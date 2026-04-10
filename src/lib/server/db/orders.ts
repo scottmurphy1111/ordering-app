@@ -8,7 +8,8 @@ import {
 	jsonb,
 	index
 } from 'drizzle-orm/pg-core';
-import { tenant, menuItems } from './schema';
+import { tenant } from './tenant';
+import { menuItems } from './menu';
 import { orderStatusEnum, paymentStatusEnum } from './types';
 
 export const orders = pgTable(

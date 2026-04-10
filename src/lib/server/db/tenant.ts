@@ -105,3 +105,19 @@ export const tenantUsers = pgTable(
 	},
 	(table) => [primaryKey({ columns: [table.tenantId, table.userId] })]
 );
+
+// Pending invitations — allows admins to invite users who don't yet have accounts
+export const tenantInvitations = pgTable('tenant_invitations', {
+	id: text('id').primaryKey(), // random UUID used as the invite token
+	tenantId: integer('tenant_id')
+		.notNull()
+		.references(() => tenant.id, { onDelete: 'cascade' }),
+	email: varchar('email', { length: 255 }).notNull(),
+	role: varchar('role', { length: 50 }).default('staff').notNull(),
+	invitedByUserId: text('invited_by_user_id')
+		.notNull()
+		.references(() => user.id, { onDelete: 'cascade' }),
+	expiresAt: timestamp('expires_at').notNull(),
+	acceptedAt: timestamp('accepted_at'),
+	createdAt: timestamp('created_at').defaultNow().notNull()
+});

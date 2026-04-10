@@ -1,0 +1,107 @@
+<script lang="ts">
+	import { enhance } from '$app/forms';
+	import type { PageData } from './$types';
+
+	let { data }: { data: PageData } = $props();
+
+	const statuses = ['', 'received', 'confirmed', 'preparing', 'ready', 'fulfilled', 'cancelled'];
+	const statusLabels: Record<string, string> = {
+		'': 'All',
+		received: 'Received',
+		confirmed: 'Confirmed',
+		preparing: 'Preparing',
+		ready: 'Ready',
+		fulfilled: 'Fulfilled',
+		cancelled: 'Cancelled'
+	};
+	const statusColors: Record<string, string> = {
+		received: 'bg-blue-100 text-blue-700',
+		confirmed: 'bg-purple-100 text-purple-700',
+		preparing: 'bg-yellow-100 text-yellow-700',
+		ready: 'bg-green-100 text-green-700',
+		fulfilled: 'bg-gray-100 text-gray-600',
+		cancelled: 'bg-red-100 text-red-600'
+	};
+	const nextStatus: Record<string, string> = {
+		received: 'confirmed',
+		confirmed: 'preparing',
+		preparing: 'ready',
+		ready: 'fulfilled'
+	};
+</script>
+
+<div>
+	<div class="flex items-center justify-between mb-6">
+		<h1 class="text-2xl font-bold text-gray-900">Orders</h1>
+		<span class="text-sm text-gray-500">{data.orders.length} shown</span>
+	</div>
+
+	<!-- Status filter tabs -->
+	<div class="mb-5 flex gap-1 overflow-x-auto">
+		{#each statuses as s}
+			<a
+				href="/dashboard/orders{s ? `?status=${s}` : ''}"
+				class="whitespace-nowrap rounded-md px-3 py-1.5 text-sm font-medium transition-colors
+					{data.statusFilter === s
+					? 'bg-gray-900 text-white'
+					: 'text-gray-500 hover:bg-gray-100 hover:text-gray-800'}"
+			>
+				{statusLabels[s]}
+			</a>
+		{/each}
+	</div>
+
+	{#if data.orders.length === 0}
+		<div class="rounded-xl border border-dashed border-gray-300 p-12 text-center">
+			<p class="text-gray-400 text-sm">No orders{data.statusFilter ? ` with status "${data.statusFilter}"` : ''} yet.</p>
+		</div>
+	{:else}
+		<div class="space-y-3">
+			{#each data.orders as order}
+				<div class="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+					<div class="flex items-start justify-between gap-4">
+						<div class="flex-1 min-w-0">
+							<div class="flex items-center gap-2 flex-wrap">
+								<span class="font-mono text-sm font-semibold text-gray-800">{order.orderNumber}</span>
+								<span class="rounded-full px-2 py-0.5 text-xs font-medium {statusColors[order.status] ?? 'bg-gray-100'}">
+									{order.status}
+								</span>
+								<span class="rounded-full px-2 py-0.5 text-xs bg-gray-100 text-gray-500 capitalize">{order.type}</span>
+								{#if order.paymentStatus === 'paid'}
+									<span class="rounded-full px-2 py-0.5 text-xs bg-emerald-100 text-emerald-700">paid</span>
+								{/if}
+							</div>
+							{#if order.customerName}
+								<p class="mt-1 text-sm text-gray-600">{order.customerName}{order.customerPhone ? ` · ${order.customerPhone}` : ''}</p>
+							{/if}
+							{#if order.notes}
+								<p class="mt-1 text-xs text-gray-400 italic">"{order.notes}"</p>
+							{/if}
+						</div>
+						<div class="text-right shrink-0">
+							<p class="font-semibold text-gray-900">${(order.total / 100).toFixed(2)}</p>
+							<p class="text-xs text-gray-400 mt-0.5">
+								{new Date(order.createdAt).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+							</p>
+						</div>
+					</div>
+
+					{#if nextStatus[order.status]}
+						<div class="mt-3 pt-3 border-t border-gray-100">
+							<form method="post" action="?/updateStatus" use:enhance>
+								<input type="hidden" name="id" value={order.id} />
+								<input type="hidden" name="status" value={nextStatus[order.status]} />
+								<button
+									type="submit"
+									class="rounded-md bg-gray-900 px-3 py-1.5 text-xs font-medium text-white hover:bg-gray-700 transition-colors"
+								>
+									Mark as {nextStatus[order.status]}
+								</button>
+							</form>
+						</div>
+					{/if}
+				</div>
+			{/each}
+		</div>
+	{/if}
+</div>

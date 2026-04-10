@@ -10,7 +10,7 @@ import {
 	index,
 	primaryKey
 } from 'drizzle-orm/pg-core';
-import { tenant } from './schema'; // adjust import path as needed
+import { tenant } from './tenant';
 
 // Menu categories (Appetizers, Burgers, Drinks, etc.)
 export const menuCategories = pgTable(

@@ -1,16 +1,21 @@
 import type { LayoutServerLoad } from './$types';
-import { db } from '$lib/server/db';
-import { eq } from 'drizzle-orm';
-import { requireTenant } from '$lib/server/tenant';
-import { menuItems } from '$lib/server/db/schema';
+import { redirect } from '@sveltejs/kit';
 
-export const load: LayoutServerLoad = async (event) => {
-	const tenantId = requireTenant(event); // throws if no tenant
+export const load: LayoutServerLoad = async ({ locals, url }) => {
+	// Require authentication
+	if (!locals.user) {
+		throw redirect(303, `/login?redirectTo=${encodeURIComponent(url.pathname)}`);
+	}
 
-	const items = await db.query.menuItems.findMany({
-		where: eq(menuItems.tenantId, tenantId)
-		// add ordering, limits, etc.
-	});
+	// Allow /tenants without a selected tenant (that's where you pick one)
+	const isTenantRoute = url.pathname === '/tenants' || url.pathname.startsWith('/tenants/');
+	if (!isTenantRoute && !locals.tenantId) {
+		throw redirect(303, '/tenants');
+	}
 
-	return { items };
+	return {
+		user: locals.user,
+		tenant: locals.tenant ?? null,
+		tenantId: locals.tenantId ?? null
+	};
 };
