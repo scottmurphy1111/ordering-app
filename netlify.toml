@@ -1,6 +1,6 @@
 [build]
   command = "bun run build"
-  publish = ".svelte-kit/output"
+  publish = ".netlify/functions-internal"
 
 [context.production.environment]
   ORIGIN = "https://getorderlocal.com"
