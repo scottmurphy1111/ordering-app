@@ -1,0 +1,12 @@
+[build]
+  command = "bun run build"
+  publish = ".svelte-kit/output"
+
+[context.production.environment]
+  ORIGIN = "https://getorderlocal.com"
+
+[context.deploy-preview.environment]
+  ORIGIN = "https://order-local.netlify.app"
+
+[context.branch-deploy.environment]
+  ORIGIN = "https://order-local.netlify.app"
