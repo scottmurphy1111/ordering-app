@@ -122,7 +122,7 @@
 							name="role"
 							class="rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
 						>
-							{#each data.roles as role}
+							{#each data.roles as role (role)}
 								{#if role !== 'owner' || data.currentRole === 'owner'}
 									<option value={role}>{roleLabels[role]}</option>
 								{/if}
@@ -169,7 +169,7 @@
 							name="role"
 							class="rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
 						>
-							{#each data.roles as role}
+							{#each data.roles as role (role)}
 								{#if role !== 'owner' || data.currentRole === 'owner'}
 									<option value={role}>{roleLabels[role]}</option>
 								{/if}
@@ -229,7 +229,7 @@
 					</tr>
 				</thead>
 				<tbody class="divide-y divide-gray-100">
-					{#each data.members as member}
+					{#each data.members as member (member.userId)}
 						<tr class="hover:bg-gray-50 transition-colors">
 							<td class="px-4 py-3">
 								<p class="font-medium text-gray-900">
@@ -252,7 +252,7 @@
 											onchange={(e) => (e.target as HTMLSelectElement).form?.requestSubmit()}
 											class="rounded-md border border-gray-200 px-2 py-1 text-xs focus:border-blue-500 focus:outline-none"
 										>
-											{#each data.roles as role}
+											{#each data.roles as role (role)}
 												{#if role !== 'owner' || data.currentRole === 'owner'}
 													<option value={role} selected={member.role === role}>{roleLabels[role]}</option>
 												{/if}
@@ -323,7 +323,7 @@
 							</tr>
 						</thead>
 						<tbody class="divide-y divide-gray-100">
-							{#each data.pendingInvitations as invite}
+							{#each data.pendingInvitations as invite (invite.id)}
 								<tr class="hover:bg-gray-50 transition-colors">
 									<td class="px-4 py-3 text-gray-700">{invite.email}</td>
 									<td class="px-4 py-3">
@@ -386,7 +386,7 @@
 						</tr>
 					</thead>
 					<tbody class="divide-y divide-gray-100">
-						{#each data.internalUsers as u}
+						{#each data.internalUsers as u (u.id)}
 							<tr class="hover:bg-gray-50 transition-colors">
 								<td class="px-4 py-3">
 									<p class="font-medium text-gray-900">{u.name}</p>
@@ -422,7 +422,7 @@
 				<div class="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
 					<table class="w-full text-sm">
 						<tbody class="divide-y divide-gray-100">
-							{#each nonInternalMembers as member}
+							{#each nonInternalMembers as member (member.userId)}
 								<tr class="hover:bg-gray-50 transition-colors">
 									<td class="px-4 py-3">
 										<p class="font-medium text-gray-900">{member.name}</p>

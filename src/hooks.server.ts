@@ -3,8 +3,8 @@ import { building } from '$app/environment';
 import { auth } from '$lib/server/auth';
 import { svelteKitHandler } from 'better-auth/svelte-kit';
 import { db } from '$lib/server/db';
-import { eq } from 'drizzle-orm';
-import { tenant } from '$lib/server/db/tenant';
+import { eq, and } from 'drizzle-orm';
+import { tenant, tenantUsers } from '$lib/server/db/tenant';
 
 const handleBetterAuth: Handle = async ({ event, resolve }) => {
 	const session = await auth.api.getSession({ headers: event.request.headers });
@@ -39,12 +39,25 @@ const handleTenantContext: Handle = async ({ event, resolve }) => {
 		if (tenantIdCookie) {
 			const tenantId = parseInt(tenantIdCookie);
 			if (!isNaN(tenantId)) {
-				const currentTenant = await db.query.tenant.findFirst({
-					where: eq(tenant.id, tenantId)
-				});
-				if (currentTenant?.isActive) {
-					event.locals.tenantId = currentTenant.id;
-					event.locals.tenant = currentTenant;
+				const userId = event.locals.user?.id;
+				const isInternal = event.locals.user?.isInternal ?? false;
+
+				// Verify the user is actually a member of this tenant (internal users can access any)
+				const membership = userId && !isInternal
+					? await db.query.tenantUsers.findFirst({
+							where: and(eq(tenantUsers.tenantId, tenantId), eq(tenantUsers.userId, userId)),
+							columns: { tenantId: true }
+						})
+					: { tenantId }; // internal users skip the membership check
+
+				if (membership) {
+					const currentTenant = await db.query.tenant.findFirst({
+						where: eq(tenant.id, tenantId)
+					});
+					if (currentTenant?.isActive) {
+						event.locals.tenantId = currentTenant.id;
+						event.locals.tenant = currentTenant;
+					}
 				}
 			}
 		}

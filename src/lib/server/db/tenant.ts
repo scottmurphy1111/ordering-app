@@ -46,6 +46,7 @@ export const tenant = pgTable(
 		logoUrl: text('logo_url'),
 		bannerUrl: text('banner_url'),
 		faviconUrl: text('favicon_url'),
+		backgroundImageUrl: text('background_image_url'),
 		primaryColor: varchar('primary_color', { length: 7 }).default('#000000'), // hex
 		accentColor: varchar('accent_color', { length: 7 }).default('#ffffff'),
 
@@ -74,6 +75,9 @@ export const tenant = pgTable(
 		subscriptionStatus: varchar('subscription_status', { length: 50 }).default('active'),
 		stripeCustomerId: varchar('stripe_customer_id', { length: 255 }),
 		stripeSubscriptionId: varchar('stripe_subscription_id', { length: 255 }),
+
+		// Per-tenant Stripe integration (for product discovery)
+		stripeSecretKey: text('stripe_secret_key'),
 
 		// Timestamps
 		createdAt: timestamp('created_at').defaultNow().notNull(),

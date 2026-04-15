@@ -58,6 +58,8 @@
 		"vitest-browser-svelte": "^2.0.2"
 	},
 	"dependencies": {
+		"@iconify-json/mdi": "^1.2.3",
+		"@iconify/svelte": "^5.2.1",
 		"stripe": "^22.0.0"
 	}
 }

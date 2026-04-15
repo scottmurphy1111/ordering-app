@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import type { PageData, ActionData } from './$types';
+	import Icon from '@iconify/svelte';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
@@ -30,7 +31,7 @@
 
 		{#if data.tenants.length > 0}
 			<div class="space-y-2 mb-6">
-				{#each data.tenants as t}
+				{#each data.tenants as t (t.id)}
 					<form method="post" action="?/select" use:enhance>
 						<input type="hidden" name="tenantId" value={t.id} />
 						<button
@@ -41,7 +42,7 @@
 								<p class="font-medium text-gray-900">{t.name}</p>
 								<p class="text-xs text-gray-400 mt-0.5">/{t.slug} · {t.type?.replace('_', ' ')} · {t.role}</p>
 							</div>
-							<span class="text-gray-400 text-sm">→</span>
+							<Icon icon="mdi:chevron-right" class="h-5 w-5 text-gray-400" />
 						</button>
 					</form>
 				{/each}
@@ -51,9 +52,9 @@
 		{#if data.isInternal && !showCreate}
 			<button
 				onclick={() => (showCreate = true)}
-				class="w-full rounded-lg border-2 border-dashed border-gray-300 px-4 py-3 text-sm text-gray-500 hover:border-gray-400 hover:text-gray-700 transition-colors"
+				class="flex items-center justify-center gap-2 w-full rounded-lg border-2 border-dashed border-gray-300 px-4 py-3 text-sm text-gray-500 hover:border-gray-400 hover:text-gray-700 transition-colors"
 			>
-				+ Create new tenant
+				<Icon icon="mdi:plus" class="h-4 w-4" /> Create new tenant
 			</button>
 		{:else if data.isInternal}
 			<form

@@ -11,10 +11,35 @@ export const load: PageServerLoad = async ({ locals, params }) => {
 	if (isNaN(itemId)) throw error(404, 'Item not found');
 
 	const item = await db.query.menuItems.findFirst({
-		where: and(eq(menuItems.id, itemId), eq(menuItems.tenantId, tenantId), eq(menuItems.available, true))
+		where: and(eq(menuItems.id, itemId), eq(menuItems.tenantId, tenantId), eq(menuItems.available, true)),
+		with: {
+			modifiers: {
+				with: {
+					modifier: {
+						with: { options: { orderBy: (o, { asc }) => [asc(o.id)] } }
+					}
+				}
+			}
+		}
 	});
 
 	if (!item) throw error(404, 'Item not found');
 
-	return { item, tenantSlug: params.tenantSlug };
+	// Transform normalized modifier relations into the shape the page expects
+	const modifierGroups = item.modifiers
+		.map((m) => m.modifier)
+		.sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0))
+		.map((mod) => ({
+			id: mod.id,
+			name: mod.name,
+			required: mod.isRequired ?? false,
+			maxSelections: mod.maxSelections ?? 1,
+			options: mod.options.map((opt) => ({
+				name: opt.name,
+				priceAdjustment: opt.priceAdjustment ?? 0,
+				isDefault: opt.isDefault ?? false
+			}))
+		}));
+
+	return { item, modifierGroups, tenantSlug: params.tenantSlug };
 };

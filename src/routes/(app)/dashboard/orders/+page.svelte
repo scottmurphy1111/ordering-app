@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import type { PageData } from './$types';
+	import { resolve } from '$app/paths';
 
 	let { data }: { data: PageData } = $props();
 
@@ -38,9 +39,9 @@
 
 	<!-- Status filter tabs -->
 	<div class="mb-5 flex gap-1 overflow-x-auto">
-		{#each statuses as s}
+		{#each statuses as s (s)}
 			<a
-				href="/dashboard/orders{s ? `?status=${s}` : ''}"
+				href={resolve(`/dashboard/orders${s ? `?status=${s}` : ''}`)}
 				class="whitespace-nowrap rounded-md px-3 py-1.5 text-sm font-medium transition-colors
 					{data.statusFilter === s
 					? 'bg-gray-900 text-white'
@@ -57,7 +58,7 @@
 		</div>
 	{:else}
 		<div class="space-y-3">
-			{#each data.orders as order}
+			{#each data.orders as order (order.id)}
 				<div class="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
 					<div class="flex items-start justify-between gap-4">
 						<div class="flex-1 min-w-0">

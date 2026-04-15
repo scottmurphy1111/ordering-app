@@ -22,8 +22,10 @@ export const load: PageServerLoad = async ({ locals, params }) => {
 				discountedPrice: true,
 				images: true,
 				tags: true,
-				modifiers: true,
 				categoryId: true
+			},
+			with: {
+				modifiers: { columns: { modifierId: true } }
 			}
 		})
 	]);

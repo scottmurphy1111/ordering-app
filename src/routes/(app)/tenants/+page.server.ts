@@ -67,10 +67,22 @@ export const actions: Actions = {
 		throw redirect(303, '/dashboard');
 	},
 
-	select: async ({ request, cookies }) => {
+	select: async ({ request, cookies, locals }) => {
 		const formData = await request.formData();
 		const tenantId = formData.get('tenantId')?.toString();
 		if (!tenantId) return fail(400, { error: 'No tenant selected' });
+
+		const userId = locals.user!.id;
+		const isInternal = locals.user!.isInternal;
+
+		// Verify the user is a member of this tenant (internal users can select any)
+		if (!isInternal) {
+			const membership = await db.query.tenantUsers.findFirst({
+				where: (tu) => eq(tu.tenantId, Number(tenantId)) && eq(tu.userId, userId),
+				columns: { tenantId: true }
+			});
+			if (!membership) return fail(403, { error: 'You do not have access to that tenant' });
+		}
 
 		cookies.set('selected-tenant-id', tenantId, {
 			path: '/',

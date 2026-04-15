@@ -1,5 +1,9 @@
 <script lang="ts">
 	import type { PageData } from './$types';
+	import type { DiscoveredItem } from '$lib/../routes/api/discover-stripe-items/+server';
+	import { SvelteSet } from 'svelte/reactivity';
+	import { resolve } from '$app/paths';
+	import Icon from '@iconify/svelte';
 
 	let { data }: { data: PageData } = $props();
 
@@ -70,6 +74,80 @@
 	}
 
 	const hasErrors = $derived(importResult?.results.some((r) => r.status === 'skipped') ?? false);
+
+	// ── Stripe discovery ──────────────────────────────────────────
+	let showDiscover = $state(false);
+	let discovering = $state(false);
+	let discoverError = $state<string | null>(null);
+	let discoveredItems = $state<DiscoveredItem[]>([]);
+	let selected = $state(new SvelteSet<string>());
+	let importing2 = $state(false);
+	let discoverResult = $state<{ imported: number; skipped: number } | null>(null);
+
+	async function openDiscover() {
+		showDiscover = true;
+		discovering = true;
+		discoverError = null;
+		discoveredItems = [];
+		discoverResult = null;
+		selected = new SvelteSet();
+
+		try {
+			const res = await fetch('/api/discover-stripe-items');
+			const json = await res.json();
+			if (!res.ok) { discoverError = json.message ?? 'Failed to load Stripe products'; }
+			else {
+				discoveredItems = json;
+				// Pre-select everything not already imported
+				selected = new SvelteSet(
+					(json as DiscoveredItem[]).filter((i) => !i.alreadyImported).map((i) => i.stripeProductId)
+				);
+			}
+		} catch {
+			discoverError = 'Network error. Please try again.';
+		} finally {
+			discovering = false;
+		}
+	}
+
+	function toggleSelected(id: string) {
+		const next = new SvelteSet(selected);
+		if (next.has(id)) next.delete(id);
+		else next.add(id);
+		selected = next;
+	}
+
+	async function importSelected() {
+		const items = discoveredItems.filter((i) => selected.has(i.stripeProductId));
+		if (!items.length) return;
+		importing2 = true;
+		discoverError = null;
+
+		try {
+			const res = await fetch('/api/discover-stripe-items', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ items })
+			});
+			const json = await res.json();
+			if (!res.ok) { discoverError = json.message ?? 'Import failed'; }
+			else { discoverResult = json; }
+		} catch {
+			discoverError = 'Network error. Please try again.';
+		} finally {
+			importing2 = false;
+		}
+	}
+
+	function closeDiscover() {
+		const hadChanges = (discoverResult?.imported ?? 0) > 0;
+		showDiscover = false;
+		discoveredItems = [];
+		discoverError = null;
+		discoverResult = null;
+		selected = new SvelteSet();
+		if (hadChanges) window.location.reload();
+	}
 </script>
 
 <div>
@@ -80,16 +158,22 @@
 		</div>
 		<div class="flex gap-2">
 			<button
-				onclick={() => (showImport = true)}
-				class="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+				onclick={openDiscover}
+				class="inline-flex items-center gap-1.5 rounded-md border border-purple-300 bg-purple-50 px-4 py-2 text-sm font-medium text-purple-700 hover:bg-purple-100 transition-colors"
 			>
-				↑ Import CSV
+				<Icon icon="mdi:lightning-bolt" class="h-4 w-4" /> Discover from Stripe
+			</button>
+			<button
+				onclick={() => (showImport = true)}
+				class="inline-flex items-center gap-1.5 rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+			>
+				<Icon icon="mdi:upload" class="h-4 w-4" /> Import CSV
 			</button>
 			<a
-				href="/dashboard/menu/items/new"
-				class="rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-700 transition-colors"
+				href={resolve('/dashboard/menu/items/new')}
+				class="inline-flex items-center gap-1.5 rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-700 transition-colors"
 			>
-				+ New item
+				<Icon icon="mdi:plus" class="h-4 w-4" /> New item
 			</a>
 		</div>
 	</div>
@@ -109,7 +193,7 @@
 				class="rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
 			>
 				<option value="">All categories</option>
-				{#each data.categories as cat}
+				{#each data.categories as cat (cat.id)}
 					<option value={String(cat.id)} selected={data.selectedCategoryId === cat.id}>
 						{cat.name}
 					</option>
@@ -127,7 +211,7 @@
 	{#if data.items.length === 0}
 		<div class="rounded-xl border border-dashed border-gray-300 p-12 text-center">
 			<p class="text-gray-400 text-sm">No items found.</p>
-			<a href="/dashboard/menu/items/new" class="mt-3 inline-block text-sm text-blue-600 hover:underline">+ Add your first item</a>
+			<a href={resolve('/dashboard/menu/items/new')} class="mt-3 inline-flex items-center gap-1 text-sm text-blue-600 hover:underline"><Icon icon="mdi:plus" class="h-3.5 w-3.5" /> Add your first item</a>
 		</div>
 	{:else}
 		<div class="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
@@ -145,7 +229,7 @@
 					{#each data.items as item (item.id)}
 						<tr class="hover:bg-gray-50 transition-colors">
 							<td class="px-4 py-3">
-								<a href="/dashboard/menu/items/{item.id}" class="font-medium text-gray-900 hover:underline">
+								<a href={resolve(`/dashboard/menu/items/${item.id}`)} class="font-medium text-gray-900 hover:underline">
 									{item.name}
 								</a>
 								{#if item.description}
@@ -165,7 +249,7 @@
 								</span>
 							</td>
 							<td class="px-4 py-3 text-right">
-								<a href="/dashboard/menu/items/{item.id}" class="text-xs text-blue-600 hover:underline">Edit</a>
+								<a href={resolve(`/dashboard/menu/items/${item.id}`)} class="text-xs text-blue-600 hover:underline">Edit</a>
 							</td>
 						</tr>
 					{/each}
@@ -180,15 +264,15 @@
 				<div class="flex gap-2">
 					{#if data.pagination.page > 1}
 						<a
-							href="/dashboard/menu/items?page={data.pagination.page - 1}"
+							href={resolve(`/dashboard/menu/items?page=${data.pagination.page - 1}`)}
 							class="rounded-md border border-gray-300 px-3 py-1.5 hover:bg-gray-50 transition-colors"
-						>← Prev</a>
+						><Icon icon="mdi:chevron-left" class="h-4 w-4" /> Prev</a>
 					{/if}
 					{#if data.pagination.page < data.pagination.totalPages}
 						<a
-							href="/dashboard/menu/items?page={data.pagination.page + 1}"
-							class="rounded-md border border-gray-300 px-3 py-1.5 hover:bg-gray-50 transition-colors"
-						>Next →</a>
+							href={resolve(`/dashboard/menu/items?page=${data.pagination.page + 1}`)}
+							class="inline-flex items-center gap-1 rounded-md border border-gray-300 px-3 py-1.5 hover:bg-gray-50 transition-colors"
+						>Next <Icon icon="mdi:chevron-right" class="h-4 w-4" /></a>
 					{/if}
 				</div>
 			</div>
@@ -212,8 +296,8 @@
 				<h2 class="text-base font-semibold text-gray-900">Import menu items from CSV</h2>
 				<button
 					onclick={closeImport}
-					class="text-gray-400 hover:text-gray-600 transition-colors text-lg leading-none"
-				>✕</button>
+					class="text-gray-400 hover:text-gray-600 transition-colors"
+				><Icon icon="mdi:close" class="h-5 w-5" /></button>
 			</div>
 
 			<div class="px-6 py-5 space-y-4">
@@ -230,7 +314,7 @@
 						onclick={downloadTemplate}
 						class="text-sm text-blue-600 hover:underline"
 					>
-						↓ Download template CSV
+						<Icon icon="mdi:download" class="inline h-4 w-4 mr-0.5" /> Download template CSV
 					</button>
 
 					<div>
@@ -298,7 +382,7 @@
 									</tr>
 								</thead>
 								<tbody class="divide-y divide-red-100">
-									{#each importResult.results.filter((r) => r.status === 'skipped') as r}
+									{#each importResult.results.filter((r) => r.status === 'skipped') as r (r.row)}
 										<tr>
 											<td class="px-3 py-2 text-red-600">{r.row}</td>
 											<td class="px-3 py-2 text-red-800">{r.name}</td>
@@ -320,6 +404,132 @@
 					</div>
 				{/if}
 			</div>
+		</div>
+	</div>
+{/if}
+
+<!-- ── Stripe discover modal ─── -->
+{#if showDiscover}
+	<div class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+		<div class="flex w-full max-w-2xl flex-col rounded-xl bg-white shadow-xl" style="max-height: 90vh;">
+			<!-- Header -->
+			<div class="flex items-center justify-between border-b border-gray-200 px-5 py-4">
+				<div>
+					<h2 class="text-lg font-semibold text-gray-900">Discover Stripe Products</h2>
+					<p class="text-xs text-gray-500 mt-0.5">Select products from your Stripe account to import as menu items.</p>
+				</div>
+				<button onclick={closeDiscover} class="text-gray-400 hover:text-gray-600 transition-colors"><Icon icon="mdi:close" class="h-5 w-5" /></button>
+			</div>
+
+			<!-- Body -->
+			<div class="flex-1 overflow-y-auto px-5 py-4">
+				{#if discovering}
+					<div class="flex flex-col items-center justify-center py-12 text-gray-400">
+						<svg class="mb-3 h-6 w-6 animate-spin" fill="none" viewBox="0 0 24 24">
+							<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+							<path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+						</svg>
+						<p class="text-sm">Loading products from Stripe…</p>
+					</div>
+				{:else if discoverError}
+					<div class="rounded-md bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">{discoverError}</div>
+				{:else if discoverResult}
+					<div class="rounded-md bg-green-50 border border-green-200 px-4 py-3 text-sm text-green-700">
+						<p class="font-medium">Import complete</p>
+						<p class="mt-0.5">{discoverResult.imported} item{discoverResult.imported !== 1 ? 's' : ''} imported{discoverResult.skipped > 0 ? `, ${discoverResult.skipped} skipped (already exist)` : ''}.</p>
+					</div>
+				{:else if discoveredItems.length === 0}
+					<div class="py-10 text-center text-sm text-gray-500">No active one-time products found in your Stripe account.</div>
+				{:else}
+					<!-- Select-all toggle -->
+					<div class="mb-3 flex items-center justify-between">
+						<p class="text-sm text-gray-600">{discoveredItems.length} product{discoveredItems.length !== 1 ? 's' : ''} found</p>
+						<button
+							onclick={() => {
+								const unimported = discoveredItems.filter((i) => !i.alreadyImported).map((i) => i.stripeProductId);
+								if (unimported.every((id) => selected.has(id))) {
+									const next = new SvelteSet(selected);
+									unimported.forEach((id) => next.delete(id));
+									selected = next;
+								} else {
+									const next = new SvelteSet(selected);
+									unimported.forEach((id) => next.add(id));
+									selected = next;
+								}
+							}}
+							class="text-xs text-gray-500 hover:text-gray-800 underline transition-colors"
+						>
+							{discoveredItems.filter((i) => !i.alreadyImported).every((i) => selected.has(i.stripeProductId)) ? 'Deselect all' : 'Select all'}
+						</button>
+					</div>
+
+					<!-- Product list -->
+					<ul class="divide-y divide-gray-100 rounded-lg border border-gray-200">
+						{#each discoveredItems as item (item.stripeProductId)}
+							<li class="flex items-center gap-3 px-4 py-3 {item.alreadyImported ? 'opacity-60' : ''}">
+								<input
+									type="checkbox"
+									id="discover-{item.stripeProductId}"
+									checked={selected.has(item.stripeProductId)}
+									disabled={item.alreadyImported}
+									onchange={() => toggleSelected(item.stripeProductId)}
+									class="h-4 w-4 rounded border-gray-300 accent-gray-900"
+								/>
+								{#if item.imageUrl}
+									<img src={item.imageUrl} alt={item.name} class="h-10 w-10 rounded object-cover shrink-0" />
+								{:else}
+									<div class="h-10 w-10 rounded bg-gray-100 flex items-center justify-center shrink-0">
+										<Icon icon="mdi:silverware-fork-knife" class="h-5 w-5 text-gray-400" />
+									</div>
+								{/if}
+								<label for="discover-{item.stripeProductId}" class="flex-1 min-w-0 cursor-pointer">
+									<p class="text-sm font-medium text-gray-900 truncate">{item.name}</p>
+									{#if item.description}
+										<p class="text-xs text-gray-500 truncate">{item.description}</p>
+									{/if}
+								</label>
+								<div class="flex flex-col items-end gap-1 shrink-0">
+									<span class="text-sm font-semibold text-gray-800">${(item.price / 100).toFixed(2)}</span>
+									{#if item.alreadyImported}
+										<span class="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-500">Already imported</span>
+									{/if}
+								</div>
+							</li>
+						{/each}
+					</ul>
+				{/if}
+			</div>
+
+			<!-- Footer -->
+			{#if !discovering && !discoverResult}
+				<div class="flex items-center justify-between border-t border-gray-200 px-5 py-4">
+					<p class="text-xs text-gray-500">{selected.size} item{selected.size !== 1 ? 's' : ''} selected</p>
+					<div class="flex gap-2">
+						<button
+							onclick={closeDiscover}
+							class="rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-600 hover:bg-gray-50 transition-colors"
+						>
+							Cancel
+						</button>
+						<button
+							onclick={importSelected}
+							disabled={selected.size === 0 || importing2}
+							class="rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+						>
+							{importing2 ? 'Importing…' : `Import ${selected.size > 0 ? selected.size : ''} item${selected.size !== 1 ? 's' : ''}`}
+						</button>
+					</div>
+				</div>
+			{:else if discoverResult}
+				<div class="flex justify-end border-t border-gray-200 px-5 py-4">
+					<button
+						onclick={closeDiscover}
+						class="rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-700 transition-colors"
+					>
+						Done
+					</button>
+				</div>
+			{/if}
 		</div>
 	</div>
 {/if}

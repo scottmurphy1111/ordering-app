@@ -2,7 +2,7 @@ import type { PageServerLoad, Actions } from './$types';
 import { fail, redirect, error } from '@sveltejs/kit';
 import { db } from '$lib/server/db';
 import { eq, and } from 'drizzle-orm';
-import { menuItems, menuCategories } from '$lib/server/db/schema';
+import { menuItems, menuCategories, modifiers, modifierOptions, menuItemModifiers } from '$lib/server/db/schema';
 
 export const load: PageServerLoad = async ({ locals, params }) => {
 	const tenantId = locals.tenantId!;
@@ -12,7 +12,16 @@ export const load: PageServerLoad = async ({ locals, params }) => {
 	const [item, categories] = await Promise.all([
 		db.query.menuItems.findFirst({
 			where: and(eq(menuItems.id, itemId), eq(menuItems.tenantId, tenantId)),
-			with: { category: { columns: { id: true, name: true } } }
+			with: {
+				category: { columns: { id: true, name: true } },
+				modifiers: {
+					with: {
+						modifier: {
+							with: { options: { orderBy: (o, { asc }) => [asc(o.id)] } }
+						}
+					}
+				}
+			}
 		}),
 		db.query.menuCategories.findMany({
 			where: eq(menuCategories.tenantId, tenantId),
@@ -64,5 +73,103 @@ export const actions: Actions = {
 			.where(and(eq(menuItems.id, itemId), eq(menuItems.tenantId, tenantId)));
 
 		throw redirect(303, '/dashboard/menu/items');
+	},
+
+	addModifier: async ({ request, locals, params }) => {
+		const tenantId = locals.tenantId!;
+		const itemId = parseInt(params.itemId);
+		const formData = await request.formData();
+
+		const name = formData.get('modifierName')?.toString().trim();
+		if (!name) return fail(400, { modifierError: 'Group name is required' });
+
+		const isRequired = formData.get('isRequired') === 'on';
+		const maxSelections = parseInt(formData.get('maxSelections')?.toString() ?? '1') || 1;
+
+		const [mod] = await db
+			.insert(modifiers)
+			.values({ tenantId, name, isRequired, maxSelections })
+			.returning({ id: modifiers.id });
+
+		await db.insert(menuItemModifiers).values({ menuItemId: itemId, modifierId: mod.id });
+
+		return { success: true };
+	},
+
+	updateModifier: async ({ request, locals }) => {
+		const tenantId = locals.tenantId!;
+		const formData = await request.formData();
+
+		const modifierId = parseInt(formData.get('modifierId')?.toString() ?? '');
+		const name = formData.get('modifierName')?.toString().trim();
+		if (!modifierId || !name) return fail(400, { modifierError: 'Invalid request' });
+
+		const isRequired = formData.get('isRequired') === 'on';
+		const maxSelections = parseInt(formData.get('maxSelections')?.toString() ?? '1') || 1;
+
+		await db
+			.update(modifiers)
+			.set({ name, isRequired, maxSelections })
+			.where(and(eq(modifiers.id, modifierId), eq(modifiers.tenantId, tenantId)));
+
+		return { success: true };
+	},
+
+	deleteModifier: async ({ request, locals }) => {
+		const tenantId = locals.tenantId!;
+		const formData = await request.formData();
+
+		const modifierId = parseInt(formData.get('modifierId')?.toString() ?? '');
+		if (!modifierId) return fail(400, { modifierError: 'Invalid request' });
+
+		// Cascade deletes options + junction row
+		await db
+			.delete(modifiers)
+			.where(and(eq(modifiers.id, modifierId), eq(modifiers.tenantId, tenantId)));
+
+		return { success: true };
+	},
+
+	addOption: async ({ request, locals }) => {
+		const tenantId = locals.tenantId!;
+		const formData = await request.formData();
+
+		const modifierId = parseInt(formData.get('modifierId')?.toString() ?? '');
+		const name = formData.get('optionName')?.toString().trim();
+		if (!modifierId || !name) return fail(400, { modifierError: 'Invalid request' });
+
+		// Verify modifier belongs to this tenant
+		const mod = await db.query.modifiers.findFirst({
+			where: and(eq(modifiers.id, modifierId), eq(modifiers.tenantId, tenantId)),
+			columns: { id: true }
+		});
+		if (!mod) return fail(403, { modifierError: 'Not found' });
+
+		const priceAdjStr = formData.get('priceAdjustment')?.toString() ?? '0';
+		const priceAdjustment = Math.round(parseFloat(priceAdjStr || '0') * 100);
+		const isDefault = formData.get('isDefault') === 'on';
+
+		await db.insert(modifierOptions).values({ modifierId, name, priceAdjustment, isDefault });
+
+		return { success: true };
+	},
+
+	deleteOption: async ({ request, locals }) => {
+		const tenantId = locals.tenantId!;
+		const formData = await request.formData();
+
+		const optionId = parseInt(formData.get('optionId')?.toString() ?? '');
+		if (!optionId) return fail(400, { modifierError: 'Invalid request' });
+
+		// Verify option belongs to a modifier owned by this tenant
+		const option = await db.query.modifierOptions.findFirst({
+			where: eq(modifierOptions.id, optionId),
+			with: { modifier: { columns: { tenantId: true } } }
+		});
+		if (!option || option.modifier.tenantId !== tenantId) return fail(403, { modifierError: 'Not found' });
+
+		await db.delete(modifierOptions).where(eq(modifierOptions.id, optionId));
+
+		return { success: true };
 	}
 };

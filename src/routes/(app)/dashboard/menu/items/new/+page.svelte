@@ -1,13 +1,15 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import type { PageData, ActionData } from './$types';
+	import { resolve } from '$app/paths';
+	import Icon from '@iconify/svelte';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 </script>
 
 <div class="max-w-xl">
 	<div class="flex items-center gap-3 mb-6">
-		<a href="/dashboard/menu/items" class="text-sm text-gray-400 hover:text-gray-600 transition-colors">← Items</a>
+		<a href={resolve('/dashboard/menu/items')} class="inline-flex items-center gap-1 text-sm text-gray-400 hover:text-gray-600 transition-colors"><Icon icon="mdi:arrow-left" class="h-4 w-4" /> Items</a>
 		<h1 class="text-2xl font-bold text-gray-900">New item</h1>
 	</div>
 
@@ -80,7 +82,7 @@
 					class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
 				>
 					<option value="">No category</option>
-					{#each data.categories as cat}
+					{#each data.categories as cat (cat.id)}
 						<option value={String(cat.id)}>{cat.name}</option>
 					{/each}
 				</select>
@@ -111,7 +113,7 @@
 				Create item
 			</button>
 			<a
-				href="/dashboard/menu/items"
+				href={resolve('/dashboard/menu/items')}
 				class="rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-600 hover:bg-gray-50 transition-colors"
 			>
 				Cancel

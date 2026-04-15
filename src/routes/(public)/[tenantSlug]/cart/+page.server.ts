@@ -1,7 +1,5 @@
 import type { PageServerLoad } from './$types';
-import { error } from '@sveltejs/kit';
 
-export const load: PageServerLoad = async ({ locals, params }) => {
-	if (!locals.tenant) throw error(404, 'Store not found');
+export const load: PageServerLoad = async ({ params }) => {
 	return { tenantSlug: params.tenantSlug };
 };

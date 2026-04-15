@@ -89,7 +89,7 @@
 					</tr>
 				</thead>
 				<tbody class="divide-y divide-gray-100">
-					{#each data.categories as cat}
+					{#each data.categories as cat (cat.id)}
 						<tr class="hover:bg-gray-50 transition-colors">
 							<td class="px-4 py-3 font-medium text-gray-900">{cat.name}</td>
 							<td class="px-4 py-3 text-gray-500">{cat.description ?? '—'}</td>

@@ -3,42 +3,55 @@
 	import { goto } from '$app/navigation';
 	import type { PageData } from './$types';
 	import { cart, type CartModifier } from '$lib/cart.svelte';
+	import { resolve } from '$app/paths';
+	import Icon from '@iconify/svelte';
 
 	let { data }: { data: PageData } = $props();
 
 	onMount(() => cart.init(data.tenantSlug));
 
-	type ModifierOption = { name: string; priceAdjustment?: number; isDefault?: boolean };
-	type ModifierGroup = { name: string; required?: boolean; maxSelections?: number; options: ModifierOption[] };
-
-	const modifierGroups = $derived<ModifierGroup[]>(
-		Array.isArray(data.item.modifiers) ? (data.item.modifiers as ModifierGroup[]) : []
-	);
+	const modifierGroups = $derived(data.modifierGroups);
 	const basePrice = $derived(data.item.discountedPrice ?? data.item.price);
 	const images = $derived(
 		(data.item.images as { url: string; alt?: string; isPrimary?: boolean }[] | null) ?? []
 	);
 	const primaryImage = $derived(images.find((i) => i.isPrimary) ?? images[0]);
 
-	// Default selections derived from modifierGroups
-	const defaultSelections = $derived(
-		Object.fromEntries(
-			modifierGroups
-				.filter((g) => g.options.some((o) => o.isDefault))
-				.map((g) => [g.name, g.options.find((o) => o.isDefault)!.name])
-		)
-	);
+	// selections: group id → array of selected option names
+	// single-select groups hold at most one name, multi-select hold up to maxSelections
+	let selections = $state<Record<number, string[]>>({});
 
-	// User overrides on top of defaults
-	let userOverrides = $state<Record<string, string>>({});
-	const selections = $derived({ ...defaultSelections, ...userOverrides });
+	$effect(() => {
+		const initial: Record<number, string[]> = {};
+		for (const group of modifierGroups) {
+			initial[group.id] = group.options.filter((o) => o.isDefault).map((o) => o.name);
+		}
+		selections = initial;
+	});
+
+	function toggleOption(groupId: number, optionName: string, maxSelections: number) {
+		const current = selections[groupId] ?? [];
+		if (maxSelections === 1) {
+			// radio: always replace
+			selections[groupId] = [optionName];
+		} else {
+			// checkbox: toggle, respect max
+			if (current.includes(optionName)) {
+				selections[groupId] = current.filter((n) => n !== optionName);
+			} else if (current.length < maxSelections) {
+				selections[groupId] = [...current, optionName];
+			}
+			// at max and option not selected — do nothing
+		}
+	}
 
 	const selectedModifiers = $derived<CartModifier[]>(
-		modifierGroups.flatMap((group) => {
-			const chosen = group.options.find((o) => o.name === selections[group.name]);
-			if (!chosen) return [];
-			return [{ group: group.name, name: chosen.name, priceAdjustment: chosen.priceAdjustment ?? 0 }];
-		})
+		modifierGroups.flatMap((group) =>
+			(selections[group.id] ?? []).map((name) => {
+				const opt = group.options.find((o) => o.name === name);
+				return { group: group.name, name, priceAdjustment: opt?.priceAdjustment ?? 0 };
+			})
+		)
 	);
 
 	const totalPrice = $derived(
@@ -46,7 +59,7 @@
 	);
 
 	const canAdd = $derived(
-		modifierGroups.every((g) => !g.required || selections[g.name] !== undefined)
+		modifierGroups.every((g) => !g.required || (selections[g.id] ?? []).length > 0)
 	);
 
 	function addToCart() {
@@ -58,7 +71,7 @@
 			selectedModifiers,
 			imageUrl: primaryImage?.url
 		});
-		goto(`/${data.tenantSlug}/menu`);
+		goto(resolve(`/${data.tenantSlug}/menu`));
 	}
 </script>
 
@@ -66,16 +79,19 @@
 	<title>{data.item.name} — {data.tenant.name}</title>
 </svelte:head>
 
-<div class="min-h-screen bg-gray-50">
-	<header class="border-b border-gray-200 bg-white">
+<div class="min-h-screen">
+	<header class="border-b border-gray-200 bg-white/90 backdrop-blur-sm">
 		<div class="mx-auto max-w-lg px-4 py-4">
-			<a href="/{data.tenantSlug}/menu" class="text-sm text-gray-500 hover:text-gray-800 transition-colors">
-				← Back to menu
-			</a>
+			<a
+				href={resolve(`/${data.tenantSlug}/menu`)}
+				class="inline-flex items-center gap-1 text-sm text-gray-500 transition-colors hover:text-gray-800"
+			>
+				<Icon icon="mdi:arrow-left" class="h-4 w-4" /> Back to menu
+</a>
 		</div>
 	</header>
 
-	<main class="mx-auto max-w-lg px-4 py-6 space-y-6">
+	<main class="mx-auto max-w-lg space-y-6 px-4 py-6">
 		<!-- Image -->
 		{#if primaryImage}
 			<img
@@ -94,7 +110,9 @@
 			{/if}
 			<div class="mt-2 flex items-center gap-2">
 				{#if data.item.discountedPrice}
-					<p class="text-xl font-bold text-green-700">${(data.item.discountedPrice / 100).toFixed(2)}</p>
+					<p class="text-xl font-bold text-green-700">
+						${(data.item.discountedPrice / 100).toFixed(2)}
+					</p>
 					<p class="text-sm text-gray-400 line-through">${(data.item.price / 100).toFixed(2)}</p>
 				{:else}
 					<p class="text-xl font-bold text-gray-900">${(data.item.price / 100).toFixed(2)}</p>
@@ -110,33 +128,71 @@
 		</div>
 
 		<!-- Modifier groups -->
-		{#each modifierGroups as group (group.name)}
+		{#each modifierGroups as group (group.id)}
+			{@const chosen = selections[group.id] ?? []}
+			{@const isMulti = group.maxSelections > 1}
 			<div class="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
 				<div class="mb-3 flex items-center justify-between">
-					<h2 class="font-semibold text-gray-900">{group.name}</h2>
-					{#if group.required}
-						<span class="rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-600">Required</span>
-					{:else}
-						<span class="text-xs text-gray-400">Optional</span>
-					{/if}
+					<div>
+						<h2 class="font-semibold text-gray-900">{group.name}</h2>
+						<p class="mt-0.5 text-xs text-gray-400">
+							{#if isMulti}
+								Choose up to {group.maxSelections}
+							{:else}
+								Choose one
+							{/if}
+						</p>
+					</div>
+					<div class="flex items-center gap-2">
+						{#if isMulti}
+							<span class="text-xs text-gray-400">{chosen.length}/{group.maxSelections}</span>
+						{/if}
+						{#if group.required}
+							<span class="rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-600">Required</span>
+						{:else}
+							<span class="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-500">Optional</span>
+						{/if}
+					</div>
 				</div>
 				<div class="space-y-2">
 					{#each group.options as option (option.name)}
-						<label class="flex cursor-pointer items-center justify-between rounded-lg border border-gray-200 px-3 py-2.5 transition-colors hover:bg-gray-50 {selections[group.name] === option.name ? 'border-gray-900 bg-gray-50' : ''}">
+						{@const isSelected = chosen.includes(option.name)}
+						{@const isDisabled = isMulti && !isSelected && chosen.length >= group.maxSelections}
+						<label
+							style={isSelected ? 'border-color: var(--primary-color);' : ''}
+							class="flex cursor-pointer items-center justify-between rounded-lg border px-3 py-2.5 transition-colors
+								{isSelected ? 'bg-gray-50' : 'border-gray-200 hover:bg-gray-50'}
+								{isDisabled ? 'cursor-not-allowed opacity-50' : ''}"
+						>
 							<div class="flex items-center gap-3">
-								<input
-									type="radio"
-									name={group.name}
-									value={option.name}
-									checked={selections[group.name] === option.name}
-									onchange={() => (userOverrides[group.name] = option.name)}
-									class="h-4 w-4 accent-gray-900"
-								/>
+								{#if isMulti}
+									<input
+										type="checkbox"
+										checked={isSelected}
+										disabled={isDisabled}
+										onchange={() => toggleOption(group.id, option.name, group.maxSelections)}
+										style="accent-color: var(--primary-color);"
+										class="h-4 w-4 rounded"
+									/>
+								{:else}
+									<input
+										type="radio"
+										name="group-{group.id}"
+										value={option.name}
+										checked={isSelected}
+										onchange={() => toggleOption(group.id, option.name, group.maxSelections)}
+										style="accent-color: var(--primary-color);"
+										class="h-4 w-4"
+									/>
+								{/if}
 								<span class="text-sm text-gray-800">{option.name}</span>
+								{#if option.isDefault}
+									<span class="rounded-full bg-blue-50 px-1.5 py-0.5 text-xs text-blue-500">Default</span>
+								{/if}
 							</div>
-							{#if option.priceAdjustment && option.priceAdjustment !== 0}
+							{#if option.priceAdjustment !== 0}
 								<span class="text-sm text-gray-500">
-									{option.priceAdjustment > 0 ? '+' : ''}{(option.priceAdjustment / 100).toFixed(2)}
+									{option.priceAdjustment > 0 ? '+' : '−'}${(Math.abs(option.priceAdjustment) / 100).toFixed(2)}
 								</span>
 							{/if}
 						</label>
@@ -147,7 +203,7 @@
 
 		<!-- Allergens -->
 		{#if Array.isArray(data.item.allergens) && (data.item.allergens as string[]).length > 0}
-			<div class="rounded-lg bg-yellow-50 border border-yellow-200 px-4 py-3 text-sm text-yellow-800">
+			<div class="rounded-lg border border-yellow-200 bg-yellow-50 px-4 py-3 text-sm text-yellow-800">
 				<span class="font-medium">Allergens:</span>
 				{(data.item.allergens as string[]).join(', ')}
 			</div>
@@ -158,7 +214,8 @@
 			<button
 				onclick={addToCart}
 				disabled={!canAdd}
-				class="w-full rounded-xl bg-gray-900 px-6 py-4 text-base font-semibold text-white shadow-lg transition-colors hover:bg-gray-700 disabled:opacity-50"
+				style="background-color: var(--primary-color); color: var(--accent-color);"
+				class="w-full rounded-xl px-6 py-4 text-base font-semibold shadow-lg transition-opacity hover:opacity-90 disabled:opacity-50"
 			>
 				Add to Cart — ${(totalPrice / 100).toFixed(2)}
 			</button>

@@ -1,6 +1,6 @@
 import { relations } from 'drizzle-orm';
 import { tenant, tenantUsers } from './tenant';
-import { menuCategories, menuItems, modifiers, menuItemModifiers } from './menu';
+import { menuCategories, menuItems, modifiers, modifierOptions, menuItemModifiers } from './menu';
 import { orders, orderItems } from './orders';
 import { user, session, account } from './auth.schema';
 
@@ -36,7 +36,12 @@ export const menuItemsRelations = relations(menuItems, ({ one, many }) => ({
 
 export const modifiersRelations = relations(modifiers, ({ one, many }) => ({
 	tenant: one(tenant, { fields: [modifiers.tenantId], references: [tenant.id] }),
-	items: many(menuItemModifiers)
+	items: many(menuItemModifiers),
+	options: many(modifierOptions)
+}));
+
+export const modifierOptionsRelations = relations(modifierOptions, ({ one }) => ({
+	modifier: one(modifiers, { fields: [modifierOptions.modifierId], references: [modifiers.id] })
 }));
 
 export const menuItemModifiersRelations = relations(menuItemModifiers, ({ one }) => ({
