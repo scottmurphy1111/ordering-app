@@ -4,8 +4,40 @@
 	import { SvelteSet } from 'svelte/reactivity';
 	import { resolve } from '$app/paths';
 	import Icon from '@iconify/svelte';
+	import { afterNavigate } from '$app/navigation';
+	import { tick } from 'svelte';
 
 	let { data }: { data: PageData } = $props();
+
+	// ── Search ────────────────────────────────────────────────────
+	let searchForm = $state<HTMLFormElement | null>(null);
+	let searchInput = $state<HTMLInputElement | null>(null);
+	let searchTimer: ReturnType<typeof setTimeout> | null = null;
+	let refocusAfterNav = false;
+
+	afterNavigate(() => {
+		if (refocusAfterNav) {
+			refocusAfterNav = false;
+			tick().then(() => {
+				if (!searchInput) return;
+				searchInput.focus();
+				const len = searchInput.value.length;
+				searchInput.setSelectionRange(len, len);
+			});
+		}
+	});
+
+	function onSearchInput() {
+		if (searchTimer) clearTimeout(searchTimer);
+		searchTimer = setTimeout(() => {
+			refocusAfterNav = true;
+			searchForm?.requestSubmit();
+		}, 300);
+	}
+
+	function onCategoryChange() {
+		searchForm?.requestSubmit();
+	}
 
 	// ── CSV import ────────────────────────────────────────────────
 	let showImport = $state(false);
@@ -179,17 +211,20 @@
 	</div>
 
 	<!-- Filters -->
-	<form method="get" class="mb-5 flex gap-3">
+	<form bind:this={searchForm} method="get" class="mb-5 flex gap-3">
 		<input
+			bind:this={searchInput}
 			type="text"
 			name="search"
 			value={data.search ?? ''}
 			placeholder="Search items..."
+			oninput={onSearchInput}
 			class="flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
 		/>
 		{#if data.categories.length > 0}
 			<select
 				name="categoryId"
+				onchange={onCategoryChange}
 				class="rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
 			>
 				<option value="">All categories</option>
@@ -200,12 +235,6 @@
 				{/each}
 			</select>
 		{/if}
-		<button
-			type="submit"
-			class="rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-600 hover:bg-gray-50 transition-colors"
-		>
-			Search
-		</button>
 	</form>
 
 	{#if data.items.length === 0}
@@ -218,6 +247,7 @@
 			<table class="w-full text-sm">
 				<thead class="bg-gray-50 border-b border-gray-200">
 					<tr>
+						<th class="px-4 py-2.5 w-12"></th>
 						<th class="px-4 py-2.5 text-left font-medium text-gray-500">Name</th>
 						<th class="px-4 py-2.5 text-left font-medium text-gray-500">Category</th>
 						<th class="px-4 py-2.5 text-left font-medium text-gray-500">Price</th>
@@ -227,7 +257,17 @@
 				</thead>
 				<tbody class="divide-y divide-gray-100">
 					{#each data.items as item (item.id)}
+						{@const primaryImage = (item.images as { url: string; isPrimary?: boolean }[] | null)?.find((img) => img.isPrimary) ?? (item.images as { url: string }[] | null)?.[0]}
 						<tr class="hover:bg-gray-50 transition-colors">
+							<td class="px-4 py-3">
+								{#if primaryImage}
+									<img src={primaryImage.url} alt={item.name} class="h-10 w-10 rounded-md object-cover" />
+								{:else}
+									<div class="h-10 w-10 rounded-md bg-gray-100 flex items-center justify-center">
+										<Icon icon="mdi:silverware-fork-knife" class="h-5 w-5 text-gray-300" />
+									</div>
+								{/if}
+							</td>
 							<td class="px-4 py-3">
 								<a href={resolve(`/dashboard/menu/items/${item.id}`)} class="font-medium text-gray-900 hover:underline">
 									{item.name}

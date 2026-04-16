@@ -47,6 +47,7 @@ export const actions: Actions = {
 		const categoryIdStr = formData.get('categoryId')?.toString();
 		const available = formData.get('available') === 'on';
 		const tagsRaw = formData.get('tags')?.toString().trim();
+		const imageUrl = formData.get('imageUrl')?.toString().trim() || null;
 
 		if (!name) return fail(400, { error: 'Name is required' });
 		if (!priceStr || isNaN(parseFloat(priceStr))) return fail(400, { error: 'Valid price is required' });
@@ -55,10 +56,12 @@ export const actions: Actions = {
 		const discountedPrice = discountedPriceStr ? Math.round(parseFloat(discountedPriceStr) * 100) : null;
 		const categoryId = categoryIdStr ? parseInt(categoryIdStr) : null;
 		const tags = tagsRaw ? tagsRaw.split(',').map((t) => t.trim()).filter(Boolean) : [];
+		const images = imageUrl ? [{ url: imageUrl, isPrimary: true }] : [];
+		const sortOrder = parseInt(formData.get('sortOrder')?.toString() ?? '0') || 0;
 
 		await db
 			.update(menuItems)
-			.set({ name, description, price, discountedPrice, categoryId, available, tags, updatedAt: new Date() })
+			.set({ name, description, price, discountedPrice, categoryId, available, tags, images, sortOrder, updatedAt: new Date() })
 			.where(and(eq(menuItems.id, itemId), eq(menuItems.tenantId, tenantId)));
 
 		return { success: true };

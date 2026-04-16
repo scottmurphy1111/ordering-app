@@ -5,13 +5,12 @@
 
 	let { form }: { form: ActionData } = $props();
 
-	let showEmailForm = $state(false);
+	let tab = $state<'signin' | 'signup'>('signin');
 	let loading = $state(false);
 
 	async function signInWithGoogle() {
 		loading = true;
 		await signIn.social({ provider: 'google', callbackURL: '/tenants' });
-		// browser will redirect — no need to reset loading
 	}
 </script>
 
@@ -22,7 +21,6 @@
 		disabled={loading}
 		class="flex w-full items-center justify-center gap-3 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 shadow-sm transition-colors hover:bg-gray-50 disabled:opacity-60"
 	>
-		<!-- Google logo SVG -->
 		<svg class="h-5 w-5" viewBox="0 0 24 24" aria-hidden="true">
 			<path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
 			<path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
@@ -39,24 +37,36 @@
 		<div class="h-px flex-1 bg-gray-200"></div>
 	</div>
 
-	{#if !showEmailForm}
+	<!-- Tabs -->
+	<div class="mb-5 flex rounded-lg border border-gray-200 p-1">
 		<button
-			onclick={() => (showEmailForm = true)}
-			class="w-full rounded-lg border border-gray-200 px-4 py-2.5 text-sm text-gray-500 transition-colors hover:bg-gray-50 hover:text-gray-700"
+			onclick={() => (tab = 'signin')}
+			class="flex-1 rounded-md px-3 py-2 text-sm font-medium transition-colors {tab === 'signin'
+				? 'bg-gray-900 text-white'
+				: 'text-gray-500 hover:text-gray-700'}"
 		>
-			Continue with email & password
+			Sign in
 		</button>
-	{:else}
-		{#if form?.message}
-			<div class="mb-4 rounded-md bg-red-50 border border-red-200 px-3 py-2.5 text-sm text-red-700">
-				{form.message}
-			</div>
-		{/if}
+		<button
+			onclick={() => (tab = 'signup')}
+			class="flex-1 rounded-md px-3 py-2 text-sm font-medium transition-colors {tab === 'signup'
+				? 'bg-gray-900 text-white'
+				: 'text-gray-500 hover:text-gray-700'}"
+		>
+			Create account
+		</button>
+	</div>
 
-		<!-- Sign in form -->
+	{#if form?.message}
+		<div class="mb-4 rounded-md border border-red-200 bg-red-50 px-3 py-2.5 text-sm text-red-700">
+			{form.message}
+		</div>
+	{/if}
+
+	{#if tab === 'signin'}
 		<form method="post" action="?/signInEmail" use:enhance class="space-y-3">
 			<div>
-				<label class="block text-xs font-medium text-gray-600 mb-1" for="email">Email</label>
+				<label class="mb-1 block text-xs font-medium text-gray-600" for="email">Email</label>
 				<input
 					id="email"
 					name="email"
@@ -67,7 +77,7 @@
 				/>
 			</div>
 			<div>
-				<label class="block text-xs font-medium text-gray-600 mb-1" for="password">Password</label>
+				<label class="mb-1 block text-xs font-medium text-gray-600" for="password">Password</label>
 				<input
 					id="password"
 					name="password"
@@ -84,50 +94,47 @@
 				Sign in
 			</button>
 		</form>
-
-		<div class="mt-4 border-t border-gray-100 pt-4">
-			<p class="mb-2 text-xs font-medium text-gray-500 uppercase tracking-wide">New account</p>
-			<form method="post" action="?/signUpEmail" use:enhance class="space-y-3">
-				<div>
-					<label class="block text-xs font-medium text-gray-600 mb-1" for="signup-name">Name</label>
-					<input
-						id="signup-name"
-						name="name"
-						type="text"
-						required
-						placeholder="Your name"
-						class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-					/>
-				</div>
-				<div>
-					<label class="block text-xs font-medium text-gray-600 mb-1" for="signup-email">Email</label>
-					<input
-						id="signup-email"
-						name="email"
-						type="email"
-						required
-						placeholder="you@example.com"
-						class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-					/>
-				</div>
-				<div>
-					<label class="block text-xs font-medium text-gray-600 mb-1" for="signup-password">Password</label>
-					<input
-						id="signup-password"
-						name="password"
-						type="password"
-						required
-						placeholder="••••••••"
-						class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-					/>
-				</div>
-				<button
-					type="submit"
-					class="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
-				>
-					Create account
-				</button>
-			</form>
-		</div>
+	{:else}
+		<form method="post" action="?/signUpEmail" use:enhance class="space-y-3">
+			<div>
+				<label class="mb-1 block text-xs font-medium text-gray-600" for="signup-name">Name</label>
+				<input
+					id="signup-name"
+					name="name"
+					type="text"
+					required
+					placeholder="Your name"
+					class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+				/>
+			</div>
+			<div>
+				<label class="mb-1 block text-xs font-medium text-gray-600" for="signup-email">Email</label>
+				<input
+					id="signup-email"
+					name="email"
+					type="email"
+					required
+					placeholder="you@example.com"
+					class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+				/>
+			</div>
+			<div>
+				<label class="mb-1 block text-xs font-medium text-gray-600" for="signup-password">Password</label>
+				<input
+					id="signup-password"
+					name="password"
+					type="password"
+					required
+					placeholder="••••••••"
+					class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+				/>
+			</div>
+			<button
+				type="submit"
+				class="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
+			>
+				Create account
+			</button>
+		</form>
 	{/if}
 </div>

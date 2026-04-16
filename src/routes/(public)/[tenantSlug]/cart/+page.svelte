@@ -77,7 +77,7 @@
 				class="inline-flex items-center gap-1 text-sm text-gray-500 transition-colors hover:text-gray-800"
 			>
 				<Icon icon="mdi:arrow-left" class="h-4 w-4" /> Back to menu
-</a>
+			</a>
 			<h1 class="text-lg font-semibold text-gray-900">Your Cart</h1>
 			<span class="w-20"></span>
 		</div>
@@ -131,7 +131,8 @@
 							>
 							<button
 								onclick={() => cart.remove(i)}
-								class="ml-1 text-red-400 transition-colors hover:text-red-600"><Icon icon="mdi:close" class="h-4 w-4" /></button
+								class="ml-1 text-red-400 transition-colors hover:text-red-600"
+								><Icon icon="mdi:close" class="h-4 w-4" /></button
 							>
 						</div>
 					</div>
@@ -144,7 +145,9 @@
 				<div class="flex gap-3">
 					{#each ['pickup', 'dine-in'] as const as type (type)}
 						<label
-							style={orderType === type ? 'background-color: var(--primary-color); color: var(--accent-color); border-color: var(--primary-color);' : ''}
+							style={orderType === type
+								? 'background-color: var(--primary-color); color: var(--accent-color); border-color: var(--primary-color);'
+								: ''}
 							class="flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-lg border py-2.5 text-sm font-medium transition-colors
 							{orderType === type ? '' : 'border-gray-300 text-gray-700 hover:bg-gray-50'}"
 						>
@@ -156,10 +159,10 @@
 								class="sr-only"
 							/>
 							{#if type === 'pickup'}
-									<Icon icon="mdi:bag-personal-outline" class="h-4 w-4" /> Pickup
-								{:else}
-									<Icon icon="mdi:silverware-fork-knife" class="h-4 w-4" /> Dine-in
-								{/if}
+								<Icon icon="mdi:bag-personal-outline" class="h-4 w-4" /> Pickup
+							{:else}
+								<Icon icon="mdi:silverware-fork-knife" class="h-4 w-4" /> Dine-in
+							{/if}
 						</label>
 					{/each}
 				</div>
@@ -230,6 +233,11 @@
 					<span>${(total / 100).toFixed(2)}</span>
 				</div>
 			</div>
+
+			<p class="w-sm text-xs text-gray-400">
+				Please double-check your order before paying — changes can't be made once payment is
+				submitted.
+			</p>
 
 			{#if checkoutError}
 				<div class="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">

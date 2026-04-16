@@ -85,7 +85,7 @@
 						<th class="px-4 py-2.5 text-left font-medium text-gray-500">Description</th>
 						<th class="px-4 py-2.5 text-left font-medium text-gray-500">Items</th>
 						<th class="px-4 py-2.5 text-left font-medium text-gray-500">Status</th>
-						<th class="px-4 py-2.5"></th>
+						<th class="px-4 py-2.5 text-left font-medium text-gray-500">Actions</th>
 					</tr>
 				</thead>
 				<tbody class="divide-y divide-gray-100">
@@ -107,17 +107,25 @@
 									</button>
 								</form>
 							</td>
-							<td class="px-4 py-3 text-right">
-								<form method="post" action="?/delete" use:enhance>
-									<input type="hidden" name="id" value={cat.id} />
-									<button
-										type="submit"
-										onclick={(e) => { if (!confirm('Delete this category?')) e.preventDefault(); }}
-										class="text-xs text-red-500 hover:text-red-700 transition-colors"
+							<td class="px-4 py-3">
+								<div class="flex items-center gap-3">
+									<a
+										href="/dashboard/menu/categories/{cat.id}"
+										class="text-xs font-medium text-gray-600 hover:text-gray-900 transition-colors"
 									>
-										Delete
-									</button>
-								</form>
+										Edit
+									</a>
+									<form method="post" action="?/delete" use:enhance>
+										<input type="hidden" name="id" value={cat.id} />
+										<button
+											type="submit"
+											onclick={(e) => { if (!confirm('Delete this category?')) e.preventDefault(); }}
+											class="text-xs text-red-500 hover:text-red-700 transition-colors"
+										>
+											Delete
+										</button>
+									</form>
+								</div>
 							</td>
 						</tr>
 					{/each}

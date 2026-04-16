@@ -31,18 +31,17 @@
 
 	function toggleOption(groupId: number, optionName: string, maxSelections: number) {
 		const current = selections[groupId] ?? [];
-		if (maxSelections === 1) {
-			// radio: always replace
+		if (current.includes(optionName)) {
+			// always allow deselecting
+			selections[groupId] = current.filter((n) => n !== optionName);
+		} else if (maxSelections === 1) {
+			// single-select: replace
 			selections[groupId] = [optionName];
-		} else {
-			// checkbox: toggle, respect max
-			if (current.includes(optionName)) {
-				selections[groupId] = current.filter((n) => n !== optionName);
-			} else if (current.length < maxSelections) {
-				selections[groupId] = [...current, optionName];
-			}
-			// at max and option not selected — do nothing
+		} else if (current.length < maxSelections) {
+			// multi-select: add if under limit
+			selections[groupId] = [...current, optionName];
 		}
+		// at max and option not selected — do nothing
 	}
 
 	const selectedModifiers = $derived<CartModifier[]>(
@@ -165,26 +164,14 @@
 								{isDisabled ? 'cursor-not-allowed opacity-50' : ''}"
 						>
 							<div class="flex items-center gap-3">
-								{#if isMulti}
-									<input
-										type="checkbox"
-										checked={isSelected}
-										disabled={isDisabled}
-										onchange={() => toggleOption(group.id, option.name, group.maxSelections)}
-										style="accent-color: var(--primary-color);"
-										class="h-4 w-4 rounded"
-									/>
-								{:else}
-									<input
-										type="radio"
-										name="group-{group.id}"
-										value={option.name}
-										checked={isSelected}
-										onchange={() => toggleOption(group.id, option.name, group.maxSelections)}
-										style="accent-color: var(--primary-color);"
-										class="h-4 w-4"
-									/>
-								{/if}
+								<input
+									type="checkbox"
+									checked={isSelected}
+									disabled={isDisabled}
+									onchange={() => toggleOption(group.id, option.name, group.maxSelections)}
+									style="accent-color: var(--primary-color);"
+									class="h-4 w-4 rounded"
+								/>
 								<span class="text-sm text-gray-800">{option.name}</span>
 								{#if option.isDefault}
 									<span class="rounded-full bg-blue-50 px-1.5 py-0.5 text-xs text-blue-500">Default</span>

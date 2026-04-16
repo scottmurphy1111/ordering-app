@@ -3,6 +3,7 @@
 	import type { PageData } from './$types';
 	import { cart } from '$lib/cart.svelte';
 	import { resolve } from '$app/paths';
+	import { fly } from 'svelte/transition';
 
 	let { data }: { data: PageData } = $props();
 
@@ -19,6 +20,8 @@
 			.filter((c) => c.items.length > 0)
 	);
 
+	// $inspect('data', data);
+
 	// Items with no category, an inactive category, or a category not in the list
 	const visibleCategoryIds = $derived(new Set(data.categories.map((c) => c.id)));
 	const uncategorized = $derived(
@@ -32,6 +35,9 @@
 	function effectivePrice(item: { price: number; discountedPrice: number | null }) {
 		return item.discountedPrice ?? item.price;
 	}
+
+	let lastAddedId = $state<number | null>(null);
+	let addedTimer: ReturnType<typeof setTimeout> | null = null;
 
 	function addSimple(item: {
 		id: number;
@@ -49,6 +55,12 @@
 			selectedModifiers: [],
 			imageUrl
 		});
+
+		if (addedTimer) clearTimeout(addedTimer);
+		lastAddedId = item.id;
+		addedTimer = setTimeout(() => {
+			lastAddedId = null;
+		}, 3000);
 	}
 </script>
 
@@ -61,12 +73,42 @@
 	<header class="border-b border-gray-200 bg-white/90 backdrop-blur-sm">
 		<div class="mx-auto max-w-2xl px-4 py-5">
 			{#if tenant.logoUrl}
-				<img src={tenant.logoUrl} alt={tenant.name} class="h-12 w-auto max-w-48 object-contain mb-2" />
+				<img
+					src={tenant.logoUrl}
+					alt={tenant.name}
+					class="mb-2 h-12 w-auto max-w-48 object-contain"
+				/>
 			{/if}
 			<h1 class="text-2xl font-bold text-gray-900">{tenant.name}</h1>
 			<p class="mt-0.5 text-sm text-gray-500 capitalize">{tenant.type?.replace('_', ' ')}</p>
 		</div>
 	</header>
+
+	<!-- Category nav -->
+	{#if categorized.length > 0}
+		<nav class="sticky top-0 z-40 border-b border-gray-200 bg-white/95 backdrop-blur-sm">
+			<div class="mx-auto max-w-2xl overflow-x-auto px-4">
+				<div class="flex gap-1 py-2">
+					{#each categorized as category (category.id)}
+						<a
+							href="#{category.id}"
+							class="shrink-0 rounded-full px-4 py-1.5 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900"
+						>
+							{category.name}
+						</a>
+					{/each}
+					{#if uncategorized.length > 0}
+						<a
+							href="#other"
+							class="shrink-0 rounded-full px-4 py-1.5 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900"
+						>
+							Other
+						</a>
+					{/if}
+				</div>
+			</div>
+		</nav>
+	{/if}
 
 	<main class="mx-auto max-w-2xl space-y-10 px-4 py-8">
 		{#if data.items.length === 0}
@@ -75,15 +117,22 @@
 			</div>
 		{:else}
 			{#each categorized as category (category.id)}
-				<section>
+				<section id={String(category.id)}>
 					<h2 class="mb-4 border-b border-gray-200 pb-2 text-lg font-semibold text-gray-800">
 						{category.name}
 					</h2>
 					<div class="space-y-3">
 						{#each category.items as item (item.id)}
-							<div
-								class="flex justify-between gap-4 rounded-xl border border-gray-200 bg-white p-4 shadow-sm"
-							>
+							{@const imgs = item.images as { url: string; isPrimary?: boolean }[] | null}
+							{@const primaryImage = imgs?.find((i) => i.isPrimary)?.url ?? imgs?.[0]?.url}
+							<div class="flex gap-4 rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+								{#if primaryImage}
+									<img
+										src={primaryImage}
+										alt={item.name}
+										class="h-20 w-20 shrink-0 rounded-lg object-cover"
+									/>
+								{/if}
 								<div class="min-w-0 flex-1">
 									<p class="font-medium text-gray-900">{item.name}</p>
 									{#if item.description}
@@ -123,10 +172,15 @@
 									{:else}
 										<button
 											onclick={() => addSimple(item)}
-											style="background-color: var(--primary-color); color: var(--accent-color);"
-											class="rounded-lg px-3 py-1.5 text-xs font-medium transition-opacity hover:opacity-85"
+											style={lastAddedId === item.id
+												? ''
+												: 'background-color: var(--primary-color); color: var(--accent-color);'}
+											class="rounded-lg px-3 py-1.5 text-xs font-medium transition-all {lastAddedId ===
+											item.id
+												? 'scale-105 bg-green-500 text-white'
+												: 'hover:opacity-85'}"
 										>
-											+ Add
+											{lastAddedId === item.id ? '✓ Added' : '+ Add'}
 										</button>
 									{/if}
 								</div>
@@ -137,7 +191,7 @@
 			{/each}
 
 			{#if uncategorized.length > 0}
-				<section>
+				<section id="other">
 					{#if categorized.length > 0}
 						<h2 class="mb-4 border-b border-gray-200 pb-2 text-lg font-semibold text-gray-800">
 							Other
@@ -145,9 +199,16 @@
 					{/if}
 					<div class="space-y-3">
 						{#each uncategorized as item (item.id)}
-							<div
-								class="flex justify-between gap-4 rounded-xl border border-gray-200 bg-white p-4 shadow-sm"
-							>
+							{@const imgs = item.images as { url: string; isPrimary?: boolean }[] | null}
+							{@const primaryImage = imgs?.find((i) => i.isPrimary)?.url ?? imgs?.[0]?.url}
+							<div class="flex gap-4 rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+								{#if primaryImage}
+									<img
+										src={primaryImage}
+										alt={item.name}
+										class="h-20 w-20 shrink-0 rounded-lg object-cover"
+									/>
+								{/if}
 								<div class="min-w-0 flex-1">
 									<p class="font-medium text-gray-900">{item.name}</p>
 									{#if item.description}
@@ -187,10 +248,15 @@
 									{:else}
 										<button
 											onclick={() => addSimple(item)}
-											style="background-color: var(--primary-color); color: var(--accent-color);"
-											class="rounded-lg px-3 py-1.5 text-xs font-medium transition-opacity hover:opacity-85"
+											style={lastAddedId === item.id
+												? ''
+												: 'background-color: var(--primary-color); color: var(--accent-color);'}
+											class="rounded-lg px-3 py-1.5 text-xs font-medium transition-all {lastAddedId ===
+											item.id
+												? 'scale-105 bg-green-500 text-white'
+												: 'hover:opacity-85'}"
 										>
-											+ Add
+											{lastAddedId === item.id ? '✓ Added' : '+ Add'}
 										</button>
 									{/if}
 								</div>
@@ -205,7 +271,10 @@
 
 <!-- Floating cart bar -->
 {#if cart.count > 0}
-	<div class="fixed right-0 bottom-0 left-0 z-50 flex justify-center p-4">
+	<div
+		transition:fly={{ y: 80, duration: 300 }}
+		class="fixed right-0 bottom-0 left-0 z-50 flex justify-center p-4"
+	>
 		<a
 			href={resolve(`/${data.tenantSlug}/cart`)}
 			style="background-color: var(--primary-color); color: var(--accent-color);"

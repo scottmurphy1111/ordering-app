@@ -5,6 +5,44 @@
 	import Icon from '@iconify/svelte';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
+
+	let imageUrl = $state('');
+	let imagePreview = $state('');
+	let uploading = $state(false);
+	let uploadError = $state('');
+
+	async function onImageChange(e: Event) {
+		const input = e.target as HTMLInputElement;
+		const file = input.files?.[0];
+		if (!file) return;
+
+		uploading = true;
+		uploadError = '';
+
+		const fd = new FormData();
+		fd.append('image', file);
+
+		try {
+			const res = await fetch('/api/upload-menu-item-image', { method: 'POST', body: fd });
+			const json = await res.json();
+			if (!res.ok) {
+				uploadError = json.message ?? 'Upload failed';
+			} else {
+				imageUrl = json.url;
+				imagePreview = json.url;
+			}
+		} catch {
+			uploadError = 'Network error. Please try again.';
+		} finally {
+			uploading = false;
+		}
+	}
+
+	function clearImage() {
+		imageUrl = '';
+		imagePreview = '';
+		uploadError = '';
+	}
 </script>
 
 <div class="max-w-xl">
@@ -22,6 +60,64 @@
 		use:enhance
 		class="rounded-xl border border-gray-200 bg-white p-6 shadow-sm space-y-5"
 	>
+		<!-- Image upload -->
+		<div>
+			<p class="block text-sm font-medium text-gray-700 mb-2">Image <span class="text-gray-400 font-normal">(optional)</span></p>
+			<div class="flex items-start gap-4">
+				<!-- Square preview / upload target -->
+				<div
+					role="button"
+					tabindex="0"
+					aria-label="Upload item image"
+					onclick={() => (document.getElementById('image-upload') as HTMLInputElement)?.click()}
+					onkeydown={(e) => e.key === 'Enter' && (document.getElementById('image-upload') as HTMLInputElement)?.click()}
+					class="relative flex h-24 w-24 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 transition-colors hover:border-gray-400 hover:bg-gray-100 {uploading ? 'pointer-events-none opacity-60' : ''}"
+				>
+					{#if imagePreview}
+						<img src={imagePreview} alt="Item preview" class="h-full w-full object-cover" />
+						<div class="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 hover:opacity-100 transition-opacity">
+							<Icon icon="mdi:pencil" class="h-5 w-5 text-white" />
+						</div>
+					{:else if uploading}
+						<svg class="h-5 w-5 animate-spin text-gray-400" fill="none" viewBox="0 0 24 24">
+							<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+							<path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+						</svg>
+					{:else}
+						<div class="flex flex-col items-center gap-1 text-gray-400">
+							<Icon icon="mdi:image-plus" class="h-6 w-6" />
+							<span class="text-xs">Add photo</span>
+						</div>
+					{/if}
+				</div>
+				<label for="image-upload" class="sr-only">Item image</label>
+				<input
+					id="image-upload"
+					type="file"
+					accept="image/jpeg,image/png,image/webp"
+					class="sr-only"
+					onchange={onImageChange}
+				/>
+
+				<div class="flex-1 space-y-1.5 pt-1">
+					<p class="text-xs text-gray-500">JPG, PNG, or WebP · max 5MB</p>
+					{#if uploadError}
+						<p class="text-xs text-red-600">{uploadError}</p>
+					{/if}
+					{#if imagePreview}
+						<button
+							type="button"
+							onclick={clearImage}
+							class="text-xs text-red-500 hover:text-red-700 transition-colors"
+						>
+							Remove image
+						</button>
+					{/if}
+				</div>
+			</div>
+			<input type="hidden" name="imageUrl" value={imageUrl} />
+		</div>
+
 		<div>
 			<label class="block text-sm font-medium text-gray-700 mb-1" for="name">Name *</label>
 			<input
@@ -100,6 +196,20 @@
 			/>
 		</div>
 
+		<div>
+			<label class="block text-sm font-medium text-gray-700 mb-1" for="sortOrder">Sort order</label>
+			<input
+				id="sortOrder"
+				name="sortOrder"
+				type="number"
+				min="0"
+				value="0"
+				placeholder="0"
+				class="w-32 rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+			/>
+			<p class="mt-1 text-xs text-gray-400">Higher numbers appear first.</p>
+		</div>
+
 		<div class="flex items-center gap-2">
 			<input id="available" name="available" type="checkbox" checked class="h-4 w-4 rounded border-gray-300" />
 			<label class="text-sm text-gray-700" for="available">Available for ordering</label>
@@ -108,7 +218,8 @@
 		<div class="flex gap-2 pt-1">
 			<button
 				type="submit"
-				class="flex-1 rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-700 transition-colors"
+				disabled={uploading}
+				class="flex-1 rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-700 transition-colors disabled:opacity-50"
 			>
 				Create item
 			</button>

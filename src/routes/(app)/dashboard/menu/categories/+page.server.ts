@@ -35,7 +35,7 @@ export const actions: Actions = {
 
 		if (!name) return fail(400, { error: 'Category name is required' });
 
-		await db.insert(menuCategories).values({ tenantId, name, description });
+		await db.insert(menuCategories).values({ tenantId, name, description, isActive: true });
 		return { success: true };
 	},
 
