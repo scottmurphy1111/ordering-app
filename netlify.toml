@@ -1,6 +1,6 @@
 [build]
   command = "bun run build"
-  publish = ".netlify/functions-internal"
+  publish = "build"
 
 [context.production.environment]
   ORIGIN = "https://getorderlocal.com"

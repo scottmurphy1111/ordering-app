@@ -5,9 +5,13 @@ import { env } from '$env/dynamic/private';
 import { getRequestEvent } from '$app/server';
 import { db } from '$lib/server/db';
 
+// Netlify provides URL (the deploy-specific URL) and DEPLOY_PRIME_URL for previews.
+// Fall back through them so OAuth redirects work on deploy previews too.
+const baseURL = env.ORIGIN || env.URL || env.DEPLOY_PRIME_URL;
+
 export const auth = betterAuth({
-	baseURL: env.ORIGIN,
-	trustedOrigins: [env.ORIGIN].filter(Boolean),
+	baseURL,
+	trustedOrigins: [baseURL].filter((s): s is string => Boolean(s)),
 	secret: env.BETTER_AUTH_SECRET,
 	database: drizzleAdapter(db, { provider: 'pg' }),
 
