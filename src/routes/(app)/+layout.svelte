@@ -91,6 +91,13 @@
 				<Icon icon="mdi:swap-horizontal" class="h-3.5 w-3.5" />
 				Switch tenant
 			</a>
+			<a
+				href={resolve('/dashboard/settings/profile')}
+				class="flex items-center gap-1.5 text-xs text-gray-400 transition-colors hover:text-white"
+			>
+				<Icon icon="mdi:account-circle-outline" class="h-3.5 w-3.5" />
+				Account
+			</a>
 			<p class="truncate text-xs text-gray-500">{data.user.email}</p>
 			<button
 				onclick={() =>

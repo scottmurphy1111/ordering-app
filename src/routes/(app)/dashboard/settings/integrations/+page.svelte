@@ -1,5 +1,7 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import { resolve } from '$app/paths';
+	import Icon from '@iconify/svelte';
 	import type { PageData, ActionData } from './$types';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
@@ -28,6 +30,13 @@
 					<div>
 						<p class="font-medium text-gray-900">Stripe</p>
 						<p class="text-xs text-gray-500 mt-0.5">Discover and import products from your Stripe account</p>
+					<a
+						href={resolve('/dashboard/settings/integrations/stripe-setup')}
+						class="mt-1 inline-flex items-center gap-1 text-xs text-[#635BFF] transition-opacity hover:opacity-75"
+					>
+						<Icon icon="mdi:help-circle-outline" class="h-3.5 w-3.5" />
+						Need help setting up Stripe?
+					</a>
 					</div>
 				</div>
 				<div class="shrink-0">

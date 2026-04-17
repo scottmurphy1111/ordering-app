@@ -1,9 +1,9 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
-	import type { PageData } from './$types';
+	import type { PageData, ActionData } from './$types';
 	import { resolve } from '$app/paths';
 
-	let { data }: { data: PageData } = $props();
+	let { data, form }: { data: PageData; form: ActionData } = $props();
 
 	const statuses = ['', 'received', 'confirmed', 'preparing', 'ready', 'fulfilled', 'cancelled'];
 	const statusLabels: Record<string, string> = {
@@ -36,6 +36,10 @@
 		<h1 class="text-2xl font-bold text-gray-900">Orders</h1>
 		<span class="text-sm text-gray-500">{data.orders.length} shown</span>
 	</div>
+
+	{#if form?.error}
+		<div class="mb-4 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{form.error}</div>
+	{/if}
 
 	<!-- Status filter tabs -->
 	<div class="mb-5 flex gap-1 overflow-x-auto">
@@ -70,6 +74,10 @@
 								<span class="rounded-full px-2 py-0.5 text-xs bg-gray-100 text-gray-500 capitalize">{order.type}</span>
 								{#if order.paymentStatus === 'paid'}
 									<span class="rounded-full px-2 py-0.5 text-xs bg-emerald-100 text-emerald-700">paid</span>
+								{:else if order.paymentStatus === 'refunded'}
+									<span class="rounded-full px-2 py-0.5 text-xs bg-orange-100 text-orange-700">refunded</span>
+								{:else if order.paymentStatus === 'failed'}
+									<span class="rounded-full px-2 py-0.5 text-xs bg-red-100 text-red-600">payment failed</span>
 								{/if}
 							</div>
 							{#if order.customerName}
@@ -87,18 +95,52 @@
 						</div>
 					</div>
 
-					{#if nextStatus[order.status]}
-						<div class="mt-3 pt-3 border-t border-gray-100">
-							<form method="post" action="?/updateStatus" use:enhance>
-								<input type="hidden" name="id" value={order.id} />
-								<input type="hidden" name="status" value={nextStatus[order.status]} />
-								<button
-									type="submit"
-									class="rounded-md bg-green-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-green-700 transition-colors"
+					{#if nextStatus[order.status] || !['fulfilled', 'cancelled'].includes(order.status) || (order.status === 'cancelled' && order.paymentStatus === 'paid')}
+						<div class="mt-3 flex items-center gap-2 border-t border-gray-100 pt-3">
+							{#if nextStatus[order.status]}
+								<form method="post" action="?/updateStatus" use:enhance>
+									<input type="hidden" name="id" value={order.id} />
+									<input type="hidden" name="status" value={nextStatus[order.status]} />
+									<button
+										type="submit"
+										class="rounded-md border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 transition-colors hover:bg-gray-50"
+									>
+										Mark as {nextStatus[order.status]}
+									</button>
+								</form>
+							{/if}
+							{#if !['fulfilled', 'cancelled'].includes(order.status)}
+								<form
+									method="post"
+									action="?/cancel"
+									use:enhance
+									onsubmit={(e) => { if (!confirm('Cancel this order?')) e.preventDefault(); }}
 								>
-									Mark as {nextStatus[order.status]}
-								</button>
-							</form>
+									<input type="hidden" name="id" value={order.id} />
+									<button
+										type="submit"
+										class="rounded-md border border-red-200 px-3 py-1.5 text-xs font-medium text-red-600 transition-colors hover:bg-red-50"
+									>
+										Cancel order
+									</button>
+								</form>
+							{/if}
+							{#if order.status === 'cancelled' && order.paymentStatus === 'paid'}
+								<form
+									method="post"
+									action="?/refund"
+									use:enhance
+									onsubmit={(e) => { if (!confirm('Issue a full refund for this order?')) e.preventDefault(); }}
+								>
+									<input type="hidden" name="id" value={order.id} />
+									<button
+										type="submit"
+										class="rounded-md border border-orange-200 px-3 py-1.5 text-xs font-medium text-orange-600 transition-colors hover:bg-orange-50"
+									>
+										Refund payment
+									</button>
+								</form>
+							{/if}
 						</div>
 					{/if}
 				</div>

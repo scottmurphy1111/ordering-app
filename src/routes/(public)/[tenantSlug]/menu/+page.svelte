@@ -3,13 +3,14 @@
 	import type { PageData } from './$types';
 	import { cart } from '$lib/cart.svelte';
 	import { resolve } from '$app/paths';
-	import { fly } from 'svelte/transition';
+	import { page } from '$app/state';
 
 	let { data }: { data: PageData } = $props();
 
 	onMount(() => cart.init(data.tenantSlug));
 
 	const tenant = $derived(data.tenant);
+	const tableParam = $derived(page.url.searchParams.get('table'));
 
 	const categorized = $derived(
 		data.categories
@@ -65,7 +66,7 @@
 	<title>{tenant.name} — Menu</title>
 </svelte:head>
 
-<div class="min-h-screen pb-28">
+<div class="min-h-screen">
 	<!-- Branded header -->
 	<header style="background-color: var(--primary-color);">
 		<div class="mx-auto max-w-2xl px-4 py-5">
@@ -276,29 +277,25 @@
 			{/if}
 		{/if}
 	</main>
+
+	<!-- Sticky cart bar — inside the page div so it sits above the footer naturally -->
+	{#if cart.count > 0}
+		<div class="sticky bottom-0 flex justify-center p-4">
+			<a
+				href={resolve(`/${data.tenantSlug}/cart${tableParam ? `?table=${encodeURIComponent(tableParam)}` : ''}` as `/${string}`)}
+				style="background-color: var(--primary-color); color: var(--accent-color);"
+				class="flex w-full max-w-2xl items-center justify-between rounded-xl px-5 py-3.5 shadow-lg transition-opacity hover:opacity-90"
+			>
+				<span class="flex h-6 w-6 items-center justify-center rounded-full bg-white/20 text-sm font-bold">
+					{cart.count}
+				</span>
+				<span class="font-semibold">View Cart</span>
+				<span class="font-semibold">${(cart.subtotal / 100).toFixed(2)}</span>
+			</a>
+		</div>
+	{/if}
 </div>
 
-<!-- Floating cart bar -->
-{#if cart.count > 0}
-	<div
-		transition:fly={{ y: 80, duration: 300 }}
-		class="fixed right-0 bottom-0 left-0 z-50 flex justify-center p-4"
-	>
-		<a
-			href={resolve(`/${data.tenantSlug}/cart`)}
-			style="background-color: var(--primary-color); color: var(--accent-color);"
-			class="flex w-full max-w-2xl items-center justify-between rounded-xl px-5 py-3.5 shadow-lg transition-opacity hover:opacity-90"
-		>
-			<span
-				class="flex h-6 w-6 items-center justify-center rounded-full bg-white/20 text-sm font-bold"
-			>
-				{cart.count}
-			</span>
-			<span class="font-semibold">View Cart</span>
-			<span class="font-semibold">${(cart.subtotal / 100).toFixed(2)}</span>
-		</a>
-	</div>
-{/if}
 
 <style>
 	.category-pill:hover {

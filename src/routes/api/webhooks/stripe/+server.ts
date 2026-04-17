@@ -62,6 +62,7 @@ async function handleEvent(event: Stripe.Event) {
 				.update(orders)
 				.set({
 					paymentStatus: 'failed',
+					status: 'cancelled',
 					updatedAt: new Date()
 				})
 				.where(eq(orders.stripePaymentIntentId, intent.id));

@@ -119,9 +119,15 @@ export const POST: RequestHandler = async ({ request }) => {
 		}
 	});
 
-	// Store the Stripe session/payment intent on the order
+	// session.payment_intent is the PI ID (pi_...) for payment-mode sessions.
+	// Fall back to the session ID only if somehow absent — the refund action
+	// knows how to resolve a cs_... ID back to a PI via the Sessions API.
+	const paymentIntentId = (typeof session.payment_intent === 'string'
+		? session.payment_intent
+		: session.payment_intent?.id) ?? session.id;
+
 	await db.update(orders)
-		.set({ stripePaymentIntentId: session.payment_intent as string ?? session.id })
+		.set({ stripePaymentIntentId: paymentIntentId, metadata: { stripeSessionId: session.id } })
 		.where(eq(orders.id, newOrder.id));
 
 	return json({ url: session.url });

@@ -3,16 +3,25 @@
 	import type { PageData } from './$types';
 	import { cart, itemUnitPrice } from '$lib/cart.svelte';
 	import { resolve } from '$app/paths';
+	import { page } from '$app/state';
 	import Icon from '@iconify/svelte';
 
 	let { data }: { data: PageData } = $props();
 
-	onMount(() => cart.init(data.tenantSlug));
+	onMount(() => {
+		cart.init(data.tenantSlug);
+		const tableParam = page.url.searchParams.get('table');
+		if (tableParam) {
+			orderType = 'dine-in';
+			tableNumber = tableParam;
+		}
+	});
 
 	let customerName = $state('');
 	let email = $state('');
 	let phone = $state('');
 	let notes = $state('');
+	let tableNumber = $state('');
 	let orderType = $state<'pickup' | 'dine-in'>('pickup');
 	let loading = $state(false);
 	let checkoutError = $state<string | null>(null);
@@ -41,7 +50,7 @@
 					tenantSlug: data.tenantSlug,
 					items: cart.items,
 					customer: { name: customerName, email, phone },
-					notes,
+					notes: [tableNumber ? `Table ${tableNumber}` : '', notes].filter(Boolean).join(' | '),
 					orderType,
 					subtotal,
 					tax,
@@ -167,6 +176,20 @@
 					{/each}
 				</div>
 			</div>
+
+			<!-- Table number (dine-in only) -->
+			{#if orderType === 'dine-in'}
+				<div class="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+					<label class="mb-1 block text-sm font-semibold text-gray-800" for="cart-table">Table number</label>
+					<input
+						id="cart-table"
+						type="text"
+						bind:value={tableNumber}
+						placeholder="e.g. 4"
+						class="branded-input w-32 rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none transition-colors"
+					/>
+				</div>
+			{/if}
 
 			<!-- Customer info -->
 			<div class="space-y-3 rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
