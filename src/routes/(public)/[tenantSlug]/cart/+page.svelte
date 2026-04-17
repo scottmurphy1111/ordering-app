@@ -70,15 +70,17 @@
 </svelte:head>
 
 <div class="min-h-screen">
-	<header class="border-b border-gray-200 bg-white/90 backdrop-blur-sm">
+	<!-- Branded header -->
+	<header style="background-color: var(--primary-color);">
 		<div class="mx-auto flex max-w-lg items-center justify-between px-4 py-4">
 			<a
 				href={resolve(`/${data.tenantSlug}/menu`)}
-				class="inline-flex items-center gap-1 text-sm text-gray-500 transition-colors hover:text-gray-800"
+				class="inline-flex items-center gap-1 text-sm font-medium transition-opacity hover:opacity-75"
+				style="color: var(--accent-color);"
 			>
 				<Icon icon="mdi:arrow-left" class="h-4 w-4" /> Back to menu
 			</a>
-			<h1 class="text-lg font-semibold text-gray-900">Your Cart</h1>
+			<h1 class="text-lg font-semibold" style="color: var(--accent-color);">Your Cart</h1>
 			<span class="w-20"></span>
 		</div>
 	</header>
@@ -89,7 +91,8 @@
 				<p class="mb-3 text-gray-400">Your cart is empty.</p>
 				<a
 					href={resolve(`/${data.tenantSlug}/menu`)}
-					class="text-sm font-medium text-gray-700 underline hover:text-gray-900"
+					class="text-sm font-medium transition-opacity hover:opacity-75"
+					style="color: var(--primary-color);"
 				>
 					Browse the menu
 				</a>
@@ -120,20 +123,17 @@
 						<div class="flex shrink-0 items-center gap-2">
 							<button
 								onclick={() => cart.decrement(i)}
-								class="flex h-6 w-6 items-center justify-center rounded-full border border-gray-300 text-sm text-gray-600 transition-colors hover:bg-gray-100"
-								>−</button
-							>
+								class="qty-btn flex h-6 w-6 items-center justify-center rounded-full border border-gray-300 text-sm text-gray-600 transition-colors"
+							>−</button>
 							<span class="w-4 text-center text-sm font-medium">{item.quantity}</span>
 							<button
 								onclick={() => cart.increment(i)}
-								class="flex h-6 w-6 items-center justify-center rounded-full border border-gray-300 text-sm text-gray-600 transition-colors hover:bg-gray-100"
-								>+</button
-							>
+								class="qty-btn flex h-6 w-6 items-center justify-center rounded-full border border-gray-300 text-sm text-gray-600 transition-colors"
+							>+</button>
 							<button
 								onclick={() => cart.remove(i)}
 								class="ml-1 text-red-400 transition-colors hover:text-red-600"
-								><Icon icon="mdi:close" class="h-4 w-4" /></button
-							>
+							><Icon icon="mdi:close" class="h-4 w-4" /></button>
 						</div>
 					</div>
 				{/each}
@@ -179,7 +179,7 @@
 						required
 						bind:value={customerName}
 						placeholder="Your name"
-						class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
+						class="branded-input w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none transition-colors"
 					/>
 				</div>
 				<div>
@@ -189,7 +189,7 @@
 						type="email"
 						bind:value={email}
 						placeholder="for receipt (optional)"
-						class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
+						class="branded-input w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none transition-colors"
 					/>
 				</div>
 				<div>
@@ -199,7 +199,7 @@
 						type="tel"
 						bind:value={phone}
 						placeholder="for order updates (optional)"
-						class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
+						class="branded-input w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none transition-colors"
 					/>
 				</div>
 				<div>
@@ -211,7 +211,7 @@
 						bind:value={notes}
 						rows="2"
 						placeholder="Allergies, preferences…"
-						class="w-full resize-none rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
+						class="branded-input w-full resize-none rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none transition-colors"
 					></textarea>
 				</div>
 			</div>
@@ -227,14 +227,15 @@
 					<span>${(tax / 100).toFixed(2)}</span>
 				</div>
 				<div
-					class="mt-1.5 flex justify-between border-t border-gray-100 pt-1.5 font-semibold text-gray-900"
+					class="mt-1.5 flex justify-between border-t border-gray-100 pt-1.5 font-semibold"
+					style="color: var(--primary-color);"
 				>
 					<span>Total</span>
 					<span>${(total / 100).toFixed(2)}</span>
 				</div>
 			</div>
 
-			<p class="w-sm text-xs text-gray-400">
+			<p class="text-xs text-gray-400">
 				Please double-check your order before paying — changes can't be made once payment is
 				submitted.
 			</p>
@@ -256,3 +257,15 @@
 		{/if}
 	</main>
 </div>
+
+<style>
+	.branded-input:focus {
+		border-color: var(--primary-color);
+		box-shadow: 0 0 0 1px var(--primary-color);
+	}
+
+	.qty-btn:hover {
+		border-color: var(--primary-color);
+		color: var(--primary-color);
+	}
+</style>

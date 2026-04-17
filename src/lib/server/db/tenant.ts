@@ -48,6 +48,7 @@ export const tenant = pgTable(
 		faviconUrl: text('favicon_url'),
 		backgroundImageUrl: text('background_image_url'),
 		primaryColor: varchar('primary_color', { length: 7 }).default('#000000'), // hex
+		secondaryColor: varchar('secondary_color', { length: 7 }).default('#374151'), // hex — used for category pills, badges, tints
 		accentColor: varchar('accent_color', { length: 7 }).default('#ffffff'),
 
 		// Business settings (flexible JSONB for future-proofing)

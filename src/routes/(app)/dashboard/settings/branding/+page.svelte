@@ -6,10 +6,12 @@
 
 	// Color picker state
 	let primaryColor = $state('');
+	let secondaryColor = $state('');
 	let accentColor = $state('');
 
 	$effect(() => {
 		primaryColor = data.branding.primaryColor ?? '#000000';
+		secondaryColor = data.branding.secondaryColor ?? '#374151';
 		accentColor = data.branding.accentColor ?? '#ffffff';
 	});
 
@@ -78,7 +80,7 @@
 			</div>
 			<div class="px-5 py-5">
 				<form method="post" action="?/saveColors" use:enhance class="space-y-5">
-					<div class="grid grid-cols-2 gap-6">
+					<div class="grid grid-cols-1 gap-6 sm:grid-cols-3">
 						<!-- Primary color -->
 						<div>
 							<label class="block text-sm font-medium text-gray-700 mb-2" for="primaryColor">
@@ -104,7 +106,35 @@
 									class="w-28 rounded-md border border-gray-300 px-3 py-2 font-mono text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
 								/>
 							</div>
-							<p class="mt-1.5 text-xs text-gray-400">Used for buttons and key actions.</p>
+							<p class="mt-1.5 text-xs text-gray-400">Buttons, headers, key actions.</p>
+						</div>
+
+						<!-- Secondary color -->
+						<div>
+							<label class="block text-sm font-medium text-gray-700 mb-2" for="secondaryColor">
+								Secondary color
+							</label>
+							<div class="flex items-center gap-3">
+								<div class="relative h-10 w-10 shrink-0 overflow-hidden rounded-md border border-gray-300 shadow-sm">
+									<input
+										type="color"
+										id="secondaryColor"
+										name="secondaryColor"
+										bind:value={secondaryColor}
+										class="absolute inset-0 h-full w-full cursor-pointer border-0 p-0 opacity-0"
+									/>
+									<div class="h-full w-full rounded-md" style="background-color: {secondaryColor};"></div>
+								</div>
+								<input
+									type="text"
+									value={secondaryColor}
+									oninput={(e) => { secondaryColor = (e.target as HTMLInputElement).value; }}
+									maxlength="7"
+									placeholder="#374151"
+									class="w-28 rounded-md border border-gray-300 px-3 py-2 font-mono text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+								/>
+							</div>
+							<p class="mt-1.5 text-xs text-gray-400">Category pills, badges, tinted sections.</p>
 						</div>
 
 						<!-- Accent color -->
@@ -132,27 +162,31 @@
 									class="w-28 rounded-md border border-gray-300 px-3 py-2 font-mono text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
 								/>
 							</div>
-							<p class="mt-1.5 text-xs text-gray-400">Used for highlights and backgrounds.</p>
+							<p class="mt-1.5 text-xs text-gray-400">Text on primary backgrounds.</p>
 						</div>
 					</div>
 
 					<!-- Live preview -->
 					<div>
 						<p class="mb-2 text-xs font-medium text-gray-500 uppercase tracking-wide">Preview</p>
-						<div
-							class="flex items-center gap-3 rounded-lg border border-gray-200 p-4"
-							style="background-color: {accentColor};"
-						>
-							<button
-								type="button"
-								class="rounded-md px-4 py-2 text-sm font-medium shadow-sm transition-opacity hover:opacity-90"
-								style="background-color: {primaryColor}; color: {accentColor};"
-							>
-								Add to cart
-							</button>
-							<span class="text-sm font-medium" style="color: {primaryColor};">
-								Storefront button preview
-							</span>
+						<div class="overflow-hidden rounded-lg border border-gray-200">
+							<!-- Header bar (primary) -->
+							<div class="flex items-center gap-3 px-4 py-3" style="background-color: {primaryColor};">
+								<span class="text-sm font-bold" style="color: {accentColor};">My Restaurant</span>
+								<span class="rounded-full px-2 py-0.5 text-xs font-medium" style="background-color: {secondaryColor}; color: {accentColor};">Quick service</span>
+							</div>
+							<!-- Body (accent) -->
+							<div class="flex items-center gap-3 px-4 py-4" style="background-color: {accentColor};">
+								<span class="rounded-full px-3 py-1 text-xs font-medium" style="background-color: {secondaryColor}; color: {accentColor};">Burgers</span>
+								<span class="rounded-full px-3 py-1 text-xs font-medium border" style="border-color: {secondaryColor}; color: {secondaryColor};">Drinks</span>
+								<button
+									type="button"
+									class="ml-auto rounded-md px-3 py-1.5 text-xs font-semibold shadow-sm"
+									style="background-color: {primaryColor}; color: {accentColor};"
+								>
+									+ Add
+								</button>
+							</div>
 						</div>
 					</div>
 

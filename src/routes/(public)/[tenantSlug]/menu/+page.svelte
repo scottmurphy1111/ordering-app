@@ -20,9 +20,6 @@
 			.filter((c) => c.items.length > 0)
 	);
 
-	// $inspect('data', data);
-
-	// Items with no category, an inactive category, or a category not in the list
 	const visibleCategoryIds = $derived(new Set(data.categories.map((c) => c.id)));
 	const uncategorized = $derived(
 		data.items.filter((item) => !item.categoryId || !visibleCategoryIds.has(item.categoryId))
@@ -69,18 +66,22 @@
 </svelte:head>
 
 <div class="min-h-screen pb-28">
-	<!-- Header -->
-	<header class="border-b border-gray-200 bg-white/90 backdrop-blur-sm">
+	<!-- Branded header -->
+	<header style="background-color: var(--primary-color);">
 		<div class="mx-auto max-w-2xl px-4 py-5">
 			{#if tenant.logoUrl}
 				<img
 					src={tenant.logoUrl}
 					alt={tenant.name}
-					class="mb-2 h-12 w-auto max-w-48 object-contain"
+					class="mb-3 h-12 w-auto max-w-48 object-contain"
 				/>
 			{/if}
-			<h1 class="text-2xl font-bold text-gray-900">{tenant.name}</h1>
-			<p class="mt-0.5 text-sm text-gray-500 capitalize">{tenant.type?.replace('_', ' ')}</p>
+			<h1 class="text-2xl font-bold" style="color: var(--accent-color);">{tenant.name}</h1>
+			{#if tenant.type}
+				<p class="mt-0.5 text-sm capitalize opacity-75" style="color: var(--accent-color);">
+					{tenant.type.replace('_', ' ')}
+				</p>
+			{/if}
 		</div>
 	</header>
 
@@ -92,7 +93,7 @@
 					{#each categorized as category (category.id)}
 						<a
 							href="#{category.id}"
-							class="shrink-0 rounded-full px-4 py-1.5 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900"
+							class="category-pill shrink-0 rounded-full px-4 py-1.5 text-sm font-medium text-gray-600 transition-colors"
 						>
 							{category.name}
 						</a>
@@ -100,7 +101,7 @@
 					{#if uncategorized.length > 0}
 						<a
 							href="#other"
-							class="shrink-0 rounded-full px-4 py-1.5 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900"
+							class="category-pill shrink-0 rounded-full px-4 py-1.5 text-sm font-medium text-gray-600 transition-colors"
 						>
 							Other
 						</a>
@@ -118,7 +119,10 @@
 		{:else}
 			{#each categorized as category (category.id)}
 				<section id={String(category.id)}>
-					<h2 class="mb-4 border-b border-gray-200 pb-2 text-lg font-semibold text-gray-800">
+					<h2
+						class="mb-4 border-b-2 pb-2 text-lg font-semibold text-gray-800"
+						style="border-color: var(--primary-color);"
+					>
 						{category.name}
 					</h2>
 					<div class="space-y-3">
@@ -141,9 +145,10 @@
 									{#if Array.isArray(item.tags) && item.tags.length > 0}
 										<div class="mt-1.5 flex flex-wrap gap-1">
 											{#each item.tags as tag (tag)}
-												<span class="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-500"
-													>{tag}</span
-												>
+												<span
+													class="rounded-full px-2 py-0.5 text-xs"
+													style="background-color: color-mix(in srgb, var(--secondary-color) 15%, white); color: var(--secondary-color);"
+												>{tag}</span>
 											{/each}
 										</div>
 									{/if}
@@ -151,7 +156,7 @@
 								<div class="flex shrink-0 flex-col items-end justify-between gap-2">
 									<div class="text-right">
 										{#if item.discountedPrice}
-											<p class="font-semibold text-green-700">
+											<p class="font-semibold" style="color: var(--primary-color);">
 												${(item.discountedPrice / 100).toFixed(2)}
 											</p>
 											<p class="text-xs text-gray-400 line-through">
@@ -193,7 +198,10 @@
 			{#if uncategorized.length > 0}
 				<section id="other">
 					{#if categorized.length > 0}
-						<h2 class="mb-4 border-b border-gray-200 pb-2 text-lg font-semibold text-gray-800">
+						<h2
+							class="mb-4 border-b-2 pb-2 text-lg font-semibold text-gray-800"
+							style="border-color: var(--primary-color);"
+						>
 							Other
 						</h2>
 					{/if}
@@ -217,9 +225,10 @@
 									{#if Array.isArray(item.tags) && item.tags.length > 0}
 										<div class="mt-1.5 flex flex-wrap gap-1">
 											{#each item.tags as tag (tag)}
-												<span class="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-500"
-													>{tag}</span
-												>
+												<span
+													class="rounded-full px-2 py-0.5 text-xs"
+													style="background-color: color-mix(in srgb, var(--secondary-color) 15%, white); color: var(--secondary-color);"
+												>{tag}</span>
 											{/each}
 										</div>
 									{/if}
@@ -227,7 +236,7 @@
 								<div class="flex shrink-0 flex-col items-end justify-between gap-2">
 									<div class="text-right">
 										{#if item.discountedPrice}
-											<p class="font-semibold text-green-700">
+											<p class="font-semibold" style="color: var(--primary-color);">
 												${(item.discountedPrice / 100).toFixed(2)}
 											</p>
 											<p class="text-xs text-gray-400 line-through">
@@ -290,3 +299,10 @@
 		</a>
 	</div>
 {/if}
+
+<style>
+	.category-pill:hover {
+		background-color: var(--secondary-color);
+		color: var(--accent-color);
+	}
+</style>

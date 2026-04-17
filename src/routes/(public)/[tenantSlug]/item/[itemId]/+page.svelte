@@ -17,8 +17,6 @@
 	);
 	const primaryImage = $derived(images.find((i) => i.isPrimary) ?? images[0]);
 
-	// selections: group id → array of selected option names
-	// single-select groups hold at most one name, multi-select hold up to maxSelections
 	let selections = $state<Record<number, string[]>>({});
 
 	$effect(() => {
@@ -32,16 +30,12 @@
 	function toggleOption(groupId: number, optionName: string, maxSelections: number) {
 		const current = selections[groupId] ?? [];
 		if (current.includes(optionName)) {
-			// always allow deselecting
 			selections[groupId] = current.filter((n) => n !== optionName);
 		} else if (maxSelections === 1) {
-			// single-select: replace
 			selections[groupId] = [optionName];
 		} else if (current.length < maxSelections) {
-			// multi-select: add if under limit
 			selections[groupId] = [...current, optionName];
 		}
-		// at max and option not selected — do nothing
 	}
 
 	const selectedModifiers = $derived<CartModifier[]>(
@@ -79,14 +73,16 @@
 </svelte:head>
 
 <div class="min-h-screen">
-	<header class="border-b border-gray-200 bg-white/90 backdrop-blur-sm">
+	<!-- Branded header -->
+	<header style="background-color: var(--primary-color);">
 		<div class="mx-auto max-w-lg px-4 py-4">
 			<a
 				href={resolve(`/${data.tenantSlug}/menu`)}
-				class="inline-flex items-center gap-1 text-sm text-gray-500 transition-colors hover:text-gray-800"
+				class="inline-flex items-center gap-1 text-sm font-medium transition-opacity hover:opacity-75"
+				style="color: var(--accent-color);"
 			>
 				<Icon icon="mdi:arrow-left" class="h-4 w-4" /> Back to menu
-</a>
+			</a>
 		</div>
 	</header>
 
@@ -109,7 +105,7 @@
 			{/if}
 			<div class="mt-2 flex items-center gap-2">
 				{#if data.item.discountedPrice}
-					<p class="text-xl font-bold text-green-700">
+					<p class="text-xl font-bold" style="color: var(--primary-color);">
 						${(data.item.discountedPrice / 100).toFixed(2)}
 					</p>
 					<p class="text-sm text-gray-400 line-through">${(data.item.price / 100).toFixed(2)}</p>
@@ -120,7 +116,10 @@
 			{#if Array.isArray(data.item.tags) && data.item.tags.length > 0}
 				<div class="mt-2 flex flex-wrap gap-1">
 					{#each data.item.tags as tag (tag)}
-						<span class="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-500">{tag}</span>
+						<span
+							class="rounded-full px-2 py-0.5 text-xs"
+							style="background-color: color-mix(in srgb, var(--secondary-color) 15%, white); color: var(--secondary-color);"
+						>{tag}</span>
 					{/each}
 				</div>
 			{/if}
@@ -158,9 +157,9 @@
 						{@const isSelected = chosen.includes(option.name)}
 						{@const isDisabled = isMulti && !isSelected && chosen.length >= group.maxSelections}
 						<label
-							style={isSelected ? 'border-color: var(--primary-color);' : ''}
+							style={isSelected ? 'border-color: var(--primary-color); background-color: color-mix(in srgb, var(--primary-color) 6%, white);' : ''}
 							class="flex cursor-pointer items-center justify-between rounded-lg border px-3 py-2.5 transition-colors
-								{isSelected ? 'bg-gray-50' : 'border-gray-200 hover:bg-gray-50'}
+								{isSelected ? '' : 'border-gray-200 hover:bg-gray-50'}
 								{isDisabled ? 'cursor-not-allowed opacity-50' : ''}"
 						>
 							<div class="flex items-center gap-3">
@@ -174,7 +173,10 @@
 								/>
 								<span class="text-sm text-gray-800">{option.name}</span>
 								{#if option.isDefault}
-									<span class="rounded-full bg-blue-50 px-1.5 py-0.5 text-xs text-blue-500">Default</span>
+									<span
+										class="rounded-full px-1.5 py-0.5 text-xs font-medium"
+										style="background-color: color-mix(in srgb, var(--secondary-color) 15%, white); color: var(--secondary-color);"
+									>Default</span>
 								{/if}
 							</div>
 							{#if option.priceAdjustment !== 0}

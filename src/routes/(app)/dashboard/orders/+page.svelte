@@ -44,7 +44,7 @@
 				href={resolve(`/dashboard/orders${s ? `?status=${s}` : ''}`)}
 				class="whitespace-nowrap rounded-md px-3 py-1.5 text-sm font-medium transition-colors
 					{data.statusFilter === s
-					? 'bg-gray-900 text-white'
+					? 'bg-green-600 text-white'
 					: 'text-gray-500 hover:bg-gray-100 hover:text-gray-800'}"
 			>
 				{statusLabels[s]}
@@ -94,7 +94,7 @@
 								<input type="hidden" name="status" value={nextStatus[order.status]} />
 								<button
 									type="submit"
-									class="rounded-md bg-gray-900 px-3 py-1.5 text-xs font-medium text-white hover:bg-gray-700 transition-colors"
+									class="rounded-md bg-green-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-green-700 transition-colors"
 								>
 									Mark as {nextStatus[order.status]}
 								</button>

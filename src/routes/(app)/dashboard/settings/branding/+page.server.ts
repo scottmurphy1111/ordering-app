@@ -11,6 +11,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 		columns: {
 			logoUrl: true,
 			primaryColor: true,
+			secondaryColor: true,
 			accentColor: true
 		}
 	});
@@ -19,6 +20,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 		branding: record ?? {
 			logoUrl: null,
 			primaryColor: '#000000',
+			secondaryColor: '#374151',
 			accentColor: '#ffffff'
 		}
 	};
@@ -30,11 +32,14 @@ export const actions: Actions = {
 		const formData = await request.formData();
 
 		const primaryColor = formData.get('primaryColor')?.toString().trim();
+		const secondaryColor = formData.get('secondaryColor')?.toString().trim();
 		const accentColor = formData.get('accentColor')?.toString().trim();
 
 		const hexRegex = /^#[0-9a-fA-F]{6}$/;
 		if (primaryColor && !hexRegex.test(primaryColor))
 			return fail(400, { error: 'Invalid primary color format' });
+		if (secondaryColor && !hexRegex.test(secondaryColor))
+			return fail(400, { error: 'Invalid secondary color format' });
 		if (accentColor && !hexRegex.test(accentColor))
 			return fail(400, { error: 'Invalid accent color format' });
 
@@ -42,6 +47,7 @@ export const actions: Actions = {
 			.update(tenant)
 			.set({
 				...(primaryColor ? { primaryColor } : {}),
+				...(secondaryColor ? { secondaryColor } : {}),
 				...(accentColor ? { accentColor } : {}),
 				updatedAt: new Date()
 			})

@@ -372,7 +372,7 @@
 		<p class="text-sm font-semibold text-gray-900">
 			Order<span class="text-green-600">Local</span>
 		</p>
-		<p class="text-xs text-gray-400">© {new Date().getFullYear()} OrderLocal. All rights reserved.</p>
+		<p class="text-xs text-gray-400">© {new Date().getFullYear()} Order<span class="text-green-600">Local</span>. All rights reserved.</p>
 		<nav class="flex gap-4 text-xs text-gray-400">
 			<a href={loginHref} class="hover:text-gray-700 transition-colors">Sign in</a>
 			<a href="mailto:hello@orderlocal.app" rel="external" class="hover:text-gray-700 transition-colors">Contact</a>

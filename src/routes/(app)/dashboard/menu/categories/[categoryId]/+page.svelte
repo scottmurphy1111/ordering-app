@@ -5,6 +5,9 @@
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
+	let isActiveOverride = $state<boolean | null>(null);
+	const isActive = $derived(isActiveOverride ?? data.category.isActive ?? true);
+
 	// Explicit user toggles; undefined = follow server data
 	let overrides = new SvelteMap<number, boolean>();
 
@@ -61,7 +64,7 @@
 					type="text"
 					required
 					value={data.category.name}
-					class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-gray-900 focus:outline-none focus:ring-1 focus:ring-gray-900"
+					class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-green-500 focus:outline-none focus:ring-1 focus:ring-green-500"
 				/>
 			</div>
 			<div>
@@ -72,7 +75,7 @@
 					type="text"
 					value={data.category.description ?? ''}
 					placeholder="Optional"
-					class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-gray-900 focus:outline-none focus:ring-1 focus:ring-gray-900"
+					class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-green-500 focus:outline-none focus:ring-1 focus:ring-green-500"
 				/>
 			</div>
 			<div>
@@ -83,23 +86,43 @@
 					type="number"
 					min="0"
 					value={data.category.sortOrder ?? 0}
-					class="w-28 rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-gray-900 focus:outline-none focus:ring-1 focus:ring-gray-900"
+					class="w-28 rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-green-500 focus:outline-none focus:ring-1 focus:ring-green-500"
 				/>
 				<p class="mt-1 text-xs text-gray-400">Lower numbers appear first on the menu.</p>
 			</div>
-			<div class="flex items-center gap-2">
-				<input
-					id="isActive"
-					name="isActive"
-					type="checkbox"
-					checked={data.category.isActive ?? true}
-					class="h-4 w-4 rounded"
-				/>
-				<label class="text-sm font-medium text-gray-700" for="isActive">Visible on public menu</label>
+
+			<!-- Active / Inactive toggle -->
+			<div class="flex items-center justify-between rounded-lg border border-gray-200 px-4 py-3">
+				<div>
+					<p class="text-sm font-medium text-gray-700">Status</p>
+					<p class="text-xs text-gray-400">Controls visibility on your public menu</p>
+				</div>
+				<input type="hidden" name="isActive" value={isActive ? 'on' : ''} />
+				<button
+					type="button"
+					onclick={() => (isActiveOverride = !isActive)}
+					class="flex cursor-pointer items-center gap-3"
+				>
+					<div
+						class="relative h-6 w-11 rounded-full transition-colors duration-200 {isActive
+							? 'bg-green-600'
+							: 'bg-gray-300'}"
+					>
+						<span
+							class="absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform duration-200 {isActive
+								? 'translate-x-5'
+								: 'translate-x-0'}"
+						></span>
+					</div>
+					<span class="w-14 text-sm font-medium {isActive ? 'text-green-700' : 'text-gray-500'}">
+						{isActive ? 'Active' : 'Inactive'}
+					</span>
+				</button>
 			</div>
+
 			<button
 				type="submit"
-				class="rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-700 transition-colors"
+				class="rounded-md bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700 transition-colors"
 			>
 				Save changes
 			</button>
@@ -147,7 +170,7 @@
 				</div>
 				<button
 					type="submit"
-					class="rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-700 transition-colors"
+					class="rounded-md bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700 transition-colors"
 				>
 					Save assignments
 				</button>

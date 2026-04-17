@@ -4,13 +4,14 @@
 	let { data, children }: { data: LayoutData; children: import('svelte').Snippet } = $props();
 
 	const primaryColor = $derived(data.tenant.primaryColor ?? '#000000');
+	const secondaryColor = $derived(data.tenant.secondaryColor ?? '#374151');
 	const accentColor = $derived(data.tenant.accentColor ?? '#ffffff');
 	const logoUrl = $derived(data.tenant.logoUrl ?? '');
 </script>
 
 <div
 	class="relative flex min-h-screen flex-col"
-	style="--primary-color: {primaryColor}; --accent-color: {accentColor};"
+	style="--primary-color: {primaryColor}; --secondary-color: {secondaryColor}; --accent-color: {accentColor};"
 >
 	<!-- Subtle tiled logo background -->
 	{#if logoUrl}
@@ -30,7 +31,7 @@
 		<div
 			class="mx-auto flex max-w-2xl flex-col items-center gap-1.5 px-4 py-5 sm:flex-row sm:justify-center"
 		>
-			<p class="text-xs font-semibold tracking-wide text-gray-500 uppercase">Order Local</p>
+			<p class="text-xs font-semibold tracking-wide text-gray-500 uppercase">Order<span class="text-green-600">Local</span></p>
 			<p class="text-xs text-gray-400">&copy; {new Date().getFullYear()} All rights reserved.</p>
 		</div>
 	</footer>

@@ -1,0 +1,1 @@
+ALTER TABLE "tenants" ADD COLUMN "secondary_color" varchar(7) DEFAULT '#374151';

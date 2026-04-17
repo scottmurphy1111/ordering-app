@@ -22,7 +22,7 @@
 				href={resolve(`/${data.tenant.slug}/menu`)}
 				target="_blank"
 				rel="noopener noreferrer"
-				class="inline-flex items-center gap-1.5 rounded-md border border-gray-300 px-3 py-1.5 text-sm text-gray-600 transition-colors hover:bg-gray-50"
+				class="inline-flex items-center gap-1.5 rounded-md border border-green-200 bg-green-50 px-3 py-1.5 text-sm text-green-700 transition-colors hover:bg-green-100"
 			>
 				View menu <Icon icon="mdi:open-in-new" class="h-3.5 w-3.5" />
 			</a>
@@ -34,14 +34,14 @@
 		<div class="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
 			<p class="text-xs font-medium tracking-wide text-gray-500 uppercase">Menu Items</p>
 			<p class="mt-1 text-3xl font-bold text-gray-900">{data.stats.items}</p>
-			<a href={resolve('/dashboard/menu/items')} class="mt-2 block text-xs text-blue-600 hover:underline"
+			<a href={resolve('/dashboard/menu/items')} class="mt-2 block text-xs text-green-600 hover:underline"
 				><span class="inline-flex items-center gap-1">Manage <Icon icon="mdi:chevron-right" class="h-3 w-3" /></span></a
 			>
 		</div>
 		<div class="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
 			<p class="text-xs font-medium tracking-wide text-gray-500 uppercase">Categories</p>
 			<p class="mt-1 text-3xl font-bold text-gray-900">{data.stats.categories}</p>
-			<a href={resolve('/dashboard/menu/categories')} class="mt-2 block text-xs text-blue-600 hover:underline"
+			<a href={resolve('/dashboard/menu/categories')} class="mt-2 block text-xs text-green-600 hover:underline"
 				><span class="inline-flex items-center gap-1">Manage <Icon icon="mdi:chevron-right" class="h-3 w-3" /></span></a
 			>
 		</div>
@@ -51,7 +51,7 @@
 			{#if data.stats.pendingOrders > 0}
 				<p class="mt-1 text-xs text-yellow-600">{data.stats.pendingOrders} pending</p>
 			{/if}
-			<a href={resolve('/dashboard/orders')} class="mt-2 block text-xs text-blue-600 hover:underline">View →</a
+			<a href={resolve('/dashboard/orders')} class="mt-2 block text-xs text-green-600 hover:underline">View →</a
 			>
 		</div>
 		<div class="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
@@ -64,7 +64,7 @@
 	<div class="mb-8 flex flex-wrap gap-3">
 		<a
 			href={resolve('/dashboard/menu/items/new')}
-			class="inline-flex items-center gap-1.5 rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-gray-700"
+			class="inline-flex items-center gap-1.5 rounded-md bg-green-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-green-700"
 		>
 			<Icon icon="mdi:plus" class="h-4 w-4" /> Add menu item
 		</a>
