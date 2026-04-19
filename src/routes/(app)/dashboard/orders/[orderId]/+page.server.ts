@@ -1,7 +1,7 @@
 import type { PageServerLoad, Actions } from './$types';
-import { fail } from '@sveltejs/kit';
+import { error, fail } from '@sveltejs/kit';
 import { db } from '$lib/server/db';
-import { eq, and, desc } from 'drizzle-orm';
+import { eq, and } from 'drizzle-orm';
 import { orders } from '$lib/server/db/schema';
 import { tenant } from '$lib/server/db/tenant';
 import Stripe from 'stripe';
@@ -10,35 +10,18 @@ import { orderReadyEmail } from '$lib/server/email/templates/orderReady';
 import { orderCancelledEmail } from '$lib/server/email/templates/orderCancelled';
 import { orderRefundedEmail } from '$lib/server/email/templates/orderRefunded';
 
-export const load: PageServerLoad = async ({ locals, url }) => {
+export const load: PageServerLoad = async ({ locals, params }) => {
 	const tenantId = locals.tenantId!;
-	const statusFilter = url.searchParams.get('status') ?? '';
+	const orderId = parseInt(params.orderId);
+	if (isNaN(orderId)) throw error(404, 'Order not found');
 
-	const whereConditions = [eq(orders.tenantId, tenantId)];
-	if (statusFilter) {
-		whereConditions.push(eq(orders.status, statusFilter as typeof orders.status._.data));
-	}
-
-	const allOrders = await db.query.orders.findMany({
-		where: and(...whereConditions),
-		orderBy: [desc(orders.createdAt)],
-		limit: 50,
-		columns: {
-			id: true,
-			orderNumber: true,
-			customerName: true,
-			customerPhone: true,
-			total: true,
-			status: true,
-			paymentStatus: true,
-			type: true,
-			createdAt: true,
-			notes: true,
-			stripePaymentIntentId: true
-		}
+	const order = await db.query.orders.findFirst({
+		where: and(eq(orders.id, orderId), eq(orders.tenantId, tenantId))
 	});
 
-	return { orders: allOrders, statusFilter };
+	if (!order) throw error(404, 'Order not found');
+
+	return { order };
 };
 
 export const actions: Actions = {

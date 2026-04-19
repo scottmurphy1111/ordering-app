@@ -31,9 +31,42 @@
 			desc: 'Organize your menu exactly how you want customers to see it — by category and priority.'
 		},
 		{
-			icon: 'mdi:chart-bar',
-			title: 'Analytics',
-			desc: 'See your top items, busiest hours, and revenue trends at a glance.'
+			icon: 'mdi:email-fast-outline',
+			title: 'Automated customer emails',
+			desc: 'Customers get branded emails when their order is confirmed, ready, or refunded — automatically.'
+		}
+	];
+
+	const addons = [
+		{
+			icon: 'mdi:table-chair',
+			name: 'Table QR Codes',
+			price: '$9/mo',
+			desc: 'One QR code per table — customers scan and order with their table number pre-filled. Perfect for dine-in.'
+		},
+		{
+			icon: 'mdi:message-text-outline',
+			name: 'SMS Notifications',
+			price: '$19/mo',
+			desc: 'Text your customers the moment their order is ready. Fewer missed pickups, happier guests.'
+		},
+		{
+			icon: 'mdi:web',
+			name: 'Custom Domain',
+			price: '$12/mo',
+			desc: 'Use your own URL — like menu.yourcafe.com — instead of the default ordering link.'
+		},
+		{
+			icon: 'mdi:chart-line',
+			name: 'Advanced Analytics',
+			price: '$19/mo',
+			desc: 'Revenue trends, top-selling items, peak hours, and customer insights — all in one dashboard.'
+		},
+		{
+			icon: 'mdi:star-circle-outline',
+			name: 'Loyalty Program',
+			price: '$29/mo',
+			desc: 'Reward repeat customers with a digital stamp card or points system built into your ordering flow.'
 		}
 	];
 
@@ -67,44 +100,41 @@
 			period: '',
 			description: 'Perfect for getting started.',
 			features: [
-				'1 location',
-				'Up to 20 menu items',
-				'Stripe payments',
-				'Basic order management',
-				'QR code menu link'
+				'Up to 10 menu items',
+				'Online ordering & payments',
+				'Order management',
+				'Customer email receipts',
+				'Menu QR code'
 			],
 			cta: 'Get started free',
 			href: loginHref,
 			highlight: false
 		},
 		{
-			name: 'Pro',
+			name: 'Growth',
 			price: '$29',
 			period: '/ month',
-			description: 'For growing restaurants and cafes.',
+			description: 'For established single-location businesses.',
 			features: [
-				'1 location',
 				'Unlimited menu items',
-				'Stripe payments',
-				'Full order history & analytics',
-				'Custom branding',
+				'Everything in Starter',
+				'Website embed',
 				'Priority support'
 			],
-			cta: 'Start free trial',
+			cta: 'Get started',
 			href: loginHref,
 			highlight: true
 		},
 		{
-			name: 'Multi-location',
+			name: 'Pro',
 			price: '$79',
 			period: '/ month',
-			description: 'Run multiple spots from one dashboard.',
+			description: 'For multi-location operators.',
 			features: [
-				'Up to 5 locations',
-				'Unlimited menu items',
-				'All Pro features',
+				'Everything in Growth',
+				'Multiple locations',
 				'Team accounts',
-				'Dedicated onboarding'
+				'Dedicated support'
 			],
 			cta: 'Contact us',
 			href: 'mailto:hello@getorderlocal.com',
@@ -122,16 +152,20 @@
 			a: 'No app required. Your menu is a regular web page that works on any phone or desktop browser.'
 		},
 		{
+			q: 'What happens when I hit 10 items on the Starter plan?',
+			a: "You'll see a clear warning as you approach the limit. Once you hit 10 items, adding more is blocked until you upgrade to Growth ($29/mo) which includes unlimited items."
+		},
+		{
+			q: 'What are add-ons and how do they work?',
+			a: 'Add-ons are optional features you can activate from your billing page — things like Table QR Codes, SMS Notifications, and a Loyalty Program. You only pay for what you actually need.'
+		},
+		{
 			q: 'Can I use my own branding?',
 			a: 'Yes. Upload your logo, set your brand colors, and your menu page will feel like yours — not ours.'
 		},
 		{
 			q: 'How do I get paid?',
 			a: 'Payments go straight to your Stripe account. Payouts follow your normal Stripe schedule (typically 2 business days).'
-		},
-		{
-			q: 'Can I try it before subscribing?',
-			a: 'The Starter plan is free forever. Pro and Multi-location plans come with a 14-day free trial — no card required.'
 		}
 	];
 
@@ -316,8 +350,44 @@
 	</div>
 </section>
 
+<!-- Add-ons -->
+<section class="bg-white px-6 py-24">
+	<div class="mx-auto max-w-6xl">
+		<div class="mb-14 text-center">
+			<span class="mb-3 inline-block rounded-full bg-green-50 px-3 py-1 text-xs font-semibold tracking-wide text-green-700 uppercase">
+				Optional add-ons
+			</span>
+			<h2 class="text-3xl font-bold text-gray-900 sm:text-4xl">
+				Only pay for what you need
+			</h2>
+			<p class="mt-3 text-lg text-gray-500">
+				Every plan starts lean. Add features as your business grows — activate or cancel anytime from your dashboard.
+			</p>
+		</div>
+		<div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+			{#each addons as addon (addon.name)}
+				<div class="flex flex-col gap-3 rounded-2xl border border-gray-100 bg-gray-50 p-6">
+					<div class="flex items-center justify-between">
+						<div class="flex h-10 w-10 items-center justify-center rounded-xl bg-green-100">
+							<Icon icon={addon.icon} class="h-5 w-5 text-green-700" />
+						</div>
+						<span class="rounded-full border border-gray-200 bg-white px-2.5 py-0.5 text-xs font-semibold text-gray-600">{addon.price}</span>
+					</div>
+					<div>
+						<h3 class="font-semibold text-gray-900">{addon.name}</h3>
+						<p class="mt-1 text-sm leading-relaxed text-gray-500">{addon.desc}</p>
+					</div>
+				</div>
+			{/each}
+		</div>
+		<p class="mt-8 text-center text-sm text-gray-400">
+			Add-ons are free during our beta period. Pricing locks in when you activate.
+		</p>
+	</div>
+</section>
+
 <!-- Pricing -->
-<section id="pricing" class="bg-white px-6 py-24">
+<section id="pricing" class="bg-gray-50 px-6 py-24">
 	<div class="mx-auto max-w-6xl">
 		<div class="mb-14 text-center">
 			<h2 class="text-3xl font-bold text-gray-900 sm:text-4xl">Simple, honest pricing</h2>

@@ -81,6 +81,9 @@ export const tenant = pgTable(
 		stripeSecretKey: text('stripe_secret_key'),
 		stripeWebhookSecret: text('stripe_webhook_secret'),
 
+		// Active add-ons with their Stripe subscription item IDs
+		addons: jsonb('addons').default([]).$type<import('$lib/billing').AddonItem[]>(),
+
 		// Timestamps
 		createdAt: timestamp('created_at').defaultNow().notNull(),
 		updatedAt: timestamp('updated_at').defaultNow().notNull(),

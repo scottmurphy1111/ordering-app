@@ -32,7 +32,12 @@ export const actions: Actions = {
 		const type = formData.get('type')?.toString().trim() || null;
 		const phone = formData.get('phone')?.toString().trim() || null;
 		const email = formData.get('email')?.toString().trim() || null;
-		const website = formData.get('website')?.toString().trim() || null;
+		const rawWebsite = formData.get('website')?.toString().trim() || null;
+		const website = rawWebsite
+			? rawWebsite.startsWith('http://') || rawWebsite.startsWith('https://')
+				? rawWebsite
+				: `https://${rawWebsite}`
+			: null;
 
 		const street = formData.get('street')?.toString().trim() || null;
 		const city = formData.get('city')?.toString().trim() || null;

@@ -3,6 +3,7 @@
 	import { page } from '$app/state';
 	import Icon from '@iconify/svelte';
 	import QRCode from 'qrcode';
+	import { hasAddon } from '$lib/billing';
 
 	const tenant = $derived(page.data.tenant);
 	const menuUrl = $derived(tenant?.slug ? `${page.url.origin}/${tenant.slug}/menu` : '');
@@ -31,6 +32,8 @@
 		a.download = `${tenant?.slug ?? 'menu'}-qr-code.png`;
 		a.click();
 	}
+
+	const hasTableQr = $derived(hasAddon(tenant?.addons as string[] | null, 'table_qr'));
 
 	// ── Table QR codes ───────────────────────────────────────────────────────
 	let tableCount = $state(10);
@@ -182,51 +185,74 @@
 
 		<!-- ── Table QR codes ────────────────────────────────────────────────── -->
 		{#if tenant?.slug}
-			<div class="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-				<div class="mb-5 flex items-start justify-between gap-4">
-					<div class="flex items-center gap-3">
-						<div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-green-100">
-							<Icon icon="mdi:table-chair" class="h-5 w-5 text-green-700" />
+			{#if hasTableQr}
+				<div class="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+					<div class="mb-5 flex items-start justify-between gap-4">
+						<div class="flex items-center gap-3">
+							<div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-green-100">
+								<Icon icon="mdi:table-chair" class="h-5 w-5 text-green-700" />
+							</div>
+							<div>
+								<h2 class="font-semibold text-gray-900">Table QR Codes</h2>
+								<p class="text-sm text-gray-500">One QR per table — scans to your menu with dine-in pre-selected.</p>
+							</div>
 						</div>
-						<div>
-							<h2 class="font-semibold text-gray-900">Table QR Codes</h2>
-							<p class="text-sm text-gray-500">One QR per table — scans to your menu with dine-in pre-selected.</p>
+						<div class="flex shrink-0 items-center gap-2">
+							<label class="text-sm text-gray-600" for="table-count">Tables:</label>
+							<input
+								id="table-count"
+								type="number"
+								min="1"
+								max="50"
+								bind:value={tableCount}
+								class="w-16 rounded-md border border-gray-300 px-2 py-1.5 text-center text-sm focus:border-green-500 focus:outline-none focus:ring-1 focus:ring-green-500"
+							/>
 						</div>
 					</div>
-					<div class="flex shrink-0 items-center gap-2">
-						<label class="text-sm text-gray-600" for="table-count">Tables:</label>
-						<input
-							id="table-count"
-							type="number"
-							min="1"
-							max="50"
-							bind:value={tableCount}
-							class="w-16 rounded-md border border-gray-300 px-2 py-1.5 text-center text-sm focus:border-green-500 focus:outline-none focus:ring-1 focus:ring-green-500"
-						/>
+
+					{#if tableQrDataUrls.length === 0}
+						<div class="flex items-center justify-center py-8">
+							<Icon icon="mdi:loading" class="h-6 w-6 animate-spin text-gray-300" />
+						</div>
+					{:else}
+						<div class="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+							{#each tableQrDataUrls as dataUrl, i (i)}
+								<div class="flex flex-col items-center gap-2 rounded-lg border border-gray-100 bg-gray-50 p-3">
+									<img src={dataUrl} alt="Table {i + 1} QR code" class="h-24 w-24" />
+									<p class="text-xs font-semibold text-gray-700">Table {i + 1}</p>
+									<button
+										onclick={() => downloadTableQr(i)}
+										class="flex items-center gap-1 rounded-md border border-gray-200 bg-white px-2 py-1 text-xs text-gray-600 transition-colors hover:bg-gray-50"
+									>
+										<Icon icon="mdi:download" class="h-3 w-3" /> PNG
+									</button>
+								</div>
+							{/each}
+						</div>
+					{/if}
+				</div>
+			{:else}
+				<div class="rounded-xl border border-dashed border-gray-200 bg-gray-50 p-6">
+					<div class="flex items-start gap-4">
+						<div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gray-100">
+							<Icon icon="mdi:table-chair" class="h-5 w-5 text-gray-400" />
+						</div>
+						<div class="flex-1">
+							<div class="flex items-center gap-2 flex-wrap">
+								<h2 class="font-semibold text-gray-400">Table QR Codes</h2>
+								<span class="rounded-full bg-gray-200 px-2 py-0.5 text-xs font-medium text-gray-500">Add-on</span>
+							</div>
+							<p class="mt-1 text-sm text-gray-400">Per-table QR codes for dine-in ordering. Activate this add-on in Billing to unlock.</p>
+							<a
+								href="/dashboard/settings/billing"
+								class="mt-3 inline-flex items-center gap-1.5 rounded-md bg-gray-900 px-3 py-1.5 text-xs font-medium text-white hover:bg-gray-700 transition-colors"
+							>
+								<Icon icon="mdi:arrow-right" class="h-3.5 w-3.5" /> Go to Billing
+							</a>
+						</div>
 					</div>
 				</div>
-
-				{#if tableQrDataUrls.length === 0}
-					<div class="flex items-center justify-center py-8">
-						<Icon icon="mdi:loading" class="h-6 w-6 animate-spin text-gray-300" />
-					</div>
-				{:else}
-					<div class="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
-						{#each tableQrDataUrls as dataUrl, i (i)}
-							<div class="flex flex-col items-center gap-2 rounded-lg border border-gray-100 bg-gray-50 p-3">
-								<img src={dataUrl} alt="Table {i + 1} QR code" class="h-24 w-24" />
-								<p class="text-xs font-semibold text-gray-700">Table {i + 1}</p>
-								<button
-									onclick={() => downloadTableQr(i)}
-									class="flex items-center gap-1 rounded-md border border-gray-200 bg-white px-2 py-1 text-xs text-gray-600 transition-colors hover:bg-gray-50"
-								>
-									<Icon icon="mdi:download" class="h-3 w-3" /> PNG
-								</button>
-							</div>
-						{/each}
-					</div>
-				{/if}
-			</div>
+			{/if}
 		{/if}
 
 		<!-- ── Embed snippet ──────────────────────────────────────────────────── -->

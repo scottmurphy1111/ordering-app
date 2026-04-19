@@ -115,14 +115,17 @@
 				</div>
 				<div>
 					<label class="mb-1 block text-sm font-medium text-gray-700" for="website">Website</label>
-					<input
-						id="website"
-						name="website"
-						type="url"
-						value={data.info?.website ?? ''}
-						placeholder="https://yourbusiness.com"
-						class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-green-500 focus:outline-none focus:ring-1 focus:ring-green-500"
-					/>
+					<div class="flex rounded-md border border-gray-300 focus-within:border-green-500 focus-within:ring-1 focus-within:ring-green-500">
+						<span class="flex items-center rounded-l-md border-r border-gray-300 bg-gray-50 px-3 text-sm text-gray-500">https://</span>
+						<input
+							id="website"
+							name="website"
+							type="text"
+							value={(data.info?.website ?? '').replace(/^https?:\/\//, '')}
+							placeholder="yourbusiness.com"
+							class="min-w-0 flex-1 rounded-r-md px-3 py-2 text-sm focus:outline-none"
+						/>
+					</div>
 				</div>
 			</div>
 		</div>

@@ -10,6 +10,8 @@ export const load: PageServerLoad = async ({ locals }) => {
 		where: eq(tenant.id, tenantId),
 		columns: {
 			logoUrl: true,
+			bannerUrl: true,
+			backgroundImageUrl: true,
 			primaryColor: true,
 			secondaryColor: true,
 			accentColor: true
@@ -19,6 +21,8 @@ export const load: PageServerLoad = async ({ locals }) => {
 	return {
 		branding: record ?? {
 			logoUrl: null,
+			bannerUrl: null,
+			backgroundImageUrl: null,
 			primaryColor: '#000000',
 			secondaryColor: '#374151',
 			accentColor: '#ffffff'
@@ -58,10 +62,19 @@ export const actions: Actions = {
 
 	removeLogo: async ({ locals }) => {
 		const tenantId = locals.tenantId!;
-		await db
-			.update(tenant)
-			.set({ logoUrl: null, updatedAt: new Date() })
-			.where(eq(tenant.id, tenantId));
+		await db.update(tenant).set({ logoUrl: null, updatedAt: new Date() }).where(eq(tenant.id, tenantId));
 		return { success: true, message: 'Logo removed' };
+	},
+
+	removeBanner: async ({ locals }) => {
+		const tenantId = locals.tenantId!;
+		await db.update(tenant).set({ bannerUrl: null, updatedAt: new Date() }).where(eq(tenant.id, tenantId));
+		return { success: true, message: 'Banner removed' };
+	},
+
+	removeBackground: async ({ locals }) => {
+		const tenantId = locals.tenantId!;
+		await db.update(tenant).set({ backgroundImageUrl: null, updatedAt: new Date() }).where(eq(tenant.id, tenantId));
+		return { success: true, message: 'Background image removed' };
 	}
 };

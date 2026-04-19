@@ -10,10 +10,11 @@
 
 	onMount(() => {
 		cart.init(data.tenantSlug);
-		const tableParam = page.url.searchParams.get('table');
-		if (tableParam) {
+		const t = page.url.searchParams.get('table');
+		tableParam = t;
+		if (t) {
 			orderType = 'dine-in';
-			tableNumber = tableParam;
+			tableNumber = t;
 		}
 	});
 
@@ -22,6 +23,7 @@
 	let phone = $state('');
 	let notes = $state('');
 	let tableNumber = $state('');
+	let tableParam = $state<string | null>(null);
 	let orderType = $state<'pickup' | 'dine-in'>('pickup');
 	let loading = $state(false);
 	let checkoutError = $state<string | null>(null);
@@ -89,12 +91,19 @@
 			>
 				<Icon icon="mdi:arrow-left" class="h-4 w-4" /> Back to menu
 			</a>
-			<h1 class="text-lg font-semibold" style="color: var(--accent-color);">Your Cart</h1>
+			<div class="flex flex-col items-center gap-1">
+				<h1 class="text-lg font-semibold" style="color: var(--accent-color);">Your Cart</h1>
+				{#if tableParam}
+					<span class="rounded-full px-2.5 py-0.5 text-xs font-medium" style="background-color: var(--accent-color); color: var(--primary-color);">
+						<Icon icon="mdi:table-chair" class="inline h-3 w-3 mr-0.5" />Table {tableParam}
+					</span>
+				{/if}
+			</div>
 			<span class="w-20"></span>
 		</div>
 	</header>
 
-	<main class="mx-auto max-w-lg space-y-5 px-4 py-6">
+	<main class="mx-auto max-w-lg space-y-5 rounded-2xl bg-white/80 px-4 py-6 backdrop-blur-sm">
 		{#if cart.items.length === 0}
 			<div class="rounded-xl border border-dashed border-gray-300 p-12 text-center">
 				<p class="mb-3 text-gray-400">Your cart is empty.</p>

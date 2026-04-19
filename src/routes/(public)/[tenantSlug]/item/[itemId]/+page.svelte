@@ -86,7 +86,7 @@
 		</div>
 	</header>
 
-	<main class="mx-auto max-w-lg space-y-6 px-4 py-6">
+	<main class="mx-auto max-w-lg space-y-6 rounded-2xl bg-white/80 px-4 py-6 backdrop-blur-sm">
 		<!-- Image -->
 		{#if primaryImage}
 			<img

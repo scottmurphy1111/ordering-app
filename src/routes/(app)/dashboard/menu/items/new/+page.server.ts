@@ -1,8 +1,10 @@
 import type { PageServerLoad, Actions } from './$types';
 import { fail, redirect } from '@sveltejs/kit';
 import { db } from '$lib/server/db';
-import { eq } from 'drizzle-orm';
+import { eq, count } from 'drizzle-orm';
 import { menuItems, menuCategories } from '$lib/server/db/schema';
+import { isAtItemLimit } from '$lib/billing';
+import { tenant } from '$lib/server/db/tenant';
 
 export const load: PageServerLoad = async ({ locals }) => {
 	const tenantId = locals.tenantId!;
@@ -17,6 +19,19 @@ export const load: PageServerLoad = async ({ locals }) => {
 export const actions: Actions = {
 	default: async ({ request, locals }) => {
 		const tenantId = locals.tenantId!;
+
+		const [tenantRecord, countResult] = await Promise.all([
+			db.query.tenant.findFirst({ where: eq(tenant.id, tenantId), columns: { subscriptionTier: true } }),
+			db.select({ count: count() }).from(menuItems).where(eq(menuItems.tenantId, tenantId))
+		]);
+
+		const tierKey = tenantRecord?.subscriptionTier ?? 'starter';
+		const itemCount = countResult[0]?.count ?? 0;
+
+		if (isAtItemLimit(tierKey, itemCount)) {
+			return fail(403, { error: 'You have reached the item limit for your plan. Upgrade to add more items.' });
+		}
+
 		const formData = await request.formData();
 
 		const name = formData.get('name')?.toString().trim();

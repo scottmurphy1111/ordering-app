@@ -7,14 +7,21 @@
 	const secondaryColor = $derived(data.tenant.secondaryColor ?? '#374151');
 	const accentColor = $derived(data.tenant.accentColor ?? '#ffffff');
 	const logoUrl = $derived(data.tenant.logoUrl ?? '');
+	const backgroundImageUrl = $derived(data.tenant.backgroundImageUrl ?? '');
 </script>
 
 <div
 	class="relative flex min-h-screen flex-col"
 	style="--primary-color: {primaryColor}; --secondary-color: {secondaryColor}; --accent-color: {accentColor};"
 >
-	<!-- Subtle tiled logo background -->
-	{#if logoUrl}
+	<!-- Background: custom image takes priority over tiled logo -->
+	{#if backgroundImageUrl}
+		<div
+			aria-hidden="true"
+			class="pointer-events-none fixed inset-0 z-0"
+			style="background-image: url('{backgroundImageUrl}'); background-repeat: no-repeat; background-size: cover; background-position: center; opacity: 1;"
+		></div>
+	{:else if logoUrl}
 		<div
 			aria-hidden="true"
 			class="pointer-events-none fixed inset-0 z-0 opacity-[0.04]"
@@ -31,7 +38,18 @@
 		<div
 			class="mx-auto flex max-w-2xl flex-col items-center gap-1.5 px-4 py-5 sm:flex-row sm:justify-center"
 		>
-			<p class="text-xs font-semibold tracking-wide text-gray-500 uppercase">Order<span class="text-green-600">Local</span></p>
+			{#if data.tenant.website}
+				<a
+					href={data.tenant.website}
+					target="_blank"
+					rel="noopener noreferrer"
+					class="text-xs font-semibold text-gray-700 hover:underline">{data.tenant.name}</a
+				>
+				<span class="hidden text-gray-300 sm:inline">·</span>
+			{/if}
+			<p class="text-xs font-semibold tracking-wide text-gray-500 uppercase">
+				Order<span class="text-green-600">Local</span>
+			</p>
 			<p class="text-xs text-gray-400">&copy; {new Date().getFullYear()} All rights reserved.</p>
 		</div>
 	</footer>
