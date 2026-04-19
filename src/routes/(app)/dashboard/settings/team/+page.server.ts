@@ -5,9 +5,12 @@ import { eq, and, gt, isNull } from 'drizzle-orm';
 import { tenantUsers, tenantInvitations } from '$lib/server/db/tenant';
 import { user } from '$lib/server/db/auth.schema';
 import { env } from '$env/dynamic/private';
+import { sendEmail } from '$lib/server/email';
+import { inviteEmail } from '$lib/server/email/templates/invite';
+import { tenant } from '$lib/server/db/tenant';
 
-const ROLES = ['owner', 'manager', 'kitchen', 'staff', 'viewer'] as const;
-type Role = (typeof ROLES)[number];
+import { ROLES, requireOwner } from '$lib/server/roles';
+type Role = 'owner' | 'admin' | 'staff' | 'viewer';
 
 export const load: PageServerLoad = async ({ locals }) => {
 	const tenantId = locals.tenantId!;
@@ -43,7 +46,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 
 	// Fetch pending (not yet accepted, not expired) invitations for this tenant
 	const pendingInvitations =
-		currentMember?.role === 'owner' || currentMember?.role === 'manager'
+		currentMember?.role === 'owner' || locals.user?.isInternal
 			? await db
 					.select({
 						id: tenantInvitations.id,
@@ -78,6 +81,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 export const actions: Actions = {
 	// Add an existing user to this tenant by email
 	addMember: async ({ request, locals }) => {
+		requireOwner(locals);
 		const tenantId = locals.tenantId!;
 		const formData = await request.formData();
 		const email = formData.get('email')?.toString().trim().toLowerCase();
@@ -100,6 +104,7 @@ export const actions: Actions = {
 
 	// Send an invite link to an email (works for users who don't have an account yet)
 	sendInvite: async ({ request, locals }) => {
+		requireOwner(locals);
 		const tenantId = locals.tenantId!;
 		const currentUserId = locals.user!.id;
 		const formData = await request.formData();
@@ -136,11 +141,33 @@ export const actions: Actions = {
 		});
 
 		const inviteUrl = `${env.ORIGIN}/invite/${token}`;
+
+		const tenantRecord = await db.query.tenant.findFirst({
+			where: eq(tenant.id, tenantId),
+			columns: { name: true, primaryColor: true }
+		});
+		const inviterName = locals.user!.name ?? locals.user!.email;
+
+		if (tenantRecord) {
+			await sendEmail({
+				to: email,
+				subject: `You're invited to join ${tenantRecord.name}`,
+				html: inviteEmail({
+					tenantName: tenantRecord.name,
+					primaryColor: tenantRecord.primaryColor ?? undefined,
+					invitedByName: inviterName,
+					role,
+					inviteUrl
+				})
+			}).catch(console.error);
+		}
+
 		return { inviteSuccess: true, inviteUrl, inviteEmail: email };
 	},
 
 	// Cancel a pending invitation
 	cancelInvite: async ({ request, locals }) => {
+		requireOwner(locals);
 		const tenantId = locals.tenantId!;
 		const formData = await request.formData();
 		const id = formData.get('id')?.toString();
@@ -156,6 +183,7 @@ export const actions: Actions = {
 
 	// Change an existing member's role
 	changeRole: async ({ request, locals }) => {
+		requireOwner(locals);
 		const tenantId = locals.tenantId!;
 		const formData = await request.formData();
 		const userId = formData.get('userId')?.toString();
@@ -173,6 +201,7 @@ export const actions: Actions = {
 
 	// Remove a member from this tenant
 	removeMember: async ({ request, locals }) => {
+		requireOwner(locals);
 		const tenantId = locals.tenantId!;
 		const currentUserId = locals.user!.id;
 		const formData = await request.formData();
@@ -204,16 +233,7 @@ export const actions: Actions = {
 
 	// Toggle isInternal on a user (platform-level, owner/internal only)
 	toggleInternal: async ({ request, locals }) => {
-		const currentUser = locals.user!;
-		const currentMember = await db.query.tenantUsers.findFirst({
-			where: and(
-				eq(tenantUsers.tenantId, locals.tenantId!),
-				eq(tenantUsers.userId, currentUser.id)
-			)
-		});
-		const canManage = currentMember?.role === 'owner' || currentUser.isInternal;
-		if (!canManage) return fail(403, { error: 'Not authorized' });
-
+		requireOwner(locals);
 		const formData = await request.formData();
 		const userId = formData.get('userId')?.toString();
 		const current = formData.get('isInternal') === 'true';

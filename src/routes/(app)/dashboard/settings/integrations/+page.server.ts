@@ -4,22 +4,24 @@ import { db } from '$lib/server/db';
 import { eq } from 'drizzle-orm';
 import { tenant } from '$lib/server/db/tenant';
 import Stripe from 'stripe';
+import { requireOwner } from '$lib/server/roles';
 
 export const load: PageServerLoad = async ({ locals }) => {
 	const tenantId = locals.tenantId!;
 	const record = await db.query.tenant.findFirst({
 		where: eq(tenant.id, tenantId),
-		columns: { stripeSecretKey: true }
+		columns: { stripeSecretKey: true, stripeWebhookSecret: true }
 	});
 
 	return {
-		// Only tell the UI whether a key is saved — never send the raw key to the client
-		hasStripeKey: !!record?.stripeSecretKey
+		hasStripeKey: !!record?.stripeSecretKey,
+		hasStripeWebhookSecret: !!record?.stripeWebhookSecret
 	};
 };
 
 export const actions: Actions = {
 	saveStripeKey: async ({ request, locals }) => {
+		requireOwner(locals);
 		const tenantId = locals.tenantId!;
 		const formData = await request.formData();
 		const key = formData.get('stripeSecretKey')?.toString().trim();
@@ -27,7 +29,6 @@ export const actions: Actions = {
 		if (!key) return fail(400, { error: 'API key is required' });
 		if (!key.startsWith('sk_')) return fail(400, { error: 'Must be a Stripe secret key (starts with sk_)' });
 
-		// Validate the key works before saving
 		try {
 			const stripe = new Stripe(key);
 			await stripe.products.list({ limit: 1 });
@@ -40,8 +41,29 @@ export const actions: Actions = {
 	},
 
 	clearStripeKey: async ({ locals }) => {
+		requireOwner(locals);
 		const tenantId = locals.tenantId!;
-		await db.update(tenant).set({ stripeSecretKey: null }).where(eq(tenant.id, tenantId));
+		await db.update(tenant).set({ stripeSecretKey: null, stripeWebhookSecret: null }).where(eq(tenant.id, tenantId));
 		return { cleared: true };
+	},
+
+	saveWebhookSecret: async ({ request, locals }) => {
+		requireOwner(locals);
+		const tenantId = locals.tenantId!;
+		const formData = await request.formData();
+		const secret = formData.get('stripeWebhookSecret')?.toString().trim();
+
+		if (!secret) return fail(400, { error: 'Webhook secret is required' });
+		if (!secret.startsWith('whsec_')) return fail(400, { error: 'Must be a Stripe webhook secret (starts with whsec_)' });
+
+		await db.update(tenant).set({ stripeWebhookSecret: secret }).where(eq(tenant.id, tenantId));
+		return { webhookSaved: true };
+	},
+
+	clearWebhookSecret: async ({ locals }) => {
+		requireOwner(locals);
+		const tenantId = locals.tenantId!;
+		await db.update(tenant).set({ stripeWebhookSecret: null }).where(eq(tenant.id, tenantId));
+		return { webhookCleared: true };
 	}
 };

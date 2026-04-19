@@ -5,8 +5,8 @@
 # ORIGIN is intentionally omitted for production — auth.ts falls back to
 # Netlify's built-in URL env var (the site's primary URL).
 # Uncomment and set this once getorderlocal.com is the live custom domain:
-# [context.production.environment]
-#   ORIGIN = "https://getorderlocal.com"
+[context.production.environment]
+  ORIGIN = "https://getorderlocal.com"
 
 [context.deploy-preview.environment]
   ORIGIN = "https://order-local.netlify.app"

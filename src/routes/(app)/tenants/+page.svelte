@@ -49,14 +49,14 @@
 			</div>
 		{/if}
 
-		{#if data.isInternal && !showCreate}
+		{#if data.canCreate && !showCreate}
 			<button
 				onclick={() => (showCreate = true)}
 				class="flex items-center justify-center gap-2 w-full rounded-lg border-2 border-dashed border-gray-300 px-4 py-3 text-sm text-gray-500 hover:border-gray-400 hover:text-gray-700 transition-colors"
 			>
 				<Icon icon="mdi:plus" class="h-4 w-4" /> Create new tenant
 			</button>
-		{:else if data.isInternal}
+		{:else if data.canCreate}
 			<form
 				method="post"
 				action="?/create"

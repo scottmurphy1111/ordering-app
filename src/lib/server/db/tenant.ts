@@ -77,8 +77,9 @@ export const tenant = pgTable(
 		stripeCustomerId: varchar('stripe_customer_id', { length: 255 }),
 		stripeSubscriptionId: varchar('stripe_subscription_id', { length: 255 }),
 
-		// Per-tenant Stripe integration (for product discovery)
+		// Per-tenant Stripe integration (for product discovery and payments)
 		stripeSecretKey: text('stripe_secret_key'),
+		stripeWebhookSecret: text('stripe_webhook_secret'),
 
 		// Timestamps
 		createdAt: timestamp('created_at').defaultNow().notNull(),

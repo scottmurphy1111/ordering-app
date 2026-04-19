@@ -15,6 +15,12 @@ export const auth = betterAuth({
 	secret: env.BETTER_AUTH_SECRET,
 	database: drizzleAdapter(db, { provider: 'pg' }),
 
+	user: {
+		additionalFields: {
+			isInternal: { type: 'boolean', defaultValue: false, input: false }
+		}
+	},
+
 	emailAndPassword: { enabled: true },
 
 	socialProviders: {

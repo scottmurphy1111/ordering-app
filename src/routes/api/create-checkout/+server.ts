@@ -8,9 +8,8 @@ import { tenant } from '$lib/server/db/schema';
 import { orders, orderItems } from '$lib/server/db/orders';
 import type { CartItem } from '$lib/cart.svelte';
 
-function getStripe() {
-	if (!env.STRIPE_SECRET_KEY) throw error(500, 'STRIPE_SECRET_KEY not set');
-	return new Stripe(env.STRIPE_SECRET_KEY);
+function getStripe(secretKey: string) {
+	return new Stripe(secretKey);
 }
 
 function generateOrderNumber(): string {
@@ -24,7 +23,6 @@ function itemUnitPrice(item: CartItem): number {
 }
 
 export const POST: RequestHandler = async ({ request }) => {
-	const stripe = getStripe();
 	const origin = env.ORIGIN;
 
 	const body = await request.json() as {
@@ -47,6 +45,9 @@ export const POST: RequestHandler = async ({ request }) => {
 	// Resolve tenant
 	const tenantRecord = await db.query.tenant.findFirst({ where: eq(tenant.slug, tenantSlug) });
 	if (!tenantRecord?.isActive) throw error(404, 'Store not found');
+	if (!tenantRecord.stripeSecretKey) throw error(400, 'Stripe not configured for this store');
+
+	const stripe = getStripe(tenantRecord.stripeSecretKey);
 
 	// Create order in DB (payment_status = pending until webhook confirms)
 	const orderNumber = generateOrderNumber();

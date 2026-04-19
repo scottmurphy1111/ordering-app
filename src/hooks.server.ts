@@ -57,6 +57,17 @@ const handleTenantContext: Handle = async ({ event, resolve }) => {
 					if (currentTenant?.isActive) {
 						event.locals.tenantId = currentTenant.id;
 						event.locals.tenant = currentTenant;
+
+						// Resolve the user's role within this tenant
+						if (userId && !isInternal) {
+							const memberRecord = await db.query.tenantUsers.findFirst({
+								where: and(eq(tenantUsers.tenantId, tenantId), eq(tenantUsers.userId, userId)),
+								columns: { role: true }
+							});
+							if (memberRecord) {
+								event.locals.tenantRole = memberRecord.role as import('$lib/server/roles').TenantRole;
+							}
+						}
 					}
 				}
 			}

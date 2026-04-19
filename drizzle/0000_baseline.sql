@@ -1,15 +1,10 @@
+CREATE TYPE "public"."order_status" AS ENUM('received', 'confirmed', 'preparing', 'ready', 'fulfilled', 'cancelled');--> statement-breakpoint
+CREATE TYPE "public"."payment_status" AS ENUM('pending', 'paid', 'failed', 'refunded');--> statement-breakpoint
 CREATE TYPE "public"."tenant_type" AS ENUM('quick_service', 'full_service', 'cafe', 'food_truck', 'bar', 'bakery', 'other');--> statement-breakpoint
 CREATE TABLE "task" (
 	"id" serial PRIMARY KEY NOT NULL,
 	"title" text NOT NULL,
 	"priority" integer DEFAULT 1 NOT NULL
-);
---> statement-breakpoint
-CREATE TABLE "tenant_users" (
-	"tenant_id" integer,
-	"user_id" integer,
-	"role" varchar(50) DEFAULT 'staff',
-	CONSTRAINT "tenant_users_tenant_id_user_id_pk" PRIMARY KEY("tenant_id","user_id")
 );
 --> statement-breakpoint
 CREATE TABLE "account" (
@@ -46,6 +41,7 @@ CREATE TABLE "user" (
 	"email" text NOT NULL,
 	"email_verified" boolean DEFAULT false NOT NULL,
 	"image" text,
+	"is_internal" boolean DEFAULT false NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL,
 	CONSTRAINT "user_email_unique" UNIQUE("email")
@@ -66,28 +62,51 @@ CREATE TABLE "tenants" (
 	"slug" varchar(100) NOT NULL,
 	"legal_name" varchar(255),
 	"type" "tenant_type" DEFAULT 'quick_service',
-	"address" jsonb NOT NULL,
+	"address" jsonb DEFAULT '{}'::jsonb,
 	"phone" varchar(20),
 	"email" varchar(255),
 	"website" varchar(255),
 	"logo_url" text,
 	"banner_url" text,
 	"favicon_url" text,
+	"background_image_url" text,
 	"primary_color" varchar(7) DEFAULT '#000000',
+	"secondary_color" varchar(7) DEFAULT '#374151',
 	"accent_color" varchar(7) DEFAULT '#ffffff',
 	"settings" jsonb DEFAULT '{"currency":"USD","taxRate":0.0825,"enableTips":true,"defaultTipPercentages":[15,18,20],"allowPickup":true,"allowDelivery":false,"minimumOrderAmount":0,"estimatedPrepTimeMinutes":15,"hours":{},"specialHours":[]}'::jsonb,
 	"is_active" boolean DEFAULT true NOT NULL,
-	"is_approved" boolean DEFAULT false,
+	"is_approved" boolean DEFAULT true,
 	"suspended_at" timestamp,
 	"suspended_reason" text,
 	"subscription_tier" varchar(50) DEFAULT 'starter',
 	"subscription_status" varchar(50) DEFAULT 'active',
 	"stripe_customer_id" varchar(255),
 	"stripe_subscription_id" varchar(255),
+	"stripe_secret_key" text,
+	"stripe_webhook_secret" text,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL,
 	"deleted_at" timestamp,
 	CONSTRAINT "tenants_slug_unique" UNIQUE("slug")
+);
+--> statement-breakpoint
+CREATE TABLE "tenant_invitations" (
+	"id" text PRIMARY KEY NOT NULL,
+	"tenant_id" integer NOT NULL,
+	"email" varchar(255) NOT NULL,
+	"role" varchar(50) DEFAULT 'staff' NOT NULL,
+	"invited_by_user_id" text NOT NULL,
+	"expires_at" timestamp NOT NULL,
+	"accepted_at" timestamp,
+	"created_at" timestamp DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "tenant_users" (
+	"tenant_id" integer NOT NULL,
+	"user_id" text NOT NULL,
+	"role" varchar(50) DEFAULT 'owner' NOT NULL,
+	"assigned_at" timestamp DEFAULT now() NOT NULL,
+	CONSTRAINT "tenant_users_tenant_id_user_id_pk" PRIMARY KEY("tenant_id","user_id")
 );
 --> statement-breakpoint
 CREATE TABLE "menu_categories" (
@@ -101,8 +120,8 @@ CREATE TABLE "menu_categories" (
 );
 --> statement-breakpoint
 CREATE TABLE "menu_item_modifiers" (
-	"menu_item_id" integer,
-	"modifier_id" integer,
+	"menu_item_id" integer NOT NULL,
+	"modifier_id" integer NOT NULL,
 	CONSTRAINT "menu_item_modifiers_menu_item_id_modifier_id_pk" PRIMARY KEY("menu_item_id","modifier_id")
 );
 --> statement-breakpoint
@@ -179,10 +198,12 @@ CREATE TABLE "orders" (
 	CONSTRAINT "orders_order_number_unique" UNIQUE("order_number")
 );
 --> statement-breakpoint
-ALTER TABLE "tenant_users" ADD CONSTRAINT "tenant_users_tenant_id_tenants_id_fk" FOREIGN KEY ("tenant_id") REFERENCES "public"."tenants"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "tenant_users" ADD CONSTRAINT "tenant_users_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "account" ADD CONSTRAINT "account_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "session" ADD CONSTRAINT "session_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "tenant_invitations" ADD CONSTRAINT "tenant_invitations_tenant_id_tenants_id_fk" FOREIGN KEY ("tenant_id") REFERENCES "public"."tenants"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "tenant_invitations" ADD CONSTRAINT "tenant_invitations_invited_by_user_id_user_id_fk" FOREIGN KEY ("invited_by_user_id") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "tenant_users" ADD CONSTRAINT "tenant_users_tenant_id_tenants_id_fk" FOREIGN KEY ("tenant_id") REFERENCES "public"."tenants"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "tenant_users" ADD CONSTRAINT "tenant_users_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "menu_categories" ADD CONSTRAINT "menu_categories_tenant_id_tenants_id_fk" FOREIGN KEY ("tenant_id") REFERENCES "public"."tenants"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "menu_item_modifiers" ADD CONSTRAINT "menu_item_modifiers_menu_item_id_menu_items_id_fk" FOREIGN KEY ("menu_item_id") REFERENCES "public"."menu_items"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "menu_item_modifiers" ADD CONSTRAINT "menu_item_modifiers_modifier_id_modifiers_id_fk" FOREIGN KEY ("modifier_id") REFERENCES "public"."modifiers"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
@@ -198,8 +219,6 @@ CREATE INDEX "session_userId_idx" ON "session" USING btree ("user_id");--> state
 CREATE INDEX "verification_identifier_idx" ON "verification" USING btree ("identifier");--> statement-breakpoint
 CREATE INDEX "tenants_slug_idx" ON "tenants" USING btree ("slug");--> statement-breakpoint
 CREATE INDEX "tenants_active_idx" ON "tenants" USING btree ("is_active");--> statement-breakpoint
-CREATE INDEX "tenants_subscription_idx" ON "tenants" USING btree ("subscription_tier");--> statement-breakpoint
-CREATE INDEX "tenants_created_idx" ON "tenants" USING btree ("created_at");--> statement-breakpoint
 CREATE INDEX "tenants_tenant_lookup_idx" ON "tenants" USING btree ("slug","is_active");--> statement-breakpoint
 CREATE INDEX "menu_categories_tenant_idx" ON "menu_categories" USING btree ("tenant_id");--> statement-breakpoint
 CREATE INDEX "menu_items_restaurant_idx" ON "menu_items" USING btree ("tenant_id");--> statement-breakpoint

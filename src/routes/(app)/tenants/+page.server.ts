@@ -1,7 +1,7 @@
 import type { PageServerLoad, Actions } from './$types';
 import { fail, redirect } from '@sveltejs/kit';
 import { db } from '$lib/server/db';
-import { eq } from 'drizzle-orm';
+import { eq, and } from 'drizzle-orm';
 import { tenant, tenantUsers } from '$lib/server/db/schema';
 
 export const load: PageServerLoad = async ({ locals }) => {
@@ -23,14 +23,23 @@ export const load: PageServerLoad = async ({ locals }) => {
 		.innerJoin(tenant, eq(tenantUsers.tenantId, tenant.id))
 		.where(eq(tenantUsers.userId, userId));
 
-	return { tenants: userTenants, isInternal: locals.user!.isInternal };
+	const canCreate = locals.user!.isInternal || userTenants.some((t) => t.role === 'owner');
+	return { tenants: userTenants, isInternal: locals.user!.isInternal, canCreate };
 };
 
 export const actions: Actions = {
 	create: async ({ request, locals, cookies }) => {
-		if (!locals.user!.isInternal) return fail(403, { error: 'Only internal users can create tenants' });
-
 		const userId = locals.user!.id;
+		const isInternal = locals.user!.isInternal;
+
+		if (!isInternal) {
+			const ownerRecord = await db.query.tenantUsers.findFirst({
+				where: and(eq(tenantUsers.userId, userId), eq(tenantUsers.role, 'owner')),
+				columns: { tenantId: true }
+			});
+			if (!ownerRecord) return fail(403, { error: 'Only owners and internal users can create tenants' });
+		}
+
 		const formData = await request.formData();
 
 		const name = formData.get('name')?.toString().trim();
