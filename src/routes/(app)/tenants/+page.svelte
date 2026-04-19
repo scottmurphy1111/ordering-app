@@ -38,11 +38,20 @@
 							type="submit"
 							class="w-full flex items-center justify-between rounded-lg border border-gray-200 bg-white px-4 py-3 text-left shadow-sm hover:border-gray-400 hover:shadow transition-all"
 						>
-							<div>
-								<p class="font-medium text-gray-900">{t.name}</p>
-								<p class="text-xs text-gray-400 mt-0.5">/{t.slug} · {t.type?.replace('_', ' ')} · {t.role}</p>
+							<div class="flex items-center gap-3 min-w-0">
+								{#if t.logoUrl}
+									<img src={t.logoUrl} alt={t.name} class="h-10 w-10 shrink-0 rounded-md border border-gray-100 object-contain p-0.5" />
+								{:else}
+									<div class="h-10 w-10 shrink-0 rounded-md border border-gray-100 bg-gray-100 flex items-center justify-center">
+										<Icon icon="mdi:store-outline" class="h-5 w-5 text-gray-400" />
+									</div>
+								{/if}
+								<div class="min-w-0">
+									<p class="font-medium text-gray-900">{t.name}</p>
+									<p class="text-xs text-gray-400 mt-0.5">/{t.slug} · {t.type?.replace('_', ' ')} · {t.role}</p>
+								</div>
 							</div>
-							<Icon icon="mdi:chevron-right" class="h-5 w-5 text-gray-400" />
+							<Icon icon="mdi:chevron-right" class="h-5 w-5 text-gray-400 shrink-0 ml-2" />
 						</button>
 					</form>
 				{/each}

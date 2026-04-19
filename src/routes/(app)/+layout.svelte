@@ -49,13 +49,18 @@
 	>
 		<!-- Logo / Tenant Name -->
 		<div class="flex items-center justify-between border-b border-gray-700 px-4 py-4">
-			<a href={resolve('/tenants')} class="block min-w-0 flex-1">
-				<p class="text-xs font-medium tracking-wider text-gray-400 uppercase">Order<span class="text-green-400">Local</span></p>
-				{#if data.tenant}
-					<p class="mt-1 truncate text-sm font-semibold text-white">{data.tenant.name}</p>
-				{:else}
-					<p class="mt-1 text-sm text-gray-500">No tenant selected</p>
+			<a href={resolve('/tenants')} class="flex min-w-0 flex-1 items-center gap-3">
+				{#if data.tenant?.logoUrl}
+					<img src={data.tenant.logoUrl} alt={data.tenant.name} class="h-9 w-9 shrink-0 rounded-md object-contain bg-white/10 p-0.5" />
 				{/if}
+				<div class="min-w-0">
+					<p class="text-xs font-medium tracking-wider text-gray-400 uppercase">Order<span class="text-green-400">Local</span></p>
+					{#if data.tenant}
+						<p class="mt-0.5 truncate text-sm font-semibold text-white">{data.tenant.name}</p>
+					{:else}
+						<p class="mt-0.5 text-sm text-gray-500">No tenant selected</p>
+					{/if}
+				</div>
 			</a>
 			<button
 				onclick={() => (sidebarOpen = false)}
@@ -126,11 +131,16 @@
 			>
 				<Icon icon="mdi:menu" class="h-6 w-6" />
 			</button>
-			<div class="min-w-0 flex-1">
-				<p class="text-xs font-medium uppercase tracking-wide text-gray-400">Order<span class="text-green-400">Local</span></p>
-				{#if data.tenant}
-					<p class="truncate text-sm font-semibold leading-tight text-white">{data.tenant.name}</p>
+			<div class="flex min-w-0 flex-1 items-center gap-2.5">
+				{#if data.tenant?.logoUrl}
+					<img src={data.tenant.logoUrl} alt={data.tenant.name} class="h-8 w-8 shrink-0 rounded-md object-contain bg-white/10 p-0.5" />
 				{/if}
+				<div class="min-w-0">
+					<p class="text-xs font-medium uppercase tracking-wide text-gray-400">Order<span class="text-green-400">Local</span></p>
+					{#if data.tenant}
+						<p class="truncate text-sm font-semibold leading-tight text-white">{data.tenant.name}</p>
+					{/if}
+				</div>
 			</div>
 		</header>
 
