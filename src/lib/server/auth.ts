@@ -28,6 +28,15 @@ export const auth = betterAuth({
 		}
 	},
 
+	session: {
+		expiresIn: 60 * 60 * 24 * 30,      // 30 days
+		updateAge: 60 * 60 * 24,            // refresh session expiry once per day on activity
+		cookieCache: {
+			enabled: true,
+			maxAge: 60 * 5                   // cache session in cookie for 5 min to reduce DB lookups
+		}
+	},
+
 	socialProviders: {
 		google: {
 			clientId: env.GOOGLE_CLIENT_ID ?? '',
@@ -38,13 +47,22 @@ export const auth = betterAuth({
 	plugins: [
 		magicLink({
 			sendMagicLink: async ({ email, url }) => {
+				// Rewrite the verify URL to our intermediate page so that email
+				// scanners (Outlook Safe Links, etc.) can't consume the token by
+				// pre-fetching the link. The verify page shows a button; clicking
+				// it navigates to the real better-auth verify endpoint.
+				const verifyUrl = new URL(url);
+				const intermediateUrl = new URL('/verify', verifyUrl.origin);
+				intermediateUrl.searchParams.set('token', verifyUrl.searchParams.get('token') ?? '');
+				intermediateUrl.searchParams.set('callbackURL', verifyUrl.searchParams.get('callbackURL') ?? '/tenants');
+
 				const html = emailWrapper({
 					title: 'Sign in to Order Local',
 					previewText: 'Your sign-in link for Order Local',
 					tenantName: 'Order Local',
 					content: `
 						<p style="margin:0 0 16px;font-size:16px;color:#111827;">Click the button below to sign in to your Order Local account. This link expires in 15 minutes.</p>
-						<a href="${url}" style="display:inline-block;background:#111827;color:#ffffff;padding:12px 24px;border-radius:8px;font-size:14px;font-weight:600;text-decoration:none;">Sign in</a>
+						<a href="${intermediateUrl.toString()}" style="display:inline-block;background:#111827;color:#ffffff;padding:12px 24px;border-radius:8px;font-size:14px;font-weight:600;text-decoration:none;">Sign in</a>
 						<p style="margin:16px 0 0;font-size:12px;color:#9ca3af;">If you didn't request this, you can safely ignore this email.</p>
 					`
 				});
