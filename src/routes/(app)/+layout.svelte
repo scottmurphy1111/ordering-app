@@ -6,10 +6,16 @@
 	import { signOut } from '$lib/auth-client';
 	import Icon from '@iconify/svelte';
 	import AppTour from '$lib/components/AppTour.svelte';
+	import { tourState } from '$lib/tour-state.svelte';
 
 	let { data, children }: { data: LayoutData; children: import('svelte').Snippet } = $props();
 
 	let sidebarOpen = $state(false);
+
+	// Let the tour open the sidebar on mobile when it needs to highlight a nav item
+	$effect(() => {
+		if (tourState.openSidebar) sidebarOpen = true;
+	});
 
 	const navItems = [
 		{ href: '/dashboard', label: 'Overview', icon: 'mdi:view-dashboard-outline', tour: 'overview' },

@@ -1,1 +1,1 @@
-export const tourState = $state({ active: false });
+export const tourState = $state({ active: false, openSidebar: false });

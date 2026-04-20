@@ -14,7 +14,7 @@
 			selector: '[data-tour="create-tenant"]',
 			title: 'First — Create a tenant',
 			description:
-				"A tenant is your business profile on Order Local. Create one now to get your ordering page, menu, and dashboard set up.",
+				'A tenant is your business profile on Order Local. Create one now to get your ordering page, menu, and dashboard set up.',
 			action: null
 		},
 		{
@@ -49,13 +49,29 @@
 			selector: '[data-tour="view-menu"]',
 			title: "You're ready to go!",
 			description:
-				"Once your menu is built, click View menu to see exactly what your customers see when they scan your QR code or visit your ordering page.",
+				'Once your menu is built, click View menu to see exactly what your customers see when they scan your QR code or visit your ordering page.',
 			action: null
 		}
 	];
 
 	let step = $state(0);
 	let rect = $state<Rect | null>(null);
+	let isMobile = $state(false);
+
+	function checkMobile() {
+		isMobile = window.innerWidth < 768;
+	}
+
+	function updateSidebar() {
+		if (!isMobile) {
+			tourState.openSidebar = false;
+			return;
+		}
+		// Open sidebar only when the target element lives inside <aside>
+		const el = document.querySelector(steps[step].selector);
+		const sidebar = document.querySelector('aside');
+		tourState.openSidebar = el ? (sidebar?.contains(el) ?? false) : false;
+	}
 
 	function measureRect() {
 		const el = document.querySelector(steps[step].selector);
@@ -68,7 +84,6 @@
 				height: r.height + PAD * 2
 			};
 		} else {
-			// Element not in DOM for this route — show tooltip centered, no spotlight
 			rect = null;
 		}
 	}
@@ -78,18 +93,20 @@
 		const currentStep = step;
 		if (active) {
 			void currentStep;
-			requestAnimationFrame(measureRect);
+			requestAnimationFrame(() => {
+				updateSidebar();
+				// Give sidebar animation time to finish before measuring
+				setTimeout(measureRect, isMobile ? 220 : 0);
+			});
 		} else {
 			rect = null;
+			tourState.openSidebar = false;
 		}
 	});
 
 	function next() {
-		if (step < steps.length - 1) {
-			step++;
-		} else {
-			finish();
-		}
+		if (step < steps.length - 1) step++;
+		else finish();
 	}
 
 	function prev() {
@@ -98,13 +115,16 @@
 
 	function finish() {
 		tourState.active = false;
+		tourState.openSidebar = false;
 		step = 0;
 		localStorage.setItem(STORAGE_KEY, 'true');
 	}
 
 	onMount(() => {
-		window.addEventListener('resize', measureRect);
-		return () => window.removeEventListener('resize', measureRect);
+		checkMobile();
+		const handler = () => { checkMobile(); measureRect(); };
+		window.addEventListener('resize', handler);
+		return () => window.removeEventListener('resize', handler);
 	});
 
 	function handleKeydown(e: KeyboardEvent) {
@@ -114,13 +134,20 @@
 		if (e.key === 'ArrowLeft') prev();
 	}
 
-	// When rect exists: tooltip to the right of the spotlight
-	// When rect is null (element not found): tooltip centered on screen
-	const tooltipStyle = $derived(
-		rect
-			? `top:${Math.max(8, rect.top + rect.height / 2 - 80)}px;left:${rect.left + rect.width + 16}px`
-			: 'top:50%;left:50%;transform:translate(-50%,-50%)'
-	);
+	const tooltipStyle = $derived.by(() => {
+		if (isMobile) {
+			// Bottom sheet on mobile — ignore rect position
+			return 'bottom:0;left:0;right:0;border-bottom-left-radius:0;border-bottom-right-radius:0';
+		}
+		if (rect) {
+			// Right of spotlight on desktop, clamped to viewport
+			const top = Math.max(8, rect.top + rect.height / 2 - 80);
+			const left = rect.left + rect.width + 16;
+			return `top:${top}px;left:${left}px`;
+		}
+		// Centered fallback (element not in DOM)
+		return 'top:50%;left:50%;transform:translate(-50%,-50%)';
+	});
 </script>
 
 <svelte:window onkeydown={handleKeydown} />
@@ -148,13 +175,12 @@
 			></div>
 		</div>
 	{:else}
-		<!-- Full overlay when element not present on current route -->
 		<div class="pointer-events-none fixed inset-0 z-200 bg-black/70" aria-hidden="true"></div>
 	{/if}
 
 	<!-- Tooltip card -->
 	<div
-		class="fixed z-201 w-72 rounded-xl bg-white p-5 shadow-2xl"
+		class="fixed z-201 rounded-xl bg-white shadow-2xl {isMobile ? 'rounded-b-none p-5 pb-8' : 'w-72 p-5'}"
 		style={tooltipStyle}
 		role="dialog"
 		aria-label="Tour step {step + 1} of {steps.length}"
