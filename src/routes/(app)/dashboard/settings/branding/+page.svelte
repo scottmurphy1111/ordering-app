@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import type { PageData, ActionData } from './$types';
+	import Icon from '@iconify/svelte';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
@@ -63,6 +64,9 @@
 
 <div>
 	<div class="mb-6">
+		<a href="/dashboard/settings" class="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 mb-1">
+			<Icon icon="mdi:chevron-left" class="h-4 w-4" /> Settings
+		</a>
 		<h1 class="text-2xl font-bold text-gray-900">Branding</h1>
 		<p class="mt-0.5 text-sm text-gray-500">Customize your storefront's appearance.</p>
 	</div>

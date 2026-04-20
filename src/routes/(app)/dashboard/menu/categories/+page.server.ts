@@ -32,10 +32,11 @@ export const actions: Actions = {
 		const formData = await request.formData();
 		const name = formData.get('name')?.toString().trim();
 		const description = formData.get('description')?.toString().trim() || null;
+		const isActive = formData.get('isActive') === 'on';
 
 		if (!name) return fail(400, { error: 'Category name is required' });
 
-		await db.insert(menuCategories).values({ tenantId, name, description, isActive: true });
+		await db.insert(menuCategories).values({ tenantId, name, description, isActive });
 		return { success: true };
 	},
 

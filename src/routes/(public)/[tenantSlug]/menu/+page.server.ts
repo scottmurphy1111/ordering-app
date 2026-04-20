@@ -14,7 +14,7 @@ export const load: PageServerLoad = async ({ locals, params }) => {
 		}),
 		db.query.menuItems.findMany({
 			where: and(eq(menuItems.tenantId, tenantId), eq(menuItems.available, true)),
-			orderBy: (i, { asc, desc }) => [desc(i.sortOrder), asc(i.name)],
+			orderBy: (i, { asc }) => [asc(i.sortOrder), asc(i.name)],
 			columns: {
 				id: true,
 				name: true,

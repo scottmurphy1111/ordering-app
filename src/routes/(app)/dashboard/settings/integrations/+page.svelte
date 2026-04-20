@@ -14,6 +14,9 @@
 
 <div>
 	<div class="mb-6">
+		<a href="/dashboard/settings" class="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 mb-1">
+			<Icon icon="mdi:chevron-left" class="h-4 w-4" /> Settings
+		</a>
 		<h1 class="text-2xl font-bold text-gray-900">Integrations</h1>
 		<p class="text-sm text-gray-500 mt-0.5">Connect third-party services to your account.</p>
 	</div>

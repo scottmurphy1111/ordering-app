@@ -1,13 +1,125 @@
 <script lang="ts">
-	import type { PageData } from './$types';
+	import type { PageData, ActionData } from './$types';
 	import type { DiscoveredItem } from '$lib/../routes/api/discover-stripe-items/+server';
 	import { SvelteSet } from 'svelte/reactivity';
 	import { resolve } from '$app/paths';
 	import Icon from '@iconify/svelte';
 	import { afterNavigate } from '$app/navigation';
 	import { tick } from 'svelte';
+	import { enhance } from '$app/forms';
+	import Sortable from 'sortablejs';
 
-	let { data }: { data: PageData } = $props();
+	let { data, form }: { data: PageData; form: ActionData } = $props();
+
+	// ── Table sorting ─────────────────────────────────────────────
+	type SortCol = 'name' | 'category' | 'price' | 'status';
+	let sortCol = $state<SortCol>('name');
+	let sortDir = $state<'asc' | 'desc'>('asc');
+
+	function sortBy(col: SortCol) {
+		if (sortCol === col) sortDir = sortDir === 'asc' ? 'desc' : 'asc';
+		else { sortCol = col; sortDir = 'asc'; }
+	}
+
+	const sortedItems = $derived([...data.items].sort((a, b) => {
+		let cmp = 0;
+		if (sortCol === 'name') cmp = a.name.localeCompare(b.name);
+		else if (sortCol === 'category') cmp = (a.category?.name ?? '').localeCompare(b.category?.name ?? '');
+		else if (sortCol === 'price') cmp = a.price - b.price;
+		else if (sortCol === 'status') cmp = Number(b.available) - Number(a.available);
+		return sortDir === 'asc' ? cmp : -cmp;
+	}));
+
+	// ── Drag-and-drop sort mode ───────────────────────────────────
+	let sortMode = $state(false);
+	let sortSaving = $state(false);
+	let sortSaveError = $state<string | null>(null);
+	let sortContainerEl = $state<HTMLElement | null>(null);
+
+	// Group items by category for the sort view
+	const groupedForSort = $derived(() => {
+		const catMap = new Map<number | null, { id: number | null; name: string; items: typeof data.items }>();
+		for (const cat of data.categories) {
+			catMap.set(cat.id, { id: cat.id, name: cat.name, items: [] });
+		}
+		catMap.set(null, { id: null, name: 'Uncategorized', items: [] });
+		for (const item of data.items) {
+			const key = item.category?.id ?? null;
+			if (!catMap.has(key)) catMap.set(key, { id: key, name: item.category?.name ?? 'Uncategorized', items: [] });
+			catMap.get(key)!.items.push(item);
+		}
+		return [...catMap.values()].filter(g => g.items.length > 0);
+	});
+
+	function sortableGroup(node: HTMLElement) {
+		const s = Sortable.create(node, { animation: 150, handle: '.drag-handle', ghostClass: 'opacity-40' });
+		return { destroy() { s.destroy(); } };
+	}
+
+	async function saveSortOrder() {
+		if (!sortContainerEl) return;
+		sortSaving = true;
+		sortSaveError = null;
+		// Collect order per group — sortOrder is scoped within each category
+		const order: { id: number; sortOrder: number }[] = [];
+		sortContainerEl.querySelectorAll('[data-group]').forEach(group => {
+			group.querySelectorAll('[data-id]').forEach((el, i) => {
+				order.push({ id: parseInt((el as HTMLElement).dataset.id!), sortOrder: i });
+			});
+		});
+		try {
+			const res = await fetch('/api/reorder-items', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ order })
+			});
+			if (!res.ok) throw new Error();
+			sortMode = false;
+			window.location.reload();
+		} catch {
+			sortSaveError = 'Failed to save. Please try again.';
+		} finally {
+			sortSaving = false;
+		}
+	}
+
+	// ── Inline create form ────────────────────────────────────────
+	let showForm = $state(false);
+	let newImageUrl = $state('');
+	let newImagePreview = $state('');
+	let newUploading = $state(false);
+	let newUploadError = $state('');
+	let lastCreated = $state<{ id: number; name: string } | null>(null);
+	let createFormEl = $state<HTMLFormElement | null>(null);
+
+	$effect(() => {
+		if (form?.success && form.item) {
+			lastCreated = form.item as { id: number; name: string };
+			newImageUrl = '';
+			newImagePreview = '';
+			createFormEl?.reset();
+		}
+	});
+
+	async function onNewImageChange(e: Event) {
+		const input = e.target as HTMLInputElement;
+		const file = input.files?.[0];
+		if (!file) return;
+		newUploading = true;
+		newUploadError = '';
+		const fd = new FormData();
+		fd.append('image', file);
+		try {
+			const res = await fetch('/api/upload-menu-item-image', { method: 'POST', body: fd });
+			const json = await res.json();
+			if (!res.ok) { newUploadError = json.message ?? 'Upload failed'; }
+			else { newImageUrl = json.url; newImagePreview = json.url; }
+		} catch {
+			newUploadError = 'Network error. Please try again.';
+		} finally {
+			newUploading = false;
+		}
+	}
 
 	// ── Search ────────────────────────────────────────────────────
 	let searchForm = $state<HTMLFormElement | null>(null);
@@ -183,7 +295,7 @@
 </script>
 
 <div>
-	<div class="flex items-center justify-between mb-6">
+	<div class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
 		<div>
 			<a href="/dashboard/menu" class="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 mb-1">
 				<Icon icon="mdi:chevron-left" class="h-4 w-4" /> Menu
@@ -191,27 +303,141 @@
 			<h1 class="text-2xl font-bold text-gray-900">Menu Items</h1>
 			<p class="text-sm text-gray-500 mt-0.5">{data.pagination.totalItems} items total</p>
 		</div>
-		<div class="flex gap-2">
-			<button
-				onclick={openDiscover}
-				class="inline-flex items-center gap-1.5 rounded-md border border-purple-300 bg-purple-50 px-4 py-2 text-sm font-medium text-purple-700 hover:bg-purple-100 transition-colors"
-			>
-				<Icon icon="mdi:lightning-bolt" class="h-4 w-4" /> Discover from Stripe
-			</button>
-			<button
-				onclick={() => (showImport = true)}
-				class="inline-flex items-center gap-1.5 rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
-			>
-				<Icon icon="mdi:upload" class="h-4 w-4" /> Import CSV
-			</button>
-			<a
-				href={resolve('/dashboard/menu/items/new')}
-				class="inline-flex items-center gap-1.5 rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-700 transition-colors"
-			>
-				<Icon icon="mdi:plus" class="h-4 w-4" /> New item
-			</a>
+		<div class="flex flex-wrap gap-2">
+			{#if !sortMode}
+				<button onclick={openDiscover}
+					class="inline-flex items-center gap-1.5 rounded-md border border-purple-300 bg-purple-50 px-3 py-2 text-sm font-medium text-purple-700 hover:bg-purple-100 transition-colors">
+					<Icon icon="mdi:lightning-bolt" class="h-4 w-4" /><span class="hidden sm:inline">Discover from Stripe</span><span class="sm:hidden">Discover</span>
+				</button>
+				<button onclick={() => (showImport = true)}
+					class="inline-flex items-center gap-1.5 rounded-md border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
+					<Icon icon="mdi:upload" class="h-4 w-4" /><span class="hidden sm:inline">Import CSV</span><span class="sm:hidden">Import</span>
+				</button>
+				<button onclick={() => { sortMode = true; showForm = false; }}
+					class="inline-flex items-center gap-1.5 rounded-md border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
+					<Icon icon="mdi:drag-vertical" class="h-4 w-4" /> Reorder
+				</button>
+				<button onclick={() => { showForm = !showForm; lastCreated = null; }}
+					class="inline-flex items-center gap-1.5 rounded-md bg-gray-900 px-3 py-2 text-sm font-medium text-white hover:bg-gray-700 transition-colors">
+					<Icon icon={showForm ? 'mdi:close' : 'mdi:plus'} class="h-4 w-4" /> {showForm ? 'Cancel' : 'New item'}
+				</button>
+			{:else}
+				<button onclick={() => { sortMode = false; sortSaveError = null; }}
+					class="rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-600 hover:bg-gray-50 transition-colors">
+					Cancel
+				</button>
+				<button onclick={saveSortOrder} disabled={sortSaving}
+					class="inline-flex items-center gap-1.5 rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-700 transition-colors disabled:opacity-50">
+					<Icon icon="mdi:check" class="h-4 w-4" /> {sortSaving ? 'Saving…' : 'Save order'}
+				</button>
+			{/if}
 		</div>
 	</div>
+
+	<!-- ── Inline create form ────────────────────────────────────── -->
+	{#if showForm}
+		{#if lastCreated}
+			<div class="mb-3 flex items-center justify-between rounded-lg border border-green-200 bg-green-50 px-4 py-2.5 text-sm text-green-700">
+				<span>✓ <strong>{lastCreated.name}</strong> created — <a href={resolve(`/dashboard/menu/items/${lastCreated.id}`)} class="underline hover:text-green-900">edit item</a></span>
+				<button onclick={() => (lastCreated = null)} class="ml-4 text-green-500 hover:text-green-700"><Icon icon="mdi:close" class="h-4 w-4" /></button>
+			</div>
+		{/if}
+		{#if form?.error}
+			<div class="mb-3 rounded-lg border border-red-200 bg-red-50 px-4 py-2.5 text-sm text-red-700">{form.error}</div>
+		{/if}
+		<form
+			method="post"
+			action="?/create"
+			bind:this={createFormEl}
+			use:enhance={() => ({ update }) => update({ reset: false })}
+			class="mb-6 rounded-xl border border-gray-200 bg-white p-5 shadow-sm space-y-4"
+		>
+			<h2 class="font-semibold text-gray-800">New item</h2>
+
+			<!-- Image -->
+			<div class="flex items-start gap-4">
+				<div
+					role="button" tabindex="0" aria-label="Upload item image"
+					onclick={() => (document.getElementById('new-image-upload') as HTMLInputElement)?.click()}
+					onkeydown={(e) => e.key === 'Enter' && (document.getElementById('new-image-upload') as HTMLInputElement)?.click()}
+					class="relative flex h-20 w-20 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 hover:border-gray-400 hover:bg-gray-100 transition-colors {newUploading ? 'pointer-events-none opacity-60' : ''}"
+				>
+					{#if newImagePreview}
+						<img src={newImagePreview} alt="Preview" class="h-full w-full object-cover" />
+						<div class="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 hover:opacity-100 transition-opacity">
+							<Icon icon="mdi:pencil" class="h-4 w-4 text-white" />
+						</div>
+					{:else if newUploading}
+						<svg class="h-4 w-4 animate-spin text-gray-400" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>
+					{:else}
+						<Icon icon="mdi:image-plus" class="h-5 w-5 text-gray-400" />
+					{/if}
+				</div>
+				<input id="new-image-upload" type="file" accept="image/jpeg,image/png,image/webp" class="sr-only" onchange={onNewImageChange} />
+				<input type="hidden" name="imageUrl" value={newImageUrl} />
+				<div class="flex-1 pt-1 space-y-1">
+					<p class="text-xs text-gray-400">JPG, PNG, WebP · max 5MB</p>
+					{#if newUploadError}<p class="text-xs text-red-600">{newUploadError}</p>{/if}
+					{#if newImagePreview}<button type="button" onclick={() => { newImageUrl = ''; newImagePreview = ''; }} class="text-xs text-red-500 hover:text-red-700">Remove</button>{/if}
+				</div>
+			</div>
+
+			<div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+				<div class="sm:col-span-2">
+					<label class="block text-sm font-medium text-gray-700 mb-1" for="new-name">Name *</label>
+					<input id="new-name" name="name" type="text" required placeholder="e.g. Classic Cheeseburger"
+						class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500" />
+				</div>
+				<div class="sm:col-span-2">
+					<label class="block text-sm font-medium text-gray-700 mb-1" for="new-description">Description</label>
+					<textarea id="new-description" name="description" rows="2" placeholder="Short description..."
+						class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"></textarea>
+				</div>
+				<div>
+					<label class="block text-sm font-medium text-gray-700 mb-1" for="new-price">Price ($) *</label>
+					<input id="new-price" name="price" type="number" min="0" step="0.01" required placeholder="9.99"
+						class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500" />
+				</div>
+				<div>
+					<label class="block text-sm font-medium text-gray-700 mb-1" for="new-sale">Sale price ($)</label>
+					<input id="new-sale" name="discountedPrice" type="number" min="0" step="0.01" placeholder="Optional"
+						class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500" />
+				</div>
+				{#if data.categories.length > 0}
+					<div>
+						<label class="block text-sm font-medium text-gray-700 mb-1" for="new-category">Category</label>
+						<select id="new-category" name="categoryId"
+							class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500">
+							<option value="">No category</option>
+							{#each data.categories as cat (cat.id)}<option value={String(cat.id)}>{cat.name}</option>{/each}
+						</select>
+					</div>
+				{/if}
+				<div>
+					<label class="block text-sm font-medium text-gray-700 mb-1" for="new-tags">Tags</label>
+					<input id="new-tags" name="tags" type="text" placeholder="spicy, popular (comma-separated)"
+						class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500" />
+				</div>
+			</div>
+
+			<div class="flex items-center gap-2">
+				<input id="new-available" name="available" type="checkbox" checked class="h-4 w-4 rounded border-gray-300" />
+				<label class="text-sm text-gray-700" for="new-available">Available for ordering</label>
+			</div>
+
+			<div class="flex gap-2 pt-1">
+				<button type="submit" disabled={newUploading}
+					class="rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-700 transition-colors disabled:opacity-50">
+					Save &amp; add another
+				</button>
+				<button type="submit" name="closeAfter" value="1" disabled={newUploading}
+					class="rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50"
+					onclick={() => setTimeout(() => { showForm = false; }, 100)}>
+					Save &amp; close
+				</button>
+			</div>
+		</form>
+	{/if}
 
 	<!-- Filters -->
 	<form bind:this={searchForm} method="get" class="mb-5 flex gap-3">
@@ -240,26 +466,65 @@
 		{/if}
 	</form>
 
-	{#if data.items.length === 0}
+	{#if sortSaveError}
+		<div class="mb-4 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{sortSaveError}</div>
+	{/if}
+
+	{#if sortMode}
+		<!-- ── Drag-and-drop reorder — grouped by category ─────────── -->
+		<div class="space-y-4" bind:this={sortContainerEl}>
+			<p class="text-sm text-gray-500">Drag items within each category to reorder, then click <strong>Save order</strong>.</p>
+			{#each groupedForSort() as group (group.id)}
+				<div class="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+					<div class="border-b border-gray-100 bg-gray-50 px-4 py-2.5">
+						<span class="text-xs font-semibold uppercase tracking-wide text-gray-500">{group.name}</span>
+					</div>
+					<ul use:sortableGroup data-group={group.id ?? 'null'} class="divide-y divide-gray-100">
+						{#each group.items as item (item.id)}
+							{@const primaryImage = (item.images as { url: string; isPrimary?: boolean }[] | null)?.find(i => i.isPrimary) ?? (item.images as { url: string }[] | null)?.[0]}
+							<li data-id={item.id} class="flex items-center gap-3 px-4 py-3 bg-white hover:bg-gray-50 transition-colors">
+								<span class="drag-handle cursor-grab active:cursor-grabbing text-gray-300 hover:text-gray-500 transition-colors">
+									<Icon icon="mdi:drag-horizontal-variant" class="h-5 w-5" />
+								</span>
+								{#if primaryImage}
+									<img src={primaryImage.url} alt={item.name} class="h-9 w-9 shrink-0 rounded-md object-cover" />
+								{:else}
+									<div class="h-9 w-9 shrink-0 rounded-md bg-gray-100 flex items-center justify-center">
+										<Icon icon="mdi:silverware-fork-knife" class="h-4 w-4 text-gray-300" />
+									</div>
+								{/if}
+								<span class="flex-1 text-sm font-medium text-gray-900">{item.name}</span>
+								<span class="text-xs font-medium text-gray-700">${(item.price / 100).toFixed(2)}</span>
+							</li>
+						{/each}
+					</ul>
+				</div>
+			{/each}
+		</div>
+	{:else if data.items.length === 0}
 		<div class="rounded-xl border border-dashed border-gray-300 p-12 text-center">
 			<p class="text-gray-400 text-sm">No items found.</p>
-			<a href={resolve('/dashboard/menu/items/new')} class="mt-3 inline-flex items-center gap-1 text-sm text-blue-600 hover:underline"><Icon icon="mdi:plus" class="h-3.5 w-3.5" /> Add your first item</a>
+			<button onclick={() => { showForm = true; }} class="mt-3 inline-flex items-center gap-1 text-sm text-blue-600 hover:underline"><Icon icon="mdi:plus" class="h-3.5 w-3.5" /> Add your first item</button>
 		</div>
 	{:else}
-		<div class="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+		<div class="overflow-x-auto rounded-xl border border-gray-200 bg-white shadow-sm">
 			<table class="w-full text-sm">
 				<thead class="bg-gray-50 border-b border-gray-200">
 					<tr>
 						<th class="px-4 py-2.5 w-12"></th>
-						<th class="px-4 py-2.5 text-left font-medium text-gray-500">Name</th>
-						<th class="px-4 py-2.5 text-left font-medium text-gray-500">Category</th>
-						<th class="px-4 py-2.5 text-left font-medium text-gray-500">Price</th>
-						<th class="px-4 py-2.5 text-left font-medium text-gray-500">Status</th>
+						{#each ([['name','Name'],['category','Category'],['price','Price'],['status','Status']] as const) as [col, label]}
+							<th class="px-4 py-2.5 text-left">
+								<button onclick={() => sortBy(col)} class="inline-flex items-center gap-1 font-medium text-gray-500 hover:text-gray-800 transition-colors">
+									{label}
+									<Icon icon={sortCol === col ? (sortDir === 'asc' ? 'mdi:chevron-up' : 'mdi:chevron-down') : 'mdi:unfold-more-horizontal'} class="h-3.5 w-3.5 {sortCol === col ? 'text-gray-800' : 'text-gray-300'}" />
+								</button>
+							</th>
+						{/each}
 						<th class="px-4 py-2.5"></th>
 					</tr>
 				</thead>
 				<tbody class="divide-y divide-gray-100">
-					{#each data.items as item (item.id)}
+					{#each sortedItems as item (item.id)}
 						{@const primaryImage = (item.images as { url: string; isPrimary?: boolean }[] | null)?.find((img) => img.isPrimary) ?? (item.images as { url: string }[] | null)?.[0]}
 						<tr class="hover:bg-gray-50 transition-colors">
 							<td class="px-4 py-3">
@@ -291,8 +556,18 @@
 									{item.available ? 'Available' : 'Hidden'}
 								</span>
 							</td>
-							<td class="px-4 py-3 text-right">
-								<a href={resolve(`/dashboard/menu/items/${item.id}`)} class="text-xs text-blue-600 hover:underline">Edit</a>
+							<td class="px-4 py-3">
+								<div class="flex items-center gap-3">
+									<a href={resolve(`/dashboard/menu/items/${item.id}`)} class="text-xs font-medium text-gray-600 hover:text-gray-900 transition-colors">Edit</a>
+									<form method="post" action="?/delete" use:enhance>
+										<input type="hidden" name="id" value={item.id} />
+										<button
+											type="submit"
+											onclick={(e) => { if (!confirm('Delete this item?')) e.preventDefault(); }}
+											class="text-xs text-red-500 hover:text-red-700 transition-colors"
+										>Delete</button>
+									</form>
+								</div>
 							</td>
 						</tr>
 					{/each}
