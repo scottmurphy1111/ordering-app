@@ -2,11 +2,17 @@
 	import { enhance } from '$app/forms';
 	import type { PageData, ActionData } from './$types';
 	import Icon from '@iconify/svelte';
+	import { tourState } from '$lib/tour-state.svelte';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
 	let showCreate = $state(false);
 	let slugValue = $state('');
+
+	function startTour() {
+		showCreate = false;
+		tourState.active = true;
+	}
 
 	function toSlug(name: string) {
 		return name
@@ -60,6 +66,7 @@
 
 		{#if data.canCreate && !showCreate}
 			<button
+				data-tour="create-tenant"
 				onclick={() => (showCreate = true)}
 				class="flex items-center justify-center gap-2 w-full rounded-lg border-2 border-dashed border-gray-300 px-4 py-3 text-sm text-gray-500 hover:border-gray-400 hover:text-gray-700 transition-colors"
 			>
@@ -137,5 +144,15 @@
 				</div>
 			</form>
 		{/if}
+
+		<div class="mt-6 flex justify-center">
+			<button
+				onclick={startTour}
+				class="inline-flex items-center gap-1.5 text-sm text-gray-400 transition-colors hover:text-gray-600"
+			>
+				<Icon icon="mdi:compass-outline" class="h-4 w-4" />
+				Take the tour
+			</button>
+		</div>
 	</div>
 </div>

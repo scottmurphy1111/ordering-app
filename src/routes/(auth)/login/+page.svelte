@@ -1,16 +1,30 @@
 <script lang="ts">
-	import { enhance } from '$app/forms';
-	import { signIn } from '$lib/auth-client';
-	import type { ActionData } from './$types';
-
-	let { form }: { form: ActionData } = $props();
-
-	let tab = $state<'signin' | 'signup'>('signin');
+	import { signIn, authClient } from '$lib/auth-client';
 	let loading = $state(false);
+	let magicEmail = $state('');
+	let magicSent = $state(false);
+	let magicError = $state<string | null>(null);
 
 	async function signInWithGoogle() {
 		loading = true;
 		await signIn.social({ provider: 'google', callbackURL: '/tenants' });
+	}
+
+	async function sendMagicLink(e: SubmitEvent) {
+		e.preventDefault();
+		if (!magicEmail) return;
+		loading = true;
+		magicError = null;
+		const { error } = await authClient.signIn.magicLink({
+			email: magicEmail,
+			callbackURL: '/tenants'
+		});
+		loading = false;
+		if (error) {
+			magicError = error.message ?? 'Failed to send link. Please try again.';
+		} else {
+			magicSent = true;
+		}
 	}
 </script>
 
@@ -37,103 +51,38 @@
 		<div class="h-px flex-1 bg-gray-200"></div>
 	</div>
 
-	<!-- Tabs -->
-	<div class="mb-5 flex rounded-lg border border-gray-200 p-1">
-		<button
-			onclick={() => (tab = 'signin')}
-			class="flex-1 rounded-md px-3 py-2 text-sm font-medium transition-colors {tab === 'signin'
-				? 'bg-gray-900 text-white'
-				: 'text-gray-500 hover:text-gray-700'}"
-		>
-			Sign in
-		</button>
-		<button
-			onclick={() => (tab = 'signup')}
-			class="flex-1 rounded-md px-3 py-2 text-sm font-medium transition-colors {tab === 'signup'
-				? 'bg-gray-900 text-white'
-				: 'text-gray-500 hover:text-gray-700'}"
-		>
-			Create account
-		</button>
-	</div>
-
-	{#if form?.message}
-		<div class="mb-4 rounded-md border border-red-200 bg-red-50 px-3 py-2.5 text-sm text-red-700">
-			{form.message}
+	<!-- Magic link form -->
+	{#if magicSent}
+		<div class="rounded-lg border border-green-200 bg-green-50 px-4 py-4 text-center">
+			<p class="text-sm font-medium text-green-800">Check your email</p>
+			<p class="mt-1 text-sm text-green-700">We sent a sign-in link to <strong>{magicEmail}</strong>.</p>
+			<button
+				onclick={() => { magicSent = false; magicEmail = ''; }}
+				class="mt-3 text-xs text-green-600 underline hover:text-green-800"
+			>Use a different email</button>
 		</div>
-	{/if}
-
-	{#if tab === 'signin'}
-		<form method="post" action="?/signInEmail" use:enhance class="space-y-3">
-			<div>
-				<label class="mb-1 block text-xs font-medium text-gray-600" for="email">Email</label>
-				<input
-					id="email"
-					name="email"
-					type="email"
-					required
-					placeholder="you@example.com"
-					class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-				/>
-			</div>
-			<div>
-				<label class="mb-1 block text-xs font-medium text-gray-600" for="password">Password</label>
-				<input
-					id="password"
-					name="password"
-					type="password"
-					required
-					placeholder="••••••••"
-					class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-				/>
-			</div>
-			<button
-				type="submit"
-				class="w-full rounded-lg bg-gray-900 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-gray-700"
-			>
-				Sign in
-			</button>
-		</form>
 	{:else}
-		<form method="post" action="?/signUpEmail" use:enhance class="space-y-3">
+		<form onsubmit={sendMagicLink} class="space-y-3">
 			<div>
-				<label class="mb-1 block text-xs font-medium text-gray-600" for="signup-name">Name</label>
+				<label class="mb-1 block text-xs font-medium text-gray-600" for="magic-email">Email</label>
 				<input
-					id="signup-name"
-					name="name"
-					type="text"
-					required
-					placeholder="Your name"
-					class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-				/>
-			</div>
-			<div>
-				<label class="mb-1 block text-xs font-medium text-gray-600" for="signup-email">Email</label>
-				<input
-					id="signup-email"
-					name="email"
+					id="magic-email"
 					type="email"
 					required
+					bind:value={magicEmail}
 					placeholder="you@example.com"
 					class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
 				/>
 			</div>
-			<div>
-				<label class="mb-1 block text-xs font-medium text-gray-600" for="signup-password">Password</label>
-				<input
-					id="signup-password"
-					name="password"
-					type="password"
-					required
-					placeholder="••••••••"
-					class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-				/>
-			</div>
+			{#if magicError}
+				<div class="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{magicError}</div>
+			{/if}
 			<button
 				type="submit"
-				class="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
+				disabled={loading}
+				class="w-full rounded-lg bg-gray-900 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-gray-700 disabled:opacity-60"
 			>
-				Create account
+				{loading ? 'Sending…' : 'Send sign-in link'}
 			</button>
 		</form>
 	{/if}

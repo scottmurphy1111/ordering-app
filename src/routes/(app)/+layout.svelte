@@ -5,17 +5,18 @@
 	import { afterNavigate } from '$app/navigation';
 	import { signOut } from '$lib/auth-client';
 	import Icon from '@iconify/svelte';
+	import AppTour from '$lib/components/AppTour.svelte';
 
 	let { data, children }: { data: LayoutData; children: import('svelte').Snippet } = $props();
 
 	let sidebarOpen = $state(false);
 
 	const navItems = [
-		{ href: '/dashboard', label: 'Overview', icon: 'mdi:view-dashboard-outline' },
-		{ href: '/dashboard/orders', label: 'Orders', icon: 'mdi:clipboard-list-outline' },
-		{ href: '/dashboard/menu', label: 'Menu', icon: 'mdi:silverware-fork-knife' },
-		{ href: '/dashboard/analytics', label: 'Analytics', icon: 'mdi:chart-bar' },
-		{ href: '/dashboard/settings', label: 'Settings', icon: 'mdi:cog-outline' }
+		{ href: '/dashboard', label: 'Overview', icon: 'mdi:view-dashboard-outline', tour: 'overview' },
+		{ href: '/dashboard/orders', label: 'Orders', icon: 'mdi:clipboard-list-outline', tour: 'orders' },
+		{ href: '/dashboard/menu', label: 'Menu', icon: 'mdi:silverware-fork-knife', tour: 'menu' },
+		{ href: '/dashboard/analytics', label: 'Analytics', icon: 'mdi:chart-bar', tour: 'analytics' },
+		{ href: '/dashboard/settings', label: 'Settings', icon: 'mdi:cog-outline', tour: 'settings' }
 	];
 
 	const exactMatch = new Set(['/dashboard']);
@@ -76,6 +77,7 @@
 			{#each navItems as item (item.href)}
 				<a
 					href={resolve(item.href as `/${string}`)}
+					data-tour={item.tour}
 					class="flex items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium transition-colors
 						{isActive(item.href)
 						? 'bg-green-600 text-white'
@@ -89,13 +91,15 @@
 
 		<!-- User + Switch Tenant -->
 		<div class="space-y-2 border-t border-gray-700 px-4 py-3">
-			<a
-				href={resolve('/tenants')}
-				class="flex items-center gap-1.5 text-xs text-gray-400 transition-colors hover:text-white"
-			>
-				<Icon icon="mdi:swap-horizontal" class="h-3.5 w-3.5" />
-				Switch tenant
-			</a>
+			{#if data.hasMultipleTenants}
+				<a
+					href={resolve('/tenants')}
+					class="flex items-center gap-1.5 text-xs text-gray-400 transition-colors hover:text-white"
+				>
+					<Icon icon="mdi:swap-horizontal" class="h-3.5 w-3.5" />
+					Switch tenant
+				</a>
+			{/if}
 			<a
 				href={resolve('/dashboard/settings/profile')}
 				class="flex items-center gap-1.5 text-xs text-gray-400 transition-colors hover:text-white"
@@ -157,3 +161,5 @@
 		</footer>
 	</main>
 </div>
+
+<AppTour />

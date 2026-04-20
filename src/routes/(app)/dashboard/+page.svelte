@@ -19,6 +19,7 @@
 		<h1 class="text-2xl font-bold text-gray-900">Overview</h1>
 		{#if data.tenant?.slug}
 			<a
+				data-tour="view-menu"
 				href={resolve(`/${data.tenant.slug}/menu`)}
 				target="_blank"
 				rel="noopener noreferrer"
@@ -51,8 +52,7 @@
 			{#if data.stats.pendingOrders > 0}
 				<p class="mt-1 text-xs text-yellow-600">{data.stats.pendingOrders} pending</p>
 			{/if}
-			<a href={resolve('/dashboard/orders')} class="mt-2 block text-xs text-green-600 hover:underline">View →</a
-			>
+			<a href={resolve('/dashboard/orders')} class="mt-2 inline-flex items-center gap-0.5 text-xs text-green-600 hover:underline">View <Icon icon="mdi:chevron-right" class="h-3 w-3" /></a>
 		</div>
 		<div class="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
 			<p class="text-xs font-medium tracking-wide text-gray-500 uppercase">Revenue</p>

@@ -1,5 +1,8 @@
 import type { LayoutServerLoad } from './$types';
 import { redirect } from '@sveltejs/kit';
+import { db } from '$lib/server/db';
+import { eq } from 'drizzle-orm';
+import { tenantUsers } from '$lib/server/db/schema';
 
 export const load: LayoutServerLoad = async ({ locals, url }) => {
 	// Require authentication
@@ -13,9 +16,12 @@ export const load: LayoutServerLoad = async ({ locals, url }) => {
 		throw redirect(303, '/tenants');
 	}
 
+	const tenantCount = await db.$count(tenantUsers, eq(tenantUsers.userId, locals.user.id));
+
 	return {
 		user: locals.user,
 		tenant: locals.tenant ?? null,
-		tenantId: locals.tenantId ?? null
+		tenantId: locals.tenantId ?? null,
+		hasMultipleTenants: tenantCount > 1
 	};
 };

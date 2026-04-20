@@ -1,13 +1,19 @@
 import type { PageServerLoad, Actions } from './$types';
 import { fail, redirect } from '@sveltejs/kit';
 import { db } from '$lib/server/db';
-import { eq, and } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 import { tenant, tenantUsers } from '$lib/server/db/schema';
+
+function canCreateTenant(isInternal: boolean, userTenants: Array<{ role: string; subscriptionTier: string | null }>) {
+	if (isInternal) return true;
+	if (userTenants.length === 0) return true;
+	// Must own a Pro tenant to create additional tenants
+	return userTenants.some((t) => t.role === 'owner' && t.subscriptionTier === 'pro');
+}
 
 export const load: PageServerLoad = async ({ locals }) => {
 	const userId = locals.user!.id;
 
-	// Get all tenants the current user belongs to
 	const userTenants = await db
 		.select({
 			id: tenant.id,
@@ -16,6 +22,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 			type: tenant.type,
 			isActive: tenant.isActive,
 			logoUrl: tenant.logoUrl,
+			subscriptionTier: tenant.subscriptionTier,
 			role: tenantUsers.role,
 			createdAt: tenant.createdAt
 		})
@@ -23,8 +30,9 @@ export const load: PageServerLoad = async ({ locals }) => {
 		.innerJoin(tenant, eq(tenantUsers.tenantId, tenant.id))
 		.where(eq(tenantUsers.userId, userId));
 
-	const canCreate = locals.user!.isInternal || userTenants.some((t) => t.role === 'owner');
-	return { tenants: userTenants, isInternal: locals.user!.isInternal, canCreate };
+	const isInternal = locals.user!.isInternal;
+	const canCreate = canCreateTenant(isInternal, userTenants);
+	return { tenants: userTenants, isInternal, canCreate };
 };
 
 export const actions: Actions = {
@@ -33,11 +41,14 @@ export const actions: Actions = {
 		const isInternal = locals.user!.isInternal;
 
 		if (!isInternal) {
-			const ownerRecord = await db.query.tenantUsers.findFirst({
-				where: and(eq(tenantUsers.userId, userId), eq(tenantUsers.role, 'owner')),
-				columns: { tenantId: true }
-			});
-			if (!ownerRecord) return fail(403, { error: 'Only owners and internal users can create tenants' });
+			const memberships = await db
+				.select({ role: tenantUsers.role, subscriptionTier: tenant.subscriptionTier })
+				.from(tenantUsers)
+				.innerJoin(tenant, eq(tenantUsers.tenantId, tenant.id))
+				.where(eq(tenantUsers.userId, userId));
+			if (!canCreateTenant(false, memberships)) {
+				return fail(403, { error: 'Upgrade to the Pro plan to create additional tenants.' });
+			}
 		}
 
 		const formData = await request.formData();

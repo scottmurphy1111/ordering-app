@@ -2,6 +2,7 @@
 	import { enhance } from '$app/forms';
 	import { SvelteMap } from 'svelte/reactivity';
 	import type { PageData, ActionData } from './$types';
+	import Icon from '@iconify/svelte';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
@@ -32,9 +33,9 @@
 	<div class="flex items-center gap-3">
 		<a
 			href="/dashboard/menu/categories"
-			class="text-sm text-gray-500 hover:text-gray-800 transition-colors"
+			class="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-800 transition-colors"
 		>
-			← Categories
+			<Icon icon="mdi:chevron-left" class="h-4 w-4" /> Categories
 		</a>
 		<span class="text-gray-300">/</span>
 		<h1 class="text-2xl font-bold text-gray-900">{data.category.name}</h1>
