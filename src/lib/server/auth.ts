@@ -14,7 +14,11 @@ const baseURL = env.ORIGIN || env.URL || env.DEPLOY_PRIME_URL;
 
 export const auth = betterAuth({
 	baseURL,
-	trustedOrigins: [baseURL].filter((s): s is string => Boolean(s)),
+	trustedOrigins: [
+		baseURL,
+		'https://getorderlocal.com',
+		'https://order-local.netlify.app'
+	].filter((s): s is string => Boolean(s)),
 	secret: env.BETTER_AUTH_SECRET,
 	database: drizzleAdapter(db, { provider: 'pg' }),
 

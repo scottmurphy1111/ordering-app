@@ -7,7 +7,7 @@
 
 	async function signInWithGoogle() {
 		loading = true;
-		await signIn.social({ provider: 'google', callbackURL: '/tenants' });
+		await signIn.social({ provider: 'google', callbackURL: `${window.location.origin}/tenants` });
 	}
 
 	async function sendMagicLink(e: SubmitEvent) {
@@ -17,7 +17,7 @@
 		magicError = null;
 		const { error } = await authClient.signIn.magicLink({
 			email: magicEmail,
-			callbackURL: '/tenants'
+			callbackURL: `${window.location.origin}/tenants`
 		});
 		loading = false;
 		if (error) {
