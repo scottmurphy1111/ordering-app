@@ -1,8 +1,24 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
+	import { invalidate } from '$app/navigation';
 	import type { PageData } from './$types';
 	import { resolve } from '$app/paths';
 	import Icon from '@iconify/svelte';
+
 	let { data }: { data: PageData } = $props();
+
+	onMount(() => {
+		let interval: ReturnType<typeof setInterval> | null = null;
+		function start() {
+			if (!interval) interval = setInterval(() => invalidate('app:overview'), 15_000);
+		}
+		function stop() {
+			if (interval) { clearInterval(interval); interval = null; }
+		}
+		start();
+		document.addEventListener('visibilitychange', () => document.hidden ? stop() : start());
+		return () => { stop(); document.removeEventListener('visibilitychange', start); };
+	});
 
 	const statusColors: Record<string, string> = {
 		received: 'bg-blue-100 text-blue-700',
@@ -85,7 +101,16 @@
 	<!-- Recent orders -->
 	{#if data.recentOrders.length > 0}
 		<div>
-			<h2 class="mb-3 text-base font-semibold text-gray-800">Recent orders</h2>
+			<div class="mb-3 flex items-center gap-2">
+			<h2 class="text-base font-semibold text-gray-800">Recent orders</h2>
+			<span class="flex items-center gap-1.5 text-xs text-gray-400">
+				<span class="relative flex h-2 w-2">
+					<span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-400 opacity-75"></span>
+					<span class="relative inline-flex h-2 w-2 rounded-full bg-green-500"></span>
+				</span>
+				Live
+			</span>
+		</div>
 			<div class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
 				<table class="w-full text-sm">
 					<thead class="border-b border-gray-200 bg-gray-50">

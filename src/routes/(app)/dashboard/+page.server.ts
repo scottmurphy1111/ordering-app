@@ -1,9 +1,10 @@
 import type { PageServerLoad } from './$types';
 import { db } from '$lib/server/db';
-import { eq, sql, and } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import { menuItems, menuCategories, orders } from '$lib/server/db/schema';
 
-export const load: PageServerLoad = async ({ locals }) => {
+export const load: PageServerLoad = async ({ locals, depends }) => {
+	depends('app:overview');
 	const tenantId = locals.tenantId!;
 
 	const [itemCount, categoryCount, orderStats] = await Promise.all([

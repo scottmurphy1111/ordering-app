@@ -10,7 +10,8 @@ import { orderReadyEmail } from '$lib/server/email/templates/orderReady';
 import { orderCancelledEmail } from '$lib/server/email/templates/orderCancelled';
 import { orderRefundedEmail } from '$lib/server/email/templates/orderRefunded';
 
-export const load: PageServerLoad = async ({ locals, url }) => {
+export const load: PageServerLoad = async ({ locals, url, depends }) => {
+	depends('app:orders');
 	const tenantId = locals.tenantId!;
 	const statusFilter = url.searchParams.get('status') ?? '';
 
