@@ -7,7 +7,7 @@ import { eq, and, sql } from 'drizzle-orm';
 import { tenant } from '$lib/server/db/schema';
 import { orders, orderItems } from '$lib/server/db/orders';
 import { promoCodes } from '$lib/server/db/promos';
-import { calcDiscount } from '../validate-promo/+server';
+import { calcDiscount } from '$lib/server/promo';
 import type { CartItem } from '$lib/cart.svelte';
 
 function getStripe(secretKey: string) {

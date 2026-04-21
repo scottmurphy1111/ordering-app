@@ -3,11 +3,7 @@ import type { RequestHandler } from './$types';
 import { db } from '$lib/server/db';
 import { eq, and } from 'drizzle-orm';
 import { promoCodes } from '$lib/server/db/schema';
-
-export function calcDiscount(type: string, amount: number, subtotal: number): number {
-	if (type === 'percent') return Math.round(subtotal * (amount / 100));
-	return Math.min(amount, subtotal); // flat: never exceed subtotal
-}
+import { calcDiscount } from '$lib/server/promo';
 
 export const POST: RequestHandler = async ({ request, locals }) => {
 	if (!locals.tenantId) throw error(401, 'Unauthorized');
