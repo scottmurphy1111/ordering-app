@@ -7,10 +7,16 @@
 
 	let { data }: { data: PageData } = $props();
 
+	let lastUpdated = $state(new Date());
+
 	onMount(() => {
 		let interval: ReturnType<typeof setInterval> | null = null;
+		function refresh() {
+			invalidate('app:overview');
+			lastUpdated = new Date();
+		}
 		function start() {
-			if (!interval) interval = setInterval(() => invalidate('app:overview'), 15_000);
+			if (!interval) interval = setInterval(refresh, 15_000);
 		}
 		function stop() {
 			if (interval) { clearInterval(interval); interval = null; }
@@ -108,7 +114,7 @@
 					<span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-400 opacity-75"></span>
 					<span class="relative inline-flex h-2 w-2 rounded-full bg-green-500"></span>
 				</span>
-				Live
+				Live · updated {lastUpdated.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
 			</span>
 		</div>
 			<div class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
