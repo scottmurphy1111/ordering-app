@@ -1,25 +1,48 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
+	import { invalidate } from '$app/navigation';
 	import type { PageData } from './$types';
 	import { resolve } from '$app/paths';
 	import Icon from '@iconify/svelte';
 
 	let { data }: { data: PageData } = $props();
 
-	const isPaid = $derived(data.order.paymentStatus === 'paid');
-	const isPending = $derived(data.order.paymentStatus === 'pending');
+	const order = $derived(data.order);
+	const isPaid = $derived(order.paymentStatus === 'paid');
+	const isCancelled = $derived(order.status === 'cancelled');
+	const isFulfilled = $derived(order.status === 'fulfilled');
+	const isDone = $derived(isFulfilled || isCancelled);
 
-	const statusLabels: Record<string, string> = {
-		received: 'Order received',
-		confirmed: 'Confirmed',
-		preparing: 'Being prepared',
-		ready: 'Ready for pickup',
-		fulfilled: 'Fulfilled',
-		cancelled: 'Cancelled'
-	};
+	// Status stepper — only shown for paid orders
+	const STEPS = [
+		{ key: 'received',  label: 'Received',  icon: 'mdi:receipt-text-outline' },
+		{ key: 'confirmed', label: 'Confirmed', icon: 'mdi:check-circle-outline' },
+		{ key: 'preparing', label: 'Preparing', icon: 'mdi:chef-hat' },
+		{ key: 'ready',     label: 'Ready!',    icon: 'mdi:bell-ring-outline' },
+		{ key: 'fulfilled', label: 'Done',      icon: 'mdi:flag-checkered' }
+	];
+	const stepIndex = $derived(STEPS.findIndex(s => s.key === order.status));
+
+	const scheduledFor = $derived(order.scheduledFor ? new Date(order.scheduledFor) : null);
+	const scheduledLabel = $derived(
+		scheduledFor
+			? scheduledFor.toLocaleString(undefined, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })
+			: null
+	);
+
+	// ── Live polling ─────────────────────────────────────────────────────────
+	// Poll every 15s while order is active; stop when done or cancelled
+	onMount(() => {
+		if (isDone || !isPaid) return;
+		const interval = setInterval(() => {
+			invalidate('app:order-status');
+		}, 15_000);
+		return () => clearInterval(interval);
+	});
 </script>
 
 <svelte:head>
-	<title>Order {data.order.orderNumber} — {data.tenant.name}</title>
+	<title>Order {order.orderNumber} — {data.tenant.name}</title>
 </svelte:head>
 
 <div class="min-h-screen">
@@ -36,17 +59,18 @@
 		</div>
 	</header>
 
-	<main class="mx-auto max-w-lg space-y-5 px-4 py-8">
-		<!-- Status card -->
+	<main class="mx-auto max-w-lg space-y-4 px-4 py-8">
+
+		<!-- Payment / confirmation card -->
 		<div
 			class="rounded-xl border bg-white p-6 text-center shadow-sm"
 			style={isPaid
 				? 'border-color: var(--primary-color);'
-				: isPending
+				: order.paymentStatus === 'pending'
 					? 'border-color: #fde68a;'
 					: 'border-color: #fca5a5;'}
 		>
-			{#if isPaid}
+			{#if isPaid && !isCancelled}
 				<div class="mb-3 flex justify-center">
 					<div
 						class="flex h-14 w-14 items-center justify-center rounded-full"
@@ -56,52 +80,112 @@
 					</div>
 				</div>
 				<h1 class="text-xl font-bold text-gray-900">Payment confirmed!</h1>
-				<p class="mt-1 text-sm text-gray-500">Thank you, {data.order.customerName}.</p>
-			{:else if isPending}
+				<p class="mt-1 text-sm text-gray-500">Thank you{order.customerName ? `, ${order.customerName}` : ''}. Your order is in.</p>
+			{:else if isCancelled}
+				<div class="mb-3 flex justify-center">
+					<div class="flex h-14 w-14 items-center justify-center rounded-full bg-red-50">
+						<Icon icon="mdi:close-circle" class="h-8 w-8 text-red-400" />
+					</div>
+				</div>
+				<h1 class="text-xl font-bold text-gray-900">Order cancelled</h1>
+				<p class="mt-1 text-sm text-gray-500">This order has been cancelled. Contact the vendor with any questions.</p>
+			{:else if order.paymentStatus === 'pending'}
 				<div class="mb-3 flex justify-center">
 					<div class="flex h-14 w-14 items-center justify-center rounded-full bg-yellow-50">
 						<Icon icon="mdi:clock-outline" class="h-8 w-8 text-yellow-500" />
 					</div>
 				</div>
 				<h1 class="text-xl font-bold text-gray-900">Awaiting payment</h1>
-				<p class="mt-1 text-sm text-gray-500">
-					We'll update this page once your payment is confirmed.
-				</p>
+				<p class="mt-1 text-sm text-gray-500">We'll update this page once your payment is confirmed.</p>
 			{:else}
 				<div class="mb-3 flex justify-center">
 					<div class="flex h-14 w-14 items-center justify-center rounded-full bg-red-50">
-						<Icon icon="mdi:close-circle" class="h-8 w-8 text-red-400" />
+						<Icon icon="mdi:alert-circle-outline" class="h-8 w-8 text-red-400" />
 					</div>
 				</div>
 				<h1 class="text-xl font-bold text-gray-900">Payment issue</h1>
 				<p class="mt-1 text-sm text-gray-500">Your payment could not be processed.</p>
 			{/if}
 
-			<div class="mt-4 flex flex-wrap items-center justify-center gap-3">
-				<span class="font-mono text-sm font-semibold text-gray-700">{data.order.orderNumber}</span>
-				<span
-					class="rounded-full px-2.5 py-0.5 text-xs font-medium"
-					style="background-color: color-mix(in srgb, var(--secondary-color) 15%, white); color: var(--secondary-color);"
-				>
-					{statusLabels[data.order.status] ?? data.order.status}
-				</span>
+			<div class="mt-3 flex flex-wrap items-center justify-center gap-2">
+				<span class="font-mono text-sm font-semibold text-gray-700">{order.orderNumber}</span>
 				<span class="rounded-full bg-gray-100 px-2.5 py-0.5 text-xs text-gray-500 capitalize">
-					{data.order.type}
+					{order.type}
 				</span>
+				{#if scheduledLabel}
+					<span class="flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-medium text-amber-700">
+						<Icon icon="mdi:calendar-clock" class="h-3 w-3" /> {scheduledLabel}
+					</span>
+				{/if}
 			</div>
 		</div>
 
-		<!-- Order items -->
+		<!-- Status stepper (paid, non-cancelled orders only) -->
+		{#if isPaid && !isCancelled}
+			<div class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+				<div class="mb-4 flex items-center justify-between">
+					<h2 class="text-sm font-semibold text-gray-800">Order status</h2>
+					{#if !isDone}
+						<span class="flex items-center gap-1 text-xs text-gray-400">
+							<Icon icon="mdi:refresh" class="h-3.5 w-3.5" /> Auto-refreshing
+						</span>
+					{/if}
+				</div>
+
+				<div class="relative flex items-start justify-between">
+					<!-- connector line behind steps -->
+					<div class="absolute top-5 left-0 right-0 h-0.5 bg-gray-200" aria-hidden="true">
+						<div
+							class="h-full transition-all duration-500"
+							style="background-color: var(--primary-color); width: {stepIndex >= 0 ? `${(stepIndex / (STEPS.length - 1)) * 100}%` : '0%'};"
+						></div>
+					</div>
+
+					{#each STEPS as step, i (step.key)}
+						{@const done = i < stepIndex}
+						{@const active = i === stepIndex}
+						<div class="relative z-10 flex flex-col items-center gap-1.5" style="width: {100 / STEPS.length}%;">
+							<div
+								class="flex h-10 w-10 items-center justify-center rounded-full border-2 transition-colors"
+								style={done || active
+									? `background-color: var(--primary-color); border-color: var(--primary-color); color: var(--accent-color);`
+									: 'background-color: white; border-color: #e5e7eb; color: #9ca3af;'}
+							>
+								<Icon icon={step.icon} class="h-5 w-5" />
+							</div>
+							<span
+								class="text-center text-xs leading-tight"
+								style={active ? 'color: var(--primary-color); font-weight: 600;' : done ? 'color: #374151; font-weight: 500;' : 'color: #9ca3af;'}
+							>
+								{step.label}
+							</span>
+						</div>
+					{/each}
+				</div>
+
+				{#if order.status === 'ready'}
+					<div
+						class="mt-5 rounded-lg px-4 py-3 text-center text-sm font-semibold"
+						style="background-color: color-mix(in srgb, var(--primary-color) 10%, white); color: var(--primary-color);"
+					>
+						<Icon icon="mdi:bell-ring" class="inline h-4 w-4 mr-1" />
+						Your order is ready! Head over to pick it up.
+					</div>
+				{:else if order.status === 'preparing'}
+					<p class="mt-4 text-center text-xs text-gray-400">Hang tight — your order is being prepared.</p>
+				{:else if order.status === 'received'}
+					<p class="mt-4 text-center text-xs text-gray-400">Your order has been received and is awaiting confirmation.</p>
+				{/if}
+			</div>
+		{/if}
+
+		<!-- Items -->
 		<div class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
-			<div class="border-b px-4 py-3" style="border-color: color-mix(in srgb, var(--primary-color) 20%, #e5e7eb);">
+			<div class="border-b border-gray-100 px-4 py-3">
 				<h2 class="text-sm font-semibold text-gray-800">Items ordered</h2>
 			</div>
 			{#each data.items as item, i (item.id)}
-				<div
-					class="flex items-start justify-between gap-3 px-4 py-3 {i > 0
-						? 'border-t border-gray-100'
-						: ''}"
-				>
+				<div class="flex items-start justify-between gap-3 px-4 py-3 {i > 0 ? 'border-t border-gray-100' : ''}">
 					<div class="min-w-0 flex-1">
 						<p class="text-sm font-medium text-gray-900">{item.name}</p>
 						{#if Array.isArray(item.selectedModifiers) && (item.selectedModifiers as { name: string }[]).length > 0}
@@ -112,9 +196,7 @@
 					</div>
 					<div class="shrink-0 text-right">
 						<p class="text-sm text-gray-700">×{item.quantity}</p>
-						<p class="text-xs text-gray-400">
-							${((item.unitPrice * item.quantity) / 100).toFixed(2)}
-						</p>
+						<p class="text-xs text-gray-400">${((item.unitPrice * item.quantity) / 100).toFixed(2)}</p>
 					</div>
 				</div>
 			{/each}
@@ -124,16 +206,25 @@
 		<div class="space-y-1.5 rounded-xl border border-gray-200 bg-white p-4 text-sm shadow-sm">
 			<div class="flex justify-between text-gray-600">
 				<span>Subtotal</span>
-				<span>${(data.order.subtotal / 100).toFixed(2)}</span>
+				<span>${(order.subtotal / 100).toFixed(2)}</span>
 			</div>
 			<div class="flex justify-between text-gray-600">
 				<span>Tax</span>
-				<span>${(data.order.tax / 100).toFixed(2)}</span>
+				<span>${(order.tax / 100).toFixed(2)}</span>
 			</div>
-			{#if data.order.tip && data.order.tip > 0}
+			{#if order.tip && order.tip > 0}
 				<div class="flex justify-between text-gray-600">
 					<span>Tip</span>
-					<span>${(data.order.tip / 100).toFixed(2)}</span>
+					<span>${(order.tip / 100).toFixed(2)}</span>
+				</div>
+			{/if}
+			{#if order.discount && order.discount > 0}
+				<div class="flex justify-between font-medium text-green-600">
+					<span class="flex items-center gap-1">
+						<Icon icon="mdi:ticket-percent-outline" class="h-3.5 w-3.5" />
+						Promo{order.promoCode ? ` (${order.promoCode})` : ''}
+					</span>
+					<span>−${(order.discount / 100).toFixed(2)}</span>
 				</div>
 			{/if}
 			<div
@@ -141,14 +232,13 @@
 				style="color: var(--primary-color);"
 			>
 				<span>Total</span>
-				<span>${(data.order.total / 100).toFixed(2)}</span>
+				<span>${(order.total / 100).toFixed(2)}</span>
 			</div>
 		</div>
 
-		{#if data.order.notes}
+		{#if order.notes}
 			<div class="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-600">
-				<span class="font-medium">Notes:</span>
-				{data.order.notes}
+				<span class="font-medium">Notes: </span>{order.notes}
 			</div>
 		{/if}
 

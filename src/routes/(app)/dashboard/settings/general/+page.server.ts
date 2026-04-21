@@ -15,7 +15,8 @@ export const load: PageServerLoad = async ({ locals }) => {
 			phone: true,
 			email: true,
 			website: true,
-			address: true
+			address: true,
+			settings: true
 		}
 	});
 
@@ -55,5 +56,30 @@ export const actions: Actions = {
 			.where(eq(tenant.id, tenantId));
 
 		return { success: true };
+	},
+
+	saveHours: async ({ request, locals }) => {
+		const tenantId = locals.tenantId!;
+		const formData = await request.formData();
+
+		const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+		const hours: Record<string, { open: string; close: string; closed?: boolean }> = {};
+		for (const day of days) {
+			const closed = formData.get(`${day}_closed`) === 'on';
+			const open = formData.get(`${day}_open`)?.toString() ?? '09:00';
+			const close = formData.get(`${day}_close`)?.toString() ?? '17:00';
+			hours[day] = closed ? { open, close, closed: true } : { open, close };
+		}
+
+		const record = await db.query.tenant.findFirst({
+			where: eq(tenant.id, tenantId),
+			columns: { settings: true }
+		});
+		const current = (record?.settings ?? {}) as Record<string, unknown>;
+		await db.update(tenant)
+			.set({ settings: { ...current, hours }, updatedAt: new Date() })
+			.where(eq(tenant.id, tenantId));
+
+		return { hoursSuccess: true };
 	}
 };

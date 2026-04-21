@@ -2,6 +2,7 @@
 	import { enhance } from '$app/forms';
 	import type { PageData, ActionData } from './$types';
 	import { resolve } from '$app/paths';
+	import Icon from '@iconify/svelte';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
@@ -82,6 +83,12 @@
 							</div>
 							{#if order.customerName}
 								<p class="mt-1 text-sm text-gray-600">{order.customerName}{order.customerPhone ? ` · ${order.customerPhone}` : ''}</p>
+							{/if}
+							{#if order.scheduledFor}
+								<p class="mt-1 flex items-center gap-1 text-xs text-amber-600 font-medium">
+									<Icon icon="mdi:calendar-clock" class="h-3.5 w-3.5 shrink-0" />
+									Scheduled: {new Date(order.scheduledFor).toLocaleString([], { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
+								</p>
 							{/if}
 							{#if order.notes}
 								<p class="mt-1 text-xs text-gray-400 italic">"{order.notes}"</p>

@@ -8,6 +8,8 @@
 	import AppTour from '$lib/components/AppTour.svelte';
 	import { tourState } from '$lib/tour-state.svelte';
 
+	import { onMount } from 'svelte';
+
 	let { data, children }: { data: LayoutData; children: import('svelte').Snippet } = $props();
 
 	let sidebarOpen = $state(false);
@@ -17,11 +19,71 @@
 		if (tourState.openSidebar) sidebarOpen = true;
 	});
 
+	// ── New order alert ──────────────────────────────────────────────────────
+	let lastKnownOrderId = $state(0);
+	let newOrderToast = $state<{ orderNumber: string; customerName: string | null; total: number } | null>(null);
+	let toastTimer: ReturnType<typeof setTimeout> | null = null;
+
+	function playChime() {
+		try {
+			const ctx = new AudioContext();
+			const frequencies = [523, 659, 784]; // C5, E5, G5
+			frequencies.forEach((freq, i) => {
+				const osc = ctx.createOscillator();
+				const gain = ctx.createGain();
+				osc.connect(gain);
+				gain.connect(ctx.destination);
+				osc.frequency.value = freq;
+				osc.type = 'sine';
+				const t = ctx.currentTime + i * 0.15;
+				gain.gain.setValueAtTime(0, t);
+				gain.gain.linearRampToValueAtTime(0.3, t + 0.02);
+				gain.gain.exponentialRampToValueAtTime(0.001, t + 0.5);
+				osc.start(t);
+				osc.stop(t + 0.5);
+			});
+		} catch { /* AudioContext not available */ }
+	}
+
+	function showToast(order: { orderNumber: string; customerName: string | null; total: number }) {
+		newOrderToast = order;
+		if (toastTimer) clearTimeout(toastTimer);
+		toastTimer = setTimeout(() => { newOrderToast = null; }, 8000);
+	}
+
+	async function pollOrders() {
+		try {
+			const res = await fetch('/api/orders-latest');
+			if (!res.ok) return;
+			const { latestId, order } = await res.json();
+			if (lastKnownOrderId > 0 && latestId > lastKnownOrderId && order) {
+				playChime();
+				showToast(order);
+				if ('Notification' in window && Notification.permission === 'granted') {
+					new Notification('New order', {
+						body: `${order.orderNumber}${order.customerName ? ` · ${order.customerName}` : ''} · $${(order.total / 100).toFixed(2)}`,
+						icon: '/favicon.png'
+					});
+				}
+			}
+			lastKnownOrderId = latestId;
+		} catch { /* ignore network errors */ }
+	}
+
+	onMount(() => {
+		pollOrders(); // seed lastKnownOrderId immediately (no alert on first load)
+		const interval = setInterval(pollOrders, 30_000);
+		if ('Notification' in window && Notification.permission === 'default') {
+			Notification.requestPermission();
+		}
+		return () => clearInterval(interval);
+	});
+
 	const navItems = [
 		{ href: '/dashboard', label: 'Overview', icon: 'mdi:view-dashboard-outline', tour: 'overview' },
 		{ href: '/dashboard/orders', label: 'Orders', icon: 'mdi:clipboard-list-outline', tour: 'orders' },
 		{ href: '/dashboard/menu', label: 'Menu', icon: 'mdi:silverware-fork-knife', tour: 'menu' },
-		{ href: '/dashboard/analytics', label: 'Analytics', icon: 'mdi:chart-bar', tour: 'analytics' },
+{ href: '/dashboard/analytics', label: 'Analytics', icon: 'mdi:chart-bar', tour: 'analytics' },
 		{ href: '/dashboard/settings', label: 'Settings', icon: 'mdi:cog-outline', tour: 'settings' }
 	];
 
@@ -167,5 +229,30 @@
 		</footer>
 	</main>
 </div>
+
+<!-- New order toast -->
+{#if newOrderToast}
+	<div class="fixed bottom-5 right-5 z-300 flex items-start gap-3 rounded-xl border border-green-200 bg-white px-4 py-3.5 shadow-xl">
+		<div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-green-100">
+			<Icon icon="mdi:bell-ring-outline" class="h-5 w-5 text-green-600" />
+		</div>
+		<div class="min-w-0">
+			<p class="text-sm font-semibold text-gray-900">New order!</p>
+			<p class="text-xs text-gray-500">
+				{newOrderToast.orderNumber}{newOrderToast.customerName ? ` · ${newOrderToast.customerName}` : ''} · ${(newOrderToast.total / 100).toFixed(2)}
+			</p>
+			<a
+				href={resolve('/dashboard/orders')}
+				onclick={() => { newOrderToast = null; }}
+				class="mt-1 inline-block text-xs font-medium text-green-600 hover:text-green-700"
+			>
+				View orders
+			</a>
+		</div>
+		<button onclick={() => { newOrderToast = null; }} class="shrink-0 text-gray-300 hover:text-gray-500">
+			<Icon icon="mdi:close" class="h-4 w-4" />
+		</button>
+	</div>
+{/if}
 
 <AppTour />

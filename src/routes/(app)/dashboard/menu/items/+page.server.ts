@@ -45,6 +45,18 @@ export const load: PageServerLoad = async (event) => {
 };
 
 export const actions: Actions = {
+	toggleAvailable: async ({ request, locals }) => {
+		const tenantId = locals.tenantId!;
+		const formData = await request.formData();
+		const id = parseInt(formData.get('id')?.toString() ?? '');
+		const available = formData.get('available') === 'true';
+		if (isNaN(id)) return fail(400, { error: 'Invalid ID' });
+		await db.update(menuItems)
+			.set({ available, updatedAt: new Date() })
+			.where(and(eq(menuItems.id, id), eq(menuItems.tenantId, tenantId)));
+		return { toggled: true };
+	},
+
 	delete: async ({ request, locals }) => {
 		const tenantId = locals.tenantId!;
 		const formData = await request.formData();

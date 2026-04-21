@@ -5,7 +5,7 @@ import { menuItems, menuCategories } from '$lib/server/db/schema';
 
 export const load: PageServerLoad = async ({ locals, params }) => {
 	const tenantId = locals.tenantId!;
-	console.log('tenantId', tenantId);
+
 
 	const [categories, items] = await Promise.all([
 		db.query.menuCategories.findMany({
@@ -30,9 +30,6 @@ export const load: PageServerLoad = async ({ locals, params }) => {
 			}
 		})
 	]);
-
-	console.log('categories', categories);
-	console.log('items', items);
 
 	// Group items by category
 	const itemsByCategory = new Map<number | null, typeof items>();

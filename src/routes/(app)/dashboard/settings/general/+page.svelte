@@ -2,6 +2,7 @@
 	import { enhance } from '$app/forms';
 	import type { PageData, ActionData } from './$types';
 	import Icon from '@iconify/svelte';
+	import type { WeekHours } from '$lib/hours';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
@@ -12,6 +13,18 @@
 		zip?: string;
 		country?: string;
 	} | null);
+
+	const savedHours = $derived(((data.info as unknown as { settings?: { hours?: WeekHours } } | null)?.settings?.hours) ?? {});
+
+	const DAYS = [
+		{ key: 'monday', label: 'Monday' },
+		{ key: 'tuesday', label: 'Tuesday' },
+		{ key: 'wednesday', label: 'Wednesday' },
+		{ key: 'thursday', label: 'Thursday' },
+		{ key: 'friday', label: 'Friday' },
+		{ key: 'saturday', label: 'Saturday' },
+		{ key: 'sunday', label: 'Sunday' }
+	];
 
 	const businessTypes = [
 		{ value: 'quick_service', label: 'Quick service' },
@@ -205,6 +218,51 @@
 			>
 				Save changes
 			</button>
+		</div>
+	</form>
+
+	<!-- Operating hours — separate form/action -->
+	{#if form?.hoursSuccess}
+		<div class="mt-4 rounded-md border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">Hours saved.</div>
+	{/if}
+	<form method="post" action="?/saveHours" use:enhance class="mt-6">
+		<div class="rounded-xl border border-gray-200 bg-white shadow-sm">
+			<div class="border-b border-gray-100 px-5 py-4">
+				<h2 class="font-semibold text-gray-900">Operating hours</h2>
+				<p class="mt-0.5 text-xs text-gray-500">Customers will see open/closed status on your menu page. Leave all days unset to hide the status.</p>
+			</div>
+			<div class="divide-y divide-gray-100 px-5">
+				{#each DAYS as day (day.key)}
+					{@const h = savedHours[day.key]}
+					<div class="flex items-center gap-4 py-3">
+						<span class="w-24 shrink-0 text-sm font-medium text-gray-700">{day.label}</span>
+						<label class="flex items-center gap-1.5 text-sm text-gray-500">
+							<input type="checkbox" name="{day.key}_closed" class="h-4 w-4 rounded border-gray-300" checked={h?.closed ?? false} />
+							Closed
+						</label>
+						<div class="flex flex-1 items-center gap-2">
+							<input
+								type="time"
+								name="{day.key}_open"
+								value={h?.open ?? '09:00'}
+								class="rounded-md border border-gray-300 px-2 py-1.5 text-sm focus:border-green-500 focus:outline-none focus:ring-1 focus:ring-green-500"
+							/>
+							<span class="text-xs text-gray-400">to</span>
+							<input
+								type="time"
+								name="{day.key}_close"
+								value={h?.close ?? '21:00'}
+								class="rounded-md border border-gray-300 px-2 py-1.5 text-sm focus:border-green-500 focus:outline-none focus:ring-1 focus:ring-green-500"
+							/>
+						</div>
+					</div>
+				{/each}
+			</div>
+			<div class="border-t border-gray-100 px-5 py-4">
+				<button type="submit" class="rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-gray-700">
+					Save hours
+				</button>
+			</div>
 		</div>
 	</form>
 </div>

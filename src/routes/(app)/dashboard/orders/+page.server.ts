@@ -34,6 +34,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 			type: true,
 			createdAt: true,
 			notes: true,
+			scheduledFor: true,
 			stripePaymentIntentId: true
 		}
 	});

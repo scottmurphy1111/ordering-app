@@ -9,11 +9,13 @@ import { sendEmail } from '$lib/server/email';
 import { orderConfirmedEmail } from '$lib/server/email/templates/orderConfirmed';
 import { orderCancelledEmail } from '$lib/server/email/templates/orderCancelled';
 import { orderRefundedEmail } from '$lib/server/email/templates/orderRefunded';
+import { sendSms } from '$lib/server/sms';
+import { env } from '$env/dynamic/private';
 
 export const POST: RequestHandler = async ({ request, params }) => {
 	const tenantRecord = await db.query.tenant.findFirst({
 		where: eq(tenant.id, parseInt(params.tenantId)),
-		columns: { stripeSecretKey: true, stripeWebhookSecret: true, isActive: true, name: true, primaryColor: true }
+		columns: { stripeSecretKey: true, stripeWebhookSecret: true, isActive: true, name: true, primaryColor: true, slug: true }
 	});
 
 	if (!tenantRecord?.isActive) throw error(404, 'Tenant not found');
@@ -35,7 +37,7 @@ export const POST: RequestHandler = async ({ request, params }) => {
 		throw error(400, 'Invalid webhook signature');
 	}
 
-	const tenantCtx = { name: tenantRecord.name, primaryColor: tenantRecord.primaryColor ?? undefined };
+	const tenantCtx = { name: tenantRecord.name, primaryColor: tenantRecord.primaryColor ?? undefined, slug: tenantRecord.slug };
 
 	try {
 		await handleEvent(event, tenantCtx);
@@ -47,7 +49,11 @@ export const POST: RequestHandler = async ({ request, params }) => {
 	return json({ received: true });
 };
 
-type TenantCtx = { name: string; primaryColor?: string };
+type TenantCtx = { name: string; primaryColor?: string; slug: string };
+
+function orderUrl(tenantSlug: string, orderId: number) {
+	return `${env.ORIGIN}/${tenantSlug}/orders/${orderId}`;
+}
 
 async function handleEvent(event: Stripe.Event, tenant: TenantCtx) {
 	switch (event.type) {
@@ -77,6 +83,12 @@ async function handleEvent(event: Stripe.Event, tenant: TenantCtx) {
 					})
 				}).catch(console.error);
 			}
+			if (order?.customerPhone) {
+				await sendSms(
+					order.customerPhone,
+					`${tenant.name}: Order ${order.orderNumber} confirmed! We'll text you when it's ready. Track: ${orderUrl(tenant.slug, order.id)}`
+				).catch(console.error);
+			}
 			break;
 		}
 
@@ -100,6 +112,12 @@ async function handleEvent(event: Stripe.Event, tenant: TenantCtx) {
 						total: order.total
 					})
 				}).catch(console.error);
+			}
+			if (order?.customerPhone) {
+				await sendSms(
+					order.customerPhone,
+					`${tenant.name}: Your order ${order.orderNumber} has been cancelled.`
+				).catch(console.error);
 			}
 			break;
 		}
@@ -129,12 +147,19 @@ async function handleEvent(event: Stripe.Event, tenant: TenantCtx) {
 					})
 				}).catch(console.error);
 			}
+			if (order?.customerPhone) {
+				await sendSms(
+					order.customerPhone,
+					`${tenant.name}: Your refund for order ${order.orderNumber} has been processed.`
+				).catch(console.error);
+			}
 			break;
 		}
 
 		case 'checkout.session.completed': {
 			const session = event.data.object as Stripe.Checkout.Session;
 			const orderId = session.metadata?.orderId ? parseInt(session.metadata.orderId) : null;
+			const tenantSlug = session.metadata?.tenantSlug ?? '';
 			const intentId = session.payment_intent
 				? typeof session.payment_intent === 'string'
 					? session.payment_intent
@@ -178,6 +203,12 @@ async function handleEvent(event: Stripe.Event, tenant: TenantCtx) {
 						notes: order.notes
 					})
 				}).catch(console.error);
+			}
+			if (order?.customerPhone) {
+				await sendSms(
+					order.customerPhone,
+					`${tenant.name}: Order ${order.orderNumber} confirmed! We'll text you when it's ready. Track: ${orderUrl(tenantSlug, order.id)}`
+				).catch(console.error);
 			}
 			break;
 		}

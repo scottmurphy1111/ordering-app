@@ -39,7 +39,11 @@ export const orders = pgTable(
 		items: jsonb('items').notNull(), // snapshot of ordered items with selected modifiers for auditability
 		// Alternative: normalize into order_items table (see below)
 
+		discount: integer('discount').default(0),
+		promoCode: varchar('promo_code', { length: 50 }),
+
 		notes: text('notes'),
+		scheduledFor: timestamp('scheduled_for'),
 		estimatedReadyTime: timestamp('estimated_ready_time'),
 
 		stripePaymentIntentId: varchar('stripe_payment_intent_id', { length: 255 }), // for webhooks

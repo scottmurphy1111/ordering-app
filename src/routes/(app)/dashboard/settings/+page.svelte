@@ -34,6 +34,12 @@
 			description: 'Manage your subscription and billing details.'
 		},
 		{
+			href: '/dashboard/settings/promotions',
+			icon: 'mdi:ticket-percent-outline',
+			label: 'Promotions',
+			description: 'Create discount codes for customers to apply at checkout.'
+		},
+		{
 			href: '/dashboard/settings/resources',
 			icon: 'mdi:qrcode',
 			label: 'Resources',

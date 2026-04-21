@@ -552,9 +552,15 @@
 								{/if}
 							</td>
 							<td class="px-4 py-3">
-								<span class="rounded-full px-2 py-0.5 text-xs font-medium {item.available ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}">
-									{item.available ? 'Available' : 'Hidden'}
-								</span>
+								<form method="post" action="?/toggleAvailable" use:enhance={() => ({ update }) => update({ reset: false })}>
+									<input type="hidden" name="id" value={item.id} />
+									<input type="hidden" name="available" value={String(!item.available)} />
+									<button type="submit" class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium transition-colors
+										{item.available ? 'bg-green-100 text-green-700 hover:bg-red-50 hover:text-red-600' : 'bg-gray-100 text-gray-500 hover:bg-green-50 hover:text-green-700'}">
+										<Icon icon={item.available ? 'mdi:check-circle-outline' : 'mdi:close-circle-outline'} class="h-3.5 w-3.5" />
+										{item.available ? 'Available' : '86\'d'}
+									</button>
+								</form>
 							</td>
 							<td class="px-4 py-3">
 								<div class="flex items-center gap-3">

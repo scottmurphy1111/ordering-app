@@ -4,7 +4,8 @@ import { db } from '$lib/server/db';
 import { eq, and } from 'drizzle-orm';
 import { orders, orderItems } from '$lib/server/db/orders';
 
-export const load: PageServerLoad = async ({ locals, params }) => {
+export const load: PageServerLoad = async ({ locals, params, depends }) => {
+	depends('app:order-status');
 	const tenantId = locals.tenantId!;
 	const orderId = parseInt(params.orderId);
 

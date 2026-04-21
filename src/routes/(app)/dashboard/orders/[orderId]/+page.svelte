@@ -68,6 +68,12 @@
 			<p class="text-sm text-gray-400 mt-1">
 				{new Date(order.createdAt).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}
 			</p>
+			{#if order.scheduledFor}
+				<p class="mt-1.5 flex items-center gap-1.5 text-sm font-medium text-amber-600">
+					<Icon icon="mdi:calendar-clock" class="h-4 w-4 shrink-0" />
+					Scheduled for {new Date(order.scheduledFor).toLocaleString([], { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
+				</p>
+			{/if}
 		</div>
 		<p class="text-2xl font-bold text-gray-900">{formatCents(order.total)}</p>
 	</div>
@@ -131,6 +137,15 @@
 			{#if order.tip && order.tip > 0}
 				<div class="flex justify-between text-sm text-gray-500">
 					<span>Tip</span><span>{formatCents(order.tip)}</span>
+				</div>
+			{/if}
+			{#if order.discount && order.discount > 0}
+				<div class="flex justify-between text-sm font-medium text-green-600">
+					<span class="flex items-center gap-1">
+						<Icon icon="mdi:ticket-percent-outline" class="h-3.5 w-3.5" />
+						Promo{order.promoCode ? ` (${order.promoCode})` : ''}
+					</span>
+					<span>−{formatCents(order.discount)}</span>
 				</div>
 			{/if}
 			{#if order.deliveryFee && order.deliveryFee > 0}

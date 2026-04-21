@@ -9,6 +9,7 @@ import { sendEmail } from '$lib/server/email';
 import { orderReadyEmail } from '$lib/server/email/templates/orderReady';
 import { orderCancelledEmail } from '$lib/server/email/templates/orderCancelled';
 import { orderRefundedEmail } from '$lib/server/email/templates/orderRefunded';
+import { sendSms } from '$lib/server/sms';
 
 export const load: PageServerLoad = async ({ locals, params }) => {
 	const tenantId = locals.tenantId!;
@@ -38,24 +39,32 @@ export const actions: Actions = {
 			.where(and(eq(orders.id, id), eq(orders.tenantId, tenantId)))
 			.returning();
 
-		if (status === 'ready' && order?.customerEmail) {
+		if (status === 'ready' && (order?.customerEmail || order?.customerPhone)) {
 			const tenantRecord = await db.query.tenant.findFirst({
 				where: eq(tenant.id, tenantId),
-				columns: { name: true, primaryColor: true }
+				columns: { name: true, primaryColor: true, slug: true }
 			});
 			if (tenantRecord) {
-				await sendEmail({
-					to: order.customerEmail,
-					subject: `Your order is ready — ${tenantRecord.name}`,
-					html: orderReadyEmail({
-						tenantName: tenantRecord.name,
-						primaryColor: tenantRecord.primaryColor ?? undefined,
-						orderNumber: order.orderNumber,
-						customerName: order.customerName ?? 'there',
-						total: order.total,
-						orderType: order.type
-					})
-				}).catch(console.error);
+				if (order.customerEmail) {
+					await sendEmail({
+						to: order.customerEmail,
+						subject: `Your order is ready — ${tenantRecord.name}`,
+						html: orderReadyEmail({
+							tenantName: tenantRecord.name,
+							primaryColor: tenantRecord.primaryColor ?? undefined,
+							orderNumber: order.orderNumber,
+							customerName: order.customerName ?? 'there',
+							total: order.total,
+							orderType: order.type
+						})
+					}).catch(console.error);
+				}
+				if (order.customerPhone) {
+					await sendSms(
+						order.customerPhone,
+						`${tenantRecord.name}: Your order ${order.orderNumber} is ready for pickup!`
+					).catch(console.error);
+				}
 			}
 		}
 
@@ -74,23 +83,31 @@ export const actions: Actions = {
 			.where(and(eq(orders.id, id), eq(orders.tenantId, tenantId)))
 			.returning();
 
-		if (order?.customerEmail) {
+		if (order?.customerEmail || order?.customerPhone) {
 			const tenantRecord = await db.query.tenant.findFirst({
 				where: eq(tenant.id, tenantId),
-				columns: { name: true, primaryColor: true }
+				columns: { name: true, primaryColor: true, slug: true }
 			});
 			if (tenantRecord) {
-				await sendEmail({
-					to: order.customerEmail,
-					subject: `Order ${order.orderNumber} cancelled — ${tenantRecord.name}`,
-					html: orderCancelledEmail({
-						tenantName: tenantRecord.name,
-						primaryColor: tenantRecord.primaryColor ?? undefined,
-						orderNumber: order.orderNumber,
-						customerName: order.customerName ?? 'there',
-						total: order.total
-					})
-				}).catch(console.error);
+				if (order.customerEmail) {
+					await sendEmail({
+						to: order.customerEmail,
+						subject: `Order ${order.orderNumber} cancelled — ${tenantRecord.name}`,
+						html: orderCancelledEmail({
+							tenantName: tenantRecord.name,
+							primaryColor: tenantRecord.primaryColor ?? undefined,
+							orderNumber: order.orderNumber,
+							customerName: order.customerName ?? 'there',
+							total: order.total
+						})
+					}).catch(console.error);
+				}
+				if (order.customerPhone) {
+					await sendSms(
+						order.customerPhone,
+						`${tenantRecord.name}: Your order ${order.orderNumber} has been cancelled.`
+					).catch(console.error);
+				}
 			}
 		}
 

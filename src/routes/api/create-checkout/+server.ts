@@ -3,9 +3,11 @@ import type { RequestHandler } from './$types';
 import Stripe from 'stripe';
 import { env } from '$env/dynamic/private';
 import { db } from '$lib/server/db';
-import { eq } from 'drizzle-orm';
+import { eq, and, sql } from 'drizzle-orm';
 import { tenant } from '$lib/server/db/schema';
 import { orders, orderItems } from '$lib/server/db/orders';
+import { promoCodes } from '$lib/server/db/promos';
+import { calcDiscount } from '../validate-promo/+server';
 import type { CartItem } from '$lib/cart.svelte';
 
 function getStripe(secretKey: string) {
@@ -31,12 +33,16 @@ export const POST: RequestHandler = async ({ request }) => {
 		customer: { name: string; email?: string; phone?: string };
 		notes?: string;
 		orderType: string;
+		scheduledFor?: string | null;
 		subtotal: number;
 		tax: number;
+		tip?: number;
+		discount?: number;
+		promoCode?: string | null;
 		total: number;
 	};
 
-	const { tenantSlug, items, customer, notes, orderType, subtotal, tax, total } = body;
+	const { tenantSlug, items, customer, notes, orderType, scheduledFor, subtotal, tax, tip, promoCode } = body;
 
 	if (!tenantSlug || !items?.length || !customer?.name) {
 		throw error(400, 'Missing required fields');
@@ -48,6 +54,34 @@ export const POST: RequestHandler = async ({ request }) => {
 	if (!tenantRecord.stripeSecretKey) throw error(400, 'Stripe not configured for this store');
 
 	const stripe = getStripe(tenantRecord.stripeSecretKey);
+
+	// Re-validate promo code server-side (never trust client discount amount)
+	let verifiedDiscount = 0;
+	let verifiedPromoCode: string | null = null;
+	let promoRecord: typeof promoCodes.$inferSelect | null = null;
+
+	if (promoCode) {
+		promoRecord = await db.query.promoCodes.findFirst({
+			where: and(
+				eq(promoCodes.tenantId, tenantRecord.id),
+				eq(promoCodes.code, promoCode.toUpperCase())
+			)
+		}) ?? null;
+
+		const now = new Date();
+		const valid = promoRecord &&
+			promoRecord.isActive &&
+			(!promoRecord.expiresAt || now <= promoRecord.expiresAt) &&
+			(promoRecord.maxUses === null || promoRecord.usedCount < promoRecord.maxUses) &&
+			subtotal >= promoRecord.minOrderAmount;
+
+		if (valid && promoRecord) {
+			verifiedDiscount = calcDiscount(promoRecord.type, promoRecord.amount, subtotal);
+			verifiedPromoCode = promoRecord.code;
+		}
+	}
+
+	const verifiedTotal = Math.max(0, subtotal + tax + (tip ?? 0) - verifiedDiscount);
 
 	// Create order in DB (payment_status = pending until webhook confirms)
 	const orderNumber = generateOrderNumber();
@@ -64,10 +98,13 @@ export const POST: RequestHandler = async ({ request }) => {
 		subtotal,
 		tax,
 		deliveryFee: 0,
-		tip: 0,
-		total,
-		items: items, // denormalised snapshot
-		notes: notes || null
+		tip: tip ?? 0,
+		discount: verifiedDiscount,
+		promoCode: verifiedPromoCode,
+		total: verifiedTotal,
+		items: items,
+		notes: notes || null,
+		scheduledFor: scheduledFor ? new Date(scheduledFor) : null
 	}).returning({ id: orders.id });
 
 	// Also insert normalised order items
@@ -96,21 +133,28 @@ export const POST: RequestHandler = async ({ request }) => {
 		}
 	}));
 
-	// Add tax as its own line item so it's visible on the Stripe receipt
 	if (tax > 0) {
-		lineItems.push({
-			quantity: 1,
-			price_data: {
-				currency: 'usd',
-				unit_amount: tax,
-				product_data: { name: 'Tax' }
-			}
+		lineItems.push({ quantity: 1, price_data: { currency: 'usd', unit_amount: tax, product_data: { name: 'Tax' } } });
+	}
+	if (tip && tip > 0) {
+		lineItems.push({ quantity: 1, price_data: { currency: 'usd', unit_amount: tip, product_data: { name: 'Tip' } } });
+	}
+
+	// Create a one-time Stripe coupon for the discount so it shows on the receipt
+	let stripeCouponId: string | undefined;
+	if (verifiedDiscount > 0) {
+		const coupon = await stripe.coupons.create({
+			amount_off: verifiedDiscount,
+			currency: 'usd',
+			duration: 'once'
 		});
+		stripeCouponId = coupon.id;
 	}
 
 	const session = await stripe.checkout.sessions.create({
 		mode: 'payment',
 		line_items: lineItems,
+		...(stripeCouponId ? { discounts: [{ coupon: stripeCouponId }] } : {}),
 		...(customer.email ? { customer_email: customer.email } : {}),
 		success_url: `${origin}/${tenantSlug}/orders/${newOrder.id}?session_id={CHECKOUT_SESSION_ID}`,
 		cancel_url: `${origin}/${tenantSlug}/cart`,
@@ -130,6 +174,12 @@ export const POST: RequestHandler = async ({ request }) => {
 	await db.update(orders)
 		.set({ stripePaymentIntentId: paymentIntentId, metadata: { stripeSessionId: session.id } })
 		.where(eq(orders.id, newOrder.id));
+
+	if (promoRecord) {
+		await db.update(promoCodes)
+			.set({ usedCount: sql`${promoCodes.usedCount} + 1` })
+			.where(eq(promoCodes.id, promoRecord.id));
+	}
 
 	return json({ url: session.url });
 };
