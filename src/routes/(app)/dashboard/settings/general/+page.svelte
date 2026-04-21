@@ -4,7 +4,8 @@
 	import Icon from '@iconify/svelte';
 	import type { WeekHours } from '$lib/hours';
 
-	let { data, form }: { data: PageData; form: ActionData } = $props();
+	let { data, form: _form }: { data: PageData; form: ActionData } = $props();
+	const form = _form as (ActionData & { deliverySuccess?: boolean }) | null;
 
 	const address = $derived(data.info?.address as {
 		street?: string;
@@ -15,6 +16,7 @@
 	} | null);
 
 	const savedHours = $derived(((data.info as unknown as { settings?: { hours?: WeekHours } } | null)?.settings?.hours) ?? {});
+	const savedDelivery = $derived((data.info as unknown as { settings?: { enableDelivery?: boolean; deliveryFee?: number } } | null)?.settings ?? {});
 
 	const DAYS = [
 		{ key: 'monday', label: 'Monday' },
@@ -218,6 +220,51 @@
 			>
 				Save changes
 			</button>
+		</div>
+	</form>
+
+	<!-- Delivery — separate form/action -->
+	{#if form?.deliverySuccess}
+		<div class="mt-4 rounded-md border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">Delivery settings saved.</div>
+	{/if}
+	<form method="post" action="?/saveDelivery" use:enhance class="mt-6">
+		<div class="rounded-xl border border-gray-200 bg-white shadow-sm">
+			<div class="border-b border-gray-100 px-5 py-4">
+				<h2 class="font-semibold text-gray-900">Delivery</h2>
+				<p class="mt-0.5 text-xs text-gray-500">Enable delivery as an order type at checkout and set a flat delivery fee.</p>
+			</div>
+			<div class="space-y-4 px-5 py-5">
+				<label class="flex items-center gap-3 cursor-pointer">
+					<input
+						type="checkbox"
+						name="enableDelivery"
+						class="h-4 w-4 rounded border-gray-300 text-green-600"
+						checked={savedDelivery.enableDelivery ?? false}
+					/>
+					<span class="text-sm font-medium text-gray-700">Enable delivery orders</span>
+				</label>
+				<div class="sm:w-48">
+					<label class="mb-1 block text-sm font-medium text-gray-700" for="deliveryFee">Delivery fee</label>
+					<div class="flex rounded-md border border-gray-300 focus-within:border-green-500 focus-within:ring-1 focus-within:ring-green-500">
+						<span class="flex items-center rounded-l-md border-r border-gray-300 bg-gray-50 px-3 text-sm text-gray-500">$</span>
+						<input
+							id="deliveryFee"
+							name="deliveryFee"
+							type="number"
+							min="0"
+							step="0.01"
+							placeholder="0.00"
+							value={((savedDelivery.deliveryFee ?? 0) / 100).toFixed(2)}
+							class="min-w-0 flex-1 rounded-r-md px-3 py-2 text-sm focus:outline-none"
+						/>
+					</div>
+				</div>
+			</div>
+			<div class="border-t border-gray-100 px-5 py-4">
+				<button type="submit" class="rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-gray-700">
+					Save delivery settings
+				</button>
+			</div>
 		</div>
 	</form>
 

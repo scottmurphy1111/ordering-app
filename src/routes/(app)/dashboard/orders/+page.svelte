@@ -116,6 +116,12 @@
 									Scheduled: {new Date(order.scheduledFor).toLocaleString([], { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
 								</p>
 							{/if}
+							{#if order.deliveryAddress}
+								<p class="mt-1 flex items-center gap-1 text-xs text-gray-500">
+									<Icon icon="mdi:map-marker-outline" class="h-3.5 w-3.5 shrink-0 text-gray-400" />
+									{order.deliveryAddress}
+								</p>
+							{/if}
 							{#if order.notes}
 								<p class="mt-1 text-xs text-gray-400 italic">"{order.notes}"</p>
 							{/if}

@@ -153,6 +153,12 @@
 					<span>Delivery fee</span><span>{formatCents(order.deliveryFee)}</span>
 				</div>
 			{/if}
+			{#if order.deliveryAddress}
+				<div class="mt-2 flex items-start gap-1.5 rounded-md bg-gray-50 px-3 py-2 text-sm text-gray-600">
+					<Icon icon="mdi:map-marker-outline" class="h-4 w-4 shrink-0 mt-0.5 text-gray-400" />
+					{order.deliveryAddress}
+				</div>
+			{/if}
 			<div class="flex justify-between text-sm font-bold text-gray-900 pt-1.5 border-t border-gray-200">
 				<span>Total</span><span>{formatCents(order.total)}</span>
 			</div>

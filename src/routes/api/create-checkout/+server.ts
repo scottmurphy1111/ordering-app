@@ -33,16 +33,18 @@ export const POST: RequestHandler = async ({ request }) => {
 		customer: { name: string; email?: string; phone?: string };
 		notes?: string;
 		orderType: string;
+		deliveryAddress?: string | null;
 		scheduledFor?: string | null;
 		subtotal: number;
 		tax: number;
 		tip?: number;
+		deliveryFee?: number;
 		discount?: number;
 		promoCode?: string | null;
 		total: number;
 	};
 
-	const { tenantSlug, items, customer, notes, orderType, scheduledFor, subtotal, tax, tip, promoCode } = body;
+	const { tenantSlug, items, customer, notes, orderType, deliveryAddress, scheduledFor, subtotal, tax, tip, promoCode } = body;
 
 	if (!tenantSlug || !items?.length || !customer?.name) {
 		throw error(400, 'Missing required fields');
@@ -54,6 +56,12 @@ export const POST: RequestHandler = async ({ request }) => {
 	if (!tenantRecord.stripeSecretKey) throw error(400, 'Stripe not configured for this store');
 
 	const stripe = getStripe(tenantRecord.stripeSecretKey);
+
+	// Re-validate delivery fee server-side
+	const tenantSettings = tenantRecord.settings as { deliveryFee?: number; enableDelivery?: boolean } | null;
+	const verifiedDeliveryFee = orderType === 'delivery' && tenantSettings?.enableDelivery
+		? (tenantSettings.deliveryFee ?? 0)
+		: 0;
 
 	// Re-validate promo code server-side (never trust client discount amount)
 	let verifiedDiscount = 0;
@@ -81,7 +89,7 @@ export const POST: RequestHandler = async ({ request }) => {
 		}
 	}
 
-	const verifiedTotal = Math.max(0, subtotal + tax + (tip ?? 0) - verifiedDiscount);
+	const verifiedTotal = Math.max(0, subtotal + tax + (tip ?? 0) + verifiedDeliveryFee - verifiedDiscount);
 
 	// Create order in DB (payment_status = pending until webhook confirms)
 	const orderNumber = generateOrderNumber();
@@ -97,12 +105,13 @@ export const POST: RequestHandler = async ({ request }) => {
 		paymentStatus: 'pending',
 		subtotal,
 		tax,
-		deliveryFee: 0,
+		deliveryFee: verifiedDeliveryFee,
 		tip: tip ?? 0,
 		discount: verifiedDiscount,
 		promoCode: verifiedPromoCode,
 		total: verifiedTotal,
 		items: items,
+		deliveryAddress: deliveryAddress || null,
 		notes: notes || null,
 		scheduledFor: scheduledFor ? new Date(scheduledFor) : null
 	}).returning({ id: orders.id });
@@ -138,6 +147,9 @@ export const POST: RequestHandler = async ({ request }) => {
 	}
 	if (tip && tip > 0) {
 		lineItems.push({ quantity: 1, price_data: { currency: 'usd', unit_amount: tip, product_data: { name: 'Tip' } } });
+	}
+	if (verifiedDeliveryFee > 0) {
+		lineItems.push({ quantity: 1, price_data: { currency: 'usd', unit_amount: verifiedDeliveryFee, product_data: { name: 'Delivery fee' } } });
 	}
 
 	// Create a one-time Stripe coupon for the discount so it shows on the receipt

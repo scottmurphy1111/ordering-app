@@ -81,5 +81,25 @@ export const actions: Actions = {
 			.where(eq(tenant.id, tenantId));
 
 		return { hoursSuccess: true };
+	},
+
+	saveDelivery: async ({ request, locals }) => {
+		const tenantId = locals.tenantId!;
+		const formData = await request.formData();
+
+		const enableDelivery = formData.get('enableDelivery') === 'on';
+		const deliveryFeeRaw = parseFloat(formData.get('deliveryFee')?.toString() ?? '0');
+		const deliveryFee = isNaN(deliveryFeeRaw) ? 0 : Math.round(deliveryFeeRaw * 100);
+
+		const record = await db.query.tenant.findFirst({
+			where: eq(tenant.id, tenantId),
+			columns: { settings: true }
+		});
+		const current = (record?.settings ?? {}) as Record<string, unknown>;
+		await db.update(tenant)
+			.set({ settings: { ...current, enableDelivery, deliveryFee }, updatedAt: new Date() })
+			.where(eq(tenant.id, tenantId));
+
+		return { deliverySuccess: true };
 	}
 };

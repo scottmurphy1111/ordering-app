@@ -12,10 +12,7 @@
 		cart.init(data.tenantSlug);
 		const t = page.url.searchParams.get('table');
 		tableParam = t;
-		if (t) {
-			orderType = 'dine-in';
-			tableNumber = t;
-		}
+		if (t) tableNumber = t;
 	});
 
 	let customerName = $state('');
@@ -24,7 +21,12 @@
 	let notes = $state('');
 	let tableNumber = $state('');
 	let tableParam = $state<string | null>(null);
-	let orderType = $state<'pickup' | 'dine-in'>('pickup');
+	let orderType = $state<'pickup' | 'delivery'>('pickup');
+	let deliveryStreet = $state('');
+	let deliveryApt = $state('');
+	let deliveryCity = $state('');
+	let deliveryState = $state('');
+	let deliveryZip = $state('');
 	let pickupTiming = $state<'asap' | 'scheduled'>('asap');
 	let pickupDate = $state('');
 	let pickupTimeValue = $state('');
@@ -54,10 +56,14 @@
 		taxRate?: number;
 		enableTips?: boolean;
 		defaultTipPercentages?: number[];
+		enableDelivery?: boolean;
+		deliveryFee?: number;
 	} | null);
 	const TAX_RATE = $derived(settings?.taxRate ?? 0.0825);
 	const tipPercentages = $derived(settings?.defaultTipPercentages ?? [15, 18, 20]);
 	const tipsEnabled = $derived(settings?.enableTips !== false);
+	const deliveryEnabled = $derived(settings?.enableDelivery === true);
+	const tenantDeliveryFee = $derived(settings?.deliveryFee ?? 0);
 
 	let tipPercent = $state<number | 'custom' | 0>(0);
 	let customTipDollars = $state('');
@@ -107,12 +113,17 @@
 		return Math.round(subtotal * (tipPercent / 100));
 	});
 	const discountCents = $derived(promoApplied?.discount ?? 0);
-	const total = $derived(Math.max(0, subtotal + tax + tipCents - discountCents));
+	const deliveryFeeCents = $derived(orderType === 'delivery' ? tenantDeliveryFee : 0);
+	const total = $derived(Math.max(0, subtotal + tax + tipCents + deliveryFeeCents - discountCents));
 
 	async function checkout() {
 		if (cart.items.length === 0) return;
 		if (!customerName.trim()) {
 			checkoutError = 'Please enter your name.';
+			return;
+		}
+		if (orderType === 'delivery' && !deliveryStreet.trim()) {
+			checkoutError = 'Please enter a delivery address.';
 			return;
 		}
 		checkoutError = null;
@@ -128,12 +139,16 @@
 					customer: { name: customerName, email, phone },
 					notes: [tableNumber ? `Table ${tableNumber}` : '', notes].filter(Boolean).join(' | '),
 					orderType,
+					deliveryAddress: orderType === 'delivery'
+						? [deliveryStreet, deliveryApt, deliveryCity, deliveryState, deliveryZip].filter(Boolean).join(', ')
+						: null,
 					scheduledFor: pickupTiming === 'scheduled' && pickupDate && pickupTimeValue
 						? new Date(`${pickupDate}T${pickupTimeValue}`).toISOString()
 						: null,
 					subtotal,
 					tax,
 					tip: tipCents,
+					deliveryFee: deliveryFeeCents,
 					discount: discountCents,
 					promoCode: promoApplied?.code ?? null,
 					total
@@ -238,33 +253,25 @@
 			</div>
 
 			<!-- Order type -->
-			<div class="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
-				<p class="mb-2 text-sm font-semibold text-gray-800">Order type</p>
-				<div class="flex gap-3">
-					{#each ['pickup', 'dine-in'] as const as type (type)}
-						<label
-							style={orderType === type
-								? 'background-color: var(--primary-color); color: var(--accent-color); border-color: var(--primary-color);'
-								: ''}
-							class="flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-lg border py-2.5 text-sm font-medium transition-colors
-							{orderType === type ? '' : 'border-gray-300 text-gray-700 hover:bg-gray-50'}"
-						>
-							<input
-								type="radio"
-								name="orderType"
-								value={type}
-								bind:group={orderType}
-								class="sr-only"
-							/>
-							{#if type === 'pickup'}
-								<Icon icon="mdi:bag-personal-outline" class="h-4 w-4" /> Pickup
-							{:else}
-								<Icon icon="mdi:silverware-fork-knife" class="h-4 w-4" /> Dine-in
-							{/if}
-						</label>
-					{/each}
+			{#if deliveryEnabled}
+				<div class="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+					<p class="mb-2 text-sm font-semibold text-gray-800">Order type</p>
+					<div class="flex gap-3">
+						{#each [{ value: 'pickup', label: 'Pickup', icon: 'mdi:bag-personal-outline' }, { value: 'delivery', label: 'Delivery', icon: 'mdi:moped-outline' }] as type (type.value)}
+							<label
+								style={orderType === type.value
+									? 'background-color: var(--primary-color); color: var(--accent-color); border-color: var(--primary-color);'
+									: ''}
+								class="flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-lg border py-2.5 text-sm font-medium transition-colors
+								{orderType === type.value ? '' : 'border-gray-300 text-gray-700 hover:bg-gray-50'}"
+							>
+								<input type="radio" name="orderType" value={type.value} bind:group={orderType} class="sr-only" />
+								<Icon icon={type.icon} class="h-4 w-4" /> {type.label}
+							</label>
+						{/each}
+					</div>
 				</div>
-			</div>
+			{/if}
 
 			<!-- Pickup timing (pickup only) -->
 			{#if orderType === 'pickup'}
@@ -326,17 +333,60 @@
 				</div>
 			{/if}
 
-			<!-- Table number (dine-in only) -->
-			{#if orderType === 'dine-in'}
-				<div class="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
-					<label class="mb-1 block text-sm font-semibold text-gray-800" for="cart-table">Table number</label>
-					<input
-						id="cart-table"
-						type="text"
-						bind:value={tableNumber}
-						placeholder="e.g. 4"
-						class="branded-input w-32 rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none transition-colors"
-					/>
+			<!-- Delivery address -->
+			{#if orderType === 'delivery'}
+				<div class="space-y-3 rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+					<p class="text-sm font-semibold text-gray-800">Delivery address</p>
+					<div>
+						<label class="mb-1 block text-xs font-medium text-gray-600" for="delivery-street">Street address *</label>
+						<input
+							id="delivery-street"
+							type="text"
+							bind:value={deliveryStreet}
+							placeholder="123 Main St"
+							class="branded-input w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none transition-colors"
+						/>
+					</div>
+					<div>
+						<label class="mb-1 block text-xs font-medium text-gray-600" for="delivery-apt">Apt / Suite</label>
+						<input
+							id="delivery-apt"
+							type="text"
+							bind:value={deliveryApt}
+							placeholder="Apt 2B (optional)"
+							class="branded-input w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none transition-colors"
+						/>
+					</div>
+					<div class="grid grid-cols-3 gap-2">
+						<div class="col-span-1">
+							<label class="mb-1 block text-xs font-medium text-gray-600" for="delivery-city">City</label>
+							<input
+								id="delivery-city"
+								type="text"
+								bind:value={deliveryCity}
+								class="branded-input w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none transition-colors"
+							/>
+						</div>
+						<div>
+							<label class="mb-1 block text-xs font-medium text-gray-600" for="delivery-state">State</label>
+							<input
+								id="delivery-state"
+								type="text"
+								bind:value={deliveryState}
+								placeholder="TX"
+								class="branded-input w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none transition-colors"
+							/>
+						</div>
+						<div>
+							<label class="mb-1 block text-xs font-medium text-gray-600" for="delivery-zip">ZIP</label>
+							<input
+								id="delivery-zip"
+								type="text"
+								bind:value={deliveryZip}
+								class="branded-input w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none transition-colors"
+							/>
+						</div>
+					</div>
 				</div>
 			{/if}
 
@@ -483,6 +533,12 @@
 					<span>Tax ({(TAX_RATE * 100).toFixed(2)}%)</span>
 					<span>${(tax / 100).toFixed(2)}</span>
 				</div>
+				{#if deliveryFeeCents > 0}
+					<div class="flex justify-between text-gray-600">
+						<span>Delivery fee</span>
+						<span>${(deliveryFeeCents / 100).toFixed(2)}</span>
+					</div>
+				{/if}
 				{#if tipCents > 0}
 					<div class="flex justify-between text-gray-600">
 						<span>Tip{tipPercent !== 'custom' && tipPercent !== 0 ? ` (${tipPercent}%)` : ''}</span>
