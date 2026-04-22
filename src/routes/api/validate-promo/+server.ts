@@ -8,7 +8,7 @@ import { calcDiscount } from '$lib/server/promo';
 export const POST: RequestHandler = async ({ request, locals }) => {
 	if (!locals.tenantId) throw error(401, 'Unauthorized');
 
-	const { code, subtotal } = await request.json() as { code: string; subtotal: number };
+	const { code, subtotal } = (await request.json()) as { code: string; subtotal: number };
 	if (!code?.trim()) return json({ valid: false, message: 'Enter a promo code.' });
 
 	const promo = await db.query.promoCodes.findFirst({
@@ -39,9 +39,8 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 	return json({
 		valid: true,
 		discount,
-		description: promo.type === 'percent'
-			? `${promo.amount}% off`
-			: `$${(promo.amount / 100).toFixed(2)} off`,
+		description:
+			promo.type === 'percent' ? `${promo.amount}% off` : `$${(promo.amount / 100).toFixed(2)} off`,
 		promoId: promo.id
 	});
 };

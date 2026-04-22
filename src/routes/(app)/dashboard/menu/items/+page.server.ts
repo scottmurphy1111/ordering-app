@@ -12,26 +12,42 @@ export const load: PageServerLoad = async (event) => {
 	const { searchParams } = event.url;
 
 	const search = searchParams.get('search')?.trim() || '';
-	const categoryId = searchParams.get('categoryId') ? parseInt(searchParams.get('categoryId')!) : null;
+	const categoryId = searchParams.get('categoryId')
+		? parseInt(searchParams.get('categoryId')!)
+		: null;
 	const page = Math.max(1, parseInt(searchParams.get('page') || '1'));
 	const limit = Math.min(50, parseInt(searchParams.get('limit') || '20'));
 	const offset = (page - 1) * limit;
 
 	const whereConditions = [eq(menuItems.tenantId, tenantId)];
-	if (search) whereConditions.push(like(sql`LOWER(${menuItems.name})`, `%${search.toLowerCase()}%`));
+	if (search)
+		whereConditions.push(like(sql`LOWER(${menuItems.name})`, `%${search.toLowerCase()}%`));
 	if (categoryId) whereConditions.push(eq(menuItems.categoryId, categoryId));
 	const whereClause = and(...whereConditions);
 
 	const items = await db.query.menuItems.findMany({
 		where: whereClause,
-		columns: { id: true, name: true, description: true, price: true, discountedPrice: true, images: true, available: true, sortOrder: true, createdAt: true },
+		columns: {
+			id: true,
+			name: true,
+			description: true,
+			price: true,
+			discountedPrice: true,
+			images: true,
+			available: true,
+			sortOrder: true,
+			createdAt: true
+		},
 		with: { category: { columns: { id: true, name: true } } },
 		orderBy: [menuItems.sortOrder, desc(menuItems.createdAt)],
 		limit,
 		offset
 	});
 
-	const totalCountResult = await db.select({ count: sql<number>`count(*)` }).from(menuItems).where(whereClause);
+	const totalCountResult = await db
+		.select({ count: sql<number>`count(*)` })
+		.from(menuItems)
+		.where(whereClause);
 	const totalItems = totalCountResult[0]?.count || 0;
 	const totalPages = Math.ceil(totalItems / limit);
 
@@ -41,7 +57,13 @@ export const load: PageServerLoad = async (event) => {
 		orderBy: menuCategories.sortOrder
 	});
 
-	return { items, categories, pagination: { page, limit, totalItems, totalPages }, search, selectedCategoryId: categoryId };
+	return {
+		items,
+		categories,
+		pagination: { page, limit, totalItems, totalPages },
+		search,
+		selectedCategoryId: categoryId
+	};
 };
 
 export const actions: Actions = {
@@ -51,7 +73,8 @@ export const actions: Actions = {
 		const id = parseInt(formData.get('id')?.toString() ?? '');
 		const available = formData.get('available') === 'true';
 		if (isNaN(id)) return fail(400, { error: 'Invalid ID' });
-		await db.update(menuItems)
+		await db
+			.update(menuItems)
 			.set({ available, updatedAt: new Date() })
 			.where(and(eq(menuItems.id, id), eq(menuItems.tenantId, tenantId)));
 		return { toggled: true };
@@ -70,7 +93,10 @@ export const actions: Actions = {
 		const tenantId = locals.tenantId!;
 
 		const [tenantRecord, countResult] = await Promise.all([
-			db.query.tenant.findFirst({ where: eq(tenant.id, tenantId), columns: { subscriptionTier: true } }),
+			db.query.tenant.findFirst({
+				where: eq(tenant.id, tenantId),
+				columns: { subscriptionTier: true }
+			}),
 			db.select({ count: count() }).from(menuItems).where(eq(menuItems.tenantId, tenantId))
 		]);
 
@@ -78,7 +104,9 @@ export const actions: Actions = {
 		const itemCount = countResult[0]?.count ?? 0;
 
 		if (isAtItemLimit(tierKey, itemCount)) {
-			return fail(403, { error: 'You have reached the item limit for your plan. Upgrade to add more items.' });
+			return fail(403, {
+				error: 'You have reached the item limit for your plan. Upgrade to add more items.'
+			});
 		}
 
 		const formData = await request.formData();
@@ -93,17 +121,36 @@ export const actions: Actions = {
 		const sortOrder = parseInt(formData.get('sortOrder')?.toString() ?? '0') || 0;
 
 		if (!name) return fail(400, { error: 'Name is required' });
-		if (!priceStr || isNaN(parseFloat(priceStr))) return fail(400, { error: 'Valid price is required' });
+		if (!priceStr || isNaN(parseFloat(priceStr)))
+			return fail(400, { error: 'Valid price is required' });
 
 		const price = Math.round(parseFloat(priceStr) * 100);
-		const discountedPrice = discountedPriceStr ? Math.round(parseFloat(discountedPriceStr) * 100) : null;
+		const discountedPrice = discountedPriceStr
+			? Math.round(parseFloat(discountedPriceStr) * 100)
+			: null;
 		const categoryId = categoryIdStr ? parseInt(categoryIdStr) : null;
-		const tags = tagsRaw ? tagsRaw.split(',').map((t) => t.trim()).filter(Boolean) : [];
+		const tags = tagsRaw
+			? tagsRaw
+					.split(',')
+					.map((t) => t.trim())
+					.filter(Boolean)
+			: [];
 		const images = imageUrl ? [{ url: imageUrl, isPrimary: true }] : [];
 
 		const [item] = await db
 			.insert(menuItems)
-			.values({ tenantId, name, description, price, discountedPrice, categoryId, available, tags, images, sortOrder })
+			.values({
+				tenantId,
+				name,
+				description,
+				price,
+				discountedPrice,
+				categoryId,
+				available,
+				tags,
+				images,
+				sortOrder
+			})
 			.returning({ id: menuItems.id, name: menuItems.name });
 
 		return { success: true, item };

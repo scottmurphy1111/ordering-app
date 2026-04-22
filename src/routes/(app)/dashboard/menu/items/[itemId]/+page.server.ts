@@ -2,7 +2,13 @@ import type { PageServerLoad, Actions } from './$types';
 import { fail, redirect, error } from '@sveltejs/kit';
 import { db } from '$lib/server/db';
 import { eq, and } from 'drizzle-orm';
-import { menuItems, menuCategories, modifiers, modifierOptions, menuItemModifiers } from '$lib/server/db/schema';
+import {
+	menuItems,
+	menuCategories,
+	modifiers,
+	modifierOptions,
+	menuItemModifiers
+} from '$lib/server/db/schema';
 import { hasAddon, type AddonItem } from '$lib/billing';
 import { tenant } from '$lib/server/db/tenant';
 
@@ -54,20 +60,43 @@ export const actions: Actions = {
 		const imageUrl = formData.get('imageUrl')?.toString().trim() || null;
 
 		if (!name) return fail(400, { error: 'Name is required' });
-		if (!priceStr || isNaN(parseFloat(priceStr))) return fail(400, { error: 'Valid price is required' });
+		if (!priceStr || isNaN(parseFloat(priceStr)))
+			return fail(400, { error: 'Valid price is required' });
 
 		const price = Math.round(parseFloat(priceStr) * 100);
-		const discountedPrice = discountedPriceStr ? Math.round(parseFloat(discountedPriceStr) * 100) : null;
+		const discountedPrice = discountedPriceStr
+			? Math.round(parseFloat(discountedPriceStr) * 100)
+			: null;
 		const categoryId = categoryIdStr ? parseInt(categoryIdStr) : null;
-		const tags = tagsRaw ? tagsRaw.split(',').map((t) => t.trim()).filter(Boolean) : [];
+		const tags = tagsRaw
+			? tagsRaw
+					.split(',')
+					.map((t) => t.trim())
+					.filter(Boolean)
+			: [];
 		const images = imageUrl ? [{ url: imageUrl, isPrimary: true }] : [];
 		const sortOrder = parseInt(formData.get('sortOrder')?.toString() ?? '0') || 0;
 		const isSubscription = formData.get('isSubscription') === 'on';
-		const billingInterval = isSubscription ? (formData.get('billingInterval')?.toString() || 'monthly') : null;
+		const billingInterval = isSubscription
+			? formData.get('billingInterval')?.toString() || 'monthly'
+			: null;
 
 		await db
 			.update(menuItems)
-			.set({ name, description, price, discountedPrice, categoryId, available, tags, images, sortOrder, isSubscription, billingInterval, updatedAt: new Date() })
+			.set({
+				name,
+				description,
+				price,
+				discountedPrice,
+				categoryId,
+				available,
+				tags,
+				images,
+				sortOrder,
+				isSubscription,
+				billingInterval,
+				updatedAt: new Date()
+			})
 			.where(and(eq(menuItems.id, itemId), eq(menuItems.tenantId, tenantId)));
 
 		return { success: true };
@@ -175,7 +204,8 @@ export const actions: Actions = {
 			where: eq(modifierOptions.id, optionId),
 			with: { modifier: { columns: { tenantId: true } } }
 		});
-		if (!option || option.modifier.tenantId !== tenantId) return fail(403, { modifierError: 'Not found' });
+		if (!option || option.modifier.tenantId !== tenantId)
+			return fail(403, { modifierError: 'Not found' });
 
 		await db.delete(modifierOptions).where(eq(modifierOptions.id, optionId));
 

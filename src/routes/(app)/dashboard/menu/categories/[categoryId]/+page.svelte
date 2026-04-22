@@ -33,7 +33,7 @@
 	<div class="flex items-center gap-3">
 		<a
 			href="/dashboard/menu/categories"
-			class="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-800 transition-colors"
+			class="inline-flex items-center gap-1 text-sm text-gray-500 transition-colors hover:text-gray-800"
 		>
 			<Icon icon="mdi:chevron-left" class="h-4 w-4" /> Categories
 		</a>
@@ -42,41 +42,49 @@
 	</div>
 
 	{#if form?.error}
-		<div class="rounded-md bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">{form.error}</div>
+		<div class="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+			{form.error}
+		</div>
 	{/if}
 	{#if form?.success}
-		<div class="rounded-md bg-green-50 border border-green-200 px-4 py-3 text-sm text-green-700">Saved.</div>
+		<div class="rounded-md border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
+			Saved.
+		</div>
 	{/if}
 
 	<!-- Category details -->
-	<section class="rounded-xl border border-gray-200 bg-white p-6 shadow-sm space-y-4">
+	<section class="space-y-4 rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
 		<h2 class="font-semibold text-gray-800">Details</h2>
 		<form
 			method="post"
 			action="?/update"
-			use:enhance={() => ({ update }) => update({ reset: false })}
+			use:enhance={() =>
+				({ update }) =>
+					update({ reset: false })}
 			class="space-y-4"
 		>
 			<div>
-				<label class="block text-sm font-medium text-gray-700 mb-1" for="name">Name</label>
+				<label class="mb-1 block text-sm font-medium text-gray-700" for="name">Name</label>
 				<input
 					id="name"
 					name="name"
 					type="text"
 					required
 					value={data.category.name}
-					class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-green-500 focus:outline-none focus:ring-1 focus:ring-green-500"
+					class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-green-500 focus:ring-1 focus:ring-green-500 focus:outline-none"
 				/>
 			</div>
 			<div>
-				<label class="block text-sm font-medium text-gray-700 mb-1" for="description">Description</label>
+				<label class="mb-1 block text-sm font-medium text-gray-700" for="description"
+					>Description</label
+				>
 				<input
 					id="description"
 					name="description"
 					type="text"
 					value={data.category.description ?? ''}
 					placeholder="Optional"
-					class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-green-500 focus:outline-none focus:ring-1 focus:ring-green-500"
+					class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-green-500 focus:ring-1 focus:ring-green-500 focus:outline-none"
 				/>
 			</div>
 			<input type="hidden" name="sortOrder" value={data.category.sortOrder ?? 0} />
@@ -112,7 +120,7 @@
 
 			<button
 				type="submit"
-				class="rounded-md bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700 transition-colors"
+				class="rounded-md bg-green-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-green-700"
 			>
 				Save changes
 			</button>
@@ -120,10 +128,10 @@
 	</section>
 
 	<!-- Item assignment -->
-	<section class="rounded-xl border border-gray-200 bg-white p-6 shadow-sm space-y-4">
+	<section class="space-y-4 rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
 		<div>
 			<h2 class="font-semibold text-gray-800">Assign items</h2>
-			<p class="text-sm text-gray-500 mt-0.5">Check items that belong to this category.</p>
+			<p class="mt-0.5 text-sm text-gray-500">Check items that belong to this category.</p>
 		</div>
 		{#if data.items.length === 0}
 			<p class="text-sm text-gray-400">No menu items yet.</p>
@@ -131,15 +139,16 @@
 			<form
 				method="post"
 				action="?/assignItems"
-				use:enhance={() => ({ result, update }) => {
-					if (result.type === 'success') resetOverrides();
-					return update({ reset: false });
-				}}
+				use:enhance={() =>
+					({ result, update }) => {
+						if (result.type === 'success') resetOverrides();
+						return update({ reset: false });
+					}}
 			>
-				<div class="space-y-2 mb-4">
+				<div class="mb-4 space-y-2">
 					{#each data.items as item (item.id)}
 						<label
-							class="flex items-center gap-3 rounded-lg border px-3 py-2.5 cursor-pointer transition-colors
+							class="flex cursor-pointer items-center gap-3 rounded-lg border px-3 py-2.5 transition-colors
 								{selections.has(item.id) ? 'border-gray-400 bg-gray-50' : 'border-gray-200 hover:bg-gray-50'}"
 						>
 							<input
@@ -153,14 +162,16 @@
 							<span class="flex-1 text-sm text-gray-800">{item.name}</span>
 							<span class="text-xs text-gray-400">${(item.price / 100).toFixed(2)}</span>
 							{#if item.categoryId !== null && item.categoryId !== data.category.id}
-								<span class="rounded-full bg-yellow-100 px-2 py-0.5 text-xs text-yellow-700">Other category</span>
+								<span class="rounded-full bg-yellow-100 px-2 py-0.5 text-xs text-yellow-700"
+									>Other category</span
+								>
 							{/if}
 						</label>
 					{/each}
 				</div>
 				<button
 					type="submit"
-					class="rounded-md bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700 transition-colors"
+					class="rounded-md bg-green-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-green-700"
 				>
 					Save assignments
 				</button>

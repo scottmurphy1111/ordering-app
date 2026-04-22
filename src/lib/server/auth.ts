@@ -14,11 +14,9 @@ const baseURL = env.ORIGIN || env.URL || env.DEPLOY_PRIME_URL;
 
 export const auth = betterAuth({
 	baseURL,
-	trustedOrigins: [
-		baseURL,
-		'https://getorderlocal.com',
-		'https://order-local.netlify.app'
-	].filter((s): s is string => Boolean(s)),
+	trustedOrigins: [baseURL, 'https://getorderlocal.com', 'https://order-local.netlify.app'].filter(
+		(s): s is string => Boolean(s)
+	),
 	secret: env.BETTER_AUTH_SECRET,
 	database: drizzleAdapter(db, { provider: 'pg' }),
 
@@ -29,11 +27,11 @@ export const auth = betterAuth({
 	},
 
 	session: {
-		expiresIn: 60 * 60 * 24 * 30,      // 30 days
-		updateAge: 60 * 60 * 24,            // refresh session expiry once per day on activity
+		expiresIn: 60 * 60 * 24 * 30, // 30 days
+		updateAge: 60 * 60 * 24, // refresh session expiry once per day on activity
 		cookieCache: {
 			enabled: true,
-			maxAge: 60 * 5                   // cache session in cookie for 5 min to reduce DB lookups
+			maxAge: 60 * 5 // cache session in cookie for 5 min to reduce DB lookups
 		}
 	},
 
@@ -54,7 +52,10 @@ export const auth = betterAuth({
 				const verifyUrl = new URL(url);
 				const intermediateUrl = new URL('/verify', verifyUrl.origin);
 				intermediateUrl.searchParams.set('token', verifyUrl.searchParams.get('token') ?? '');
-				intermediateUrl.searchParams.set('callbackURL', verifyUrl.searchParams.get('callbackURL') ?? '/tenants');
+				intermediateUrl.searchParams.set(
+					'callbackURL',
+					verifyUrl.searchParams.get('callbackURL') ?? '/tenants'
+				);
 
 				const html = emailWrapper({
 					title: 'Sign in to Order Local',

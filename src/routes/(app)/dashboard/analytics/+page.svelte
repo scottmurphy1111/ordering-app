@@ -7,7 +7,10 @@
 	const { kpis, dailyData, topItems, statusBreakdown, typeBreakdown } = $derived(data);
 
 	function fmt(cents: number) {
-		return '$' + (cents / 100).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+		return (
+			'$' +
+			(cents / 100).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+		);
 	}
 
 	function fmtPct(val: number | null) {
@@ -113,7 +116,8 @@
 		<h2 class="mb-4 text-sm font-semibold text-gray-800">Daily revenue — last 30 days</h2>
 		<div class="flex h-36 items-end gap-px">
 			{#each dailyData as day (day.date)}
-				{@const height = day.revenue === 0 ? 2 : Math.max(4, Math.round((day.revenue / maxDailyRevenue) * 144))}
+				{@const height =
+					day.revenue === 0 ? 2 : Math.max(4, Math.round((day.revenue / maxDailyRevenue) * 144))}
 				<div class="group relative flex flex-1 flex-col items-center justify-end">
 					<div
 						class="w-full rounded-sm bg-gray-800 transition-colors group-hover:bg-gray-600"
@@ -121,12 +125,16 @@
 					></div>
 					<!-- Tooltip -->
 					{#if day.revenue > 0}
-						<div class="pointer-events-none absolute bottom-full mb-1.5 left-1/2 -translate-x-1/2 hidden group-hover:flex flex-col items-center z-10">
-							<div class="whitespace-nowrap rounded-md bg-gray-900 px-2 py-1 text-xs text-white shadow-lg">
+						<div
+							class="pointer-events-none absolute bottom-full left-1/2 z-10 mb-1.5 hidden -translate-x-1/2 flex-col items-center group-hover:flex"
+						>
+							<div
+								class="rounded-md bg-gray-900 px-2 py-1 text-xs whitespace-nowrap text-white shadow-lg"
+							>
 								<p>{fmt(day.revenue)}</p>
 								<p class="text-gray-400">{day.count} {day.count === 1 ? 'order' : 'orders'}</p>
 							</div>
-							<div class="h-1.5 w-1.5 rotate-45 bg-gray-900 -mt-1"></div>
+							<div class="-mt-1 h-1.5 w-1.5 rotate-45 bg-gray-900"></div>
 						</div>
 					{/if}
 				</div>
@@ -142,9 +150,8 @@
 
 	<!-- ── Bottom grid ───────────────────────────────────────────── -->
 	<div class="grid gap-6 lg:grid-cols-3">
-
 		<!-- Top items -->
-		<div class="lg:col-span-2 rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+		<div class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm lg:col-span-2">
 			<h2 class="mb-4 text-sm font-semibold text-gray-800">Top items</h2>
 			{#if topItems.length === 0}
 				<p class="text-sm text-gray-400">No order data yet.</p>
@@ -153,11 +160,11 @@
 					{#each topItems as item, i (item.name)}
 						<div>
 							<div class="mb-1 flex items-center justify-between gap-2">
-								<div class="flex items-center gap-2 min-w-0">
-									<span class="shrink-0 text-xs font-bold text-gray-400 w-4">#{i + 1}</span>
+								<div class="flex min-w-0 items-center gap-2">
+									<span class="w-4 shrink-0 text-xs font-bold text-gray-400">#{i + 1}</span>
 									<span class="truncate text-sm font-medium text-gray-800">{item.name}</span>
 								</div>
-								<div class="shrink-0 flex items-center gap-3 text-xs text-gray-500">
+								<div class="flex shrink-0 items-center gap-3 text-xs text-gray-500">
 									<span>{item.totalQty} sold</span>
 									<span class="font-medium text-gray-700">{fmt(item.totalRevenue)}</span>
 								</div>
@@ -176,7 +183,6 @@
 
 		<!-- Right column -->
 		<div class="space-y-6">
-
 			<!-- Order types -->
 			<div class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
 				<h2 class="mb-3 text-sm font-semibold text-gray-800">Order types</h2>
@@ -226,8 +232,12 @@
 						{#each statusBreakdown as row (row.status)}
 							<div class="flex items-center justify-between text-xs">
 								<span class="inline-flex items-center gap-1.5">
-									<span class="h-2 w-2 rounded-full {statusColors[row.status] ?? 'bg-gray-300'}"></span>
-									<span class="rounded-full px-1.5 py-0.5 {statusBadge[row.status] ?? 'bg-gray-100 text-gray-600'} capitalize">
+									<span class="h-2 w-2 rounded-full {statusColors[row.status] ?? 'bg-gray-300'}"
+									></span>
+									<span
+										class="rounded-full px-1.5 py-0.5 {statusBadge[row.status] ??
+											'bg-gray-100 text-gray-600'} capitalize"
+									>
 										{row.status}
 									</span>
 								</span>
@@ -237,7 +247,6 @@
 					</div>
 				{/if}
 			</div>
-
 		</div>
 	</div>
 </div>

@@ -27,8 +27,10 @@ function parseCSV(text: string): Record<string, string>[] {
 		for (let i = 0; i < line.length; i++) {
 			const ch = line[i];
 			if (ch === '"') {
-				if (inQuotes && line[i + 1] === '"') { current += '"'; i++; }
-				else inQuotes = !inQuotes;
+				if (inQuotes && line[i + 1] === '"') {
+					current += '"';
+					i++;
+				} else inQuotes = !inQuotes;
 			} else if (ch === ',' && !inQuotes) {
 				fields.push(current.trim());
 				current = '';
@@ -48,7 +50,9 @@ function parseCSV(text: string): Record<string, string>[] {
 		if (!line) continue;
 		const values = parseLine(line);
 		const row: Record<string, string> = {};
-		headers.forEach((h, idx) => { row[h] = values[idx] ?? ''; });
+		headers.forEach((h, idx) => {
+			row[h] = values[idx] ?? '';
+		});
 		rows.push(row);
 	}
 	return rows;
@@ -77,18 +81,14 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 		where: eq(menuCategories.tenantId, tenantId),
 		columns: { id: true, name: true }
 	});
-	const categoryByName = new Map(
-		existingCategories.map((c) => [c.name.toLowerCase(), c.id])
-	);
+	const categoryByName = new Map(existingCategories.map((c) => [c.name.toLowerCase(), c.id]));
 
 	// Pre-load existing items by name for upsert
 	const existingItems = await db.query.menuItems.findMany({
 		where: eq(menuItems.tenantId, tenantId),
 		columns: { id: true, name: true }
 	});
-	const itemByName = new Map(
-		existingItems.map((i) => [i.name.toLowerCase(), i.id])
-	);
+	const itemByName = new Map(existingItems.map((i) => [i.name.toLowerCase(), i.id]));
 
 	const results: RowResult[] = [];
 	let created = 0;
@@ -122,15 +122,22 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 
 		const description = row['description']?.trim() || null;
 		const discountedPriceStr = row['discounted_price']?.trim();
-		const discountedPrice = discountedPriceStr && !isNaN(parseFloat(discountedPriceStr))
-			? Math.round(parseFloat(discountedPriceStr) * 100)
-			: null;
+		const discountedPrice =
+			discountedPriceStr && !isNaN(parseFloat(discountedPriceStr))
+				? Math.round(parseFloat(discountedPriceStr) * 100)
+				: null;
 		const tagsRaw = row['tags']?.trim();
-		const tags = tagsRaw ? tagsRaw.split('|').map((t) => t.trim()).filter(Boolean) : [];
+		const tags = tagsRaw
+			? tagsRaw
+					.split('|')
+					.map((t) => t.trim())
+					.filter(Boolean)
+			: [];
 		const availableStr = row['available']?.trim().toLowerCase();
-		const available = availableStr === '' || availableStr === undefined
-			? true
-			: availableStr !== 'false' && availableStr !== '0' && availableStr !== 'no';
+		const available =
+			availableStr === '' || availableStr === undefined
+				? true
+				: availableStr !== 'false' && availableStr !== '0' && availableStr !== 'no';
 
 		// Resolve category — create it if it doesn't exist yet
 		let categoryId: number | null = null;
@@ -156,14 +163,31 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 			if (existingId) {
 				await db
 					.update(menuItems)
-					.set({ description, price, discountedPrice, categoryId, tags, available, updatedAt: new Date() })
+					.set({
+						description,
+						price,
+						discountedPrice,
+						categoryId,
+						tags,
+						available,
+						updatedAt: new Date()
+					})
 					.where(eq(menuItems.id, existingId));
 				results.push({ row: rowNum, name, status: 'updated' });
 				updated++;
 			} else {
 				const [newItem] = await db
 					.insert(menuItems)
-					.values({ tenantId, name, description, price, discountedPrice, categoryId, tags, available })
+					.values({
+						tenantId,
+						name,
+						description,
+						price,
+						discountedPrice,
+						categoryId,
+						tags,
+						available
+					})
 					.returning({ id: menuItems.id });
 				itemByName.set(name.toLowerCase(), newItem.id);
 				results.push({ row: rowNum, name, status: 'created' });
@@ -171,7 +195,12 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 			}
 		} catch (err) {
 			const errorMessage = err instanceof Error ? err.message : String(err);
-			results.push({ row: rowNum, name, status: 'skipped', error: `Database error: ${errorMessage}` });
+			results.push({
+				row: rowNum,
+				name,
+				status: 'skipped',
+				error: `Database error: ${errorMessage}`
+			});
 			skipped++;
 		}
 	}

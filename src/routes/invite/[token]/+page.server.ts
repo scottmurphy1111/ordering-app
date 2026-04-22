@@ -85,7 +85,9 @@ export const actions: Actions = {
 			return fail(400, { message: 'This invite is no longer valid.' });
 		}
 		if (email.toLowerCase() !== invite.email.toLowerCase()) {
-			return fail(400, { message: `This invite was sent to ${invite.email}. Please sign in with that email.` });
+			return fail(400, {
+				message: `This invite was sent to ${invite.email}. Please sign in with that email.`
+			});
 		}
 
 		try {
@@ -119,7 +121,9 @@ export const actions: Actions = {
 			return fail(400, { message: 'This invite is no longer valid.' });
 		}
 		if (email.toLowerCase() !== invite.email.toLowerCase()) {
-			return fail(400, { message: `This invite was sent to ${invite.email}. Please use that email address.` });
+			return fail(400, {
+				message: `This invite was sent to ${invite.email}. Please use that email address.`
+			});
 		}
 
 		try {

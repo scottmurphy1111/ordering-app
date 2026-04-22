@@ -11,7 +11,11 @@ export const load: PageServerLoad = async ({ locals, params }) => {
 	if (isNaN(itemId)) throw error(404, 'Item not found');
 
 	const item = await db.query.menuItems.findFirst({
-		where: and(eq(menuItems.id, itemId), eq(menuItems.tenantId, tenantId), eq(menuItems.available, true)),
+		where: and(
+			eq(menuItems.id, itemId),
+			eq(menuItems.tenantId, tenantId),
+			eq(menuItems.available, true)
+		),
 		with: {
 			modifiers: {
 				with: {

@@ -31,7 +31,12 @@
 	};
 
 	// --- Addon confirmation modal ---
-	type PendingAddon = { key: string; name: string; price: number; action: 'activate' | 'deactivate' };
+	type PendingAddon = {
+		key: string;
+		name: string;
+		price: number;
+		action: 'activate' | 'deactivate';
+	};
 	let pendingAddon = $state<PendingAddon | null>(null);
 
 	function openModal(addon: (typeof ADDONS)[number], action: 'activate' | 'deactivate') {
@@ -54,7 +59,11 @@
 	}
 
 	function fmtDate(iso: string) {
-		return new Date(iso).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+		return new Date(iso).toLocaleDateString('en-US', {
+			month: 'long',
+			day: 'numeric',
+			year: 'numeric'
+		});
 	}
 
 	function fmtMoney(dollars: number) {
@@ -64,7 +73,10 @@
 
 <div class="max-w-3xl">
 	<div class="mb-6">
-		<a href="/dashboard/settings" class="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 mb-1">
+		<a
+			href="/dashboard/settings"
+			class="mb-1 inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700"
+		>
 			<Icon icon="mdi:chevron-left" class="h-4 w-4" /> Settings
 		</a>
 		<h1 class="text-2xl font-bold text-gray-900">Billing</h1>
@@ -72,34 +84,49 @@
 	</div>
 
 	{#if isUpgraded}
-		<div class="mb-4 rounded-md border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700 flex items-center gap-2">
+		<div
+			class="mb-4 flex items-center gap-2 rounded-md border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700"
+		>
 			<Icon icon="mdi:check-circle-outline" class="h-4 w-4 shrink-0" />
 			Your plan has been upgraded. Welcome to {tierInfo.name}!
 		</div>
 	{/if}
 	{#if form?.error}
-		<div class="mb-4 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{form.error}</div>
+		<div class="mb-4 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+			{form.error}
+		</div>
 	{/if}
 
 	<!-- Current plan -->
 	<div class="mb-8 rounded-xl border border-gray-200 bg-white shadow-sm">
-		<div class="border-b border-gray-100 px-5 py-4 flex items-center justify-between">
+		<div class="flex items-center justify-between border-b border-gray-100 px-5 py-4">
 			<h2 class="font-semibold text-gray-900">Current plan</h2>
 			{#if isPaidPlan}
 				<form method="post" action="?/openPortal" use:enhance>
-					<button type="submit" class="flex items-center gap-1.5 rounded-md border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-600 transition-colors hover:border-gray-400 hover:bg-gray-100">
+					<button
+						type="submit"
+						class="flex items-center gap-1.5 rounded-md border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-600 transition-colors hover:border-gray-400 hover:bg-gray-100"
+					>
 						<Icon icon="mdi:cog-outline" class="h-3.5 w-3.5" /> Manage billing
 					</button>
 				</form>
 			{/if}
 		</div>
 		<div class="px-5 py-5">
-			<div class="flex items-start justify-between gap-4 flex-wrap">
+			<div class="flex flex-wrap items-start justify-between gap-4">
 				<div>
-					<div class="flex items-center gap-2 flex-wrap">
+					<div class="flex flex-wrap items-center gap-2">
 						<span class="text-xl font-bold text-gray-900">{tierInfo.name}</span>
-						<span class="rounded-full px-2.5 py-0.5 text-xs font-medium {statusColors[data.subscriptionStatus ?? 'active'] ?? statusColors.active}">
-							{data.subscriptionStatus === 'past_due' ? 'Payment past due' : data.subscriptionStatus === 'cancelled' ? 'Cancelled' : 'Active'}
+						<span
+							class="rounded-full px-2.5 py-0.5 text-xs font-medium {statusColors[
+								data.subscriptionStatus ?? 'active'
+							] ?? statusColors.active}"
+						>
+							{data.subscriptionStatus === 'past_due'
+								? 'Payment past due'
+								: data.subscriptionStatus === 'cancelled'
+									? 'Cancelled'
+									: 'Active'}
 						</span>
 					</div>
 					<p class="mt-0.5 text-sm text-gray-500">
@@ -111,7 +138,10 @@
 				</div>
 				{#if data.subscriptionStatus === 'past_due'}
 					<form method="post" action="?/openPortal" use:enhance>
-						<button type="submit" class="flex items-center gap-1.5 rounded-md bg-amber-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-amber-700 transition-colors">
+						<button
+							type="submit"
+							class="flex items-center gap-1.5 rounded-md bg-amber-600 px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-amber-700"
+						>
 							<Icon icon="mdi:alert-outline" class="h-3.5 w-3.5" /> Update payment method
 						</button>
 					</form>
@@ -123,13 +153,23 @@
 				<div class="mt-5">
 					<div class="mb-1.5 flex items-center justify-between text-sm">
 						<span class="font-medium text-gray-700">Menu items</span>
-						<span class="{atLimit ? 'text-red-600 font-semibold' : nearLimit ? 'text-amber-600 font-semibold' : 'text-gray-500'}">
+						<span
+							class={atLimit
+								? 'font-semibold text-red-600'
+								: nearLimit
+									? 'font-semibold text-amber-600'
+									: 'text-gray-500'}
+						>
 							{itemCount} / {itemLimit}
 						</span>
 					</div>
 					<div class="h-2 w-full rounded-full bg-gray-100">
 						<div
-							class="h-2 rounded-full transition-all {atLimit ? 'bg-red-500' : nearLimit ? 'bg-amber-400' : 'bg-green-500'}"
+							class="h-2 rounded-full transition-all {atLimit
+								? 'bg-red-500'
+								: nearLimit
+									? 'bg-amber-400'
+									: 'bg-green-500'}"
 							style="width: {usagePct}%"
 						></div>
 					</div>
@@ -163,9 +203,16 @@
 				{@const tierIndex = TIERS.findIndex((t) => t.key === tier.key)}
 				{@const currentIndex = TIERS.findIndex((t) => t.key === currentTierKey)}
 				{@const isUpgrade = tierIndex > currentIndex}
-				<div class="relative rounded-xl border {isCurrent ? 'border-green-400 shadow-md' : 'border-gray-200'} bg-white p-5">
+				<div
+					class="relative rounded-xl border {isCurrent
+						? 'border-green-400 shadow-md'
+						: 'border-gray-200'} bg-white p-5"
+				>
 					{#if isCurrent}
-						<span class="absolute -top-2.5 left-4 rounded-full bg-green-500 px-2.5 py-0.5 text-xs font-semibold text-white">Current</span>
+						<span
+							class="absolute -top-2.5 left-4 rounded-full bg-green-500 px-2.5 py-0.5 text-xs font-semibold text-white"
+							>Current</span
+						>
 					{/if}
 					<div class="mb-4">
 						<p class="font-semibold text-gray-900">{tier.name}</p>
@@ -177,33 +224,45 @@
 					<ul class="mb-5 space-y-2">
 						{#each tier.features as feature (feature)}
 							<li class="flex items-start gap-2 text-sm text-gray-600">
-								<Icon icon="mdi:check-circle-outline" class="mt-0.5 h-4 w-4 shrink-0 text-green-500" />
+								<Icon
+									icon="mdi:check-circle-outline"
+									class="mt-0.5 h-4 w-4 shrink-0 text-green-500"
+								/>
 								{feature}
 							</li>
 						{/each}
 					</ul>
 					{#if isCurrent}
-						<button disabled class="w-full rounded-md border border-gray-200 px-4 py-2 text-sm font-medium text-gray-400 cursor-default">
+						<button
+							disabled
+							class="w-full cursor-default rounded-md border border-gray-200 px-4 py-2 text-sm font-medium text-gray-400"
+						>
 							Current plan
 						</button>
 					{:else if isUpgrade}
 						{#if tier.key === 'pro'}
 							<a
 								href="mailto:hello@getorderlocal.com?subject=Order Local Pro upgrade"
-								class="block w-full rounded-md bg-gray-900 px-4 py-2 text-center text-sm font-medium text-white hover:bg-gray-700 transition-colors"
+								class="block w-full rounded-md bg-gray-900 px-4 py-2 text-center text-sm font-medium text-white transition-colors hover:bg-gray-700"
 							>
 								Contact us
 							</a>
 						{:else}
 							<form method="post" action="?/upgrade" use:enhance>
 								<input type="hidden" name="planKey" value={tier.key} />
-								<button type="submit" class="w-full rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-700 transition-colors">
+								<button
+									type="submit"
+									class="w-full rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-gray-700"
+								>
 									Upgrade to {tier.name}
 								</button>
 							</form>
 						{/if}
 					{:else}
-						<button disabled class="w-full rounded-md border border-gray-100 px-4 py-2 text-sm font-medium text-gray-300 cursor-default">
+						<button
+							disabled
+							class="w-full cursor-default rounded-md border border-gray-100 px-4 py-2 text-sm font-medium text-gray-300"
+						>
 							Downgrade
 						</button>
 					{/if}
@@ -211,7 +270,8 @@
 			{/each}
 		</div>
 		<p class="mt-2 text-xs text-gray-400">
-			All plans include Stripe payment processing. Stripe charges 2.9% + 30¢ per transaction — we never take a cut.
+			All plans include Stripe payment processing. Stripe charges 2.9% + 30¢ per transaction — we
+			never take a cut.
 		</p>
 	</div>
 
@@ -219,36 +279,60 @@
 	<div>
 		<h2 class="mb-1 font-semibold text-gray-900">Add-ons</h2>
 		{#if !isPaidPlan}
-			<div class="mb-4 flex items-start gap-3 rounded-lg border border-amber-100 bg-amber-50 px-4 py-3">
+			<div
+				class="mb-4 flex items-start gap-3 rounded-lg border border-amber-100 bg-amber-50 px-4 py-3"
+			>
 				<Icon icon="mdi:lock-outline" class="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
-				<p class="text-sm text-amber-700">Add-ons require an active Growth or Pro plan. Upgrade above to unlock.</p>
+				<p class="text-sm text-amber-700">
+					Add-ons require an active Growth or Pro plan. Upgrade above to unlock.
+				</p>
 			</div>
 		{:else if !data.hasStripeSubscription}
-			<div class="mb-4 flex items-start gap-3 rounded-lg border border-amber-100 bg-amber-50 px-4 py-3">
+			<div
+				class="mb-4 flex items-start gap-3 rounded-lg border border-amber-100 bg-amber-50 px-4 py-3"
+			>
 				<Icon icon="mdi:alert-outline" class="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
-				<p class="text-sm text-amber-700">Complete your plan upgrade through Stripe to activate add-ons.</p>
+				<p class="text-sm text-amber-700">
+					Complete your plan upgrade through Stripe to activate add-ons.
+				</p>
 			</div>
 		{:else}
-			<p class="mb-4 text-sm text-gray-500">Activate or deactivate features. Changes are prorated on your next invoice.</p>
+			<p class="mb-4 text-sm text-gray-500">
+				Activate or deactivate features. Changes are prorated on your next invoice.
+			</p>
 		{/if}
 
 		<div class="grid gap-4 sm:grid-cols-2">
 			{#each ADDONS as addon (addon.key)}
 				{@const isActive = hasAddon(activeAddons, addon.key)}
 				{@const canToggle = isPaidPlan && data.hasStripeSubscription}
-				<div class="rounded-xl border {isActive ? 'border-green-300 bg-green-50/40' : 'border-gray-200 bg-white'} p-5 shadow-sm">
+				<div
+					class="rounded-xl border {isActive
+						? 'border-green-300 bg-green-50/40'
+						: 'border-gray-200 bg-white'} p-5 shadow-sm"
+				>
 					<div class="mb-3 flex items-start justify-between gap-3">
 						<div class="flex items-center gap-3">
-							<div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl {isActive ? 'bg-green-100' : 'bg-gray-100'}">
-								<Icon icon={addon.icon} class="h-5 w-5 {isActive ? 'text-green-700' : 'text-gray-500'}" />
+							<div
+								class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl {isActive
+									? 'bg-green-100'
+									: 'bg-gray-100'}"
+							>
+								<Icon
+									icon={addon.icon}
+									class="h-5 w-5 {isActive ? 'text-green-700' : 'text-gray-500'}"
+								/>
 							</div>
 							<div>
-								<p class="font-semibold text-gray-900 text-sm">{addon.name}</p>
+								<p class="text-sm font-semibold text-gray-900">{addon.name}</p>
 								<p class="text-xs text-gray-500">${addon.price}/mo</p>
 							</div>
 						</div>
 						{#if isActive}
-							<span class="shrink-0 rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700">Active</span>
+							<span
+								class="shrink-0 rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700"
+								>Active</span
+							>
 						{/if}
 					</div>
 					<p class="mb-4 text-sm text-gray-500">{addon.description}</p>
@@ -257,7 +341,7 @@
 							type="button"
 							disabled={!canToggle}
 							onclick={() => openModal(addon, 'deactivate')}
-							class="w-full rounded-md border border-red-200 px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+							class="w-full rounded-md border border-red-200 px-3 py-1.5 text-sm font-medium text-red-600 transition-colors hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-40"
 						>
 							Deactivate
 						</button>
@@ -266,7 +350,7 @@
 							type="button"
 							disabled={!canToggle}
 							onclick={() => openModal(addon, 'activate')}
-							class="w-full rounded-md bg-gray-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-gray-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+							class="w-full rounded-md bg-gray-900 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-gray-700 disabled:cursor-not-allowed disabled:opacity-40"
 						>
 							Activate — ${addon.price}/mo
 						</button>
@@ -280,7 +364,10 @@
 <!-- Addon confirmation modal -->
 {#if pendingAddon}
 	{@const proration = calcProration(pendingAddon.price, pendingAddon.action)}
-	{@const newMonthly = pendingAddon.action === 'activate' ? currentMonthly + pendingAddon.price : currentMonthly - pendingAddon.price}
+	{@const newMonthly =
+		pendingAddon.action === 'activate'
+			? currentMonthly + pendingAddon.price
+			: currentMonthly - pendingAddon.price}
 	{@const isActivate = pendingAddon.action === 'activate'}
 
 	<div
@@ -292,21 +379,30 @@
 		<div class="w-full max-w-md rounded-2xl bg-white shadow-xl">
 			<div class="px-6 pt-6 pb-4">
 				<h2 id="modal-title" class="text-lg font-semibold text-gray-900">
-					{isActivate ? 'Activate' : 'Deactivate'} {pendingAddon.name}?
+					{isActivate ? 'Activate' : 'Deactivate'}
+					{pendingAddon.name}?
 				</h2>
 
 				<!-- Billing summary -->
-				<div class="mt-5 rounded-xl border border-gray-100 bg-gray-50 px-4 py-4 space-y-2">
-					<p class="text-xs font-medium text-gray-400 uppercase tracking-wide mb-3">Billing summary</p>
+				<div class="mt-5 space-y-2 rounded-xl border border-gray-100 bg-gray-50 px-4 py-4">
+					<p class="mb-3 text-xs font-medium tracking-wide text-gray-400 uppercase">
+						Billing summary
+					</p>
 					<div class="flex items-center justify-between text-sm text-gray-600">
 						<span>Current monthly bill</span>
 						<span class="font-medium">${currentMonthly}/mo</span>
 					</div>
-					<div class="flex items-center justify-between text-sm {isActivate ? 'text-gray-800' : 'text-red-600'}">
+					<div
+						class="flex items-center justify-between text-sm {isActivate
+							? 'text-gray-800'
+							: 'text-red-600'}"
+					>
 						<span>{isActivate ? '+' : '−'} {pendingAddon.name}</span>
 						<span class="font-medium">{isActivate ? '+' : '−'}${pendingAddon.price}/mo</span>
 					</div>
-					<div class="border-t border-gray-200 pt-2 flex items-center justify-between text-sm font-semibold text-gray-900">
+					<div
+						class="flex items-center justify-between border-t border-gray-200 pt-2 text-sm font-semibold text-gray-900"
+					>
 						<span>New monthly bill</span>
 						<span>${newMonthly}/mo</span>
 					</div>
@@ -314,13 +410,17 @@
 
 				<!-- Proration note -->
 				{#if proration !== null}
-					<div class="mt-4 flex items-start gap-2.5 rounded-lg border border-blue-100 bg-blue-50 px-3.5 py-3">
+					<div
+						class="mt-4 flex items-start gap-2.5 rounded-lg border border-blue-100 bg-blue-50 px-3.5 py-3"
+					>
 						<Icon icon="mdi:information-outline" class="mt-0.5 h-4 w-4 shrink-0 text-blue-500" />
 						<p class="text-sm text-blue-700">
 							{#if isActivate}
-								You'll be charged a prorated amount of <strong>{fmtMoney(proration)}</strong> today for the remaining days in this billing cycle.
+								You'll be charged a prorated amount of <strong>{fmtMoney(proration)}</strong> today for
+								the remaining days in this billing cycle.
 							{:else}
-								You'll receive a prorated credit of <strong>{fmtMoney(proration)}</strong> on your next invoice.
+								You'll receive a prorated credit of <strong>{fmtMoney(proration)}</strong> on your next
+								invoice.
 							{/if}
 						</p>
 					</div>
@@ -345,15 +445,23 @@
 				<form
 					method="post"
 					action={isActivate ? '?/activateAddon' : '?/deactivateAddon'}
-					use:enhance={() => ({ update }) => { pendingAddon = null; update(); }}
+					use:enhance={() =>
+						({ update }) => {
+							pendingAddon = null;
+							update();
+						}}
 					class="flex-1"
 				>
 					<input type="hidden" name="key" value={pendingAddon.key} />
 					<button
 						type="submit"
-						class="w-full rounded-lg px-4 py-2 text-sm font-medium text-white transition-colors {isActivate ? 'bg-gray-900 hover:bg-gray-700' : 'bg-red-600 hover:bg-red-700'}"
+						class="w-full rounded-lg px-4 py-2 text-sm font-medium text-white transition-colors {isActivate
+							? 'bg-gray-900 hover:bg-gray-700'
+							: 'bg-red-600 hover:bg-red-700'}"
 					>
-						{isActivate ? `Confirm — ${fmtMoney(proration ?? pendingAddon.price)} today` : 'Confirm removal'}
+						{isActivate
+							? `Confirm — ${fmtMoney(proration ?? pendingAddon.price)} today`
+							: 'Confirm removal'}
 					</button>
 				</form>
 			</div>

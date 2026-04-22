@@ -119,7 +119,8 @@
 						<span
 							class="rounded-full px-2 py-0.5 text-xs"
 							style="background-color: color-mix(in srgb, var(--secondary-color) 15%, white); color: var(--secondary-color);"
-						>{tag}</span>
+							>{tag}</span
+						>
 					{/each}
 				</div>
 			{/if}
@@ -146,9 +147,13 @@
 							<span class="text-xs text-gray-400">{chosen.length}/{group.maxSelections}</span>
 						{/if}
 						{#if group.required}
-							<span class="rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-600">Required</span>
+							<span class="rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-600"
+								>Required</span
+							>
 						{:else}
-							<span class="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-500">Optional</span>
+							<span class="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-500"
+								>Optional</span
+							>
 						{/if}
 					</div>
 				</div>
@@ -157,7 +162,9 @@
 						{@const isSelected = chosen.includes(option.name)}
 						{@const isDisabled = isMulti && !isSelected && chosen.length >= group.maxSelections}
 						<label
-							style={isSelected ? 'border-color: var(--primary-color); background-color: color-mix(in srgb, var(--primary-color) 6%, white);' : ''}
+							style={isSelected
+								? 'border-color: var(--primary-color); background-color: color-mix(in srgb, var(--primary-color) 6%, white);'
+								: ''}
 							class="flex cursor-pointer items-center justify-between rounded-lg border px-3 py-2.5 transition-colors
 								{isSelected ? '' : 'border-gray-200 hover:bg-gray-50'}
 								{isDisabled ? 'cursor-not-allowed opacity-50' : ''}"
@@ -176,12 +183,15 @@
 									<span
 										class="rounded-full px-1.5 py-0.5 text-xs font-medium"
 										style="background-color: color-mix(in srgb, var(--secondary-color) 15%, white); color: var(--secondary-color);"
-									>Default</span>
+										>Default</span
+									>
 								{/if}
 							</div>
 							{#if option.priceAdjustment !== 0}
 								<span class="text-sm text-gray-500">
-									{option.priceAdjustment > 0 ? '+' : '−'}${(Math.abs(option.priceAdjustment) / 100).toFixed(2)}
+									{option.priceAdjustment > 0 ? '+' : '−'}${(
+										Math.abs(option.priceAdjustment) / 100
+									).toFixed(2)}
 								</span>
 							{/if}
 						</label>
@@ -192,7 +202,9 @@
 
 		<!-- Allergens -->
 		{#if Array.isArray(data.item.allergens) && (data.item.allergens as string[]).length > 0}
-			<div class="rounded-lg border border-yellow-200 bg-yellow-50 px-4 py-3 text-sm text-yellow-800">
+			<div
+				class="rounded-lg border border-yellow-200 bg-yellow-50 px-4 py-3 text-sm text-yellow-800"
+			>
 				<span class="font-medium">Allergens:</span>
 				{(data.item.allergens as string[]).join(', ')}
 			</div>

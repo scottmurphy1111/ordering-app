@@ -6,7 +6,6 @@ import { menuItems, menuCategories } from '$lib/server/db/schema';
 export const load: PageServerLoad = async ({ locals, params }) => {
 	const tenantId = locals.tenantId!;
 
-
 	const [categories, items] = await Promise.all([
 		db.query.menuCategories.findMany({
 			where: and(eq(menuCategories.tenantId, tenantId), ne(menuCategories.isActive, false)),

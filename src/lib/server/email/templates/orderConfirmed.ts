@@ -17,7 +17,12 @@ export function orderConfirmedEmail({
 	primaryColor?: string;
 	orderNumber: string;
 	customerName: string;
-	items: Array<{ name: string; quantity: number; unitPrice: number; selectedModifiers?: Array<{ name: string }> }>;
+	items: Array<{
+		name: string;
+		quantity: number;
+		unitPrice: number;
+		selectedModifiers?: Array<{ name: string }>;
+	}>;
 	subtotal: number;
 	tax: number;
 	tip: number;
@@ -45,10 +50,14 @@ export function orderConfirmedEmail({
         <td style="padding:4px 0;font-size:14px;color:#6b7280;">Tax</td>
         <td style="padding:4px 0;font-size:14px;color:#6b7280;text-align:right;">${formatCents(tax)}</td>
       </tr>
-      ${tip > 0 ? `<tr>
+      ${
+				tip > 0
+					? `<tr>
         <td style="padding:4px 0;font-size:14px;color:#6b7280;">Tip</td>
         <td style="padding:4px 0;font-size:14px;color:#6b7280;text-align:right;">${formatCents(tip)}</td>
-      </tr>` : ''}
+      </tr>`
+					: ''
+			}
       <tr>
         <td style="padding:12px 0 0;font-size:16px;font-weight:700;color:#111827;border-top:2px solid #111827;">Total</td>
         <td style="padding:12px 0 0;font-size:16px;font-weight:700;color:#111827;text-align:right;border-top:2px solid #111827;">${formatCents(total)}</td>

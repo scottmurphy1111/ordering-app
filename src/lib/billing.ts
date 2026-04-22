@@ -1,6 +1,9 @@
 export type AddonItem = { key: string; stripeItemId: string };
 
-export function hasAddon(addons: Array<AddonItem | string> | null | undefined, key: string): boolean {
+export function hasAddon(
+	addons: Array<AddonItem | string> | null | undefined,
+	key: string
+): boolean {
 	if (!addons?.length) return false;
 	return addons.some((a) => (typeof a === 'string' ? a === key : a.key === key));
 }
@@ -24,23 +27,14 @@ export const TIERS = [
 		name: 'Growth',
 		price: 29,
 		itemLimit: null,
-		features: [
-			'Unlimited menu items',
-			'Everything in Starter',
-			'Website embed',
-			'Priority support'
-		]
+		features: ['Unlimited menu items', 'Everything in Starter', 'Website embed', 'Priority support']
 	},
 	{
 		key: 'pro',
 		name: 'Pro',
 		price: 79,
 		itemLimit: null,
-		features: [
-			'Everything in Growth',
-			'Multiple locations',
-			'Dedicated support'
-		]
+		features: ['Everything in Growth', 'Multiple locations', 'Dedicated support']
 	}
 ] as const;
 
@@ -94,7 +88,8 @@ export const ADDONS = [
 		name: 'Subscriptions',
 		price: 29,
 		icon: 'mdi:refresh-circle',
-		description: 'Sell recurring items or services — customers subscribe and are billed monthly or yearly.'
+		description:
+			'Sell recurring items or services — customers subscribe and are billed monthly or yearly.'
 	}
 ] as const;
 

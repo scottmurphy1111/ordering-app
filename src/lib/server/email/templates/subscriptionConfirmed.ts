@@ -25,10 +25,14 @@ export function subscriptionConfirmedEmail({
         <td style="padding:12px 16px;background:#f9fafb;font-size:13px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:0.05em;border-top:1px solid #e5e7eb;">Amount</td>
         <td style="padding:12px 16px;font-size:14px;color:#111827;text-align:right;border-top:1px solid #e5e7eb;">${amount}/month</td>
       </tr>
-      ${nextBillingDate ? `<tr>
+      ${
+				nextBillingDate
+					? `<tr>
         <td style="padding:12px 16px;background:#f9fafb;font-size:13px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:0.05em;border-top:1px solid #e5e7eb;">Next billing date</td>
         <td style="padding:12px 16px;font-size:14px;color:#111827;text-align:right;border-top:1px solid #e5e7eb;">${nextBillingDate}</td>
-      </tr>` : ''}
+      </tr>`
+					: ''
+			}
     </table>
     <p style="margin:0 0 8px;font-size:14px;color:#374151;line-height:1.6;">
       You can manage your subscription, update your payment method, or view invoices from your billing dashboard.

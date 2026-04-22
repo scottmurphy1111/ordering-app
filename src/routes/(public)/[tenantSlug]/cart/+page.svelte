@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { SvelteDate } from 'svelte/reactivity';
 	import type { PageData } from './$types';
 	import { cart, itemUnitPrice } from '$lib/cart.svelte';
 	import { resolve } from '$app/paths';
@@ -34,9 +35,9 @@
 	let checkoutError = $state<string | null>(null);
 
 	// Minimum date (today) and a sensible default time (next 15-min slot + 30 min)
-	const today = new Date().toISOString().split('T')[0];
+	const today = new SvelteDate().toISOString().split('T')[0];
 	function defaultScheduledTime() {
-		const d = new Date();
+		const d = new SvelteDate();
 		d.setMinutes(Math.ceil((d.getMinutes() + 30) / 15) * 15, 0, 0);
 		return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
 	}

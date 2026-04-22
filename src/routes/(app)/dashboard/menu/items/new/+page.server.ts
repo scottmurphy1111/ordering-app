@@ -25,7 +25,10 @@ export const actions: Actions = {
 		const tenantId = locals.tenantId!;
 
 		const [tenantRecord, countResult] = await Promise.all([
-			db.query.tenant.findFirst({ where: eq(tenant.id, tenantId), columns: { subscriptionTier: true } }),
+			db.query.tenant.findFirst({
+				where: eq(tenant.id, tenantId),
+				columns: { subscriptionTier: true }
+			}),
 			db.select({ count: count() }).from(menuItems).where(eq(menuItems.tenantId, tenantId))
 		]);
 
@@ -33,7 +36,9 @@ export const actions: Actions = {
 		const itemCount = countResult[0]?.count ?? 0;
 
 		if (isAtItemLimit(tierKey, itemCount)) {
-			return fail(403, { error: 'You have reached the item limit for your plan. Upgrade to add more items.' });
+			return fail(403, {
+				error: 'You have reached the item limit for your plan. Upgrade to add more items.'
+			});
 		}
 
 		const formData = await request.formData();
@@ -48,20 +53,43 @@ export const actions: Actions = {
 		const imageUrl = formData.get('imageUrl')?.toString().trim() || null;
 
 		if (!name) return fail(400, { error: 'Name is required' });
-		if (!priceStr || isNaN(parseFloat(priceStr))) return fail(400, { error: 'Valid price is required' });
+		if (!priceStr || isNaN(parseFloat(priceStr)))
+			return fail(400, { error: 'Valid price is required' });
 
 		const price = Math.round(parseFloat(priceStr) * 100);
-		const discountedPrice = discountedPriceStr ? Math.round(parseFloat(discountedPriceStr) * 100) : null;
+		const discountedPrice = discountedPriceStr
+			? Math.round(parseFloat(discountedPriceStr) * 100)
+			: null;
 		const categoryId = categoryIdStr ? parseInt(categoryIdStr) : null;
-		const tags = tagsRaw ? tagsRaw.split(',').map((t) => t.trim()).filter(Boolean) : [];
+		const tags = tagsRaw
+			? tagsRaw
+					.split(',')
+					.map((t) => t.trim())
+					.filter(Boolean)
+			: [];
 		const images = imageUrl ? [{ url: imageUrl, isPrimary: true }] : [];
 		const sortOrder = parseInt(formData.get('sortOrder')?.toString() ?? '0') || 0;
 		const isSubscription = formData.get('isSubscription') === 'on';
-		const billingInterval = isSubscription ? (formData.get('billingInterval')?.toString() || 'monthly') : null;
+		const billingInterval = isSubscription
+			? formData.get('billingInterval')?.toString() || 'monthly'
+			: null;
 
 		const [item] = await db
 			.insert(menuItems)
-			.values({ tenantId, name, description, price, discountedPrice, categoryId, available, tags, images, sortOrder, isSubscription, billingInterval })
+			.values({
+				tenantId,
+				name,
+				description,
+				price,
+				discountedPrice,
+				categoryId,
+				available,
+				tags,
+				images,
+				sortOrder,
+				isSubscription,
+				billingInterval
+			})
 			.returning({ id: menuItems.id });
 
 		throw redirect(303, `/dashboard/menu/items/${item.id}`);

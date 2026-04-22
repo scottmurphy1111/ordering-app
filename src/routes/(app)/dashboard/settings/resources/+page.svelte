@@ -11,7 +11,11 @@
 	// ── Menu QR ──────────────────────────────────────────────────────────────
 	const qrDataUrl = $derived(
 		menuUrl
-			? QRCode.toDataURL(menuUrl, { width: 256, margin: 2, color: { dark: '#111827', light: '#ffffff' } })
+			? QRCode.toDataURL(menuUrl, {
+					width: 256,
+					margin: 2,
+					color: { dark: '#111827', light: '#ffffff' }
+				})
 			: Promise.resolve('')
 	);
 
@@ -83,15 +87,19 @@
 
 <div>
 	<div class="mb-6">
-		<a href="/dashboard/settings" class="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 mb-1">
+		<a
+			href="/dashboard/settings"
+			class="mb-1 inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700"
+		>
 			<Icon icon="mdi:chevron-left" class="h-4 w-4" /> Settings
 		</a>
 		<h1 class="text-2xl font-bold text-gray-900">Resources</h1>
-		<p class="mt-0.5 text-sm text-gray-500">Shareable links and marketing assets for your storefront.</p>
+		<p class="mt-0.5 text-sm text-gray-500">
+			Shareable links and marketing assets for your storefront.
+		</p>
 	</div>
 
 	<div class="space-y-6">
-
 		<!-- ── Menu QR code ──────────────────────────────────────────────────── -->
 		{#if tenant?.slug}
 			<div class="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
@@ -101,7 +109,9 @@
 					</div>
 					<div>
 						<h2 class="font-semibold text-gray-900">Menu QR Code</h2>
-						<p class="text-sm text-gray-500">Print or share so customers can scan directly to your menu.</p>
+						<p class="text-sm text-gray-500">
+							Print or share so customers can scan directly to your menu.
+						</p>
 					</div>
 				</div>
 
@@ -120,7 +130,9 @@
 						<div>
 							<p class="mb-1 text-xs font-medium tracking-wide text-gray-500 uppercase">Menu URL</p>
 							<div class="flex items-center gap-2">
-								<span class="max-w-xs truncate rounded-md border border-gray-200 bg-gray-50 px-3 py-1.5 font-mono text-sm text-gray-700">
+								<span
+									class="max-w-xs truncate rounded-md border border-gray-200 bg-gray-50 px-3 py-1.5 font-mono text-sm text-gray-700"
+								>
 									{menuUrl}
 								</span>
 								<button
@@ -156,21 +168,29 @@
 		{#if tenant?.slug}
 			<div class="rounded-xl border border-blue-100 bg-blue-50 p-6">
 				<div class="flex items-start gap-4">
-					<div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white shadow-sm">
+					<div
+						class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white shadow-sm"
+					>
 						<Icon icon="mdi:google-maps" class="h-5 w-5 text-blue-600" />
 					</div>
 					<div class="min-w-0 flex-1">
 						<h2 class="font-semibold text-gray-900">Add ordering to your Google Maps listing</h2>
 						<p class="mt-1 text-sm text-gray-600">
-							Google Business Profile lets you add an <span class="font-medium">"Order online"</span> button directly to your Maps listing and search result. Customers can tap it to go straight to your menu.
+							Google Business Profile lets you add an <span class="font-medium">"Order online"</span
+							> button directly to your Maps listing and search result. Customers can tap it to go straight
+							to your menu.
 						</p>
-						<ol class="mt-3 space-y-1 text-sm text-gray-600 list-decimal list-inside">
+						<ol class="mt-3 list-inside list-decimal space-y-1 text-sm text-gray-600">
 							<li>Go to <span class="font-medium">Google Business Profile</span> and sign in</li>
 							<li>Select your business → <span class="font-medium">Edit profile → Links</span></li>
-							<li>Paste your menu URL into the <span class="font-medium">Order online</span> field</li>
+							<li>
+								Paste your menu URL into the <span class="font-medium">Order online</span> field
+							</li>
 						</ol>
 						<div class="mt-3 flex items-center gap-2">
-							<span class="max-w-xs truncate rounded-md border border-blue-200 bg-white px-3 py-1.5 font-mono text-xs text-gray-700">
+							<span
+								class="max-w-xs truncate rounded-md border border-blue-200 bg-white px-3 py-1.5 font-mono text-xs text-gray-700"
+							>
 								{menuUrl}
 							</span>
 							<button
@@ -192,12 +212,16 @@
 				<div class="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
 					<div class="mb-5 flex items-start justify-between gap-4">
 						<div class="flex items-center gap-3">
-							<div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-green-100">
+							<div
+								class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-green-100"
+							>
 								<Icon icon="mdi:table-chair" class="h-5 w-5 text-green-700" />
 							</div>
 							<div>
 								<h2 class="font-semibold text-gray-900">Table QR Codes</h2>
-								<p class="text-sm text-gray-500">One QR per table — scans to your menu with dine-in pre-selected.</p>
+								<p class="text-sm text-gray-500">
+									One QR per table — scans to your menu with dine-in pre-selected.
+								</p>
 							</div>
 						</div>
 						<div class="flex shrink-0 items-center gap-2">
@@ -208,7 +232,7 @@
 								min="1"
 								max="50"
 								bind:value={tableCount}
-								class="w-16 rounded-md border border-gray-300 px-2 py-1.5 text-center text-sm focus:border-green-500 focus:outline-none focus:ring-1 focus:ring-green-500"
+								class="w-16 rounded-md border border-gray-300 px-2 py-1.5 text-center text-sm focus:border-green-500 focus:ring-1 focus:ring-green-500 focus:outline-none"
 							/>
 						</div>
 					</div>
@@ -220,7 +244,9 @@
 					{:else}
 						<div class="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
 							{#each tableQrDataUrls as dataUrl, i (i)}
-								<div class="flex flex-col items-center gap-2 rounded-lg border border-gray-100 bg-gray-50 p-3">
+								<div
+									class="flex flex-col items-center gap-2 rounded-lg border border-gray-100 bg-gray-50 p-3"
+								>
 									<img src={dataUrl} alt="Table {i + 1} QR code" class="h-24 w-24" />
 									<p class="text-xs font-semibold text-gray-700">Table {i + 1}</p>
 									<button
@@ -241,14 +267,18 @@
 							<Icon icon="mdi:table-chair" class="h-5 w-5 text-gray-400" />
 						</div>
 						<div class="flex-1">
-							<div class="flex items-center gap-2 flex-wrap">
+							<div class="flex flex-wrap items-center gap-2">
 								<h2 class="font-semibold text-gray-400">Table QR Codes</h2>
-								<span class="rounded-full bg-gray-200 px-2 py-0.5 text-xs font-medium text-gray-500">Add-on</span>
+								<span class="rounded-full bg-gray-200 px-2 py-0.5 text-xs font-medium text-gray-500"
+									>Add-on</span
+								>
 							</div>
-							<p class="mt-1 text-sm text-gray-400">Per-table QR codes for dine-in ordering. Activate this add-on in Billing to unlock.</p>
+							<p class="mt-1 text-sm text-gray-400">
+								Per-table QR codes for dine-in ordering. Activate this add-on in Billing to unlock.
+							</p>
 							<a
 								href="/dashboard/settings/billing"
-								class="mt-3 inline-flex items-center gap-1.5 rounded-md bg-gray-900 px-3 py-1.5 text-xs font-medium text-white hover:bg-gray-700 transition-colors"
+								class="mt-3 inline-flex items-center gap-1.5 rounded-md bg-gray-900 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-gray-700"
 							>
 								<Icon icon="mdi:arrow-right" class="h-3.5 w-3.5" /> Go to Billing
 							</a>
@@ -267,12 +297,15 @@
 					</div>
 					<div>
 						<h2 class="font-semibold text-gray-900">Embed on Your Website</h2>
-						<p class="text-sm text-gray-500">Paste this snippet into any webpage to embed your menu.</p>
+						<p class="text-sm text-gray-500">
+							Paste this snippet into any webpage to embed your menu.
+						</p>
 					</div>
 				</div>
 
 				<div class="relative rounded-lg border border-gray-200 bg-gray-50">
-					<pre class="overflow-x-auto px-4 py-3 font-mono text-xs text-gray-700">{embedSnippet}</pre>
+					<pre
+						class="overflow-x-auto px-4 py-3 font-mono text-xs text-gray-700">{embedSnippet}</pre>
 					<button
 						onclick={copyEmbed}
 						class="absolute top-2 right-2 flex items-center gap-1.5 rounded-md border border-gray-200 bg-white px-2.5 py-1.5 text-xs text-gray-600 transition-colors hover:border-gray-400 hover:bg-gray-100"
@@ -281,7 +314,9 @@
 						{embedCopied ? 'Copied' : 'Copy'}
 					</button>
 				</div>
-				<p class="mt-2 text-xs text-gray-400">Tip: adjust the <code>height</code> value to fit your page layout.</p>
+				<p class="mt-2 text-xs text-gray-400">
+					Tip: adjust the <code>height</code> value to fit your page layout.
+				</p>
 			</div>
 		{/if}
 
@@ -294,7 +329,9 @@
 				<div>
 					<div class="flex items-center gap-2">
 						<h2 class="font-semibold text-gray-400">Printable Menu</h2>
-						<span class="rounded-full bg-gray-200 px-2 py-0.5 text-xs font-medium text-gray-500">Coming soon</span>
+						<span class="rounded-full bg-gray-200 px-2 py-0.5 text-xs font-medium text-gray-500"
+							>Coming soon</span
+						>
 					</div>
 					<p class="text-sm text-gray-400">Generate a print-ready PDF of your full menu.</p>
 				</div>
@@ -310,12 +347,15 @@
 				<div>
 					<div class="flex items-center gap-2">
 						<h2 class="font-semibold text-gray-400">Social Share Card</h2>
-						<span class="rounded-full bg-gray-200 px-2 py-0.5 text-xs font-medium text-gray-500">Coming soon</span>
+						<span class="rounded-full bg-gray-200 px-2 py-0.5 text-xs font-medium text-gray-500"
+							>Coming soon</span
+						>
 					</div>
-					<p class="text-sm text-gray-400">A branded image card ready to share on Instagram, Facebook, and more.</p>
+					<p class="text-sm text-gray-400">
+						A branded image card ready to share on Instagram, Facebook, and more.
+					</p>
 				</div>
 			</div>
 		</div>
-
 	</div>
 </div>

@@ -11,7 +11,7 @@ body {
 }
 
 button:not(:disabled),
-[role="button"]:not(:disabled),
+[role='button']:not(:disabled),
 label[for],
 select:not(:disabled) {
 	cursor: pointer;

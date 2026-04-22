@@ -15,15 +15,22 @@ import { env } from '$env/dynamic/private';
 export const POST: RequestHandler = async ({ request, params }) => {
 	const numericId = parseInt(params.tenantId);
 	const tenantRecord = await db.query.tenant.findFirst({
-		where: isNaN(numericId)
-			? eq(tenant.slug, params.tenantId)
-			: eq(tenant.id, numericId),
-		columns: { id: true, stripeSecretKey: true, stripeWebhookSecret: true, isActive: true, name: true, primaryColor: true, slug: true }
+		where: isNaN(numericId) ? eq(tenant.slug, params.tenantId) : eq(tenant.id, numericId),
+		columns: {
+			id: true,
+			stripeSecretKey: true,
+			stripeWebhookSecret: true,
+			isActive: true,
+			name: true,
+			primaryColor: true,
+			slug: true
+		}
 	});
 
 	if (!tenantRecord?.isActive) throw error(404, 'Tenant not found');
 	if (!tenantRecord.stripeSecretKey) throw error(400, 'Stripe not configured for this tenant');
-	if (!tenantRecord.stripeWebhookSecret) throw error(400, 'Webhook secret not configured for this tenant');
+	if (!tenantRecord.stripeWebhookSecret)
+		throw error(400, 'Webhook secret not configured for this tenant');
 
 	const stripe = new Stripe(tenantRecord.stripeSecretKey);
 
@@ -40,7 +47,12 @@ export const POST: RequestHandler = async ({ request, params }) => {
 		throw error(400, 'Invalid webhook signature');
 	}
 
-	const tenantCtx = { id: tenantRecord.id, name: tenantRecord.name, primaryColor: tenantRecord.primaryColor ?? undefined, slug: tenantRecord.slug };
+	const tenantCtx = {
+		id: tenantRecord.id,
+		name: tenantRecord.name,
+		primaryColor: tenantRecord.primaryColor ?? undefined,
+		slug: tenantRecord.slug
+	};
 
 	try {
 		await handleEvent(event, tenantCtx);
@@ -188,7 +200,9 @@ async function handleEvent(event: Stripe.Event, tenant: TenantCtx) {
 						paymentStatus: 'paid',
 						status: 'confirmed',
 						...(intentId ? { stripePaymentIntentId: intentId } : {}),
-						...(subscriptionId ? { metadata: { stripeSessionId: session.id, stripeSubscriptionId: subscriptionId } } : { metadata: { stripeSessionId: session.id } }),
+						...(subscriptionId
+							? { metadata: { stripeSessionId: session.id, stripeSubscriptionId: subscriptionId } }
+							: { metadata: { stripeSessionId: session.id } }),
 						updatedAt: new Date()
 					})
 					.where(eq(orders.id, orderId))
@@ -233,9 +247,10 @@ async function handleEvent(event: Stripe.Event, tenant: TenantCtx) {
 			// Skip first payment — already handled by checkout.session.completed
 			if (invoice.billing_reason === 'subscription_create') break;
 
-			const subDetails = invoice.parent?.type === 'subscription_details'
-				? invoice.parent.subscription_details
-				: null;
+			const subDetails =
+				invoice.parent?.type === 'subscription_details'
+					? invoice.parent.subscription_details
+					: null;
 			const subRaw = subDetails?.subscription;
 			const subId = subRaw ? (typeof subRaw === 'string' ? subRaw : subRaw.id) : null;
 			if (!subId) break;
@@ -245,29 +260,34 @@ async function handleEvent(event: Stripe.Event, tenant: TenantCtx) {
 				where: sql`${orders.tenantId} = ${tenant.id} AND ${orders.metadata}->>'stripeSubscriptionId' = ${subId}`
 			});
 			if (!original) {
-				console.warn(`[webhook] invoice.payment_succeeded: no order found for subscription ${subId}`);
+				console.warn(
+					`[webhook] invoice.payment_succeeded: no order found for subscription ${subId}`
+				);
 				break;
 			}
 
 			const orderNumber = generateOrderNumber();
-			const [recurring] = await db.insert(orders).values({
-				tenantId: original.tenantId,
-				orderNumber,
-				customerName: original.customerName,
-				customerEmail: original.customerEmail,
-				customerPhone: original.customerPhone,
-				type: 'subscription',
-				status: 'received',
-				paymentStatus: 'paid',
-				subtotal: original.subtotal,
-				tax: 0,
-				deliveryFee: 0,
-				tip: 0,
-				discount: 0,
-				total: original.subtotal,
-				items: original.items as unknown[],
-				metadata: { stripeSubscriptionId: subId, isRecurring: true }
-			}).returning();
+			const [recurring] = await db
+				.insert(orders)
+				.values({
+					tenantId: original.tenantId,
+					orderNumber,
+					customerName: original.customerName,
+					customerEmail: original.customerEmail,
+					customerPhone: original.customerPhone,
+					type: 'subscription',
+					status: 'received',
+					paymentStatus: 'paid',
+					subtotal: original.subtotal,
+					tax: 0,
+					deliveryFee: 0,
+					tip: 0,
+					discount: 0,
+					total: original.subtotal,
+					items: original.items as unknown[],
+					metadata: { stripeSubscriptionId: subId, isRecurring: true }
+				})
+				.returning();
 
 			if (recurring?.customerEmail) {
 				await sendEmail({

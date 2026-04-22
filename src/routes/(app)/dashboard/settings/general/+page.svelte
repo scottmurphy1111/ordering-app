@@ -7,16 +7,26 @@
 	let { data, form: _form }: { data: PageData; form: ActionData } = $props();
 	const form = $derived(_form as (ActionData & { deliverySuccess?: boolean }) | null);
 
-	const address = $derived(data.info?.address as {
-		street?: string;
-		city?: string;
-		state?: string;
-		zip?: string;
-		country?: string;
-	} | null);
+	const address = $derived(
+		data.info?.address as {
+			street?: string;
+			city?: string;
+			state?: string;
+			zip?: string;
+			country?: string;
+		} | null
+	);
 
-	const savedHours = $derived(((data.info as unknown as { settings?: { hours?: WeekHours } } | null)?.settings?.hours) ?? {});
-	const savedDelivery = $derived((data.info as unknown as { settings?: { enableDelivery?: boolean; deliveryFee?: number } } | null)?.settings ?? {});
+	const savedHours = $derived(
+		(data.info as unknown as { settings?: { hours?: WeekHours } } | null)?.settings?.hours ?? {}
+	);
+	const savedDelivery = $derived(
+		(
+			data.info as unknown as {
+				settings?: { enableDelivery?: boolean; deliveryFee?: number };
+			} | null
+		)?.settings ?? {}
+	);
 
 	const DAYS = [
 		{ key: 'monday', label: 'Monday' },
@@ -41,7 +51,10 @@
 
 <div class="max-w-2xl">
 	<div class="mb-6">
-		<a href="/dashboard/settings" class="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 mb-1">
+		<a
+			href="/dashboard/settings"
+			class="mb-1 inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700"
+		>
 			<Icon icon="mdi:chevron-left" class="h-4 w-4" /> Settings
 		</a>
 		<h1 class="text-2xl font-bold text-gray-900">General</h1>
@@ -49,14 +62,26 @@
 	</div>
 
 	{#if form?.error}
-		<div class="mb-4 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{form.error}</div>
+		<div class="mb-4 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+			{form.error}
+		</div>
 	{/if}
 	{#if form?.success}
-		<div class="mb-4 rounded-md border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">Changes saved.</div>
+		<div
+			class="mb-4 rounded-md border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700"
+		>
+			Changes saved.
+		</div>
 	{/if}
 
-	<form method="post" action="?/save" use:enhance={() => ({ update }) => update({ reset: false })} class="space-y-6">
-
+	<form
+		method="post"
+		action="?/save"
+		use:enhance={() =>
+			({ update }) =>
+				update({ reset: false })}
+		class="space-y-6"
+	>
 		<!-- Business identity -->
 		<div class="rounded-xl border border-gray-200 bg-white shadow-sm">
 			<div class="border-b border-gray-100 px-5 py-4">
@@ -65,34 +90,40 @@
 			<div class="space-y-4 px-5 py-5">
 				<div class="grid gap-4 sm:grid-cols-2">
 					<div>
-						<label class="mb-1 block text-sm font-medium text-gray-700" for="name">Business name *</label>
+						<label class="mb-1 block text-sm font-medium text-gray-700" for="name"
+							>Business name *</label
+						>
 						<input
 							id="name"
 							name="name"
 							type="text"
 							required
 							value={data.info?.name ?? ''}
-							class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-green-500 focus:outline-none focus:ring-1 focus:ring-green-500"
+							class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-green-500 focus:ring-1 focus:ring-green-500 focus:outline-none"
 						/>
 					</div>
 					<div>
-						<label class="mb-1 block text-sm font-medium text-gray-700" for="legalName">Legal name</label>
+						<label class="mb-1 block text-sm font-medium text-gray-700" for="legalName"
+							>Legal name</label
+						>
 						<input
 							id="legalName"
 							name="legalName"
 							type="text"
 							value={data.info?.legalName ?? ''}
 							placeholder="If different from business name"
-							class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-green-500 focus:outline-none focus:ring-1 focus:ring-green-500"
+							class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-green-500 focus:ring-1 focus:ring-green-500 focus:outline-none"
 						/>
 					</div>
 				</div>
 				<div class="sm:w-1/2">
-					<label class="mb-1 block text-sm font-medium text-gray-700" for="type">Business type</label>
+					<label class="mb-1 block text-sm font-medium text-gray-700" for="type"
+						>Business type</label
+					>
 					<select
 						id="type"
 						name="type"
-						class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-green-500 focus:outline-none focus:ring-1 focus:ring-green-500"
+						class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-green-500 focus:ring-1 focus:ring-green-500 focus:outline-none"
 					>
 						{#each businessTypes as bt (bt.value)}
 							<option value={bt.value} selected={data.info?.type === bt.value}>{bt.label}</option>
@@ -117,7 +148,7 @@
 							type="tel"
 							value={data.info?.phone ?? ''}
 							placeholder="+1 (555) 000-0000"
-							class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-green-500 focus:outline-none focus:ring-1 focus:ring-green-500"
+							class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-green-500 focus:ring-1 focus:ring-green-500 focus:outline-none"
 						/>
 					</div>
 					<div>
@@ -128,14 +159,19 @@
 							type="email"
 							value={data.info?.email ?? ''}
 							placeholder="contact@yourbusiness.com"
-							class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-green-500 focus:outline-none focus:ring-1 focus:ring-green-500"
+							class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-green-500 focus:ring-1 focus:ring-green-500 focus:outline-none"
 						/>
 					</div>
 				</div>
 				<div>
 					<label class="mb-1 block text-sm font-medium text-gray-700" for="website">Website</label>
-					<div class="flex rounded-md border border-gray-300 focus-within:border-green-500 focus-within:ring-1 focus-within:ring-green-500">
-						<span class="flex items-center rounded-l-md border-r border-gray-300 bg-gray-50 px-3 text-sm text-gray-500">https://</span>
+					<div
+						class="flex rounded-md border border-gray-300 focus-within:border-green-500 focus-within:ring-1 focus-within:ring-green-500"
+					>
+						<span
+							class="flex items-center rounded-l-md border-r border-gray-300 bg-gray-50 px-3 text-sm text-gray-500"
+							>https://</span
+						>
 						<input
 							id="website"
 							name="website"
@@ -163,7 +199,7 @@
 						type="text"
 						value={address?.street ?? ''}
 						placeholder="123 Main St"
-						class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-green-500 focus:outline-none focus:ring-1 focus:ring-green-500"
+						class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-green-500 focus:ring-1 focus:ring-green-500 focus:outline-none"
 					/>
 				</div>
 				<div class="grid gap-4 sm:grid-cols-3">
@@ -174,7 +210,7 @@
 							name="city"
 							type="text"
 							value={address?.city ?? ''}
-							class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-green-500 focus:outline-none focus:ring-1 focus:ring-green-500"
+							class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-green-500 focus:ring-1 focus:ring-green-500 focus:outline-none"
 						/>
 					</div>
 					<div>
@@ -185,7 +221,7 @@
 							type="text"
 							value={address?.state ?? ''}
 							placeholder="TX"
-							class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-green-500 focus:outline-none focus:ring-1 focus:ring-green-500"
+							class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-green-500 focus:ring-1 focus:ring-green-500 focus:outline-none"
 						/>
 					</div>
 					<div>
@@ -195,7 +231,7 @@
 							name="zip"
 							type="text"
 							value={address?.zip ?? ''}
-							class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-green-500 focus:outline-none focus:ring-1 focus:ring-green-500"
+							class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-green-500 focus:ring-1 focus:ring-green-500 focus:outline-none"
 						/>
 					</div>
 				</div>
@@ -207,7 +243,7 @@
 						type="text"
 						value={address?.country ?? ''}
 						placeholder="US"
-						class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-green-500 focus:outline-none focus:ring-1 focus:ring-green-500"
+						class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-green-500 focus:ring-1 focus:ring-green-500 focus:outline-none"
 					/>
 				</div>
 			</div>
@@ -225,16 +261,29 @@
 
 	<!-- Delivery — separate form/action -->
 	{#if form?.deliverySuccess}
-		<div class="mt-4 rounded-md border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">Delivery settings saved.</div>
+		<div
+			class="mt-4 rounded-md border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700"
+		>
+			Delivery settings saved.
+		</div>
 	{/if}
-	<form method="post" action="?/saveDelivery" use:enhance={() => ({ update }) => update({ reset: false })} class="mt-6">
+	<form
+		method="post"
+		action="?/saveDelivery"
+		use:enhance={() =>
+			({ update }) =>
+				update({ reset: false })}
+		class="mt-6"
+	>
 		<div class="rounded-xl border border-gray-200 bg-white shadow-sm">
 			<div class="border-b border-gray-100 px-5 py-4">
 				<h2 class="font-semibold text-gray-900">Delivery</h2>
-				<p class="mt-0.5 text-xs text-gray-500">Enable delivery as an order type at checkout and set a flat delivery fee.</p>
+				<p class="mt-0.5 text-xs text-gray-500">
+					Enable delivery as an order type at checkout and set a flat delivery fee.
+				</p>
 			</div>
 			<div class="space-y-4 px-5 py-5">
-				<label class="flex items-center gap-3 cursor-pointer">
+				<label class="flex cursor-pointer items-center gap-3">
 					<input
 						type="checkbox"
 						name="enableDelivery"
@@ -244,9 +293,16 @@
 					<span class="text-sm font-medium text-gray-700">Enable delivery orders</span>
 				</label>
 				<div class="sm:w-48">
-					<label class="mb-1 block text-sm font-medium text-gray-700" for="deliveryFee">Delivery fee</label>
-					<div class="flex rounded-md border border-gray-300 focus-within:border-green-500 focus-within:ring-1 focus-within:ring-green-500">
-						<span class="flex items-center rounded-l-md border-r border-gray-300 bg-gray-50 px-3 text-sm text-gray-500">$</span>
+					<label class="mb-1 block text-sm font-medium text-gray-700" for="deliveryFee"
+						>Delivery fee</label
+					>
+					<div
+						class="flex rounded-md border border-gray-300 focus-within:border-green-500 focus-within:ring-1 focus-within:ring-green-500"
+					>
+						<span
+							class="flex items-center rounded-l-md border-r border-gray-300 bg-gray-50 px-3 text-sm text-gray-500"
+							>$</span
+						>
 						<input
 							id="deliveryFee"
 							name="deliveryFee"
@@ -261,7 +317,10 @@
 				</div>
 			</div>
 			<div class="border-t border-gray-100 px-5 py-4">
-				<button type="submit" class="rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-gray-700">
+				<button
+					type="submit"
+					class="rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-gray-700"
+				>
 					Save delivery settings
 				</button>
 			</div>
@@ -270,13 +329,27 @@
 
 	<!-- Operating hours — separate form/action -->
 	{#if form?.hoursSuccess}
-		<div class="mt-4 rounded-md border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">Hours saved.</div>
+		<div
+			class="mt-4 rounded-md border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700"
+		>
+			Hours saved.
+		</div>
 	{/if}
-	<form method="post" action="?/saveHours" use:enhance={() => ({ update }) => update({ reset: false })} class="mt-6">
+	<form
+		method="post"
+		action="?/saveHours"
+		use:enhance={() =>
+			({ update }) =>
+				update({ reset: false })}
+		class="mt-6"
+	>
 		<div class="rounded-xl border border-gray-200 bg-white shadow-sm">
 			<div class="border-b border-gray-100 px-5 py-4">
 				<h2 class="font-semibold text-gray-900">Operating hours</h2>
-				<p class="mt-0.5 text-xs text-gray-500">Customers will see open/closed status on your menu page. Leave all days unset to hide the status.</p>
+				<p class="mt-0.5 text-xs text-gray-500">
+					Customers will see open/closed status on your menu page. Leave all days unset to hide the
+					status.
+				</p>
 			</div>
 			<div class="divide-y divide-gray-100 px-5">
 				{#each DAYS as day (day.key)}
@@ -285,7 +358,12 @@
 						<div class="flex items-center justify-between sm:contents">
 							<span class="w-24 shrink-0 text-sm font-medium text-gray-700">{day.label}</span>
 							<label class="flex items-center gap-1.5 text-sm text-gray-500">
-								<input type="checkbox" name="{day.key}_closed" class="h-4 w-4 rounded border-gray-300" checked={h?.closed ?? false} />
+								<input
+									type="checkbox"
+									name="{day.key}_closed"
+									class="h-4 w-4 rounded border-gray-300"
+									checked={h?.closed ?? false}
+								/>
 								Closed
 							</label>
 						</div>
@@ -294,21 +372,24 @@
 								type="time"
 								name="{day.key}_open"
 								value={h?.open ?? '09:00'}
-								class="flex-1 rounded-md border border-gray-300 px-2 py-1.5 text-sm focus:border-green-500 focus:outline-none focus:ring-1 focus:ring-green-500 sm:flex-none"
+								class="flex-1 rounded-md border border-gray-300 px-2 py-1.5 text-sm focus:border-green-500 focus:ring-1 focus:ring-green-500 focus:outline-none sm:flex-none"
 							/>
 							<span class="text-xs text-gray-400">to</span>
 							<input
 								type="time"
 								name="{day.key}_close"
 								value={h?.close ?? '21:00'}
-								class="flex-1 rounded-md border border-gray-300 px-2 py-1.5 text-sm focus:border-green-500 focus:outline-none focus:ring-1 focus:ring-green-500 sm:flex-none"
+								class="flex-1 rounded-md border border-gray-300 px-2 py-1.5 text-sm focus:border-green-500 focus:ring-1 focus:ring-green-500 focus:outline-none sm:flex-none"
 							/>
 						</div>
 					</div>
 				{/each}
 			</div>
 			<div class="border-t border-gray-100 px-5 py-4">
-				<button type="submit" class="rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-gray-700">
+				<button
+					type="submit"
+					class="rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-gray-700"
+				>
 					Save hours
 				</button>
 			</div>

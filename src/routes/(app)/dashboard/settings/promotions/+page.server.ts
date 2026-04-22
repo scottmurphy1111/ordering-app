@@ -53,7 +53,8 @@ export const actions: Actions = {
 		if (type !== 'percent' && type !== 'flat') return fail(400, { error: 'Invalid type.' });
 		const amount = parseFloat(amountStr ?? '');
 		if (isNaN(amount) || amount <= 0) return fail(400, { error: 'Invalid amount.' });
-		if (type === 'percent' && amount > 100) return fail(400, { error: 'Percent cannot exceed 100.' });
+		if (type === 'percent' && amount > 100)
+			return fail(400, { error: 'Percent cannot exceed 100.' });
 
 		const amountStored = type === 'percent' ? Math.round(amount) : Math.round(amount * 100);
 		const minOrderAmount = Math.round(parseFloat(minOrderStr ?? '0') * 100) || 0;
@@ -66,8 +67,14 @@ export const actions: Actions = {
 		if (existing) return fail(400, { error: `Code "${code}" already exists.` });
 
 		await db.insert(promoCodes).values({
-			tenantId, code, description, type, amount: amountStored,
-			minOrderAmount, maxUses, expiresAt
+			tenantId,
+			code,
+			description,
+			type,
+			amount: amountStored,
+			minOrderAmount,
+			maxUses,
+			expiresAt
 		});
 
 		return { success: true };
@@ -79,7 +86,8 @@ export const actions: Actions = {
 		const id = parseInt(fd.get('id')?.toString() ?? '');
 		const isActive = fd.get('isActive') === 'true';
 		if (isNaN(id)) return fail(400, { error: 'Invalid ID.' });
-		await db.update(promoCodes)
+		await db
+			.update(promoCodes)
 			.set({ isActive })
 			.where(and(eq(promoCodes.id, id), eq(promoCodes.tenantId, tenantId)));
 		return { success: true };
@@ -90,7 +98,8 @@ export const actions: Actions = {
 		const fd = await request.formData();
 		const id = parseInt(fd.get('id')?.toString() ?? '');
 		if (isNaN(id)) return fail(400, { error: 'Invalid ID.' });
-		await db.delete(promoCodes)
+		await db
+			.delete(promoCodes)
 			.where(and(eq(promoCodes.id, id), eq(promoCodes.tenantId, tenantId)));
 		return { success: true };
 	}

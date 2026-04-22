@@ -22,7 +22,11 @@
 
 	// ── New order alert ──────────────────────────────────────────────────────
 	let lastKnownOrderId = $state(0);
-	let newOrderToast = $state<{ orderNumber: string; customerName: string | null; total: number } | null>(null);
+	let newOrderToast = $state<{
+		orderNumber: string;
+		customerName: string | null;
+		total: number;
+	} | null>(null);
 	let toastTimer: ReturnType<typeof setTimeout> | null = null;
 
 	function playChime() {
@@ -43,13 +47,17 @@
 				osc.start(t);
 				osc.stop(t + 0.5);
 			});
-		} catch { /* AudioContext not available */ }
+		} catch {
+			/* AudioContext not available */
+		}
 	}
 
 	function showToast(order: { orderNumber: string; customerName: string | null; total: number }) {
 		newOrderToast = order;
 		if (toastTimer) clearTimeout(toastTimer);
-		toastTimer = setTimeout(() => { newOrderToast = null; }, 8000);
+		toastTimer = setTimeout(() => {
+			newOrderToast = null;
+		}, 8000);
 	}
 
 	async function pollOrders() {
@@ -68,7 +76,9 @@
 				}
 			}
 			lastKnownOrderId = latestId;
-		} catch { /* ignore network errors */ }
+		} catch {
+			/* ignore network errors */
+		}
 	}
 
 	onMount(() => {
@@ -82,9 +92,14 @@
 
 	const navItems = [
 		{ href: '/dashboard', label: 'Overview', icon: 'mdi:view-dashboard-outline', tour: 'overview' },
-		{ href: '/dashboard/orders', label: 'Orders', icon: 'mdi:clipboard-list-outline', tour: 'orders' },
+		{
+			href: '/dashboard/orders',
+			label: 'Orders',
+			icon: 'mdi:clipboard-list-outline',
+			tour: 'orders'
+		},
 		{ href: '/dashboard/menu', label: 'Menu', icon: 'mdi:silverware-fork-knife', tour: 'menu' },
-{ href: '/dashboard/analytics', label: 'Analytics', icon: 'mdi:chart-bar', tour: 'analytics' },
+		{ href: '/dashboard/analytics', label: 'Analytics', icon: 'mdi:chart-bar', tour: 'analytics' },
 		{ href: '/dashboard/settings', label: 'Settings', icon: 'mdi:cog-outline', tour: 'settings' }
 	];
 
@@ -121,10 +136,16 @@
 		<div class="flex items-center justify-between border-b border-gray-700 px-4 py-4">
 			<a href={resolve('/tenants')} class="flex min-w-0 flex-1 items-center gap-3">
 				{#if data.tenant?.logoUrl}
-					<img src={data.tenant.logoUrl} alt={data.tenant.name} class="h-9 w-9 shrink-0 rounded-md object-contain bg-white/10 p-0.5" />
+					<img
+						src={data.tenant.logoUrl}
+						alt={data.tenant.name}
+						class="h-9 w-9 shrink-0 rounded-md bg-white/10 object-contain p-0.5"
+					/>
 				{/if}
 				<div class="min-w-0">
-					<p class="text-xs font-medium tracking-wider text-gray-400 uppercase">Order<span class="text-green-400">Local</span></p>
+					<p class="text-xs font-medium tracking-wider text-gray-400 uppercase">
+						Order<span class="text-green-400">Local</span>
+					</p>
 					{#if data.tenant}
 						<p class="mt-0.5 truncate text-sm font-semibold text-white">{data.tenant.name}</p>
 					{:else}
@@ -196,7 +217,9 @@
 	<!-- Main content -->
 	<main class="flex flex-1 flex-col overflow-y-auto">
 		<!-- Mobile top bar -->
-		<header class="flex items-center gap-3 border-b border-gray-700 bg-gray-900 px-4 py-3 md:hidden">
+		<header
+			class="flex items-center gap-3 border-b border-gray-700 bg-gray-900 px-4 py-3 md:hidden"
+		>
 			<button
 				onclick={() => (sidebarOpen = true)}
 				class="shrink-0 rounded-md p-1 text-gray-300 transition-colors hover:text-white"
@@ -206,12 +229,20 @@
 			</button>
 			<a href={resolve('/tenants')} class="flex min-w-0 flex-1 items-center gap-2.5">
 				{#if data.tenant?.logoUrl}
-					<img src={data.tenant.logoUrl} alt={data.tenant.name} class="h-8 w-8 shrink-0 rounded-md object-contain bg-white/10 p-0.5" />
+					<img
+						src={data.tenant.logoUrl}
+						alt={data.tenant.name}
+						class="h-8 w-8 shrink-0 rounded-md bg-white/10 object-contain p-0.5"
+					/>
 				{/if}
 				<div class="min-w-0">
-					<p class="text-xs font-medium uppercase tracking-wide text-gray-400">Order<span class="text-green-400">Local</span></p>
+					<p class="text-xs font-medium tracking-wide text-gray-400 uppercase">
+						Order<span class="text-green-400">Local</span>
+					</p>
 					{#if data.tenant}
-						<p class="truncate text-sm font-semibold leading-tight text-white">{data.tenant.name}</p>
+						<p class="truncate text-sm leading-tight font-semibold text-white">
+							{data.tenant.name}
+						</p>
 					{/if}
 				</div>
 			</a>
@@ -222,7 +253,9 @@
 		</div>
 		<footer class="border-t border-gray-200 bg-white px-6 py-4">
 			<div class="mx-auto flex max-w-5xl items-center justify-center gap-4">
-				<p class="text-xs font-semibold uppercase tracking-wide text-gray-400">Order<span class="text-green-600">Local</span></p>
+				<p class="text-xs font-semibold tracking-wide text-gray-400 uppercase">
+					Order<span class="text-green-600">Local</span>
+				</p>
 				<p class="text-xs text-gray-400">
 					&copy; {new Date().getFullYear()} All rights reserved.
 				</p>
@@ -233,24 +266,35 @@
 
 <!-- New order toast -->
 {#if newOrderToast}
-	<div class="fixed bottom-5 right-5 z-300 flex items-start gap-3 rounded-xl border border-green-200 bg-white px-4 py-3.5 shadow-xl">
+	<div
+		class="fixed right-5 bottom-5 z-300 flex items-start gap-3 rounded-xl border border-green-200 bg-white px-4 py-3.5 shadow-xl"
+	>
 		<div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-green-100">
 			<Icon icon="mdi:bell-ring-outline" class="h-5 w-5 text-green-600" />
 		</div>
 		<div class="min-w-0">
 			<p class="text-sm font-semibold text-gray-900">New order!</p>
 			<p class="text-xs text-gray-500">
-				{newOrderToast.orderNumber}{newOrderToast.customerName ? ` · ${newOrderToast.customerName}` : ''} · ${(newOrderToast.total / 100).toFixed(2)}
+				{newOrderToast.orderNumber}{newOrderToast.customerName
+					? ` · ${newOrderToast.customerName}`
+					: ''} · ${(newOrderToast.total / 100).toFixed(2)}
 			</p>
 			<a
 				href={resolve('/dashboard/orders')}
-				onclick={() => { newOrderToast = null; }}
+				onclick={() => {
+					newOrderToast = null;
+				}}
 				class="mt-1 inline-block text-xs font-medium text-green-600 hover:text-green-700"
 			>
 				View orders
 			</a>
 		</div>
-		<button onclick={() => { newOrderToast = null; }} class="shrink-0 text-gray-300 hover:text-gray-500">
+		<button
+			onclick={() => {
+				newOrderToast = null;
+			}}
+			class="shrink-0 text-gray-300 hover:text-gray-500"
+		>
 			<Icon icon="mdi:close" class="h-4 w-4" />
 		</button>
 	</div>

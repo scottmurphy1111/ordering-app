@@ -30,7 +30,10 @@ export const menuCategoriesRelations = relations(menuCategories, ({ one, many })
 
 export const menuItemsRelations = relations(menuItems, ({ one, many }) => ({
 	tenant: one(tenant, { fields: [menuItems.tenantId], references: [tenant.id] }),
-	category: one(menuCategories, { fields: [menuItems.categoryId], references: [menuCategories.id] }),
+	category: one(menuCategories, {
+		fields: [menuItems.categoryId],
+		references: [menuCategories.id]
+	}),
 	modifiers: many(menuItemModifiers)
 }));
 

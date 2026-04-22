@@ -26,14 +26,21 @@ export const GET: RequestHandler = async ({ locals }) => {
 	});
 
 	if (!record?.stripeSecretKey) {
-		throw error(400, 'No Stripe key connected. Go to Settings → Integrations to connect your Stripe account.');
+		throw error(
+			400,
+			'No Stripe key connected. Go to Settings → Integrations to connect your Stripe account.'
+		);
 	}
 
 	const stripe = new Stripe(record.stripeSecretKey);
 
 	// Fetch all active products with their default prices, auto-paginating
 	const products: Stripe.Product[] = [];
-	for await (const product of stripe.products.list({ active: true, limit: 100, expand: ['data.default_price'] })) {
+	for await (const product of stripe.products.list({
+		active: true,
+		limit: 100,
+		expand: ['data.default_price']
+	})) {
 		products.push(product);
 	}
 
@@ -84,7 +91,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 	});
 	if (!record?.stripeSecretKey) throw error(400, 'No Stripe key connected');
 
-	const body = await request.json() as { items: DiscoveredItem[] };
+	const body = (await request.json()) as { items: DiscoveredItem[] };
 	if (!Array.isArray(body.items) || body.items.length === 0) {
 		throw error(400, 'No items provided');
 	}

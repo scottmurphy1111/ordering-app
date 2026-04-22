@@ -11,13 +11,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 	const startOfPrev30Days = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000);
 	const startOf7Days = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
 
-	const [
-		recentOrders,
-		prev30Orders,
-		topItems,
-		statusBreakdown,
-		typeBreakdown
-	] = await Promise.all([
+	const [recentOrders, prev30Orders, topItems, statusBreakdown, typeBreakdown] = await Promise.all([
 		// All paid orders in last 30 days (full rows for chart + KPIs)
 		db.query.orders.findMany({
 			where: and(
@@ -85,7 +79,8 @@ export const load: PageServerLoad = async ({ locals }) => {
 	// ── KPI calculations ────────────────────────────────────────────
 	const revenue30 = recentOrders.reduce((s, o) => s + o.total, 0);
 	const revenuePrev30 = prev30Orders.reduce((s, o) => s + o.total, 0);
-	const revenueChange = revenuePrev30 > 0 ? ((revenue30 - revenuePrev30) / revenuePrev30) * 100 : null;
+	const revenueChange =
+		revenuePrev30 > 0 ? ((revenue30 - revenuePrev30) / revenuePrev30) * 100 : null;
 
 	const orders30 = recentOrders.length;
 	const ordersPrev30 = prev30Orders.length;

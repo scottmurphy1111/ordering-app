@@ -12,10 +12,7 @@ function getClient() {
 	});
 }
 
-export async function uploadToR2(
-	file: File,
-	prefix: string
-): Promise<string> {
+export async function uploadToR2(file: File, prefix: string): Promise<string> {
 	const timestamp = Date.now();
 	const extension = file.name.split('.').pop()?.toLowerCase() || 'jpg';
 	const key = `${prefix}-${timestamp}.${extension}`;

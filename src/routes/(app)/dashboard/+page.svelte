@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { SvelteDate } from 'svelte/reactivity';
 	import { invalidate } from '$app/navigation';
 	import type { PageData } from './$types';
 	import { resolve } from '$app/paths';
@@ -7,23 +8,29 @@
 
 	let { data }: { data: PageData } = $props();
 
-	let lastUpdated = $state(new Date());
+	const lastUpdated = new SvelteDate();
 
 	onMount(() => {
 		let interval: ReturnType<typeof setInterval> | null = null;
 		function refresh() {
 			invalidate('app:overview');
-			lastUpdated = new Date();
+			lastUpdated.setTime(Date.now());
 		}
 		function start() {
 			if (!interval) interval = setInterval(refresh, 15_000);
 		}
 		function stop() {
-			if (interval) { clearInterval(interval); interval = null; }
+			if (interval) {
+				clearInterval(interval);
+				interval = null;
+			}
 		}
 		start();
-		document.addEventListener('visibilitychange', () => document.hidden ? stop() : start());
-		return () => { stop(); document.removeEventListener('visibilitychange', start); };
+		document.addEventListener('visibilitychange', () => (document.hidden ? stop() : start()));
+		return () => {
+			stop();
+			document.removeEventListener('visibilitychange', start);
+		};
 	});
 
 	const statusColors: Record<string, string> = {
@@ -57,14 +64,20 @@
 		<div class="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
 			<p class="text-xs font-medium tracking-wide text-gray-500 uppercase">Menu Items</p>
 			<p class="mt-1 text-3xl font-bold text-gray-900">{data.stats.items}</p>
-			<a href={resolve('/dashboard/menu/items')} class="mt-2 inline-flex items-center gap-0.5 text-xs font-medium text-green-600 transition-colors hover:text-green-800">
+			<a
+				href={resolve('/dashboard/menu/items')}
+				class="mt-2 inline-flex items-center gap-0.5 text-xs font-medium text-green-600 transition-colors hover:text-green-800"
+			>
 				Manage <Icon icon="mdi:chevron-right" class="h-3 w-3" />
 			</a>
 		</div>
 		<div class="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
 			<p class="text-xs font-medium tracking-wide text-gray-500 uppercase">Categories</p>
 			<p class="mt-1 text-3xl font-bold text-gray-900">{data.stats.categories}</p>
-			<a href={resolve('/dashboard/menu/categories')} class="mt-2 inline-flex items-center gap-0.5 text-xs font-medium text-green-600 transition-colors hover:text-green-800">
+			<a
+				href={resolve('/dashboard/menu/categories')}
+				class="mt-2 inline-flex items-center gap-0.5 text-xs font-medium text-green-600 transition-colors hover:text-green-800"
+			>
 				Manage <Icon icon="mdi:chevron-right" class="h-3 w-3" />
 			</a>
 		</div>
@@ -74,7 +87,10 @@
 			{#if data.stats.pendingOrders > 0}
 				<p class="mt-1 text-xs text-yellow-600">{data.stats.pendingOrders} pending</p>
 			{/if}
-			<a href={resolve('/dashboard/orders')} class="mt-2 inline-flex items-center gap-0.5 text-xs font-medium text-green-600 transition-colors hover:text-green-800">
+			<a
+				href={resolve('/dashboard/orders')}
+				class="mt-2 inline-flex items-center gap-0.5 text-xs font-medium text-green-600 transition-colors hover:text-green-800"
+			>
 				View <Icon icon="mdi:chevron-right" class="h-3 w-3" />
 			</a>
 		</div>
@@ -110,22 +126,32 @@
 	{#if data.recentOrders.length > 0}
 		<div>
 			<div class="mb-3 flex items-center gap-2">
-			<h2 class="text-base font-semibold text-gray-800">Recent orders</h2>
-			<span class="flex items-center gap-1.5 text-xs text-gray-400">
-				<span class="relative flex h-2 w-2">
-					<span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-400 opacity-75"></span>
-					<span class="relative inline-flex h-2 w-2 rounded-full bg-green-500"></span>
+				<h2 class="text-base font-semibold text-gray-800">Recent orders</h2>
+				<span class="flex items-center gap-1.5 text-xs text-gray-400">
+					<span class="relative flex h-2 w-2">
+						<span
+							class="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-400 opacity-75"
+						></span>
+						<span class="relative inline-flex h-2 w-2 rounded-full bg-green-500"></span>
+					</span>
+					Live · updated {lastUpdated.toLocaleTimeString([], {
+						hour: '2-digit',
+						minute: '2-digit',
+						second: '2-digit'
+					})}
 				</span>
-				Live · updated {lastUpdated.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
-			</span>
-		</div>
+			</div>
 			<div class="overflow-x-auto rounded-xl border border-gray-200 bg-white shadow-sm">
 				<table class="w-full text-sm">
 					<thead class="border-b border-gray-200 bg-gray-50">
 						<tr>
 							<th class="px-4 py-2.5 text-left font-medium text-gray-500">Order</th>
-							<th class="hidden px-4 py-2.5 text-left font-medium text-gray-500 sm:table-cell">Customer</th>
-							<th class="hidden px-4 py-2.5 text-left font-medium text-gray-500 md:table-cell">Type</th>
+							<th class="hidden px-4 py-2.5 text-left font-medium text-gray-500 sm:table-cell"
+								>Customer</th
+							>
+							<th class="hidden px-4 py-2.5 text-left font-medium text-gray-500 md:table-cell"
+								>Type</th
+							>
 							<th class="px-4 py-2.5 text-left font-medium text-gray-500">Status</th>
 							<th class="px-4 py-2.5 text-right font-medium text-gray-500">Total</th>
 						</tr>
@@ -134,16 +160,27 @@
 						{#each data.recentOrders as order (order.id)}
 							<tr class="transition-colors hover:bg-gray-50">
 								<td class="px-4 py-3 font-mono text-xs text-gray-600">
-									<a href={resolve(`/dashboard/orders/${order.id}`)} class="hover:underline">{order.orderNumber}</a>
+									<a href={resolve(`/dashboard/orders/${order.id}`)} class="hover:underline"
+										>{order.orderNumber}</a
+									>
 								</td>
-								<td class="hidden px-4 py-3 text-gray-700 sm:table-cell">{order.customerName ?? '—'}</td>
-								<td class="hidden px-4 py-3 text-gray-500 capitalize md:table-cell">{order.type}</td>
+								<td class="hidden px-4 py-3 text-gray-700 sm:table-cell"
+									>{order.customerName ?? '—'}</td
+								>
+								<td class="hidden px-4 py-3 text-gray-500 capitalize md:table-cell">{order.type}</td
+								>
 								<td class="px-4 py-3">
-									<span class="rounded-full px-2 py-0.5 text-xs font-medium {statusColors[order.status] ?? 'bg-gray-100 text-gray-600'}">
+									<span
+										class="rounded-full px-2 py-0.5 text-xs font-medium {statusColors[
+											order.status
+										] ?? 'bg-gray-100 text-gray-600'}"
+									>
 										{order.status}
 									</span>
 								</td>
-								<td class="px-4 py-3 text-right font-medium text-gray-900">${(order.total / 100).toFixed(2)}</td>
+								<td class="px-4 py-3 text-right font-medium text-gray-900"
+									>${(order.total / 100).toFixed(2)}</td
+								>
 							</tr>
 						{/each}
 					</tbody>

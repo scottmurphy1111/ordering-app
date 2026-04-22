@@ -33,8 +33,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 
 	// Fetch all internal (platform) users — visible to owners and internal users
 	const currentMember = members.find((m) => m.userId === currentUserId);
-	const canManageInternal =
-		currentMember?.role === 'owner' || locals.user?.isInternal === true;
+	const canManageInternal = currentMember?.role === 'owner' || locals.user?.isInternal === true;
 
 	let internalUsers: { id: string; name: string; email: string; createdAt: Date }[] = [];
 	if (canManageInternal) {

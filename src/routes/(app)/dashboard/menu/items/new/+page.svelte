@@ -48,23 +48,31 @@
 </script>
 
 <div class="max-w-xl">
-	<div class="flex items-center gap-3 mb-6">
-		<a href={resolve('/dashboard/menu/items')} class="inline-flex items-center gap-1 text-sm text-gray-400 hover:text-gray-600 transition-colors"><Icon icon="mdi:arrow-left" class="h-4 w-4" /> Items</a>
+	<div class="mb-6 flex items-center gap-3">
+		<a
+			href={resolve('/dashboard/menu/items')}
+			class="inline-flex items-center gap-1 text-sm text-gray-400 transition-colors hover:text-gray-600"
+			><Icon icon="mdi:arrow-left" class="h-4 w-4" /> Items</a
+		>
 		<h1 class="text-2xl font-bold text-gray-900">New item</h1>
 	</div>
 
 	{#if form?.error}
-		<div class="mb-4 rounded-md bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">{form.error}</div>
+		<div class="mb-4 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+			{form.error}
+		</div>
 	{/if}
 
 	<form
 		method="post"
 		use:enhance
-		class="rounded-xl border border-gray-200 bg-white p-6 shadow-sm space-y-5"
+		class="space-y-5 rounded-xl border border-gray-200 bg-white p-6 shadow-sm"
 	>
 		<!-- Image upload -->
 		<div>
-			<p class="block text-sm font-medium text-gray-700 mb-2">Image <span class="text-gray-400 font-normal">(optional)</span></p>
+			<p class="mb-2 block text-sm font-medium text-gray-700">
+				Image <span class="font-normal text-gray-400">(optional)</span>
+			</p>
 			<div class="flex items-start gap-4">
 				<!-- Square preview / upload target -->
 				<div
@@ -72,17 +80,30 @@
 					tabindex="0"
 					aria-label="Upload item image"
 					onclick={() => (document.getElementById('image-upload') as HTMLInputElement)?.click()}
-					onkeydown={(e) => e.key === 'Enter' && (document.getElementById('image-upload') as HTMLInputElement)?.click()}
-					class="relative flex h-24 w-24 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 transition-colors hover:border-gray-400 hover:bg-gray-100 {uploading ? 'pointer-events-none opacity-60' : ''}"
+					onkeydown={(e) =>
+						e.key === 'Enter' &&
+						(document.getElementById('image-upload') as HTMLInputElement)?.click()}
+					class="relative flex h-24 w-24 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 transition-colors hover:border-gray-400 hover:bg-gray-100 {uploading
+						? 'pointer-events-none opacity-60'
+						: ''}"
 				>
 					{#if imagePreview}
 						<img src={imagePreview} alt="Item preview" class="h-full w-full object-cover" />
-						<div class="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 hover:opacity-100 transition-opacity">
+						<div
+							class="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity hover:opacity-100"
+						>
 							<Icon icon="mdi:pencil" class="h-5 w-5 text-white" />
 						</div>
 					{:else if uploading}
 						<svg class="h-5 w-5 animate-spin text-gray-400" fill="none" viewBox="0 0 24 24">
-							<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+							<circle
+								class="opacity-25"
+								cx="12"
+								cy="12"
+								r="10"
+								stroke="currentColor"
+								stroke-width="4"
+							></circle>
 							<path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
 						</svg>
 					{:else}
@@ -110,7 +131,7 @@
 						<button
 							type="button"
 							onclick={clearImage}
-							class="text-xs text-red-500 hover:text-red-700 transition-colors"
+							class="text-xs text-red-500 transition-colors hover:text-red-700"
 						>
 							Remove image
 						</button>
@@ -121,31 +142,33 @@
 		</div>
 
 		<div>
-			<label class="block text-sm font-medium text-gray-700 mb-1" for="name">Name *</label>
+			<label class="mb-1 block text-sm font-medium text-gray-700" for="name">Name *</label>
 			<input
 				id="name"
 				name="name"
 				type="text"
 				required
 				placeholder="e.g. Classic Cheeseburger"
-				class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+				class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
 			/>
 		</div>
 
 		<div>
-			<label class="block text-sm font-medium text-gray-700 mb-1" for="description">Description</label>
+			<label class="mb-1 block text-sm font-medium text-gray-700" for="description"
+				>Description</label
+			>
 			<textarea
 				id="description"
 				name="description"
 				rows="2"
 				placeholder="Short description of the item..."
-				class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+				class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
 			></textarea>
 		</div>
 
 		<div class="grid grid-cols-2 gap-4">
 			<div>
-				<label class="block text-sm font-medium text-gray-700 mb-1" for="price">Price ($) *</label>
+				<label class="mb-1 block text-sm font-medium text-gray-700" for="price">Price ($) *</label>
 				<input
 					id="price"
 					name="price"
@@ -154,11 +177,13 @@
 					step="0.01"
 					required
 					placeholder="9.99"
-					class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+					class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
 				/>
 			</div>
 			<div>
-				<label class="block text-sm font-medium text-gray-700 mb-1" for="discountedPrice">Sale price ($)</label>
+				<label class="mb-1 block text-sm font-medium text-gray-700" for="discountedPrice"
+					>Sale price ($)</label
+				>
 				<input
 					id="discountedPrice"
 					name="discountedPrice"
@@ -166,18 +191,19 @@
 					min="0"
 					step="0.01"
 					placeholder="Optional"
-					class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+					class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
 				/>
 			</div>
 		</div>
 
 		{#if data.categories.length > 0}
 			<div>
-				<label class="block text-sm font-medium text-gray-700 mb-1" for="categoryId">Category</label>
+				<label class="mb-1 block text-sm font-medium text-gray-700" for="categoryId">Category</label
+				>
 				<select
 					id="categoryId"
 					name="categoryId"
-					class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+					class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
 				>
 					<option value="">No category</option>
 					{#each data.categories as cat (cat.id)}
@@ -188,29 +214,37 @@
 		{/if}
 
 		<div>
-			<label class="block text-sm font-medium text-gray-700 mb-1" for="tags">Tags</label>
+			<label class="mb-1 block text-sm font-medium text-gray-700" for="tags">Tags</label>
 			<input
 				id="tags"
 				name="tags"
 				type="text"
 				placeholder="spicy, popular, vegetarian (comma-separated)"
-				class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+				class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
 			/>
 		</div>
 
 		<input type="hidden" name="sortOrder" value="0" />
 
 		<div class="flex items-center gap-2">
-			<input id="available" name="available" type="checkbox" checked class="h-4 w-4 rounded border-gray-300" />
+			<input
+				id="available"
+				name="available"
+				type="checkbox"
+				checked
+				class="h-4 w-4 rounded border-gray-300"
+			/>
 			<label class="text-sm text-gray-700" for="available">Available for ordering</label>
 		</div>
 
 		{#if data.hasSubscriptionsAddon}
-			<div class="rounded-lg border border-gray-200 p-4 space-y-3">
+			<div class="space-y-3 rounded-lg border border-gray-200 p-4">
 				<div class="flex items-center justify-between">
 					<div>
 						<p class="text-sm font-medium text-gray-700">Recurring subscription</p>
-						<p class="text-xs text-gray-400">Customers subscribe and are billed on a set interval.</p>
+						<p class="text-xs text-gray-400">
+							Customers subscribe and are billed on a set interval.
+						</p>
 					</div>
 					<button
 						type="button"
@@ -218,8 +252,16 @@
 						aria-label={isSubscription ? 'Disable subscription' : 'Enable subscription'}
 						class="flex items-center"
 					>
-						<div class="relative h-6 w-11 rounded-full transition-colors duration-200 {isSubscription ? 'bg-green-600' : 'bg-gray-300'}">
-							<span class="absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform duration-200 {isSubscription ? 'translate-x-5' : 'translate-x-0'}"></span>
+						<div
+							class="relative h-6 w-11 rounded-full transition-colors duration-200 {isSubscription
+								? 'bg-green-600'
+								: 'bg-gray-300'}"
+						>
+							<span
+								class="absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform duration-200 {isSubscription
+									? 'translate-x-5'
+									: 'translate-x-0'}"
+							></span>
 						</div>
 					</button>
 				</div>
@@ -232,7 +274,10 @@
 								<button
 									type="button"
 									onclick={() => (billingInterval = opt.value)}
-									class="rounded-md border px-4 py-1.5 text-sm transition-colors {billingInterval === opt.value ? 'border-green-500 bg-green-50 text-green-700 font-medium' : 'border-gray-200 text-gray-500 hover:border-gray-300'}"
+									class="rounded-md border px-4 py-1.5 text-sm transition-colors {billingInterval ===
+									opt.value
+										? 'border-green-500 bg-green-50 font-medium text-green-700'
+										: 'border-gray-200 text-gray-500 hover:border-gray-300'}"
 								>
 									{opt.label}
 								</button>
@@ -248,7 +293,7 @@
 			<button
 				type="submit"
 				disabled={uploading}
-				class="flex-1 rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-700 transition-colors disabled:opacity-50"
+				class="flex-1 rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-gray-700 disabled:opacity-50"
 			>
 				Create item
 			</button>

@@ -13,7 +13,11 @@
 	}
 </script>
 
-<svelte:window onkeydown={(e) => { if (confirmState.open && e.key === 'Escape') handleCancel(); }} />
+<svelte:window
+	onkeydown={(e) => {
+		if (confirmState.open && e.key === 'Escape') handleCancel();
+	}}
+/>
 
 {#if confirmState.open}
 	<div
@@ -35,7 +39,7 @@
 						class="h-5 w-5 {confirmState.danger ? 'text-red-600' : 'text-gray-500'}"
 					/>
 				</div>
-				<p id="confirm-msg" class="pt-1.5 text-sm font-medium leading-relaxed text-gray-900">
+				<p id="confirm-msg" class="pt-1.5 text-sm leading-relaxed font-medium text-gray-900">
 					{confirmState.message}
 				</p>
 			</div>

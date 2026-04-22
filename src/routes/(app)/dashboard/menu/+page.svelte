@@ -14,7 +14,7 @@
 			icon: 'mdi:folder-outline',
 			label: 'Categories',
 			description: 'Group your menu items into categories.'
-		},
+		}
 	];
 </script>
 
@@ -32,8 +32,8 @@
 				class="flex items-start gap-4 rounded-xl border border-gray-200 bg-white p-5 shadow-sm transition-colors hover:border-gray-300 hover:bg-gray-50"
 			>
 				<div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-green-100">
-				<Icon icon={section.icon} class="h-5 w-5 text-green-700" />
-			</div>
+					<Icon icon={section.icon} class="h-5 w-5 text-green-700" />
+				</div>
 				<div>
 					<p class="font-semibold text-gray-900">{section.label}</p>
 					<p class="mt-0.5 text-sm text-gray-500">{section.description}</p>

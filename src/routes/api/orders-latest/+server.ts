@@ -11,10 +11,7 @@ export const GET: RequestHandler = async ({ locals }) => {
 	// completes Stripe checkout, so filtering on paymentStatus prevents the chime
 	// firing for abandoned carts.
 	const latest = await db.query.orders.findFirst({
-		where: and(
-			eq(orders.tenantId, locals.tenantId),
-			eq(orders.paymentStatus, 'paid')
-		),
+		where: and(eq(orders.tenantId, locals.tenantId), eq(orders.paymentStatus, 'paid')),
 		orderBy: [desc(orders.id)],
 		columns: { id: true, orderNumber: true, customerName: true, total: true }
 	});

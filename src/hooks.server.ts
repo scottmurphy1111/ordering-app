@@ -43,12 +43,13 @@ const handleTenantContext: Handle = async ({ event, resolve }) => {
 				const isInternal = event.locals.user?.isInternal ?? false;
 
 				// Verify the user is actually a member of this tenant (internal users can access any)
-				const membership = userId && !isInternal
-					? await db.query.tenantUsers.findFirst({
-							where: and(eq(tenantUsers.tenantId, tenantId), eq(tenantUsers.userId, userId)),
-							columns: { tenantId: true }
-						})
-					: { tenantId }; // internal users skip the membership check
+				const membership =
+					userId && !isInternal
+						? await db.query.tenantUsers.findFirst({
+								where: and(eq(tenantUsers.tenantId, tenantId), eq(tenantUsers.userId, userId)),
+								columns: { tenantId: true }
+							})
+						: { tenantId }; // internal users skip the membership check
 
 				if (membership) {
 					const currentTenant = await db.query.tenant.findFirst({
@@ -65,7 +66,8 @@ const handleTenantContext: Handle = async ({ event, resolve }) => {
 								columns: { role: true }
 							});
 							if (memberRecord) {
-								event.locals.tenantRole = memberRecord.role as import('$lib/server/roles').TenantRole;
+								event.locals.tenantRole =
+									memberRecord.role as import('$lib/server/roles').TenantRole;
 							}
 						}
 					}

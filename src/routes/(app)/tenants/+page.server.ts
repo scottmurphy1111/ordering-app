@@ -4,7 +4,10 @@ import { db } from '$lib/server/db';
 import { eq } from 'drizzle-orm';
 import { tenant, tenantUsers } from '$lib/server/db/schema';
 
-function canCreateTenant(isInternal: boolean, userTenants: Array<{ role: string; subscriptionTier: string | null }>) {
+function canCreateTenant(
+	isInternal: boolean,
+	userTenants: Array<{ role: string; subscriptionTier: string | null }>
+) {
 	if (isInternal) return true;
 	if (userTenants.length === 0) return true;
 	// Must own a Pro tenant to create additional tenants
@@ -57,11 +60,20 @@ export const actions: Actions = {
 
 		const name = formData.get('name')?.toString().trim();
 		const slug = formData.get('slug')?.toString().trim().toLowerCase().replace(/\s+/g, '-');
-		const type = (formData.get('type')?.toString() as 'quick_service' | 'full_service' | 'cafe' | 'food_truck' | 'bar' | 'bakery' | 'other') ?? 'quick_service';
+		const type =
+			(formData.get('type')?.toString() as
+				| 'quick_service'
+				| 'full_service'
+				| 'cafe'
+				| 'food_truck'
+				| 'bar'
+				| 'bakery'
+				| 'other') ?? 'quick_service';
 
 		if (!name) return fail(400, { error: 'Name is required' });
 		if (!slug) return fail(400, { error: 'Slug is required' });
-		if (!/^[a-z0-9-]+$/.test(slug)) return fail(400, { error: 'Slug may only contain lowercase letters, numbers, and hyphens' });
+		if (!/^[a-z0-9-]+$/.test(slug))
+			return fail(400, { error: 'Slug may only contain lowercase letters, numbers, and hyphens' });
 
 		// Check slug uniqueness
 		const existing = await db.query.tenant.findFirst({ where: eq(tenant.slug, slug) });

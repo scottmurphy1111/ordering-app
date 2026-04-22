@@ -69,7 +69,13 @@ export const actions: Actions = {
 
 		const record = await db.query.tenant.findFirst({
 			where: eq(tenant.id, tenantId),
-			columns: { stripeCustomerId: true, name: true, email: true, subscriptionTier: true, stripeSubscriptionId: true }
+			columns: {
+				stripeCustomerId: true,
+				name: true,
+				email: true,
+				subscriptionTier: true,
+				stripeSubscriptionId: true
+			}
 		});
 
 		if (record?.subscriptionTier === planKey) return fail(400, { error: 'Already on this plan.' });
@@ -81,14 +87,16 @@ export const actions: Actions = {
 			const subscription = await stripe.subscriptions.retrieve(record.stripeSubscriptionId, {
 				expand: ['items']
 			});
-			const planItem = subscription.items.data.find((i) => {
-				const meta = i.price.metadata?.type;
-				return meta === 'plan' || !meta; // plan items have type=plan or are the first item
-			}) ?? subscription.items.data[0];
+			const planItem =
+				subscription.items.data.find((i) => {
+					const meta = i.price.metadata?.type;
+					return meta === 'plan' || !meta; // plan items have type=plan or are the first item
+				}) ?? subscription.items.data[0];
 
 			if (planItem) {
 				await stripe.subscriptionItems.update(planItem.id, { price: priceId });
-				await db.update(tenant)
+				await db
+					.update(tenant)
 					.set({ subscriptionTier: planKey, updatedAt: new Date() })
 					.where(eq(tenant.id, tenantId));
 				return { success: true, upgraded: true };
@@ -104,9 +112,7 @@ export const actions: Actions = {
 				metadata: { tenantId: String(tenantId) }
 			});
 			customerId = customer.id;
-			await db.update(tenant)
-				.set({ stripeCustomerId: customerId })
-				.where(eq(tenant.id, tenantId));
+			await db.update(tenant).set({ stripeCustomerId: customerId }).where(eq(tenant.id, tenantId));
 		}
 
 		const session = await stripe.checkout.sessions.create({
@@ -159,7 +165,9 @@ export const actions: Actions = {
 		}
 
 		if (!record.stripeSubscriptionId) {
-			return fail(400, { error: 'No active Stripe subscription found. Complete your plan upgrade first.' });
+			return fail(400, {
+				error: 'No active Stripe subscription found. Complete your plan upgrade first.'
+			});
 		}
 
 		const current = (record.addons ?? []) as AddonItem[];
@@ -174,7 +182,8 @@ export const actions: Actions = {
 			price: priceId
 		});
 
-		await db.update(tenant)
+		await db
+			.update(tenant)
 			.set({ addons: [...current, { key, stripeItemId: item.id }], updatedAt: new Date() })
 			.where(eq(tenant.id, tenantId));
 
@@ -200,7 +209,9 @@ export const actions: Actions = {
 
 		const stripe = getOrderLocalStripe();
 		try {
-			await stripe.subscriptionItems.del(addonEntry.stripeItemId, { proration_behavior: 'create_prorations' });
+			await stripe.subscriptionItems.del(addonEntry.stripeItemId, {
+				proration_behavior: 'create_prorations'
+			});
 		} catch (e: unknown) {
 			// If the item doesn't exist in Stripe, still clean up the DB
 			if (!(e instanceof Error && e.message.includes('No such subscription_item'))) {
@@ -208,7 +219,8 @@ export const actions: Actions = {
 			}
 		}
 
-		await db.update(tenant)
+		await db
+			.update(tenant)
 			.set({ addons: current.filter((a) => a.key !== key), updatedAt: new Date() })
 			.where(eq(tenant.id, tenantId));
 

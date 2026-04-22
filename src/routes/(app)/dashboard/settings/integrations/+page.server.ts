@@ -46,14 +46,17 @@ export const actions: Actions = {
 		const key = formData.get('stripeSecretKey')?.toString().trim();
 
 		if (!key) return fail(400, { error: 'API key is required' });
-		if (!key.startsWith('sk_')) return fail(400, { error: 'Must be a Stripe secret key (starts with sk_)' });
+		if (!key.startsWith('sk_'))
+			return fail(400, { error: 'Must be a Stripe secret key (starts with sk_)' });
 
 		let stripe: Stripe;
 		try {
 			stripe = new Stripe(key);
 			await stripe.products.list({ limit: 1 });
 		} catch {
-			return fail(400, { error: 'Could not connect to Stripe with that key. Please check it and try again.' });
+			return fail(400, {
+				error: 'Could not connect to Stripe with that key. Please check it and try again.'
+			});
 		}
 
 		// Delete old webhook endpoint if one exists
@@ -85,11 +88,14 @@ export const actions: Actions = {
 			webhookEndpointId = endpoint.id;
 		}
 
-		await db.update(tenant).set({
-			stripeSecretKey: key,
-			stripeWebhookSecret: webhookSecret,
-			stripeWebhookEndpointId: webhookEndpointId
-		}).where(eq(tenant.id, tenantId));
+		await db
+			.update(tenant)
+			.set({
+				stripeSecretKey: key,
+				stripeWebhookSecret: webhookSecret,
+				stripeWebhookEndpointId: webhookEndpointId
+			})
+			.where(eq(tenant.id, tenantId));
 
 		return { success: true };
 	},
@@ -108,12 +114,14 @@ export const actions: Actions = {
 			await stripe.webhookEndpoints.del(record.stripeWebhookEndpointId).catch(() => {});
 		}
 
-		await db.update(tenant).set({
-			stripeSecretKey: null,
-			stripeWebhookSecret: null,
-			stripeWebhookEndpointId: null
-		}).where(eq(tenant.id, tenantId));
+		await db
+			.update(tenant)
+			.set({
+				stripeSecretKey: null,
+				stripeWebhookSecret: null,
+				stripeWebhookEndpointId: null
+			})
+			.where(eq(tenant.id, tenantId));
 		return { cleared: true };
-	},
-
+	}
 };

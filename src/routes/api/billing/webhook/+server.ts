@@ -17,7 +17,11 @@ function formatAmount(cents: number): string {
 }
 
 function formatDate(unix: number): string {
-	return new Date(unix * 1000).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+	return new Date(unix * 1000).toLocaleDateString('en-US', {
+		month: 'long',
+		day: 'numeric',
+		year: 'numeric'
+	});
 }
 
 export const POST: RequestHandler = async ({ request }) => {
@@ -45,14 +49,15 @@ export const POST: RequestHandler = async ({ request }) => {
 				const planKey = session.metadata?.planKey;
 				if (isNaN(tenantId) || !planKey || !PAID_TIERS.has(planKey)) break;
 
-				const subscriptionId = typeof session.subscription === 'string'
-					? session.subscription
-					: session.subscription?.id;
-				const customerId = typeof session.customer === 'string'
-					? session.customer
-					: session.customer?.id;
+				const subscriptionId =
+					typeof session.subscription === 'string'
+						? session.subscription
+						: session.subscription?.id;
+				const customerId =
+					typeof session.customer === 'string' ? session.customer : session.customer?.id;
 
-				await db.update(tenant)
+				await db
+					.update(tenant)
 					.set({
 						subscriptionTier: planKey,
 						subscriptionStatus: 'active',
@@ -88,9 +93,10 @@ export const POST: RequestHandler = async ({ request }) => {
 
 			case 'customer.subscription.updated': {
 				const subscription = event.data.object as Stripe.Subscription;
-				const customerId = typeof subscription.customer === 'string'
-					? subscription.customer
-					: subscription.customer.id;
+				const customerId =
+					typeof subscription.customer === 'string'
+						? subscription.customer
+						: subscription.customer.id;
 
 				const tenantRecord = await db.query.tenant.findFirst({
 					where: eq(tenant.stripeCustomerId, customerId),
@@ -98,12 +104,17 @@ export const POST: RequestHandler = async ({ request }) => {
 				});
 				if (!tenantRecord) break;
 
-				const status = subscription.status === 'active' ? 'active'
-					: subscription.status === 'past_due' ? 'past_due'
-					: subscription.status === 'canceled' ? 'cancelled'
-					: subscription.status;
+				const status =
+					subscription.status === 'active'
+						? 'active'
+						: subscription.status === 'past_due'
+							? 'past_due'
+							: subscription.status === 'canceled'
+								? 'cancelled'
+								: subscription.status;
 
-				await db.update(tenant)
+				await db
+					.update(tenant)
 					.set({ subscriptionStatus: status, updatedAt: new Date() })
 					.where(eq(tenant.id, tenantRecord.id));
 				break;
@@ -111,9 +122,10 @@ export const POST: RequestHandler = async ({ request }) => {
 
 			case 'customer.subscription.deleted': {
 				const subscription = event.data.object as Stripe.Subscription;
-				const customerId = typeof subscription.customer === 'string'
-					? subscription.customer
-					: subscription.customer.id;
+				const customerId =
+					typeof subscription.customer === 'string'
+						? subscription.customer
+						: subscription.customer.id;
 
 				const tenantRecord = await db.query.tenant.findFirst({
 					where: eq(tenant.stripeCustomerId, customerId),
@@ -122,7 +134,8 @@ export const POST: RequestHandler = async ({ request }) => {
 				if (!tenantRecord) break;
 
 				// Downgrade to Starter and clear all paid add-ons
-				await db.update(tenant)
+				await db
+					.update(tenant)
 					.set({
 						subscriptionTier: 'starter',
 						subscriptionStatus: 'cancelled',
@@ -136,9 +149,8 @@ export const POST: RequestHandler = async ({ request }) => {
 
 			case 'invoice.payment_failed': {
 				const invoice = event.data.object as Stripe.Invoice;
-				const customerId = typeof invoice.customer === 'string'
-					? invoice.customer
-					: invoice.customer?.id;
+				const customerId =
+					typeof invoice.customer === 'string' ? invoice.customer : invoice.customer?.id;
 				if (!customerId) break;
 
 				const tenantRecord = await db.query.tenant.findFirst({
@@ -147,15 +159,18 @@ export const POST: RequestHandler = async ({ request }) => {
 				});
 				if (!tenantRecord) break;
 
-				await db.update(tenant)
+				await db
+					.update(tenant)
 					.set({ subscriptionStatus: 'past_due', updatedAt: new Date() })
 					.where(eq(tenant.id, tenantRecord.id));
 
 				if (tenantRecord.email) {
 					const amount = invoice.amount_due ?? 0;
-					const nextRetry = (invoice as Stripe.Invoice & { next_payment_attempt?: number }).next_payment_attempt;
-					const planName = (tenantRecord.subscriptionTier ?? 'plan')
-						.charAt(0).toUpperCase() + (tenantRecord.subscriptionTier ?? 'plan').slice(1);
+					const nextRetry = (invoice as Stripe.Invoice & { next_payment_attempt?: number })
+						.next_payment_attempt;
+					const planName =
+						(tenantRecord.subscriptionTier ?? 'plan').charAt(0).toUpperCase() +
+						(tenantRecord.subscriptionTier ?? 'plan').slice(1);
 
 					await sendEmail({
 						to: tenantRecord.email,

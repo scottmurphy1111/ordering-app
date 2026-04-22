@@ -12,10 +12,11 @@
 
 	const filteredTenants = $derived(
 		search.trim()
-			? data.tenants.filter((t) =>
-				t.name.toLowerCase().includes(search.toLowerCase()) ||
-				t.slug.toLowerCase().includes(search.toLowerCase())
-			)
+			? data.tenants.filter(
+					(t) =>
+						t.name.toLowerCase().includes(search.toLowerCase()) ||
+						t.slug.toLowerCase().includes(search.toLowerCase())
+				)
 			: data.tenants
 	);
 
@@ -34,52 +35,63 @@
 	}
 </script>
 
-<div class="min-h-screen bg-gray-50 flex flex-col items-center justify-center px-4 py-16">
+<div class="flex min-h-screen flex-col items-center justify-center bg-gray-50 px-4 py-16">
 	<div class="w-full max-w-lg">
-		<h1 class="text-2xl font-bold text-gray-900 mb-1">Your tenants</h1>
-		<p class="text-gray-500 text-sm mb-6">Select a tenant to manage, or create a new one.</p>
+		<h1 class="mb-1 text-2xl font-bold text-gray-900">Your tenants</h1>
+		<p class="mb-6 text-sm text-gray-500">Select a tenant to manage, or create a new one.</p>
 
 		{#if form?.error}
-			<div class="mb-4 rounded-md bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
+			<div class="mb-4 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
 				{form.error}
 			</div>
 		{/if}
 
 		{#if data.tenants.length > 4}
 			<div class="relative mb-4">
-				<Icon icon="mdi:magnify" class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+				<Icon
+					icon="mdi:magnify"
+					class="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-gray-400"
+				/>
 				<input
 					type="search"
 					placeholder="Search tenants..."
 					bind:value={search}
-					class="w-full rounded-lg border border-gray-200 bg-white py-2 pl-9 pr-3 text-sm focus:border-gray-400 focus:outline-none focus:ring-1 focus:ring-gray-400"
+					class="w-full rounded-lg border border-gray-200 bg-white py-2 pr-3 pl-9 text-sm focus:border-gray-400 focus:ring-1 focus:ring-gray-400 focus:outline-none"
 				/>
 			</div>
 		{/if}
 
 		{#if data.tenants.length > 0}
-			<div class="space-y-2 mb-6">
+			<div class="mb-6 space-y-2">
 				{#each filteredTenants as t (t.id)}
 					<form method="post" action="?/select" use:enhance>
 						<input type="hidden" name="tenantId" value={t.id} />
 						<button
 							type="submit"
-							class="w-full flex items-center justify-between rounded-lg border border-gray-200 bg-white px-4 py-3 text-left shadow-sm hover:border-gray-400 hover:shadow transition-all"
+							class="flex w-full items-center justify-between rounded-lg border border-gray-200 bg-white px-4 py-3 text-left shadow-sm transition-all hover:border-gray-400 hover:shadow"
 						>
-							<div class="flex items-center gap-3 min-w-0">
+							<div class="flex min-w-0 items-center gap-3">
 								{#if t.logoUrl}
-									<img src={t.logoUrl} alt={t.name} class="h-10 w-10 shrink-0 rounded-md border border-gray-100 object-contain p-0.5" />
+									<img
+										src={t.logoUrl}
+										alt={t.name}
+										class="h-10 w-10 shrink-0 rounded-md border border-gray-100 object-contain p-0.5"
+									/>
 								{:else}
-									<div class="h-10 w-10 shrink-0 rounded-md border border-gray-100 bg-gray-100 flex items-center justify-center">
+									<div
+										class="flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-gray-100 bg-gray-100"
+									>
 										<Icon icon="mdi:store-outline" class="h-5 w-5 text-gray-400" />
 									</div>
 								{/if}
 								<div class="min-w-0">
 									<p class="font-medium text-gray-900">{t.name}</p>
-									<p class="text-xs text-gray-400 mt-0.5">/{t.slug} · {t.type?.replace('_', ' ')} · {t.role}</p>
+									<p class="mt-0.5 text-xs text-gray-400">
+										/{t.slug} · {t.type?.replace('_', ' ')} · {t.role}
+									</p>
 								</div>
 							</div>
-							<Icon icon="mdi:chevron-right" class="h-5 w-5 text-gray-400 shrink-0 ml-2" />
+							<Icon icon="mdi:chevron-right" class="ml-2 h-5 w-5 shrink-0 text-gray-400" />
 						</button>
 					</form>
 				{/each}
@@ -90,7 +102,7 @@
 			<button
 				data-tour="create-tenant"
 				onclick={() => (showCreate = true)}
-				class="flex items-center justify-center gap-2 w-full rounded-lg border-2 border-dashed border-gray-300 px-4 py-3 text-sm text-gray-500 hover:border-gray-400 hover:text-gray-700 transition-colors"
+				class="flex w-full items-center justify-center gap-2 rounded-lg border-2 border-dashed border-gray-300 px-4 py-3 text-sm text-gray-500 transition-colors hover:border-gray-400 hover:text-gray-700"
 			>
 				<Icon icon="mdi:plus" class="h-4 w-4" /> Create new tenant
 			</button>
@@ -99,25 +111,29 @@
 				method="post"
 				action="?/create"
 				use:enhance
-				class="rounded-lg border border-gray-200 bg-white p-5 shadow-sm space-y-4"
+				class="space-y-4 rounded-lg border border-gray-200 bg-white p-5 shadow-sm"
 			>
 				<h2 class="font-semibold text-gray-800">New tenant</h2>
 
 				<div>
-					<label class="block text-sm font-medium text-gray-700 mb-1" for="name">Business name</label>
+					<label class="mb-1 block text-sm font-medium text-gray-700" for="name"
+						>Business name</label
+					>
 					<input
 						id="name"
 						name="name"
 						type="text"
 						required
 						placeholder="Acme Burger Co."
-						oninput={(e) => { slugValue = toSlug((e.target as HTMLInputElement).value); }}
-						class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+						oninput={(e) => {
+							slugValue = toSlug((e.target as HTMLInputElement).value);
+						}}
+						class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
 					/>
 				</div>
 
 				<div>
-					<label class="block text-sm font-medium text-gray-700 mb-1" for="slug">URL slug</label>
+					<label class="mb-1 block text-sm font-medium text-gray-700" for="slug">URL slug</label>
 					<div class="flex items-center gap-1.5">
 						<span class="text-sm text-gray-400">yourapp.com/</span>
 						<input
@@ -127,17 +143,19 @@
 							required
 							bind:value={slugValue}
 							placeholder="acme-burger"
-							class="flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+							class="flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
 						/>
 					</div>
 				</div>
 
 				<div>
-					<label class="block text-sm font-medium text-gray-700 mb-1" for="type">Business type</label>
+					<label class="mb-1 block text-sm font-medium text-gray-700" for="type"
+						>Business type</label
+					>
 					<select
 						id="type"
 						name="type"
-						class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+						class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
 					>
 						<option value="quick_service">Quick Service</option>
 						<option value="full_service">Full Service</option>
@@ -152,7 +170,7 @@
 				<div class="flex gap-2 pt-1">
 					<button
 						type="submit"
-						class="flex-1 rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-700 transition-colors"
+						class="flex-1 rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-gray-700"
 					>
 						Create & go to dashboard
 					</button>

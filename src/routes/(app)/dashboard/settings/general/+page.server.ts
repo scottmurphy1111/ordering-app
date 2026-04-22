@@ -52,7 +52,16 @@ export const actions: Actions = {
 
 		await db
 			.update(tenant)
-			.set({ name, legalName, type: type as typeof tenant.$inferSelect.type, phone, email, website, address, updatedAt: new Date() })
+			.set({
+				name,
+				legalName,
+				type: type as typeof tenant.$inferSelect.type,
+				phone,
+				email,
+				website,
+				address,
+				updatedAt: new Date()
+			})
 			.where(eq(tenant.id, tenantId));
 
 		return { success: true };
@@ -76,7 +85,8 @@ export const actions: Actions = {
 			columns: { settings: true }
 		});
 		const current = (record?.settings ?? {}) as Record<string, unknown>;
-		await db.update(tenant)
+		await db
+			.update(tenant)
 			.set({ settings: { ...current, hours }, updatedAt: new Date() })
 			.where(eq(tenant.id, tenantId));
 
@@ -96,7 +106,8 @@ export const actions: Actions = {
 			columns: { settings: true }
 		});
 		const current = (record?.settings ?? {}) as Record<string, unknown>;
-		await db.update(tenant)
+		await db
+			.update(tenant)
 			.set({ settings: { ...current, enableDelivery, deliveryFee }, updatedAt: new Date() })
 			.where(eq(tenant.id, tenantId));
 

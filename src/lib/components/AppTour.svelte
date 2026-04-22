@@ -122,7 +122,10 @@
 
 	onMount(() => {
 		checkMobile();
-		const handler = () => { checkMobile(); measureRect(); };
+		const handler = () => {
+			checkMobile();
+			measureRect();
+		};
 		window.addEventListener('resize', handler);
 		return () => window.removeEventListener('resize', handler);
 	});
@@ -180,7 +183,9 @@
 
 	<!-- Tooltip card -->
 	<div
-		class="fixed z-201 rounded-xl bg-white shadow-2xl {isMobile ? 'rounded-b-none p-5 pb-8' : 'w-72 p-5'}"
+		class="fixed z-201 rounded-xl bg-white shadow-2xl {isMobile
+			? 'rounded-b-none p-5 pb-8'
+			: 'w-72 p-5'}"
 		style={tooltipStyle}
 		role="dialog"
 		aria-label="Tour step {step + 1} of {steps.length}"

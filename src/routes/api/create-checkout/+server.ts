@@ -27,7 +27,7 @@ function itemUnitPrice(item: CartItem): number {
 export const POST: RequestHandler = async ({ request }) => {
 	const origin = env.ORIGIN;
 
-	const body = await request.json() as {
+	const body = (await request.json()) as {
 		tenantSlug: string;
 		items: CartItem[];
 		customer: { name: string; email?: string; phone?: string };
@@ -46,7 +46,21 @@ export const POST: RequestHandler = async ({ request }) => {
 		billingInterval?: string | null;
 	};
 
-	const { tenantSlug, items, customer, notes, orderType, deliveryAddress, scheduledFor, subtotal, tax, tip, promoCode, isSubscription, billingInterval } = body;
+	const {
+		tenantSlug,
+		items,
+		customer,
+		notes,
+		orderType,
+		deliveryAddress,
+		scheduledFor,
+		subtotal,
+		tax,
+		tip,
+		promoCode,
+		isSubscription,
+		billingInterval
+	} = body;
 
 	if (!tenantSlug || !items?.length || !customer?.name) {
 		throw error(400, 'Missing required fields');
@@ -60,10 +74,14 @@ export const POST: RequestHandler = async ({ request }) => {
 	const stripe = getStripe(tenantRecord.stripeSecretKey);
 
 	// Re-validate delivery fee server-side
-	const tenantSettings = tenantRecord.settings as { deliveryFee?: number; enableDelivery?: boolean } | null;
-	const verifiedDeliveryFee = orderType === 'delivery' && tenantSettings?.enableDelivery
-		? (tenantSettings.deliveryFee ?? 0)
-		: 0;
+	const tenantSettings = tenantRecord.settings as {
+		deliveryFee?: number;
+		enableDelivery?: boolean;
+	} | null;
+	const verifiedDeliveryFee =
+		orderType === 'delivery' && tenantSettings?.enableDelivery
+			? (tenantSettings.deliveryFee ?? 0)
+			: 0;
 
 	// Re-validate promo code server-side (never trust client discount amount)
 	let verifiedDiscount = 0;
@@ -71,15 +89,17 @@ export const POST: RequestHandler = async ({ request }) => {
 	let promoRecord: typeof promoCodes.$inferSelect | null = null;
 
 	if (promoCode) {
-		promoRecord = await db.query.promoCodes.findFirst({
-			where: and(
-				eq(promoCodes.tenantId, tenantRecord.id),
-				eq(promoCodes.code, promoCode.toUpperCase())
-			)
-		}) ?? null;
+		promoRecord =
+			(await db.query.promoCodes.findFirst({
+				where: and(
+					eq(promoCodes.tenantId, tenantRecord.id),
+					eq(promoCodes.code, promoCode.toUpperCase())
+				)
+			})) ?? null;
 
 		const now = new Date();
-		const valid = promoRecord &&
+		const valid =
+			promoRecord &&
 			promoRecord.isActive &&
 			(!promoRecord.expiresAt || now <= promoRecord.expiresAt) &&
 			(promoRecord.maxUses === null || promoRecord.usedCount < promoRecord.maxUses) &&
@@ -91,32 +111,38 @@ export const POST: RequestHandler = async ({ request }) => {
 		}
 	}
 
-	const verifiedTotal = Math.max(0, subtotal + tax + (tip ?? 0) + verifiedDeliveryFee - verifiedDiscount);
+	const verifiedTotal = Math.max(
+		0,
+		subtotal + tax + (tip ?? 0) + verifiedDeliveryFee - verifiedDiscount
+	);
 
 	// Create order in DB (payment_status = pending until webhook confirms)
 	const orderNumber = generateOrderNumber();
 
-	const [newOrder] = await db.insert(orders).values({
-		tenantId: tenantRecord.id,
-		orderNumber,
-		customerName: customer.name,
-		customerEmail: customer.email || null,
-		customerPhone: customer.phone || null,
-		type: orderType,
-		status: 'received',
-		paymentStatus: 'pending',
-		subtotal,
-		tax,
-		deliveryFee: verifiedDeliveryFee,
-		tip: tip ?? 0,
-		discount: verifiedDiscount,
-		promoCode: verifiedPromoCode,
-		total: verifiedTotal,
-		items: items,
-		deliveryAddress: deliveryAddress || null,
-		notes: notes || null,
-		scheduledFor: scheduledFor ? new Date(scheduledFor) : null
-	}).returning({ id: orders.id });
+	const [newOrder] = await db
+		.insert(orders)
+		.values({
+			tenantId: tenantRecord.id,
+			orderNumber,
+			customerName: customer.name,
+			customerEmail: customer.email || null,
+			customerPhone: customer.phone || null,
+			type: orderType,
+			status: 'received',
+			paymentStatus: 'pending',
+			subtotal,
+			tax,
+			deliveryFee: verifiedDeliveryFee,
+			tip: tip ?? 0,
+			discount: verifiedDiscount,
+			promoCode: verifiedPromoCode,
+			total: verifiedTotal,
+			items: items,
+			deliveryAddress: deliveryAddress || null,
+			notes: notes || null,
+			scheduledFor: scheduledFor ? new Date(scheduledFor) : null
+		})
+		.returning({ id: orders.id });
 
 	// Also insert normalised order items
 	await db.insert(orderItems).values(
@@ -159,8 +185,12 @@ export const POST: RequestHandler = async ({ request }) => {
 		});
 
 		// Subscription sessions have no payment_intent — store session ID as placeholder
-		await db.update(orders)
-			.set({ stripePaymentIntentId: session.id, metadata: { stripeSessionId: session.id, isSubscription: true } })
+		await db
+			.update(orders)
+			.set({
+				stripePaymentIntentId: session.id,
+				metadata: { stripeSessionId: session.id, isSubscription: true }
+			})
 			.where(eq(orders.id, newOrder.id));
 	} else {
 		// One-time payment mode
@@ -178,18 +208,35 @@ export const POST: RequestHandler = async ({ request }) => {
 		}));
 
 		if (tax > 0) {
-			lineItems.push({ quantity: 1, price_data: { currency: 'usd', unit_amount: tax, product_data: { name: 'Tax' } } });
+			lineItems.push({
+				quantity: 1,
+				price_data: { currency: 'usd', unit_amount: tax, product_data: { name: 'Tax' } }
+			});
 		}
 		if (tip && tip > 0) {
-			lineItems.push({ quantity: 1, price_data: { currency: 'usd', unit_amount: tip, product_data: { name: 'Tip' } } });
+			lineItems.push({
+				quantity: 1,
+				price_data: { currency: 'usd', unit_amount: tip, product_data: { name: 'Tip' } }
+			});
 		}
 		if (verifiedDeliveryFee > 0) {
-			lineItems.push({ quantity: 1, price_data: { currency: 'usd', unit_amount: verifiedDeliveryFee, product_data: { name: 'Delivery fee' } } });
+			lineItems.push({
+				quantity: 1,
+				price_data: {
+					currency: 'usd',
+					unit_amount: verifiedDeliveryFee,
+					product_data: { name: 'Delivery fee' }
+				}
+			});
 		}
 
 		let stripeCouponId: string | undefined;
 		if (verifiedDiscount > 0) {
-			const coupon = await stripe.coupons.create({ amount_off: verifiedDiscount, currency: 'usd', duration: 'once' });
+			const coupon = await stripe.coupons.create({
+				amount_off: verifiedDiscount,
+				currency: 'usd',
+				duration: 'once'
+			});
 			stripeCouponId = coupon.id;
 		}
 
@@ -203,17 +250,20 @@ export const POST: RequestHandler = async ({ request }) => {
 			metadata: { orderId: String(newOrder.id), tenantSlug }
 		});
 
-		const paymentIntentId = (typeof session.payment_intent === 'string'
-			? session.payment_intent
-			: session.payment_intent?.id) ?? session.id;
+		const paymentIntentId =
+			(typeof session.payment_intent === 'string'
+				? session.payment_intent
+				: session.payment_intent?.id) ?? session.id;
 
-		await db.update(orders)
+		await db
+			.update(orders)
 			.set({ stripePaymentIntentId: paymentIntentId, metadata: { stripeSessionId: session.id } })
 			.where(eq(orders.id, newOrder.id));
 	}
 
 	if (promoRecord) {
-		await db.update(promoCodes)
+		await db
+			.update(promoCodes)
 			.set({ usedCount: sql`${promoCodes.usedCount} + 1` })
 			.where(eq(promoCodes.id, promoRecord.id));
 	}

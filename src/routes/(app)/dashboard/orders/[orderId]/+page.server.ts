@@ -131,10 +131,13 @@ export const actions: Actions = {
 		]);
 
 		if (!orderRow) return fail(404, { error: 'Order not found' });
-		if (orderRow.status !== 'cancelled') return fail(400, { error: 'Order must be cancelled before refunding' });
+		if (orderRow.status !== 'cancelled')
+			return fail(400, { error: 'Order must be cancelled before refunding' });
 		if (orderRow.paymentStatus !== 'paid') return fail(400, { error: 'Order has not been paid' });
-		if (!orderRow.stripePaymentIntentId) return fail(400, { error: 'No payment found for this order' });
-		if (!tenantRecord?.stripeSecretKey) return fail(500, { error: 'Stripe not configured for this tenant' });
+		if (!orderRow.stripePaymentIntentId)
+			return fail(400, { error: 'No payment found for this order' });
+		if (!tenantRecord?.stripeSecretKey)
+			return fail(500, { error: 'Stripe not configured for this tenant' });
 
 		const stripe = new Stripe(tenantRecord.stripeSecretKey);
 
@@ -142,12 +145,16 @@ export const actions: Actions = {
 		if (paymentIntentId.startsWith('cs_')) {
 			try {
 				const session = await stripe.checkout.sessions.retrieve(paymentIntentId);
-				if (!session.payment_intent) return fail(400, { error: 'No payment intent found on this session' });
-				paymentIntentId = typeof session.payment_intent === 'string'
-					? session.payment_intent
-					: session.payment_intent.id;
+				if (!session.payment_intent)
+					return fail(400, { error: 'No payment intent found on this session' });
+				paymentIntentId =
+					typeof session.payment_intent === 'string'
+						? session.payment_intent
+						: session.payment_intent.id;
 			} catch (e: unknown) {
-				return fail(502, { error: e instanceof Error ? e.message : 'Could not resolve Stripe session' });
+				return fail(502, {
+					error: e instanceof Error ? e.message : 'Could not resolve Stripe session'
+				});
 			}
 		}
 

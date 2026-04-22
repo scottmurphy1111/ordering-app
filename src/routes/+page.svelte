@@ -360,14 +360,15 @@
 <section class="bg-white px-6 py-24">
 	<div class="mx-auto max-w-6xl">
 		<div class="mb-14 text-center">
-			<span class="mb-3 inline-block rounded-full bg-green-50 px-3 py-1 text-xs font-semibold tracking-wide text-green-700 uppercase">
+			<span
+				class="mb-3 inline-block rounded-full bg-green-50 px-3 py-1 text-xs font-semibold tracking-wide text-green-700 uppercase"
+			>
 				Optional add-ons
 			</span>
-			<h2 class="text-3xl font-bold text-gray-900 sm:text-4xl">
-				Only pay for what you need
-			</h2>
+			<h2 class="text-3xl font-bold text-gray-900 sm:text-4xl">Only pay for what you need</h2>
 			<p class="mt-3 text-lg text-gray-500">
-				Every plan starts lean. Add features as your business grows — activate or cancel anytime from your dashboard.
+				Every plan starts lean. Add features as your business grows — activate or cancel anytime
+				from your dashboard.
 			</p>
 		</div>
 		<div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
@@ -377,7 +378,10 @@
 						<div class="flex h-10 w-10 items-center justify-center rounded-xl bg-green-100">
 							<Icon icon={addon.icon} class="h-5 w-5 text-green-700" />
 						</div>
-						<span class="rounded-full border border-gray-200 bg-white px-2.5 py-0.5 text-xs font-semibold text-gray-600">{addon.price}</span>
+						<span
+							class="rounded-full border border-gray-200 bg-white px-2.5 py-0.5 text-xs font-semibold text-gray-600"
+							>{addon.price}</span
+						>
 					</div>
 					<div>
 						<h3 class="font-semibold text-gray-900">{addon.name}</h3>
