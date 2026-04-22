@@ -13,6 +13,8 @@ export type CartItem = {
 	quantity: number;
 	selectedModifiers: CartModifier[];
 	imageUrl?: string;
+	isSubscription?: boolean;
+	billingInterval?: string; // 'monthly' | 'yearly'
 };
 
 /** Unit price for one of this item (base + all modifiers) */

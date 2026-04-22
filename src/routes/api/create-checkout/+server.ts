@@ -42,9 +42,11 @@ export const POST: RequestHandler = async ({ request }) => {
 		discount?: number;
 		promoCode?: string | null;
 		total: number;
+		isSubscription?: boolean;
+		billingInterval?: string | null;
 	};
 
-	const { tenantSlug, items, customer, notes, orderType, deliveryAddress, scheduledFor, subtotal, tax, tip, promoCode } = body;
+	const { tenantSlug, items, customer, notes, orderType, deliveryAddress, scheduledFor, subtotal, tax, tip, promoCode, isSubscription, billingInterval } = body;
 
 	if (!tenantSlug || !items?.length || !customer?.name) {
 		throw error(400, 'Missing required fields');
@@ -128,64 +130,87 @@ export const POST: RequestHandler = async ({ request }) => {
 		}))
 	);
 
-	// Build Stripe line items
-	const lineItems = items.map((item) => ({
-		quantity: item.quantity,
-		price_data: {
-			currency: 'usd',
-			unit_amount: itemUnitPrice(item),
-			product_data: {
-				name: item.selectedModifiers.length
-					? `${item.name} (${item.selectedModifiers.map((m) => m.name).join(', ')})`
-					: item.name
+	let session: Awaited<ReturnType<typeof stripe.checkout.sessions.create>>;
+
+	if (isSubscription) {
+		// Subscription mode — recurring line items, no tax/tip/promo
+		const stripeInterval = billingInterval === 'yearly' ? 'year' : 'month';
+		const subLineItems = items.map((item) => ({
+			quantity: item.quantity,
+			price_data: {
+				currency: 'usd',
+				unit_amount: itemUnitPrice(item),
+				recurring: { interval: stripeInterval as 'month' | 'year' },
+				product_data: {
+					name: item.selectedModifiers.length
+						? `${item.name} (${item.selectedModifiers.map((m) => m.name).join(', ')})`
+						: item.name
+				}
 			}
-		}
-	}));
+		}));
 
-	if (tax > 0) {
-		lineItems.push({ quantity: 1, price_data: { currency: 'usd', unit_amount: tax, product_data: { name: 'Tax' } } });
-	}
-	if (tip && tip > 0) {
-		lineItems.push({ quantity: 1, price_data: { currency: 'usd', unit_amount: tip, product_data: { name: 'Tip' } } });
-	}
-	if (verifiedDeliveryFee > 0) {
-		lineItems.push({ quantity: 1, price_data: { currency: 'usd', unit_amount: verifiedDeliveryFee, product_data: { name: 'Delivery fee' } } });
-	}
-
-	// Create a one-time Stripe coupon for the discount so it shows on the receipt
-	let stripeCouponId: string | undefined;
-	if (verifiedDiscount > 0) {
-		const coupon = await stripe.coupons.create({
-			amount_off: verifiedDiscount,
-			currency: 'usd',
-			duration: 'once'
+		session = await stripe.checkout.sessions.create({
+			mode: 'subscription',
+			line_items: subLineItems,
+			...(customer.email ? { customer_email: customer.email } : {}),
+			success_url: `${origin}/${tenantSlug}/orders/${newOrder.id}?session_id={CHECKOUT_SESSION_ID}`,
+			cancel_url: `${origin}/${tenantSlug}/cart`,
+			metadata: { orderId: String(newOrder.id), tenantSlug, isSubscription: 'true' }
 		});
-		stripeCouponId = coupon.id;
-	}
 
-	const session = await stripe.checkout.sessions.create({
-		mode: 'payment',
-		line_items: lineItems,
-		...(stripeCouponId ? { discounts: [{ coupon: stripeCouponId }] } : {}),
-		...(customer.email ? { customer_email: customer.email } : {}),
-		success_url: `${origin}/${tenantSlug}/orders/${newOrder.id}?session_id={CHECKOUT_SESSION_ID}`,
-		cancel_url: `${origin}/${tenantSlug}/cart`,
-		metadata: {
-			orderId: String(newOrder.id),
-			tenantSlug
+		// Subscription sessions have no payment_intent — store session ID as placeholder
+		await db.update(orders)
+			.set({ stripePaymentIntentId: session.id, metadata: { stripeSessionId: session.id, isSubscription: true } })
+			.where(eq(orders.id, newOrder.id));
+	} else {
+		// One-time payment mode
+		const lineItems = items.map((item) => ({
+			quantity: item.quantity,
+			price_data: {
+				currency: 'usd',
+				unit_amount: itemUnitPrice(item),
+				product_data: {
+					name: item.selectedModifiers.length
+						? `${item.name} (${item.selectedModifiers.map((m) => m.name).join(', ')})`
+						: item.name
+				}
+			}
+		}));
+
+		if (tax > 0) {
+			lineItems.push({ quantity: 1, price_data: { currency: 'usd', unit_amount: tax, product_data: { name: 'Tax' } } });
 		}
-	});
+		if (tip && tip > 0) {
+			lineItems.push({ quantity: 1, price_data: { currency: 'usd', unit_amount: tip, product_data: { name: 'Tip' } } });
+		}
+		if (verifiedDeliveryFee > 0) {
+			lineItems.push({ quantity: 1, price_data: { currency: 'usd', unit_amount: verifiedDeliveryFee, product_data: { name: 'Delivery fee' } } });
+		}
 
-	// session.payment_intent is the PI ID (pi_...) for payment-mode sessions.
-	// Fall back to the session ID only if somehow absent — the refund action
-	// knows how to resolve a cs_... ID back to a PI via the Sessions API.
-	const paymentIntentId = (typeof session.payment_intent === 'string'
-		? session.payment_intent
-		: session.payment_intent?.id) ?? session.id;
+		let stripeCouponId: string | undefined;
+		if (verifiedDiscount > 0) {
+			const coupon = await stripe.coupons.create({ amount_off: verifiedDiscount, currency: 'usd', duration: 'once' });
+			stripeCouponId = coupon.id;
+		}
 
-	await db.update(orders)
-		.set({ stripePaymentIntentId: paymentIntentId, metadata: { stripeSessionId: session.id } })
-		.where(eq(orders.id, newOrder.id));
+		session = await stripe.checkout.sessions.create({
+			mode: 'payment',
+			line_items: lineItems,
+			...(stripeCouponId ? { discounts: [{ coupon: stripeCouponId }] } : {}),
+			...(customer.email ? { customer_email: customer.email } : {}),
+			success_url: `${origin}/${tenantSlug}/orders/${newOrder.id}?session_id={CHECKOUT_SESSION_ID}`,
+			cancel_url: `${origin}/${tenantSlug}/cart`,
+			metadata: { orderId: String(newOrder.id), tenantSlug }
+		});
+
+		const paymentIntentId = (typeof session.payment_intent === 'string'
+			? session.payment_intent
+			: session.payment_intent?.id) ?? session.id;
+
+		await db.update(orders)
+			.set({ stripePaymentIntentId: paymentIntentId, metadata: { stripeSessionId: session.id } })
+			.where(eq(orders.id, newOrder.id));
+	}
 
 	if (promoRecord) {
 		await db.update(promoCodes)

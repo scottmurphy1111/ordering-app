@@ -94,7 +94,7 @@
 					<div class="flex items-start justify-between gap-4">
 						<div class="flex-1 min-w-0">
 							<div class="flex items-center gap-2 flex-wrap">
-								<span class="font-mono text-sm font-semibold text-gray-800">{order.orderNumber}</span>
+								<a href={resolve(`/dashboard/orders/${order.id}`)} class="font-mono text-sm font-semibold text-gray-800 hover:underline">{order.orderNumber}</a>
 								<span class="rounded-full px-2 py-0.5 text-xs font-medium {statusColors[order.status] ?? 'bg-gray-100'}">
 									{order.status}
 								</span>
@@ -131,6 +131,9 @@
 							<p class="text-xs text-gray-400 mt-0.5">
 								{new Date(order.createdAt).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
 							</p>
+							<a href={resolve(`/dashboard/orders/${order.id}`)} class="mt-1 inline-flex items-center gap-0.5 text-xs text-green-600 hover:underline">
+								View <Icon icon="mdi:chevron-right" class="h-3 w-3" />
+							</a>
 						</div>
 					</div>
 

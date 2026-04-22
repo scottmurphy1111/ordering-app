@@ -87,7 +87,7 @@
 				<p class="mt-0.5 text-xs text-gray-500">Sets the primary and accent colors on your public storefront.</p>
 			</div>
 			<div class="px-5 py-5">
-				<form method="post" action="?/saveColors" use:enhance class="space-y-5">
+				<form method="post" action="?/saveColors" use:enhance={() => ({ update }) => update({ reset: false })} class="space-y-5">
 					<div class="grid grid-cols-1 gap-6 sm:grid-cols-3">
 						{#each [
 							{ id: 'primaryColor', label: 'Primary color', bind: 'primaryColor', note: 'Buttons, headers, key actions.', value: primaryColor },

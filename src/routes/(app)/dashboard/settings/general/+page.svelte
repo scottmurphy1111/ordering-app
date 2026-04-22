@@ -5,7 +5,7 @@
 	import type { WeekHours } from '$lib/hours';
 
 	let { data, form: _form }: { data: PageData; form: ActionData } = $props();
-	const form = _form as (ActionData & { deliverySuccess?: boolean }) | null;
+	const form = $derived(_form as (ActionData & { deliverySuccess?: boolean }) | null);
 
 	const address = $derived(data.info?.address as {
 		street?: string;
@@ -55,7 +55,7 @@
 		<div class="mb-4 rounded-md border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">Changes saved.</div>
 	{/if}
 
-	<form method="post" action="?/save" use:enhance class="space-y-6">
+	<form method="post" action="?/save" use:enhance={() => ({ update }) => update({ reset: false })} class="space-y-6">
 
 		<!-- Business identity -->
 		<div class="rounded-xl border border-gray-200 bg-white shadow-sm">
@@ -227,7 +227,7 @@
 	{#if form?.deliverySuccess}
 		<div class="mt-4 rounded-md border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">Delivery settings saved.</div>
 	{/if}
-	<form method="post" action="?/saveDelivery" use:enhance class="mt-6">
+	<form method="post" action="?/saveDelivery" use:enhance={() => ({ update }) => update({ reset: false })} class="mt-6">
 		<div class="rounded-xl border border-gray-200 bg-white shadow-sm">
 			<div class="border-b border-gray-100 px-5 py-4">
 				<h2 class="font-semibold text-gray-900">Delivery</h2>
@@ -272,7 +272,7 @@
 	{#if form?.hoursSuccess}
 		<div class="mt-4 rounded-md border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">Hours saved.</div>
 	{/if}
-	<form method="post" action="?/saveHours" use:enhance class="mt-6">
+	<form method="post" action="?/saveHours" use:enhance={() => ({ update }) => update({ reset: false })} class="mt-6">
 		<div class="rounded-xl border border-gray-200 bg-white shadow-sm">
 			<div class="border-b border-gray-100 px-5 py-4">
 				<h2 class="font-semibold text-gray-900">Operating hours</h2>
@@ -281,25 +281,27 @@
 			<div class="divide-y divide-gray-100 px-5">
 				{#each DAYS as day (day.key)}
 					{@const h = savedHours[day.key]}
-					<div class="flex items-center gap-4 py-3">
-						<span class="w-24 shrink-0 text-sm font-medium text-gray-700">{day.label}</span>
-						<label class="flex items-center gap-1.5 text-sm text-gray-500">
-							<input type="checkbox" name="{day.key}_closed" class="h-4 w-4 rounded border-gray-300" checked={h?.closed ?? false} />
-							Closed
-						</label>
-						<div class="flex flex-1 items-center gap-2">
+					<div class="flex flex-col gap-2 py-3 sm:flex-row sm:items-center sm:gap-4">
+						<div class="flex items-center justify-between sm:contents">
+							<span class="w-24 shrink-0 text-sm font-medium text-gray-700">{day.label}</span>
+							<label class="flex items-center gap-1.5 text-sm text-gray-500">
+								<input type="checkbox" name="{day.key}_closed" class="h-4 w-4 rounded border-gray-300" checked={h?.closed ?? false} />
+								Closed
+							</label>
+						</div>
+						<div class="flex items-center gap-2">
 							<input
 								type="time"
 								name="{day.key}_open"
 								value={h?.open ?? '09:00'}
-								class="rounded-md border border-gray-300 px-2 py-1.5 text-sm focus:border-green-500 focus:outline-none focus:ring-1 focus:ring-green-500"
+								class="flex-1 rounded-md border border-gray-300 px-2 py-1.5 text-sm focus:border-green-500 focus:outline-none focus:ring-1 focus:ring-green-500 sm:flex-none"
 							/>
 							<span class="text-xs text-gray-400">to</span>
 							<input
 								type="time"
 								name="{day.key}_close"
 								value={h?.close ?? '21:00'}
-								class="rounded-md border border-gray-300 px-2 py-1.5 text-sm focus:border-green-500 focus:outline-none focus:ring-1 focus:ring-green-500"
+								class="flex-1 rounded-md border border-gray-300 px-2 py-1.5 text-sm focus:border-green-500 focus:outline-none focus:ring-1 focus:ring-green-500 sm:flex-none"
 							/>
 						</div>
 					</div>

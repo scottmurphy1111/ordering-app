@@ -3,13 +3,15 @@ import { fail, redirect, error } from '@sveltejs/kit';
 import { db } from '$lib/server/db';
 import { eq, and } from 'drizzle-orm';
 import { menuItems, menuCategories, modifiers, modifierOptions, menuItemModifiers } from '$lib/server/db/schema';
+import { hasAddon, type AddonItem } from '$lib/billing';
+import { tenant } from '$lib/server/db/tenant';
 
 export const load: PageServerLoad = async ({ locals, params }) => {
 	const tenantId = locals.tenantId!;
 	const itemId = parseInt(params.itemId);
 	if (isNaN(itemId)) throw error(404, 'Not found');
 
-	const [item, categories] = await Promise.all([
+	const [item, categories, tenantRecord] = await Promise.all([
 		db.query.menuItems.findFirst({
 			where: and(eq(menuItems.id, itemId), eq(menuItems.tenantId, tenantId)),
 			with: {
@@ -27,11 +29,13 @@ export const load: PageServerLoad = async ({ locals, params }) => {
 			where: eq(menuCategories.tenantId, tenantId),
 			columns: { id: true, name: true },
 			orderBy: (c, { asc }) => [asc(c.sortOrder), asc(c.name)]
-		})
+		}),
+		db.query.tenant.findFirst({ where: eq(tenant.id, tenantId), columns: { addons: true } })
 	]);
 
 	if (!item) throw error(404, 'Item not found');
-	return { item, categories };
+	const addons = (tenantRecord?.addons ?? []) as AddonItem[];
+	return { item, categories, hasSubscriptionsAddon: hasAddon(addons, 'subscriptions') };
 };
 
 export const actions: Actions = {
@@ -58,10 +62,12 @@ export const actions: Actions = {
 		const tags = tagsRaw ? tagsRaw.split(',').map((t) => t.trim()).filter(Boolean) : [];
 		const images = imageUrl ? [{ url: imageUrl, isPrimary: true }] : [];
 		const sortOrder = parseInt(formData.get('sortOrder')?.toString() ?? '0') || 0;
+		const isSubscription = formData.get('isSubscription') === 'on';
+		const billingInterval = isSubscription ? (formData.get('billingInterval')?.toString() || 'monthly') : null;
 
 		await db
 			.update(menuItems)
-			.set({ name, description, price, discountedPrice, categoryId, available, tags, images, sortOrder, updatedAt: new Date() })
+			.set({ name, description, price, discountedPrice, categoryId, available, tags, images, sortOrder, isSubscription, billingInterval, updatedAt: new Date() })
 			.where(and(eq(menuItems.id, itemId), eq(menuItems.tenantId, tenantId)));
 
 		return { success: true };

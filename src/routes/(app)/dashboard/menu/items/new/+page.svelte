@@ -10,6 +10,8 @@
 	let imagePreview = $state('');
 	let uploading = $state(false);
 	let uploadError = $state('');
+	let isSubscription = $state(false);
+	let billingInterval = $state('monthly');
 
 	async function onImageChange(e: Event) {
 		const input = e.target as HTMLInputElement;
@@ -196,24 +198,50 @@
 			/>
 		</div>
 
-		<div>
-			<label class="block text-sm font-medium text-gray-700 mb-1" for="sortOrder">Sort order</label>
-			<input
-				id="sortOrder"
-				name="sortOrder"
-				type="number"
-				min="0"
-				value="0"
-				placeholder="0"
-				class="w-32 rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-			/>
-			<p class="mt-1 text-xs text-gray-400">Higher numbers appear first.</p>
-		</div>
+		<input type="hidden" name="sortOrder" value="0" />
 
 		<div class="flex items-center gap-2">
 			<input id="available" name="available" type="checkbox" checked class="h-4 w-4 rounded border-gray-300" />
 			<label class="text-sm text-gray-700" for="available">Available for ordering</label>
 		</div>
+
+		{#if data.hasSubscriptionsAddon}
+			<div class="rounded-lg border border-gray-200 p-4 space-y-3">
+				<div class="flex items-center justify-between">
+					<div>
+						<p class="text-sm font-medium text-gray-700">Recurring subscription</p>
+						<p class="text-xs text-gray-400">Customers subscribe and are billed on a set interval.</p>
+					</div>
+					<button
+						type="button"
+						onclick={() => (isSubscription = !isSubscription)}
+						class="flex items-center"
+					>
+						<div class="relative h-6 w-11 rounded-full transition-colors duration-200 {isSubscription ? 'bg-green-600' : 'bg-gray-300'}">
+							<span class="absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform duration-200 {isSubscription ? 'translate-x-5' : 'translate-x-0'}"></span>
+						</div>
+					</button>
+				</div>
+				<input type="hidden" name="isSubscription" value={isSubscription ? 'on' : ''} />
+				{#if isSubscription}
+					<div>
+						<p class="mb-2 text-xs font-medium text-gray-600">Billing interval</p>
+						<div class="flex gap-2">
+							{#each [{ value: 'monthly', label: 'Monthly' }, { value: 'yearly', label: 'Yearly' }] as opt (opt.value)}
+								<button
+									type="button"
+									onclick={() => (billingInterval = opt.value)}
+									class="rounded-md border px-4 py-1.5 text-sm transition-colors {billingInterval === opt.value ? 'border-green-500 bg-green-50 text-green-700 font-medium' : 'border-gray-200 text-gray-500 hover:border-gray-300'}"
+								>
+									{opt.label}
+								</button>
+							{/each}
+						</div>
+						<input type="hidden" name="billingInterval" value={billingInterval} />
+					</div>
+				{/if}
+			</div>
+		{/if}
 
 		<div class="flex gap-2 pt-1">
 			<button

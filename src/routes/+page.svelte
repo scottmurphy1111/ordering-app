@@ -67,6 +67,12 @@
 			name: 'Loyalty Program',
 			price: '$29/mo',
 			desc: 'Reward repeat customers with a digital stamp card or points system built into your ordering flow.'
+		},
+		{
+			icon: 'mdi:refresh-circle',
+			name: 'Subscriptions',
+			price: '$29/mo',
+			desc: 'Sell recurring items or services — meal plans, weekly boxes, retainers. Customers subscribe and are billed automatically.'
 		}
 	];
 

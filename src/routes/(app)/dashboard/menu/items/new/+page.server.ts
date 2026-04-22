@@ -3,17 +3,21 @@ import { fail, redirect } from '@sveltejs/kit';
 import { db } from '$lib/server/db';
 import { eq, count } from 'drizzle-orm';
 import { menuItems, menuCategories } from '$lib/server/db/schema';
-import { isAtItemLimit } from '$lib/billing';
+import { isAtItemLimit, hasAddon, type AddonItem } from '$lib/billing';
 import { tenant } from '$lib/server/db/tenant';
 
 export const load: PageServerLoad = async ({ locals }) => {
 	const tenantId = locals.tenantId!;
-	const categories = await db.query.menuCategories.findMany({
-		where: eq(menuCategories.tenantId, tenantId),
-		columns: { id: true, name: true },
-		orderBy: (c, { asc }) => [asc(c.sortOrder), asc(c.name)]
-	});
-	return { categories };
+	const [categories, tenantRecord] = await Promise.all([
+		db.query.menuCategories.findMany({
+			where: eq(menuCategories.tenantId, tenantId),
+			columns: { id: true, name: true },
+			orderBy: (c, { asc }) => [asc(c.sortOrder), asc(c.name)]
+		}),
+		db.query.tenant.findFirst({ where: eq(tenant.id, tenantId), columns: { addons: true } })
+	]);
+	const addons = (tenantRecord?.addons ?? []) as AddonItem[];
+	return { categories, hasSubscriptionsAddon: hasAddon(addons, 'subscriptions') };
 };
 
 export const actions: Actions = {
@@ -52,10 +56,12 @@ export const actions: Actions = {
 		const tags = tagsRaw ? tagsRaw.split(',').map((t) => t.trim()).filter(Boolean) : [];
 		const images = imageUrl ? [{ url: imageUrl, isPrimary: true }] : [];
 		const sortOrder = parseInt(formData.get('sortOrder')?.toString() ?? '0') || 0;
+		const isSubscription = formData.get('isSubscription') === 'on';
+		const billingInterval = isSubscription ? (formData.get('billingInterval')?.toString() || 'monthly') : null;
 
 		const [item] = await db
 			.insert(menuItems)
-			.values({ tenantId, name, description, price, discountedPrice, categoryId, available, tags, images, sortOrder })
+			.values({ tenantId, name, description, price, discountedPrice, categoryId, available, tags, images, sortOrder, isSubscription, billingInterval })
 			.returning({ id: menuItems.id });
 
 		throw redirect(303, `/dashboard/menu/items/${item.id}`);

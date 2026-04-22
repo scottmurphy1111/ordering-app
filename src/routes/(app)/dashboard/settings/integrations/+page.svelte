@@ -1,15 +1,14 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import { untrack } from 'svelte';
 	import { resolve } from '$app/paths';
 	import Icon from '@iconify/svelte';
 	import type { PageData, ActionData } from './$types';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
-	let showKeyInput = $state(false);
+	let editing = $state(untrack(() => !data.hasStripeKey));
 	let showKey = $state(false);
-	let showWebhookInput = $state(false);
-	let showWebhookKey = $state(false);
 </script>
 
 <div>
@@ -67,147 +66,105 @@
 			{#if form?.cleared}
 				<div class="mt-3 rounded-md bg-gray-50 border border-gray-200 px-3 py-2 text-sm text-gray-600">Stripe key removed.</div>
 			{/if}
-			{#if form?.webhookSaved}
-				<div class="mt-3 rounded-md bg-green-50 border border-green-200 px-3 py-2 text-sm text-green-700">Webhook secret saved.</div>
-			{/if}
-			{#if form?.webhookCleared}
-				<div class="mt-3 rounded-md bg-gray-50 border border-gray-200 px-3 py-2 text-sm text-gray-600">Webhook secret removed.</div>
-			{/if}
 
-			<div class="mt-4 flex flex-wrap gap-2">
-				{#if !data.hasStripeKey}
-					{#if !showKeyInput}
+<div class="mt-4 space-y-2">
+				<form
+					id="save-stripe-form"
+					method="post"
+					action="?/saveStripeKey"
+					use:enhance={() => ({ update }) => { editing = false; showKey = false; update({ reset: false }); }}
+				>
+					<div class="relative mb-2">
+						<input
+							name="stripeSecretKey"
+							type={showKey ? 'text' : 'password'}
+							readonly={!editing}
+							required={editing}
+							value={editing ? '' : (data.stripeKeyMasked ?? '')}
+							placeholder={editing ? 'sk_test_...' : ''}
+							autocomplete="off"
+							class="w-full rounded-md border px-3 py-2 pr-16 text-sm font-mono focus:outline-none focus:ring-1 transition-colors
+								{editing
+									? 'border-gray-300 bg-white focus:border-gray-900 focus:ring-gray-900'
+									: 'border-gray-200 bg-gray-50 text-gray-600 cursor-default select-none'}"
+						/>
 						<button
-							onclick={() => (showKeyInput = true)}
-							class="rounded-md bg-gray-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-gray-700 transition-colors"
+							type="button"
+							onclick={() => (showKey = !showKey)}
+							class="absolute right-2 top-1/2 -translate-y-1/2 inline-flex items-center gap-1 text-xs text-gray-400 hover:text-gray-600 transition-colors"
 						>
-							Connect Stripe
+							<Icon icon={showKey ? 'mdi:eye-off-outline' : 'mdi:eye-outline'} class="h-3.5 w-3.5" />
 						</button>
-					{:else}
-						<form
-							method="post"
-							action="?/saveStripeKey"
-							use:enhance={() => ({ update }) => { update(); showKeyInput = false; }}
-							class="w-full space-y-2"
-						>
-							<div class="relative">
-								<input
-									name="stripeSecretKey"
-									type={showKey ? 'text' : 'password'}
-									required
-									placeholder="sk_test_..."
-									autocomplete="off"
-									class="w-full rounded-md border border-gray-300 px-3 py-2 pr-20 text-sm font-mono focus:border-gray-900 focus:outline-none focus:ring-1 focus:ring-gray-900"
-								/>
-								<button
-									type="button"
-									onclick={() => (showKey = !showKey)}
-									class="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-gray-400 hover:text-gray-600 transition-colors"
-								>
-									{showKey ? 'Hide' : 'Show'}
-								</button>
-							</div>
-							<p class="text-xs text-gray-400">
-								Find your secret key at
-								<a href="https://dashboard.stripe.com/apikeys" target="_blank" rel="noopener noreferrer" class="underline hover:text-gray-600">
-									dashboard.stripe.com/apikeys
-								</a>.
-								Use a restricted key with read-only access to Products and Prices.
-							</p>
-							<div class="flex gap-2">
-								<button
-									type="submit"
-									class="rounded-md bg-gray-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-gray-700 transition-colors"
-								>
-									Save & verify
-								</button>
-								<button
-									type="button"
-									onclick={() => (showKeyInput = false)}
-									class="rounded-md border border-gray-300 px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-50 transition-colors"
-								>
-									Cancel
-								</button>
-							</div>
-						</form>
+					</div>
+					{#if editing}
+						<p class="text-xs text-gray-400 mb-2">
+							Find your secret key at
+							<a href="https://dashboard.stripe.com/apikeys" target="_blank" rel="noopener noreferrer" class="underline hover:text-gray-600">
+								dashboard.stripe.com/apikeys
+							</a>.
+						</p>
 					{/if}
-				{:else}
-					<button
-						onclick={() => (showKeyInput = true)}
-						class="rounded-md border border-gray-300 px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-50 transition-colors"
-					>
-						Replace key
-					</button>
-					<form method="post" action="?/clearStripeKey" use:enhance>
+				</form>
+
+				<form
+					id="disconnect-stripe-form"
+					method="post"
+					action="?/clearStripeKey"
+					use:enhance={() => ({ update }) => { editing = true; showKey = false; update({ reset: false }); }}
+				></form>
+
+				<div class="flex gap-2">
+					{#if editing}
 						<button
 							type="submit"
+							form="save-stripe-form"
+							class="rounded-md bg-gray-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-gray-700 transition-colors"
+						>
+							{data.hasStripeKey ? 'Save & verify' : 'Connect Stripe'}
+						</button>
+						{#if data.hasStripeKey}
+							<button
+								type="button"
+								onclick={() => { editing = false; showKey = false; }}
+								class="rounded-md border border-gray-300 px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-50 transition-colors"
+							>
+								Cancel
+							</button>
+						{/if}
+					{:else}
+						<button
+							type="button"
+							onclick={() => { editing = true; showKey = false; }}
+							class="rounded-md border border-gray-300 px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-50 transition-colors"
+						>
+							Replace key
+						</button>
+						<button
+							type="submit"
+							form="disconnect-stripe-form"
 							onclick={(e) => { if (!confirm('Remove Stripe connection?')) e.preventDefault(); }}
 							class="rounded-md border border-red-200 px-3 py-1.5 text-sm text-red-600 hover:bg-red-50 transition-colors"
 						>
 							Disconnect
 						</button>
-					</form>
-
-					{#if showKeyInput}
-						<form
-							method="post"
-							action="?/saveStripeKey"
-							use:enhance={() => ({ update }) => { update(); showKeyInput = false; }}
-							class="w-full mt-1 space-y-2"
-						>
-							<div class="relative">
-								<input
-									name="stripeSecretKey"
-									type={showKey ? 'text' : 'password'}
-									required
-									placeholder="sk_test_..."
-									autocomplete="off"
-									class="w-full rounded-md border border-gray-300 px-3 py-2 pr-20 text-sm font-mono focus:border-gray-900 focus:outline-none focus:ring-1 focus:ring-gray-900"
-								/>
-								<button
-									type="button"
-									onclick={() => (showKey = !showKey)}
-									class="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-gray-400 hover:text-gray-600 transition-colors"
-								>
-									{showKey ? 'Hide' : 'Show'}
-								</button>
-							</div>
-							<div class="flex gap-2">
-								<button
-									type="submit"
-									class="rounded-md bg-gray-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-gray-700 transition-colors"
-								>
-									Save & verify
-								</button>
-								<button
-									type="button"
-									onclick={() => (showKeyInput = false)}
-									class="rounded-md border border-gray-300 px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-50 transition-colors"
-								>
-									Cancel
-								</button>
-							</div>
-						</form>
 					{/if}
-				{/if}
+				</div>
 			</div>
-			<!-- Webhook secret -->
+			<!-- Webhook status (auto-configured) -->
 			{#if data.hasStripeKey}
 				<div class="mt-5 pt-4 border-t border-gray-100">
 					<div class="flex items-center justify-between">
 						<div>
-							<p class="text-sm font-medium text-gray-900">Webhook secret</p>
+							<p class="text-sm font-medium text-gray-900">Webhooks</p>
 							<p class="text-xs text-gray-500 mt-0.5">
-								Required to receive payment confirmations. Register
-								<code class="font-mono">/api/webhooks/stripe/{'{your-tenant-id}'}</code>
-								as an endpoint in your Stripe dashboard, then paste the signing secret here.
+								Payment confirmations are received automatically via a registered Stripe webhook endpoint.
 							</p>
 						</div>
 						<div class="shrink-0 ml-4">
-							{#if data.hasStripeWebhookSecret}
+							{#if data.hasWebhookEndpoint}
 								<span class="inline-flex items-center gap-1.5 rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-700">
 									<span class="h-1.5 w-1.5 rounded-full bg-green-500"></span>
-									Configured
+									Auto-configured
 								</span>
 							{:else}
 								<span class="inline-flex items-center gap-1.5 rounded-full bg-yellow-100 px-2.5 py-0.5 text-xs font-medium text-yellow-700">
@@ -215,68 +172,6 @@
 								</span>
 							{/if}
 						</div>
-					</div>
-
-					<div class="mt-3 flex flex-wrap gap-2">
-						{#if !showWebhookInput}
-							<button
-								onclick={() => (showWebhookInput = true)}
-								class="rounded-md border border-gray-300 px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-50 transition-colors"
-							>
-								{data.hasStripeWebhookSecret ? 'Replace secret' : 'Add secret'}
-							</button>
-							{#if data.hasStripeWebhookSecret}
-								<form method="post" action="?/clearWebhookSecret" use:enhance>
-									<button
-										type="submit"
-										onclick={(e) => { if (!confirm('Remove webhook secret?')) e.preventDefault(); }}
-										class="rounded-md border border-red-200 px-3 py-1.5 text-sm text-red-600 hover:bg-red-50 transition-colors"
-									>
-										Remove
-									</button>
-								</form>
-							{/if}
-						{:else}
-							<form
-								method="post"
-								action="?/saveWebhookSecret"
-								use:enhance={() => ({ update }) => { update(); showWebhookInput = false; }}
-								class="w-full space-y-2"
-							>
-								<div class="relative">
-									<input
-										name="stripeWebhookSecret"
-										type={showWebhookKey ? 'text' : 'password'}
-										required
-										placeholder="whsec_..."
-										autocomplete="off"
-										class="w-full rounded-md border border-gray-300 px-3 py-2 pr-20 text-sm font-mono focus:border-gray-900 focus:outline-none focus:ring-1 focus:ring-gray-900"
-									/>
-									<button
-										type="button"
-										onclick={() => (showWebhookKey = !showWebhookKey)}
-										class="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-gray-400 hover:text-gray-600 transition-colors"
-									>
-										{showWebhookKey ? 'Hide' : 'Show'}
-									</button>
-								</div>
-								<div class="flex gap-2">
-									<button
-										type="submit"
-										class="rounded-md bg-gray-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-gray-700 transition-colors"
-									>
-										Save
-									</button>
-									<button
-										type="button"
-										onclick={() => (showWebhookInput = false)}
-										class="rounded-md border border-gray-300 px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-50 transition-colors"
-									>
-										Cancel
-									</button>
-								</div>
-							</form>
-						{/if}
 					</div>
 				</div>
 			{/if}

@@ -80,6 +80,7 @@ export const tenant = pgTable(
 		// Per-tenant Stripe integration (for product discovery and payments)
 		stripeSecretKey: text('stripe_secret_key'),
 		stripeWebhookSecret: text('stripe_webhook_secret'),
+		stripeWebhookEndpointId: text('stripe_webhook_endpoint_id'),
 
 		// Active add-ons with their Stripe subscription item IDs
 		addons: jsonb('addons').default([]).$type<import('$lib/billing').AddonItem[]>(),

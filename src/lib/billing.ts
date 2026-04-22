@@ -88,6 +88,13 @@ export const ADDONS = [
 		price: 9,
 		icon: 'mdi:ticket-percent-outline',
 		description: 'Create discount codes for promotions, events, or loyal customers.'
+	},
+	{
+		key: 'subscriptions',
+		name: 'Subscriptions',
+		price: 29,
+		icon: 'mdi:refresh-circle',
+		description: 'Sell recurring items or services — customers subscribe and are billed monthly or yearly.'
 	}
 ] as const;
 

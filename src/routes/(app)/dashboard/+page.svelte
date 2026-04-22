@@ -117,13 +117,13 @@
 				Live · updated {lastUpdated.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
 			</span>
 		</div>
-			<div class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+			<div class="overflow-x-auto rounded-xl border border-gray-200 bg-white shadow-sm">
 				<table class="w-full text-sm">
 					<thead class="border-b border-gray-200 bg-gray-50">
 						<tr>
 							<th class="px-4 py-2.5 text-left font-medium text-gray-500">Order</th>
-							<th class="px-4 py-2.5 text-left font-medium text-gray-500">Customer</th>
-							<th class="px-4 py-2.5 text-left font-medium text-gray-500">Type</th>
+							<th class="hidden px-4 py-2.5 text-left font-medium text-gray-500 sm:table-cell">Customer</th>
+							<th class="hidden px-4 py-2.5 text-left font-medium text-gray-500 md:table-cell">Type</th>
 							<th class="px-4 py-2.5 text-left font-medium text-gray-500">Status</th>
 							<th class="px-4 py-2.5 text-right font-medium text-gray-500">Total</th>
 						</tr>
@@ -132,24 +132,16 @@
 						{#each data.recentOrders as order (order.id)}
 							<tr class="transition-colors hover:bg-gray-50">
 								<td class="px-4 py-3 font-mono text-xs text-gray-600">
-									<a href={resolve(`/dashboard/orders/${order.id}`)} class="hover:underline"
-										>{order.orderNumber}</a
-									>
+									<a href={resolve(`/dashboard/orders/${order.id}`)} class="hover:underline">{order.orderNumber}</a>
 								</td>
-								<td class="px-4 py-3 text-gray-700">{order.customerName ?? '—'}</td>
-								<td class="px-4 py-3 text-gray-500 capitalize">{order.type}</td>
+								<td class="hidden px-4 py-3 text-gray-700 sm:table-cell">{order.customerName ?? '—'}</td>
+								<td class="hidden px-4 py-3 text-gray-500 capitalize md:table-cell">{order.type}</td>
 								<td class="px-4 py-3">
-									<span
-										class="rounded-full px-2 py-0.5 text-xs font-medium {statusColors[
-											order.status
-										] ?? 'bg-gray-100 text-gray-600'}"
-									>
+									<span class="rounded-full px-2 py-0.5 text-xs font-medium {statusColors[order.status] ?? 'bg-gray-100 text-gray-600'}">
 										{order.status}
 									</span>
 								</td>
-								<td class="px-4 py-3 text-right font-medium text-gray-900"
-									>${(order.total / 100).toFixed(2)}</td
-								>
+								<td class="px-4 py-3 text-right font-medium text-gray-900">${(order.total / 100).toFixed(2)}</td>
 							</tr>
 						{/each}
 					</tbody>

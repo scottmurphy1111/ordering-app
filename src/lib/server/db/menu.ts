@@ -58,6 +58,9 @@ export const menuItems = pgTable(
 		modifiers: jsonb('modifiers').default([]), // flexible: [{ name: "Size", required: true, options: [{name, price, ...}] }, ...]
 		// Or normalize modifiers into separate tables (see below) for advanced queries
 
+		isSubscription: boolean('is_subscription').default(false),
+		billingInterval: varchar('billing_interval', { length: 20 }), // 'monthly' | 'yearly'
+
 		available: boolean('available').default(true),
 		sortOrder: integer('sort_order').default(0),
 		createdAt: timestamp('created_at').defaultNow(),

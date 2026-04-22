@@ -8,6 +8,16 @@
 
 	let showCreate = $state(false);
 	let slugValue = $state('');
+	let search = $state('');
+
+	const filteredTenants = $derived(
+		search.trim()
+			? data.tenants.filter((t) =>
+				t.name.toLowerCase().includes(search.toLowerCase()) ||
+				t.slug.toLowerCase().includes(search.toLowerCase())
+			)
+			: data.tenants
+	);
 
 	function startTour() {
 		showCreate = false;
@@ -35,9 +45,21 @@
 			</div>
 		{/if}
 
+		{#if data.tenants.length > 4}
+			<div class="relative mb-4">
+				<Icon icon="mdi:magnify" class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+				<input
+					type="search"
+					placeholder="Search tenants..."
+					bind:value={search}
+					class="w-full rounded-lg border border-gray-200 bg-white py-2 pl-9 pr-3 text-sm focus:border-gray-400 focus:outline-none focus:ring-1 focus:ring-gray-400"
+				/>
+			</div>
+		{/if}
+
 		{#if data.tenants.length > 0}
 			<div class="space-y-2 mb-6">
-				{#each data.tenants as t (t.id)}
+				{#each filteredTenants as t (t.id)}
 					<form method="post" action="?/select" use:enhance>
 						<input type="hidden" name="tenantId" value={t.id} />
 						<button

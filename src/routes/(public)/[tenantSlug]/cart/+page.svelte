@@ -105,19 +105,39 @@
 		promoError = null;
 	}
 
+	// Subscription detection
+	const isSubscriptionCart = $derived(cart.items.length > 0 && cart.items.every((i) => i.isSubscription));
+	const hasMixedCart = $derived(
+		cart.items.some((i) => i.isSubscription) && cart.items.some((i) => !i.isSubscription)
+	);
+	const subscriptionInterval = $derived(
+		isSubscriptionCart ? (cart.items[0]?.billingInterval ?? 'monthly') : null
+	);
+	const hasMixedIntervals = $derived(
+		isSubscriptionCart && new Set(cart.items.map((i) => i.billingInterval)).size > 1
+	);
+
 	const subtotal = $derived(cart.subtotal);
-	const tax = $derived(Math.round(subtotal * TAX_RATE));
+	const tax = $derived(isSubscriptionCart ? 0 : Math.round(subtotal * TAX_RATE));
 	const tipCents = $derived.by(() => {
-		if (!tipsEnabled || tipPercent === 0) return 0;
+		if (isSubscriptionCart || !tipsEnabled || tipPercent === 0) return 0;
 		if (tipPercent === 'custom') return Math.round((parseFloat(customTipDollars) || 0) * 100);
 		return Math.round(subtotal * (tipPercent / 100));
 	});
-	const discountCents = $derived(promoApplied?.discount ?? 0);
-	const deliveryFeeCents = $derived(orderType === 'delivery' ? tenantDeliveryFee : 0);
+	const discountCents = $derived(isSubscriptionCart ? 0 : (promoApplied?.discount ?? 0));
+	const deliveryFeeCents = $derived(isSubscriptionCart ? 0 : (orderType === 'delivery' ? tenantDeliveryFee : 0));
 	const total = $derived(Math.max(0, subtotal + tax + tipCents + deliveryFeeCents - discountCents));
 
 	async function checkout() {
 		if (cart.items.length === 0) return;
+		if (hasMixedCart) {
+			checkoutError = 'Remove subscription or one-time items so all items match before checking out.';
+			return;
+		}
+		if (hasMixedIntervals) {
+			checkoutError = 'All subscription items must have the same billing interval.';
+			return;
+		}
 		if (!customerName.trim()) {
 			checkoutError = 'Please enter your name.';
 			return;
@@ -138,13 +158,15 @@
 					items: cart.items,
 					customer: { name: customerName, email, phone },
 					notes: [tableNumber ? `Table ${tableNumber}` : '', notes].filter(Boolean).join(' | '),
-					orderType,
-					deliveryAddress: orderType === 'delivery'
+					orderType: isSubscriptionCart ? 'subscription' : orderType,
+					deliveryAddress: orderType === 'delivery' && !isSubscriptionCart
 						? [deliveryStreet, deliveryApt, deliveryCity, deliveryState, deliveryZip].filter(Boolean).join(', ')
 						: null,
-					scheduledFor: pickupTiming === 'scheduled' && pickupDate && pickupTimeValue
+					scheduledFor: pickupTiming === 'scheduled' && pickupDate && pickupTimeValue && !isSubscriptionCart
 						? new Date(`${pickupDate}T${pickupTimeValue}`).toISOString()
 						: null,
+					isSubscription: isSubscriptionCart,
+					billingInterval: subscriptionInterval,
 					subtotal,
 					tax,
 					tip: tipCents,
@@ -211,6 +233,19 @@
 				</a>
 			</div>
 		{:else}
+			{#if hasMixedCart}
+				<div class="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700">
+					<p class="font-medium">Mixed cart not supported</p>
+					<p class="mt-0.5 text-xs">Subscription items and one-time items can't be ordered together. Please remove one or the other.</p>
+				</div>
+			{/if}
+			{#if hasMixedIntervals}
+				<div class="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700">
+					<p class="font-medium">Mixed billing intervals</p>
+					<p class="mt-0.5 text-xs">All subscription items in an order must have the same billing interval (monthly or yearly).</p>
+				</div>
+			{/if}
+
 			<!-- Cart items -->
 			<div class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
 				{#each cart.items as item, i (i)}
@@ -223,14 +258,22 @@
 							/>
 						{/if}
 						<div class="min-w-0 flex-1">
-							<p class="text-sm font-medium text-gray-900">{item.name}</p>
+							<div class="flex items-center gap-1.5 flex-wrap">
+								<p class="text-sm font-medium text-gray-900">{item.name}</p>
+								{#if item.isSubscription}
+									<span class="inline-flex items-center gap-0.5 rounded-full bg-purple-100 px-2 py-0.5 text-xs font-medium text-purple-700">
+										<Icon icon="mdi:refresh" class="h-3 w-3" />
+										{item.billingInterval === 'yearly' ? 'Yearly' : 'Monthly'}
+									</span>
+								{/if}
+							</div>
 							{#if item.selectedModifiers.length > 0}
 								<p class="mt-0.5 text-xs text-gray-400">
 									{item.selectedModifiers.map((m) => m.name).join(', ')}
 								</p>
 							{/if}
 							<p class="mt-0.5 text-xs text-gray-500">
-								${(itemUnitPrice(item) / 100).toFixed(2)} each
+								${(itemUnitPrice(item) / 100).toFixed(2)}{item.isSubscription ? `/${item.billingInterval === 'yearly' ? 'yr' : 'mo'}` : ' each'}
 							</p>
 						</div>
 						<div class="flex shrink-0 items-center gap-2">
@@ -253,7 +296,7 @@
 			</div>
 
 			<!-- Order type -->
-			{#if deliveryEnabled}
+			{#if deliveryEnabled && !isSubscriptionCart}
 				<div class="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
 					<p class="mb-2 text-sm font-semibold text-gray-800">Order type</p>
 					<div class="flex gap-3">
@@ -274,7 +317,7 @@
 			{/if}
 
 			<!-- Pickup timing (pickup only) -->
-			{#if orderType === 'pickup'}
+			{#if orderType === 'pickup' && !isSubscriptionCart}
 				<div class="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
 					<p class="mb-2 text-sm font-semibold text-gray-800">Pickup time</p>
 					<div class="flex gap-3">
@@ -439,6 +482,7 @@
 			</div>
 
 			<!-- Promo code -->
+			{#if !isSubscriptionCart}
 			<div class="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
 				<p class="mb-2 text-sm font-semibold text-gray-800">Promo code</p>
 				{#if promoApplied}
@@ -474,9 +518,10 @@
 					{/if}
 				{/if}
 			</div>
+			{/if}
 
 			<!-- Tip selector -->
-			{#if tipsEnabled}
+			{#if tipsEnabled && !isSubscriptionCart}
 				<div class="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
 					<p class="mb-2 text-sm font-semibold text-gray-800">Add a tip</p>
 					<div class="flex gap-2 flex-wrap">
@@ -519,46 +564,53 @@
 
 			<!-- Order summary -->
 			<div class="space-y-1.5 rounded-xl border border-gray-200 bg-white p-4 text-sm shadow-sm">
-				{#if orderType === 'pickup'}
+				{#if isSubscriptionCart}
+					<div class="flex items-center gap-2 pb-2 mb-1 border-b border-gray-100 text-purple-700">
+						<Icon icon="mdi:refresh-circle" class="h-4 w-4 shrink-0" />
+						<p class="text-xs font-medium">Recurring subscription — billed {subscriptionInterval}</p>
+					</div>
+				{:else if orderType === 'pickup'}
 					<div class="flex items-center justify-between text-gray-600 pb-1.5 mb-0.5 border-b border-gray-100">
 						<span class="flex items-center gap-1.5"><Icon icon="mdi:clock-outline" class="h-3.5 w-3.5" /> Pickup</span>
 						<span class="font-medium">{scheduledLabel ?? 'ASAP'}</span>
 					</div>
 				{/if}
 				<div class="flex justify-between text-gray-600">
-					<span>Subtotal</span>
+					<span>{isSubscriptionCart ? `Per ${subscriptionInterval === 'yearly' ? 'year' : 'month'}` : 'Subtotal'}</span>
 					<span>${(subtotal / 100).toFixed(2)}</span>
 				</div>
-				<div class="flex justify-between text-gray-600">
-					<span>Tax ({(TAX_RATE * 100).toFixed(2)}%)</span>
-					<span>${(tax / 100).toFixed(2)}</span>
-				</div>
-				{#if deliveryFeeCents > 0}
+				{#if !isSubscriptionCart}
 					<div class="flex justify-between text-gray-600">
-						<span>Delivery fee</span>
-						<span>${(deliveryFeeCents / 100).toFixed(2)}</span>
+						<span>Tax ({(TAX_RATE * 100).toFixed(2)}%)</span>
+						<span>${(tax / 100).toFixed(2)}</span>
 					</div>
-				{/if}
-				{#if tipCents > 0}
-					<div class="flex justify-between text-gray-600">
-						<span>Tip{tipPercent !== 'custom' && tipPercent !== 0 ? ` (${tipPercent}%)` : ''}</span>
-						<span>${(tipCents / 100).toFixed(2)}</span>
-					</div>
-				{/if}
-				{#if discountCents > 0}
-					<div class="flex justify-between text-green-600 font-medium">
-						<span class="flex items-center gap-1">
-							<Icon icon="mdi:ticket-percent-outline" class="h-3.5 w-3.5" />
-							Promo ({promoApplied?.code})
-						</span>
-						<span>−${(discountCents / 100).toFixed(2)}</span>
-					</div>
+					{#if deliveryFeeCents > 0}
+						<div class="flex justify-between text-gray-600">
+							<span>Delivery fee</span>
+							<span>${(deliveryFeeCents / 100).toFixed(2)}</span>
+						</div>
+					{/if}
+					{#if tipCents > 0}
+						<div class="flex justify-between text-gray-600">
+							<span>Tip{tipPercent !== 'custom' && tipPercent !== 0 ? ` (${tipPercent}%)` : ''}</span>
+							<span>${(tipCents / 100).toFixed(2)}</span>
+						</div>
+					{/if}
+					{#if discountCents > 0}
+						<div class="flex justify-between text-green-600 font-medium">
+							<span class="flex items-center gap-1">
+								<Icon icon="mdi:ticket-percent-outline" class="h-3.5 w-3.5" />
+								Promo ({promoApplied?.code})
+							</span>
+							<span>−${(discountCents / 100).toFixed(2)}</span>
+						</div>
+					{/if}
 				{/if}
 				<div
 					class="mt-1.5 flex justify-between border-t border-gray-100 pt-1.5 font-semibold"
 					style="color: var(--primary-color);"
 				>
-					<span>Total</span>
+					<span>{isSubscriptionCart ? `Total / ${subscriptionInterval === 'yearly' ? 'yr' : 'mo'}` : 'Total'}</span>
 					<span>${(total / 100).toFixed(2)}</span>
 				</div>
 			</div>
@@ -580,7 +632,7 @@
 				style="background-color: var(--primary-color); color: var(--accent-color);"
 				class="w-full rounded-xl px-6 py-4 text-base font-semibold shadow-sm transition-opacity hover:opacity-90 disabled:opacity-50"
 			>
-				{loading ? 'Redirecting to payment…' : `Pay $${(total / 100).toFixed(2)}`}
+				{loading ? 'Redirecting to payment…' : isSubscriptionCart ? `Subscribe — $${(total / 100).toFixed(2)}/${subscriptionInterval === 'yearly' ? 'yr' : 'mo'}` : `Pay $${(total / 100).toFixed(2)}`}
 			</button>
 		{/if}
 	</main>

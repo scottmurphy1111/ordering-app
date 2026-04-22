@@ -22,12 +22,44 @@
 	const addonMonthlyTotal = $derived(
 		ADDONS.filter((a) => hasAddon(activeAddons, a.key)).reduce((s, a) => s + a.price, 0)
 	);
+	const currentMonthly = $derived(tierInfo.price + addonMonthlyTotal);
 
 	const statusColors: Record<string, string> = {
 		active: 'bg-green-100 text-green-700',
 		past_due: 'bg-amber-100 text-amber-700',
 		cancelled: 'bg-red-100 text-red-600'
 	};
+
+	// --- Addon confirmation modal ---
+	type PendingAddon = { key: string; name: string; price: number; action: 'activate' | 'deactivate' };
+	let pendingAddon = $state<PendingAddon | null>(null);
+
+	function openModal(addon: (typeof ADDONS)[number], action: 'activate' | 'deactivate') {
+		pendingAddon = { key: addon.key, name: addon.name, price: addon.price, action };
+	}
+
+	function closeModal() {
+		pendingAddon = null;
+	}
+
+	function calcProration(addonPrice: number, action: 'activate' | 'deactivate'): number | null {
+		if (!data.nextBillingDate || !data.periodStart) return null;
+		const now = Date.now();
+		const end = new Date(data.nextBillingDate).getTime();
+		const start = new Date(data.periodStart).getTime();
+		const totalDays = (end - start) / 86_400_000;
+		const daysLeft = Math.max(0, (end - now) / 86_400_000);
+		const amount = addonPrice * (daysLeft / totalDays);
+		return action === 'activate' ? amount : -amount;
+	}
+
+	function fmtDate(iso: string) {
+		return new Date(iso).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+	}
+
+	function fmtMoney(dollars: number) {
+		return Math.abs(dollars).toLocaleString('en-US', { style: 'currency', currency: 'USD' });
+	}
 </script>
 
 <div class="max-w-3xl">
@@ -221,23 +253,110 @@
 					</div>
 					<p class="mb-4 text-sm text-gray-500">{addon.description}</p>
 					{#if isActive}
-						<form method="post" action="?/deactivateAddon" use:enhance
-							onsubmit={(e) => { if (!confirm(`Deactivate ${addon.name}? This will remove it from your next invoice.`)) e.preventDefault(); }}>
-							<input type="hidden" name="key" value={addon.key} />
-							<button type="submit" disabled={!canToggle} class="w-full rounded-md border border-red-200 px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
-								Deactivate
-							</button>
-						</form>
+						<button
+							type="button"
+							disabled={!canToggle}
+							onclick={() => openModal(addon, 'deactivate')}
+							class="w-full rounded-md border border-red-200 px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+						>
+							Deactivate
+						</button>
 					{:else}
-						<form method="post" action="?/activateAddon" use:enhance>
-							<input type="hidden" name="key" value={addon.key} />
-							<button type="submit" disabled={!canToggle} class="w-full rounded-md bg-gray-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-gray-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
-								Activate — ${addon.price}/mo
-							</button>
-						</form>
+						<button
+							type="button"
+							disabled={!canToggle}
+							onclick={() => openModal(addon, 'activate')}
+							class="w-full rounded-md bg-gray-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-gray-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+						>
+							Activate — ${addon.price}/mo
+						</button>
 					{/if}
 				</div>
 			{/each}
 		</div>
 	</div>
 </div>
+
+<!-- Addon confirmation modal -->
+{#if pendingAddon}
+	{@const proration = calcProration(pendingAddon.price, pendingAddon.action)}
+	{@const newMonthly = pendingAddon.action === 'activate' ? currentMonthly + pendingAddon.price : currentMonthly - pendingAddon.price}
+	{@const isActivate = pendingAddon.action === 'activate'}
+
+	<div
+		class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+		role="dialog"
+		aria-modal="true"
+		aria-labelledby="modal-title"
+	>
+		<div class="w-full max-w-md rounded-2xl bg-white shadow-xl">
+			<div class="px-6 pt-6 pb-4">
+				<h2 id="modal-title" class="text-lg font-semibold text-gray-900">
+					{isActivate ? 'Activate' : 'Deactivate'} {pendingAddon.name}?
+				</h2>
+
+				<!-- Billing summary -->
+				<div class="mt-5 rounded-xl border border-gray-100 bg-gray-50 px-4 py-4 space-y-2">
+					<p class="text-xs font-medium text-gray-400 uppercase tracking-wide mb-3">Billing summary</p>
+					<div class="flex items-center justify-between text-sm text-gray-600">
+						<span>Current monthly bill</span>
+						<span class="font-medium">${currentMonthly}/mo</span>
+					</div>
+					<div class="flex items-center justify-between text-sm {isActivate ? 'text-gray-800' : 'text-red-600'}">
+						<span>{isActivate ? '+' : '−'} {pendingAddon.name}</span>
+						<span class="font-medium">{isActivate ? '+' : '−'}${pendingAddon.price}/mo</span>
+					</div>
+					<div class="border-t border-gray-200 pt-2 flex items-center justify-between text-sm font-semibold text-gray-900">
+						<span>New monthly bill</span>
+						<span>${newMonthly}/mo</span>
+					</div>
+				</div>
+
+				<!-- Proration note -->
+				{#if proration !== null}
+					<div class="mt-4 flex items-start gap-2.5 rounded-lg border border-blue-100 bg-blue-50 px-3.5 py-3">
+						<Icon icon="mdi:information-outline" class="mt-0.5 h-4 w-4 shrink-0 text-blue-500" />
+						<p class="text-sm text-blue-700">
+							{#if isActivate}
+								You'll be charged a prorated amount of <strong>{fmtMoney(proration)}</strong> today for the remaining days in this billing cycle.
+							{:else}
+								You'll receive a prorated credit of <strong>{fmtMoney(proration)}</strong> on your next invoice.
+							{/if}
+						</p>
+					</div>
+				{/if}
+
+				<!-- Next billing date -->
+				{#if data.nextBillingDate}
+					<p class="mt-3 text-xs text-gray-400">
+						Next full charge of <strong>${newMonthly}</strong> on {fmtDate(data.nextBillingDate)}.
+					</p>
+				{/if}
+			</div>
+
+			<div class="flex gap-3 border-t border-gray-100 px-6 py-4">
+				<button
+					type="button"
+					onclick={closeModal}
+					class="flex-1 rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+				>
+					Cancel
+				</button>
+				<form
+					method="post"
+					action={isActivate ? '?/activateAddon' : '?/deactivateAddon'}
+					use:enhance={() => ({ update }) => { pendingAddon = null; update(); }}
+					class="flex-1"
+				>
+					<input type="hidden" name="key" value={pendingAddon.key} />
+					<button
+						type="submit"
+						class="w-full rounded-lg px-4 py-2 text-sm font-medium text-white transition-colors {isActivate ? 'bg-gray-900 hover:bg-gray-700' : 'bg-red-600 hover:bg-red-700'}"
+					>
+						{isActivate ? `Confirm — ${fmtMoney(proration ?? pendingAddon.price)} today` : 'Confirm removal'}
+					</button>
+				</form>
+			</div>
+		</div>
+	</div>
+{/if}

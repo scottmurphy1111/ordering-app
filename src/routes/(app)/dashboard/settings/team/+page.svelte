@@ -124,7 +124,7 @@
 						/>
 						<select
 							name="role"
-							class="rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+							class="rounded-md border border-gray-300 px-3 pr-8 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
 						>
 							{#each data.roles as role (role)}
 								{#if role !== 'owner' || data.currentRole === 'owner'}
@@ -171,7 +171,7 @@
 						/>
 						<select
 							name="role"
-							class="rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+							class="rounded-md border border-gray-300 px-3 pr-8 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
 						>
 							{#each data.roles as role (role)}
 								{#if role !== 'owner' || data.currentRole === 'owner'}
@@ -222,13 +222,13 @@
 			{/if}
 		{/if}
 
-		<div class="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+		<div class="rounded-xl border border-gray-200 bg-white shadow-sm overflow-x-auto">
 			<table class="w-full text-sm">
 				<thead class="bg-gray-50 border-b border-gray-200">
 					<tr>
 						<th class="px-4 py-2.5 text-left font-medium text-gray-500">User</th>
 						<th class="px-4 py-2.5 text-left font-medium text-gray-500">Role</th>
-						<th class="px-4 py-2.5 text-left font-medium text-gray-500">Added</th>
+						<th class="hidden sm:table-cell px-4 py-2.5 text-left font-medium text-gray-500">Added</th>
 						<th class="px-4 py-2.5"></th>
 					</tr>
 				</thead>
@@ -254,7 +254,7 @@
 										<select
 											name="role"
 											onchange={(e) => (e.target as HTMLSelectElement).form?.requestSubmit()}
-											class="rounded-md border border-gray-200 px-2 py-1 text-xs focus:border-blue-500 focus:outline-none"
+											class="rounded-md border border-gray-200 px-2 pr-6 py-1 text-xs focus:border-blue-500 focus:outline-none"
 										>
 											{#each data.roles as role (role)}
 												{#if role !== 'owner' || data.currentRole === 'owner'}
@@ -269,7 +269,7 @@
 									</span>
 								{/if}
 							</td>
-							<td class="px-4 py-3 text-xs text-gray-400">
+							<td class="hidden sm:table-cell px-4 py-3 text-xs text-gray-400">
 								{new Date(member.assignedAt).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}
 							</td>
 							<td class="px-4 py-3 text-right">
@@ -282,7 +282,7 @@
 												<button
 													type="submit"
 													onclick={(e) => { if (!confirm(`Grant internal platform access to ${member.name}?`)) e.preventDefault(); }}
-													class="text-xs text-indigo-500 hover:text-indigo-700 transition-colors"
+													class="hidden sm:inline text-xs text-indigo-500 hover:text-indigo-700 transition-colors"
 												>
 													Make internal
 												</button>
@@ -316,26 +316,26 @@
 						{data.pendingInvitations.length}
 					</span>
 				</h2>
-				<div class="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+				<div class="rounded-xl border border-gray-200 bg-white shadow-sm overflow-x-auto">
 					<table class="w-full text-sm">
 						<thead class="bg-gray-50 border-b border-gray-200">
 							<tr>
 								<th class="px-4 py-2.5 text-left font-medium text-gray-500">Email</th>
 								<th class="px-4 py-2.5 text-left font-medium text-gray-500">Role</th>
-								<th class="px-4 py-2.5 text-left font-medium text-gray-500">Expires</th>
+								<th class="hidden sm:table-cell px-4 py-2.5 text-left font-medium text-gray-500">Expires</th>
 								<th class="px-4 py-2.5"></th>
 							</tr>
 						</thead>
 						<tbody class="divide-y divide-gray-100">
 							{#each data.pendingInvitations as invite (invite.id)}
 								<tr class="hover:bg-gray-50 transition-colors">
-									<td class="px-4 py-3 text-gray-700">{invite.email}</td>
+									<td class="px-4 py-3 text-gray-700 min-w-0 max-w-40 truncate">{invite.email}</td>
 									<td class="px-4 py-3">
 										<span class="rounded-full px-2 py-0.5 text-xs font-medium {roleColors[invite.role] ?? 'bg-gray-100 text-gray-600'}">
 											{roleLabels[invite.role] ?? invite.role}
 										</span>
 									</td>
-									<td class="px-4 py-3 text-xs text-gray-400">
+									<td class="hidden sm:table-cell px-4 py-3 text-xs text-gray-400">
 										{new Date(invite.expiresAt).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}
 									</td>
 									<td class="px-4 py-3 text-right">
@@ -380,12 +380,12 @@
 				<p class="text-gray-400 text-xs mt-1">Promote a tenant member using "Make internal" on the Members tab.</p>
 			</div>
 		{:else}
-			<div class="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden mb-6">
+			<div class="rounded-xl border border-gray-200 bg-white shadow-sm overflow-x-auto mb-6">
 				<table class="w-full text-sm">
 					<thead class="bg-gray-50 border-b border-gray-200">
 						<tr>
 							<th class="px-4 py-2.5 text-left font-medium text-gray-500">User</th>
-							<th class="px-4 py-2.5 text-left font-medium text-gray-500">Account created</th>
+							<th class="hidden sm:table-cell px-4 py-2.5 text-left font-medium text-gray-500">Account created</th>
 							<th class="px-4 py-2.5"></th>
 						</tr>
 					</thead>
@@ -396,7 +396,7 @@
 									<p class="font-medium text-gray-900">{u.name}</p>
 									<p class="text-xs text-gray-400">{u.email}</p>
 								</td>
-								<td class="px-4 py-3 text-xs text-gray-400">
+								<td class="hidden sm:table-cell px-4 py-3 text-xs text-gray-400">
 									{new Date(u.createdAt).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}
 								</td>
 								<td class="px-4 py-3 text-right">

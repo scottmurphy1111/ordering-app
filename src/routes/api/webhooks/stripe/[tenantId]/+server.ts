@@ -2,7 +2,7 @@ import { error, json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import Stripe from 'stripe';
 import { db } from '$lib/server/db';
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import { tenant } from '$lib/server/db/tenant';
 import { orders } from '$lib/server/db/schema';
 import { sendEmail } from '$lib/server/email';
@@ -18,7 +18,7 @@ export const POST: RequestHandler = async ({ request, params }) => {
 		where: isNaN(numericId)
 			? eq(tenant.slug, params.tenantId)
 			: eq(tenant.id, numericId),
-		columns: { stripeSecretKey: true, stripeWebhookSecret: true, isActive: true, name: true, primaryColor: true, slug: true }
+		columns: { id: true, stripeSecretKey: true, stripeWebhookSecret: true, isActive: true, name: true, primaryColor: true, slug: true }
 	});
 
 	if (!tenantRecord?.isActive) throw error(404, 'Tenant not found');
@@ -40,7 +40,7 @@ export const POST: RequestHandler = async ({ request, params }) => {
 		throw error(400, 'Invalid webhook signature');
 	}
 
-	const tenantCtx = { name: tenantRecord.name, primaryColor: tenantRecord.primaryColor ?? undefined, slug: tenantRecord.slug };
+	const tenantCtx = { id: tenantRecord.id, name: tenantRecord.name, primaryColor: tenantRecord.primaryColor ?? undefined, slug: tenantRecord.slug };
 
 	try {
 		await handleEvent(event, tenantCtx);
@@ -52,7 +52,13 @@ export const POST: RequestHandler = async ({ request, params }) => {
 	return json({ received: true });
 };
 
-type TenantCtx = { name: string; primaryColor?: string; slug: string };
+type TenantCtx = { id: number; name: string; primaryColor?: string; slug: string };
+
+function generateOrderNumber(): string {
+	const ts = Date.now().toString(36).toUpperCase();
+	const rand = Math.random().toString(36).slice(2, 5).toUpperCase();
+	return `#${ts}-${rand}`;
+}
 
 function orderUrl(tenantSlug: string, orderId: number) {
 	return `${env.ORIGIN}/${tenantSlug}/orders/${orderId}`;
@@ -168,6 +174,11 @@ async function handleEvent(event: Stripe.Event, tenant: TenantCtx) {
 					? session.payment_intent
 					: session.payment_intent.id
 				: null;
+			const subscriptionId = session.subscription
+				? typeof session.subscription === 'string'
+					? session.subscription
+					: (session.subscription as Stripe.Subscription).id
+				: null;
 
 			let order;
 			if (orderId) {
@@ -177,6 +188,7 @@ async function handleEvent(event: Stripe.Event, tenant: TenantCtx) {
 						paymentStatus: 'paid',
 						status: 'confirmed',
 						...(intentId ? { stripePaymentIntentId: intentId } : {}),
+						...(subscriptionId ? { metadata: { stripeSessionId: session.id, stripeSubscriptionId: subscriptionId } } : { metadata: { stripeSessionId: session.id } }),
 						updatedAt: new Date()
 					})
 					.where(eq(orders.id, orderId))
@@ -216,6 +228,75 @@ async function handleEvent(event: Stripe.Event, tenant: TenantCtx) {
 			break;
 		}
 
+		case 'invoice.payment_succeeded': {
+			const invoice = event.data.object as Stripe.Invoice;
+			// Skip first payment — already handled by checkout.session.completed
+			if (invoice.billing_reason === 'subscription_create') break;
+
+			const subDetails = invoice.parent?.type === 'subscription_details'
+				? invoice.parent.subscription_details
+				: null;
+			const subRaw = subDetails?.subscription;
+			const subId = subRaw ? (typeof subRaw === 'string' ? subRaw : subRaw.id) : null;
+			if (!subId) break;
+
+			// Find the original order for this subscription
+			const original = await db.query.orders.findFirst({
+				where: sql`${orders.tenantId} = ${tenant.id} AND ${orders.metadata}->>'stripeSubscriptionId' = ${subId}`
+			});
+			if (!original) {
+				console.warn(`[webhook] invoice.payment_succeeded: no order found for subscription ${subId}`);
+				break;
+			}
+
+			const orderNumber = generateOrderNumber();
+			const [recurring] = await db.insert(orders).values({
+				tenantId: original.tenantId,
+				orderNumber,
+				customerName: original.customerName,
+				customerEmail: original.customerEmail,
+				customerPhone: original.customerPhone,
+				type: 'subscription',
+				status: 'received',
+				paymentStatus: 'paid',
+				subtotal: original.subtotal,
+				tax: 0,
+				deliveryFee: 0,
+				tip: 0,
+				discount: 0,
+				total: original.subtotal,
+				items: original.items as unknown[],
+				metadata: { stripeSubscriptionId: subId, isRecurring: true }
+			}).returning();
+
+			if (recurring?.customerEmail) {
+				await sendEmail({
+					to: recurring.customerEmail,
+					subject: `Subscription renewed — ${tenant.name}`,
+					html: orderConfirmedEmail({
+						tenantName: tenant.name,
+						primaryColor: tenant.primaryColor,
+						orderNumber: recurring.orderNumber,
+						customerName: recurring.customerName ?? 'there',
+						items: recurring.items as Parameters<typeof orderConfirmedEmail>[0]['items'],
+						subtotal: recurring.subtotal,
+						tax: 0,
+						tip: 0,
+						total: recurring.total,
+						orderType: 'subscription',
+						notes: null
+					})
+				}).catch(console.error);
+			}
+			if (recurring?.customerPhone) {
+				await sendSms(
+					recurring.customerPhone,
+					`${tenant.name}: Your subscription has renewed. Order ${recurring.orderNumber} — ${orderUrl(tenant.slug, recurring.id)}`
+				).catch(console.error);
+			}
+			break;
+		}
+
 		case 'product.created':
 		case 'product.updated':
 		case 'price.created':
@@ -223,6 +304,9 @@ async function handleEvent(event: Stripe.Event, tenant: TenantCtx) {
 		case 'payment_intent.created':
 		case 'charge.succeeded':
 		case 'charge.updated':
+		case 'invoice.created':
+		case 'invoice.finalized':
+		case 'invoice.updated':
 			break;
 
 		default:

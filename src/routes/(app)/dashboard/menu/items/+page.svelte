@@ -440,7 +440,7 @@
 	{/if}
 
 	<!-- Filters -->
-	<form bind:this={searchForm} method="get" class="mb-5 flex gap-3">
+	<form bind:this={searchForm} method="get" class="mb-5 flex min-w-0 gap-2">
 		<input
 			bind:this={searchInput}
 			type="text"
@@ -448,13 +448,13 @@
 			value={data.search ?? ''}
 			placeholder="Search items..."
 			oninput={onSearchInput}
-			class="flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+			class="min-w-0 flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
 		/>
 		{#if data.categories.length > 0}
 			<select
 				name="categoryId"
 				onchange={onCategoryChange}
-				class="rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+				class="w-36 shrink-0 truncate rounded-md border border-gray-300 py-2 pl-3 pr-8 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
 			>
 				<option value="">All categories</option>
 				{#each data.categories as cat (cat.id)}

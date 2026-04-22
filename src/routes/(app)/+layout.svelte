@@ -203,7 +203,7 @@
 			>
 				<Icon icon="mdi:menu" class="h-6 w-6" />
 			</button>
-			<div class="flex min-w-0 flex-1 items-center gap-2.5">
+			<a href={resolve('/tenants')} class="flex min-w-0 flex-1 items-center gap-2.5">
 				{#if data.tenant?.logoUrl}
 					<img src={data.tenant.logoUrl} alt={data.tenant.name} class="h-8 w-8 shrink-0 rounded-md object-contain bg-white/10 p-0.5" />
 				{/if}
@@ -213,7 +213,7 @@
 						<p class="truncate text-sm font-semibold leading-tight text-white">{data.tenant.name}</p>
 					{/if}
 				</div>
-			</div>
+			</a>
 		</header>
 
 		<div class="mx-auto w-full max-w-5xl flex-1 px-4 py-6 sm:px-6 sm:py-8">

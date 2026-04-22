@@ -29,13 +29,29 @@ export const load: PageServerLoad = async ({ locals }) => {
 		})
 	]);
 
+	let nextBillingDate: string | null = null;
+	let periodStart: string | null = null;
+
+	if (tenantRecord?.stripeSubscriptionId) {
+		try {
+			const stripe = getOrderLocalStripe();
+			const preview = await stripe.invoices.createPreview({
+				subscription: tenantRecord.stripeSubscriptionId
+			});
+			periodStart = new Date(preview.period_start * 1000).toISOString();
+			nextBillingDate = new Date(preview.period_end * 1000).toISOString();
+		} catch {}
+	}
+
 	return {
 		itemCount: countResult[0]?.count ?? 0,
 		subscriptionTier: tenantRecord?.subscriptionTier ?? 'starter',
 		subscriptionStatus: tenantRecord?.subscriptionStatus ?? 'active',
 		hasStripeSubscription: !!tenantRecord?.stripeSubscriptionId,
 		hasStripeCustomer: !!tenantRecord?.stripeCustomerId,
-		addons: (tenantRecord?.addons ?? []) as AddonItem[]
+		addons: (tenantRecord?.addons ?? []) as AddonItem[],
+		nextBillingDate,
+		periodStart
 	};
 };
 

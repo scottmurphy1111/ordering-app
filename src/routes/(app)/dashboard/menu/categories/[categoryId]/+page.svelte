@@ -79,18 +79,7 @@
 					class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-green-500 focus:outline-none focus:ring-1 focus:ring-green-500"
 				/>
 			</div>
-			<div>
-				<label class="block text-sm font-medium text-gray-700 mb-1" for="sortOrder">Sort order</label>
-				<input
-					id="sortOrder"
-					name="sortOrder"
-					type="number"
-					min="0"
-					value={data.category.sortOrder ?? 0}
-					class="w-28 rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-green-500 focus:outline-none focus:ring-1 focus:ring-green-500"
-				/>
-				<p class="mt-1 text-xs text-gray-400">Lower numbers appear first on the menu.</p>
-			</div>
+			<input type="hidden" name="sortOrder" value={data.category.sortOrder ?? 0} />
 
 			<!-- Active / Inactive toggle -->
 			<div class="flex items-center justify-between rounded-lg border border-gray-200 px-4 py-3">

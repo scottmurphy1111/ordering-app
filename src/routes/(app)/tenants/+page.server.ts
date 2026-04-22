@@ -30,6 +30,8 @@ export const load: PageServerLoad = async ({ locals }) => {
 		.innerJoin(tenant, eq(tenantUsers.tenantId, tenant.id))
 		.where(eq(tenantUsers.userId, userId));
 
+	userTenants.sort((a, b) => a.name.localeCompare(b.name));
+
 	const isInternal = locals.user!.isInternal;
 	const canCreate = canCreateTenant(isInternal, userTenants);
 	return { tenants: userTenants, isInternal, canCreate };

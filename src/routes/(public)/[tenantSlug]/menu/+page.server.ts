@@ -23,7 +23,9 @@ export const load: PageServerLoad = async ({ locals, params }) => {
 				discountedPrice: true,
 				images: true,
 				tags: true,
-				categoryId: true
+				categoryId: true,
+				isSubscription: true,
+				billingInterval: true
 			},
 			with: {
 				modifiers: { columns: { modifierId: true } }
