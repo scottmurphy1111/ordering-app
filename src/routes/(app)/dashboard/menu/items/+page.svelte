@@ -311,11 +311,11 @@
 					<Icon icon="mdi:lightning-bolt" class="h-4 w-4" /><span class="hidden sm:inline">Discover from Stripe</span><span class="sm:hidden">Discover</span>
 				</button>
 				<button onclick={() => (showImport = true)}
-					class="inline-flex items-center gap-1.5 rounded-md border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
+					class="inline-flex items-center gap-1.5 rounded-md border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:border-gray-400 hover:bg-gray-100">
 					<Icon icon="mdi:upload" class="h-4 w-4" /><span class="hidden sm:inline">Import CSV</span><span class="sm:hidden">Import</span>
 				</button>
 				<button onclick={() => { sortMode = true; showForm = false; }}
-					class="inline-flex items-center gap-1.5 rounded-md border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
+					class="inline-flex items-center gap-1.5 rounded-md border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:border-gray-400 hover:bg-gray-100">
 					<Icon icon="mdi:drag-vertical" class="h-4 w-4" /> Reorder
 				</button>
 				<button onclick={() => { showForm = !showForm; lastCreated = null; }}
@@ -324,7 +324,7 @@
 				</button>
 			{:else}
 				<button onclick={() => { sortMode = false; sortSaveError = null; }}
-					class="rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-600 hover:bg-gray-50 transition-colors">
+					class="rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-600 transition-colors hover:border-gray-400 hover:bg-gray-100">
 					Cancel
 				</button>
 				<button onclick={saveSortOrder} disabled={sortSaving}
@@ -432,7 +432,7 @@
 					Save &amp; add another
 				</button>
 				<button type="submit" name="closeAfter" value="1" disabled={newUploading}
-					class="rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50"
+					class="rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-700 transition-colors hover:border-gray-400 hover:bg-gray-100 disabled:opacity-50"
 					onclick={() => setTimeout(() => { showForm = false; }, 100)}>
 					Save &amp; close
 				</button>
@@ -557,7 +557,7 @@
 									<input type="hidden" name="id" value={item.id} />
 									<input type="hidden" name="available" value={String(!item.available)} />
 									<button type="submit" class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium transition-colors
-										{item.available ? 'bg-green-100 text-green-700 hover:bg-red-50 hover:text-red-600' : 'bg-gray-100 text-gray-500 hover:bg-green-50 hover:text-green-700'}">
+										{item.available ? 'bg-green-100 text-green-700 hover:bg-red-50 hover:text-red-600' : 'bg-red-100 text-red-600 hover:bg-green-50 hover:text-green-700'}">
 										<Icon icon={item.available ? 'mdi:check-circle-outline' : 'mdi:close-circle-outline'} class="h-3.5 w-3.5" />
 										{item.available ? 'Available' : '86\'d'}
 									</button>
@@ -590,13 +590,13 @@
 					{#if data.pagination.page > 1}
 						<a
 							href={resolve(`/dashboard/menu/items?page=${data.pagination.page - 1}`)}
-							class="rounded-md border border-gray-300 px-3 py-1.5 hover:bg-gray-50 transition-colors"
+							class="rounded-md border border-gray-300 px-3 py-1.5 transition-colors hover:border-gray-400 hover:bg-gray-100"
 						><Icon icon="mdi:chevron-left" class="h-4 w-4" /> Prev</a>
 					{/if}
 					{#if data.pagination.page < data.pagination.totalPages}
 						<a
 							href={resolve(`/dashboard/menu/items?page=${data.pagination.page + 1}`)}
-							class="inline-flex items-center gap-1 rounded-md border border-gray-300 px-3 py-1.5 hover:bg-gray-50 transition-colors"
+							class="inline-flex items-center gap-1 rounded-md border border-gray-300 px-3 py-1.5 transition-colors hover:border-gray-400 hover:bg-gray-100"
 						>Next <Icon icon="mdi:chevron-right" class="h-4 w-4" /></a>
 					{/if}
 				</div>
@@ -665,7 +665,7 @@
 					<div class="flex justify-end gap-2 pt-1">
 						<button
 							onclick={closeImport}
-							class="rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-600 hover:bg-gray-50 transition-colors"
+							class="rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-600 transition-colors hover:border-gray-400 hover:bg-gray-100"
 						>
 							Cancel
 						</button>
@@ -832,7 +832,7 @@
 					<div class="flex gap-2">
 						<button
 							onclick={closeDiscover}
-							class="rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-600 hover:bg-gray-50 transition-colors"
+							class="rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-600 transition-colors hover:border-gray-400 hover:bg-gray-100"
 						>
 							Cancel
 						</button>

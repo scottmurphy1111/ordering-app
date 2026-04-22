@@ -146,7 +146,7 @@
 									<input type="hidden" name="status" value={nextStatus[order.status]} />
 									<button
 										type="submit"
-										class="rounded-md border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 transition-colors hover:bg-gray-50"
+										class="rounded-md border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 transition-colors hover:border-gray-400 hover:bg-gray-100"
 									>
 										Mark as {nextStatus[order.status]}
 									</button>

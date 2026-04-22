@@ -57,16 +57,16 @@
 		<div class="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
 			<p class="text-xs font-medium tracking-wide text-gray-500 uppercase">Menu Items</p>
 			<p class="mt-1 text-3xl font-bold text-gray-900">{data.stats.items}</p>
-			<a href={resolve('/dashboard/menu/items')} class="mt-2 block text-xs text-green-600 hover:underline"
-				><span class="inline-flex items-center gap-1">Manage <Icon icon="mdi:chevron-right" class="h-3 w-3" /></span></a
-			>
+			<a href={resolve('/dashboard/menu/items')} class="mt-2 inline-flex items-center gap-0.5 text-xs font-medium text-green-600 transition-colors hover:text-green-800">
+				Manage <Icon icon="mdi:chevron-right" class="h-3 w-3" />
+			</a>
 		</div>
 		<div class="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
 			<p class="text-xs font-medium tracking-wide text-gray-500 uppercase">Categories</p>
 			<p class="mt-1 text-3xl font-bold text-gray-900">{data.stats.categories}</p>
-			<a href={resolve('/dashboard/menu/categories')} class="mt-2 block text-xs text-green-600 hover:underline"
-				><span class="inline-flex items-center gap-1">Manage <Icon icon="mdi:chevron-right" class="h-3 w-3" /></span></a
-			>
+			<a href={resolve('/dashboard/menu/categories')} class="mt-2 inline-flex items-center gap-0.5 text-xs font-medium text-green-600 transition-colors hover:text-green-800">
+				Manage <Icon icon="mdi:chevron-right" class="h-3 w-3" />
+			</a>
 		</div>
 		<div class="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
 			<p class="text-xs font-medium tracking-wide text-gray-500 uppercase">Total Orders</p>
@@ -74,7 +74,9 @@
 			{#if data.stats.pendingOrders > 0}
 				<p class="mt-1 text-xs text-yellow-600">{data.stats.pendingOrders} pending</p>
 			{/if}
-			<a href={resolve('/dashboard/orders')} class="mt-2 inline-flex items-center gap-0.5 text-xs text-green-600 hover:underline">View <Icon icon="mdi:chevron-right" class="h-3 w-3" /></a>
+			<a href={resolve('/dashboard/orders')} class="mt-2 inline-flex items-center gap-0.5 text-xs font-medium text-green-600 transition-colors hover:text-green-800">
+				View <Icon icon="mdi:chevron-right" class="h-3 w-3" />
+			</a>
 		</div>
 		<div class="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
 			<p class="text-xs font-medium tracking-wide text-gray-500 uppercase">Revenue</p>
@@ -92,13 +94,13 @@
 		</a>
 		<a
 			href={resolve('/dashboard/menu/categories')}
-			class="rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-700 transition-colors hover:bg-gray-50"
+			class="inline-flex items-center rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:border-gray-400 hover:bg-gray-100"
 		>
 			Manage categories
 		</a>
 		<a
 			href={resolve('/dashboard/orders')}
-			class="rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-700 transition-colors hover:bg-gray-50"
+			class="inline-flex items-center rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:border-gray-400 hover:bg-gray-100"
 		>
 			View orders
 		</a>

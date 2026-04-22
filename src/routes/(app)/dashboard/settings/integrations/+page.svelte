@@ -127,7 +127,7 @@
 							<button
 								type="button"
 								onclick={() => { editing = false; showKey = false; }}
-								class="rounded-md border border-gray-300 px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-50 transition-colors"
+								class="rounded-md border border-gray-300 px-3 py-1.5 text-sm text-gray-600 transition-colors hover:border-gray-400 hover:bg-gray-100"
 							>
 								Cancel
 							</button>
@@ -136,7 +136,7 @@
 						<button
 							type="button"
 							onclick={() => { editing = true; showKey = false; }}
-							class="rounded-md border border-gray-300 px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-50 transition-colors"
+							class="rounded-md border border-gray-300 px-3 py-1.5 text-sm text-gray-600 transition-colors hover:border-gray-400 hover:bg-gray-100"
 						>
 							Replace key
 						</button>

@@ -125,7 +125,7 @@
 								</span>
 								<button
 									onclick={copyMenuUrl}
-									class="flex shrink-0 items-center gap-1.5 rounded-md border border-gray-200 bg-white px-3 py-1.5 text-sm text-gray-600 transition-colors hover:bg-gray-50"
+									class="flex shrink-0 items-center gap-1.5 rounded-md border border-gray-200 bg-white px-3 py-1.5 text-sm text-gray-600 transition-colors hover:border-gray-400 hover:bg-gray-100"
 								>
 									<Icon icon={menuUrlCopied ? 'mdi:check' : 'mdi:content-copy'} class="h-4 w-4" />
 									{menuUrlCopied ? 'Copied' : 'Copy'}
@@ -142,7 +142,7 @@
 							<a
 								href={resolve(`/${tenant.slug}/menu` as `/${string}`)}
 								rel="noopener noreferrer"
-								class="flex items-center gap-2 rounded-md border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
+								class="flex items-center gap-2 rounded-md border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:border-gray-400 hover:bg-gray-100"
 							>
 								<Icon icon="mdi:open-in-new" class="h-4 w-4" /> Preview menu
 							</a>
@@ -225,7 +225,7 @@
 									<p class="text-xs font-semibold text-gray-700">Table {i + 1}</p>
 									<button
 										onclick={() => downloadTableQr(i)}
-										class="flex items-center gap-1 rounded-md border border-gray-200 bg-white px-2 py-1 text-xs text-gray-600 transition-colors hover:bg-gray-50"
+										class="flex items-center gap-1 rounded-md border border-gray-200 bg-white px-2 py-1 text-xs text-gray-600 transition-colors hover:border-gray-400 hover:bg-gray-100"
 									>
 										<Icon icon="mdi:download" class="h-3 w-3" /> PNG
 									</button>
@@ -275,7 +275,7 @@
 					<pre class="overflow-x-auto px-4 py-3 font-mono text-xs text-gray-700">{embedSnippet}</pre>
 					<button
 						onclick={copyEmbed}
-						class="absolute top-2 right-2 flex items-center gap-1.5 rounded-md border border-gray-200 bg-white px-2.5 py-1.5 text-xs text-gray-600 transition-colors hover:bg-gray-50"
+						class="absolute top-2 right-2 flex items-center gap-1.5 rounded-md border border-gray-200 bg-white px-2.5 py-1.5 text-xs text-gray-600 transition-colors hover:border-gray-400 hover:bg-gray-100"
 					>
 						<Icon icon={embedCopied ? 'mdi:check' : 'mdi:content-copy'} class="h-3.5 w-3.5" />
 						{embedCopied ? 'Copied' : 'Copy'}

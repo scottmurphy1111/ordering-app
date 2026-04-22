@@ -330,7 +330,7 @@
 			{#if !showAddGroup}
 				<button
 					onclick={() => (showAddGroup = true)}
-					class="rounded-md border border-gray-300 px-3 py-1.5 text-sm text-gray-600 transition-colors hover:bg-gray-50"
+					class="rounded-md border border-gray-300 px-3 py-1.5 text-sm text-gray-600 transition-colors hover:border-gray-400 hover:bg-gray-100"
 				>
 					+ Add group
 				</button>
@@ -395,7 +395,7 @@
 					<button
 						type="button"
 						onclick={() => (showAddGroup = false)}
-						class="rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-600 transition-colors hover:bg-gray-50"
+						class="rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-600 transition-colors hover:border-gray-400 hover:bg-gray-100"
 					>
 						Cancel
 					</button>
@@ -474,7 +474,7 @@
 							<button
 								type="button"
 								onclick={() => (editingModifier = null)}
-								class="rounded-md border border-gray-300 px-3 py-1.5 text-sm text-gray-600 transition-colors hover:bg-gray-50"
+								class="rounded-md border border-gray-300 px-3 py-1.5 text-sm text-gray-600 transition-colors hover:border-gray-400 hover:bg-gray-100"
 								>Cancel</button
 							>
 						</form>

@@ -87,7 +87,7 @@
 			{#if !sortMode}
 				<button
 					onclick={() => { sortMode = true; showForm = false; }}
-					class="inline-flex items-center gap-1.5 rounded-md border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+					class="inline-flex items-center gap-1.5 rounded-md border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:border-gray-400 hover:bg-gray-100"
 				>
 					<Icon icon="mdi:drag-vertical" class="h-4 w-4" /> Reorder
 				</button>
@@ -99,7 +99,7 @@
 				</button>
 			{:else}
 				<button onclick={() => { sortMode = false; saveError = null; }}
-					class="rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-600 hover:bg-gray-50 transition-colors">
+					class="rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-600 transition-colors hover:border-gray-400 hover:bg-gray-100">
 					Cancel
 				</button>
 				<button onclick={saveSortOrder} disabled={saving}
@@ -141,7 +141,7 @@
 			</div>
 			<div class="flex gap-2">
 				<button type="submit" class="rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-700 transition-colors">Create</button>
-				<button type="button" onclick={() => (showForm = false)} class="rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-600 hover:bg-gray-50 transition-colors">Cancel</button>
+				<button type="button" onclick={() => (showForm = false)} class="rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-600 transition-colors hover:border-gray-400 hover:bg-gray-100">Cancel</button>
 			</div>
 		</form>
 	{/if}

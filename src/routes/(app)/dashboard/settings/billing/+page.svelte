@@ -87,7 +87,7 @@
 			<h2 class="font-semibold text-gray-900">Current plan</h2>
 			{#if isPaidPlan}
 				<form method="post" action="?/openPortal" use:enhance>
-					<button type="submit" class="flex items-center gap-1.5 rounded-md border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-50 transition-colors">
+					<button type="submit" class="flex items-center gap-1.5 rounded-md border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-600 transition-colors hover:border-gray-400 hover:bg-gray-100">
 						<Icon icon="mdi:cog-outline" class="h-3.5 w-3.5" /> Manage billing
 					</button>
 				</form>
@@ -338,7 +338,7 @@
 				<button
 					type="button"
 					onclick={closeModal}
-					class="flex-1 rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+					class="flex-1 rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:border-gray-400 hover:bg-gray-100"
 				>
 					Cancel
 				</button>

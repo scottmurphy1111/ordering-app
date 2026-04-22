@@ -92,7 +92,7 @@
 				{#if !showAddForm}
 					<button
 						onclick={() => { showAddForm = true; showInviteForm = false; }}
-						class="rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+						class="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:border-gray-400 hover:bg-gray-100"
 					>
 						+ Add existing member
 					</button>
@@ -142,7 +142,7 @@
 						<button
 							type="button"
 							onclick={() => (showAddForm = false)}
-							class="rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-600 hover:bg-gray-50 transition-colors"
+							class="rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-600 transition-colors hover:border-gray-400 hover:bg-gray-100"
 						>
 							Cancel
 						</button>
@@ -189,7 +189,7 @@
 						<button
 							type="button"
 							onclick={() => (showInviteForm = false)}
-							class="rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-600 hover:bg-gray-50 transition-colors"
+							class="rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-600 transition-colors hover:border-gray-400 hover:bg-gray-100"
 						>
 							Cancel
 						</button>
