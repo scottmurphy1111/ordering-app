@@ -1,6 +1,5 @@
 import { json, error } from '@sveltejs/kit';
-import { writeFile, mkdir } from 'fs/promises';
-import { join } from 'path';
+import { uploadToR2 } from '$lib/server/r2';
 import type { RequestEvent } from '@sveltejs/kit';
 
 export async function POST(event: RequestEvent) {
@@ -16,16 +15,13 @@ export async function POST(event: RequestEvent) {
 
 	const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
 	if (!allowedTypes.includes(file.type)) throw error(400, 'File must be JPG, PNG, or WebP');
-
 	if (file.size > 5 * 1024 * 1024) throw error(400, 'File too large (max 5MB)');
 
-	const timestamp = Date.now();
-	const extension = file.name.split('.').pop()?.toLowerCase() || 'jpg';
-	const filename = `item-${locals.tenantId}-${timestamp}.${extension}`;
-
-	const uploadDir = join(process.cwd(), 'static', 'uploads', 'menu-items');
-	await mkdir(uploadDir, { recursive: true });
-	await writeFile(join(uploadDir, filename), Buffer.from(await file.arrayBuffer()));
-
-	return json({ url: `/uploads/menu-items/${filename}` });
+	try {
+		const url = await uploadToR2(file, `menu-items/item-${locals.tenantId}`);
+		return json({ url });
+	} catch (err) {
+		console.error('Menu item image upload error:', err);
+		throw error(500, 'Failed to upload image');
+	}
 }

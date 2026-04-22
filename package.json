@@ -60,6 +60,7 @@
 		"vitest-browser-svelte": "^2.0.2"
 	},
 	"dependencies": {
+		"@aws-sdk/client-s3": "^3.1034.0",
 		"@iconify-json/mdi": "^1.2.3",
 		"@iconify/svelte": "^5.2.1",
 		"qrcode": "^1.5.4",

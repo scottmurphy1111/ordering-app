@@ -1,9 +1,8 @@
 import { json, error } from '@sveltejs/kit';
-import { writeFile, mkdir } from 'fs/promises';
-import { join } from 'path';
 import { db } from '$lib/server/db';
 import { eq } from 'drizzle-orm';
 import { tenant } from '$lib/server/db/schema';
+import { uploadToR2 } from '$lib/server/r2';
 import type { RequestEvent } from '@sveltejs/kit';
 
 export async function POST(event: RequestEvent) {
@@ -22,15 +21,7 @@ export async function POST(event: RequestEvent) {
 	if (file.size > 5 * 1024 * 1024) throw error(400, 'File too large (max 5MB)');
 
 	try {
-		const timestamp = Date.now();
-		const extension = file.name.split('.').pop() || 'jpg';
-		const filename = `banner-${locals.tenantId}-${timestamp}.${extension}`;
-
-		const uploadDir = join(process.cwd(), 'static', 'uploads', 'banners');
-		await mkdir(uploadDir, { recursive: true });
-		await writeFile(join(uploadDir, filename), Buffer.from(await file.arrayBuffer()));
-
-		const bannerUrl = `/uploads/banners/${filename}`;
+		const bannerUrl = await uploadToR2(file, `banners/banner-${locals.tenantId}`);
 
 		await db
 			.update(tenant)
@@ -39,7 +30,6 @@ export async function POST(event: RequestEvent) {
 
 		return json({ success: true, bannerUrl });
 	} catch (err) {
-		if (err instanceof Response) throw err;
 		console.error('Banner upload error:', err);
 		throw error(500, 'Failed to upload banner');
 	}

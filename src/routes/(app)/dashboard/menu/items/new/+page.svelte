@@ -215,6 +215,7 @@
 					<button
 						type="button"
 						onclick={() => (isSubscription = !isSubscription)}
+						aria-label={isSubscription ? 'Disable subscription' : 'Enable subscription'}
 						class="flex items-center"
 					>
 						<div class="relative h-6 w-11 rounded-full transition-colors duration-200 {isSubscription ? 'bg-green-600' : 'bg-gray-300'}">

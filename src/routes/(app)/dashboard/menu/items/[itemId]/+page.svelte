@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import { untrack } from 'svelte';
 	import { confirmDialog } from '$lib/confirm.svelte';
 	import type { PageData, ActionData } from './$types';
 	import { resolve } from '$app/paths';
@@ -67,8 +68,8 @@
 	// Controls the "add group" panel
 	let showAddGroup = $state(false);
 
-	let isSubscription = $state(item.isSubscription ?? false);
-	let billingInterval = $state(item.billingInterval ?? 'monthly');
+	let isSubscription = $state(untrack(() => item.isSubscription ?? false));
+	let billingInterval = $state(untrack(() => item.billingInterval ?? 'monthly'));
 </script>
 
 <div class="max-w-xl">
@@ -281,6 +282,7 @@
 					<button
 						type="button"
 						onclick={() => (isSubscription = !isSubscription)}
+						aria-label={isSubscription ? 'Disable subscription' : 'Enable subscription'}
 						class="flex items-center"
 					>
 						<div class="relative h-6 w-11 rounded-full transition-colors duration-200 {isSubscription ? 'bg-green-600' : 'bg-gray-300'}">
