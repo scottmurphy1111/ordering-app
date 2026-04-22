@@ -9,3 +9,10 @@
 body {
 	font-family: var(--font-sans);
 }
+
+button:not(:disabled),
+[role="button"]:not(:disabled),
+label[for],
+select:not(:disabled) {
+	cursor: pointer;
+}
