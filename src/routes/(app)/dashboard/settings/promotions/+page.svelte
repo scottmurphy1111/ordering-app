@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import { confirmDialog } from '$lib/confirm.svelte';
 	import { resolve } from '$app/paths';
 	import Icon from '@iconify/svelte';
 	import type { PageData, ActionData } from './$types';
@@ -219,10 +220,13 @@
 									</form>
 								</td>
 								<td class="px-4 py-3">
-									<form method="post" action="?/delete" use:enhance
-										onsubmit={(e) => { if (!confirm('Delete this code?')) e.preventDefault(); }}>
+									<form method="post" action="?/delete" use:enhance>
 										<input type="hidden" name="id" value={promo.id} />
-										<button type="submit" class="text-xs text-red-500 hover:text-red-700 transition-colors">
+										<button
+											type="submit"
+											onclick={async (e) => { e.preventDefault(); if (await confirmDialog('Delete this code?')) (e.currentTarget as HTMLButtonElement).form?.requestSubmit(); }}
+											class="text-xs text-red-500 hover:text-red-700 transition-colors"
+										>
 											Delete
 										</button>
 									</form>

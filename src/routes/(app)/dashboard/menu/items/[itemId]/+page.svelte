@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import { confirmDialog } from '$lib/confirm.svelte';
 	import type { PageData, ActionData } from './$types';
 	import { resolve } from '$app/paths';
 	import Icon from '@iconify/svelte';
@@ -504,10 +505,11 @@
 									<input type="hidden" name="modifierId" value={mod.id} />
 									<button
 										type="submit"
-										onclick={(e) => {
-											if (!confirm(`Delete "${mod.name}"? This cannot be undone.`))
-												e.preventDefault();
-										}}
+										onclick={async (e) => {
+										e.preventDefault();
+										if (await confirmDialog(`Delete "${mod.name}"? This cannot be undone.`))
+											(e.currentTarget as HTMLButtonElement).form?.requestSubmit();
+									}}
 										class="text-xs text-red-400 transition-colors hover:text-red-600"
 									>
 										Delete
@@ -541,9 +543,11 @@
 										<input type="hidden" name="optionId" value={opt.id} />
 										<button
 											type="submit"
-											onclick={(e) => {
-												if (!confirm(`Delete option "${opt.name}"?`)) e.preventDefault();
-											}}
+											onclick={async (e) => {
+											e.preventDefault();
+											if (await confirmDialog(`Delete option "${opt.name}"?`))
+												(e.currentTarget as HTMLButtonElement).form?.requestSubmit();
+										}}
 											class="text-xs text-red-400 transition-colors hover:text-red-600"
 										>
 											<Icon icon="mdi:close" class="h-3.5 w-3.5" />
@@ -640,8 +644,10 @@
 		<form method="post" action="?/delete" use:enhance>
 			<button
 				type="submit"
-				onclick={(e) => {
-					if (!confirm('Delete this item? This cannot be undone.')) e.preventDefault();
+				onclick={async (e) => {
+					e.preventDefault();
+					if (await confirmDialog('Delete this item? This cannot be undone.'))
+						(e.currentTarget as HTMLButtonElement).form?.requestSubmit();
 				}}
 				class="rounded-md border border-red-300 px-4 py-2 text-sm text-red-600 transition-colors hover:bg-red-50"
 			>

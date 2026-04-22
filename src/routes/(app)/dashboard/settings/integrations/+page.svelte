@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import { confirmDialog } from '$lib/confirm.svelte';
 	import { untrack } from 'svelte';
 	import { resolve } from '$app/paths';
 	import Icon from '@iconify/svelte';
@@ -142,7 +143,7 @@
 						<button
 							type="submit"
 							form="disconnect-stripe-form"
-							onclick={(e) => { if (!confirm('Remove Stripe connection?')) e.preventDefault(); }}
+							onclick={async (e) => { e.preventDefault(); if (await confirmDialog('Remove Stripe connection?')) (document.getElementById('disconnect-stripe-form') as HTMLFormElement)?.requestSubmit(); }}
 							class="rounded-md border border-red-200 px-3 py-1.5 text-sm text-red-600 hover:bg-red-50 transition-colors"
 						>
 							Disconnect

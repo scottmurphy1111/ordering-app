@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import { confirmDialog } from '$lib/confirm.svelte';
 	import type { PageData, ActionData } from './$types';
 	import Icon from '@iconify/svelte';
 
@@ -281,7 +282,7 @@
 												<input type="hidden" name="isInternal" value="false" />
 												<button
 													type="submit"
-													onclick={(e) => { if (!confirm(`Grant internal platform access to ${member.name}?`)) e.preventDefault(); }}
+													onclick={async (e) => { e.preventDefault(); if (await confirmDialog(`Grant internal platform access to ${member.name}?`, { danger: false })) (e.currentTarget as HTMLButtonElement).form?.requestSubmit(); }}
 													class="hidden sm:inline text-xs text-indigo-500 hover:text-indigo-700 transition-colors"
 												>
 													Make internal
@@ -292,7 +293,7 @@
 											<input type="hidden" name="userId" value={member.userId} />
 											<button
 												type="submit"
-												onclick={(e) => { if (!confirm(`Remove ${member.name} from this tenant?`)) e.preventDefault(); }}
+												onclick={async (e) => { e.preventDefault(); if (await confirmDialog(`Remove ${member.name} from this tenant?`)) (e.currentTarget as HTMLButtonElement).form?.requestSubmit(); }}
 												class="text-xs text-red-500 hover:text-red-700 transition-colors"
 											>
 												Remove
@@ -351,7 +352,7 @@
 												<input type="hidden" name="id" value={invite.id} />
 												<button
 													type="submit"
-													onclick={(e) => { if (!confirm(`Cancel invite for ${invite.email}?`)) e.preventDefault(); }}
+													onclick={async (e) => { e.preventDefault(); if (await confirmDialog(`Cancel invite for ${invite.email}?`)) (e.currentTarget as HTMLButtonElement).form?.requestSubmit(); }}
 													class="text-xs text-red-500 hover:text-red-700 transition-colors"
 												>
 													Cancel
@@ -405,7 +406,7 @@
 										<input type="hidden" name="isInternal" value="true" />
 										<button
 											type="submit"
-											onclick={(e) => { if (!confirm(`Revoke internal access for ${u.name}?`)) e.preventDefault(); }}
+											onclick={async (e) => { e.preventDefault(); if (await confirmDialog(`Revoke internal access for ${u.name}?`)) (e.currentTarget as HTMLButtonElement).form?.requestSubmit(); }}
 											class="text-xs text-red-500 hover:text-red-700 transition-colors"
 										>
 											Revoke internal
@@ -438,7 +439,7 @@
 											<input type="hidden" name="isInternal" value="false" />
 											<button
 												type="submit"
-												onclick={(e) => { if (!confirm(`Grant internal platform access to ${member.name}?`)) e.preventDefault(); }}
+												onclick={async (e) => { e.preventDefault(); if (await confirmDialog(`Grant internal platform access to ${member.name}?`, { danger: false })) (e.currentTarget as HTMLButtonElement).form?.requestSubmit(); }}
 												class="rounded-md border border-indigo-300 px-3 py-1 text-xs text-indigo-600 hover:bg-indigo-50 transition-colors"
 											>
 												Make internal

@@ -7,6 +7,7 @@
 	import { afterNavigate } from '$app/navigation';
 	import { tick } from 'svelte';
 	import { enhance } from '$app/forms';
+	import { confirmDialog } from '$lib/confirm.svelte';
 	import Sortable from 'sortablejs';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
@@ -569,7 +570,7 @@
 										<input type="hidden" name="id" value={item.id} />
 										<button
 											type="submit"
-											onclick={(e) => { if (!confirm('Delete this item?')) e.preventDefault(); }}
+											onclick={async (e) => { e.preventDefault(); if (await confirmDialog('Delete this item?')) (e.currentTarget as HTMLButtonElement).form?.requestSubmit(); }}
 											class="text-xs text-red-500 hover:text-red-700 transition-colors"
 										>Delete</button>
 									</form>

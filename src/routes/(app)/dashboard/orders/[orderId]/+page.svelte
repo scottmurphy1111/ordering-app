@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import { confirmDialog } from '$lib/confirm.svelte';
 	import { resolve } from '$app/paths';
 	import Icon from '@iconify/svelte';
 	import type { PageData, ActionData } from './$types';
@@ -188,19 +189,25 @@
 					</form>
 				{/if}
 				{#if !['fulfilled', 'cancelled'].includes(order.status)}
-					<form method="post" action="?/cancel" use:enhance
-						onsubmit={(e) => { if (!confirm('Cancel this order?')) e.preventDefault(); }}>
+					<form method="post" action="?/cancel" use:enhance>
 						<input type="hidden" name="id" value={order.id} />
-						<button type="submit" class="rounded-md border border-red-200 px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50 transition-colors">
+						<button
+							type="submit"
+							onclick={async (e) => { e.preventDefault(); if (await confirmDialog('Cancel this order?')) (e.currentTarget as HTMLButtonElement).form?.requestSubmit(); }}
+							class="rounded-md border border-red-200 px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50 transition-colors"
+						>
 							Cancel order
 						</button>
 					</form>
 				{/if}
 				{#if order.status === 'cancelled' && order.paymentStatus === 'paid'}
-					<form method="post" action="?/refund" use:enhance
-						onsubmit={(e) => { if (!confirm('Issue a full refund for this order?')) e.preventDefault(); }}>
+					<form method="post" action="?/refund" use:enhance>
 						<input type="hidden" name="id" value={order.id} />
-						<button type="submit" class="rounded-md border border-orange-200 px-4 py-2 text-sm font-medium text-orange-600 hover:bg-orange-50 transition-colors">
+						<button
+							type="submit"
+							onclick={async (e) => { e.preventDefault(); if (await confirmDialog('Issue a full refund for this order?')) (e.currentTarget as HTMLButtonElement).form?.requestSubmit(); }}
+							class="rounded-md border border-orange-200 px-4 py-2 text-sm font-medium text-orange-600 hover:bg-orange-50 transition-colors"
+						>
 							Refund payment
 						</button>
 					</form>

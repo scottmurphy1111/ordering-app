@@ -6,6 +6,7 @@
 	import { signOut } from '$lib/auth-client';
 	import Icon from '@iconify/svelte';
 	import AppTour from '$lib/components/AppTour.svelte';
+	import ConfirmModal from '$lib/components/ConfirmModal.svelte';
 	import { tourState } from '$lib/tour-state.svelte';
 
 	import { onMount } from 'svelte';
@@ -256,3 +257,4 @@
 {/if}
 
 <AppTour />
+<ConfirmModal />

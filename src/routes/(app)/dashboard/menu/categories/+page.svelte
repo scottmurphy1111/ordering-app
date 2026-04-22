@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import { confirmDialog } from '$lib/confirm.svelte';
 	import type { PageData, ActionData } from './$types';
 	import Icon from '@iconify/svelte';
 	import { onMount } from 'svelte';
@@ -207,7 +208,7 @@
 									<a href="/dashboard/menu/categories/{cat.id}" class="text-xs font-medium text-gray-600 hover:text-gray-900 transition-colors">Edit</a>
 									<form method="post" action="?/delete" use:enhance>
 										<input type="hidden" name="id" value={cat.id} />
-										<button type="submit" onclick={(e) => { if (!confirm('Delete this category?')) e.preventDefault(); }} class="text-xs text-red-500 hover:text-red-700 transition-colors">Delete</button>
+										<button type="submit" onclick={async (e) => { e.preventDefault(); if (await confirmDialog('Delete this category?')) (e.currentTarget as HTMLButtonElement).form?.requestSubmit(); }} class="text-xs text-red-500 hover:text-red-700 transition-colors">Delete</button>
 									</form>
 								</div>
 							</td>
