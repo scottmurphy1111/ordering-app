@@ -1,7 +1,7 @@
 import type { PageServerLoad, Actions } from './$types';
 import { fail } from '@sveltejs/kit';
 import { db } from '$lib/server/db';
-import { eq, desc, sql } from 'drizzle-orm';
+import { and, eq, desc, sql } from 'drizzle-orm';
 import { menuCategories, menuItems } from '$lib/server/db/schema';
 
 export const load: PageServerLoad = async ({ locals }) => {
@@ -48,7 +48,7 @@ export const actions: Actions = {
 
 		await db
 			.delete(menuCategories)
-			.where(eq(menuCategories.id, id) && eq(menuCategories.tenantId, tenantId));
+			.where(and(eq(menuCategories.id, id), eq(menuCategories.tenantId, tenantId)));
 		return { success: true };
 	},
 
@@ -62,7 +62,7 @@ export const actions: Actions = {
 		await db
 			.update(menuCategories)
 			.set({ isActive: !current })
-			.where(eq(menuCategories.id, id) && eq(menuCategories.tenantId, tenantId));
+			.where(and(eq(menuCategories.id, id), eq(menuCategories.tenantId, tenantId)));
 		return { success: true };
 	}
 };
