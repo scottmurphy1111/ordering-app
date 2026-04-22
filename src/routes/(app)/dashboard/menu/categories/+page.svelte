@@ -3,6 +3,7 @@
 	import { confirmDialog } from '$lib/confirm.svelte';
 	import type { PageData, ActionData } from './$types';
 	import Icon from '@iconify/svelte';
+	import { resolve } from '$app/paths';
 	import { onMount } from 'svelte';
 	import Sortable from 'sortablejs';
 
@@ -191,7 +192,9 @@
 				<tbody class="divide-y divide-gray-100">
 					{#each sortedCategories as cat (cat.id)}
 						<tr class="hover:bg-gray-50 transition-colors">
-							<td class="px-4 py-3 font-medium text-gray-900">{cat.name}</td>
+							<td class="px-4 py-3">
+								<a href={resolve(`/dashboard/menu/categories/${cat.id}` as `/${string}`)} class="font-medium text-gray-900 hover:text-green-700 transition-colors">{cat.name}</a>
+							</td>
 							<td class="px-4 py-3 text-gray-500">{cat.description ?? '—'}</td>
 							<td class="px-4 py-3 text-gray-500">{cat.itemCount}</td>
 							<td class="px-4 py-3">
