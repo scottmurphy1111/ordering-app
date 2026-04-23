@@ -221,21 +221,21 @@
 
 <div class="min-h-screen">
 	<!-- Branded header -->
-	<header style="background-color: var(--primary-color);">
+	<header style="background-color: var(--background-color);">
 		<div class="mx-auto flex max-w-lg items-center justify-between px-4 py-4">
 			<a
 				href={resolve(`/${data.tenantSlug}/menu`)}
 				class="inline-flex items-center gap-1 text-sm font-medium transition-opacity hover:opacity-75"
-				style="color: var(--accent-color);"
+				style="color: var(--foreground-color);"
 			>
 				<Icon icon="mdi:arrow-left" class="h-4 w-4" /> Back to menu
 			</a>
 			<div class="flex flex-col items-center gap-1">
-				<h1 class="text-lg font-semibold" style="color: var(--accent-color);">Your Cart</h1>
+				<h1 class="text-lg font-semibold" style="color: var(--foreground-color);">Your Cart</h1>
 				{#if tableParam}
 					<span
 						class="rounded-full px-2.5 py-0.5 text-xs font-medium"
-						style="background-color: var(--accent-color); color: var(--primary-color);"
+						style="background-color: var(--foreground-color); color: var(--background-color);"
 					>
 						<Icon icon="mdi:table-chair" class="mr-0.5 inline h-3 w-3" />Table {tableParam}
 					</span>
@@ -252,7 +252,7 @@
 				<a
 					href={resolve(`/${data.tenantSlug}/menu`)}
 					class="text-sm font-medium transition-opacity hover:opacity-75"
-					style="color: var(--primary-color);"
+					style="color: var(--background-color);"
 				>
 					Browse the menu
 				</a>
@@ -345,7 +345,7 @@
 						{#each [{ value: 'pickup', label: 'Pickup', icon: 'mdi:bag-personal-outline' }, { value: 'delivery', label: 'Delivery', icon: 'mdi:moped-outline' }] as type (type.value)}
 							<label
 								style={orderType === type.value
-									? 'background-color: var(--primary-color); color: var(--accent-color); border-color: var(--primary-color);'
+									? 'background-color: var(--background-color); color: var(--foreground-color); border-color: var(--background-color);'
 									: ''}
 								class="flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-lg border py-2.5 text-sm font-medium transition-colors
 								{orderType === type.value ? '' : 'border-gray-300 text-gray-700 hover:bg-gray-50'}"
@@ -373,7 +373,7 @@
 						{#each [{ value: 'asap', label: 'ASAP', icon: 'mdi:lightning-bolt' }, { value: 'scheduled', label: 'Schedule', icon: 'mdi:calendar-clock' }] as opt (opt.value)}
 							<label
 								style={pickupTiming === opt.value
-									? 'background-color: var(--primary-color); color: var(--accent-color); border-color: var(--primary-color);'
+									? 'background-color: var(--background-color); color: var(--foreground-color); border-color: var(--background-color);'
 									: ''}
 								class="flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-lg border py-2.5 text-sm font-medium transition-colors
 								{pickupTiming === opt.value ? '' : 'border-gray-300 text-gray-700 hover:bg-gray-50'}"
@@ -610,7 +610,7 @@
 								customTipDollars = '';
 							}}
 							style={tipPercent === 0
-								? 'background-color: var(--primary-color); color: var(--accent-color); border-color: var(--primary-color);'
+								? 'background-color: var(--background-color); color: var(--foreground-color); border-color: var(--background-color);'
 								: ''}
 							class="rounded-lg border px-3 py-1.5 text-sm font-medium transition-colors {tipPercent ===
 							0
@@ -625,7 +625,7 @@
 									customTipDollars = '';
 								}}
 								style={tipPercent === pct
-									? 'background-color: var(--primary-color); color: var(--accent-color); border-color: var(--primary-color);'
+									? 'background-color: var(--background-color); color: var(--foreground-color); border-color: var(--background-color);'
 									: ''}
 								class="rounded-lg border px-3 py-1.5 text-sm font-medium transition-colors {tipPercent ===
 								pct
@@ -639,7 +639,7 @@
 								tipPercent = 'custom';
 							}}
 							style={tipPercent === 'custom'
-								? 'background-color: var(--primary-color); color: var(--accent-color); border-color: var(--primary-color);'
+								? 'background-color: var(--background-color); color: var(--foreground-color); border-color: var(--background-color);'
 								: ''}
 							class="rounded-lg border px-3 py-1.5 text-sm font-medium transition-colors {tipPercent ===
 							'custom'
@@ -721,7 +721,7 @@
 				{/if}
 				<div
 					class="mt-1.5 flex justify-between border-t border-gray-100 pt-1.5 font-semibold"
-					style="color: var(--primary-color);"
+					style="color: var(--background-color);"
 				>
 					<span
 						>{isSubscriptionCart
@@ -746,7 +746,7 @@
 			<button
 				onclick={checkout}
 				disabled={loading || cart.items.length === 0}
-				style="background-color: var(--primary-color); color: var(--accent-color);"
+				style="background-color: var(--background-color); color: var(--foreground-color);"
 				class="w-full rounded-xl px-6 py-4 text-base font-semibold shadow-sm transition-opacity hover:opacity-90 disabled:opacity-50"
 			>
 				{loading
@@ -761,12 +761,12 @@
 
 <style>
 	.branded-input:focus {
-		border-color: var(--primary-color);
-		box-shadow: 0 0 0 1px var(--primary-color);
+		border-color: var(--background-color);
+		box-shadow: 0 0 0 1px var(--background-color);
 	}
 
 	.qty-btn:hover {
-		border-color: var(--primary-color);
-		color: var(--primary-color);
+		border-color: var(--background-color);
+		color: var(--background-color);
 	}
 </style>

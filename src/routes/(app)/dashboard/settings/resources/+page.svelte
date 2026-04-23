@@ -290,6 +290,7 @@
 
 		<!-- ── Embed snippet ──────────────────────────────────────────────────── -->
 		{#if tenant?.slug}
+			{@const isPro = tenant.subscriptionTier === 'pro'}
 			<div class="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
 				<div class="mb-5 flex items-center gap-3">
 					<div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-green-100">
@@ -303,20 +304,34 @@
 					</div>
 				</div>
 
-				<div class="relative rounded-lg border border-gray-200 bg-gray-50">
-					<pre
-						class="overflow-x-auto px-4 py-3 font-mono text-xs text-gray-700">{embedSnippet}</pre>
-					<button
-						onclick={copyEmbed}
-						class="absolute top-2 right-2 flex items-center gap-1.5 rounded-md border border-gray-200 bg-white px-2.5 py-1.5 text-xs text-gray-600 transition-colors hover:border-gray-400 hover:bg-gray-100"
-					>
-						<Icon icon={embedCopied ? 'mdi:check' : 'mdi:content-copy'} class="h-3.5 w-3.5" />
-						{embedCopied ? 'Copied' : 'Copy'}
-					</button>
-				</div>
-				<p class="mt-2 text-xs text-gray-400">
-					Tip: adjust the <code>height</code> value to fit your page layout.
-				</p>
+				{#if isPro}
+					<div class="relative rounded-lg border border-gray-200 bg-gray-50">
+						<pre
+							class="overflow-x-auto px-4 py-3 font-mono text-xs text-gray-700">{embedSnippet}</pre>
+						<button
+							onclick={copyEmbed}
+							class="absolute top-2 right-2 flex items-center gap-1.5 rounded-md border border-gray-200 bg-white px-2.5 py-1.5 text-xs text-gray-600 transition-colors hover:border-gray-400 hover:bg-gray-100"
+						>
+							<Icon icon={embedCopied ? 'mdi:check' : 'mdi:content-copy'} class="h-3.5 w-3.5" />
+							{embedCopied ? 'Copied' : 'Copy'}
+						</button>
+					</div>
+					<p class="mt-2 text-xs text-gray-400">
+						Tip: adjust the <code>height</code> value to fit your page layout.
+					</p>
+				{:else}
+					<div class="rounded-lg border border-dashed border-gray-200 bg-gray-50 px-5 py-8 text-center">
+						<Icon icon="mdi:lock-outline" class="mx-auto mb-2 h-6 w-6 text-gray-400" />
+						<p class="text-sm font-medium text-gray-700">Website embed is a Pro feature</p>
+						<p class="mt-1 text-sm text-gray-500">Upgrade to Pro to embed your menu on any website.</p>
+						<a
+							href="/dashboard/settings/billing"
+							class="mt-4 inline-flex items-center gap-1.5 rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-gray-700"
+						>
+							Upgrade to Pro
+						</a>
+					</div>
+				{/if}
 			</div>
 		{/if}
 

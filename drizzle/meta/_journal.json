@@ -50,6 +50,13 @@
       "when": 1776825957734,
       "tag": "0006_easy_madrox",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1776956327563,
+      "tag": "0007_rename_brand_colors",
+      "breakpoints": true
     }
   ]
 }

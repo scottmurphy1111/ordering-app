@@ -137,7 +137,7 @@
 	<div class="mb-4 rounded-xl border border-gray-200 bg-white p-5">
 		<h2 class="mb-3 text-sm font-semibold tracking-wide text-gray-500 uppercase">Items</h2>
 		<div class="divide-y divide-gray-100">
-			{#each items as item}
+			{#each items as item, i (i)}
 				<div class="flex items-start justify-between py-3">
 					<div>
 						<p class="text-sm font-medium text-gray-900">{item.name}</p>

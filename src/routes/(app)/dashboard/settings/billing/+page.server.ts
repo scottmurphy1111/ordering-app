@@ -4,12 +4,12 @@ import { db } from '$lib/server/db';
 import { eq, count } from 'drizzle-orm';
 import { tenant } from '$lib/server/db/tenant';
 import { menuItems } from '$lib/server/db/schema';
-import { ADDONS, type AddonItem } from '$lib/billing';
+import { ADDONS, type AddonItem, type BillingInterval } from '$lib/billing';
 import { requireStaff } from '$lib/server/roles';
 import { getOrderLocalStripe, getPlanPriceId, getAddonPriceId } from '$lib/server/stripe-billing';
 
 const VALID_ADDON_KEYS = new Set<string>(ADDONS.map((a) => a.key));
-const PAID_TIERS = new Set(['growth', 'pro']);
+const PAID_TIERS = new Set(['pro']);
 
 export const load: PageServerLoad = async ({ locals }) => {
 	requireStaff(locals);
@@ -31,13 +31,23 @@ export const load: PageServerLoad = async ({ locals }) => {
 
 	let nextBillingDate: string | null = null;
 	let periodStart: string | null = null;
+	let billingInterval: BillingInterval = 'monthly';
 
 	if (tenantRecord?.stripeSubscriptionId) {
 		try {
 			const stripe = getOrderLocalStripe();
-			const preview = await stripe.invoices.createPreview({
-				subscription: tenantRecord.stripeSubscriptionId
-			});
+			const [subscription, preview] = await Promise.all([
+				stripe.subscriptions.retrieve(tenantRecord.stripeSubscriptionId, { expand: ['items'] }),
+				stripe.invoices.createPreview({ subscription: tenantRecord.stripeSubscriptionId })
+			]);
+
+			const planItem =
+				subscription.items.data.find((i) => {
+					const meta = i.price.metadata?.type;
+					return meta === 'plan' || !meta;
+				}) ?? subscription.items.data[0];
+
+			billingInterval = planItem?.price.recurring?.interval === 'year' ? 'annual' : 'monthly';
 			periodStart = new Date(preview.period_start * 1000).toISOString();
 			nextBillingDate = new Date(preview.period_end * 1000).toISOString();
 		} catch {}
@@ -51,7 +61,8 @@ export const load: PageServerLoad = async ({ locals }) => {
 		hasStripeCustomer: !!tenantRecord?.stripeCustomerId,
 		addons: (tenantRecord?.addons ?? []) as AddonItem[],
 		nextBillingDate,
-		periodStart
+		periodStart,
+		billingInterval
 	};
 };
 
@@ -61,10 +72,13 @@ export const actions: Actions = {
 		const tenantId = locals.tenantId!;
 		const formData = await request.formData();
 		const planKey = formData.get('planKey')?.toString();
+		const intervalRaw = formData.get('interval')?.toString();
+		const interval: BillingInterval =
+			intervalRaw === 'annual' ? 'annual' : 'monthly';
 
 		if (!planKey || !PAID_TIERS.has(planKey)) return fail(400, { error: 'Invalid plan' });
 
-		const priceId = getPlanPriceId(planKey);
+		const priceId = getPlanPriceId(planKey, interval);
 		if (!priceId) return fail(500, { error: 'Plan price not configured. Contact support.' });
 
 		const record = await db.query.tenant.findFirst({
@@ -121,10 +135,82 @@ export const actions: Actions = {
 			line_items: [{ price: priceId, quantity: 1 }],
 			success_url: `${url.origin}/dashboard/settings/billing?upgraded=1`,
 			cancel_url: `${url.origin}/dashboard/settings/billing`,
-			metadata: { tenantId: String(tenantId), planKey }
+			metadata: { tenantId: String(tenantId), planKey, interval }
 		});
 
 		redirect(303, session.url!);
+	},
+
+	downgrade: async ({ request, locals }) => {
+		requireStaff(locals);
+		const tenantId = locals.tenantId!;
+		const formData = await request.formData();
+		const planKey = formData.get('planKey')?.toString();
+
+		if (planKey !== 'starter') return fail(400, { error: 'Invalid plan' });
+
+		const record = await db.query.tenant.findFirst({
+			where: eq(tenant.id, tenantId),
+			columns: { stripeSubscriptionId: true, subscriptionTier: true }
+		});
+
+		if (record?.subscriptionTier === 'starter') return fail(400, { error: 'Already on Starter.' });
+
+		const stripe = getOrderLocalStripe();
+
+		if (record?.stripeSubscriptionId) {
+			await stripe.subscriptions.cancel(record.stripeSubscriptionId);
+		}
+		await db
+			.update(tenant)
+			.set({
+				subscriptionTier: 'starter',
+				subscriptionStatus: 'cancelled',
+				stripeSubscriptionId: null,
+				addons: [],
+				updatedAt: new Date()
+			})
+			.where(eq(tenant.id, tenantId));
+
+		return { success: true, downgraded: true };
+	},
+
+	switchInterval: async ({ request, locals }) => {
+		requireStaff(locals);
+		const tenantId = locals.tenantId!;
+		const formData = await request.formData();
+		const intervalRaw = formData.get('interval')?.toString();
+		const interval: BillingInterval = intervalRaw === 'annual' ? 'annual' : 'monthly';
+
+		const record = await db.query.tenant.findFirst({
+			where: eq(tenant.id, tenantId),
+			columns: { stripeSubscriptionId: true, subscriptionTier: true }
+		});
+
+		if (record?.subscriptionTier !== 'pro' || !record.stripeSubscriptionId)
+			return fail(400, { error: 'No active Pro subscription.' });
+
+		const priceId = getPlanPriceId('pro', interval);
+		if (!priceId) return fail(500, { error: 'Price not configured. Contact support.' });
+
+		const stripe = getOrderLocalStripe();
+		const subscription = await stripe.subscriptions.retrieve(record.stripeSubscriptionId, {
+			expand: ['items']
+		});
+		const planItem =
+			subscription.items.data.find((i) => {
+				const meta = i.price.metadata?.type;
+				return meta === 'plan' || !meta;
+			}) ?? subscription.items.data[0];
+
+		if (!planItem) return fail(500, { error: 'Could not find subscription item.' });
+
+		await stripe.subscriptionItems.update(planItem.id, {
+			price: priceId,
+			proration_behavior: 'create_prorations'
+		});
+
+		return { success: true };
 	},
 
 	openPortal: async ({ locals, url }) => {
@@ -152,6 +238,8 @@ export const actions: Actions = {
 		const tenantId = locals.tenantId!;
 		const formData = await request.formData();
 		const key = formData.get('key')?.toString();
+		const intervalRaw = formData.get('interval')?.toString();
+		const interval: BillingInterval = intervalRaw === 'annual' ? 'annual' : 'monthly';
 
 		if (!key || !VALID_ADDON_KEYS.has(key)) return fail(400, { error: 'Invalid add-on.' });
 
@@ -173,7 +261,7 @@ export const actions: Actions = {
 		const current = (record.addons ?? []) as AddonItem[];
 		if (current.some((a) => a.key === key)) return { success: true };
 
-		const priceId = getAddonPriceId(key);
+		const priceId = getAddonPriceId(key, interval);
 		if (!priceId) return fail(500, { error: 'Add-on price not configured. Contact support.' });
 
 		const stripe = getOrderLocalStripe();

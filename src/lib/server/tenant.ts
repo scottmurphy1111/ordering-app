@@ -36,8 +36,9 @@ export async function getCurrentTenant(event: RequestEvent) {
 			logoUrl: true,
 			bannerUrl: true,
 			backgroundImageUrl: true,
-			primaryColor: true,
+			backgroundColor: true,
 			accentColor: true,
+			foregroundColor: true,
 			settings: true,
 			isActive: true
 		}

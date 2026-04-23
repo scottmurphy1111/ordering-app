@@ -135,7 +135,7 @@
 				<div>
 					<label class="mb-1 block text-sm font-medium text-gray-700" for="slug">URL slug</label>
 					<div class="flex items-center gap-1.5">
-						<span class="text-sm text-gray-400">yourapp.com/</span>
+						<span class="text-sm text-gray-400">getorderlocal.com/</span>
 						<input
 							id="slug"
 							name="slug"

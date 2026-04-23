@@ -47,9 +47,9 @@ export const tenant = pgTable(
 		bannerUrl: text('banner_url'),
 		faviconUrl: text('favicon_url'),
 		backgroundImageUrl: text('background_image_url'),
-		primaryColor: varchar('primary_color', { length: 7 }).default('#000000'), // hex
-		secondaryColor: varchar('secondary_color', { length: 7 }).default('#374151'), // hex — used for category pills, badges, tints
-		accentColor: varchar('accent_color', { length: 7 }).default('#ffffff'),
+		backgroundColor: varchar('background_color', { length: 7 }).default('#000000'), // hex — header/button fill
+		accentColor: varchar('accent_color', { length: 7 }).default('#374151'), // hex — badge/pill highlight
+		foregroundColor: varchar('foreground_color', { length: 7 }).default('#ffffff'), // hex — text on background
 
 		// Business settings (flexible JSONB for future-proofing)
 		settings: jsonb('settings').default({

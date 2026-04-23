@@ -42,7 +42,7 @@ export const actions: Actions = {
 		if (status === 'ready' && (order?.customerEmail || order?.customerPhone)) {
 			const tenantRecord = await db.query.tenant.findFirst({
 				where: eq(tenant.id, tenantId),
-				columns: { name: true, primaryColor: true, slug: true }
+				columns: { name: true, backgroundColor: true, slug: true }
 			});
 			if (tenantRecord) {
 				if (order.customerEmail) {
@@ -51,7 +51,7 @@ export const actions: Actions = {
 						subject: `Your order is ready — ${tenantRecord.name}`,
 						html: orderReadyEmail({
 							tenantName: tenantRecord.name,
-							primaryColor: tenantRecord.primaryColor ?? undefined,
+							primaryColor: tenantRecord.backgroundColor ?? undefined,
 							orderNumber: order.orderNumber,
 							customerName: order.customerName ?? 'there',
 							total: order.total,
@@ -86,7 +86,7 @@ export const actions: Actions = {
 		if (order?.customerEmail || order?.customerPhone) {
 			const tenantRecord = await db.query.tenant.findFirst({
 				where: eq(tenant.id, tenantId),
-				columns: { name: true, primaryColor: true, slug: true }
+				columns: { name: true, backgroundColor: true, slug: true }
 			});
 			if (tenantRecord) {
 				if (order.customerEmail) {
@@ -95,7 +95,7 @@ export const actions: Actions = {
 						subject: `Order ${order.orderNumber} cancelled — ${tenantRecord.name}`,
 						html: orderCancelledEmail({
 							tenantName: tenantRecord.name,
-							primaryColor: tenantRecord.primaryColor ?? undefined,
+							primaryColor: tenantRecord.backgroundColor ?? undefined,
 							orderNumber: order.orderNumber,
 							customerName: order.customerName ?? 'there',
 							total: order.total
@@ -126,7 +126,7 @@ export const actions: Actions = {
 			}),
 			db.query.tenant.findFirst({
 				where: eq(tenant.id, tenantId),
-				columns: { stripeSecretKey: true, name: true, primaryColor: true }
+				columns: { stripeSecretKey: true, name: true, backgroundColor: true }
 			})
 		]);
 
@@ -176,7 +176,7 @@ export const actions: Actions = {
 				subject: `Refund processed for order ${refundedOrder.orderNumber} — ${tenantRecord.name}`,
 				html: orderRefundedEmail({
 					tenantName: tenantRecord.name,
-					primaryColor: tenantRecord.primaryColor ?? undefined,
+					primaryColor: tenantRecord.backgroundColor ?? undefined,
 					orderNumber: refundedOrder.orderNumber,
 					customerName: refundedOrder.customerName ?? 'there',
 					total: refundedOrder.total

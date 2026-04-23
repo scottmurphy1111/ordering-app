@@ -53,12 +53,12 @@
 
 <div class="min-h-screen">
 	<!-- Branded header -->
-	<header style="background-color: var(--primary-color);">
+	<header style="background-color: var(--background-color);">
 		<div class="mx-auto max-w-lg px-4 py-4">
 			<a
 				href={resolve(`/${data.tenantSlug}/menu`)}
 				class="inline-flex items-center gap-1 text-sm font-medium transition-opacity hover:opacity-75"
-				style="color: var(--accent-color);"
+				style="color: var(--foreground-color);"
 			>
 				<Icon icon="mdi:arrow-left" class="h-4 w-4" /> Back to menu
 			</a>
@@ -70,7 +70,7 @@
 		<div
 			class="rounded-xl border bg-white p-6 text-center shadow-sm"
 			style={isPaid
-				? 'border-color: var(--primary-color);'
+				? 'border-color: var(--background-color);'
 				: order.paymentStatus === 'pending'
 					? 'border-color: #fde68a;'
 					: 'border-color: #fca5a5;'}
@@ -79,9 +79,9 @@
 				<div class="mb-3 flex justify-center">
 					<div
 						class="flex h-14 w-14 items-center justify-center rounded-full"
-						style="background-color: color-mix(in srgb, var(--primary-color) 12%, white);"
+						style="background-color: color-mix(in srgb, var(--background-color) 12%, white);"
 					>
-						<Icon icon="mdi:check-circle" class="h-8 w-8" style="color: var(--primary-color);" />
+						<Icon icon="mdi:check-circle" class="h-8 w-8" style="color: var(--background-color);" />
 					</div>
 				</div>
 				<h1 class="text-xl font-bold text-gray-900">Payment confirmed!</h1>
@@ -151,7 +151,7 @@
 					<div class="absolute top-5 right-0 left-0 h-0.5 bg-gray-200" aria-hidden="true">
 						<div
 							class="h-full transition-all duration-500"
-							style="background-color: var(--primary-color); width: {stepIndex >= 0
+							style="background-color: var(--background-color); width: {stepIndex >= 0
 								? `${(stepIndex / (STEPS.length - 1)) * 100}%`
 								: '0%'};"
 						></div>
@@ -167,7 +167,7 @@
 							<div
 								class="flex h-10 w-10 items-center justify-center rounded-full border-2 transition-colors"
 								style={done || active
-									? `background-color: var(--primary-color); border-color: var(--primary-color); color: var(--accent-color);`
+									? `background-color: var(--background-color); border-color: var(--background-color); color: var(--foreground-color);`
 									: 'background-color: white; border-color: #e5e7eb; color: #9ca3af;'}
 							>
 								<Icon icon={step.icon} class="h-5 w-5" />
@@ -175,7 +175,7 @@
 							<span
 								class="text-center text-xs leading-tight"
 								style={active
-									? 'color: var(--primary-color); font-weight: 600;'
+									? 'color: var(--background-color); font-weight: 600;'
 									: done
 										? 'color: #374151; font-weight: 500;'
 										: 'color: #9ca3af;'}
@@ -189,7 +189,7 @@
 				{#if order.status === 'ready'}
 					<div
 						class="mt-5 rounded-lg px-4 py-3 text-center text-sm font-semibold"
-						style="background-color: color-mix(in srgb, var(--primary-color) 10%, white); color: var(--primary-color);"
+						style="background-color: color-mix(in srgb, var(--background-color) 10%, white); color: var(--background-color);"
 					>
 						<Icon icon="mdi:bell-ring" class="mr-1 inline h-4 w-4" />
 						Your order is ready! Head over to pick it up.
@@ -268,7 +268,7 @@
 			{/if}
 			<div
 				class="mt-1.5 flex justify-between border-t border-gray-100 pt-1.5 font-semibold"
-				style="color: var(--primary-color);"
+				style="color: var(--background-color);"
 			>
 				<span>Total</span>
 				<span>${(order.total / 100).toFixed(2)}</span>
@@ -283,7 +283,7 @@
 
 		<a
 			href={resolve(`/${data.tenantSlug}/menu`)}
-			style="background-color: var(--primary-color); color: var(--accent-color);"
+			style="background-color: var(--background-color); color: var(--foreground-color);"
 			class="block w-full rounded-xl px-6 py-3 text-center text-sm font-semibold shadow-sm transition-opacity hover:opacity-90"
 		>
 			Order again

@@ -190,7 +190,7 @@
 			</div>
 		</div>
 	{:else}
-		<header style="background-color: var(--primary-color);">
+		<header style="background-color: var(--background-color);">
 			<div class="mx-auto max-w-2xl px-4 py-5">
 				<div class="flex items-center gap-4">
 					{#if tenant.logoUrl}
@@ -208,18 +208,20 @@
 								rel="noopener noreferrer"
 								class="transition-opacity hover:opacity-80"
 							>
-								<h1 class="text-2xl font-bold" style="color: var(--accent-color);">
+								<h1 class="text-2xl font-bold" style="color: var(--foreground-color);">
 									{tenant.name}
 								</h1>
 							</a>
 						{:else}
-							<h1 class="text-2xl font-bold" style="color: var(--accent-color);">{tenant.name}</h1>
+							<h1 class="text-2xl font-bold" style="color: var(--foreground-color);">
+								{tenant.name}
+							</h1>
 						{/if}
 					</div>
 				</div>
 				<div class="mt-2 flex flex-wrap items-center gap-2">
 					{#if tenant.type}
-						<p class="text-sm capitalize opacity-75" style="color: var(--accent-color);">
+						<p class="text-sm capitalize opacity-75" style="color: var(--foreground-color);">
 							{tenant.type.replace('_', ' ')}
 						</p>
 					{/if}
@@ -235,7 +237,7 @@
 					{#if tableParam}
 						<span
 							class="flex items-center gap-1 rounded-full bg-white/20 px-2.5 py-0.5 text-xs font-semibold backdrop-blur-sm"
-							style="color: var(--accent-color);"
+							style="color: var(--foreground-color);"
 						>
 							<Icon icon="mdi:table-chair" class="h-3 w-3" /> Table {tableParam}
 						</span>
@@ -323,13 +325,13 @@
 						searchQuery = '';
 					}}
 					class="mt-3 text-sm font-medium"
-					style="color: var(--primary-color);">Clear search</button
+					style="color: var(--background-color);">Clear search</button
 				>
 			</div>
 		{:else if !mounted}
 			<!-- Skeleton -->
 			<div class="space-y-3">
-				{#each { length: 5 } as _}
+				{#each { length: 5 } as _, i (i)}
 					<div class="flex gap-4 rounded-xl border border-gray-100 bg-white p-4 shadow-sm">
 						<div class="h-20 w-20 shrink-0 animate-pulse rounded-lg bg-gray-200"></div>
 						<div class="flex-1 space-y-2 py-1">
@@ -345,7 +347,7 @@
 				<section id={String(category.id)}>
 					<h2
 						class="mb-4 border-b-2 pb-2 text-lg font-semibold text-gray-800"
-						style="border-color: var(--primary-color);"
+						style="border-color: var(--background-color);"
 					>
 						{category.name}
 					</h2>
@@ -373,7 +375,7 @@
 											{#each item.tags as tag (tag)}
 												<span
 													class="rounded-full px-2 py-0.5 text-xs"
-													style="background-color: color-mix(in srgb, var(--secondary-color) 15%, white); color: var(--secondary-color);"
+													style="background-color: color-mix(in srgb, var(--accent-color) 15%, white); color: var(--accent-color);"
 													>{tag}</span
 												>
 											{/each}
@@ -383,7 +385,7 @@
 								<div class="flex shrink-0 flex-col items-end justify-between gap-2">
 									<div class="text-right">
 										{#if item.discountedPrice}
-											<p class="font-semibold" style="color: var(--primary-color);">
+											<p class="font-semibold" style="color: var(--background-color);">
 												${(item.discountedPrice / 100).toFixed(2)}
 											</p>
 											<p class="text-xs text-gray-400 line-through">
@@ -396,7 +398,7 @@
 									{#if hasModifiers(item)}
 										<a
 											href={resolve(`/${data.tenantSlug}/item/${item.id}`)}
-											style="border-color: var(--primary-color); color: var(--primary-color);"
+											style="border-color: var(--background-color); color: var(--background-color);"
 											class="rounded-lg border px-3 py-1.5 text-xs font-medium transition-opacity hover:opacity-75"
 											>Options</a
 										>
@@ -407,9 +409,7 @@
 											item.id
 												? 'pulsing'
 												: ''} {lastAddedId === item.id ? 'added' : ''}"
-											style={lastAddedId === item.id
-												? ''
-												: 'background-color: var(--primary-color); color: var(--accent-color);'}
+											style="background-color: var(--background-color); color: var(--foreground-color);"
 										>
 											{lastAddedId === item.id ? '✓ Added' : '+ Add'}
 										</button>
@@ -426,7 +426,7 @@
 					{#if filteredCategorized.length > 0}
 						<h2
 							class="mb-4 border-b-2 pb-2 text-lg font-semibold text-gray-800"
-							style="border-color: var(--primary-color);"
+							style="border-color: var(--background-color);"
 						>
 							Other
 						</h2>
@@ -455,7 +455,7 @@
 											{#each item.tags as tag (tag)}
 												<span
 													class="rounded-full px-2 py-0.5 text-xs"
-													style="background-color: color-mix(in srgb, var(--secondary-color) 15%, white); color: var(--secondary-color);"
+													style="background-color: color-mix(in srgb, var(--accent-color) 15%, white); color: var(--accent-color);"
 													>{tag}</span
 												>
 											{/each}
@@ -465,7 +465,7 @@
 								<div class="flex shrink-0 flex-col items-end justify-between gap-2">
 									<div class="text-right">
 										{#if item.discountedPrice}
-											<p class="font-semibold" style="color: var(--primary-color);">
+											<p class="font-semibold" style="color: var(--background-color);">
 												${(item.discountedPrice / 100).toFixed(2)}
 											</p>
 											<p class="text-xs text-gray-400 line-through">
@@ -478,7 +478,7 @@
 									{#if hasModifiers(item)}
 										<a
 											href={resolve(`/${data.tenantSlug}/item/${item.id}`)}
-											style="border-color: var(--primary-color); color: var(--primary-color);"
+											style="border-color: var(--background-color); color: var(--background-color);"
 											class="rounded-lg border px-3 py-1.5 text-xs font-medium transition-opacity hover:opacity-75"
 											>Options</a
 										>
@@ -489,9 +489,7 @@
 											item.id
 												? 'pulsing'
 												: ''} {lastAddedId === item.id ? 'added' : ''}"
-											style={lastAddedId === item.id
-												? ''
-												: 'background-color: var(--primary-color); color: var(--accent-color);'}
+											style="background-color: var(--background-color); color: var(--foreground-color);"
 										>
 											{lastAddedId === item.id ? '✓ Added' : '+ Add'}
 										</button>
@@ -512,7 +510,7 @@
 				href={resolve(
 					`/${data.tenantSlug}/cart${tableParam ? `?table=${encodeURIComponent(tableParam)}` : ''}` as `/${string}`
 				)}
-				style="background-color: var(--primary-color); color: var(--accent-color);"
+				style="background-color: var(--background-color); color: var(--foreground-color);"
 				class="flex w-full max-w-2xl items-center justify-between rounded-xl px-5 py-3.5 shadow-lg transition-opacity hover:opacity-90"
 			>
 				<span
@@ -530,8 +528,8 @@
 	/* Category nav active + hover */
 	.category-pill:hover,
 	.category-pill.active {
-		background-color: var(--secondary-color);
-		color: var(--accent-color);
+		background-color: var(--accent-color);
+		color: var(--foreground-color);
 	}
 
 	/* Item card fade-in stagger */
@@ -561,11 +559,14 @@
 			transform: scale(1);
 		}
 	}
+	.add-btn:hover:not(.added) {
+		opacity: 0.82;
+	}
 	.add-btn.pulsing {
 		animation: addPulse 0.35s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
 	}
 	.add-btn.added {
-		background-color: #22c55e !important;
-		color: #ffffff !important;
+		background-color: var(--accent-color) !important;
+		color: var(--foreground-color) !important;
 	}
 </style>

@@ -104,6 +104,8 @@
 			name: 'Starter',
 			price: 'Free',
 			period: '',
+			annualPrice: null as string | null,
+			annualNote: null as string | null,
 			description: 'Perfect for getting started.',
 			features: [
 				'Up to 10 menu items',
@@ -112,41 +114,33 @@
 				'Customer email receipts',
 				'Menu QR code'
 			],
+			addonsNote: null as string | null,
 			cta: 'Get started free',
 			href: loginHref,
 			highlight: false
 		},
 		{
-			name: 'Growth',
-			price: '$29',
-			period: '/ month',
-			description: 'For established single-location businesses.',
-			features: [
-				'Unlimited menu items',
-				'Everything in Starter',
-				'Website embed',
-				'Priority support'
-			],
-			cta: 'Get started',
-			href: loginHref,
-			highlight: true
-		},
-		{
 			name: 'Pro',
 			price: '$79',
 			period: '/ month',
-			description: 'For multi-location operators.',
+			annualPrice: '$65' as string | null,
+			annualNote: 'Billed $780/yr — 2 months free' as string | null,
+			description: 'The full toolkit for serious operators.',
 			features: [
-				'Everything in Growth',
-				'Multiple locations',
-				'Team accounts',
-				'Dedicated support'
+				'Everything in Starter',
+				'Unlimited menu items',
+				'Website embed',
+				'Priority support',
+				'Access to all add-ons'
 			],
-			cta: 'Contact us',
-			href: 'mailto:hello@getorderlocal.com',
-			highlight: false
+			addonsNote: 'Table QR Codes · SMS Notifications · Custom Domain · Advanced Analytics · Loyalty Program · Subscriptions' as string | null,
+			cta: 'Get started',
+			href: loginHref,
+			highlight: true
 		}
 	];
+
+	let pricingInterval = $state<'monthly' | 'annual'>('monthly');
 
 	const faqs = [
 		{
@@ -159,11 +153,11 @@
 		},
 		{
 			q: 'What happens when I hit 10 items on the Starter plan?',
-			a: "You'll see a clear warning as you approach the limit. Once you hit 10 items, adding more is blocked until you upgrade to Growth ($29/mo) which includes unlimited items."
+			a: "You'll see a clear warning as you approach the limit. Once you hit 10 items, adding more is blocked until you upgrade to Pro ($79/mo) which includes unlimited items."
 		},
 		{
 			q: 'What are add-ons and how do they work?',
-			a: 'Add-ons are optional features you can activate from your billing page — things like Table QR Codes, SMS Notifications, and a Loyalty Program. You only pay for what you actually need.'
+			a: 'Add-ons are optional features available on the Pro plan — things like Table QR Codes, SMS Notifications, and a Loyalty Program. Activate or cancel any add-on anytime from your billing dashboard. You only pay for what you actually use.'
 		},
 		{
 			q: 'Can I use my own branding?',
@@ -391,7 +385,7 @@
 			{/each}
 		</div>
 		<p class="mt-8 text-center text-sm text-gray-400">
-			Add-ons are free during our beta period. Pricing locks in when you activate.
+			Add-ons require an active Pro plan. Activate or cancel anytime from your dashboard.
 		</p>
 	</div>
 </section>
@@ -399,12 +393,44 @@
 <!-- Pricing -->
 <section id="pricing" class="bg-gray-50 px-6 py-24">
 	<div class="mx-auto max-w-6xl">
-		<div class="mb-14 text-center">
+		<div class="mb-10 text-center">
 			<h2 class="text-3xl font-bold text-gray-900 sm:text-4xl">Simple, honest pricing</h2>
 			<p class="mt-3 text-lg text-gray-500">No commissions. No surprise fees. Cancel anytime.</p>
 		</div>
-		<div class="grid gap-6 lg:grid-cols-3 lg:items-start">
+
+		<!-- Billing interval toggle -->
+		<div class="mb-10 flex justify-center">
+			<div class="flex items-center gap-1 rounded-xl border border-gray-200 bg-white p-1 shadow-sm">
+				<button
+					onclick={() => (pricingInterval = 'monthly')}
+					class="rounded-lg px-5 py-2 text-sm font-medium transition-colors
+						{pricingInterval === 'monthly'
+						? 'bg-gray-900 text-white'
+						: 'text-gray-500 hover:text-gray-800'}"
+				>
+					Monthly
+				</button>
+				<button
+					onclick={() => (pricingInterval = 'annual')}
+					class="flex items-center gap-2 rounded-lg px-5 py-2 text-sm font-medium transition-colors
+						{pricingInterval === 'annual'
+						? 'bg-gray-900 text-white'
+						: 'text-gray-500 hover:text-gray-800'}"
+				>
+					Annual
+					<span
+						class="rounded-full px-2 py-0.5 text-xs font-semibold
+							{pricingInterval === 'annual' ? 'bg-green-500 text-white' : 'bg-green-100 text-green-700'}"
+					>
+						Save 2 months
+					</span>
+				</button>
+			</div>
+		</div>
+
+		<div class="mx-auto grid max-w-2xl gap-6 sm:grid-cols-2 lg:items-start">
 			{#each plans as plan (plan.name)}
+				{@const displayPrice = plan.highlight && pricingInterval === 'annual' && plan.annualPrice ? plan.annualPrice : plan.price}
 				<div
 					class="flex flex-col rounded-2xl border p-7
 						{plan.highlight
@@ -422,7 +448,7 @@
 					</p>
 					<div class="mt-2 flex items-end gap-1">
 						<span class="text-4xl font-bold {plan.highlight ? 'text-white' : 'text-gray-900'}"
-							>{plan.price}</span
+							>{displayPrice}</span
 						>
 						{#if plan.period}
 							<span class="mb-1 text-sm {plan.highlight ? 'text-green-100' : 'text-gray-400'}"
@@ -430,9 +456,13 @@
 							>
 						{/if}
 					</div>
-					<p class="mt-1 text-sm {plan.highlight ? 'text-green-100' : 'text-gray-500'}">
-						{plan.description}
-					</p>
+					{#if plan.highlight && pricingInterval === 'annual' && plan.annualNote}
+						<p class="mt-1 text-sm text-green-200">{plan.annualNote}</p>
+					{:else}
+						<p class="mt-1 text-sm {plan.highlight ? 'text-green-100' : 'text-gray-500'}">
+							{plan.description}
+						</p>
+					{/if}
 
 					<ul class="mt-6 flex-1 space-y-2.5">
 						{#each plan.features as feat (feat)}
@@ -452,28 +482,21 @@
 						{/each}
 					</ul>
 
-					{#if plan.href.startsWith('mailto:')}
-						<a
-							href={plan.href}
-							rel="external"
-							class="mt-8 block rounded-xl px-5 py-3 text-center text-sm font-semibold transition-colors
-								{plan.highlight
-								? 'bg-white text-green-700 hover:bg-green-50'
-								: 'bg-gray-900 text-white hover:bg-gray-700'}"
-						>
-							{plan.cta}
-						</a>
-					{:else}
-						<a
-							href={loginHref}
-							class="mt-8 block rounded-xl px-5 py-3 text-center text-sm font-semibold transition-colors
-								{plan.highlight
-								? 'bg-white text-green-700 hover:bg-green-50'
-								: 'bg-gray-900 text-white hover:bg-gray-700'}"
-						>
-							{plan.cta}
-						</a>
+					{#if plan.addonsNote}
+						<p class="mt-4 text-xs leading-relaxed {plan.highlight ? 'text-green-200' : 'text-gray-400'}">
+							Add-ons: {plan.addonsNote}
+						</p>
 					{/if}
+
+					<a
+						href={loginHref}
+						class="mt-8 block rounded-xl px-5 py-3 text-center text-sm font-semibold transition-colors
+							{plan.highlight
+							? 'bg-white text-green-700 hover:bg-green-50'
+							: 'bg-gray-900 text-white hover:bg-gray-700'}"
+					>
+						{plan.cta}
+					</a>
 				</div>
 			{/each}
 		</div>

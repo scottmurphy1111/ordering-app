@@ -1,4 +1,5 @@
 export type AddonItem = { key: string; stripeItemId: string };
+export type BillingInterval = 'monthly' | 'annual';
 
 export function hasAddon(
 	addons: Array<AddonItem | string> | null | undefined,
@@ -16,25 +17,30 @@ export const TIERS = [
 		itemLimit: 10,
 		features: [
 			'Up to 10 menu items',
-			'Online ordering',
+			'Online ordering & payments',
 			'Order management',
 			'Customer email receipts',
 			'Menu QR code'
 		]
 	},
 	{
-		key: 'growth',
-		name: 'Growth',
-		price: 29,
-		itemLimit: null,
-		features: ['Unlimited menu items', 'Everything in Starter', 'Website embed', 'Priority support']
-	},
-	{
 		key: 'pro',
 		name: 'Pro',
 		price: 79,
+		annualMonthly: 65,
+		annualTotal: 780,
+		annualSavings: 168,
 		itemLimit: null,
-		features: ['Everything in Growth', 'Multiple locations', 'Dedicated support']
+		features: [
+			'Unlimited menu items',
+			'Everything in Starter',
+			'All add-ons available',
+			'Website embed',
+			'White-label (remove OrderLocal branding)',
+			'Webhooks — push orders to any endpoint',
+			'Menu scheduling (coming soon)',
+			'Dedicated support'
+		]
 	}
 ] as const;
 
@@ -94,6 +100,14 @@ export const ADDONS = [
 ] as const;
 
 export type AddonKey = (typeof ADDONS)[number]['key'];
+
+// Add-ons that support annual billing and their pricing
+export const ANNUAL_ADDON_PRICING: Partial<
+	Record<AddonKey, { monthly: number; total: number; savings: number }>
+> = {
+	loyalty: { monthly: 24, total: 288, savings: 60 },
+	subscriptions: { monthly: 24, total: 288, savings: 60 }
+};
 
 export function getTier(key: string) {
 	return TIERS.find((t) => t.key === key) ?? TIERS[0];

@@ -12,9 +12,9 @@ export const load: PageServerLoad = async ({ locals }) => {
 			logoUrl: true,
 			bannerUrl: true,
 			backgroundImageUrl: true,
-			primaryColor: true,
-			secondaryColor: true,
-			accentColor: true
+			backgroundColor: true,
+			accentColor: true,
+			foregroundColor: true
 		}
 	});
 
@@ -23,9 +23,9 @@ export const load: PageServerLoad = async ({ locals }) => {
 			logoUrl: null,
 			bannerUrl: null,
 			backgroundImageUrl: null,
-			primaryColor: '#000000',
-			secondaryColor: '#374151',
-			accentColor: '#ffffff'
+			backgroundColor: '#000000',
+			accentColor: '#374151',
+			foregroundColor: '#ffffff'
 		}
 	};
 };
@@ -35,24 +35,24 @@ export const actions: Actions = {
 		const tenantId = locals.tenantId!;
 		const formData = await request.formData();
 
-		const primaryColor = formData.get('primaryColor')?.toString().trim();
-		const secondaryColor = formData.get('secondaryColor')?.toString().trim();
+		const backgroundColor = formData.get('backgroundColor')?.toString().trim();
 		const accentColor = formData.get('accentColor')?.toString().trim();
+		const foregroundColor = formData.get('foregroundColor')?.toString().trim();
 
 		const hexRegex = /^#[0-9a-fA-F]{6}$/;
-		if (primaryColor && !hexRegex.test(primaryColor))
-			return fail(400, { error: 'Invalid primary color format' });
-		if (secondaryColor && !hexRegex.test(secondaryColor))
-			return fail(400, { error: 'Invalid secondary color format' });
+		if (backgroundColor && !hexRegex.test(backgroundColor))
+			return fail(400, { error: 'Invalid background color format' });
 		if (accentColor && !hexRegex.test(accentColor))
 			return fail(400, { error: 'Invalid accent color format' });
+		if (foregroundColor && !hexRegex.test(foregroundColor))
+			return fail(400, { error: 'Invalid foreground color format' });
 
 		await db
 			.update(tenant)
 			.set({
-				...(primaryColor ? { primaryColor } : {}),
-				...(secondaryColor ? { secondaryColor } : {}),
+				...(backgroundColor ? { backgroundColor } : {}),
 				...(accentColor ? { accentColor } : {}),
+				...(foregroundColor ? { foregroundColor } : {}),
 				updatedAt: new Date()
 			})
 			.where(eq(tenant.id, tenantId));

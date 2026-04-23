@@ -5,15 +5,18 @@
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
-	let primaryColor = $state('');
-	let secondaryColor = $state('');
+	let backgroundColor = $state('');
 	let accentColor = $state('');
+	let foregroundColor = $state('');
 
 	$effect(() => {
-		primaryColor = data.branding.primaryColor ?? '#000000';
-		secondaryColor = data.branding.secondaryColor ?? '#374151';
-		accentColor = data.branding.accentColor ?? '#ffffff';
+		backgroundColor = data.branding.backgroundColor ?? '#000000';
+		accentColor = data.branding.accentColor ?? '#374151';
+		foregroundColor = data.branding.foregroundColor ?? '#ffffff';
 	});
+
+	// suppress stale $state warning — branding data initialized from server
+
 
 	// ── Upload helpers ─────────────────────────────────────────────────────────
 	type UploadState = { uploading: boolean; error: string };
@@ -93,7 +96,7 @@
 			<div class="border-b border-gray-100 px-5 py-4">
 				<h2 class="font-semibold text-gray-900">Color scheme</h2>
 				<p class="mt-0.5 text-xs text-gray-500">
-					Sets the primary and accent colors on your public storefront.
+					Sets the colors on your public storefront.
 				</p>
 			</div>
 			<div class="px-5 py-5">
@@ -106,7 +109,11 @@
 					class="space-y-5"
 				>
 					<div class="grid grid-cols-1 gap-6 sm:grid-cols-3">
-						{#each [{ id: 'primaryColor', label: 'Primary color', bind: 'primaryColor', note: 'Buttons, headers, key actions.', value: primaryColor }, { id: 'secondaryColor', label: 'Secondary color', bind: 'secondaryColor', note: 'Category pills, badges, tinted sections.', value: secondaryColor }, { id: 'accentColor', label: 'Accent color', bind: 'accentColor', note: 'Text on primary backgrounds.', value: accentColor }] as col (col.id)}
+						{#each [
+							{ id: 'backgroundColor', label: 'Background', note: 'Header, buttons, and key elements.', value: backgroundColor },
+							{ id: 'foregroundColor', label: 'Foreground', note: 'Text and icons on the background color.', value: foregroundColor },
+							{ id: 'accentColor', label: 'Accent', note: 'Category pills, tags, and highlights.', value: accentColor }
+						] as col (col.id)}
 							<div>
 								<label class="mb-2 block text-sm font-medium text-gray-700" for={col.id}
 									>{col.label}</label
@@ -119,39 +126,39 @@
 											type="color"
 											id={col.id}
 											name={col.id}
-											value={col.id === 'primaryColor'
-												? primaryColor
-												: col.id === 'secondaryColor'
-													? secondaryColor
+											value={col.id === 'backgroundColor'
+												? backgroundColor
+												: col.id === 'foregroundColor'
+													? foregroundColor
 													: accentColor}
 											oninput={(e) => {
 												const v = (e.target as HTMLInputElement).value;
-												if (col.id === 'primaryColor') primaryColor = v;
-												else if (col.id === 'secondaryColor') secondaryColor = v;
+												if (col.id === 'backgroundColor') backgroundColor = v;
+												else if (col.id === 'foregroundColor') foregroundColor = v;
 												else accentColor = v;
 											}}
 											class="absolute inset-0 h-full w-full cursor-pointer border-0 p-0 opacity-0"
 										/>
 										<div
 											class="h-full w-full rounded-md"
-											style="background-color: {col.id === 'primaryColor'
-												? primaryColor
-												: col.id === 'secondaryColor'
-													? secondaryColor
+											style="background-color: {col.id === 'backgroundColor'
+												? backgroundColor
+												: col.id === 'foregroundColor'
+													? foregroundColor
 													: accentColor};"
 										></div>
 									</div>
 									<input
 										type="text"
-										value={col.id === 'primaryColor'
-											? primaryColor
-											: col.id === 'secondaryColor'
-												? secondaryColor
+										value={col.id === 'backgroundColor'
+											? backgroundColor
+											: col.id === 'foregroundColor'
+												? foregroundColor
 												: accentColor}
 										oninput={(e) => {
 											const v = (e.target as HTMLInputElement).value;
-											if (col.id === 'primaryColor') primaryColor = v;
-											else if (col.id === 'secondaryColor') secondaryColor = v;
+											if (col.id === 'backgroundColor') backgroundColor = v;
+											else if (col.id === 'foregroundColor') foregroundColor = v;
 											else accentColor = v;
 										}}
 										maxlength="7"
@@ -169,31 +176,31 @@
 						<div class="overflow-hidden rounded-lg border border-gray-200">
 							<div
 								class="flex items-center gap-3 px-4 py-3"
-								style="background-color: {primaryColor};"
+								style="background-color: {backgroundColor};"
 							>
-								<span class="text-sm font-bold" style="color: {accentColor};">My Restaurant</span>
+								<span class="text-sm font-bold" style="color: {foregroundColor};">My Restaurant</span>
 								<span
 									class="rounded-full px-2 py-0.5 text-xs font-medium"
-									style="background-color: {secondaryColor}; color: {accentColor};"
+									style="background-color: {accentColor}; color: {foregroundColor};"
 									>Quick service</span
 								>
 							</div>
 							<div
 								class="flex items-center gap-3 px-4 py-4"
-								style="background-color: {accentColor};"
+								style="background-color: {foregroundColor};"
 							>
 								<span
 									class="rounded-full px-3 py-1 text-xs font-medium"
-									style="background-color: {secondaryColor}; color: {accentColor};">Burgers</span
+									style="background-color: color-mix(in srgb, {accentColor} 20%, {foregroundColor}); color: {accentColor};">Burgers</span
 								>
 								<span
 									class="rounded-full border px-3 py-1 text-xs font-medium"
-									style="border-color: {secondaryColor}; color: {secondaryColor};">Drinks</span
+									style="border-color: {accentColor}; color: {accentColor};">Drinks</span
 								>
 								<button
 									type="button"
 									class="ml-auto rounded-md px-3 py-1.5 text-xs font-semibold shadow-sm"
-									style="background-color: {primaryColor}; color: {accentColor};">+ Add</button
+									style="background-color: {backgroundColor}; color: {foregroundColor};">+ Add</button
 								>
 							</div>
 						</div>
@@ -380,7 +387,7 @@
 						accept="image/jpeg,image/png,image/webp"
 						bind:this={bgInput}
 						onchange={(e) => {
-							const f = (e.target as HTMLInputElement).files?.[0];
+							const f = (e.target as HTMLInputElement).files?.[0];;
 							if (f) uploadImage(f, '/api/upload-background-image', 'backgroundImage', bgState, 5);
 						}}
 						class="hidden"

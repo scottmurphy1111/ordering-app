@@ -3,16 +3,16 @@
 
 	let { data, children }: { data: LayoutData; children: import('svelte').Snippet } = $props();
 
-	const primaryColor = $derived(data.tenant.primaryColor ?? '#000000');
-	const secondaryColor = $derived(data.tenant.secondaryColor ?? '#374151');
-	const accentColor = $derived(data.tenant.accentColor ?? '#ffffff');
+	const backgroundColor = $derived(data.tenant.backgroundColor ?? '#000000');
+	const accentColor = $derived(data.tenant.accentColor ?? '#374151');
+	const foregroundColor = $derived(data.tenant.foregroundColor ?? '#ffffff');
 	const logoUrl = $derived(data.tenant.logoUrl ?? '');
 	const backgroundImageUrl = $derived(data.tenant.backgroundImageUrl ?? '');
 </script>
 
 <div
 	class="relative flex min-h-screen flex-col"
-	style="--primary-color: {primaryColor}; --secondary-color: {secondaryColor}; --accent-color: {accentColor};"
+	style="--background-color: {backgroundColor}; --accent-color: {accentColor}; --foreground-color: {foregroundColor};"
 >
 	<!-- Background: custom image takes priority over tiled logo -->
 	{#if backgroundImageUrl}
@@ -47,9 +47,11 @@
 				>
 				<span class="hidden text-gray-300 sm:inline">·</span>
 			{/if}
-			<p class="text-xs font-semibold tracking-wide text-gray-500 uppercase">
-				Order<span class="text-green-600">Local</span>
-			</p>
+			{#if data.tenant.subscriptionTier !== 'pro'}
+				<p class="text-xs font-semibold tracking-wide text-gray-500 uppercase">
+					Order<span class="text-green-600">Local</span>
+				</p>
+			{/if}
 			<p class="text-xs text-gray-400">&copy; {new Date().getFullYear()} All rights reserved.</p>
 		</div>
 	</footer>

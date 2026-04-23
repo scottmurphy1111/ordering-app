@@ -22,7 +22,7 @@ export const POST: RequestHandler = async ({ request, params }) => {
 			stripeWebhookSecret: true,
 			isActive: true,
 			name: true,
-			primaryColor: true,
+			backgroundColor: true,
 			slug: true
 		}
 	});
@@ -50,7 +50,7 @@ export const POST: RequestHandler = async ({ request, params }) => {
 	const tenantCtx = {
 		id: tenantRecord.id,
 		name: tenantRecord.name,
-		primaryColor: tenantRecord.primaryColor ?? undefined,
+		primaryColor: tenantRecord.backgroundColor ?? undefined,
 		slug: tenantRecord.slug
 	};
 

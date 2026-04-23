@@ -12,16 +12,24 @@ export function getOrderLocalStripe(): Stripe {
 	return _stripe;
 }
 
-export function getPlanPriceId(planKey: string): string | undefined {
+export function getPlanPriceId(
+	planKey: string,
+	interval: 'monthly' | 'annual' = 'monthly'
+): string | undefined {
 	const map: Record<string, string | undefined> = {
-		growth: env.STRIPE_PRICE_GROWTH,
-		pro: env.STRIPE_PRICE_PRO
+		'pro:monthly': env.STRIPE_PRICE_PRO,
+		'pro:annual': env.STRIPE_PRICE_PRO_ANNUAL
 	};
-	return map[planKey];
+	return map[`${planKey}:${interval}`];
 }
 
-export function getAddonPriceId(addonKey: string): string | undefined {
-	const map: Record<string, string | undefined> = {
+const ANNUAL_CAPABLE_ADDONS = new Set(['loyalty', 'subscriptions']);
+
+export function getAddonPriceId(
+	addonKey: string,
+	interval: 'monthly' | 'annual' = 'monthly'
+): string | undefined {
+	const monthlyMap: Record<string, string | undefined> = {
 		table_qr: env.STRIPE_PRICE_ADDON_TABLE_QR,
 		sms_notifications: env.STRIPE_PRICE_ADDON_SMS,
 		custom_domain: env.STRIPE_PRICE_ADDON_CUSTOM_DOMAIN,
@@ -30,5 +38,13 @@ export function getAddonPriceId(addonKey: string): string | undefined {
 		promo_codes: env.STRIPE_PRICE_ADDON_PROMO_CODES,
 		subscriptions: env.STRIPE_PRICE_ADDON_SUBSCRIPTIONS
 	};
-	return map[addonKey];
+	const annualMap: Record<string, string | undefined> = {
+		loyalty: env.STRIPE_PRICE_ADDON_LOYALTY_ANNUAL,
+		subscriptions: env.STRIPE_PRICE_ADDON_SUBSCRIPTIONS_ANNUAL
+	};
+
+	if (interval === 'annual' && ANNUAL_CAPABLE_ADDONS.has(addonKey)) {
+		return annualMap[addonKey];
+	}
+	return monthlyMap[addonKey];
 }

@@ -143,7 +143,7 @@ export const actions: Actions = {
 
 		const tenantRecord = await db.query.tenant.findFirst({
 			where: eq(tenant.id, tenantId),
-			columns: { name: true, primaryColor: true }
+			columns: { name: true, backgroundColor: true }
 		});
 		const inviterName = locals.user!.name ?? locals.user!.email;
 
@@ -153,7 +153,7 @@ export const actions: Actions = {
 				subject: `You're invited to join ${tenantRecord.name}`,
 				html: inviteEmail({
 					tenantName: tenantRecord.name,
-					primaryColor: tenantRecord.primaryColor ?? undefined,
+					primaryColor: tenantRecord.backgroundColor ?? undefined,
 					invitedByName: inviterName,
 					role,
 					inviteUrl

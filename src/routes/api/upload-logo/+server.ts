@@ -21,7 +21,7 @@ export async function POST(event: RequestEvent) {
 	if (file.size > 2 * 1024 * 1024) throw error(400, 'File too large (max 2MB)');
 
 	try {
-		const logoUrl = await uploadToR2(file, `logos/logo-${locals.tenantId}`);
+		const logoUrl = await uploadToR2(file, `${locals.tenant!.slug}/logos/logo-${locals.tenantId}`);
 
 		await db
 			.update(tenant)

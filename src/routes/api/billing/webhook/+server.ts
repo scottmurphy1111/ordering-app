@@ -10,7 +10,7 @@ import { sendEmail } from '$lib/server/email';
 import { subscriptionConfirmedEmail } from '$lib/server/email/templates/subscriptionConfirmed';
 import { paymentFailedEmail } from '$lib/server/email/templates/paymentFailed';
 
-const PAID_TIERS = new Set(['growth', 'pro']);
+const PAID_TIERS = new Set(['pro']);
 
 function formatAmount(cents: number): string {
 	return `$${(cents / 100).toFixed(0)}`;

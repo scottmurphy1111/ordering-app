@@ -18,7 +18,7 @@ export async function POST(event: RequestEvent) {
 	if (file.size > 5 * 1024 * 1024) throw error(400, 'File too large (max 5MB)');
 
 	try {
-		const url = await uploadToR2(file, `menu-items/item-${locals.tenantId}`);
+		const url = await uploadToR2(file, `${locals.tenant!.slug}/menu-items/item-${locals.tenantId}`);
 		return json({ url });
 	} catch (err) {
 		console.error('Menu item image upload error:', err);

@@ -74,12 +74,12 @@
 
 <div class="min-h-screen">
 	<!-- Branded header -->
-	<header style="background-color: var(--primary-color);">
+	<header style="background-color: var(--background-color);">
 		<div class="mx-auto max-w-lg px-4 py-4">
 			<a
 				href={resolve(`/${data.tenantSlug}/menu`)}
 				class="inline-flex items-center gap-1 text-sm font-medium transition-opacity hover:opacity-75"
-				style="color: var(--accent-color);"
+				style="color: var(--foreground-color);"
 			>
 				<Icon icon="mdi:arrow-left" class="h-4 w-4" /> Back to menu
 			</a>
@@ -105,7 +105,7 @@
 			{/if}
 			<div class="mt-2 flex items-center gap-2">
 				{#if data.item.discountedPrice}
-					<p class="text-xl font-bold" style="color: var(--primary-color);">
+					<p class="text-xl font-bold" style="color: var(--background-color);">
 						${(data.item.discountedPrice / 100).toFixed(2)}
 					</p>
 					<p class="text-sm text-gray-400 line-through">${(data.item.price / 100).toFixed(2)}</p>
@@ -118,7 +118,7 @@
 					{#each data.item.tags as tag (tag)}
 						<span
 							class="rounded-full px-2 py-0.5 text-xs"
-							style="background-color: color-mix(in srgb, var(--secondary-color) 15%, white); color: var(--secondary-color);"
+							style="background-color: color-mix(in srgb, var(--accent-color) 15%, white); color: var(--accent-color);"
 							>{tag}</span
 						>
 					{/each}
@@ -163,7 +163,7 @@
 						{@const isDisabled = isMulti && !isSelected && chosen.length >= group.maxSelections}
 						<label
 							style={isSelected
-								? 'border-color: var(--primary-color); background-color: color-mix(in srgb, var(--primary-color) 6%, white);'
+								? 'border-color: var(--background-color); background-color: color-mix(in srgb, var(--background-color) 6%, white);'
 								: ''}
 							class="flex cursor-pointer items-center justify-between rounded-lg border px-3 py-2.5 transition-colors
 								{isSelected ? '' : 'border-gray-200 hover:bg-gray-50'}
@@ -175,14 +175,14 @@
 									checked={isSelected}
 									disabled={isDisabled}
 									onchange={() => toggleOption(group.id, option.name, group.maxSelections)}
-									style="accent-color: var(--primary-color);"
+									style="accent-color: var(--background-color);"
 									class="h-4 w-4 rounded"
 								/>
 								<span class="text-sm text-gray-800">{option.name}</span>
 								{#if option.isDefault}
 									<span
 										class="rounded-full px-1.5 py-0.5 text-xs font-medium"
-										style="background-color: color-mix(in srgb, var(--secondary-color) 15%, white); color: var(--secondary-color);"
+										style="background-color: color-mix(in srgb, var(--accent-color) 15%, white); color: var(--accent-color);"
 										>Default</span
 									>
 								{/if}
@@ -215,7 +215,7 @@
 			<button
 				onclick={addToCart}
 				disabled={!canAdd}
-				style="background-color: var(--primary-color); color: var(--accent-color);"
+				style="background-color: var(--background-color); color: var(--foreground-color);"
 				class="w-full rounded-xl px-6 py-4 text-base font-semibold shadow-lg transition-opacity hover:opacity-90 disabled:opacity-50"
 			>
 				Add to Cart — ${(totalPrice / 100).toFixed(2)}
