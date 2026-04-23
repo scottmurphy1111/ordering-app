@@ -20,7 +20,12 @@ export const load: PageServerLoad = async ({ locals }) => {
 	const tenantId = locals.tenantId!;
 	const record = await db.query.tenant.findFirst({
 		where: eq(tenant.id, tenantId),
-		columns: { stripeSecretKey: true, stripeWebhookSecret: true, stripeWebhookEndpointId: true }
+		columns: {
+			stripeSecretKey: true,
+			stripePublishableKey: true,
+			stripeWebhookSecret: true,
+			stripeWebhookEndpointId: true
+		}
 	});
 
 	function maskKey(key: string | null | undefined): string | null {
@@ -31,8 +36,10 @@ export const load: PageServerLoad = async ({ locals }) => {
 
 	return {
 		hasStripeKey: !!record?.stripeSecretKey,
+		hasStripePublishableKey: !!record?.stripePublishableKey,
 		hasStripeWebhookSecret: !!record?.stripeWebhookSecret,
 		stripeKeyMasked: maskKey(record?.stripeSecretKey),
+		stripePublishableKeyMasked: maskKey(record?.stripePublishableKey),
 		stripeWebhookMasked: maskKey(record?.stripeWebhookSecret),
 		hasWebhookEndpoint: !!record?.stripeWebhookEndpointId
 	};
@@ -44,10 +51,13 @@ export const actions: Actions = {
 		const tenantId = locals.tenantId!;
 		const formData = await request.formData();
 		const key = formData.get('stripeSecretKey')?.toString().trim();
+		const publishableKey = formData.get('stripePublishableKey')?.toString().trim() || null;
 
-		if (!key) return fail(400, { error: 'API key is required' });
+		if (!key) return fail(400, { error: 'Secret key is required' });
 		if (!key.startsWith('sk_'))
 			return fail(400, { error: 'Must be a Stripe secret key (starts with sk_)' });
+		if (publishableKey && !publishableKey.startsWith('pk_'))
+			return fail(400, { error: 'Publishable key must start with pk_' });
 
 		let stripe: Stripe;
 		try {
@@ -92,6 +102,7 @@ export const actions: Actions = {
 			.update(tenant)
 			.set({
 				stripeSecretKey: key,
+				stripePublishableKey: publishableKey,
 				stripeWebhookSecret: webhookSecret,
 				stripeWebhookEndpointId: webhookEndpointId
 			})
@@ -118,6 +129,7 @@ export const actions: Actions = {
 			.update(tenant)
 			.set({
 				stripeSecretKey: null,
+				stripePublishableKey: null,
 				stripeWebhookSecret: null,
 				stripeWebhookEndpointId: null
 			})

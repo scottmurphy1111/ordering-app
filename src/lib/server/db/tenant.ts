@@ -79,6 +79,7 @@ export const tenant = pgTable(
 
 		// Per-tenant Stripe integration (for product discovery and payments)
 		stripeSecretKey: text('stripe_secret_key'),
+		stripePublishableKey: text('stripe_publishable_key'),
 		stripeWebhookSecret: text('stripe_webhook_secret'),
 		stripeWebhookEndpointId: text('stripe_webhook_endpoint_id'),
 

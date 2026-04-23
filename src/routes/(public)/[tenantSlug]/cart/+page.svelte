@@ -168,46 +168,62 @@
 		loading = true;
 
 		try {
-			const res = await fetch('/api/create-checkout', {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({
-					tenantSlug: data.tenantSlug,
-					items: cart.items,
-					customer: { name: customerName, email, phone },
-					notes: [tableNumber ? `Table ${tableNumber}` : '', notes].filter(Boolean).join(' | '),
-					orderType: isSubscriptionCart ? 'subscription' : orderType,
-					deliveryAddress:
-						orderType === 'delivery' && !isSubscriptionCart
-							? [deliveryStreet, deliveryApt, deliveryCity, deliveryState, deliveryZip]
-									.filter(Boolean)
-									.join(', ')
-							: null,
-					scheduledFor:
-						pickupTiming === 'scheduled' && pickupDate && pickupTimeValue && !isSubscriptionCart
-							? new Date(`${pickupDate}T${pickupTimeValue}`).toISOString()
-							: null,
-					isSubscription: isSubscriptionCart,
-					billingInterval: subscriptionInterval,
-					subtotal,
-					tax,
-					tip: tipCents,
-					deliveryFee: deliveryFeeCents,
-					discount: discountCents,
-					promoCode: promoApplied?.code ?? null,
-					total
-				})
-			});
+			const commonPayload = {
+				tenantSlug: data.tenantSlug,
+				items: cart.items,
+				customer: { name: customerName, email, phone },
+				notes: [tableNumber ? `Table ${tableNumber}` : '', notes].filter(Boolean).join(' | '),
+				orderType: isSubscriptionCart ? 'subscription' : orderType,
+				deliveryAddress:
+					orderType === 'delivery' && !isSubscriptionCart
+						? [deliveryStreet, deliveryApt, deliveryCity, deliveryState, deliveryZip]
+								.filter(Boolean)
+								.join(', ')
+						: null,
+				scheduledFor:
+					pickupTiming === 'scheduled' && pickupDate && pickupTimeValue && !isSubscriptionCart
+						? new Date(`${pickupDate}T${pickupTimeValue}`).toISOString()
+						: null,
+				subtotal,
+				tax,
+				tip: tipCents,
+				deliveryFee: deliveryFeeCents,
+				discount: discountCents,
+				promoCode: promoApplied?.code ?? null,
+				total
+			};
 
-			const json = await res.json();
-			if (!res.ok) {
-				checkoutError = json.message ?? 'Something went wrong.';
-				loading = false;
-				return;
+			if (isSubscriptionCart) {
+				// Subscriptions use Stripe Checkout (hosted page)
+				const res = await fetch('/api/create-checkout', {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({ ...commonPayload, isSubscription: true, billingInterval: subscriptionInterval })
+				});
+				const json = await res.json();
+				if (!res.ok) {
+					checkoutError = json.message ?? 'Something went wrong.';
+					loading = false;
+					return;
+				}
+				cart.clear();
+				window.location.href = json.url;
+			} else {
+				// One-time orders use custom Payment Element checkout
+				const res = await fetch('/api/create-payment-intent', {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify(commonPayload)
+				});
+				const json = await res.json();
+				if (!res.ok) {
+					checkoutError = json.message ?? 'Something went wrong.';
+					loading = false;
+					return;
+				}
+				cart.clear();
+				window.location.href = `/${data.tenantSlug}/checkout?orderId=${json.orderId}`;
 			}
-
-			cart.clear();
-			window.location.href = json.url;
 		} catch {
 			checkoutError = 'Network error. Please try again.';
 			loading = false;

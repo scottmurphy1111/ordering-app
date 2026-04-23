@@ -9,6 +9,7 @@
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
 	let editing = $state(untrack(() => !data.hasStripeKey));
+	let showPk = $state(false);
 	let showKey = $state(false);
 </script>
 
@@ -106,8 +107,47 @@
 							update({ reset: false });
 						}}
 				>
+					<!-- Publishable key -->
+					<div class="mb-1">
+						<label for="publishable-key-input" class="mb-1 block text-xs font-medium text-gray-500"
+							>Publishable key</label
+						>
+					</div>
+					<div class="relative mb-3">
+						<input
+							id="publishable-key-input"
+							name="stripePublishableKey"
+							type={showPk ? 'text' : 'password'}
+							readonly={!editing}
+							value={editing ? '' : (data.stripePublishableKeyMasked ?? '')}
+							placeholder={editing ? 'pk_test_...' : ''}
+							autocomplete="off"
+							class="w-full rounded-md border px-3 py-2 pr-16 font-mono text-sm transition-colors focus:ring-1 focus:outline-none
+								{editing
+								? 'border-gray-300 bg-white focus:border-gray-900 focus:ring-gray-900'
+								: 'cursor-default border-gray-200 bg-gray-50 text-gray-600 select-none'}"
+						/>
+						<button
+							type="button"
+							onclick={() => (showPk = !showPk)}
+							class="absolute top-1/2 right-2 inline-flex -translate-y-1/2 items-center gap-1 text-xs text-gray-400 transition-colors hover:text-gray-600"
+						>
+							<Icon
+								icon={showPk ? 'mdi:eye-off-outline' : 'mdi:eye-outline'}
+								class="h-3.5 w-3.5"
+							/>
+						</button>
+					</div>
+
+					<!-- Secret key -->
+					<div class="mb-1">
+						<label for="secret-key-input" class="mb-1 block text-xs font-medium text-gray-500"
+							>Secret key</label
+						>
+					</div>
 					<div class="relative mb-2">
 						<input
+							id="secret-key-input"
 							name="stripeSecretKey"
 							type={showKey ? 'text' : 'password'}
 							readonly={!editing}
@@ -133,7 +173,7 @@
 					</div>
 					{#if editing}
 						<p class="mb-2 text-xs text-gray-400">
-							Find your secret key at
+							Find both keys at
 							<a
 								href="https://dashboard.stripe.com/apikeys"
 								target="_blank"

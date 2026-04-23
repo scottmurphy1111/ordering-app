@@ -57,6 +57,13 @@
       "when": 1776956327563,
       "tag": "0007_rename_brand_colors",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1776975415470,
+      "tag": "0008_small_earthquake",
+      "breakpoints": true
     }
   ]
 }
