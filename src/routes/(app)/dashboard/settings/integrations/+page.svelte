@@ -15,7 +15,7 @@
 <div>
 	<div class="mb-6">
 		<a
-			href="/dashboard/settings"
+			href={resolve('/dashboard/settings')}
 			class="mb-1 inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700"
 		>
 			<Icon icon="mdi:chevron-left" class="h-4 w-4" /> Settings

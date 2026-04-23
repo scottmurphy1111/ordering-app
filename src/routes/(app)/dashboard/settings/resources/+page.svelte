@@ -88,7 +88,7 @@
 <div>
 	<div class="mb-6">
 		<a
-			href="/dashboard/settings"
+			href={resolve('/dashboard/settings')}
 			class="mb-1 inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700"
 		>
 			<Icon icon="mdi:chevron-left" class="h-4 w-4" /> Settings
@@ -277,7 +277,7 @@
 								Per-table QR codes for dine-in ordering. Activate this add-on in Billing to unlock.
 							</p>
 							<a
-								href="/dashboard/settings/billing"
+								href={resolve('/dashboard/settings/billing')}
 								class="mt-3 inline-flex items-center gap-1.5 rounded-md bg-gray-900 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-gray-700"
 							>
 								<Icon icon="mdi:arrow-right" class="h-3.5 w-3.5" /> Go to Billing
@@ -325,7 +325,7 @@
 						<p class="text-sm font-medium text-gray-700">Website embed is a Pro feature</p>
 						<p class="mt-1 text-sm text-gray-500">Upgrade to Pro to embed your menu on any website.</p>
 						<a
-							href="/dashboard/settings/billing"
+							href={resolve('/dashboard/settings/billing')}
 							class="mt-4 inline-flex items-center gap-1.5 rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-gray-700"
 						>
 							Upgrade to Pro

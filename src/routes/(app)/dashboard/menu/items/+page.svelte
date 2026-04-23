@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { PageData, ActionData } from './$types';
 	import type { DiscoveredItem } from '$lib/../routes/api/discover-stripe-items/+server';
-	import { SvelteSet } from 'svelte/reactivity';
+	import { SvelteMap, SvelteSet } from 'svelte/reactivity';
 	import { resolve } from '$app/paths';
 	import Icon from '@iconify/svelte';
 	import { afterNavigate } from '$app/navigation';
@@ -45,7 +45,7 @@
 
 	// Group items by category for the sort view
 	const groupedForSort = $derived(() => {
-		const catMap = new Map<
+		const catMap = new SvelteMap<
 			number | null,
 			{ id: number | null; name: string; items: typeof data.items }
 		>();
@@ -328,7 +328,7 @@
 	<div class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
 		<div>
 			<a
-				href="/dashboard/menu"
+				href={resolve('/dashboard/menu')}
 				class="mb-1 inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700"
 			>
 				<Icon icon="mdi:chevron-left" class="h-4 w-4" /> Menu

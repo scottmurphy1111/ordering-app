@@ -4,6 +4,10 @@
 - **Package Manager**: bun
 - **Add-ons**: prettier, eslint, vitest, playwright, tailwindcss, sveltekit-adapter, devtools-json, drizzle, better-auth, mdsvex, mcp
 
+## Svelte href Rule
+
+**Always** use `resolve()` from `$app/paths` for every `href` attribute that points to an internal route. Never write `href="/some/path"` — always write `href={resolve('/some/path')}`. For dynamic segments use a template literal: `href={resolve(\`/dashboard/orders/${id}\`)}`. Import `resolve` in the `<script>` block: `import { resolve } from '$app/paths';`.
+
 ---
 
 You are able to use the Svelte MCP server, where you have access to comprehensive Svelte 5 and SvelteKit documentation. Here's how to use the available tools effectively:

@@ -60,6 +60,14 @@
 	<div class="mb-6 flex items-center justify-between">
 		<h1 class="text-2xl font-bold text-gray-900">Orders</h1>
 		<div class="flex items-center gap-2">
+			<a
+				href={resolve('/dashboard/orders/history')}
+				class="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-800"
+			>
+				<Icon icon="mdi:history" class="h-4 w-4" />
+				History
+			</a>
+			<span class="text-gray-200">|</span>
 			<span class="flex items-center gap-1.5 text-xs text-gray-400">
 				<span class="relative flex h-2 w-2">
 					<span

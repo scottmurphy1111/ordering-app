@@ -156,7 +156,7 @@
 					<div class="flex flex-wrap items-center gap-2">
 						{#if tenant.website}
 							<a
-								href={tenant.website}
+								href={resolve(tenant.website as `/${string}`)}
 								target="_blank"
 								rel="noopener noreferrer"
 								class="text-2xl font-bold text-white drop-shadow hover:underline">{tenant.name}</a
@@ -203,7 +203,7 @@
 					<div>
 						{#if tenant.website}
 							<a
-								href={tenant.website}
+								href={resolve(tenant.website as `/${string}`)}
 								target="_blank"
 								rel="noopener noreferrer"
 								class="transition-opacity hover:opacity-80"
@@ -331,7 +331,7 @@
 		{:else if !mounted}
 			<!-- Skeleton -->
 			<div class="space-y-3">
-				{#each { length: 5 } as _, i (i)}
+				{#each [0, 1, 2, 3, 4] as i (i)}
 					<div class="flex gap-4 rounded-xl border border-gray-100 bg-white p-4 shadow-sm">
 						<div class="h-20 w-20 shrink-0 animate-pulse rounded-lg bg-gray-200"></div>
 						<div class="flex-1 space-y-2 py-1">

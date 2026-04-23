@@ -6,6 +6,7 @@
 	import { untrack } from 'svelte';
 	import { TIERS, ADDONS, ANNUAL_ADDON_PRICING, getTier, hasAddon, type BillingInterval } from '$lib/billing';
 	import { confirmDialog } from '$lib/confirm.svelte';
+	import { resolve } from '$app/paths';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
@@ -110,7 +111,7 @@
 <div class="max-w-3xl">
 	<div class="mb-6">
 		<a
-			href="/dashboard/settings"
+			href={resolve('/dashboard/settings')}
 			class="mb-1 inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700"
 		>
 			<Icon icon="mdi:chevron-left" class="h-4 w-4" /> Settings

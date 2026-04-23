@@ -50,7 +50,9 @@ export const load: PageServerLoad = async ({ locals }) => {
 			billingInterval = planItem?.price.recurring?.interval === 'year' ? 'annual' : 'monthly';
 			periodStart = new Date(preview.period_start * 1000).toISOString();
 			nextBillingDate = new Date(preview.period_end * 1000).toISOString();
-		} catch {}
+		} catch {
+			// Stripe preview unavailable — billing dates stay null
+		}
 	}
 
 	return {

@@ -1,47 +1,72 @@
 import type { PageServerLoad, Actions } from './$types';
 import { fail } from '@sveltejs/kit';
 import { db } from '$lib/server/db';
-import { eq, and, desc, or, not, inArray, gte } from 'drizzle-orm';
+import { eq, and, or, desc, lt, gte, lte, ilike, not, inArray } from 'drizzle-orm';
 import { orders } from '$lib/server/db/schema';
 import { tenant } from '$lib/server/db/tenant';
 import Stripe from 'stripe';
 import { sendEmail } from '$lib/server/email';
-import { orderReadyEmail } from '$lib/server/email/templates/orderReady';
-import { orderCancelledEmail } from '$lib/server/email/templates/orderCancelled';
 import { orderRefundedEmail } from '$lib/server/email/templates/orderRefunded';
 
 const HISTORY_CUTOFF_MS = 24 * 60 * 60 * 1000;
 
-export const load: PageServerLoad = async ({ locals, url, depends }) => {
-	depends('app:orders');
+export const load: PageServerLoad = async ({ locals, url }) => {
 	const tenantId = locals.tenantId!;
+	const search = url.searchParams.get('q') ?? '';
+	const from = url.searchParams.get('from') ?? '';
+	const to = url.searchParams.get('to') ?? '';
 	const statusFilter = url.searchParams.get('status') ?? '';
 
 	const cutoff = new Date(Date.now() - HISTORY_CUTOFF_MS);
 
-	const whereConditions = [
-		eq(orders.tenantId, tenantId),
-		// Exclude terminal orders older than 24h — those belong in /orders/history
-		or(not(inArray(orders.status, ['fulfilled', 'cancelled'])), gte(orders.updatedAt, cutoff))!
-	];
-	if (statusFilter) {
-		whereConditions.push(eq(orders.status, statusFilter as typeof orders.status._.data));
+	const whereConditions = [eq(orders.tenantId, tenantId), lt(orders.updatedAt, cutoff)];
+
+	if (statusFilter === 'fulfilled' || statusFilter === 'cancelled') {
+		whereConditions.push(
+			eq(orders.status, statusFilter as typeof orders.status._.data)
+		);
+	} else {
+		whereConditions.push(
+			or(eq(orders.status, 'fulfilled'), eq(orders.status, 'cancelled'))!
+		);
 	}
 
-	const allOrders = await db.query.orders.findMany({
+	if (search) {
+		whereConditions.push(
+			or(
+				ilike(orders.orderNumber, `%${search}%`),
+				ilike(orders.customerName, `%${search}%`),
+				ilike(orders.customerEmail, `%${search}%`),
+				ilike(orders.customerPhone, `%${search}%`)
+			)!
+		);
+	}
+
+	if (from) {
+		whereConditions.push(gte(orders.createdAt, new Date(from)));
+	}
+	if (to) {
+		const toDate = new Date(to);
+		toDate.setHours(23, 59, 59, 999);
+		whereConditions.push(lte(orders.createdAt, toDate));
+	}
+
+	const historyOrders = await db.query.orders.findMany({
 		where: and(...whereConditions),
 		orderBy: [desc(orders.createdAt)],
-		limit: 50,
+		limit: 100,
 		columns: {
 			id: true,
 			orderNumber: true,
 			customerName: true,
+			customerEmail: true,
 			customerPhone: true,
 			total: true,
 			status: true,
 			paymentStatus: true,
 			type: true,
 			createdAt: true,
+			updatedAt: true,
 			notes: true,
 			scheduledFor: true,
 			deliveryAddress: true,
@@ -49,82 +74,10 @@ export const load: PageServerLoad = async ({ locals, url, depends }) => {
 		}
 	});
 
-	return { orders: allOrders, statusFilter };
+	return { orders: historyOrders, search, from, to, statusFilter };
 };
 
 export const actions: Actions = {
-	updateStatus: async ({ request, locals }) => {
-		const tenantId = locals.tenantId!;
-		const formData = await request.formData();
-		const id = parseInt(formData.get('id')?.toString() ?? '');
-		const status = formData.get('status')?.toString();
-		if (isNaN(id) || !status) return fail(400, { error: 'Invalid' });
-
-		const [order] = await db
-			.update(orders)
-			.set({ status: status as typeof orders.status._.data, updatedAt: new Date() })
-			.where(and(eq(orders.id, id), eq(orders.tenantId, tenantId)))
-			.returning();
-
-		if (status === 'ready' && order?.customerEmail) {
-			const tenantRecord = await db.query.tenant.findFirst({
-				where: eq(tenant.id, tenantId),
-				columns: { name: true, backgroundColor: true }
-			});
-			if (tenantRecord) {
-				await sendEmail({
-					to: order.customerEmail,
-					subject: `Your order is ready — ${tenantRecord.name}`,
-					html: orderReadyEmail({
-						tenantName: tenantRecord.name,
-						primaryColor: tenantRecord.backgroundColor ?? undefined,
-						orderNumber: order.orderNumber,
-						customerName: order.customerName ?? 'there',
-						total: order.total,
-						orderType: order.type
-					})
-				}).catch(console.error);
-			}
-		}
-
-		return { success: true };
-	},
-
-	cancel: async ({ request, locals }) => {
-		const tenantId = locals.tenantId!;
-		const formData = await request.formData();
-		const id = parseInt(formData.get('id')?.toString() ?? '');
-		if (isNaN(id)) return fail(400, { error: 'Invalid' });
-
-		const [order] = await db
-			.update(orders)
-			.set({ status: 'cancelled', updatedAt: new Date() })
-			.where(and(eq(orders.id, id), eq(orders.tenantId, tenantId)))
-			.returning();
-
-		if (order?.customerEmail) {
-			const tenantRecord = await db.query.tenant.findFirst({
-				where: eq(tenant.id, tenantId),
-				columns: { name: true, backgroundColor: true }
-			});
-			if (tenantRecord) {
-				await sendEmail({
-					to: order.customerEmail,
-					subject: `Order ${order.orderNumber} cancelled — ${tenantRecord.name}`,
-					html: orderCancelledEmail({
-						tenantName: tenantRecord.name,
-						primaryColor: tenantRecord.backgroundColor ?? undefined,
-						orderNumber: order.orderNumber,
-						customerName: order.customerName ?? 'there',
-						total: order.total
-					})
-				}).catch(console.error);
-			}
-		}
-
-		return { success: true };
-	},
-
 	refund: async ({ request, locals }) => {
 		const tenantId = locals.tenantId!;
 		const formData = await request.formData();

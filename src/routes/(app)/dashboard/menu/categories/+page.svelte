@@ -84,7 +84,7 @@
 	<div class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
 		<div>
 			<a
-				href="/dashboard/menu"
+				href={resolve('/dashboard/menu')}
 				class="mb-1 inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700"
 			>
 				<Icon icon="mdi:chevron-left" class="h-4 w-4" /> Menu
@@ -297,7 +297,7 @@
 							<td class="px-4 py-3">
 								<div class="flex items-center gap-3">
 									<a
-										href="/dashboard/menu/categories/{cat.id}"
+										href={resolve(`/dashboard/menu/categories/${cat.id}`)}
 										class="text-xs font-medium text-gray-600 transition-colors hover:text-gray-900"
 										>Edit</a
 									>

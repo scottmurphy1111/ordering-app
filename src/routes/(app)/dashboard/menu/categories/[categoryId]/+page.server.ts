@@ -1,5 +1,5 @@
 import type { PageServerLoad, Actions } from './$types';
-import { fail, redirect, error } from '@sveltejs/kit';
+import { fail, error } from '@sveltejs/kit';
 import { db } from '$lib/server/db';
 import { eq, and } from 'drizzle-orm';
 import { menuCategories, menuItems } from '$lib/server/db/schema';

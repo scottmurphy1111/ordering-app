@@ -42,7 +42,7 @@
 				<a
 					href={data.tenant.website}
 					target="_blank"
-					rel="noopener noreferrer"
+					rel="external noopener noreferrer"
 					class="text-xs font-semibold text-gray-700 hover:underline">{data.tenant.name}</a
 				>
 				<span class="hidden text-gray-300 sm:inline">·</span>

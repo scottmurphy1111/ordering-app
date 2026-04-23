@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { page } from '$app/state';
+	import { resolve } from '$app/paths';
 	import Icon from '@iconify/svelte';
 
 	const token = $derived(page.url.searchParams.get('token'));
@@ -18,7 +19,7 @@
 		<Icon icon="mdi:link-off" class="mx-auto mb-3 h-8 w-8 text-gray-300" />
 		<p class="text-sm font-medium text-gray-700">Invalid link</p>
 		<p class="mt-1 text-sm text-gray-400">This sign-in link is missing or malformed.</p>
-		<a href="/login" class="mt-4 inline-block text-sm text-green-600 hover:underline"
+		<a href={resolve('/login')} class="mt-4 inline-block text-sm text-green-600 hover:underline"
 			>Back to sign in</a
 		>
 	{:else}
@@ -26,7 +27,7 @@
 		<p class="text-sm font-medium text-gray-700">Ready to sign in</p>
 		<p class="mt-1 mb-5 text-sm text-gray-400">Click the button below to complete your sign-in.</p>
 		<a
-			href={verifyHref}
+			href={resolve(verifyHref as `/${string}`)}
 			class="block w-full rounded-lg bg-gray-900 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-gray-700"
 		>
 			Sign in to Order Local
