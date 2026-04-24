@@ -102,9 +102,12 @@
 					method="post"
 					action="?/saveStripeKey"
 					use:enhance={() =>
-						({ update }) => {
-							editing = false;
-							showKey = false;
+						({ result, update }) => {
+							if (result.type === 'success') {
+								editing = false;
+								showKey = false;
+								showPk = false;
+							}
 							update({ reset: false });
 						}}
 				>
@@ -147,9 +150,13 @@
 							name="stripeSecretKey"
 							type={showKey ? 'text' : 'password'}
 							readonly={!editing}
-							required={editing}
+							required={editing && !data.hasStripeKey}
 							value={editing ? '' : (data.stripeKeyMasked ?? '')}
-							placeholder={editing ? 'sk_test_...' : ''}
+							placeholder={editing
+								? data.hasStripeKey
+									? 'Leave blank to keep existing key'
+									: 'sk_test_...'
+								: ''}
 							autocomplete="off"
 							class="pr-16 font-mono {editing ? '' : 'cursor-default bg-gray-50 text-gray-600 select-none'}"
 						/>

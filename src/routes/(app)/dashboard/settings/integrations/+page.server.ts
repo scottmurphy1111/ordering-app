@@ -50,59 +50,75 @@ export const actions: Actions = {
 		requireOwner(locals);
 		const tenantId = locals.tenantId!;
 		const formData = await request.formData();
-		const key = formData.get('stripeSecretKey')?.toString().trim();
+		const newKey = formData.get('stripeSecretKey')?.toString().trim() || null;
 		const publishableKey = formData.get('stripePublishableKey')?.toString().trim() || null;
 
-		if (!key) return fail(400, { error: 'Secret key is required' });
-		if (!key.startsWith('sk_'))
+		if (newKey && !newKey.startsWith('sk_'))
 			return fail(400, { error: 'Must be a Stripe secret key (starts with sk_)' });
 		if (publishableKey && !publishableKey.startsWith('pk_'))
 			return fail(400, { error: 'Publishable key must start with pk_' });
 
-		let stripe: Stripe;
-		try {
-			stripe = new Stripe(key);
-			await stripe.products.list({ limit: 1 });
-		} catch {
-			return fail(400, {
-				error: 'Could not connect to Stripe with that key. Please check it and try again.'
-			});
-		}
-
-		// Delete old webhook endpoint if one exists
 		const existing = await db.query.tenant.findFirst({
 			where: eq(tenant.id, tenantId),
-			columns: { stripeSecretKey: true, stripeWebhookEndpointId: true }
+			columns: {
+				stripeSecretKey: true,
+				stripePublishableKey: true,
+				stripeWebhookSecret: true,
+				stripeWebhookEndpointId: true,
+				slug: true
+			}
 		});
-		if (existing?.stripeWebhookEndpointId && existing.stripeSecretKey) {
-			const oldStripe = new Stripe(existing.stripeSecretKey);
-			await oldStripe.webhookEndpoints.del(existing.stripeWebhookEndpointId).catch(() => {});
+
+		const effectiveKey = newKey ?? existing?.stripeSecretKey ?? null;
+		if (!effectiveKey) return fail(400, { error: 'Secret key is required' });
+
+		// Preserve existing publishable key when the field was left empty
+		const effectivePublishableKey = publishableKey ?? existing?.stripePublishableKey ?? null;
+
+		const keyChanged = newKey !== null && newKey !== existing?.stripeSecretKey;
+		const isPublicUrl = env.ORIGIN?.startsWith('https://');
+
+		// Verify new key when it changes
+		if (keyChanged) {
+			try {
+				const stripe = new Stripe(newKey!);
+				await stripe.products.list({ limit: 1 });
+			} catch {
+				return fail(400, {
+					error: 'Could not connect to Stripe with that key. Please check it and try again.'
+				});
+			}
+			// Delete old webhook so we can register a fresh one under the new key
+			if (existing?.stripeWebhookEndpointId && existing.stripeSecretKey) {
+				const oldStripe = new Stripe(existing.stripeSecretKey);
+				await oldStripe.webhookEndpoints.del(existing.stripeWebhookEndpointId).catch(() => {});
+			}
 		}
 
-		const tenantRecord = await db.query.tenant.findFirst({
-			where: eq(tenant.id, tenantId),
-			columns: { slug: true }
-		});
+		// Webhook: create when on a public URL and (key changed OR no webhook yet)
+		let webhookSecret: string | null = existing?.stripeWebhookSecret ?? null;
+		let webhookEndpointId: string | null = existing?.stripeWebhookEndpointId ?? null;
 
-		const isPublicUrl = env.ORIGIN?.startsWith('https://');
-		let webhookSecret: string | null = null;
-		let webhookEndpointId: string | null = null;
-
-		if (isPublicUrl) {
-			const webhookUrl = `${env.ORIGIN}/api/webhooks/stripe/${tenantRecord!.slug}`;
+		if (isPublicUrl && (keyChanged || !webhookEndpointId)) {
+			const stripe = new Stripe(effectiveKey);
+			const webhookUrl = `${env.ORIGIN}/api/webhooks/stripe/${existing!.slug}`;
 			const endpoint = await stripe.webhookEndpoints.create({
 				url: webhookUrl,
 				enabled_events: WEBHOOK_EVENTS
 			});
 			webhookSecret = endpoint.secret ?? null;
 			webhookEndpointId = endpoint.id;
+		} else if (keyChanged && !isPublicUrl) {
+			// Key changed on a non-public URL — old webhook is gone, can't register a new one
+			webhookSecret = null;
+			webhookEndpointId = null;
 		}
 
 		await db
 			.update(tenant)
 			.set({
-				stripeSecretKey: key,
-				stripePublishableKey: publishableKey,
+				stripeSecretKey: effectiveKey,
+				stripePublishableKey: effectivePublishableKey,
 				stripeWebhookSecret: webhookSecret,
 				stripeWebhookEndpointId: webhookEndpointId
 			})
