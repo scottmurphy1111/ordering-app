@@ -9,6 +9,22 @@
 	import { enhance } from '$app/forms';
 	import { confirmDialog } from '$lib/confirm.svelte';
 	import Sortable from 'sortablejs';
+	import { Button } from '$lib/components/ui/button';
+	import { Badge } from '$lib/components/ui/badge';
+	import { Card } from '$lib/components/ui/card';
+	import { Table, TableHeader, TableHead, TableBody, TableRow, TableCell } from '$lib/components/ui/table';
+	import { Input } from '$lib/components/ui/input';
+	import { Label } from '$lib/components/ui/label';
+	import { Textarea } from '$lib/components/ui/textarea';
+	import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '$lib/components/ui/select';
+	import {
+		Dialog,
+		DialogContent,
+		DialogHeader,
+		DialogTitle,
+		DialogDescription,
+		DialogFooter
+	} from '$lib/components/ui/dialog';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
@@ -338,58 +354,54 @@
 		</div>
 		<div class="flex flex-wrap gap-2">
 			{#if !sortMode}
-				<button
+				<Button
 					onclick={openDiscover}
-					class="inline-flex items-center gap-1.5 rounded-md border border-purple-300 bg-purple-50 px-3 py-2 text-sm font-medium text-purple-700 transition-colors hover:bg-purple-100"
+					variant="outline"
+					class="gap-1.5 border-purple-300 bg-purple-50 text-purple-700 hover:bg-purple-100"
 				>
 					<Icon icon="mdi:lightning-bolt" class="h-4 w-4" /><span class="hidden sm:inline"
 						>Discover from Stripe</span
 					><span class="sm:hidden">Discover</span>
-				</button>
-				<button
-					onclick={() => (showImport = true)}
-					class="inline-flex items-center gap-1.5 rounded-md border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:border-gray-400 hover:bg-gray-100"
-				>
+				</Button>
+				<Button onclick={() => (showImport = true)} variant="outline" class="gap-1.5">
 					<Icon icon="mdi:upload" class="h-4 w-4" /><span class="hidden sm:inline">Import CSV</span
 					><span class="sm:hidden">Import</span>
-				</button>
-				<button
+				</Button>
+				<Button
 					onclick={() => {
 						sortMode = true;
 						showForm = false;
 					}}
-					class="inline-flex items-center gap-1.5 rounded-md border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:border-gray-400 hover:bg-gray-100"
+					variant="outline"
+					class="gap-1.5"
 				>
 					<Icon icon="mdi:drag-vertical" class="h-4 w-4" /> Reorder
-				</button>
-				<button
+				</Button>
+				<Button
 					onclick={() => {
 						showForm = !showForm;
 						lastCreated = null;
 					}}
-					class="inline-flex items-center gap-1.5 rounded-md bg-gray-900 px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-gray-700"
+					variant="default"
+					class="gap-1.5"
 				>
 					<Icon icon={showForm ? 'mdi:close' : 'mdi:plus'} class="h-4 w-4" />
 					{showForm ? 'Cancel' : 'New item'}
-				</button>
+				</Button>
 			{:else}
-				<button
+				<Button
 					onclick={() => {
 						sortMode = false;
 						sortSaveError = null;
 					}}
-					class="rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-600 transition-colors hover:border-gray-400 hover:bg-gray-100"
+					variant="outline"
 				>
 					Cancel
-				</button>
-				<button
-					onclick={saveSortOrder}
-					disabled={sortSaving}
-					class="inline-flex items-center gap-1.5 rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-gray-700 disabled:opacity-50"
-				>
+				</Button>
+				<Button onclick={saveSortOrder} disabled={sortSaving} variant="default" class="gap-1.5">
 					<Icon icon="mdi:check" class="h-4 w-4" />
 					{sortSaving ? 'Saving…' : 'Save order'}
-				</button>
+				</Button>
 			{/if}
 		</div>
 	</div>
@@ -407,11 +419,12 @@
 						class="underline hover:text-green-900">edit item</a
 					></span
 				>
-				<button
+				<Button
 					onclick={() => (lastCreated = null)}
+					variant="ghost"
+					size="icon-sm"
 					class="ml-4 text-green-500 hover:text-green-700"
-					><Icon icon="mdi:close" class="h-4 w-4" /></button
-				>
+				><Icon icon="mdi:close" class="h-4 w-4" /></Button>
 			</div>
 		{/if}
 		{#if form?.error}
@@ -478,95 +491,85 @@
 				<div class="flex-1 space-y-1 pt-1">
 					<p class="text-xs text-gray-400">JPG, PNG, WebP · max 5MB</p>
 					{#if newUploadError}<p class="text-xs text-red-600">{newUploadError}</p>{/if}
-					{#if newImagePreview}<button
+					{#if newImagePreview}<Button
 							type="button"
 							onclick={() => {
 								newImageUrl = '';
 								newImagePreview = '';
 							}}
-							class="text-xs text-red-500 hover:text-red-700">Remove</button
+							variant="ghost"
+							size="sm"
+							class="text-red-500 hover:text-red-700">Remove</Button
 						>{/if}
 				</div>
 			</div>
 
 			<div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
 				<div class="sm:col-span-2">
-					<label class="mb-1 block text-sm font-medium text-gray-700" for="new-name">Name *</label>
-					<input
+					<Label class="mb-1 block" for="new-name">Name *</Label>
+					<Input
 						id="new-name"
 						name="name"
 						type="text"
 						required
 						placeholder="e.g. Classic Cheeseburger"
-						class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
 					/>
 				</div>
 				<div class="sm:col-span-2">
-					<label class="mb-1 block text-sm font-medium text-gray-700" for="new-description"
-						>Description</label
-					>
-					<textarea
+					<Label class="mb-1 block" for="new-description">Description</Label>
+					<Textarea
 						id="new-description"
 						name="description"
-						rows="2"
+						rows={2}
 						placeholder="Short description..."
-						class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
-					></textarea>
-				</div>
-				<div>
-					<label class="mb-1 block text-sm font-medium text-gray-700" for="new-price"
-						>Price ($) *</label
-					>
-					<input
-						id="new-price"
-						name="price"
-						type="number"
-						min="0"
-						step="0.01"
-						required
-						placeholder="9.99"
-						class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
 					/>
 				</div>
 				<div>
-					<label class="mb-1 block text-sm font-medium text-gray-700" for="new-sale"
-						>Sale price ($)</label
-					>
-					<input
+					<Label class="mb-1 block" for="new-price">Price ($) *</Label>
+					<Input
+						id="new-price"
+						name="price"
+						type="number"
+						min={0}
+						step="0.01"
+						required
+						placeholder="9.99"
+					/>
+				</div>
+				<div>
+					<Label class="mb-1 block" for="new-sale">Sale price ($)</Label>
+					<Input
 						id="new-sale"
 						name="discountedPrice"
 						type="number"
-						min="0"
+						min={0}
 						step="0.01"
 						placeholder="Optional"
-						class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
 					/>
 				</div>
 				{#if data.categories.length > 0}
 					<div>
-						<label class="mb-1 block text-sm font-medium text-gray-700" for="new-category"
-							>Category</label
-						>
-						<select
-							id="new-category"
-							name="categoryId"
-							class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
-						>
-							<option value="">No category</option>
-							{#each data.categories as cat (cat.id)}<option value={String(cat.id)}
-									>{cat.name}</option
-								>{/each}
-						</select>
+						<Label class="mb-1 block" for="new-category">Category</Label>
+						<Select type="single" name="categoryId">
+							<SelectTrigger id="new-category" class="w-full">
+								<SelectValue placeholder="No category" />
+							</SelectTrigger>
+							<SelectContent>
+								<SelectItem value="">No category</SelectItem>
+								{#each data.categories as cat (cat.id)}
+									<SelectItem value={String(cat.id)}>{cat.name}</SelectItem>
+								{/each}
+							</SelectContent>
+						</Select>
 					</div>
 				{/if}
 				<div>
-					<label class="mb-1 block text-sm font-medium text-gray-700" for="new-tags">Tags</label>
-					<input
+					<Label class="mb-1 block" for="new-tags">Tags</Label>
+					<Input
 						id="new-tags"
 						name="tags"
 						type="text"
 						placeholder="spicy, popular (comma-separated)"
-						class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
 					/>
 				</div>
 			</div>
@@ -583,54 +586,54 @@
 			</div>
 
 			<div class="flex gap-2 pt-1">
-				<button
-					type="submit"
-					disabled={newUploading}
-					class="rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-gray-700 disabled:opacity-50"
-				>
+				<Button type="submit" disabled={newUploading} variant="default">
 					Save &amp; add another
-				</button>
-				<button
+				</Button>
+				<Button
 					type="submit"
 					name="closeAfter"
 					value="1"
 					disabled={newUploading}
-					class="rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-700 transition-colors hover:border-gray-400 hover:bg-gray-100 disabled:opacity-50"
+					variant="outline"
 					onclick={() =>
 						setTimeout(() => {
 							showForm = false;
 						}, 100)}
 				>
 					Save &amp; close
-				</button>
+				</Button>
 			</div>
 		</form>
 	{/if}
 
 	<!-- Filters -->
 	<form bind:this={searchForm} method="get" class="mb-5 flex min-w-0 gap-2">
-		<input
-			bind:this={searchInput}
+		<Input
+			bind:ref={searchInput}
 			type="text"
 			name="search"
 			value={data.search ?? ''}
 			placeholder="Search items..."
 			oninput={onSearchInput}
-			class="min-w-0 flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
+			class="min-w-0 flex-1"
 		/>
 		{#if data.categories.length > 0}
-			<select
+			<Select
+				type="single"
 				name="categoryId"
-				onchange={onCategoryChange}
-				class="w-36 shrink-0 truncate rounded-md border border-gray-300 py-2 pr-8 pl-3 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
+				value={data.selectedCategoryId ? String(data.selectedCategoryId) : ''}
+				onValueChange={onCategoryChange}
 			>
-				<option value="">All categories</option>
-				{#each data.categories as cat (cat.id)}
-					<option value={String(cat.id)} selected={data.selectedCategoryId === cat.id}>
-						{cat.name}
-					</option>
-				{/each}
-			</select>
+				<SelectTrigger class="w-36 shrink-0">
+					<SelectValue placeholder="All categories" />
+				</SelectTrigger>
+				<SelectContent>
+					<SelectItem value="">All categories</SelectItem>
+					{#each data.categories as cat (cat.id)}
+						<SelectItem value={String(cat.id)}>{cat.name}</SelectItem>
+					{/each}
+				</SelectContent>
+			</Select>
 		{/if}
 	</form>
 
@@ -694,22 +697,22 @@
 	{:else if data.items.length === 0}
 		<div class="rounded-xl border border-dashed border-gray-300 p-12 text-center">
 			<p class="text-sm text-gray-400">No items found.</p>
-			<button
+			<Button
 				onclick={() => {
 					showForm = true;
 				}}
-				class="mt-3 inline-flex items-center gap-1 text-sm text-blue-600 hover:underline"
-				><Icon icon="mdi:plus" class="h-3.5 w-3.5" /> Add your first item</button
-			>
+				variant="link"
+				class="mt-3 gap-1"
+			><Icon icon="mdi:plus" class="h-3.5 w-3.5" /> Add your first item</Button>
 		</div>
 	{:else}
-		<div class="overflow-x-auto rounded-xl border border-gray-200 bg-white shadow-sm">
-			<table class="w-full text-sm">
-				<thead class="border-b border-gray-200 bg-gray-50">
-					<tr>
-						<th class="w-12 px-4 py-2.5"></th>
+		<Card class="shadow-sm">
+			<Table>
+				<TableHeader class="bg-gray-50">
+					<TableRow class="hover:bg-transparent">
+						<TableHead class="w-12 px-4 py-2.5"></TableHead>
 						{#each [['name', 'Name'], ['category', 'Category'], ['price', 'Price'], ['status', 'Status']] as const as [col, label] (col)}
-							<th class="px-4 py-2.5 text-left">
+							<TableHead class="px-4 py-2.5">
 								<button
 									onclick={() => sortBy(col)}
 									class="inline-flex items-center gap-1 font-medium text-gray-500 transition-colors hover:text-gray-800"
@@ -724,19 +727,19 @@
 										class="h-3.5 w-3.5 {sortCol === col ? 'text-gray-800' : 'text-gray-300'}"
 									/>
 								</button>
-							</th>
+							</TableHead>
 						{/each}
-						<th class="px-4 py-2.5"></th>
-					</tr>
-				</thead>
-				<tbody class="divide-y divide-gray-100">
+						<TableHead class="px-4 py-2.5"></TableHead>
+					</TableRow>
+				</TableHeader>
+				<TableBody>
 					{#each sortedItems as item (item.id)}
 						{@const primaryImage =
 							(item.images as { url: string; isPrimary?: boolean }[] | null)?.find(
 								(img) => img.isPrimary
 							) ?? (item.images as { url: string }[] | null)?.[0]}
-						<tr class="transition-colors hover:bg-gray-50">
-							<td class="px-4 py-3">
+						<TableRow>
+							<TableCell class="px-4 py-3">
 								{#if primaryImage}
 									<img
 										src={primaryImage.url}
@@ -748,8 +751,8 @@
 										<Icon icon="mdi:silverware-fork-knife" class="h-5 w-5 text-gray-300" />
 									</div>
 								{/if}
-							</td>
-							<td class="px-4 py-3">
+							</TableCell>
+							<TableCell class="px-4 py-3">
 								<a
 									href={resolve(`/dashboard/menu/items/${item.id}`)}
 									class="font-medium text-gray-900 hover:underline"
@@ -759,17 +762,17 @@
 								{#if item.description}
 									<p class="mt-0.5 line-clamp-1 text-xs text-gray-400">{item.description}</p>
 								{/if}
-							</td>
-							<td class="px-4 py-3 text-gray-500">{item.category?.name ?? '—'}</td>
-							<td class="px-4 py-3 text-gray-900">
+							</TableCell>
+							<TableCell class="px-4 py-3 text-gray-500">{item.category?.name ?? '—'}</TableCell>
+							<TableCell class="px-4 py-3 text-gray-900">
 								${(item.price / 100).toFixed(2)}
 								{#if item.discountedPrice}
 									<span class="ml-1 text-xs text-green-600"
 										>(sale ${(item.discountedPrice / 100).toFixed(2)})</span
 									>
 								{/if}
-							</td>
-							<td class="px-4 py-3">
+							</TableCell>
+							<TableCell class="px-4 py-3">
 								<form
 									method="post"
 									action="?/toggleAvailable"
@@ -795,8 +798,8 @@
 										{item.available ? 'Available' : "86'd"}
 									</button>
 								</form>
-							</td>
-							<td class="px-4 py-3">
+							</TableCell>
+							<TableCell class="px-4 py-3">
 								<div class="flex items-center gap-3">
 									<a
 										href={resolve(`/dashboard/menu/items/${item.id}`)}
@@ -805,24 +808,25 @@
 									>
 									<form method="post" action="?/delete" use:enhance>
 										<input type="hidden" name="id" value={item.id} />
-										<button
+										<Button
 											type="submit"
 											onclick={async (e) => {
 												e.preventDefault();
 												if (await confirmDialog('Delete this item?'))
 													(e.currentTarget as HTMLButtonElement).form?.requestSubmit();
 											}}
-											class="text-xs text-red-500 transition-colors hover:text-red-700"
-											>Delete</button
-										>
+											variant="ghost"
+											size="sm"
+											class="text-red-500 hover:text-red-700"
+										>Delete</Button>
 									</form>
 								</div>
-							</td>
-						</tr>
+							</TableCell>
+						</TableRow>
 					{/each}
-				</tbody>
-			</table>
-		</div>
+				</TableBody>
+			</Table>
+		</Card>
 
 		<!-- Pagination -->
 		{#if data.pagination.totalPages > 1}
@@ -850,321 +854,277 @@
 </div>
 
 <!-- ── Import modal ───────────────────────────────────────────── -->
-{#if showImport}
-	<!-- Backdrop -->
-	<div class="fixed inset-0 z-40 bg-black/40" role="presentation" onclick={closeImport}></div>
+<Dialog bind:open={showImport} onOpenChange={(open) => { if (!open) closeImport(); }}>
+	<DialogContent class="max-w-lg">
+		<DialogHeader>
+			<DialogTitle>Import menu items from CSV</DialogTitle>
+			<DialogDescription class="sr-only">Upload a CSV file to import menu items</DialogDescription>
+		</DialogHeader>
 
-	<!-- Panel -->
-	<div class="fixed inset-0 z-50 flex items-center justify-center p-4">
-		<div class="w-full max-w-lg rounded-2xl bg-white shadow-xl">
-			<div class="flex items-center justify-between border-b border-gray-100 px-6 py-4">
-				<h2 class="text-base font-semibold text-gray-900">Import menu items from CSV</h2>
-				<button onclick={closeImport} class="text-gray-400 transition-colors hover:text-gray-600"
-					><Icon icon="mdi:close" class="h-5 w-5" /></button
+		<div class="space-y-4">
+			{#if !importResult}
+				<!-- Instructions -->
+				<div
+					class="space-y-1.5 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-600"
 				>
-			</div>
+					<p class="font-medium text-gray-800">CSV format</p>
+					<p>
+						Required columns: <code class="rounded bg-gray-200 px-1 text-xs">name</code>,
+						<code class="rounded bg-gray-200 px-1 text-xs">price</code>
+					</p>
+					<p>
+						Optional: <code class="rounded bg-gray-200 px-1 text-xs">description</code>
+						<code class="rounded bg-gray-200 px-1 text-xs">category</code>
+						<code class="rounded bg-gray-200 px-1 text-xs">discounted_price</code>
+						<code class="rounded bg-gray-200 px-1 text-xs">tags</code>
+						<code class="rounded bg-gray-200 px-1 text-xs">available</code>
+					</p>
+					<p class="text-xs text-gray-400">
+						Separate multiple tags with <code class="rounded bg-gray-200 px-1">|</code>. Existing
+						items are updated by name. New categories are created automatically. Max 500 rows.
+					</p>
+				</div>
 
-			<div class="space-y-4 px-6 py-5">
-				{#if !importResult}
-					<!-- Instructions -->
-					<div
-						class="space-y-1.5 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-600"
-					>
-						<p class="font-medium text-gray-800">CSV format</p>
-						<p>
-							Required columns: <code class="rounded bg-gray-200 px-1 text-xs">name</code>,
-							<code class="rounded bg-gray-200 px-1 text-xs">price</code>
-						</p>
-						<p>
-							Optional: <code class="rounded bg-gray-200 px-1 text-xs">description</code>
-							<code class="rounded bg-gray-200 px-1 text-xs">category</code>
-							<code class="rounded bg-gray-200 px-1 text-xs">discounted_price</code>
-							<code class="rounded bg-gray-200 px-1 text-xs">tags</code>
-							<code class="rounded bg-gray-200 px-1 text-xs">available</code>
-						</p>
-						<p class="text-xs text-gray-400">
-							Separate multiple tags with <code class="rounded bg-gray-200 px-1">|</code>. Existing
-							items are updated by name. New categories are created automatically. Max 500 rows.
-						</p>
-					</div>
+				<Button onclick={downloadTemplate} variant="link" class="gap-0.5">
+					<Icon icon="mdi:download" class="mr-0.5 inline h-4 w-4" /> Download template CSV
+				</Button>
 
-					<button onclick={downloadTemplate} class="text-sm text-blue-600 hover:underline">
-						<Icon icon="mdi:download" class="mr-0.5 inline h-4 w-4" /> Download template CSV
-					</button>
-
-					<div>
-						<label class="mb-1.5 block text-sm font-medium text-gray-700" for="csv-file">
-							Select CSV file
-						</label>
-						<input
-							id="csv-file"
-							type="file"
-							accept=".csv"
-							onchange={onFileChange}
-							class="block w-full text-sm text-gray-600 file:mr-3 file:rounded-md file:border file:border-gray-300 file:bg-white file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-gray-700 file:transition-colors hover:file:bg-gray-50"
-						/>
-						{#if importFile}
-							<p class="mt-1.5 text-xs text-gray-400">
-								{importFile.name} · {(importFile.size / 1024).toFixed(1)} KB
-							</p>
-						{/if}
-					</div>
-
-					{#if importError}
-						<div class="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-							{importError}
-						</div>
-					{/if}
-
-					<div class="flex justify-end gap-2 pt-1">
-						<button
-							onclick={closeImport}
-							class="rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-600 transition-colors hover:border-gray-400 hover:bg-gray-100"
-						>
-							Cancel
-						</button>
-						<button
-							onclick={runImport}
-							disabled={!importFile || importing}
-							class="rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-gray-700 disabled:opacity-50"
-						>
-							{importing ? 'Importing…' : 'Import'}
-						</button>
-					</div>
-				{:else}
-					<!-- Results -->
-					<div class="flex items-center gap-4 rounded-lg border border-gray-200 px-4 py-3">
-						<div class="text-center">
-							<p class="text-2xl font-bold text-green-700">{importResult.created}</p>
-							<p class="mt-0.5 text-xs text-gray-500">Created</p>
-						</div>
-						<div class="h-8 w-px bg-gray-200"></div>
-						<div class="text-center">
-							<p class="text-2xl font-bold text-blue-700">{importResult.updated}</p>
-							<p class="mt-0.5 text-xs text-gray-500">Updated</p>
-						</div>
-						<div class="h-8 w-px bg-gray-200"></div>
-						<div class="text-center">
-							<p
-								class="text-2xl font-bold {importResult.skipped > 0
-									? 'text-red-600'
-									: 'text-gray-400'}"
-							>
-								{importResult.skipped}
-							</p>
-							<p class="mt-0.5 text-xs text-gray-500">Skipped</p>
-						</div>
-					</div>
-
-					{#if hasErrors}
-						<div class="max-h-52 overflow-y-auto rounded-lg border border-red-100 bg-red-50">
-							<table class="w-full text-xs">
-								<thead class="sticky top-0 bg-red-100">
-									<tr>
-										<th class="px-3 py-2 text-left font-medium text-red-700">Row</th>
-										<th class="px-3 py-2 text-left font-medium text-red-700">Name</th>
-										<th class="px-3 py-2 text-left font-medium text-red-700">Reason</th>
-									</tr>
-								</thead>
-								<tbody class="divide-y divide-red-100">
-									{#each importResult.results.filter((r) => r.status === 'skipped') as r (r.row)}
-										<tr>
-											<td class="px-3 py-2 text-red-600">{r.row}</td>
-											<td class="px-3 py-2 text-red-800">{r.name}</td>
-											<td class="px-3 py-2 text-red-600">{r.error}</td>
-										</tr>
-									{/each}
-								</tbody>
-							</table>
-						</div>
-					{/if}
-
-					<div class="flex justify-end">
-						<button
-							onclick={closeImport}
-							class="rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-gray-700"
-						>
-							Done
-						</button>
-					</div>
-				{/if}
-			</div>
-		</div>
-	</div>
-{/if}
-
-<!-- ── Stripe discover modal ─── -->
-{#if showDiscover}
-	<div class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-		<div
-			class="flex w-full max-w-2xl flex-col rounded-xl bg-white shadow-xl"
-			style="max-height: 90vh;"
-		>
-			<!-- Header -->
-			<div class="flex items-center justify-between border-b border-gray-200 px-5 py-4">
 				<div>
-					<h2 class="text-lg font-semibold text-gray-900">Discover Stripe Products</h2>
-					<p class="mt-0.5 text-xs text-gray-500">
-						Select products from your Stripe account to import as menu items.
-					</p>
+					<label class="mb-1.5 block text-sm font-medium text-gray-700" for="csv-file">
+						Select CSV file
+					</label>
+					<input
+						id="csv-file"
+						type="file"
+						accept=".csv"
+						onchange={onFileChange}
+						class="block w-full text-sm text-gray-600 file:mr-3 file:rounded-md file:border file:border-gray-300 file:bg-white file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-gray-700 file:transition-colors hover:file:bg-gray-50"
+					/>
+					{#if importFile}
+						<p class="mt-1.5 text-xs text-gray-400">
+							{importFile.name} · {(importFile.size / 1024).toFixed(1)} KB
+						</p>
+					{/if}
 				</div>
-				<button onclick={closeDiscover} class="text-gray-400 transition-colors hover:text-gray-600"
-					><Icon icon="mdi:close" class="h-5 w-5" /></button
-				>
-			</div>
 
-			<!-- Body -->
-			<div class="flex-1 overflow-y-auto px-5 py-4">
-				{#if discovering}
-					<div class="flex flex-col items-center justify-center py-12 text-gray-400">
-						<svg class="mb-3 h-6 w-6 animate-spin" fill="none" viewBox="0 0 24 24">
-							<circle
-								class="opacity-25"
-								cx="12"
-								cy="12"
-								r="10"
-								stroke="currentColor"
-								stroke-width="4"
-							></circle>
-							<path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
-						</svg>
-						<p class="text-sm">Loading products from Stripe…</p>
-					</div>
-				{:else if discoverError}
+				{#if importError}
 					<div class="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-						{discoverError}
+						{importError}
 					</div>
-				{:else if discoverResult}
-					<div
-						class="rounded-md border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700"
-					>
-						<p class="font-medium">Import complete</p>
-						<p class="mt-0.5">
-							{discoverResult.imported} item{discoverResult.imported !== 1 ? 's' : ''} imported{discoverResult.skipped >
-							0
-								? `, ${discoverResult.skipped} skipped (already exist)`
-								: ''}.
-						</p>
-					</div>
-				{:else if discoveredItems.length === 0}
-					<div class="py-10 text-center text-sm text-gray-500">
-						No active one-time products found in your Stripe account.
-					</div>
-				{:else}
-					<!-- Select-all toggle -->
-					<div class="mb-3 flex items-center justify-between">
-						<p class="text-sm text-gray-600">
-							{discoveredItems.length} product{discoveredItems.length !== 1 ? 's' : ''} found
-						</p>
-						<button
-							onclick={() => {
-								const unimported = discoveredItems
-									.filter((i) => !i.alreadyImported)
-									.map((i) => i.stripeProductId);
-								if (unimported.every((id) => selected.has(id))) {
-									const next = new SvelteSet(selected);
-									unimported.forEach((id) => next.delete(id));
-									selected = next;
-								} else {
-									const next = new SvelteSet(selected);
-									unimported.forEach((id) => next.add(id));
-									selected = next;
-								}
-							}}
-							class="text-xs text-gray-500 underline transition-colors hover:text-gray-800"
-						>
-							{discoveredItems
-								.filter((i) => !i.alreadyImported)
-								.every((i) => selected.has(i.stripeProductId))
-								? 'Deselect all'
-								: 'Select all'}
-						</button>
-					</div>
-
-					<!-- Product list -->
-					<ul class="divide-y divide-gray-100 rounded-lg border border-gray-200">
-						{#each discoveredItems as item (item.stripeProductId)}
-							<li
-								class="flex items-center gap-3 px-4 py-3 {item.alreadyImported ? 'opacity-60' : ''}"
-							>
-								<input
-									type="checkbox"
-									id="discover-{item.stripeProductId}"
-									checked={selected.has(item.stripeProductId)}
-									disabled={item.alreadyImported}
-									onchange={() => toggleSelected(item.stripeProductId)}
-									class="h-4 w-4 rounded border-gray-300 accent-gray-900"
-								/>
-								{#if item.imageUrl}
-									<img
-										src={item.imageUrl}
-										alt={item.name}
-										class="h-10 w-10 shrink-0 rounded object-cover"
-									/>
-								{:else}
-									<div
-										class="flex h-10 w-10 shrink-0 items-center justify-center rounded bg-gray-100"
-									>
-										<Icon icon="mdi:silverware-fork-knife" class="h-5 w-5 text-gray-400" />
-									</div>
-								{/if}
-								<label for="discover-{item.stripeProductId}" class="min-w-0 flex-1 cursor-pointer">
-									<p class="truncate text-sm font-medium text-gray-900">{item.name}</p>
-									{#if item.description}
-										<p class="truncate text-xs text-gray-500">{item.description}</p>
-									{/if}
-								</label>
-								<div class="flex shrink-0 flex-col items-end gap-1">
-									<span class="text-sm font-semibold text-gray-800"
-										>${(item.price / 100).toFixed(2)}</span
-									>
-									{#if item.alreadyImported}
-										<span
-											class="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-500"
-											>Already imported</span
-										>
-									{/if}
-								</div>
-							</li>
-						{/each}
-					</ul>
 				{/if}
-			</div>
 
-			<!-- Footer -->
-			{#if !discovering && !discoverResult}
-				<div class="flex items-center justify-between border-t border-gray-200 px-5 py-4">
-					<p class="text-xs text-gray-500">
-						{selected.size} item{selected.size !== 1 ? 's' : ''} selected
-					</p>
-					<div class="flex gap-2">
-						<button
-							onclick={closeDiscover}
-							class="rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-600 transition-colors hover:border-gray-400 hover:bg-gray-100"
+				<DialogFooter class="flex gap-2 sm:flex-row">
+					<Button onclick={closeImport} variant="outline">Cancel</Button>
+					<Button onclick={runImport} disabled={!importFile || importing} variant="default">
+						{importing ? 'Importing…' : 'Import'}
+					</Button>
+				</DialogFooter>
+			{:else}
+				<!-- Results -->
+				<div class="flex items-center gap-4 rounded-lg border border-gray-200 px-4 py-3">
+					<div class="text-center">
+						<p class="text-2xl font-bold text-green-700">{importResult.created}</p>
+						<p class="mt-0.5 text-xs text-gray-500">Created</p>
+					</div>
+					<div class="h-8 w-px bg-gray-200"></div>
+					<div class="text-center">
+						<p class="text-2xl font-bold text-blue-700">{importResult.updated}</p>
+						<p class="mt-0.5 text-xs text-gray-500">Updated</p>
+					</div>
+					<div class="h-8 w-px bg-gray-200"></div>
+					<div class="text-center">
+						<p
+							class="text-2xl font-bold {importResult.skipped > 0
+								? 'text-red-600'
+								: 'text-gray-400'}"
 						>
-							Cancel
-						</button>
-						<button
-							onclick={importSelected}
-							disabled={selected.size === 0 || importing2}
-							class="rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-gray-700 disabled:cursor-not-allowed disabled:opacity-50"
-						>
-							{importing2
-								? 'Importing…'
-								: `Import ${selected.size > 0 ? selected.size : ''} item${selected.size !== 1 ? 's' : ''}`}
-						</button>
+							{importResult.skipped}
+						</p>
+						<p class="mt-0.5 text-xs text-gray-500">Skipped</p>
 					</div>
 				</div>
-			{:else if discoverResult}
-				<div class="flex justify-end border-t border-gray-200 px-5 py-4">
-					<button
-						onclick={closeDiscover}
-						class="rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-gray-700"
-					>
-						Done
-					</button>
-				</div>
+
+				{#if hasErrors}
+					<div class="max-h-52 overflow-y-auto rounded-lg border border-red-100 bg-red-50">
+						<table class="w-full text-xs">
+							<thead class="sticky top-0 bg-red-100">
+								<tr>
+									<th class="px-3 py-2 text-left font-medium text-red-700">Row</th>
+									<th class="px-3 py-2 text-left font-medium text-red-700">Name</th>
+									<th class="px-3 py-2 text-left font-medium text-red-700">Reason</th>
+								</tr>
+							</thead>
+							<tbody class="divide-y divide-red-100">
+								{#each importResult.results.filter((r) => r.status === 'skipped') as r (r.row)}
+									<tr>
+										<td class="px-3 py-2 text-red-600">{r.row}</td>
+										<td class="px-3 py-2 text-red-800">{r.name}</td>
+										<td class="px-3 py-2 text-red-600">{r.error}</td>
+									</tr>
+								{/each}
+							</tbody>
+						</table>
+					</div>
+				{/if}
+
+				<DialogFooter>
+					<Button onclick={closeImport} variant="default">Done</Button>
+				</DialogFooter>
 			{/if}
 		</div>
-	</div>
-{/if}
+	</DialogContent>
+</Dialog>
+
+<!-- ── Stripe discover modal ─── -->
+<Dialog bind:open={showDiscover} onOpenChange={(open) => { if (!open) closeDiscover(); }}>
+	<DialogContent class="flex max-w-2xl flex-col" style="max-height: 90vh;">
+		<DialogHeader>
+			<DialogTitle>Discover Stripe Products</DialogTitle>
+			<DialogDescription>
+				Select products from your Stripe account to import as menu items.
+			</DialogDescription>
+		</DialogHeader>
+
+		<!-- Body -->
+		<div class="flex-1 overflow-y-auto">
+			{#if discovering}
+				<div class="flex flex-col items-center justify-center py-12 text-gray-400">
+					<svg class="mb-3 h-6 w-6 animate-spin" fill="none" viewBox="0 0 24 24">
+						<circle
+							class="opacity-25"
+							cx="12"
+							cy="12"
+							r="10"
+							stroke="currentColor"
+							stroke-width="4"
+						></circle>
+						<path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+					</svg>
+					<p class="text-sm">Loading products from Stripe…</p>
+				</div>
+			{:else if discoverError}
+				<div class="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+					{discoverError}
+				</div>
+			{:else if discoverResult}
+				<div
+					class="rounded-md border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700"
+				>
+					<p class="font-medium">Import complete</p>
+					<p class="mt-0.5">
+						{discoverResult.imported} item{discoverResult.imported !== 1 ? 's' : ''} imported{discoverResult.skipped >
+						0
+							? `, ${discoverResult.skipped} skipped (already exist)`
+							: ''}.
+					</p>
+				</div>
+			{:else if discoveredItems.length === 0}
+				<div class="py-10 text-center text-sm text-gray-500">
+					No active one-time products found in your Stripe account.
+				</div>
+			{:else}
+				<!-- Select-all toggle -->
+				<div class="mb-3 flex items-center justify-between">
+					<p class="text-sm text-gray-600">
+						{discoveredItems.length} product{discoveredItems.length !== 1 ? 's' : ''} found
+					</p>
+					<Button
+						onclick={() => {
+							const unimported = discoveredItems
+								.filter((i) => !i.alreadyImported)
+								.map((i) => i.stripeProductId);
+							if (unimported.every((id) => selected.has(id))) {
+								const next = new SvelteSet(selected);
+								unimported.forEach((id) => next.delete(id));
+								selected = next;
+							} else {
+								const next = new SvelteSet(selected);
+								unimported.forEach((id) => next.add(id));
+								selected = next;
+							}
+						}}
+						variant="ghost"
+						size="sm"
+						class="h-auto p-0 text-xs text-gray-500 underline hover:text-gray-800"
+					>
+						{discoveredItems
+							.filter((i) => !i.alreadyImported)
+							.every((i) => selected.has(i.stripeProductId))
+							? 'Deselect all'
+							: 'Select all'}
+					</Button>
+				</div>
+
+				<!-- Product list -->
+				<ul class="divide-y divide-gray-100 rounded-lg border border-gray-200">
+					{#each discoveredItems as item (item.stripeProductId)}
+						<li
+							class="flex items-center gap-3 px-4 py-3 {item.alreadyImported ? 'opacity-60' : ''}"
+						>
+							<input
+								type="checkbox"
+								id="discover-{item.stripeProductId}"
+								checked={selected.has(item.stripeProductId)}
+								disabled={item.alreadyImported}
+								onchange={() => toggleSelected(item.stripeProductId)}
+								class="h-4 w-4 rounded border-gray-300 accent-gray-900"
+							/>
+							{#if item.imageUrl}
+								<img
+									src={item.imageUrl}
+									alt={item.name}
+									class="h-10 w-10 shrink-0 rounded object-cover"
+								/>
+							{:else}
+								<div
+									class="flex h-10 w-10 shrink-0 items-center justify-center rounded bg-gray-100"
+								>
+									<Icon icon="mdi:silverware-fork-knife" class="h-5 w-5 text-gray-400" />
+								</div>
+							{/if}
+							<label for="discover-{item.stripeProductId}" class="min-w-0 flex-1 cursor-pointer">
+								<p class="truncate text-sm font-medium text-gray-900">{item.name}</p>
+								{#if item.description}
+									<p class="truncate text-xs text-gray-500">{item.description}</p>
+								{/if}
+							</label>
+							<div class="flex shrink-0 flex-col items-end gap-1">
+								<span class="text-sm font-semibold text-gray-800"
+									>${(item.price / 100).toFixed(2)}</span
+								>
+								{#if item.alreadyImported}
+									<Badge class="bg-gray-100 text-gray-500">Already imported</Badge>
+								{/if}
+							</div>
+						</li>
+					{/each}
+				</ul>
+			{/if}
+		</div>
+
+		<!-- Footer -->
+		{#if !discovering && !discoverResult}
+			<DialogFooter class="flex items-center justify-between sm:justify-between">
+				<p class="text-xs text-gray-500">
+					{selected.size} item{selected.size !== 1 ? 's' : ''} selected
+				</p>
+				<div class="flex gap-2">
+					<Button onclick={closeDiscover} variant="outline">Cancel</Button>
+					<Button
+						onclick={importSelected}
+						disabled={selected.size === 0 || importing2}
+						variant="default"
+					>
+						{importing2
+							? 'Importing…'
+							: `Import ${selected.size > 0 ? selected.size : ''} item${selected.size !== 1 ? 's' : ''}`}
+					</Button>
+				</div>
+			</DialogFooter>
+		{:else if discoverResult}
+			<DialogFooter>
+				<Button onclick={closeDiscover} variant="default">Done</Button>
+			</DialogFooter>
+		{/if}
+	</DialogContent>
+</Dialog>

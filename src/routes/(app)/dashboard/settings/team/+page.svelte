@@ -4,6 +4,14 @@
 	import type { PageData, ActionData } from './$types';
 	import Icon from '@iconify/svelte';
 	import { resolve } from '$app/paths';
+	import { Button } from '$lib/components/ui/button';
+	import { Badge } from '$lib/components/ui/badge';
+	import { Input } from '$lib/components/ui/input';
+	import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '$lib/components/ui/select';
+	import { Card } from '$lib/components/ui/card';
+	import { Tabs, TabsList, TabsTrigger, TabsContent } from '$lib/components/ui/tabs';
+	import { Table, TableHeader, TableHead, TableBody, TableRow, TableCell } from '$lib/components/ui/table';
+
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
@@ -51,37 +59,21 @@
 		<p class="mt-0.5 text-sm text-gray-500">Manage who has access to this tenant.</p>
 	</div>
 
-	<!-- Tabs -->
-	<div class="mb-6 flex gap-1 border-b border-gray-200">
-		<button
-			onclick={() => (tab = 'members')}
-			class="-mb-px border-b-2 px-4 py-2 text-sm font-medium transition-colors
-				{tab === 'members'
-				? 'border-gray-900 text-gray-900'
-				: 'border-transparent text-gray-500 hover:text-gray-700'}"
-		>
-			Members
-		</button>
-		{#if data.canManageInternal}
-			<button
-				onclick={() => (tab = 'internal')}
-				class="-mb-px border-b-2 px-4 py-2 text-sm font-medium transition-colors
-					{tab === 'internal'
-					? 'border-gray-900 text-gray-900'
-					: 'border-transparent text-gray-500 hover:text-gray-700'}"
-			>
-				Internal users
-				{#if data.internalUsers.length > 0}
-					<span class="ml-1.5 rounded-full bg-gray-100 px-1.5 py-0.5 text-xs text-gray-500">
-						{data.internalUsers.length}
-					</span>
-				{/if}
-			</button>
-		{/if}
-	</div>
+	<Tabs bind:value={tab}>
+		<TabsList variant="line" class="mb-6 w-full justify-start border-b border-gray-200">
+			<TabsTrigger value="members">Members</TabsTrigger>
+			{#if data.canManageInternal}
+				<TabsTrigger value="internal">
+					Internal users
+					{#if data.internalUsers.length > 0}
+						<Badge class="ml-1.5 bg-gray-100 text-gray-500">{data.internalUsers.length}</Badge>
+					{/if}
+				</TabsTrigger>
+			{/if}
+		</TabsList>
 
 	<!-- ── MEMBERS TAB ── -->
-	{#if tab === 'members'}
+	<TabsContent value="members">
 		{#if form?.addError}
 			<div class="mb-4 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
 				{form.addError}
@@ -108,26 +100,26 @@
 		{#if data.currentRole === 'owner' || data.currentRole === 'manager'}
 			<div class="mb-5 flex gap-2">
 				{#if !showAddForm}
-					<button
+					<Button
 						onclick={() => {
 							showAddForm = true;
 							showInviteForm = false;
 						}}
-						class="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:border-gray-400 hover:bg-gray-100"
+						variant="outline"
 					>
 						+ Add existing member
-					</button>
+					</Button>
 				{/if}
 				{#if !showInviteForm}
-					<button
+					<Button
 						onclick={() => {
 							showInviteForm = true;
 							showAddForm = false;
 						}}
-						class="rounded-md border border-blue-300 bg-blue-50 px-4 py-2 text-sm text-blue-700 transition-colors hover:bg-blue-100"
+						variant="outline"
 					>
 						+ Invite by link
-					</button>
+					</Button>
 				{/if}
 			</div>
 
@@ -144,36 +136,29 @@
 				>
 					<h2 class="mb-3 text-sm font-semibold text-gray-800">Add member by email</h2>
 					<div class="flex flex-wrap gap-2">
-						<input
+						<Input
 							name="email"
 							type="email"
 							required
 							placeholder="user@example.com"
-							class="min-w-48 flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
+							class="min-w-48 flex-1"
 						/>
-						<select
-							name="role"
-							class="rounded-md border border-gray-300 px-3 py-2 pr-8 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
-						>
-							{#each data.roles as role (role)}
-								{#if role !== 'owner' || data.currentRole === 'owner'}
-									<option value={role}>{roleLabels[role]}</option>
-								{/if}
-							{/each}
-						</select>
-						<button
-							type="submit"
-							class="rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-gray-700"
-						>
-							Add
-						</button>
-						<button
-							type="button"
-							onclick={() => (showAddForm = false)}
-							class="rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-600 transition-colors hover:border-gray-400 hover:bg-gray-100"
-						>
+						<Select type="single" name="role">
+							<SelectTrigger class="w-auto">
+								<SelectValue placeholder="Role" />
+							</SelectTrigger>
+							<SelectContent>
+								{#each data.roles as role (role)}
+									{#if role !== 'owner' || data.currentRole === 'owner'}
+										<SelectItem value={role}>{roleLabels[role]}</SelectItem>
+									{/if}
+								{/each}
+							</SelectContent>
+						</Select>
+						<Button type="submit" variant="default">Add</Button>
+						<Button type="button" onclick={() => (showAddForm = false)} variant="outline">
 							Cancel
-						</button>
+						</Button>
 					</div>
 					<p class="mt-2 text-xs text-gray-400">
 						The user must already have an account. They'll have access on their next login.
@@ -197,36 +182,29 @@
 						Generate a 7-day invite link — works even if they don't have an account yet.
 					</p>
 					<div class="flex flex-wrap gap-2">
-						<input
+						<Input
 							name="email"
 							type="email"
 							required
 							placeholder="user@example.com"
-							class="min-w-48 flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
+							class="min-w-48 flex-1"
 						/>
-						<select
-							name="role"
-							class="rounded-md border border-gray-300 px-3 py-2 pr-8 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
-						>
-							{#each data.roles as role (role)}
-								{#if role !== 'owner' || data.currentRole === 'owner'}
-									<option value={role}>{roleLabels[role]}</option>
-								{/if}
-							{/each}
-						</select>
-						<button
-							type="submit"
-							class="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700"
-						>
-							Generate link
-						</button>
-						<button
-							type="button"
-							onclick={() => (showInviteForm = false)}
-							class="rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-600 transition-colors hover:border-gray-400 hover:bg-gray-100"
-						>
+						<Select type="single" name="role">
+							<SelectTrigger class="w-auto">
+								<SelectValue placeholder="Role" />
+							</SelectTrigger>
+							<SelectContent>
+								{#each data.roles as role (role)}
+									{#if role !== 'owner' || data.currentRole === 'owner'}
+										<SelectItem value={role}>{roleLabels[role]}</SelectItem>
+									{/if}
+								{/each}
+							</SelectContent>
+						</Select>
+						<Button type="submit" variant="default">Generate link</Button>
+						<Button type="button" onclick={() => (showInviteForm = false)} variant="outline">
 							Cancel
-						</button>
+						</Button>
 					</div>
 				</form>
 			{/if}
@@ -239,55 +217,51 @@
 					</p>
 					<p class="mb-2 text-xs text-gray-500">Share this link with them — expires in 7 days.</p>
 					<div class="flex items-center gap-2">
-						<input
+						<Input
 							type="text"
 							readonly
 							value={inviteUrl}
-							class="flex-1 rounded-md border border-green-300 bg-white px-3 py-2 text-xs text-gray-700 focus:outline-none"
+							class="flex-1 text-xs"
 						/>
-						<button
+						<Button
 							type="button"
 							onclick={() => copyLink(inviteUrl!, 'new')}
-							class="shrink-0 rounded-md border border-green-300 bg-white px-3 py-2 text-xs text-green-700 transition-colors hover:bg-green-100"
+							variant="outline"
+							size="sm"
 						>
 							{copiedToken === 'new' ? 'Copied!' : 'Copy'}
-						</button>
+						</Button>
 					</div>
 				</div>
 			{/if}
 		{/if}
 
-		<div class="overflow-x-auto rounded-xl border border-gray-200 bg-white shadow-sm">
-			<table class="w-full text-sm">
-				<thead class="border-b border-gray-200 bg-gray-50">
-					<tr>
-						<th class="px-4 py-2.5 text-left font-medium text-gray-500">User</th>
-						<th class="px-4 py-2.5 text-left font-medium text-gray-500">Role</th>
-						<th class="hidden px-4 py-2.5 text-left font-medium text-gray-500 sm:table-cell"
-							>Added</th
-						>
-						<th class="px-4 py-2.5"></th>
-					</tr>
-				</thead>
-				<tbody class="divide-y divide-gray-100">
+		<Card class="shadow-sm">
+			<Table>
+				<TableHeader class="bg-gray-50">
+					<TableRow class="hover:bg-transparent">
+						<TableHead class="px-4 py-2.5 text-gray-500">User</TableHead>
+						<TableHead class="px-4 py-2.5 text-gray-500">Role</TableHead>
+						<TableHead class="hidden px-4 py-2.5 text-gray-500 sm:table-cell">Added</TableHead>
+						<TableHead class="px-4 py-2.5"></TableHead>
+					</TableRow>
+				</TableHeader>
+				<TableBody>
 					{#each data.members as member (member.userId)}
-						<tr class="transition-colors hover:bg-gray-50">
-							<td class="px-4 py-3">
+						<TableRow>
+							<TableCell class="px-4 py-3">
 								<p class="font-medium text-gray-900">
 									{member.name}
 									{#if member.userId === data.currentUserId}
 										<span class="ml-1 text-xs text-gray-400">(you)</span>
 									{/if}
 									{#if member.isInternal}
-										<span
-											class="ml-1 rounded-full bg-indigo-100 px-1.5 py-0.5 text-xs font-medium text-indigo-600"
-											>internal</span
-										>
+										<Badge class="ml-1 bg-indigo-100 text-indigo-600">internal</Badge>
 									{/if}
 								</p>
 								<p class="text-xs text-gray-400">{member.email}</p>
-							</td>
-							<td class="px-4 py-3">
+							</TableCell>
+							<TableCell class="px-4 py-3">
 								{#if (data.currentRole === 'owner' || data.currentRole === 'manager') && member.userId !== data.currentUserId}
 									<form method="post" action="?/changeRole" use:enhance>
 										<input type="hidden" name="userId" value={member.userId} />
@@ -306,29 +280,26 @@
 										</select>
 									</form>
 								{:else}
-									<span
-										class="rounded-full px-2 py-0.5 text-xs font-medium {roleColors[member.role] ??
-											'bg-gray-100 text-gray-600'}"
-									>
+									<Badge class={roleColors[member.role] ?? 'bg-gray-100 text-gray-600'}>
 										{roleLabels[member.role] ?? member.role}
-									</span>
+									</Badge>
 								{/if}
-							</td>
-							<td class="hidden px-4 py-3 text-xs text-gray-400 sm:table-cell">
+							</TableCell>
+							<TableCell class="hidden px-4 py-3 text-xs text-gray-400 sm:table-cell">
 								{new Date(member.assignedAt).toLocaleDateString([], {
 									month: 'short',
 									day: 'numeric',
 									year: 'numeric'
 								})}
-							</td>
-							<td class="px-4 py-3 text-right">
+							</TableCell>
+							<TableCell class="px-4 py-3 text-right">
 								{#if member.userId !== data.currentUserId && (data.currentRole === 'owner' || data.currentRole === 'manager')}
 									<div class="flex items-center justify-end gap-3">
 										{#if data.canManageInternal && !member.isInternal}
 											<form method="post" action="?/toggleInternal" use:enhance>
 												<input type="hidden" name="userId" value={member.userId} />
 												<input type="hidden" name="isInternal" value="false" />
-												<button
+												<Button
 													type="submit"
 													onclick={async (e) => {
 														e.preventDefault();
@@ -340,114 +311,113 @@
 														)
 															(e.currentTarget as HTMLButtonElement).form?.requestSubmit();
 													}}
-													class="hidden text-xs text-indigo-500 transition-colors hover:text-indigo-700 sm:inline"
+													variant="ghost"
+													size="sm"
+													class="hidden text-indigo-500 hover:text-indigo-700 sm:inline-flex"
 												>
 													Make internal
-												</button>
+												</Button>
 											</form>
 										{/if}
 										<form method="post" action="?/removeMember" use:enhance>
 											<input type="hidden" name="userId" value={member.userId} />
-											<button
+											<Button
 												type="submit"
 												onclick={async (e) => {
 													e.preventDefault();
 													if (await confirmDialog(`Remove ${member.name} from this tenant?`))
 														(e.currentTarget as HTMLButtonElement).form?.requestSubmit();
 												}}
-												class="text-xs text-red-500 transition-colors hover:text-red-700"
+												variant="ghost"
+												size="sm"
+												class="text-red-500 hover:text-red-700"
 											>
 												Remove
-											</button>
+											</Button>
 										</form>
 									</div>
 								{/if}
-							</td>
-						</tr>
+							</TableCell>
+						</TableRow>
 					{/each}
-				</tbody>
-			</table>
-		</div>
+				</TableBody>
+			</Table>
+		</Card>
 
 		<!-- Pending invitations -->
 		{#if data.pendingInvitations.length > 0}
 			<div class="mt-6">
-				<h2 class="mb-3 text-sm font-semibold text-gray-700">
+				<h2 class="mb-3 flex items-center gap-1.5 text-sm font-semibold text-gray-700">
 					Pending invitations
-					<span
-						class="ml-1.5 rounded-full bg-yellow-100 px-1.5 py-0.5 text-xs font-medium text-yellow-700"
-					>
-						{data.pendingInvitations.length}
-					</span>
+					<Badge class="bg-yellow-100 text-yellow-700">{data.pendingInvitations.length}</Badge>
 				</h2>
-				<div class="overflow-x-auto rounded-xl border border-gray-200 bg-white shadow-sm">
-					<table class="w-full text-sm">
-						<thead class="border-b border-gray-200 bg-gray-50">
-							<tr>
-								<th class="px-4 py-2.5 text-left font-medium text-gray-500">Email</th>
-								<th class="px-4 py-2.5 text-left font-medium text-gray-500">Role</th>
-								<th class="hidden px-4 py-2.5 text-left font-medium text-gray-500 sm:table-cell"
-									>Expires</th
-								>
-								<th class="px-4 py-2.5"></th>
-							</tr>
-						</thead>
-						<tbody class="divide-y divide-gray-100">
+			<Card class="shadow-sm mt-3">
+					<Table>
+						<TableHeader class="bg-gray-50">
+							<TableRow class="hover:bg-transparent">
+								<TableHead class="px-4 py-2.5 text-gray-500">Email</TableHead>
+								<TableHead class="px-4 py-2.5 text-gray-500">Role</TableHead>
+								<TableHead class="hidden px-4 py-2.5 text-gray-500 sm:table-cell">Expires</TableHead>
+								<TableHead class="px-4 py-2.5"></TableHead>
+							</TableRow>
+						</TableHeader>
+						<TableBody>
 							{#each data.pendingInvitations as invite (invite.id)}
-								<tr class="transition-colors hover:bg-gray-50">
-									<td class="max-w-40 min-w-0 truncate px-4 py-3 text-gray-700">{invite.email}</td>
-									<td class="px-4 py-3">
-										<span
-											class="rounded-full px-2 py-0.5 text-xs font-medium {roleColors[
-												invite.role
-											] ?? 'bg-gray-100 text-gray-600'}"
-										>
+								<TableRow>
+									<TableCell class="max-w-40 min-w-0 truncate px-4 py-3 text-gray-700">{invite.email}</TableCell>
+									<TableCell class="px-4 py-3">
+										<Badge class={roleColors[invite.role] ?? 'bg-gray-100 text-gray-600'}>
 											{roleLabels[invite.role] ?? invite.role}
-										</span>
-									</td>
-									<td class="hidden px-4 py-3 text-xs text-gray-400 sm:table-cell">
+										</Badge>
+									</TableCell>
+									<TableCell class="hidden px-4 py-3 text-xs text-gray-400 sm:table-cell">
 										{new Date(invite.expiresAt).toLocaleDateString([], {
 											month: 'short',
 											day: 'numeric',
 											year: 'numeric'
 										})}
-									</td>
-									<td class="px-4 py-3 text-right">
+									</TableCell>
+									<TableCell class="px-4 py-3 text-right">
 										<div class="flex items-center justify-end gap-3">
-											<button
+											<Button
 												type="button"
 												onclick={() => copyLink(`${data.origin}/invite/${invite.id}`, invite.id)}
-												class="text-xs text-blue-500 transition-colors hover:text-blue-700"
+												variant="ghost"
+												size="sm"
+												class="text-blue-500 hover:text-blue-700"
 											>
 												{copiedToken === invite.id ? 'Copied!' : 'Copy link'}
-											</button>
+											</Button>
 											<form method="post" action="?/cancelInvite" use:enhance>
 												<input type="hidden" name="id" value={invite.id} />
-												<button
+												<Button
 													type="submit"
 													onclick={async (e) => {
 														e.preventDefault();
 														if (await confirmDialog(`Cancel invite for ${invite.email}?`))
 															(e.currentTarget as HTMLButtonElement).form?.requestSubmit();
 													}}
-													class="text-xs text-red-500 transition-colors hover:text-red-700"
+													variant="ghost"
+													size="sm"
+													class="text-red-500 hover:text-red-700"
 												>
 													Cancel
-												</button>
+												</Button>
 											</form>
 										</div>
-									</td>
-								</tr>
+									</TableCell>
+								</TableRow>
 							{/each}
-						</tbody>
-					</table>
-				</div>
+						</TableBody>
+					</Table>
+				</Card>
 			</div>
 		{/if}
-	{/if}
+	</TabsContent>
 
 	<!-- ── INTERNAL TAB ── -->
-	{#if tab === 'internal' && data.canManageInternal}
+	{#if data.canManageInternal}
+	<TabsContent value="internal">
 		<div
 			class="mb-5 rounded-md border border-indigo-200 bg-indigo-50 px-4 py-3 text-sm text-indigo-700"
 		>
@@ -463,53 +433,53 @@
 				</p>
 			</div>
 		{:else}
-			<div class="mb-6 overflow-x-auto rounded-xl border border-gray-200 bg-white shadow-sm">
-				<table class="w-full text-sm">
-					<thead class="border-b border-gray-200 bg-gray-50">
-						<tr>
-							<th class="px-4 py-2.5 text-left font-medium text-gray-500">User</th>
-							<th class="hidden px-4 py-2.5 text-left font-medium text-gray-500 sm:table-cell"
-								>Account created</th
-							>
-							<th class="px-4 py-2.5"></th>
-						</tr>
-					</thead>
-					<tbody class="divide-y divide-gray-100">
+			<Card class="mb-6 shadow-sm">
+				<Table>
+					<TableHeader class="bg-gray-50">
+						<TableRow class="hover:bg-transparent">
+							<TableHead class="px-4 py-2.5 text-gray-500">User</TableHead>
+							<TableHead class="hidden px-4 py-2.5 text-gray-500 sm:table-cell">Account created</TableHead>
+							<TableHead class="px-4 py-2.5"></TableHead>
+						</TableRow>
+					</TableHeader>
+					<TableBody>
 						{#each data.internalUsers as u (u.id)}
-							<tr class="transition-colors hover:bg-gray-50">
-								<td class="px-4 py-3">
+							<TableRow>
+								<TableCell class="px-4 py-3">
 									<p class="font-medium text-gray-900">{u.name}</p>
 									<p class="text-xs text-gray-400">{u.email}</p>
-								</td>
-								<td class="hidden px-4 py-3 text-xs text-gray-400 sm:table-cell">
+								</TableCell>
+								<TableCell class="hidden px-4 py-3 text-xs text-gray-400 sm:table-cell">
 									{new Date(u.createdAt).toLocaleDateString([], {
 										month: 'short',
 										day: 'numeric',
 										year: 'numeric'
 									})}
-								</td>
-								<td class="px-4 py-3 text-right">
+								</TableCell>
+								<TableCell class="px-4 py-3 text-right">
 									<form method="post" action="?/toggleInternal" use:enhance>
 										<input type="hidden" name="userId" value={u.id} />
 										<input type="hidden" name="isInternal" value="true" />
-										<button
+										<Button
 											type="submit"
 											onclick={async (e) => {
 												e.preventDefault();
 												if (await confirmDialog(`Revoke internal access for ${u.name}?`))
 													(e.currentTarget as HTMLButtonElement).form?.requestSubmit();
 											}}
-											class="text-xs text-red-500 transition-colors hover:text-red-700"
+											variant="ghost"
+											size="sm"
+											class="text-red-500 hover:text-red-700"
 										>
 											Revoke internal
-										</button>
+										</Button>
 									</form>
-								</td>
-							</tr>
+								</TableCell>
+							</TableRow>
 						{/each}
-					</tbody>
-				</table>
-			</div>
+					</TableBody>
+				</Table>
+			</Card>
 		{/if}
 
 		<!-- Quick promote from current tenant members -->
@@ -518,20 +488,20 @@
 				<h2 class="mb-3 text-sm font-semibold text-gray-700">
 					Promote a current member to internal
 				</h2>
-				<div class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
-					<table class="w-full text-sm">
-						<tbody class="divide-y divide-gray-100">
+				<Card class="shadow-sm">
+					<Table>
+						<TableBody>
 							{#each nonInternalMembers as member (member.userId)}
-								<tr class="transition-colors hover:bg-gray-50">
-									<td class="px-4 py-3">
+								<TableRow>
+									<TableCell class="px-4 py-3">
 										<p class="font-medium text-gray-900">{member.name}</p>
 										<p class="text-xs text-gray-400">{member.email}</p>
-									</td>
-									<td class="px-4 py-3 text-right">
+									</TableCell>
+									<TableCell class="px-4 py-3 text-right">
 										<form method="post" action="?/toggleInternal" use:enhance>
 											<input type="hidden" name="userId" value={member.userId} />
 											<input type="hidden" name="isInternal" value="false" />
-											<button
+											<Button
 												type="submit"
 												onclick={async (e) => {
 													e.preventDefault();
@@ -543,18 +513,23 @@
 													)
 														(e.currentTarget as HTMLButtonElement).form?.requestSubmit();
 												}}
-												class="rounded-md border border-indigo-300 px-3 py-1 text-xs text-indigo-600 transition-colors hover:bg-indigo-50"
+												variant="outline"
+												size="sm"
+												class="border-indigo-300 text-indigo-600 hover:bg-indigo-50"
 											>
 												Make internal
-											</button>
+											</Button>
 										</form>
-									</td>
-								</tr>
+									</TableCell>
+								</TableRow>
 							{/each}
-						</tbody>
-					</table>
-				</div>
+						</TableBody>
+					</Table>
+				</Card>
 			</div>
 		{/if}
+	</TabsContent>
 	{/if}
+
+	</Tabs>
 </div>

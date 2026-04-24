@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { PageData } from './$types';
 	import Icon from '@iconify/svelte';
+	import { Card } from '$lib/components/ui/card';
 
 	let { data }: { data: PageData } = $props();
 
@@ -65,7 +66,7 @@
 	<!-- ── KPI cards ────────────────────────────────────────────── -->
 	<div class="mb-8 grid grid-cols-2 gap-4 lg:grid-cols-4">
 		<!-- Revenue 30d -->
-		<div class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+		<Card class="p-5 shadow-sm">
 			<p class="text-xs font-medium tracking-wide text-gray-500 uppercase">Revenue (30d)</p>
 			<p class="mt-1.5 text-3xl font-bold text-gray-900">{fmt(kpis.revenue30)}</p>
 			{#if kpis.revenueChange !== null}
@@ -75,10 +76,10 @@
 			{:else}
 				<p class="mt-1 text-xs text-gray-400">No prior data</p>
 			{/if}
-		</div>
+		</Card>
 
 		<!-- Orders 30d -->
-		<div class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+		<Card class="p-5 shadow-sm">
 			<p class="text-xs font-medium tracking-wide text-gray-500 uppercase">Orders (30d)</p>
 			<p class="mt-1.5 text-3xl font-bold text-gray-900">{kpis.orders30}</p>
 			{#if kpis.ordersChange !== null}
@@ -88,10 +89,10 @@
 			{:else}
 				<p class="mt-1 text-xs text-gray-400">No prior data</p>
 			{/if}
-		</div>
+		</Card>
 
 		<!-- Avg order value -->
-		<div class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+		<Card class="p-5 shadow-sm">
 			<p class="text-xs font-medium tracking-wide text-gray-500 uppercase">Avg Order</p>
 			<p class="mt-1.5 text-3xl font-bold text-gray-900">{fmt(kpis.avgOrderValue)}</p>
 			{#if kpis.avgChange !== null}
@@ -101,18 +102,18 @@
 			{:else}
 				<p class="mt-1 text-xs text-gray-400">No prior data</p>
 			{/if}
-		</div>
+		</Card>
 
 		<!-- Revenue last 7d -->
-		<div class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+		<Card class="p-5 shadow-sm">
 			<p class="text-xs font-medium tracking-wide text-gray-500 uppercase">Revenue (7d)</p>
 			<p class="mt-1.5 text-3xl font-bold text-gray-900">{fmt(kpis.revenue7)}</p>
 			<p class="mt-1 text-xs text-gray-400">Last 7 days</p>
-		</div>
+		</Card>
 	</div>
 
 	<!-- ── Daily revenue chart ──────────────────────────────────── -->
-	<div class="mb-6 rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+	<Card class="mb-6 p-5 shadow-sm">
 		<h2 class="mb-4 text-sm font-semibold text-gray-800">Daily revenue — last 30 days</h2>
 		<div class="flex h-36 items-end gap-px">
 			{#each dailyData as day (day.date)}
@@ -146,12 +147,12 @@
 			<span>{dailyData[14]?.date.slice(5)}</span>
 			<span>{dailyData[29]?.date.slice(5)}</span>
 		</div>
-	</div>
+	</Card>
 
 	<!-- ── Bottom grid ───────────────────────────────────────────── -->
 	<div class="grid gap-6 lg:grid-cols-3">
 		<!-- Top items -->
-		<div class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm lg:col-span-2">
+		<Card class="p-5 shadow-sm lg:col-span-2">
 			<h2 class="mb-4 text-sm font-semibold text-gray-800">Top items</h2>
 			{#if topItems.length === 0}
 				<p class="text-sm text-gray-400">No order data yet.</p>
@@ -179,12 +180,12 @@
 					{/each}
 				</div>
 			{/if}
-		</div>
+		</Card>
 
 		<!-- Right column -->
 		<div class="space-y-6">
 			<!-- Order types -->
-			<div class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+			<Card class="p-5 shadow-sm">
 				<h2 class="mb-3 text-sm font-semibold text-gray-800">Order types</h2>
 				{#if typeBreakdown.length === 0}
 					<p class="text-sm text-gray-400">No data yet.</p>
@@ -210,10 +211,10 @@
 						{/each}
 					</div>
 				{/if}
-			</div>
+			</Card>
 
 			<!-- Status breakdown -->
-			<div class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+			<Card class="p-5 shadow-sm">
 				<h2 class="mb-3 text-sm font-semibold text-gray-800">By status (30d)</h2>
 				{#if statusBreakdown.length === 0}
 					<p class="text-sm text-gray-400">No data yet.</p>
@@ -246,7 +247,7 @@
 						{/each}
 					</div>
 				{/if}
-			</div>
+			</Card>
 		</div>
 	</div>
 </div>

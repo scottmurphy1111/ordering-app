@@ -4,6 +4,18 @@
 	import { resolve } from '$app/paths';
 	import Icon from '@iconify/svelte';
 	import type { PageData, ActionData } from './$types';
+	import { Button } from '$lib/components/ui/button';
+	import { Input } from '$lib/components/ui/input';
+	import { Label } from '$lib/components/ui/label';
+	import {
+		Select,
+		SelectTrigger,
+		SelectContent,
+		SelectItem,
+		SelectValue
+	} from '$lib/components/ui/select';
+	import { Card } from '$lib/components/ui/card';
+	import { Table, TableHeader, TableHead, TableBody, TableRow, TableCell } from '$lib/components/ui/table';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
@@ -28,15 +40,16 @@
 			</p>
 		</div>
 		{#if data.hasAccess}
-			<button
+			<Button
 				onclick={() => {
 					showForm = !showForm;
 				}}
-				class="inline-flex items-center gap-1.5 rounded-md bg-gray-900 px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-gray-700"
+				variant="default"
+				class="gap-1.5"
 			>
 				<Icon icon={showForm ? 'mdi:close' : 'mdi:plus'} class="h-4 w-4" />
 				{showForm ? 'Cancel' : 'New code'}
-			</button>
+			</Button>
 		{/if}
 	</div>
 
@@ -79,106 +92,82 @@
 
 				<div class="grid gap-4 sm:grid-cols-2">
 					<div>
-						<label class="mb-1 block text-xs font-medium text-gray-600" for="code">Code *</label>
-						<input
+						<Label class="mb-1 block text-xs" for="code">Code *</Label>
+						<Input
 							id="code"
 							name="code"
 							type="text"
 							required
 							placeholder="e.g. SUMMER20"
-							class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm uppercase focus:border-green-500 focus:ring-1 focus:ring-green-500 focus:outline-none"
+							class="uppercase"
 						/>
 						<p class="mt-1 text-xs text-gray-400">2–20 characters, letters, numbers, - or _</p>
 					</div>
 					<div>
-						<label class="mb-1 block text-xs font-medium text-gray-600" for="description"
-							>Description</label
-						>
-						<input
+						<Label class="mb-1 block text-xs" for="description">Description</Label>
+						<Input
 							id="description"
 							name="description"
 							type="text"
 							placeholder="Summer sale, VIP, etc."
-							class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-green-500 focus:ring-1 focus:ring-green-500 focus:outline-none"
 						/>
 					</div>
 					<div>
-						<label class="mb-1 block text-xs font-medium text-gray-600" for="type"
-							>Discount type *</label
-						>
-						<select
-							id="type"
-							name="type"
-							bind:value={typeVal}
-							class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-green-500 focus:ring-1 focus:ring-green-500 focus:outline-none"
-						>
-							<option value="percent">Percent off (%)</option>
-							<option value="flat">Flat amount ($)</option>
-						</select>
+						<Label class="mb-1 block text-xs" for="type">Discount type *</Label>
+						<Select type="single" name="type" bind:value={typeVal}>
+							<SelectTrigger id="type" class="w-full">
+								<SelectValue placeholder="Select type" />
+							</SelectTrigger>
+							<SelectContent>
+								<SelectItem value="percent">Percent off (%)</SelectItem>
+								<SelectItem value="flat">Flat amount ($)</SelectItem>
+							</SelectContent>
+						</Select>
 					</div>
 					<div>
-						<label class="mb-1 block text-xs font-medium text-gray-600" for="amount">
+						<Label class="mb-1 block text-xs" for="amount">
 							Amount * {typeVal === 'percent' ? '(%)' : '($)'}
-						</label>
-						<input
+						</Label>
+						<Input
 							id="amount"
 							name="amount"
 							type="number"
 							required
-							min="1"
+							min={1}
 							step={typeVal === 'percent' ? '1' : '0.01'}
-							max={typeVal === 'percent' ? '100' : undefined}
+							max={typeVal === 'percent' ? 100 : undefined}
 							placeholder={typeVal === 'percent' ? '20' : '5.00'}
-							class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-green-500 focus:ring-1 focus:ring-green-500 focus:outline-none"
 						/>
 					</div>
 					<div>
-						<label class="mb-1 block text-xs font-medium text-gray-600" for="minOrderAmount"
-							>Min order amount ($)</label
-						>
-						<input
+						<Label class="mb-1 block text-xs" for="minOrderAmount">Min order amount ($)</Label>
+						<Input
 							id="minOrderAmount"
 							name="minOrderAmount"
 							type="number"
-							min="0"
+							min={0}
 							step="0.01"
 							placeholder="0.00 (no minimum)"
-							class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-green-500 focus:ring-1 focus:ring-green-500 focus:outline-none"
 						/>
 					</div>
 					<div>
-						<label class="mb-1 block text-xs font-medium text-gray-600" for="maxUses"
-							>Max uses</label
-						>
-						<input
+						<Label class="mb-1 block text-xs" for="maxUses">Max uses</Label>
+						<Input
 							id="maxUses"
 							name="maxUses"
 							type="number"
-							min="1"
+							min={1}
 							step="1"
 							placeholder="Unlimited"
-							class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-green-500 focus:ring-1 focus:ring-green-500 focus:outline-none"
 						/>
 					</div>
 					<div class="sm:col-span-2">
-						<label class="mb-1 block text-xs font-medium text-gray-600" for="expiresAt"
-							>Expiry date</label
-						>
-						<input
-							id="expiresAt"
-							name="expiresAt"
-							type="date"
-							class="rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-green-500 focus:ring-1 focus:ring-green-500 focus:outline-none"
-						/>
+						<Label class="mb-1 block text-xs" for="expiresAt">Expiry date</Label>
+						<Input id="expiresAt" name="expiresAt" type="date" />
 					</div>
 				</div>
 
-				<button
-					type="submit"
-					class="rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-gray-700"
-				>
-					Create code
-				</button>
+				<Button type="submit" variant="default">Create code</Button>
 			</form>
 		{/if}
 
@@ -188,27 +177,23 @@
 				<p class="text-sm text-gray-400">No promo codes yet. Create your first one above.</p>
 			</div>
 		{:else}
-			<div class="overflow-x-auto rounded-xl border border-gray-200 bg-white shadow-sm">
-				<table class="w-full text-sm">
-					<thead class="border-b border-gray-100 bg-gray-50">
-						<tr>
-							<th class="px-4 py-3 text-left font-medium text-gray-500">Code</th>
-							<th class="px-4 py-3 text-left font-medium text-gray-500">Discount</th>
-							<th class="hidden px-4 py-3 text-left font-medium text-gray-500 sm:table-cell"
-								>Usage</th
-							>
-							<th class="hidden px-4 py-3 text-left font-medium text-gray-500 md:table-cell"
-								>Expires</th
-							>
-							<th class="px-4 py-3 text-left font-medium text-gray-500">Status</th>
-							<th class="px-4 py-3"></th>
-						</tr>
-					</thead>
-					<tbody class="divide-y divide-gray-100">
+			<Card class="shadow-sm">
+				<Table>
+					<TableHeader class="bg-gray-50">
+						<TableRow class="hover:bg-transparent">
+							<TableHead class="px-4 py-3 text-gray-500">Code</TableHead>
+							<TableHead class="px-4 py-3 text-gray-500">Discount</TableHead>
+							<TableHead class="hidden px-4 py-3 text-gray-500 sm:table-cell">Usage</TableHead>
+							<TableHead class="hidden px-4 py-3 text-gray-500 md:table-cell">Expires</TableHead>
+							<TableHead class="px-4 py-3 text-gray-500">Status</TableHead>
+							<TableHead class="px-4 py-3"></TableHead>
+						</TableRow>
+					</TableHeader>
+					<TableBody>
 						{#each data.codes as promo (promo.id)}
 							{@const expired = promo.expiresAt && Date.now() > new Date(promo.expiresAt).getTime()}
-							<tr class="transition-colors hover:bg-gray-50">
-								<td class="px-4 py-3">
+							<TableRow>
+								<TableCell class="px-4 py-3">
 									<p class="font-mono font-semibold text-gray-900">{promo.code}</p>
 									{#if promo.description}
 										<p class="mt-0.5 text-xs text-gray-400">{promo.description}</p>
@@ -218,17 +203,17 @@
 											Min ${(promo.minOrderAmount / 100).toFixed(2)}
 										</p>
 									{/if}
-								</td>
-								<td class="px-4 py-3 font-semibold text-gray-800">
+								</TableCell>
+								<TableCell class="px-4 py-3 font-semibold text-gray-800">
 									{formatAmount(promo.type, promo.amount)}
-								</td>
-								<td class="hidden px-4 py-3 text-gray-500 sm:table-cell">
+								</TableCell>
+								<TableCell class="hidden px-4 py-3 text-gray-500 sm:table-cell">
 									{promo.usedCount}{promo.maxUses !== null ? ` / ${promo.maxUses}` : ''}
-								</td>
-								<td class="hidden px-4 py-3 text-gray-500 md:table-cell">
+								</TableCell>
+								<TableCell class="hidden px-4 py-3 text-gray-500 md:table-cell">
 									{promo.expiresAt ? new Date(promo.expiresAt).toLocaleDateString() : '—'}
-								</td>
-								<td class="px-4 py-3">
+								</TableCell>
+								<TableCell class="px-4 py-3">
 									<form
 										method="post"
 										action="?/toggle"
@@ -248,28 +233,30 @@
 											{expired ? 'Expired' : promo.isActive ? 'Active' : 'Inactive'}
 										</button>
 									</form>
-								</td>
-								<td class="px-4 py-3">
+								</TableCell>
+								<TableCell class="px-4 py-3">
 									<form method="post" action="?/delete" use:enhance>
 										<input type="hidden" name="id" value={promo.id} />
-										<button
+										<Button
 											type="submit"
 											onclick={async (e) => {
 												e.preventDefault();
 												if (await confirmDialog('Delete this code?'))
 													(e.currentTarget as HTMLButtonElement).form?.requestSubmit();
 											}}
-											class="text-xs text-red-500 transition-colors hover:text-red-700"
+											variant="ghost"
+											size="sm"
+											class="text-red-500 hover:text-red-700"
 										>
 											Delete
-										</button>
+										</Button>
 									</form>
-								</td>
-							</tr>
+								</TableCell>
+							</TableRow>
 						{/each}
-					</tbody>
-				</table>
-			</div>
+					</TableBody>
+				</Table>
+			</Card>
 		{/if}
 	{/if}
 </div>

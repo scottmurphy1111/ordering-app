@@ -5,6 +5,9 @@
 	import type { PageData } from './$types';
 	import { resolve } from '$app/paths';
 	import Icon from '@iconify/svelte';
+	import { Badge } from '$lib/components/ui/badge';
+	import { Card, CardContent } from '$lib/components/ui/card';
+	import { Table, TableHeader, TableHead, TableBody, TableRow, TableCell } from '$lib/components/ui/table';
 
 	let { data }: { data: PageData } = $props();
 
@@ -61,43 +64,51 @@
 
 	<!-- Stats grid -->
 	<div class="mb-8 grid grid-cols-2 gap-4 sm:grid-cols-4">
-		<div class="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
-			<p class="text-xs font-medium tracking-wide text-gray-500 uppercase">Menu Items</p>
-			<p class="mt-1 text-3xl font-bold text-gray-900">{data.stats.items}</p>
-			<a
-				href={resolve('/dashboard/menu/items')}
-				class="mt-2 inline-flex items-center gap-0.5 text-xs font-medium text-green-600 transition-colors hover:text-green-800"
-			>
-				Manage <Icon icon="mdi:chevron-right" class="h-3 w-3" />
-			</a>
-		</div>
-		<div class="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
-			<p class="text-xs font-medium tracking-wide text-gray-500 uppercase">Categories</p>
-			<p class="mt-1 text-3xl font-bold text-gray-900">{data.stats.categories}</p>
-			<a
-				href={resolve('/dashboard/menu/categories')}
-				class="mt-2 inline-flex items-center gap-0.5 text-xs font-medium text-green-600 transition-colors hover:text-green-800"
-			>
-				Manage <Icon icon="mdi:chevron-right" class="h-3 w-3" />
-			</a>
-		</div>
-		<div class="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
-			<p class="text-xs font-medium tracking-wide text-gray-500 uppercase">Total Orders</p>
-			<p class="mt-1 text-3xl font-bold text-gray-900">{data.stats.orders}</p>
-			{#if data.stats.pendingOrders > 0}
-				<p class="mt-1 text-xs text-yellow-600">{data.stats.pendingOrders} pending</p>
-			{/if}
-			<a
-				href={resolve('/dashboard/orders')}
-				class="mt-2 inline-flex items-center gap-0.5 text-xs font-medium text-green-600 transition-colors hover:text-green-800"
-			>
-				View <Icon icon="mdi:chevron-right" class="h-3 w-3" />
-			</a>
-		</div>
-		<div class="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
-			<p class="text-xs font-medium tracking-wide text-gray-500 uppercase">Revenue</p>
-			<p class="mt-1 text-3xl font-bold text-gray-900">${(data.stats.revenue / 100).toFixed(2)}</p>
-		</div>
+		<Card class="shadow-sm">
+			<CardContent>
+				<p class="text-xs font-medium tracking-wide text-gray-500 uppercase">Menu Items</p>
+				<p class="mt-1 text-3xl font-bold text-gray-900">{data.stats.items}</p>
+				<a
+					href={resolve('/dashboard/menu/items')}
+					class="mt-2 inline-flex items-center gap-0.5 text-xs font-medium text-green-600 transition-colors hover:text-green-800"
+				>
+					Manage <Icon icon="mdi:chevron-right" class="h-3 w-3" />
+				</a>
+			</CardContent>
+		</Card>
+		<Card class="shadow-sm">
+			<CardContent>
+				<p class="text-xs font-medium tracking-wide text-gray-500 uppercase">Categories</p>
+				<p class="mt-1 text-3xl font-bold text-gray-900">{data.stats.categories}</p>
+				<a
+					href={resolve('/dashboard/menu/categories')}
+					class="mt-2 inline-flex items-center gap-0.5 text-xs font-medium text-green-600 transition-colors hover:text-green-800"
+				>
+					Manage <Icon icon="mdi:chevron-right" class="h-3 w-3" />
+				</a>
+			</CardContent>
+		</Card>
+		<Card class="shadow-sm">
+			<CardContent>
+				<p class="text-xs font-medium tracking-wide text-gray-500 uppercase">Total Orders</p>
+				<p class="mt-1 text-3xl font-bold text-gray-900">{data.stats.orders}</p>
+				{#if data.stats.pendingOrders > 0}
+					<p class="mt-1 text-xs text-yellow-600">{data.stats.pendingOrders} pending</p>
+				{/if}
+				<a
+					href={resolve('/dashboard/orders')}
+					class="mt-2 inline-flex items-center gap-0.5 text-xs font-medium text-green-600 transition-colors hover:text-green-800"
+				>
+					View <Icon icon="mdi:chevron-right" class="h-3 w-3" />
+				</a>
+			</CardContent>
+		</Card>
+		<Card class="shadow-sm">
+			<CardContent>
+				<p class="text-xs font-medium tracking-wide text-gray-500 uppercase">Revenue</p>
+				<p class="mt-1 text-3xl font-bold text-gray-900">${(data.stats.revenue / 100).toFixed(2)}</p>
+			</CardContent>
+		</Card>
 	</div>
 
 	<!-- Quick actions -->
@@ -141,51 +152,36 @@
 					})}
 				</span>
 			</div>
-			<div class="overflow-x-auto rounded-xl border border-gray-200 bg-white shadow-sm">
-				<table class="w-full text-sm">
-					<thead class="border-b border-gray-200 bg-gray-50">
-						<tr>
-							<th class="px-4 py-2.5 text-left font-medium text-gray-500">Order</th>
-							<th class="hidden px-4 py-2.5 text-left font-medium text-gray-500 sm:table-cell"
-								>Customer</th
-							>
-							<th class="hidden px-4 py-2.5 text-left font-medium text-gray-500 md:table-cell"
-								>Type</th
-							>
-							<th class="px-4 py-2.5 text-left font-medium text-gray-500">Status</th>
-							<th class="px-4 py-2.5 text-right font-medium text-gray-500">Total</th>
-						</tr>
-					</thead>
-					<tbody class="divide-y divide-gray-100">
+			<Card class="shadow-sm">
+				<Table>
+					<TableHeader class="bg-gray-50">
+						<TableRow class="hover:bg-transparent">
+							<TableHead class="px-4 py-2.5 text-gray-500">Order</TableHead>
+							<TableHead class="hidden px-4 py-2.5 text-gray-500 sm:table-cell">Customer</TableHead>
+							<TableHead class="hidden px-4 py-2.5 text-gray-500 md:table-cell">Type</TableHead>
+							<TableHead class="px-4 py-2.5 text-gray-500">Status</TableHead>
+							<TableHead class="px-4 py-2.5 text-right text-gray-500">Total</TableHead>
+						</TableRow>
+					</TableHeader>
+					<TableBody>
 						{#each data.recentOrders as order (order.id)}
-							<tr class="transition-colors hover:bg-gray-50">
-								<td class="px-4 py-3 font-mono text-xs text-gray-600">
-									<a href={resolve(`/dashboard/orders/${order.id}`)} class="hover:underline"
-										>{order.orderNumber}</a
-									>
-								</td>
-								<td class="hidden px-4 py-3 text-gray-700 sm:table-cell"
-									>{order.customerName ?? '—'}</td
-								>
-								<td class="hidden px-4 py-3 text-gray-500 capitalize md:table-cell">{order.type}</td
-								>
-								<td class="px-4 py-3">
-									<span
-										class="rounded-full px-2 py-0.5 text-xs font-medium {statusColors[
-											order.status
-										] ?? 'bg-gray-100 text-gray-600'}"
-									>
+							<TableRow>
+								<TableCell class="px-4 py-3 font-mono text-xs text-gray-600">
+									<a href={resolve(`/dashboard/orders/${order.id}`)} class="hover:underline">{order.orderNumber}</a>
+								</TableCell>
+								<TableCell class="hidden px-4 py-3 text-gray-700 sm:table-cell">{order.customerName ?? '—'}</TableCell>
+								<TableCell class="hidden px-4 py-3 text-gray-500 capitalize md:table-cell">{order.type}</TableCell>
+								<TableCell class="px-4 py-3">
+									<Badge class={statusColors[order.status] ?? 'bg-gray-100 text-gray-600'}>
 										{order.status}
-									</span>
-								</td>
-								<td class="px-4 py-3 text-right font-medium text-gray-900"
-									>${(order.total / 100).toFixed(2)}</td
-								>
-							</tr>
+									</Badge>
+								</TableCell>
+								<TableCell class="px-4 py-3 text-right font-medium text-gray-900">${(order.total / 100).toFixed(2)}</TableCell>
+							</TableRow>
 						{/each}
-					</tbody>
-				</table>
-			</div>
+					</TableBody>
+				</Table>
+			</Card>
 		</div>
 	{:else}
 		<div class="rounded-xl border border-dashed border-gray-300 p-10 text-center">

@@ -3,6 +3,7 @@
 	import type { PageData, ActionData } from './$types';
 	import { resolve } from '$app/paths';
 	import Icon from '@iconify/svelte';
+	import { Button } from '$lib/components/ui/button';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
@@ -128,13 +129,9 @@
 						<p class="text-xs text-red-600">{uploadError}</p>
 					{/if}
 					{#if imagePreview}
-						<button
-							type="button"
-							onclick={clearImage}
-							class="text-xs text-red-500 transition-colors hover:text-red-700"
-						>
+						<Button type="button" onclick={clearImage} variant="ghost" size="sm" class="h-auto p-0 text-xs text-red-500 hover:text-red-700">
 							Remove image
-						</button>
+						</Button>
 					{/if}
 				</div>
 			</div>
@@ -290,19 +287,10 @@
 		{/if}
 
 		<div class="flex gap-2 pt-1">
-			<button
-				type="submit"
-				disabled={uploading}
-				class="flex-1 rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-gray-700 disabled:opacity-50"
-			>
+			<Button type="submit" disabled={uploading} variant="default" class="flex-1">
 				Create item
-			</button>
-			<a
-				href={resolve('/dashboard/menu/items')}
-				class="rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-600 transition-colors hover:border-gray-400 hover:bg-gray-100"
-			>
-				Cancel
-			</a>
+			</Button>
+			<Button href={resolve('/dashboard/menu/items')} variant="outline">Cancel</Button>
 		</div>
 	</form>
 </div>

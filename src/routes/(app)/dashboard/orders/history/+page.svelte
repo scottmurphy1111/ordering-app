@@ -4,6 +4,8 @@
 	import type { PageData, ActionData } from './$types';
 	import { resolve } from '$app/paths';
 	import Icon from '@iconify/svelte';
+	import { Button } from '$lib/components/ui/button';
+	import { Badge } from '$lib/components/ui/badge';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
@@ -60,12 +62,7 @@
 					class="w-full rounded-lg border border-gray-200 bg-white py-2 pl-9 pr-4 text-sm text-gray-800 placeholder-gray-400 focus:border-gray-400 focus:outline-none"
 				/>
 			</div>
-			<button
-				type="submit"
-				class="rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-700"
-			>
-				Search
-			</button>
+			<Button type="submit" variant="default">Search</Button>
 		</div>
 		<div class="flex flex-wrap items-center gap-3">
 			<div class="flex items-center gap-2">
@@ -123,27 +120,16 @@
 									href={resolve(`/dashboard/orders/${order.id}`)}
 									class="font-mono text-sm font-semibold text-gray-800 hover:underline"
 								>{order.orderNumber}</a>
-								<span
-									class="rounded-full px-2 py-0.5 text-xs font-medium {statusColors[order.status] ??
-										'bg-gray-100 text-gray-600'}"
-								>
+								<Badge class={statusColors[order.status] ?? 'bg-gray-100 text-gray-600'}>
 									{order.status}
-								</span>
-								<span
-									class="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-500 capitalize"
-								>{order.type}</span>
+								</Badge>
+								<Badge class="bg-gray-100 text-gray-500 capitalize">{order.type}</Badge>
 								{#if order.paymentStatus === 'paid'}
-									<span class="rounded-full bg-emerald-100 px-2 py-0.5 text-xs text-emerald-700"
-										>paid</span
-									>
+									<Badge class="bg-emerald-100 text-emerald-700">paid</Badge>
 								{:else if order.paymentStatus === 'refunded'}
-									<span class="rounded-full bg-orange-100 px-2 py-0.5 text-xs text-orange-700"
-										>refunded</span
-									>
+									<Badge class="bg-orange-100 text-orange-700">refunded</Badge>
 								{:else if order.paymentStatus === 'failed'}
-									<span class="rounded-full bg-red-100 px-2 py-0.5 text-xs text-red-600"
-										>payment failed</span
-									>
+									<Badge class="bg-red-100 text-red-600">payment failed</Badge>
 								{/if}
 							</div>
 							{#if order.customerName}
@@ -197,17 +183,19 @@
 						<div class="mt-3 flex items-center gap-2 border-t border-gray-100 pt-3">
 							<form method="post" action="?/refund" use:enhance>
 								<input type="hidden" name="id" value={order.id} />
-								<button
+								<Button
 									type="submit"
 									onclick={async (e) => {
 										e.preventDefault();
 										if (await confirmDialog('Issue a full refund for this order?'))
 											(e.currentTarget as HTMLButtonElement).form?.requestSubmit();
 									}}
-									class="rounded-md border border-orange-200 px-3 py-1.5 text-xs font-medium text-orange-600 transition-colors hover:bg-orange-50"
+									variant="outline"
+									size="sm"
+									class="border-orange-200 text-orange-600 hover:bg-orange-50"
 								>
 									Refund payment
-								</button>
+								</Button>
 							</form>
 						</div>
 					{/if}

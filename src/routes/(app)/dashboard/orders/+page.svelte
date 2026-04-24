@@ -6,6 +6,8 @@
 	import type { PageData, ActionData } from './$types';
 	import { resolve } from '$app/paths';
 	import Icon from '@iconify/svelte';
+	import { Button } from '$lib/components/ui/button';
+	import { Badge } from '$lib/components/ui/badge';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
@@ -120,27 +122,16 @@
 									class="font-mono text-sm font-semibold text-gray-800 hover:underline"
 									>{order.orderNumber}</a
 								>
-								<span
-									class="rounded-full px-2 py-0.5 text-xs font-medium {statusColors[order.status] ??
-										'bg-gray-100'}"
-								>
+								<Badge class={statusColors[order.status] ?? 'bg-gray-100'}>
 									{order.status}
-								</span>
-								<span class="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-500 capitalize"
-									>{order.type}</span
-								>
+								</Badge>
+								<Badge class="bg-gray-100 text-gray-500 capitalize">{order.type}</Badge>
 								{#if order.paymentStatus === 'paid'}
-									<span class="rounded-full bg-emerald-100 px-2 py-0.5 text-xs text-emerald-700"
-										>paid</span
-									>
+									<Badge class="bg-emerald-100 text-emerald-700">paid</Badge>
 								{:else if order.paymentStatus === 'refunded'}
-									<span class="rounded-full bg-orange-100 px-2 py-0.5 text-xs text-orange-700"
-										>refunded</span
-									>
+									<Badge class="bg-orange-100 text-orange-700">refunded</Badge>
 								{:else if order.paymentStatus === 'failed'}
-									<span class="rounded-full bg-red-100 px-2 py-0.5 text-xs text-red-600"
-										>payment failed</span
-									>
+									<Badge class="bg-red-100 text-red-600">payment failed</Badge>
 								{/if}
 							</div>
 							{#if order.customerName}
@@ -195,44 +186,44 @@
 								<form method="post" action="?/updateStatus" use:enhance>
 									<input type="hidden" name="id" value={order.id} />
 									<input type="hidden" name="status" value={nextStatus[order.status]} />
-									<button
-										type="submit"
-										class="rounded-md border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 transition-colors hover:border-gray-400 hover:bg-gray-100"
-									>
+									<Button type="submit" variant="outline" size="sm">
 										Mark as {nextStatus[order.status]}
-									</button>
+									</Button>
 								</form>
 							{/if}
 							{#if !['fulfilled', 'cancelled'].includes(order.status)}
 								<form method="post" action="?/cancel" use:enhance>
 									<input type="hidden" name="id" value={order.id} />
-									<button
+									<Button
 										type="submit"
 										onclick={async (e) => {
 											e.preventDefault();
 											if (await confirmDialog('Cancel this order?'))
 												(e.currentTarget as HTMLButtonElement).form?.requestSubmit();
 										}}
-										class="rounded-md border border-red-200 px-3 py-1.5 text-xs font-medium text-red-600 transition-colors hover:bg-red-50"
+										variant="destructive"
+										size="sm"
 									>
 										Cancel order
-									</button>
+									</Button>
 								</form>
 							{/if}
 							{#if order.status === 'cancelled' && order.paymentStatus === 'paid'}
 								<form method="post" action="?/refund" use:enhance>
 									<input type="hidden" name="id" value={order.id} />
-									<button
+									<Button
 										type="submit"
 										onclick={async (e) => {
 											e.preventDefault();
 											if (await confirmDialog('Issue a full refund for this order?'))
 												(e.currentTarget as HTMLButtonElement).form?.requestSubmit();
 										}}
-										class="rounded-md border border-orange-200 px-3 py-1.5 text-xs font-medium text-orange-600 transition-colors hover:bg-orange-50"
+										variant="outline"
+										size="sm"
+										class="border-orange-200 text-orange-600 hover:bg-orange-50"
 									>
 										Refund payment
-									</button>
+									</Button>
 								</form>
 							{/if}
 						</div>

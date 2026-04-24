@@ -7,6 +7,18 @@
 	import { TIERS, ADDONS, ANNUAL_ADDON_PRICING, getTier, hasAddon, type BillingInterval } from '$lib/billing';
 	import { confirmDialog } from '$lib/confirm.svelte';
 	import { resolve } from '$app/paths';
+	import { Button } from '$lib/components/ui/button';
+	import { Badge } from '$lib/components/ui/badge';
+	import { Card, CardHeader, CardTitle, CardAction, CardContent } from '$lib/components/ui/card';
+	import { Tabs, TabsList, TabsTrigger } from '$lib/components/ui/tabs';
+	import {
+		Dialog,
+		DialogContent,
+		DialogHeader,
+		DialogTitle,
+		DialogDescription,
+		DialogFooter
+	} from '$lib/components/ui/dialog';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
@@ -143,41 +155,36 @@
 	{/if}
 
 	<!-- Current plan -->
-	<div class="mb-8 rounded-xl border border-gray-200 bg-white shadow-sm">
-		<div class="flex items-center justify-between border-b border-gray-100 px-5 py-4">
-			<h2 class="font-semibold text-gray-900">Current plan</h2>
-			{#if isPaidPlan}
-				<form method="post" action="?/openPortal" use:enhance>
-					<button
-						type="submit"
-						class="flex items-center gap-1.5 rounded-md border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-600 transition-colors hover:border-gray-400 hover:bg-gray-100"
-					>
-						<Icon icon="mdi:cog-outline" class="h-3.5 w-3.5" /> Manage billing
-					</button>
-				</form>
-			{/if}
-		</div>
-		<div class="px-5 py-5">
+	<Card class="mb-8 shadow-sm">
+		<CardHeader class="border-b border-gray-100">
+			<CardTitle>Current plan</CardTitle>
+			<CardAction>
+				{#if isPaidPlan}
+					<form method="post" action="?/openPortal" use:enhance>
+						<Button type="submit" variant="outline" size="sm" class="gap-1.5">
+							<Icon icon="mdi:cog-outline" class="h-3.5 w-3.5" /> Manage billing
+						</Button>
+					</form>
+				{/if}
+			</CardAction>
+		</CardHeader>
+		<CardContent>
 			<div class="flex flex-wrap items-start justify-between gap-4">
 				<div>
 					<div class="flex flex-wrap items-center gap-2">
 						<span class="text-xl font-bold text-gray-900">{tierInfo.name}</span>
-						<span
-							class="rounded-full px-2.5 py-0.5 text-xs font-medium {statusColors[
-								data.subscriptionStatus ?? 'active'
-							] ?? statusColors.active}"
-						>
-							{data.subscriptionStatus === 'past_due'
-								? 'Payment past due'
-								: data.subscriptionStatus === 'cancelled'
-									? 'Cancelled'
-									: 'Active'}
-						</span>
-						{#if isPaidPlan}
-							<span class="rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-600">
-								{data.billingInterval === 'annual' ? 'Annual' : 'Monthly'}
-							</span>
-						{/if}
+						<Badge class={statusColors[data.subscriptionStatus ?? 'active'] ?? statusColors.active}>
+						{data.subscriptionStatus === 'past_due'
+							? 'Payment past due'
+							: data.subscriptionStatus === 'cancelled'
+								? 'Cancelled'
+								: 'Active'}
+					</Badge>
+					{#if isPaidPlan}
+						<Badge class="bg-gray-100 text-gray-600">
+							{data.billingInterval === 'annual' ? 'Annual' : 'Monthly'}
+						</Badge>
+					{/if}
 					</div>
 					<p class="mt-0.5 text-sm text-gray-500">
 						{#if tierInfo.price === 0}
@@ -199,12 +206,9 @@
 				</div>
 				{#if data.subscriptionStatus === 'past_due'}
 					<form method="post" action="?/openPortal" use:enhance>
-						<button
-							type="submit"
-							class="flex items-center gap-1.5 rounded-md bg-amber-600 px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-amber-700"
-						>
+						<Button type="submit" size="sm" class="gap-1.5 bg-amber-600 hover:bg-amber-700">
 							<Icon icon="mdi:alert-outline" class="h-3.5 w-3.5" /> Update payment method
-						</button>
+						</Button>
 					</form>
 				{/if}
 			</div>
@@ -215,23 +219,17 @@
 					{#if data.billingInterval === 'monthly'}
 						<form method="post" action="?/switchInterval" use:enhance={() => ({ update }) => update({ invalidateAll: true })}>
 							<input type="hidden" name="interval" value="annual" />
-							<button
-								type="submit"
-								class="inline-flex items-center gap-1.5 rounded-md border border-green-200 bg-green-50 px-3 py-1.5 text-xs font-medium text-green-700 transition-colors hover:bg-green-100"
-							>
+							<Button type="submit" variant="outline" size="sm" class="gap-1.5 border-green-200 bg-green-50 text-green-700 hover:bg-green-100">
 								<Icon icon="mdi:arrow-up-circle-outline" class="h-3.5 w-3.5" />
 								Switch to annual — save ${proTier.annualSavings}/yr
-							</button>
+							</Button>
 						</form>
 					{:else}
 						<form method="post" action="?/switchInterval" use:enhance={() => ({ update }) => update({ invalidateAll: true })}>
 							<input type="hidden" name="interval" value="monthly" />
-							<button
-								type="submit"
-								class="inline-flex items-center gap-1.5 rounded-md border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-600 transition-colors hover:border-gray-400 hover:bg-gray-100"
-							>
+							<Button type="submit" variant="outline" size="sm" class="gap-1.5">
 								Switch to monthly
-							</button>
+							</Button>
 						</form>
 					{/if}
 				</div>
@@ -280,8 +278,8 @@
 					Unlimited menu items
 				</div>
 			{/if}
-		</div>
-	</div>
+		</CardContent>
+	</Card>
 
 	<!-- Plans -->
 	<div class="mb-8">
@@ -289,23 +287,15 @@
 			<h2 class="font-semibold text-gray-900">Plans</h2>
 			<!-- Monthly / Annual toggle (only relevant for Starter users upgrading) -->
 			{#if !isPaidPlan}
-				<div class="flex items-center rounded-lg border border-gray-200 bg-gray-50 p-0.5">
-					<button
-						type="button"
-						onclick={() => (selectedInterval = 'monthly')}
-						class="rounded-md px-3 py-1 text-xs font-medium transition-colors {selectedInterval === 'monthly' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}"
-					>
-						Monthly
-					</button>
-					<button
-						type="button"
-						onclick={() => (selectedInterval = 'annual')}
-						class="flex items-center gap-1 rounded-md px-3 py-1 text-xs font-medium transition-colors {selectedInterval === 'annual' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}"
-					>
-						Annual
-						<span class="rounded-full bg-green-100 px-1.5 py-0.5 text-[10px] font-semibold text-green-700">Save $168</span>
-					</button>
-				</div>
+				<Tabs bind:value={selectedInterval}>
+					<TabsList>
+						<TabsTrigger value="monthly">Monthly</TabsTrigger>
+						<TabsTrigger value="annual" class="gap-1.5">
+							Annual
+							<span class="rounded-full bg-green-100 px-1.5 py-0.5 text-[10px] font-semibold text-green-700">Save $168</span>
+						</TabsTrigger>
+					</TabsList>
+				</Tabs>
 			{/if}
 		</div>
 		<div class="grid gap-4 sm:grid-cols-2">
@@ -314,10 +304,10 @@
 				{@const tierIndex = TIERS.findIndex((t) => t.key === tier.key)}
 				{@const currentIndex = TIERS.findIndex((t) => t.key === currentTierKey)}
 				{@const isUpgrade = tierIndex > currentIndex}
-				<div
-					class="relative rounded-xl border {isCurrent
-						? 'border-green-400 shadow-md'
-						: 'border-gray-200'} bg-white p-5"
+				<Card
+					class="relative p-5 shadow-sm {isCurrent
+						? 'ring-2 ring-green-400 ring-offset-0'
+						: ''}"
 				>
 					{#if isCurrent}
 						<span
@@ -352,23 +342,17 @@
 						{/each}
 					</ul>
 					{#if isCurrent}
-						<button
-							disabled
-							class="w-full cursor-default rounded-md border border-gray-200 px-4 py-2 text-sm font-medium text-gray-400"
-						>
+						<Button disabled variant="outline" class="w-full cursor-default text-gray-400">
 							Current plan
-						</button>
+						</Button>
 					{:else if isUpgrade}
 						<form method="post" action="?/upgrade" use:enhance>
 							<input type="hidden" name="planKey" value={tier.key} />
 							<input type="hidden" name="interval" value={selectedInterval} />
-							<button
-								type="submit"
-								class="w-full rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-gray-700"
-							>
+							<Button type="submit" variant="default" class="w-full">
 								Upgrade to {tier.name}
 								{#if selectedInterval === 'annual'} — Annual{/if}
-							</button>
+							</Button>
 						</form>
 					{:else}
 						{@const downgradeMsg =
@@ -383,7 +367,7 @@
 									update({ invalidateAll: true })}
 						>
 							<input type="hidden" name="planKey" value={tier.key} />
-							<button
+							<Button
 								type="submit"
 								onclick={async (e) => {
 									e.preventDefault();
@@ -397,13 +381,14 @@
 									)
 										(e.currentTarget as HTMLButtonElement).form?.requestSubmit();
 								}}
-								class="w-full rounded-md border border-gray-200 px-4 py-2 text-sm font-medium text-gray-500 transition-colors hover:border-red-200 hover:bg-red-50 hover:text-red-600"
+								variant="outline"
+								class="w-full text-gray-500 hover:border-red-200 hover:bg-red-50 hover:text-red-600"
 							>
 								Downgrade to {tier.name}
-							</button>
+							</Button>
 						</form>
 					{/if}
-				</div>
+				</Card>
 			{/each}
 		</div>
 		<p class="mt-2 text-xs text-gray-400">
@@ -443,10 +428,10 @@
 			{#each ADDONS as addon (addon.key)}
 				{@const isActive = hasAddon(activeAddons, addon.key)}
 				{@const canToggle = isPaidPlan && data.hasStripeSubscription}
-				<div
-					class="rounded-xl border {isActive
-						? 'border-green-300 bg-green-50/40'
-						: 'border-gray-200 bg-white'} p-5 shadow-sm"
+				<Card
+					class="p-5 shadow-sm {isActive
+						? 'ring-green-300 bg-green-50/40'
+						: ''}"
 				>
 					<div class="mb-3 flex items-start justify-between gap-3">
 						<div class="flex items-center gap-3">
@@ -466,33 +451,32 @@
 							</div>
 						</div>
 						{#if isActive}
-							<span
-								class="shrink-0 rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700"
-								>Active</span
-							>
+							<Badge class="shrink-0 bg-green-100 text-green-700">Active</Badge>
 						{/if}
 					</div>
 					<p class="mb-4 text-sm text-gray-500">{addon.description}</p>
 					{#if isActive}
-						<button
+						<Button
 							type="button"
 							disabled={!canToggle}
 							onclick={() => openModal(addon, 'deactivate')}
-							class="w-full rounded-md border border-red-200 px-3 py-1.5 text-sm font-medium text-red-600 transition-colors hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-40"
+							variant="destructive"
+							class="w-full"
 						>
 							Deactivate
-						</button>
+						</Button>
 					{:else}
-						<button
+						<Button
 							type="button"
 							disabled={!canToggle}
 							onclick={() => openModal(addon, 'activate')}
-							class="w-full rounded-md bg-gray-900 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-gray-700 disabled:cursor-not-allowed disabled:opacity-40"
+							variant="default"
+							class="w-full"
 						>
 							Activate — ${addon.price}/mo
-						</button>
+						</Button>
 					{/if}
-				</div>
+				</Card>
 			{/each}
 		</div>
 	</div>
@@ -507,110 +491,106 @@
 			: currentMonthly - addonEffectiveMonthly}
 	{@const isActivate = pendingAddon.action === 'activate'}
 
-	<div
-		class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
-		role="dialog"
-		aria-modal="true"
-		aria-labelledby="modal-title"
-	>
-		<div class="w-full max-w-md rounded-2xl bg-white shadow-xl">
-			<div class="px-6 pt-6 pb-4">
-				<h2 id="modal-title" class="text-lg font-semibold text-gray-900">
+	<Dialog open={!!pendingAddon} onOpenChange={(open) => { if (!open) closeModal(); }}>
+		<DialogContent class="max-w-md">
+			<DialogHeader>
+				<DialogTitle>
 					{isActivate ? 'Activate' : 'Deactivate'}
 					{pendingAddon.name}?
-				</h2>
+				</DialogTitle>
+				<DialogDescription class="sr-only">Addon billing confirmation</DialogDescription>
+			</DialogHeader>
 
-				<!-- Annual billing toggle (activate only, for supported add-ons) -->
-				{#if isActivate && pendingAddon.supportsAnnual}
-					<div class="mt-4 flex items-center justify-between">
-						<p class="text-sm text-gray-600">Billing cycle</p>
-						<div class="flex items-center rounded-lg border border-gray-200 bg-gray-50 p-0.5">
-							<button
-								type="button"
-								onclick={() => (addonInterval = 'monthly')}
-								class="rounded-md px-3 py-1 text-xs font-medium transition-colors {addonInterval === 'monthly' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}"
-							>
-								Monthly
-							</button>
-							<button
-								type="button"
-								onclick={() => (addonInterval = 'annual')}
-								class="flex items-center gap-1 rounded-md px-3 py-1 text-xs font-medium transition-colors {addonInterval === 'annual' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}"
-							>
-								Annual
-								{#if addonAnnualPricing}
-									<span class="rounded-full bg-green-100 px-1.5 py-0.5 text-[10px] font-semibold text-green-700">
-										Save ${addonAnnualPricing.savings}/yr
-									</span>
-								{/if}
-							</button>
-						</div>
-					</div>
-				{/if}
-
-				<!-- Billing summary -->
-				<div class="mt-5 space-y-2 rounded-xl border border-gray-100 bg-gray-50 px-4 py-4">
-					<p class="mb-3 text-xs font-medium tracking-wide text-gray-400 uppercase">
-						Billing summary
-					</p>
-					<div class="flex items-center justify-between text-sm text-gray-600">
-						<span>Current monthly bill</span>
-						<span class="font-medium">${currentMonthly}/mo</span>
-					</div>
-					<div
-						class="flex items-center justify-between text-sm {isActivate
-							? 'text-gray-800'
-							: 'text-red-600'}"
-					>
-						<span>{isActivate ? '+' : '−'} {pendingAddon.name}</span>
-						{#if isActivate && addonInterval === 'annual' && addonAnnualPricing}
-							<span class="font-medium">${addonAnnualPricing.total}/yr <span class="text-xs text-gray-400">(${addonAnnualPricing.monthly}/mo)</span></span>
-						{:else}
-							<span class="font-medium">{isActivate ? '+' : '−'}${addonEffectiveMonthly}/mo</span>
-						{/if}
-					</div>
-					<div
-						class="flex items-center justify-between border-t border-gray-200 pt-2 text-sm font-semibold text-gray-900"
-					>
-						<span>New monthly bill</span>
-						<span>~${newMonthly}/mo</span>
+			<!-- Annual billing toggle (activate only, for supported add-ons) -->
+			{#if isActivate && pendingAddon.supportsAnnual}
+				<div class="flex items-center justify-between">
+					<p class="text-sm text-gray-600">Billing cycle</p>
+					<div class="flex items-center rounded-lg border border-gray-200 bg-gray-50 p-0.5">
+						<Button
+							type="button"
+							onclick={() => (addonInterval = 'monthly')}
+							variant="ghost"
+							size="sm"
+							class="rounded-md px-3 py-1 {addonInterval === 'monthly' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}"
+						>
+							Monthly
+						</Button>
+						<Button
+							type="button"
+							onclick={() => (addonInterval = 'annual')}
+							variant="ghost"
+							size="sm"
+							class="gap-1 rounded-md px-3 py-1 {addonInterval === 'annual' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}"
+						>
+							Annual
+							{#if addonAnnualPricing}
+								<span class="rounded-full bg-green-100 px-1.5 py-0.5 text-[10px] font-semibold text-green-700">
+									Save ${addonAnnualPricing.savings}/yr
+								</span>
+							{/if}
+						</Button>
 					</div>
 				</div>
+			{/if}
 
-				<!-- Proration note -->
-				{#if proration !== null}
-					<div
-						class="mt-4 flex items-start gap-2.5 rounded-lg border border-blue-100 bg-blue-50 px-3.5 py-3"
-					>
-						<Icon icon="mdi:information-outline" class="mt-0.5 h-4 w-4 shrink-0 text-blue-500" />
-						<p class="text-sm text-blue-700">
-							{#if isActivate}
-								You'll be charged a prorated amount of <strong>{fmtMoney(proration)}</strong> today for
-								the remaining days in this billing cycle.
-							{:else}
-								You'll receive a prorated credit of <strong>{fmtMoney(proration)}</strong> on your next
-								invoice.
-							{/if}
-						</p>
-					</div>
-				{/if}
-
-				<!-- Next billing date -->
-				{#if data.nextBillingDate}
-					<p class="mt-3 text-xs text-gray-400">
-						Next full charge of <strong>~${newMonthly}/mo</strong> on {fmtDate(data.nextBillingDate)}.
-					</p>
-				{/if}
+			<!-- Billing summary -->
+			<div class="space-y-2 rounded-xl border border-gray-100 bg-gray-50 px-4 py-4">
+				<p class="mb-3 text-xs font-medium tracking-wide text-gray-400 uppercase">
+					Billing summary
+				</p>
+				<div class="flex items-center justify-between text-sm text-gray-600">
+					<span>Current monthly bill</span>
+					<span class="font-medium">${currentMonthly}/mo</span>
+				</div>
+				<div
+					class="flex items-center justify-between text-sm {isActivate
+						? 'text-gray-800'
+						: 'text-red-600'}"
+				>
+					<span>{isActivate ? '+' : '−'} {pendingAddon.name}</span>
+					{#if isActivate && addonInterval === 'annual' && addonAnnualPricing}
+						<span class="font-medium">${addonAnnualPricing.total}/yr <span class="text-xs text-gray-400">(${addonAnnualPricing.monthly}/mo)</span></span>
+					{:else}
+						<span class="font-medium">{isActivate ? '+' : '−'}${addonEffectiveMonthly}/mo</span>
+					{/if}
+				</div>
+				<div
+					class="flex items-center justify-between border-t border-gray-200 pt-2 text-sm font-semibold text-gray-900"
+				>
+					<span>New monthly bill</span>
+					<span>~${newMonthly}/mo</span>
+				</div>
 			</div>
 
-			<div class="flex gap-3 border-t border-gray-100 px-6 py-4">
-				<button
-					type="button"
-					onclick={closeModal}
-					class="flex-1 rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:border-gray-400 hover:bg-gray-100"
+			<!-- Proration note -->
+			{#if proration !== null}
+				<div
+					class="flex items-start gap-2.5 rounded-lg border border-blue-100 bg-blue-50 px-3.5 py-3"
 				>
+					<Icon icon="mdi:information-outline" class="mt-0.5 h-4 w-4 shrink-0 text-blue-500" />
+					<p class="text-sm text-blue-700">
+						{#if isActivate}
+							You'll be charged a prorated amount of <strong>{fmtMoney(proration)}</strong> today for
+							the remaining days in this billing cycle.
+						{:else}
+							You'll receive a prorated credit of <strong>{fmtMoney(proration)}</strong> on your next
+							invoice.
+						{/if}
+					</p>
+				</div>
+			{/if}
+
+			<!-- Next billing date -->
+			{#if data.nextBillingDate}
+				<p class="text-xs text-gray-400">
+					Next full charge of <strong>~${newMonthly}/mo</strong> on {fmtDate(data.nextBillingDate)}.
+				</p>
+			{/if}
+
+			<DialogFooter class="flex gap-3 sm:flex-row">
+				<Button type="button" onclick={closeModal} variant="outline" class="flex-1">
 					Cancel
-				</button>
+				</Button>
 				<form
 					method="post"
 					action={isActivate ? '?/activateAddon' : '?/deactivateAddon'}
@@ -625,20 +605,19 @@
 					{#if isActivate}
 						<input type="hidden" name="interval" value={addonInterval} />
 					{/if}
-					<button
+					<Button
 						type="submit"
-						class="w-full rounded-lg px-4 py-2 text-sm font-medium text-white transition-colors {isActivate
-							? 'bg-gray-900 hover:bg-gray-700'
-							: 'bg-red-600 hover:bg-red-700'}"
+						variant={isActivate ? 'default' : 'destructive'}
+						class="w-full"
 					>
 						{#if isActivate}
 							Confirm — {fmtMoney(proration ?? addonEffectiveTotal)} today
 						{:else}
 							Confirm removal
 						{/if}
-					</button>
+					</Button>
 				</form>
-			</div>
-		</div>
-	</div>
+			</DialogFooter>
+		</DialogContent>
+	</Dialog>
 {/if}

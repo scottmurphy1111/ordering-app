@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 	import Icon from '@iconify/svelte';
 	import { resolve } from '$app/paths';
+	import { Button } from '$lib/components/ui/button';
 	import { tourState } from '$lib/tour-state.svelte';
 
 	const STORAGE_KEY = 'ol_tour_done';
@@ -200,13 +201,9 @@
 					></span>
 				{/each}
 			</div>
-			<button
-				onclick={finish}
-				class="text-gray-300 transition-colors hover:text-gray-500"
-				aria-label="Close tour"
-			>
+			<Button onclick={finish} variant="ghost" size="icon-sm" class="text-gray-300 hover:text-gray-500" aria-label="Close tour">
 				<Icon icon="mdi:close" class="h-4 w-4" />
-			</button>
+			</Button>
 		</div>
 
 		<h3 class="mb-1.5 text-sm font-semibold text-gray-900">{steps[step].title}</h3>
@@ -224,23 +221,22 @@
 		{/if}
 
 		<div class="flex items-center justify-between">
-			<button
+			<Button
 				onclick={prev}
 				disabled={step === 0}
-				class="inline-flex items-center gap-0.5 text-sm text-gray-400 transition-colors hover:text-gray-600 disabled:pointer-events-none disabled:opacity-0"
+				variant="ghost"
+				size="sm"
+				class="gap-0.5 text-gray-400 hover:text-gray-600 disabled:pointer-events-none disabled:opacity-0"
 			>
 				<Icon icon="mdi:chevron-left" class="h-4 w-4" /> Back
-			</button>
-			<button
-				onclick={next}
-				class="inline-flex items-center gap-0.5 rounded-lg bg-gray-900 px-4 py-1.5 text-sm font-medium text-white transition-colors hover:bg-gray-700"
-			>
+			</Button>
+			<Button onclick={next} variant="default" size="sm" class="gap-0.5">
 				{#if step === steps.length - 1}
 					Finish
 				{:else}
 					Next <Icon icon="mdi:chevron-right" class="h-4 w-4" />
 				{/if}
-			</button>
+			</Button>
 		</div>
 	</div>
 {/if}

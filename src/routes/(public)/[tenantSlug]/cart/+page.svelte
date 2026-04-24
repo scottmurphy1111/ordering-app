@@ -6,6 +6,7 @@
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
 	import Icon from '@iconify/svelte';
+	import { Card } from '$lib/components/ui/card';
 
 	let { data }: { data: PageData } = $props();
 
@@ -298,7 +299,7 @@
 			{/if}
 
 			<!-- Cart items -->
-			<div class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+			<Card class="shadow-sm">
 				{#each cart.items as item, i (i)}
 					<div class="flex items-start gap-3 px-4 py-3 {i > 0 ? 'border-t border-gray-100' : ''}">
 						{#if item.imageUrl}
@@ -351,11 +352,11 @@
 						</div>
 					</div>
 				{/each}
-			</div>
+			</Card>
 
 			<!-- Order type -->
 			{#if deliveryEnabled && !isSubscriptionCart}
-				<div class="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+				<Card class="p-4 shadow-sm">
 					<p class="mb-2 text-sm font-semibold text-gray-800">Order type</p>
 					<div class="flex gap-3">
 						{#each [{ value: 'pickup', label: 'Pickup', icon: 'mdi:bag-personal-outline' }, { value: 'delivery', label: 'Delivery', icon: 'mdi:moped-outline' }] as type (type.value)}
@@ -378,12 +379,12 @@
 							</label>
 						{/each}
 					</div>
-				</div>
+				</Card>
 			{/if}
 
 			<!-- Pickup timing (pickup only) -->
 			{#if orderType === 'pickup' && !isSubscriptionCart}
-				<div class="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+				<Card class="p-4 shadow-sm">
 					<p class="mb-2 text-sm font-semibold text-gray-800">Pickup time</p>
 					<div class="flex gap-3">
 						{#each [{ value: 'asap', label: 'ASAP', icon: 'mdi:lightning-bolt' }, { value: 'scheduled', label: 'Schedule', icon: 'mdi:calendar-clock' }] as opt (opt.value)}
@@ -444,12 +445,12 @@
 							</p>
 						{/if}
 					{/if}
-				</div>
+				</Card>
 			{/if}
 
 			<!-- Delivery address -->
 			{#if orderType === 'delivery'}
-				<div class="space-y-3 rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+				<Card class="space-y-3 p-4 shadow-sm">
 					<p class="text-sm font-semibold text-gray-800">Delivery address</p>
 					<div>
 						<label class="mb-1 block text-xs font-medium text-gray-600" for="delivery-street"
@@ -511,11 +512,11 @@
 							/>
 						</div>
 					</div>
-				</div>
+				</Card>
 			{/if}
 
 			<!-- Customer info -->
-			<div class="space-y-3 rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+			<Card class="space-y-3 p-4 shadow-sm">
 				<p class="text-sm font-semibold text-gray-800">Your details</p>
 				<div>
 					<label class="mb-1 block text-xs font-medium text-gray-600" for="cart-name">Name *</label>
@@ -560,11 +561,11 @@
 						class="branded-input w-full resize-none rounded-lg border border-gray-300 px-3 py-2 text-sm transition-colors outline-none"
 					></textarea>
 				</div>
-			</div>
+			</Card>
 
 			<!-- Promo code -->
 			{#if !isSubscriptionCart}
-				<div class="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+				<Card class="p-4 shadow-sm">
 					<p class="mb-2 text-sm font-semibold text-gray-800">Promo code</p>
 					{#if promoApplied}
 						<div
@@ -611,12 +612,12 @@
 							<p class="mt-1.5 text-xs text-red-600">{promoError}</p>
 						{/if}
 					{/if}
-				</div>
+				</Card>
 			{/if}
 
 			<!-- Tip selector -->
 			{#if tipsEnabled && !isSubscriptionCart}
-				<div class="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+				<Card class="p-4 shadow-sm">
 					<p class="mb-2 text-sm font-semibold text-gray-800">Add a tip</p>
 					<div class="flex flex-wrap gap-2">
 						<button
@@ -676,11 +677,11 @@
 							/>
 						</div>
 					{/if}
-				</div>
+				</Card>
 			{/if}
 
 			<!-- Order summary -->
-			<div class="space-y-1.5 rounded-xl border border-gray-200 bg-white p-4 text-sm shadow-sm">
+			<Card class="space-y-1.5 p-4 text-sm shadow-sm">
 				{#if isSubscriptionCart}
 					<div class="mb-1 flex items-center gap-2 border-b border-gray-100 pb-2 text-purple-700">
 						<Icon icon="mdi:refresh-circle" class="h-4 w-4 shrink-0" />
@@ -746,7 +747,7 @@
 					>
 					<span>${(total / 100).toFixed(2)}</span>
 				</div>
-			</div>
+			</Card>
 
 			<p class="text-xs text-gray-400">
 				Please double-check your order before paying — changes can't be made once payment is

@@ -4,6 +4,10 @@
 	import type { PageData, ActionData } from './$types';
 	import Icon from '@iconify/svelte';
 	import { resolve } from '$app/paths';
+	import { Button } from '$lib/components/ui/button';
+	import { Badge } from '$lib/components/ui/badge';
+	import { Input } from '$lib/components/ui/input';
+	import { Label } from '$lib/components/ui/label';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
@@ -65,27 +69,23 @@
 			class="space-y-4"
 		>
 			<div>
-				<label class="mb-1 block text-sm font-medium text-gray-700" for="name">Name</label>
-				<input
+				<Label class="mb-1 block" for="name">Name</Label>
+				<Input
 					id="name"
 					name="name"
 					type="text"
 					required
 					value={data.category.name}
-					class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-green-500 focus:ring-1 focus:ring-green-500 focus:outline-none"
 				/>
 			</div>
 			<div>
-				<label class="mb-1 block text-sm font-medium text-gray-700" for="description"
-					>Description</label
-				>
-				<input
+				<Label class="mb-1 block" for="description">Description</Label>
+				<Input
 					id="description"
 					name="description"
 					type="text"
 					value={data.category.description ?? ''}
 					placeholder="Optional"
-					class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-green-500 focus:ring-1 focus:ring-green-500 focus:outline-none"
 				/>
 			</div>
 			<input type="hidden" name="sortOrder" value={data.category.sortOrder ?? 0} />
@@ -119,12 +119,7 @@
 				</button>
 			</div>
 
-			<button
-				type="submit"
-				class="rounded-md bg-green-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-green-700"
-			>
-				Save changes
-			</button>
+			<Button type="submit" variant="default">Save changes</Button>
 		</form>
 	</section>
 
@@ -163,19 +158,12 @@
 							<span class="flex-1 text-sm text-gray-800">{item.name}</span>
 							<span class="text-xs text-gray-400">${(item.price / 100).toFixed(2)}</span>
 							{#if item.categoryId !== null && item.categoryId !== data.category.id}
-								<span class="rounded-full bg-yellow-100 px-2 py-0.5 text-xs text-yellow-700"
-									>Other category</span
-								>
+								<Badge class="bg-yellow-100 text-yellow-700">Other category</Badge>
 							{/if}
 						</label>
 					{/each}
 				</div>
-				<button
-					type="submit"
-					class="rounded-md bg-green-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-green-700"
-				>
-					Save assignments
-				</button>
+				<Button type="submit" variant="default">Save assignments</Button>
 			</form>
 		{/if}
 	</section>

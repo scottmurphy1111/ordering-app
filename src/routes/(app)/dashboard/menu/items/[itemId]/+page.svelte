@@ -5,6 +5,8 @@
 	import type { PageData, ActionData } from './$types';
 	import { resolve } from '$app/paths';
 	import Icon from '@iconify/svelte';
+	import { Button } from '$lib/components/ui/button';
+	import { Badge } from '$lib/components/ui/badge';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
@@ -162,13 +164,9 @@
 						<p class="text-xs text-red-600">{uploadError}</p>
 					{/if}
 					{#if imagePreview}
-						<button
-							type="button"
-							onclick={clearImage}
-							class="text-xs text-red-500 transition-colors hover:text-red-700"
-						>
+						<Button type="button" onclick={clearImage} variant="ghost" size="sm" class="h-auto p-0 text-xs text-red-500 hover:text-red-700">
 							Remove image
-						</button>
+						</Button>
 					{/if}
 				</div>
 			</div>
@@ -327,13 +325,9 @@
 		{/if}
 
 		<div class="flex gap-2 pt-1">
-			<button
-				type="submit"
-				disabled={uploading}
-				class="flex-1 rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-gray-700 disabled:opacity-50"
-			>
+			<Button type="submit" disabled={uploading} variant="default" class="flex-1">
 				Save changes
-			</button>
+			</Button>
 		</div>
 	</form>
 
@@ -345,12 +339,9 @@
 				<p class="mt-0.5 text-xs text-gray-400">e.g. Size, Add-ons, Doneness</p>
 			</div>
 			{#if !showAddGroup}
-				<button
-					onclick={() => (showAddGroup = true)}
-					class="rounded-md border border-gray-300 px-3 py-1.5 text-sm text-gray-600 transition-colors hover:border-gray-400 hover:bg-gray-100"
-				>
+				<Button onclick={() => (showAddGroup = true)} variant="outline" size="sm">
 					+ Add group
-				</button>
+				</Button>
 			{/if}
 		</div>
 
@@ -403,19 +394,8 @@
 					</div>
 				</div>
 				<div class="flex gap-2">
-					<button
-						type="submit"
-						class="rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-gray-700"
-					>
-						Add group
-					</button>
-					<button
-						type="button"
-						onclick={() => (showAddGroup = false)}
-						class="rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-600 transition-colors hover:border-gray-400 hover:bg-gray-100"
-					>
-						Cancel
-					</button>
+					<Button type="submit" variant="default">Add group</Button>
+					<Button type="button" onclick={() => (showAddGroup = false)} variant="outline">Cancel</Button>
 				</div>
 			</form>
 		{/if}
@@ -483,17 +463,8 @@
 								/>
 								Required
 							</label>
-							<button
-								type="submit"
-								class="rounded-md bg-gray-900 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-gray-700"
-								>Save</button
-							>
-							<button
-								type="button"
-								onclick={() => (editingModifier = null)}
-								class="rounded-md border border-gray-300 px-3 py-1.5 text-sm text-gray-600 transition-colors hover:border-gray-400 hover:bg-gray-100"
-								>Cancel</button
-							>
+							<Button type="submit" variant="default" size="sm">Save</Button>
+							<Button type="button" onclick={() => (editingModifier = null)} variant="outline" size="sm">Cancel</Button>
 						</form>
 					{:else}
 						<div class="flex items-center justify-between gap-3 border-b border-gray-100 px-4 py-3">
@@ -511,26 +482,24 @@
 								<span class="text-xs text-gray-400">max {mod.maxSelections}</span>
 							</div>
 							<div class="flex items-center gap-2">
-								<button
-									type="button"
-									onclick={() => (editingModifier = mod.id)}
-									class="text-xs text-gray-400 transition-colors hover:text-gray-700"
-								>
+								<Button type="button" onclick={() => (editingModifier = mod.id)} variant="ghost" size="sm" class="h-auto p-0 text-xs text-gray-400 hover:text-gray-700">
 									Edit
-								</button>
+								</Button>
 								<form method="post" action="?/deleteModifier" use:enhance>
 									<input type="hidden" name="modifierId" value={mod.id} />
-									<button
+									<Button
 										type="submit"
 										onclick={async (e) => {
 											e.preventDefault();
 											if (await confirmDialog(`Delete "${mod.name}"? This cannot be undone.`))
 												(e.currentTarget as HTMLButtonElement).form?.requestSubmit();
 										}}
-										class="text-xs text-red-400 transition-colors hover:text-red-600"
+										variant="ghost"
+										size="sm"
+										class="h-auto p-0 text-xs text-red-400 hover:text-red-600"
 									>
 										Delete
-									</button>
+									</Button>
 								</form>
 							</div>
 						</div>
@@ -558,17 +527,19 @@
 									</span>
 									<form method="post" action="?/deleteOption" use:enhance>
 										<input type="hidden" name="optionId" value={opt.id} />
-										<button
+										<Button
 											type="submit"
 											onclick={async (e) => {
 												e.preventDefault();
 												if (await confirmDialog(`Delete option "${opt.name}"?`))
 													(e.currentTarget as HTMLButtonElement).form?.requestSubmit();
 											}}
-											class="text-xs text-red-400 transition-colors hover:text-red-600"
+											variant="ghost"
+											size="icon-sm"
+											class="text-red-400 hover:text-red-600"
 										>
 											<Icon icon="mdi:close" class="h-3.5 w-3.5" />
-										</button>
+										</Button>
 									</form>
 								</div>
 							</div>
@@ -625,30 +596,22 @@
 									Default
 								</label>
 								<div class="flex gap-1 pb-0.5">
-									<button
-										type="submit"
-										class="rounded-md bg-gray-900 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-gray-700"
-									>
-										Add
-									</button>
-									<button
-										type="button"
-										onclick={() => (addingOptionTo = null)}
-										class="rounded-md border border-gray-300 px-3 py-1.5 text-xs text-gray-600 transition-colors hover:bg-white"
-									>
-										✕
-									</button>
+									<Button type="submit" variant="default" size="sm">Add</Button>
+									<Button type="button" onclick={() => (addingOptionTo = null)} variant="outline" size="sm">
+										<Icon icon="mdi:close" class="h-3.5 w-3.5" />
+									</Button>
 								</div>
 							</div>
 						</form>
 					{:else}
-						<button
+						<Button
 							type="button"
 							onclick={() => (addingOptionTo = mod.id)}
-							class="w-full border-t border-gray-100 px-4 py-2 text-left text-xs text-gray-400 transition-colors hover:bg-gray-50 hover:text-gray-600"
+							variant="ghost"
+							class="w-full justify-start rounded-none border-t border-gray-100 px-4 py-2 text-xs text-gray-400 hover:bg-gray-50 hover:text-gray-600"
 						>
 							+ Add option
-						</button>
+						</Button>
 					{/if}
 				</div>
 			{/each}
@@ -659,17 +622,17 @@
 	<div class="mt-6 rounded-xl border border-red-200 bg-white p-4">
 		<h2 class="mb-2 text-sm font-semibold text-red-700">Danger zone</h2>
 		<form method="post" action="?/delete" use:enhance>
-			<button
+			<Button
 				type="submit"
 				onclick={async (e) => {
 					e.preventDefault();
 					if (await confirmDialog('Delete this item? This cannot be undone.'))
 						(e.currentTarget as HTMLButtonElement).form?.requestSubmit();
 				}}
-				class="rounded-md border border-red-300 px-4 py-2 text-sm text-red-600 transition-colors hover:bg-red-50"
+				variant="destructive"
 			>
 				Delete item
-			</button>
+			</Button>
 		</form>
 	</div>
 </div>

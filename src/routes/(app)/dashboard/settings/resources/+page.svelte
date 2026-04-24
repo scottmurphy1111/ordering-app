@@ -4,6 +4,11 @@
 	import Icon from '@iconify/svelte';
 	import QRCode from 'qrcode';
 	import { hasAddon } from '$lib/billing';
+	import { Button } from '$lib/components/ui/button';
+	import { Badge } from '$lib/components/ui/badge';
+	import { Input } from '$lib/components/ui/input';
+	import { Label } from '$lib/components/ui/label';
+	import { Card } from '$lib/components/ui/card';
 
 	const tenant = $derived(page.data.tenant);
 	const menuUrl = $derived(tenant?.slug ? `${page.url.origin}/${tenant.slug}/menu` : '');
@@ -102,7 +107,7 @@
 	<div class="space-y-6">
 		<!-- ── Menu QR code ──────────────────────────────────────────────────── -->
 		{#if tenant?.slug}
-			<div class="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+			<Card class="p-6 shadow-sm">
 				<div class="mb-5 flex items-center gap-3">
 					<div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-green-100">
 						<Icon icon="mdi:qrcode" class="h-5 w-5 text-green-700" />
@@ -135,33 +140,27 @@
 								>
 									{menuUrl}
 								</span>
-								<button
-									onclick={copyMenuUrl}
-									class="flex shrink-0 items-center gap-1.5 rounded-md border border-gray-200 bg-white px-3 py-1.5 text-sm text-gray-600 transition-colors hover:border-gray-400 hover:bg-gray-100"
-								>
+								<Button onclick={copyMenuUrl} variant="outline" size="sm" class="shrink-0 gap-1.5">
 									<Icon icon={menuUrlCopied ? 'mdi:check' : 'mdi:content-copy'} class="h-4 w-4" />
 									{menuUrlCopied ? 'Copied' : 'Copy'}
-								</button>
+								</Button>
 							</div>
 						</div>
 						<div class="flex gap-2">
-							<button
-								onclick={downloadMenuQr}
-								class="flex items-center gap-2 rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-gray-700"
-							>
+							<Button onclick={downloadMenuQr} variant="default" class="gap-2">
 								<Icon icon="mdi:download" class="h-4 w-4" /> Download PNG
-							</button>
-							<a
+							</Button>
+							<Button
 								href={resolve(`/${tenant.slug}/menu` as `/${string}`)}
-								rel="noopener noreferrer"
-								class="flex items-center gap-2 rounded-md border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:border-gray-400 hover:bg-gray-100"
+								variant="outline"
+								class="gap-2"
 							>
 								<Icon icon="mdi:open-in-new" class="h-4 w-4" /> Preview menu
-							</a>
+							</Button>
 						</div>
 					</div>
 				</div>
-			</div>
+			</Card>
 		{/if}
 
 		<!-- ── Google Business Profile ──────────────────────────────────────────── -->
@@ -193,13 +192,10 @@
 							>
 								{menuUrl}
 							</span>
-							<button
-								onclick={copyMenuUrl}
-								class="flex shrink-0 items-center gap-1.5 rounded-md border border-blue-200 bg-white px-3 py-1.5 text-xs text-gray-600 transition-colors hover:bg-blue-50"
-							>
+							<Button onclick={copyMenuUrl} variant="outline" size="sm" class="shrink-0 gap-1.5">
 								<Icon icon={menuUrlCopied ? 'mdi:check' : 'mdi:content-copy'} class="h-3.5 w-3.5" />
 								{menuUrlCopied ? 'Copied' : 'Copy URL'}
-							</button>
+							</Button>
 						</div>
 					</div>
 				</div>
@@ -209,7 +205,7 @@
 		<!-- ── Table QR codes ────────────────────────────────────────────────── -->
 		{#if tenant?.slug}
 			{#if hasTableQr}
-				<div class="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+				<Card class="p-6 shadow-sm">
 					<div class="mb-5 flex items-start justify-between gap-4">
 						<div class="flex items-center gap-3">
 							<div
@@ -225,14 +221,14 @@
 							</div>
 						</div>
 						<div class="flex shrink-0 items-center gap-2">
-							<label class="text-sm text-gray-600" for="table-count">Tables:</label>
-							<input
+							<Label class="text-sm" for="table-count">Tables:</Label>
+							<Input
 								id="table-count"
 								type="number"
-								min="1"
-								max="50"
+								min={1}
+								max={50}
 								bind:value={tableCount}
-								class="w-16 rounded-md border border-gray-300 px-2 py-1.5 text-center text-sm focus:border-green-500 focus:ring-1 focus:ring-green-500 focus:outline-none"
+								class="w-16 text-center"
 							/>
 						</div>
 					</div>
@@ -249,17 +245,14 @@
 								>
 									<img src={dataUrl} alt="Table {i + 1} QR code" class="h-24 w-24" />
 									<p class="text-xs font-semibold text-gray-700">Table {i + 1}</p>
-									<button
-										onclick={() => downloadTableQr(i)}
-										class="flex items-center gap-1 rounded-md border border-gray-200 bg-white px-2 py-1 text-xs text-gray-600 transition-colors hover:border-gray-400 hover:bg-gray-100"
-									>
+									<Button onclick={() => downloadTableQr(i)} variant="outline" size="xs" class="gap-1">
 										<Icon icon="mdi:download" class="h-3 w-3" /> PNG
-									</button>
+									</Button>
 								</div>
 							{/each}
 						</div>
 					{/if}
-				</div>
+				</Card>
 			{:else}
 				<div class="rounded-xl border border-dashed border-gray-200 bg-gray-50 p-6">
 					<div class="flex items-start gap-4">
@@ -269,19 +262,19 @@
 						<div class="flex-1">
 							<div class="flex flex-wrap items-center gap-2">
 								<h2 class="font-semibold text-gray-400">Table QR Codes</h2>
-								<span class="rounded-full bg-gray-200 px-2 py-0.5 text-xs font-medium text-gray-500"
-									>Add-on</span
-								>
+								<Badge class="bg-gray-200 text-gray-500">Add-on</Badge>
 							</div>
 							<p class="mt-1 text-sm text-gray-400">
 								Per-table QR codes for dine-in ordering. Activate this add-on in Billing to unlock.
 							</p>
-							<a
+							<Button
 								href={resolve('/dashboard/settings/billing')}
-								class="mt-3 inline-flex items-center gap-1.5 rounded-md bg-gray-900 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-gray-700"
+								variant="default"
+								size="sm"
+								class="mt-3 gap-1.5"
 							>
 								<Icon icon="mdi:arrow-right" class="h-3.5 w-3.5" /> Go to Billing
-							</a>
+							</Button>
 						</div>
 					</div>
 				</div>
@@ -291,7 +284,7 @@
 		<!-- ── Embed snippet ──────────────────────────────────────────────────── -->
 		{#if tenant?.slug}
 			{@const isPro = tenant.subscriptionTier === 'pro'}
-			<div class="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+			<Card class="p-6 shadow-sm">
 				<div class="mb-5 flex items-center gap-3">
 					<div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-green-100">
 						<Icon icon="mdi:code-tags" class="h-5 w-5 text-green-700" />
@@ -308,13 +301,10 @@
 					<div class="relative rounded-lg border border-gray-200 bg-gray-50">
 						<pre
 							class="overflow-x-auto px-4 py-3 font-mono text-xs text-gray-700">{embedSnippet}</pre>
-						<button
-							onclick={copyEmbed}
-							class="absolute top-2 right-2 flex items-center gap-1.5 rounded-md border border-gray-200 bg-white px-2.5 py-1.5 text-xs text-gray-600 transition-colors hover:border-gray-400 hover:bg-gray-100"
-						>
+						<Button onclick={copyEmbed} variant="outline" size="sm" class="absolute top-2 right-2 gap-1.5">
 							<Icon icon={embedCopied ? 'mdi:check' : 'mdi:content-copy'} class="h-3.5 w-3.5" />
 							{embedCopied ? 'Copied' : 'Copy'}
-						</button>
+						</Button>
 					</div>
 					<p class="mt-2 text-xs text-gray-400">
 						Tip: adjust the <code>height</code> value to fit your page layout.
@@ -324,15 +314,12 @@
 						<Icon icon="mdi:lock-outline" class="mx-auto mb-2 h-6 w-6 text-gray-400" />
 						<p class="text-sm font-medium text-gray-700">Website embed is a Pro feature</p>
 						<p class="mt-1 text-sm text-gray-500">Upgrade to Pro to embed your menu on any website.</p>
-						<a
-							href={resolve('/dashboard/settings/billing')}
-							class="mt-4 inline-flex items-center gap-1.5 rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-gray-700"
-						>
+						<Button href={resolve('/dashboard/settings/billing')} variant="default" class="mt-4">
 							Upgrade to Pro
-						</a>
+						</Button>
 					</div>
 				{/if}
-			</div>
+			</Card>
 		{/if}
 
 		<!-- ── Printable menu (coming soon) ──────────────────────────────────── -->
@@ -344,9 +331,7 @@
 				<div>
 					<div class="flex items-center gap-2">
 						<h2 class="font-semibold text-gray-400">Printable Menu</h2>
-						<span class="rounded-full bg-gray-200 px-2 py-0.5 text-xs font-medium text-gray-500"
-							>Coming soon</span
-						>
+						<Badge class="bg-gray-200 text-gray-500">Coming soon</Badge>
 					</div>
 					<p class="text-sm text-gray-400">Generate a print-ready PDF of your full menu.</p>
 				</div>
@@ -362,9 +347,7 @@
 				<div>
 					<div class="flex items-center gap-2">
 						<h2 class="font-semibold text-gray-400">Social Share Card</h2>
-						<span class="rounded-full bg-gray-200 px-2 py-0.5 text-xs font-medium text-gray-500"
-							>Coming soon</span
-						>
+						<Badge class="bg-gray-200 text-gray-500">Coming soon</Badge>
 					</div>
 					<p class="text-sm text-gray-400">
 						A branded image card ready to share on Instagram, Facebook, and more.

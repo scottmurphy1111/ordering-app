@@ -3,6 +3,7 @@
 	import type { PageData, ActionData } from './$types';
 	import Icon from '@iconify/svelte';
 	import { tourState } from '$lib/tour-state.svelte';
+	import { Button } from '$lib/components/ui/button';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
@@ -99,13 +100,14 @@
 		{/if}
 
 		{#if data.canCreate && !showCreate}
-			<button
+			<Button
 				data-tour="create-tenant"
 				onclick={() => (showCreate = true)}
-				class="flex w-full items-center justify-center gap-2 rounded-lg border-2 border-dashed border-gray-300 px-4 py-3 text-sm text-gray-500 transition-colors hover:border-gray-400 hover:text-gray-700"
+				variant="outline"
+				class="w-full border-2 border-dashed border-gray-300 text-gray-500 hover:border-gray-400 hover:text-gray-700"
 			>
 				<Icon icon="mdi:plus" class="h-4 w-4" /> Create new tenant
-			</button>
+			</Button>
 		{:else if data.canCreate}
 			<form
 				method="post"
@@ -168,31 +170,21 @@
 				</div>
 
 				<div class="flex gap-2 pt-1">
-					<button
-						type="submit"
-						class="flex-1 rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-gray-700"
-					>
+					<Button type="submit" variant="default" class="flex-1">
 						Create & go to dashboard
-					</button>
-					<button
-						type="button"
-						onclick={() => (showCreate = false)}
-						class="rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-600 transition-colors hover:border-gray-400 hover:bg-gray-100"
-					>
+					</Button>
+					<Button type="button" onclick={() => (showCreate = false)} variant="outline">
 						Cancel
-					</button>
+					</Button>
 				</div>
 			</form>
 		{/if}
 
 		<div class="mt-6 flex justify-center">
-			<button
-				onclick={startTour}
-				class="inline-flex items-center gap-1.5 text-sm text-gray-400 transition-colors hover:text-gray-600"
-			>
+			<Button onclick={startTour} variant="ghost" size="sm" class="gap-1.5 text-gray-400 hover:text-gray-600">
 				<Icon icon="mdi:compass-outline" class="h-4 w-4" />
 				Take the tour
-			</button>
+			</Button>
 		</div>
 	</div>
 </div>

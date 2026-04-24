@@ -4,6 +4,11 @@
 	import Icon from '@iconify/svelte';
 	import { resolve } from '$app/paths';
 	import type { WeekHours } from '$lib/hours';
+	import { Button } from '$lib/components/ui/button';
+	import { Input } from '$lib/components/ui/input';
+	import { Label } from '$lib/components/ui/label';
+	import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '$lib/components/ui/select';
+	import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '$lib/components/ui/card';
 
 	let { data, form: _form }: { data: PageData; form: ActionData } = $props();
 	const form = $derived(_form as (ActionData & { deliverySuccess?: boolean }) | null);
@@ -84,88 +89,79 @@
 		class="space-y-6"
 	>
 		<!-- Business identity -->
-		<div class="rounded-xl border border-gray-200 bg-white shadow-sm">
-			<div class="border-b border-gray-100 px-5 py-4">
-				<h2 class="font-semibold text-gray-900">Business identity</h2>
-			</div>
-			<div class="space-y-4 px-5 py-5">
+		<Card class="shadow-sm">
+			<CardHeader>
+				<CardTitle>Business identity</CardTitle>
+			</CardHeader>
+			<CardContent class="space-y-4">
 				<div class="grid gap-4 sm:grid-cols-2">
 					<div>
-						<label class="mb-1 block text-sm font-medium text-gray-700" for="name"
-							>Business name *</label
-						>
-						<input
+						<Label class="mb-1 block" for="name">Business name *</Label>
+						<Input
 							id="name"
 							name="name"
 							type="text"
 							required
 							value={data.info?.name ?? ''}
-							class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-green-500 focus:ring-1 focus:ring-green-500 focus:outline-none"
 						/>
 					</div>
 					<div>
-						<label class="mb-1 block text-sm font-medium text-gray-700" for="legalName"
-							>Legal name</label
-						>
-						<input
+						<Label class="mb-1 block" for="legalName">Legal name</Label>
+						<Input
 							id="legalName"
 							name="legalName"
 							type="text"
 							value={data.info?.legalName ?? ''}
 							placeholder="If different from business name"
-							class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-green-500 focus:ring-1 focus:ring-green-500 focus:outline-none"
 						/>
 					</div>
 				</div>
 				<div class="sm:w-1/2">
-					<label class="mb-1 block text-sm font-medium text-gray-700" for="type"
-						>Business type</label
-					>
-					<select
-						id="type"
-						name="type"
-						class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-green-500 focus:ring-1 focus:ring-green-500 focus:outline-none"
-					>
-						{#each businessTypes as bt (bt.value)}
-							<option value={bt.value} selected={data.info?.type === bt.value}>{bt.label}</option>
-						{/each}
-					</select>
+					<Label class="mb-1 block" for="type">Business type</Label>
+					<Select type="single" name="type" value={data.info?.type ?? ''}>
+						<SelectTrigger id="type" class="w-full">
+							<SelectValue placeholder="Select type" />
+						</SelectTrigger>
+						<SelectContent>
+							{#each businessTypes as bt (bt.value)}
+								<SelectItem value={bt.value}>{bt.label}</SelectItem>
+							{/each}
+						</SelectContent>
+					</Select>
 				</div>
-			</div>
-		</div>
+			</CardContent>
+		</Card>
 
 		<!-- Contact -->
-		<div class="rounded-xl border border-gray-200 bg-white shadow-sm">
-			<div class="border-b border-gray-100 px-5 py-4">
-				<h2 class="font-semibold text-gray-900">Contact</h2>
-			</div>
-			<div class="space-y-4 px-5 py-5">
+		<Card class="shadow-sm">
+			<CardHeader>
+				<CardTitle>Contact</CardTitle>
+			</CardHeader>
+			<CardContent class="space-y-4">
 				<div class="grid gap-4 sm:grid-cols-2">
 					<div>
-						<label class="mb-1 block text-sm font-medium text-gray-700" for="phone">Phone</label>
-						<input
+						<Label class="mb-1 block" for="phone">Phone</Label>
+						<Input
 							id="phone"
 							name="phone"
 							type="tel"
 							value={data.info?.phone ?? ''}
 							placeholder="+1 (555) 000-0000"
-							class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-green-500 focus:ring-1 focus:ring-green-500 focus:outline-none"
 						/>
 					</div>
 					<div>
-						<label class="mb-1 block text-sm font-medium text-gray-700" for="email">Email</label>
-						<input
+						<Label class="mb-1 block" for="email">Email</Label>
+						<Input
 							id="email"
 							name="email"
 							type="email"
 							value={data.info?.email ?? ''}
 							placeholder="contact@yourbusiness.com"
-							class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-green-500 focus:ring-1 focus:ring-green-500 focus:outline-none"
 						/>
 					</div>
 				</div>
 				<div>
-					<label class="mb-1 block text-sm font-medium text-gray-700" for="website">Website</label>
+					<Label class="mb-1 block" for="website">Website</Label>
 					<div
 						class="flex rounded-md border border-gray-300 focus-within:border-green-500 focus-within:ring-1 focus-within:ring-green-500"
 					>
@@ -173,90 +169,80 @@
 							class="flex items-center rounded-l-md border-r border-gray-300 bg-gray-50 px-3 text-sm text-gray-500"
 							>https://</span
 						>
-						<input
+						<Input
 							id="website"
 							name="website"
 							type="text"
 							value={(data.info?.website ?? '').replace(/^https?:\/\//, '')}
 							placeholder="yourbusiness.com"
-							class="min-w-0 flex-1 rounded-r-md px-3 py-2 text-sm focus:outline-none"
+							class="min-w-0 flex-1 rounded-none rounded-r-md border-0 shadow-none focus-visible:ring-0"
 						/>
 					</div>
 				</div>
-			</div>
-		</div>
+			</CardContent>
+		</Card>
 
 		<!-- Address -->
-		<div class="rounded-xl border border-gray-200 bg-white shadow-sm">
-			<div class="border-b border-gray-100 px-5 py-4">
-				<h2 class="font-semibold text-gray-900">Address</h2>
-			</div>
-			<div class="space-y-4 px-5 py-5">
+		<Card class="shadow-sm">
+			<CardHeader>
+				<CardTitle>Address</CardTitle>
+			</CardHeader>
+			<CardContent class="space-y-4">
 				<div>
-					<label class="mb-1 block text-sm font-medium text-gray-700" for="street">Street</label>
-					<input
+					<Label class="mb-1 block" for="street">Street</Label>
+					<Input
 						id="street"
 						name="street"
 						type="text"
 						value={address?.street ?? ''}
 						placeholder="123 Main St"
-						class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-green-500 focus:ring-1 focus:ring-green-500 focus:outline-none"
 					/>
 				</div>
 				<div class="grid gap-4 sm:grid-cols-3">
 					<div>
-						<label class="mb-1 block text-sm font-medium text-gray-700" for="city">City</label>
-						<input
+						<Label class="mb-1 block" for="city">City</Label>
+						<Input
 							id="city"
 							name="city"
 							type="text"
 							value={address?.city ?? ''}
-							class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-green-500 focus:ring-1 focus:ring-green-500 focus:outline-none"
 						/>
 					</div>
 					<div>
-						<label class="mb-1 block text-sm font-medium text-gray-700" for="state">State</label>
-						<input
+						<Label class="mb-1 block" for="state">State</Label>
+						<Input
 							id="state"
 							name="state"
 							type="text"
 							value={address?.state ?? ''}
 							placeholder="TX"
-							class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-green-500 focus:ring-1 focus:ring-green-500 focus:outline-none"
 						/>
 					</div>
 					<div>
-						<label class="mb-1 block text-sm font-medium text-gray-700" for="zip">ZIP</label>
-						<input
+						<Label class="mb-1 block" for="zip">ZIP</Label>
+						<Input
 							id="zip"
 							name="zip"
 							type="text"
 							value={address?.zip ?? ''}
-							class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-green-500 focus:ring-1 focus:ring-green-500 focus:outline-none"
 						/>
 					</div>
 				</div>
 				<div class="sm:w-1/3">
-					<label class="mb-1 block text-sm font-medium text-gray-700" for="country">Country</label>
-					<input
+					<Label class="mb-1 block" for="country">Country</Label>
+					<Input
 						id="country"
 						name="country"
 						type="text"
 						value={address?.country ?? ''}
 						placeholder="US"
-						class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-green-500 focus:ring-1 focus:ring-green-500 focus:outline-none"
 					/>
 				</div>
-			</div>
-		</div>
+			</CardContent>
+		</Card>
 
 		<div>
-			<button
-				type="submit"
-				class="rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-gray-700"
-			>
-				Save changes
-			</button>
+			<Button type="submit" variant="default">Save changes</Button>
 		</div>
 	</form>
 
@@ -276,14 +262,14 @@
 				update({ reset: false })}
 		class="mt-6"
 	>
-		<div class="rounded-xl border border-gray-200 bg-white shadow-sm">
-			<div class="border-b border-gray-100 px-5 py-4">
-				<h2 class="font-semibold text-gray-900">Delivery</h2>
-				<p class="mt-0.5 text-xs text-gray-500">
+		<Card class="shadow-sm">
+			<CardHeader>
+				<CardTitle>Delivery</CardTitle>
+			</CardHeader>
+			<CardContent class="space-y-4">
+				<p class="text-xs text-gray-500">
 					Enable delivery as an order type at checkout and set a flat delivery fee.
 				</p>
-			</div>
-			<div class="space-y-4 px-5 py-5">
 				<label class="flex cursor-pointer items-center gap-3">
 					<input
 						type="checkbox"
@@ -294,9 +280,7 @@
 					<span class="text-sm font-medium text-gray-700">Enable delivery orders</span>
 				</label>
 				<div class="sm:w-48">
-					<label class="mb-1 block text-sm font-medium text-gray-700" for="deliveryFee"
-						>Delivery fee</label
-					>
+					<Label class="mb-1 block" for="deliveryFee">Delivery fee</Label>
 					<div
 						class="flex rounded-md border border-gray-300 focus-within:border-green-500 focus-within:ring-1 focus-within:ring-green-500"
 					>
@@ -304,7 +288,7 @@
 							class="flex items-center rounded-l-md border-r border-gray-300 bg-gray-50 px-3 text-sm text-gray-500"
 							>$</span
 						>
-						<input
+						<Input
 							id="deliveryFee"
 							name="deliveryFee"
 							type="number"
@@ -312,20 +296,15 @@
 							step="0.01"
 							placeholder="0.00"
 							value={((savedDelivery.deliveryFee ?? 0) / 100).toFixed(2)}
-							class="min-w-0 flex-1 rounded-r-md px-3 py-2 text-sm focus:outline-none"
+							class="min-w-0 flex-1 rounded-none rounded-r-md border-0 shadow-none focus-visible:ring-0"
 						/>
 					</div>
 				</div>
-			</div>
-			<div class="border-t border-gray-100 px-5 py-4">
-				<button
-					type="submit"
-					class="rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-gray-700"
-				>
-					Save delivery settings
-				</button>
-			</div>
-		</div>
+			</CardContent>
+			<CardFooter>
+				<Button type="submit" variant="default">Save delivery settings</Button>
+			</CardFooter>
+		</Card>
 	</form>
 
 	<!-- Operating hours — separate form/action -->
@@ -344,56 +323,53 @@
 				update({ reset: false })}
 		class="mt-6"
 	>
-		<div class="rounded-xl border border-gray-200 bg-white shadow-sm">
-			<div class="border-b border-gray-100 px-5 py-4">
-				<h2 class="font-semibold text-gray-900">Operating hours</h2>
-				<p class="mt-0.5 text-xs text-gray-500">
+		<Card class="shadow-sm">
+			<CardHeader>
+				<CardTitle>Operating hours</CardTitle>
+			</CardHeader>
+			<CardContent>
+				<p class="px-4 pb-3 text-xs text-gray-500">
 					Customers will see open/closed status on your menu page. Leave all days unset to hide the
 					status.
 				</p>
-			</div>
-			<div class="divide-y divide-gray-100 px-5">
-				{#each DAYS as day (day.key)}
-					{@const h = savedHours[day.key]}
-					<div class="flex flex-col gap-2 py-3 sm:flex-row sm:items-center sm:gap-4">
-						<div class="flex items-center justify-between sm:contents">
-							<span class="w-24 shrink-0 text-sm font-medium text-gray-700">{day.label}</span>
-							<label class="flex items-center gap-1.5 text-sm text-gray-500">
-								<input
-									type="checkbox"
-									name="{day.key}_closed"
-									class="h-4 w-4 rounded border-gray-300"
-									checked={h?.closed ?? false}
+				<div class="divide-y divide-gray-100 px-5">
+					{#each DAYS as day (day.key)}
+						{@const h = savedHours[day.key]}
+						<div class="flex flex-col gap-2 py-3 sm:flex-row sm:items-center sm:gap-4">
+							<div class="flex items-center justify-between sm:contents">
+								<span class="w-24 shrink-0 text-sm font-medium text-gray-700">{day.label}</span>
+								<label class="flex items-center gap-1.5 text-sm text-gray-500">
+									<input
+										type="checkbox"
+										name="{day.key}_closed"
+										class="h-4 w-4 rounded border-gray-300"
+										checked={h?.closed ?? false}
+									/>
+									Closed
+								</label>
+							</div>
+							<div class="flex items-center gap-2">
+								<Input
+									type="time"
+									name="{day.key}_open"
+									value={h?.open ?? '09:00'}
+									class="flex-1 sm:flex-none"
 								/>
-								Closed
-							</label>
+								<span class="text-xs text-gray-400">to</span>
+								<Input
+									type="time"
+									name="{day.key}_close"
+									value={h?.close ?? '21:00'}
+									class="flex-1 sm:flex-none"
+								/>
+							</div>
 						</div>
-						<div class="flex items-center gap-2">
-							<input
-								type="time"
-								name="{day.key}_open"
-								value={h?.open ?? '09:00'}
-								class="flex-1 rounded-md border border-gray-300 px-2 py-1.5 text-sm focus:border-green-500 focus:ring-1 focus:ring-green-500 focus:outline-none sm:flex-none"
-							/>
-							<span class="text-xs text-gray-400">to</span>
-							<input
-								type="time"
-								name="{day.key}_close"
-								value={h?.close ?? '21:00'}
-								class="flex-1 rounded-md border border-gray-300 px-2 py-1.5 text-sm focus:border-green-500 focus:ring-1 focus:ring-green-500 focus:outline-none sm:flex-none"
-							/>
-						</div>
-					</div>
-				{/each}
-			</div>
-			<div class="border-t border-gray-100 px-5 py-4">
-				<button
-					type="submit"
-					class="rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-gray-700"
-				>
-					Save hours
-				</button>
-			</div>
-		</div>
+					{/each}
+				</div>
+			</CardContent>
+			<CardFooter>
+				<Button type="submit" variant="default">Save hours</Button>
+			</CardFooter>
+		</Card>
 	</form>
 </div>

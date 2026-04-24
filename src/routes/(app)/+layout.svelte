@@ -8,8 +8,10 @@
 	import AppTour from '$lib/components/AppTour.svelte';
 	import ConfirmModal from '$lib/components/ConfirmModal.svelte';
 	import { tourState } from '$lib/tour-state.svelte';
+	import { Button } from '$lib/components/ui/button';
 
 	import { onMount } from 'svelte';
+	import { Sheet, SheetContent } from '$lib/components/ui/sheet';
 
 	let { data, children }: { data: LayoutData; children: import('svelte').Snippet } = $props();
 
@@ -116,102 +118,95 @@
 	});
 </script>
 
-<div class="flex h-screen bg-gray-50">
-	<!-- Mobile backdrop -->
-	{#if sidebarOpen}
-		<div
-			class="fixed inset-0 z-40 bg-black/50 md:hidden"
-			role="presentation"
-			onclick={() => (sidebarOpen = false)}
-		></div>
-	{/if}
-
-	<!-- Sidebar -->
-	<aside
-		class="fixed inset-y-0 left-0 z-50 flex w-64 flex-col bg-gray-900 text-white transition-transform duration-200 ease-in-out md:relative md:z-auto md:w-56 md:translate-x-0 {sidebarOpen
-			? 'translate-x-0'
-			: '-translate-x-full'}"
-	>
-		<!-- Logo / Tenant Name -->
-		<div class="flex items-center justify-between border-b border-gray-700 px-4 py-4">
-			<a href={resolve('/tenants')} class="flex min-w-0 flex-1 items-center gap-3">
-				{#if data.tenant?.logoUrl}
-					<img
-						src={data.tenant.logoUrl}
-						alt={data.tenant.name}
-						class="h-9 w-9 shrink-0 rounded-md bg-white/10 object-contain p-0.5"
-					/>
-				{/if}
-				<div class="min-w-0">
-					<p class="text-xs font-medium tracking-wider text-gray-400 uppercase">
-						Order<span class="text-green-400">Local</span>
-					</p>
-					{#if data.tenant}
-						<p class="mt-0.5 truncate text-sm font-semibold text-white">{data.tenant.name}</p>
-					{:else}
-						<p class="mt-0.5 text-sm text-gray-500">No tenant selected</p>
-					{/if}
-				</div>
-			</a>
-			<button
-				onclick={() => (sidebarOpen = false)}
-				class="ml-3 shrink-0 rounded-md p-1 text-gray-400 transition-colors hover:text-white md:hidden"
-				aria-label="Close menu"
-			>
-				<Icon icon="mdi:close" class="h-5 w-5" />
-			</button>
-		</div>
-
-		<!-- Nav -->
-		<nav class="flex-1 space-y-0.5 px-2 py-3">
-			{#each navItems as item (item.href)}
-				<a
-					href={resolve(item.href as `/${string}`)}
-					data-tour={item.tour}
-					class="flex items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium transition-colors
-						{isActive(item.href)
-						? 'bg-green-600 text-white'
-						: 'text-gray-400 hover:bg-gray-800 hover:text-white'}"
-				>
-					<Icon icon={item.icon} class="h-4 w-4 shrink-0" />
-					{item.label}
-				</a>
-			{/each}
-		</nav>
-
-		<!-- User + Switch Tenant -->
-		<div class="space-y-2 border-t border-gray-700 px-4 py-3">
-			{#if data.hasMultipleTenants}
-				<a
-					href={resolve('/tenants')}
-					class="flex items-center gap-1.5 text-xs text-gray-400 transition-colors hover:text-white"
-				>
-					<Icon icon="mdi:swap-horizontal" class="h-3.5 w-3.5" />
-					Switch tenant
-				</a>
+{#snippet sidebarContent()}
+	<!-- Logo / Tenant Name -->
+	<div class="flex items-center justify-between border-b border-gray-700 px-4 py-4">
+		<a href={resolve('/tenants')} class="flex min-w-0 flex-1 items-center gap-3">
+			{#if data.tenant?.logoUrl}
+				<img
+					src={data.tenant.logoUrl}
+					alt={data.tenant.name}
+					class="h-9 w-9 shrink-0 rounded-md bg-white/10 object-contain p-0.5"
+				/>
 			{/if}
+			<div class="min-w-0">
+				<p class="text-xs font-medium tracking-wider text-gray-400 uppercase">
+					Order<span class="text-green-400">Local</span>
+				</p>
+				{#if data.tenant}
+					<p class="mt-0.5 truncate text-sm font-semibold text-white">{data.tenant.name}</p>
+				{:else}
+					<p class="mt-0.5 text-sm text-gray-500">No tenant selected</p>
+				{/if}
+			</div>
+		</a>
+	</div>
+
+	<!-- Nav -->
+	<nav class="flex-1 space-y-0.5 px-2 py-3">
+		{#each navItems as item (item.href)}
 			<a
-				href={resolve('/dashboard/settings/profile')}
+				href={resolve(item.href as `/${string}`)}
+				data-tour={item.tour}
+				class="flex items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium transition-colors
+					{isActive(item.href)
+					? 'bg-green-600 text-white'
+					: 'text-gray-400 hover:bg-gray-800 hover:text-white'}"
+			>
+				<Icon icon={item.icon} class="h-4 w-4 shrink-0" />
+				{item.label}
+			</a>
+		{/each}
+	</nav>
+
+	<!-- User + Switch Tenant -->
+	<div class="space-y-2 border-t border-gray-700 px-4 py-3">
+		{#if data.hasMultipleTenants}
+			<a
+				href={resolve('/tenants')}
 				class="flex items-center gap-1.5 text-xs text-gray-400 transition-colors hover:text-white"
 			>
-				<Icon icon="mdi:account-circle-outline" class="h-3.5 w-3.5" />
-				Account
+				<Icon icon="mdi:swap-horizontal" class="h-3.5 w-3.5" />
+				Switch tenant
 			</a>
-			<p class="truncate text-xs text-gray-500">{data.user.email}</p>
-			<button
-				onclick={() =>
-					signOut({
-						fetchOptions: {
-							onSuccess: () => {
-								window.location.href = '/login';
-							}
+		{/if}
+		<a
+			href={resolve('/dashboard/settings/profile')}
+			class="flex items-center gap-1.5 text-xs text-gray-400 transition-colors hover:text-white"
+		>
+			<Icon icon="mdi:account-circle-outline" class="h-3.5 w-3.5" />
+			Account
+		</a>
+		<p class="truncate text-xs text-gray-500">{data.user.email}</p>
+		<Button
+			onclick={() =>
+				signOut({
+					fetchOptions: {
+						onSuccess: () => {
+							window.location.href = '/login';
 						}
-					})}
-				class="block text-xs text-gray-400 transition-colors hover:text-red-400"
-			>
-				Sign out
-			</button>
-		</div>
+					}
+				})}
+			variant="ghost"
+			size="sm"
+			class="text-xs text-gray-400 hover:bg-white/10 hover:text-red-400"
+		>
+			Sign out
+		</Button>
+	</div>
+{/snippet}
+
+<div class="flex h-screen bg-gray-50">
+	<!-- Mobile sidebar: Sheet -->
+	<Sheet bind:open={sidebarOpen}>
+		<SheetContent side="left" class="w-64 p-0 bg-gray-900 text-white border-none flex flex-col" showCloseButton={false}>
+			{@render sidebarContent()}
+		</SheetContent>
+	</Sheet>
+
+	<!-- Desktop sidebar: always-visible -->
+	<aside class="hidden md:flex w-56 flex-col bg-gray-900 text-white">
+		{@render sidebarContent()}
 	</aside>
 
 	<!-- Main content -->
@@ -220,13 +215,15 @@
 		<header
 			class="flex items-center gap-3 border-b border-gray-700 bg-gray-900 px-4 py-3 md:hidden"
 		>
-			<button
+			<Button
 				onclick={() => (sidebarOpen = true)}
-				class="shrink-0 rounded-md p-1 text-gray-300 transition-colors hover:text-white"
+				variant="ghost"
+				size="icon-sm"
+				class="shrink-0 text-gray-300 hover:text-white"
 				aria-label="Open menu"
 			>
 				<Icon icon="mdi:menu" class="h-6 w-6" />
-			</button>
+			</Button>
 			<a href={resolve('/tenants')} class="flex min-w-0 flex-1 items-center gap-2.5">
 				{#if data.tenant?.logoUrl}
 					<img
@@ -289,14 +286,16 @@
 				View orders
 			</a>
 		</div>
-		<button
+		<Button
 			onclick={() => {
 				newOrderToast = null;
 			}}
+			variant="ghost"
+			size="icon-sm"
 			class="shrink-0 text-gray-300 hover:text-gray-500"
 		>
 			<Icon icon="mdi:close" class="h-4 w-4" />
-		</button>
+		</Button>
 	</div>
 {/if}
 

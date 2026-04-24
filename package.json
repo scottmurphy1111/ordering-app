@@ -25,6 +25,8 @@
 		"@better-auth/cli": "~1.4.21",
 		"@eslint/compat": "^2.0.3",
 		"@eslint/js": "^10.0.1",
+		"@internationalized/date": "^3.12.0",
+		"@lucide/svelte": "^1.9.0",
 		"@neondatabase/serverless": "^1.0.2",
 		"@playwright/test": "^1.58.2",
 		"@sveltejs/adapter-netlify": "^5.2.4",
@@ -51,6 +53,7 @@
 		"prettier-plugin-tailwindcss": "^0.7.2",
 		"svelte": "^5.54.0",
 		"svelte-check": "^4.4.2",
+		"tailwind-variants": "^3.2.2",
 		"tailwindcss": "^4.1.18",
 		"typescript": "^5.9.3",
 		"typescript-eslint": "^8.57.0",
@@ -64,10 +67,16 @@
 		"@iconify-json/mdi": "^1.2.3",
 		"@iconify/svelte": "^5.2.1",
 		"@stripe/stripe-js": "^9.3.1",
+		"bits-ui": "^2.18.0",
+		"clsx": "^2.1.1",
+		"lucide-svelte": "^1.0.1",
+		"mode-watcher": "^1.1.0",
 		"qrcode": "^1.5.4",
 		"resend": "^6.12.0",
 		"sortablejs": "^1.15.7",
 		"stripe": "^22.0.0",
+		"svelte-sonner": "^1.1.0",
+		"tailwind-merge": "^3.5.0",
 		"twilio": "^6.0.0"
 	}
 }

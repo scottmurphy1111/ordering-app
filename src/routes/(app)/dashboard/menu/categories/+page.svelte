@@ -5,6 +5,12 @@
 	import Icon from '@iconify/svelte';
 	import { resolve } from '$app/paths';
 	import Sortable from 'sortablejs';
+	import { Button } from '$lib/components/ui/button';
+	import { Badge } from '$lib/components/ui/badge';
+	import { Input } from '$lib/components/ui/input';
+	import { Label } from '$lib/components/ui/label';
+	import { Card, CardContent } from '$lib/components/ui/card';
+	import { Table, TableHeader, TableHead, TableBody, TableRow, TableCell } from '$lib/components/ui/table';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
@@ -94,39 +100,38 @@
 		</div>
 		<div class="flex flex-wrap gap-2 self-start sm:self-auto">
 			{#if !sortMode}
-				<button
+				<Button
 					onclick={() => {
 						sortMode = true;
 						showForm = false;
 					}}
-					class="inline-flex items-center gap-1.5 rounded-md border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:border-gray-400 hover:bg-gray-100"
+					variant="outline"
+					class="gap-1.5"
 				>
 					<Icon icon="mdi:drag-vertical" class="h-4 w-4" /> Reorder
-				</button>
-				<button
-					onclick={() => (showForm = !showForm)}
-					class="rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-gray-700"
-				>
+				</Button>
+				<Button onclick={() => (showForm = !showForm)} variant="default">
 					+ New category
-				</button>
+				</Button>
 			{:else}
-				<button
+				<Button
 					onclick={() => {
 						sortMode = false;
 						saveError = null;
 					}}
-					class="rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-600 transition-colors hover:border-gray-400 hover:bg-gray-100"
+					variant="outline"
 				>
 					Cancel
-				</button>
-				<button
+				</Button>
+				<Button
 					onclick={saveSortOrder}
 					disabled={saving}
-					class="inline-flex items-center gap-1.5 rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-gray-700 disabled:opacity-50"
+					variant="default"
+					class="gap-1.5"
 				>
 					<Icon icon="mdi:check" class="h-4 w-4" />
 					{saving ? 'Saving…' : 'Save order'}
-				</button>
+				</Button>
 			{/if}
 		</div>
 	</div>
@@ -156,26 +161,22 @@
 		>
 			<h2 class="font-medium text-gray-800">New category</h2>
 			<div>
-				<label class="mb-1 block text-sm font-medium text-gray-700" for="name">Name</label>
-				<input
+				<Label class="mb-1 block" for="name">Name</Label>
+				<Input
 					id="name"
 					name="name"
 					type="text"
 					required
 					placeholder="e.g. Burgers, Drinks, Desserts"
-					class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
 				/>
 			</div>
 			<div>
-				<label class="mb-1 block text-sm font-medium text-gray-700" for="description"
-					>Description (optional)</label
-				>
-				<input
+				<Label class="mb-1 block" for="description">Description (optional)</Label>
+				<Input
 					id="description"
 					name="description"
 					type="text"
 					placeholder="Short description..."
-					class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
 				/>
 			</div>
 			<div class="flex items-center gap-2">
@@ -189,17 +190,8 @@
 				<label class="cursor-pointer text-sm text-gray-700" for="new-active">Active</label>
 			</div>
 			<div class="flex gap-2">
-				<button
-					type="submit"
-					class="rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-gray-700"
-					>Create</button
-				>
-				<button
-					type="button"
-					onclick={() => (showForm = false)}
-					class="rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-600 transition-colors hover:border-gray-400 hover:bg-gray-100"
-					>Cancel</button
-				>
+				<Button type="submit" variant="default">Create</Button>
+				<Button type="button" onclick={() => (showForm = false)} variant="outline">Cancel</Button>
 			</div>
 		</form>
 	{/if}
@@ -212,12 +204,12 @@
 		</div>
 	{:else if sortMode}
 		<!-- ── Drag-and-drop reorder list ──────────────────────────── -->
-		<div class="rounded-xl border border-gray-200 bg-white shadow-sm">
-			<div class="border-b border-gray-100 px-4 py-3">
+		<Card class="shadow-sm">
+			<CardContent class="border-b border-gray-100 py-3">
 				<p class="text-sm text-gray-500">
 					Drag rows to reorder, then click <strong>Save order</strong>.
 				</p>
-			</div>
+			</CardContent>
 			<ul bind:this={sortListEl} class="divide-y divide-gray-100">
 				{#each data.categories as cat (cat.id)}
 					<li
@@ -231,25 +223,21 @@
 						</span>
 						<span class="flex-1 text-sm font-medium text-gray-900">{cat.name}</span>
 						<span class="text-xs text-gray-400">{cat.itemCount} items</span>
-						<span
-							class="rounded-full px-2 py-0.5 text-xs font-medium {cat.isActive
-								? 'bg-green-100 text-green-700'
-								: 'bg-gray-100 text-gray-500'}"
-						>
+						<Badge class={cat.isActive ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}>
 							{cat.isActive ? 'Active' : 'Hidden'}
-						</span>
+						</Badge>
 					</li>
 				{/each}
 			</ul>
-		</div>
+		</Card>
 	{:else}
 		<!-- ── Normal table view ───────────────────────────────────── -->
-		<div class="overflow-x-auto rounded-xl border border-gray-200 bg-white shadow-sm">
-			<table class="w-full text-sm">
-				<thead class="border-b border-gray-200 bg-gray-50">
-					<tr>
+		<Card class="shadow-sm">
+			<Table>
+				<TableHeader class="bg-gray-50">
+					<TableRow class="hover:bg-transparent">
 						{#each [['name', 'Name'], ['description', 'Description'], ['items', 'Items'], ['status', 'Status']] as const as [col, label] (col)}
-							<th class="px-4 py-2.5 text-left">
+							<TableHead class="px-4 py-2.5">
 								<button
 									onclick={() => sortBy(col)}
 									class="inline-flex items-center gap-1 font-medium text-gray-500 transition-colors hover:text-gray-800"
@@ -264,23 +252,23 @@
 										class="h-3.5 w-3.5 {sortCol === col ? 'text-gray-800' : 'text-gray-300'}"
 									/>
 								</button>
-							</th>
+							</TableHead>
 						{/each}
-						<th class="px-4 py-2.5 text-left font-medium text-gray-500">Actions</th>
-					</tr>
-				</thead>
-				<tbody class="divide-y divide-gray-100">
+						<TableHead class="px-4 py-2.5 text-gray-500">Actions</TableHead>
+					</TableRow>
+				</TableHeader>
+				<TableBody>
 					{#each sortedCategories as cat (cat.id)}
-						<tr class="transition-colors hover:bg-gray-50">
-							<td class="px-4 py-3">
+						<TableRow>
+							<TableCell class="px-4 py-3">
 								<a
 									href={resolve(`/dashboard/menu/categories/${cat.id}` as `/${string}`)}
 									class="font-medium text-gray-900 hover:underline">{cat.name}</a
 								>
-							</td>
-							<td class="px-4 py-3 text-gray-500">{cat.description ?? '—'}</td>
-							<td class="px-4 py-3 text-gray-500">{cat.itemCount}</td>
-							<td class="px-4 py-3">
+							</TableCell>
+							<TableCell class="px-4 py-3 text-gray-500">{cat.description ?? '—'}</TableCell>
+							<TableCell class="px-4 py-3 text-gray-500">{cat.itemCount}</TableCell>
+							<TableCell class="px-4 py-3">
 								<form method="post" action="?/toggleActive" use:enhance>
 									<input type="hidden" name="id" value={cat.id} />
 									<input type="hidden" name="isActive" value={String(cat.isActive)} />
@@ -293,8 +281,8 @@
 										{cat.isActive ? 'Active' : 'Hidden'}
 									</button>
 								</form>
-							</td>
-							<td class="px-4 py-3">
+							</TableCell>
+							<TableCell class="px-4 py-3">
 								<div class="flex items-center gap-3">
 									<a
 										href={resolve(`/dashboard/menu/categories/${cat.id}`)}
@@ -303,23 +291,24 @@
 									>
 									<form method="post" action="?/delete" use:enhance>
 										<input type="hidden" name="id" value={cat.id} />
-										<button
+										<Button
 											type="submit"
 											onclick={async (e) => {
 												e.preventDefault();
 												if (await confirmDialog('Delete this category?'))
 													(e.currentTarget as HTMLButtonElement).form?.requestSubmit();
 											}}
-											class="text-xs text-red-500 transition-colors hover:text-red-700"
-											>Delete</button
-										>
+											variant="ghost"
+											size="sm"
+											class="text-red-500 hover:text-red-700"
+										>Delete</Button>
 									</form>
 								</div>
-							</td>
-						</tr>
+							</TableCell>
+						</TableRow>
 					{/each}
-				</tbody>
-			</table>
-		</div>
+				</TableBody>
+			</Table>
+		</Card>
 	{/if}
 </div>

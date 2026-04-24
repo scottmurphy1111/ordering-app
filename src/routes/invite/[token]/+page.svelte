@@ -2,6 +2,7 @@
 	import { enhance } from '$app/forms';
 	import { signIn } from '$lib/auth-client';
 	import { resolve } from '$app/paths';
+	import { Button } from '$lib/components/ui/button';
 	import type { PageData, ActionData } from './$types';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
@@ -100,10 +101,11 @@
 				{/if}
 
 				<!-- Google -->
-				<button
+				<Button
 					onclick={signInWithGoogle}
 					disabled={loading}
-					class="flex w-full items-center justify-center gap-3 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 shadow-sm transition-colors hover:bg-gray-50 disabled:opacity-60"
+					variant="outline"
+					class="w-full gap-3"
 				>
 					<svg class="h-5 w-5" viewBox="0 0 24 24" aria-hidden="true">
 						<path
@@ -124,7 +126,7 @@
 						/>
 					</svg>
 					{loading ? 'Redirecting…' : 'Continue with Google'}
-				</button>
+				</Button>
 
 				<div class="my-5 flex items-center gap-3">
 					<div class="h-px flex-1 bg-gray-200"></div>
@@ -159,21 +161,20 @@
 								class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
 							/>
 						</div>
-						<button
-							type="submit"
-							class="w-full rounded-lg bg-gray-900 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-gray-700"
-						>
+						<Button type="submit" variant="default" class="w-full">
 							Sign in &amp; accept invite
-						</button>
+						</Button>
 					</form>
 
-					<button
+					<Button
 						type="button"
 						onclick={() => (showSignUp = true)}
-						class="mt-4 w-full text-center text-xs text-gray-400 transition-colors hover:text-gray-600"
+						variant="ghost"
+						size="sm"
+						class="mt-4 w-full text-xs text-gray-400 hover:text-gray-600"
 					>
 						Don't have an account? Create one
-					</button>
+					</Button>
 				{:else}
 					<!-- Sign up form -->
 					<form method="post" action="?/signUpAndAccept" use:enhance class="space-y-3">
@@ -214,21 +215,20 @@
 								class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
 							/>
 						</div>
-						<button
-							type="submit"
-							class="w-full rounded-lg bg-gray-900 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-gray-700"
-						>
+						<Button type="submit" variant="default" class="w-full">
 							Create account &amp; accept invite
-						</button>
+						</Button>
 					</form>
 
-					<button
+					<Button
 						type="button"
 						onclick={() => (showSignUp = false)}
-						class="mt-4 w-full text-center text-xs text-gray-400 transition-colors hover:text-gray-600"
+						variant="ghost"
+						size="sm"
+						class="mt-4 w-full text-xs text-gray-400 hover:text-gray-600"
 					>
 						Already have an account? Sign in
-					</button>
+					</Button>
 				{/if}
 			</div>
 		{/if}

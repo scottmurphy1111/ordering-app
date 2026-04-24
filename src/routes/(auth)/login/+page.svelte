@@ -1,5 +1,9 @@
 <script lang="ts">
 	import { signIn, authClient } from '$lib/auth-client';
+	import { Button } from '$lib/components/ui/button';
+	import { Input } from '$lib/components/ui/input';
+	import { Label } from '$lib/components/ui/label';
+	import { Card, CardContent } from '$lib/components/ui/card';
 	let loading = $state(false);
 	let magicEmail = $state('');
 	let magicSent = $state(false);
@@ -28,12 +32,14 @@
 	}
 </script>
 
-<div class="rounded-2xl border border-gray-200 bg-white p-8 shadow-sm">
+<Card>
+<CardContent class="p-8">
 	<!-- Google button -->
-	<button
+	<Button
 		onclick={signInWithGoogle}
 		disabled={loading}
-		class="flex w-full items-center justify-center gap-3 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 shadow-sm transition-colors hover:bg-gray-50 disabled:opacity-60"
+		variant="outline"
+		class="w-full gap-3"
 	>
 		<svg class="h-5 w-5" viewBox="0 0 24 24" aria-hidden="true">
 			<path
@@ -54,7 +60,7 @@
 			/>
 		</svg>
 		{loading ? 'Redirecting…' : 'Continue with Google'}
-	</button>
+	</Button>
 
 	<!-- Divider -->
 	<div class="my-5 flex items-center gap-3">
@@ -70,26 +76,27 @@
 			<p class="mt-1 text-sm text-green-700">
 				We sent a sign-in link to <strong>{magicEmail}</strong>.
 			</p>
-			<button
+			<Button
 				onclick={() => {
 					magicSent = false;
 					magicEmail = '';
 				}}
-				class="mt-3 text-xs text-green-600 underline hover:text-green-800"
-				>Use a different email</button
+				variant="ghost"
+				size="sm"
+				class="mt-3 h-auto p-0 text-xs text-green-600 underline hover:text-green-800"
+				>Use a different email</Button
 			>
 		</div>
 	{:else}
 		<form onsubmit={sendMagicLink} class="space-y-3">
 			<div>
-				<label class="mb-1 block text-xs font-medium text-gray-600" for="magic-email">Email</label>
-				<input
+				<Label class="mb-1 block text-xs" for="magic-email">Email</Label>
+				<Input
 					id="magic-email"
 					type="email"
 					required
 					bind:value={magicEmail}
 					placeholder="you@example.com"
-					class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
 				/>
 			</div>
 			{#if magicError}
@@ -97,13 +104,10 @@
 					{magicError}
 				</div>
 			{/if}
-			<button
-				type="submit"
-				disabled={loading}
-				class="w-full rounded-lg bg-gray-900 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-gray-700 disabled:opacity-60"
-			>
+			<Button type="submit" disabled={loading} variant="default" class="w-full">
 				{loading ? 'Sending…' : 'Send sign-in link'}
-			</button>
+			</Button>
 		</form>
 	{/if}
-</div>
+</CardContent>
+</Card>

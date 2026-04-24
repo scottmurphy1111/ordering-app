@@ -7,6 +7,7 @@
 	import Icon from '@iconify/svelte';
 	import { getOpenStatus } from '$lib/hours';
 	import type { WeekHours } from '$lib/hours';
+	import { Skeleton } from '$lib/components/ui/skeleton';
 
 	let { data }: { data: PageData } = $props();
 
@@ -333,11 +334,11 @@
 			<div class="space-y-3">
 				{#each [0, 1, 2, 3, 4] as i (i)}
 					<div class="flex gap-4 rounded-xl border border-gray-100 bg-white p-4 shadow-sm">
-						<div class="h-20 w-20 shrink-0 animate-pulse rounded-lg bg-gray-200"></div>
+						<Skeleton class="h-20 w-20 shrink-0 rounded-lg" />
 						<div class="flex-1 space-y-2 py-1">
-							<div class="h-4 w-3/4 animate-pulse rounded bg-gray-200"></div>
-							<div class="h-3 w-1/2 animate-pulse rounded bg-gray-200"></div>
-							<div class="h-3 w-1/4 animate-pulse rounded bg-gray-200"></div>
+							<Skeleton class="h-4 w-3/4 rounded" />
+							<Skeleton class="h-3 w-1/2 rounded" />
+							<Skeleton class="h-3 w-1/4 rounded" />
 						</div>
 					</div>
 				{/each}

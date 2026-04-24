@@ -3,6 +3,9 @@
 	import type { PageData, ActionData } from './$types';
 	import Icon from '@iconify/svelte';
 	import { resolve } from '$app/paths';
+	import { Button } from '$lib/components/ui/button';
+	import { Input } from '$lib/components/ui/input';
+	import { Card, CardHeader, CardTitle, CardDescription, CardAction, CardContent } from '$lib/components/ui/card';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
@@ -93,14 +96,12 @@
 
 	<div class="space-y-6">
 		<!-- ── Color scheme ─────────────────────────────────────────────────────── -->
-		<div class="rounded-xl border border-gray-200 bg-white shadow-sm">
-			<div class="border-b border-gray-100 px-5 py-4">
-				<h2 class="font-semibold text-gray-900">Color scheme</h2>
-				<p class="mt-0.5 text-xs text-gray-500">
-					Sets the colors on your public storefront.
-				</p>
-			</div>
-			<div class="px-5 py-5">
+		<Card class="shadow-sm">
+			<CardHeader>
+				<CardTitle>Color scheme</CardTitle>
+			</CardHeader>
+			<CardContent>
+				<p class="mb-4 text-xs text-gray-500">Sets the colors on your public storefront.</p>
 				<form
 					method="post"
 					action="?/saveColors"
@@ -149,7 +150,7 @@
 													: accentColor};"
 										></div>
 									</div>
-									<input
+									<Input
 										type="text"
 										value={col.id === 'backgroundColor'
 											? backgroundColor
@@ -162,8 +163,8 @@
 											else if (col.id === 'foregroundColor') foregroundColor = v;
 											else accentColor = v;
 										}}
-										maxlength="7"
-										class="w-28 rounded-md border border-gray-300 px-3 py-2 font-mono text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
+										maxlength={7}
+										class="w-28 font-mono"
 									/>
 								</div>
 								<p class="mt-1.5 text-xs text-gray-400">{col.note}</p>
@@ -207,34 +208,27 @@
 						</div>
 					</div>
 
-					<button
-						type="submit"
-						class="rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-gray-700"
-					>
-						Save colors
-					</button>
+					<Button type="submit" variant="default">Save colors</Button>
 				</form>
-			</div>
-		</div>
+			</CardContent>
+		</Card>
 
 		<!-- ── Logo ─────────────────────────────────────────────────────────────── -->
-		<div class="rounded-xl border border-gray-200 bg-white shadow-sm">
-			<div class="flex items-center justify-between border-b border-gray-100 px-5 py-4">
-				<div>
-					<h2 class="font-semibold text-gray-900">Logo</h2>
-					<p class="mt-0.5 text-xs text-gray-500">
-						Shown in your menu header and tiled as a subtle background pattern.
-					</p>
-				</div>
-				<span
-					class="rounded-full px-2.5 py-0.5 text-xs font-medium {data.branding.logoUrl
-						? 'bg-green-100 text-green-700'
-						: 'bg-gray-100 text-gray-500'}"
-				>
-					{data.branding.logoUrl ? 'Active' : 'Not set'}
-				</span>
-			</div>
-			<div class="space-y-4 px-5 py-5">
+		<Card class="shadow-sm">
+			<CardHeader class="border-b border-gray-100">
+				<CardTitle>Logo</CardTitle>
+				<CardDescription>Shown in your menu header and tiled as a subtle background pattern.</CardDescription>
+				<CardAction>
+					<span
+						class="rounded-full px-2.5 py-0.5 text-xs font-medium {data.branding.logoUrl
+							? 'bg-green-100 text-green-700'
+							: 'bg-gray-100 text-gray-500'}"
+					>
+						{data.branding.logoUrl ? 'Active' : 'Not set'}
+					</span>
+				</CardAction>
+			</CardHeader>
+			<CardContent class="space-y-4">
 				{#if data.branding.logoUrl}
 					<div class="flex items-center gap-4 rounded-lg border border-gray-200 bg-gray-50 p-4">
 						<img
@@ -258,52 +252,46 @@
 						}}
 						class="hidden"
 					/>
-					<button
+					<Button
 						type="button"
 						onclick={() => logoInput?.click()}
 						disabled={logoState.uploading}
-						class="rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-gray-700 disabled:opacity-50"
+						variant="default"
 					>
 						{logoState.uploading
 							? 'Uploading…'
 							: data.branding.logoUrl
 								? 'Replace logo'
 								: 'Upload logo'}
-					</button>
+					</Button>
 					{#if data.branding.logoUrl}
 						<form method="post" action="?/removeLogo" use:enhance>
-							<button
-								type="submit"
-								class="rounded-md border border-red-200 px-4 py-2 text-sm text-red-600 transition-colors hover:bg-red-50"
-								>Remove</button
-							>
+							<Button type="submit" variant="destructive">Remove</Button>
 						</form>
 					{/if}
 				</div>
 				<p class="text-xs text-gray-400">
 					JPG, PNG, WebP, or SVG · max 2MB · transparent PNG or SVG recommended
 				</p>
-			</div>
-		</div>
+			</CardContent>
+		</Card>
 
 		<!-- ── Banner image ──────────────────────────────────────────────────────── -->
-		<div class="rounded-xl border border-gray-200 bg-white shadow-sm">
-			<div class="flex items-center justify-between border-b border-gray-100 px-5 py-4">
-				<div>
-					<h2 class="font-semibold text-gray-900">Banner image</h2>
-					<p class="mt-0.5 text-xs text-gray-500">
-						Full-bleed hero image shown at the top of your menu page.
-					</p>
-				</div>
-				<span
-					class="rounded-full px-2.5 py-0.5 text-xs font-medium {data.branding.bannerUrl
-						? 'bg-green-100 text-green-700'
-						: 'bg-gray-100 text-gray-500'}"
-				>
-					{data.branding.bannerUrl ? 'Active' : 'Not set'}
-				</span>
-			</div>
-			<div class="space-y-4 px-5 py-5">
+		<Card class="shadow-sm">
+			<CardHeader class="border-b border-gray-100">
+				<CardTitle>Banner image</CardTitle>
+				<CardDescription>Full-bleed hero image shown at the top of your menu page.</CardDescription>
+				<CardAction>
+					<span
+						class="rounded-full px-2.5 py-0.5 text-xs font-medium {data.branding.bannerUrl
+							? 'bg-green-100 text-green-700'
+							: 'bg-gray-100 text-gray-500'}"
+					>
+						{data.branding.bannerUrl ? 'Active' : 'Not set'}
+					</span>
+				</CardAction>
+			</CardHeader>
+			<CardContent class="space-y-4">
 				{#if data.branding.bannerUrl}
 					<div class="overflow-hidden rounded-lg border border-gray-200">
 						<img src={data.branding.bannerUrl} alt="Banner" class="h-36 w-full object-cover" />
@@ -323,53 +311,46 @@
 						}}
 						class="hidden"
 					/>
-					<button
+					<Button
 						type="button"
 						onclick={() => bannerInput?.click()}
 						disabled={bannerState.uploading}
-						class="rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-gray-700 disabled:opacity-50"
+						variant="default"
 					>
 						{bannerState.uploading
 							? 'Uploading…'
 							: data.branding.bannerUrl
 								? 'Replace banner'
 								: 'Upload banner'}
-					</button>
+					</Button>
 					{#if data.branding.bannerUrl}
 						<form method="post" action="?/removeBanner" use:enhance>
-							<button
-								type="submit"
-								class="rounded-md border border-red-200 px-4 py-2 text-sm text-red-600 transition-colors hover:bg-red-50"
-								>Remove</button
-							>
+							<Button type="submit" variant="destructive">Remove</Button>
 						</form>
 					{/if}
 				</div>
 				<p class="text-xs text-gray-400">
 					JPG, PNG, or WebP · max 5MB · wide landscape image recommended (1600×600px or similar)
 				</p>
-			</div>
-		</div>
+			</CardContent>
+		</Card>
 
 		<!-- ── Background image ──────────────────────────────────────────────────── -->
-		<div class="rounded-xl border border-gray-200 bg-white shadow-sm">
-			<div class="flex items-center justify-between border-b border-gray-100 px-5 py-4">
-				<div>
-					<h2 class="font-semibold text-gray-900">Background image</h2>
-					<p class="mt-0.5 text-xs text-gray-500">
-						Subtle full-page texture behind your menu and cart. Works best with low-contrast images
-						(wood, marble, linen).
-					</p>
-				</div>
-				<span
-					class="rounded-full px-2.5 py-0.5 text-xs font-medium {data.branding.backgroundImageUrl
-						? 'bg-green-100 text-green-700'
-						: 'bg-gray-100 text-gray-500'}"
-				>
-					{data.branding.backgroundImageUrl ? 'Active' : 'Not set'}
-				</span>
-			</div>
-			<div class="space-y-4 px-5 py-5">
+		<Card class="shadow-sm">
+			<CardHeader class="border-b border-gray-100">
+				<CardTitle>Background image</CardTitle>
+				<CardDescription>Subtle full-page texture behind your menu and cart. Works best with low-contrast images (wood, marble, linen).</CardDescription>
+				<CardAction>
+					<span
+						class="rounded-full px-2.5 py-0.5 text-xs font-medium {data.branding.backgroundImageUrl
+							? 'bg-green-100 text-green-700'
+							: 'bg-gray-100 text-gray-500'}"
+					>
+						{data.branding.backgroundImageUrl ? 'Active' : 'Not set'}
+					</span>
+				</CardAction>
+			</CardHeader>
+			<CardContent class="space-y-4">
 				{#if data.branding.backgroundImageUrl}
 					<div class="overflow-hidden rounded-lg border border-gray-200">
 						<img
@@ -388,37 +369,33 @@
 						accept="image/jpeg,image/png,image/webp"
 						bind:this={bgInput}
 						onchange={(e) => {
-							const f = (e.target as HTMLInputElement).files?.[0];;
+							const f = (e.target as HTMLInputElement).files?.[0];
 							if (f) uploadImage(f, '/api/upload-background-image', 'backgroundImage', bgState, 5);
 						}}
 						class="hidden"
 					/>
-					<button
+					<Button
 						type="button"
 						onclick={() => bgInput?.click()}
 						disabled={bgState.uploading}
-						class="rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-gray-700 disabled:opacity-50"
+						variant="default"
 					>
 						{bgState.uploading
 							? 'Uploading…'
 							: data.branding.backgroundImageUrl
 								? 'Replace background'
 								: 'Upload background'}
-					</button>
+					</Button>
 					{#if data.branding.backgroundImageUrl}
 						<form method="post" action="?/removeBackground" use:enhance>
-							<button
-								type="submit"
-								class="rounded-md border border-red-200 px-4 py-2 text-sm text-red-600 transition-colors hover:bg-red-50"
-								>Remove</button
-							>
+							<Button type="submit" variant="destructive">Remove</Button>
 						</form>
 					{/if}
 				</div>
 				<p class="text-xs text-gray-400">
 					JPG, PNG, or WebP · max 5MB · tileable textures work best
 				</p>
-			</div>
-		</div>
+			</CardContent>
+		</Card>
 	</div>
 </div>

@@ -5,6 +5,8 @@
 	import type { PageData } from './$types';
 	import { resolve } from '$app/paths';
 	import Icon from '@iconify/svelte';
+	import { Skeleton } from '$lib/components/ui/skeleton';
+	import { Card, CardContent } from '$lib/components/ui/card';
 
 	let { data }: { data: PageData } = $props();
 
@@ -118,16 +120,17 @@
 		<div class="grid gap-6 lg:grid-cols-[1fr_420px]">
 			<!-- Left: payment form -->
 			<div class="space-y-4">
-				<div class="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+				<Card class="shadow-sm">
+				<CardContent class="p-6">
 					<h2 class="mb-5 text-base font-semibold text-gray-900">Payment details</h2>
 
 					{#if !mountReady}
 						<div class="space-y-3">
-							<div class="h-10 animate-pulse rounded-lg bg-gray-100"></div>
-							<div class="h-10 animate-pulse rounded-lg bg-gray-100"></div>
+							<Skeleton class="h-10 rounded-lg" />
+							<Skeleton class="h-10 rounded-lg" />
 							<div class="grid grid-cols-2 gap-3">
-								<div class="h-10 animate-pulse rounded-lg bg-gray-100"></div>
-								<div class="h-10 animate-pulse rounded-lg bg-gray-100"></div>
+								<Skeleton class="h-10 rounded-lg" />
+								<Skeleton class="h-10 rounded-lg" />
 							</div>
 						</div>
 					{/if}
@@ -161,7 +164,8 @@
 							</button>
 						{/if}
 					</form>
-				</div>
+				</CardContent>
+				</Card>
 
 				<div class="flex items-center justify-center gap-4 px-2">
 					<Icon icon="mdi:shield-check-outline" class="h-4 w-4 text-gray-400" />
@@ -174,7 +178,8 @@
 
 			<!-- Right: order summary -->
 			<div class="order-first lg:order-last">
-				<div class="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+				<Card class="shadow-sm">
+				<CardContent class="p-6">
 					<div class="mb-5 flex items-center justify-between">
 						<h2 class="text-base font-semibold text-gray-900">Order summary</h2>
 						<span
@@ -266,7 +271,8 @@
 							<p class="text-xs text-gray-500">{data.order.notes}</p>
 						</div>
 					{/if}
-				</div>
+				</CardContent>
+				</Card>
 
 				<div class="mt-3 flex justify-center">
 					<a
