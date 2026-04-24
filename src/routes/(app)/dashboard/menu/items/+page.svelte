@@ -11,7 +11,7 @@
 	import Sortable from 'sortablejs';
 	import { Button } from '$lib/components/ui/button';
 	import { Badge } from '$lib/components/ui/badge';
-	import { Card } from '$lib/components/ui/card';
+	import { Card, CardContent } from '$lib/components/ui/card';
 	import {
 		Table,
 		TableHeader,
@@ -721,125 +721,127 @@
 		</div>
 	{:else}
 		<Card class="p-0 shadow-sm">
-			<Table>
-				<TableHeader class="bg-gray-50">
-					<TableRow class="hover:bg-transparent">
-						<TableHead class="w-12 px-4 py-2.5"></TableHead>
-						{#each [['name', 'Name'], ['category', 'Category'], ['price', 'Price'], ['status', 'Status']] as const as [col, label] (col)}
-							<TableHead class="px-4 py-2.5">
-								<button
-									onclick={() => sortBy(col)}
-									class="inline-flex items-center gap-1 font-medium text-gray-500 transition-colors hover:text-gray-800"
-								>
-									{label}
-									<Icon
-										icon={sortCol === col
-											? sortDir === 'asc'
-												? 'mdi:chevron-up'
-												: 'mdi:chevron-down'
-											: 'mdi:unfold-more-horizontal'}
-										class="h-3.5 w-3.5 {sortCol === col ? 'text-gray-800' : 'text-gray-300'}"
-									/>
-								</button>
-							</TableHead>
-						{/each}
-						<TableHead class="px-4 py-2.5"></TableHead>
-					</TableRow>
-				</TableHeader>
-				<TableBody>
-					{#each sortedItems as item (item.id)}
-						{@const primaryImage =
-							(item.images as { url: string; isPrimary?: boolean }[] | null)?.find(
-								(img) => img.isPrimary
-							) ?? (item.images as { url: string }[] | null)?.[0]}
-						<TableRow>
-							<TableCell class="px-4 py-3">
-								{#if primaryImage}
-									<img
-										src={primaryImage.url}
-										alt={item.name}
-										class="h-10 w-10 rounded-md object-cover"
-									/>
-								{:else}
-									<div class="flex h-10 w-10 items-center justify-center rounded-md bg-gray-100">
-										<Icon icon="mdi:silverware-fork-knife" class="h-5 w-5 text-gray-300" />
-									</div>
-								{/if}
-							</TableCell>
-							<TableCell class="px-4 py-3">
-								<a
-									href={resolve(`/dashboard/menu/items/${item.id}`)}
-									class="font-medium text-gray-900 hover:underline"
-								>
-									{item.name}
-								</a>
-								{#if item.description}
-									<p class="mt-0.5 line-clamp-1 text-xs text-gray-400">{item.description}</p>
-								{/if}
-							</TableCell>
-							<TableCell class="px-4 py-3 text-gray-500">{item.category?.name ?? '—'}</TableCell>
-							<TableCell class="px-4 py-3 text-gray-900">
-								${(item.price / 100).toFixed(2)}
-								{#if item.discountedPrice}
-									<span class="ml-1 text-xs text-green-600"
-										>(sale ${(item.discountedPrice / 100).toFixed(2)})</span
-									>
-								{/if}
-							</TableCell>
-							<TableCell class="px-4 py-3">
-								<form
-									method="post"
-									action="?/toggleAvailable"
-									use:enhance={() =>
-										({ update }) =>
-											update({ reset: false })}
-								>
-									<input type="hidden" name="id" value={item.id} />
-									<input type="hidden" name="available" value={String(!item.available)} />
+			<CardContent>
+				<Table>
+					<TableHeader class="">
+						<TableRow class="hover:bg-transparent">
+							<TableHead class="w-12 px-4 py-2.5"></TableHead>
+							{#each [['name', 'Name'], ['category', 'Category'], ['price', 'Price'], ['status', 'Status']] as const as [col, label] (col)}
+								<TableHead class="px-4 py-2.5">
 									<button
-										type="submit"
-										class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium transition-colors
-										{item.available
-											? 'bg-green-100 text-green-700 hover:bg-red-50 hover:text-red-600'
-											: 'bg-red-100 text-red-600 hover:bg-green-50 hover:text-green-700'}"
+										onclick={() => sortBy(col)}
+										class="inline-flex items-center gap-1 font-medium text-gray-500 transition-colors hover:text-gray-800"
 									>
+										{label}
 										<Icon
-											icon={item.available
-												? 'mdi:check-circle-outline'
-												: 'mdi:close-circle-outline'}
-											class="h-3.5 w-3.5"
+											icon={sortCol === col
+												? sortDir === 'asc'
+													? 'mdi:chevron-up'
+													: 'mdi:chevron-down'
+												: 'mdi:unfold-more-horizontal'}
+											class="h-3.5 w-3.5 {sortCol === col ? 'text-gray-800' : 'text-gray-300'}"
 										/>
-										{item.available ? 'Available' : "86'd"}
 									</button>
-								</form>
-							</TableCell>
-							<TableCell class="px-4 py-3">
-								<div class="flex items-center gap-3">
+								</TableHead>
+							{/each}
+							<TableHead class="px-4 py-2.5"></TableHead>
+						</TableRow>
+					</TableHeader>
+					<TableBody>
+						{#each sortedItems as item (item.id)}
+							{@const primaryImage =
+								(item.images as { url: string; isPrimary?: boolean }[] | null)?.find(
+									(img) => img.isPrimary
+								) ?? (item.images as { url: string }[] | null)?.[0]}
+							<TableRow>
+								<TableCell class="px-4 py-3">
+									{#if primaryImage}
+										<img
+											src={primaryImage.url}
+											alt={item.name}
+											class="h-10 w-10 rounded-md object-cover"
+										/>
+									{:else}
+										<div class="flex h-10 w-10 items-center justify-center rounded-md bg-gray-100">
+											<Icon icon="mdi:silverware-fork-knife" class="h-5 w-5 text-gray-300" />
+										</div>
+									{/if}
+								</TableCell>
+								<TableCell class="px-4 py-3">
 									<a
 										href={resolve(`/dashboard/menu/items/${item.id}`)}
-										class="text-xs font-medium text-gray-600 transition-colors hover:text-gray-900"
-										>Edit</a
+										class="font-medium text-gray-900 hover:underline"
 									>
-									<form method="post" action="?/delete" use:enhance>
-										<input type="hidden" name="id" value={item.id} />
-										<Button
-											type="submit"
-											onclick={async (e) => {
-												e.preventDefault();
-												if (await confirmDialog('Delete this item?'))
-													(e.currentTarget as HTMLButtonElement).form?.requestSubmit();
-											}}
-											variant="ghost"
-											size="sm"
-											class="text-red-500 hover:text-red-700">Delete</Button
+										{item.name}
+									</a>
+									{#if item.description}
+										<p class="mt-0.5 line-clamp-1 text-xs text-gray-400">{item.description}</p>
+									{/if}
+								</TableCell>
+								<TableCell class="px-4 py-3 text-gray-500">{item.category?.name ?? '—'}</TableCell>
+								<TableCell class="px-4 py-3 text-gray-900">
+									${(item.price / 100).toFixed(2)}
+									{#if item.discountedPrice}
+										<span class="ml-1 text-xs text-green-600"
+											>(sale ${(item.discountedPrice / 100).toFixed(2)})</span
 										>
+									{/if}
+								</TableCell>
+								<TableCell class="px-4 py-3">
+									<form
+										method="post"
+										action="?/toggleAvailable"
+										use:enhance={() =>
+											({ update }) =>
+												update({ reset: false })}
+									>
+										<input type="hidden" name="id" value={item.id} />
+										<input type="hidden" name="available" value={String(!item.available)} />
+										<button
+											type="submit"
+											class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium transition-colors
+										{item.available
+												? 'bg-green-100 text-green-700 hover:bg-red-50 hover:text-red-600'
+												: 'bg-red-100 text-red-600 hover:bg-green-50 hover:text-green-700'}"
+										>
+											<Icon
+												icon={item.available
+													? 'mdi:check-circle-outline'
+													: 'mdi:close-circle-outline'}
+												class="h-3.5 w-3.5"
+											/>
+											{item.available ? 'Available' : "86'd"}
+										</button>
 									</form>
-								</div>
-							</TableCell>
-						</TableRow>
-					{/each}
-				</TableBody>
-			</Table>
+								</TableCell>
+								<TableCell class="px-4 py-3">
+									<div class="flex items-center gap-3">
+										<a
+											href={resolve(`/dashboard/menu/items/${item.id}`)}
+											class="text-xs font-medium text-gray-600 transition-colors hover:text-gray-900"
+											>Edit</a
+										>
+										<form method="post" action="?/delete" use:enhance>
+											<input type="hidden" name="id" value={item.id} />
+											<Button
+												type="submit"
+												onclick={async (e) => {
+													e.preventDefault();
+													if (await confirmDialog('Delete this item?'))
+														(e.currentTarget as HTMLButtonElement).form?.requestSubmit();
+												}}
+												variant="ghost"
+												size="sm"
+												class="text-red-500 hover:text-red-700">Delete</Button
+											>
+										</form>
+									</div>
+								</TableCell>
+							</TableRow>
+						{/each}
+					</TableBody>
+				</Table>
+			</CardContent>
 		</Card>
 
 		<!-- Pagination -->

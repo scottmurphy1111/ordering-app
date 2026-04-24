@@ -8,7 +8,7 @@
 	import { Badge } from '$lib/components/ui/badge';
 	import { Input } from '$lib/components/ui/input';
 	import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '$lib/components/ui/select';
-	import { Card } from '$lib/components/ui/card';
+	import { Card, CardContent } from '$lib/components/ui/card';
 	import { Tabs, TabsList, TabsTrigger, TabsContent } from '$lib/components/ui/tabs';
 	import { Table, TableHeader, TableHead, TableBody, TableRow, TableCell } from '$lib/components/ui/table';
 
@@ -124,89 +124,95 @@
 			</div>
 
 			{#if showAddForm}
-				<form
-					method="post"
-					action="?/addMember"
-					use:enhance={() =>
-						({ update }) => {
-							update();
-							showAddForm = false;
-						}}
-					class="mb-5 rounded-lg border border-gray-200 bg-white p-4 shadow-sm"
-				>
-					<h2 class="mb-3 text-sm font-semibold text-gray-800">Add member by email</h2>
-					<div class="flex flex-wrap gap-2">
-						<Input
-							name="email"
-							type="email"
-							required
-							placeholder="user@example.com"
-							class="min-w-48 flex-1"
-						/>
-						<Select type="single" name="role">
-							<SelectTrigger class="w-auto">
-								<SelectValue placeholder="Role" />
-							</SelectTrigger>
-							<SelectContent>
-								{#each data.roles as role (role)}
-									{#if role !== 'owner' || data.currentRole === 'owner'}
-										<SelectItem value={role}>{roleLabels[role]}</SelectItem>
-									{/if}
-								{/each}
-							</SelectContent>
-						</Select>
-						<Button type="submit" variant="default">Add</Button>
-						<Button type="button" onclick={() => (showAddForm = false)} variant="outline">
-							Cancel
-						</Button>
-					</div>
-					<p class="mt-2 text-xs text-gray-400">
-						The user must already have an account. They'll have access on their next login.
-					</p>
-				</form>
+				<Card class="mb-5 shadow-sm">
+					<CardContent>
+						<form
+							method="post"
+							action="?/addMember"
+							use:enhance={() =>
+								({ update }) => {
+									update();
+									showAddForm = false;
+								}}
+						>
+							<h2 class="mb-3 text-sm font-semibold text-gray-800">Add member by email</h2>
+							<div class="flex flex-wrap gap-2">
+								<Input
+									name="email"
+									type="email"
+									required
+									placeholder="user@example.com"
+									class="min-w-48 flex-1"
+								/>
+								<Select type="single" name="role">
+									<SelectTrigger class="w-auto">
+										<SelectValue placeholder="Role" />
+									</SelectTrigger>
+									<SelectContent>
+										{#each data.roles as role (role)}
+											{#if role !== 'owner' || data.currentRole === 'owner'}
+												<SelectItem value={role}>{roleLabels[role]}</SelectItem>
+											{/if}
+										{/each}
+									</SelectContent>
+								</Select>
+								<Button type="submit" variant="default">Add</Button>
+								<Button type="button" onclick={() => (showAddForm = false)} variant="outline">
+									Cancel
+								</Button>
+							</div>
+							<p class="mt-2 text-xs text-gray-400">
+								The user must already have an account. They'll have access on their next login.
+							</p>
+						</form>
+					</CardContent>
+				</Card>
 			{/if}
 
 			{#if showInviteForm}
-				<form
-					method="post"
-					action="?/sendInvite"
-					use:enhance={() =>
-						({ update }) => {
-							update();
-							showInviteForm = false;
-						}}
-					class="mb-5 rounded-lg border border-blue-200 bg-blue-50 p-4 shadow-sm"
-				>
-					<h2 class="mb-1 text-sm font-semibold text-gray-800">Invite by link</h2>
-					<p class="mb-3 text-xs text-gray-500">
-						Generate a 7-day invite link — works even if they don't have an account yet.
-					</p>
-					<div class="flex flex-wrap gap-2">
-						<Input
-							name="email"
-							type="email"
-							required
-							placeholder="user@example.com"
-							class="min-w-48 flex-1"
-						/>
-						<Select type="single" name="role">
-							<SelectTrigger class="w-auto">
-								<SelectValue placeholder="Role" />
-							</SelectTrigger>
-							<SelectContent>
-								{#each data.roles as role (role)}
-									{#if role !== 'owner' || data.currentRole === 'owner'}
-										<SelectItem value={role}>{roleLabels[role]}</SelectItem>
-									{/if}
-								{/each}
-							</SelectContent>
-						</Select>
-						<Button type="submit" variant="default">Generate link</Button>
-						<Button type="button" onclick={() => (showInviteForm = false)} variant="outline">
-							Cancel
-						</Button>
-					</div>
-				</form>
+				<Card class="mb-5 border-blue-200 bg-blue-50 shadow-sm">
+					<CardContent>
+						<form
+							method="post"
+							action="?/sendInvite"
+							use:enhance={() =>
+								({ update }) => {
+									update();
+									showInviteForm = false;
+								}}
+						>
+							<h2 class="mb-1 text-sm font-semibold text-gray-800">Invite by link</h2>
+							<p class="mb-3 text-xs text-gray-500">
+								Generate a 7-day invite link — works even if they don't have an account yet.
+							</p>
+							<div class="flex flex-wrap gap-2">
+								<Input
+									name="email"
+									type="email"
+									required
+									placeholder="user@example.com"
+									class="min-w-48 flex-1"
+								/>
+								<Select type="single" name="role">
+									<SelectTrigger class="w-auto">
+										<SelectValue placeholder="Role" />
+									</SelectTrigger>
+									<SelectContent>
+										{#each data.roles as role (role)}
+											{#if role !== 'owner' || data.currentRole === 'owner'}
+												<SelectItem value={role}>{roleLabels[role]}</SelectItem>
+											{/if}
+										{/each}
+									</SelectContent>
+								</Select>
+								<Button type="submit" variant="default">Generate link</Button>
+								<Button type="button" onclick={() => (showInviteForm = false)} variant="outline">
+									Cancel
+								</Button>
+							</div>
+						</form>
+					</CardContent>
+				</Card>
 			{/if}
 
 			<!-- Show the generated invite link -->
@@ -237,111 +243,113 @@
 		{/if}
 
 		<Card class="shadow-sm">
-			<Table>
-				<TableHeader class="bg-gray-50">
-					<TableRow class="hover:bg-transparent">
-						<TableHead class="px-4 py-2.5 text-gray-500">User</TableHead>
-						<TableHead class="px-4 py-2.5 text-gray-500">Role</TableHead>
-						<TableHead class="hidden px-4 py-2.5 text-gray-500 sm:table-cell">Added</TableHead>
-						<TableHead class="px-4 py-2.5"></TableHead>
-					</TableRow>
-				</TableHeader>
-				<TableBody>
-					{#each data.members as member (member.userId)}
-						<TableRow>
-							<TableCell class="px-4 py-3">
-								<p class="font-medium text-gray-900">
-									{member.name}
-									{#if member.userId === data.currentUserId}
-										<span class="ml-1 text-xs text-gray-400">(you)</span>
+			<CardContent>
+				<Table>
+					<TableHeader class="bg-muted/50">
+						<TableRow class="hover:bg-transparent">
+							<TableHead>User</TableHead>
+							<TableHead>Role</TableHead>
+							<TableHead class="hidden sm:table-cell">Added</TableHead>
+							<TableHead></TableHead>
+						</TableRow>
+					</TableHeader>
+					<TableBody>
+						{#each data.members as member (member.userId)}
+							<TableRow>
+								<TableCell class="px-4 py-3">
+									<p class="font-medium text-gray-900">
+										{member.name}
+										{#if member.userId === data.currentUserId}
+											<span class="ml-1 text-xs text-gray-400">(you)</span>
+										{/if}
+										{#if member.isInternal}
+											<Badge class="ml-1 bg-indigo-100 text-indigo-600">internal</Badge>
+										{/if}
+									</p>
+									<p class="text-xs text-gray-400">{member.email}</p>
+								</TableCell>
+								<TableCell class="px-4 py-3">
+									{#if (data.currentRole === 'owner' || data.currentRole === 'manager') && member.userId !== data.currentUserId}
+										<form method="post" action="?/changeRole" use:enhance>
+											<input type="hidden" name="userId" value={member.userId} />
+											<select
+												name="role"
+												onchange={(e) => (e.target as HTMLSelectElement).form?.requestSubmit()}
+												class="rounded-md border border-gray-200 px-2 py-1 pr-6 text-xs focus:border-blue-500 focus:outline-none"
+											>
+												{#each data.roles as role (role)}
+													{#if role !== 'owner' || data.currentRole === 'owner'}
+														<option value={role} selected={member.role === role}
+															>{roleLabels[role]}</option
+														>
+													{/if}
+												{/each}
+											</select>
+										</form>
+									{:else}
+										<Badge class={roleColors[member.role] ?? 'bg-gray-100 text-gray-600'}>
+											{roleLabels[member.role] ?? member.role}
+										</Badge>
 									{/if}
-									{#if member.isInternal}
-										<Badge class="ml-1 bg-indigo-100 text-indigo-600">internal</Badge>
-									{/if}
-								</p>
-								<p class="text-xs text-gray-400">{member.email}</p>
-							</TableCell>
-							<TableCell class="px-4 py-3">
-								{#if (data.currentRole === 'owner' || data.currentRole === 'manager') && member.userId !== data.currentUserId}
-									<form method="post" action="?/changeRole" use:enhance>
-										<input type="hidden" name="userId" value={member.userId} />
-										<select
-											name="role"
-											onchange={(e) => (e.target as HTMLSelectElement).form?.requestSubmit()}
-											class="rounded-md border border-gray-200 px-2 py-1 pr-6 text-xs focus:border-blue-500 focus:outline-none"
-										>
-											{#each data.roles as role (role)}
-												{#if role !== 'owner' || data.currentRole === 'owner'}
-													<option value={role} selected={member.role === role}
-														>{roleLabels[role]}</option
+								</TableCell>
+								<TableCell class="hidden px-4 py-3 text-xs text-gray-400 sm:table-cell">
+									{new Date(member.assignedAt).toLocaleDateString([], {
+										month: 'short',
+										day: 'numeric',
+										year: 'numeric'
+									})}
+								</TableCell>
+								<TableCell class="px-4 py-3 text-right">
+									{#if member.userId !== data.currentUserId && (data.currentRole === 'owner' || data.currentRole === 'manager')}
+										<div class="flex items-center justify-end gap-3">
+											{#if data.canManageInternal && !member.isInternal}
+												<form method="post" action="?/toggleInternal" use:enhance>
+													<input type="hidden" name="userId" value={member.userId} />
+													<input type="hidden" name="isInternal" value="false" />
+													<Button
+														type="submit"
+														onclick={async (e) => {
+															e.preventDefault();
+															if (
+																await confirmDialog(
+																	`Grant internal platform access to ${member.name}?`,
+																	{ danger: false }
+																)
+															)
+																(e.currentTarget as HTMLButtonElement).form?.requestSubmit();
+														}}
+														variant="ghost"
+														size="sm"
+														class="hidden text-indigo-500 hover:text-indigo-700 sm:inline-flex"
 													>
-												{/if}
-											{/each}
-										</select>
-									</form>
-								{:else}
-									<Badge class={roleColors[member.role] ?? 'bg-gray-100 text-gray-600'}>
-										{roleLabels[member.role] ?? member.role}
-									</Badge>
-								{/if}
-							</TableCell>
-							<TableCell class="hidden px-4 py-3 text-xs text-gray-400 sm:table-cell">
-								{new Date(member.assignedAt).toLocaleDateString([], {
-									month: 'short',
-									day: 'numeric',
-									year: 'numeric'
-								})}
-							</TableCell>
-							<TableCell class="px-4 py-3 text-right">
-								{#if member.userId !== data.currentUserId && (data.currentRole === 'owner' || data.currentRole === 'manager')}
-									<div class="flex items-center justify-end gap-3">
-										{#if data.canManageInternal && !member.isInternal}
-											<form method="post" action="?/toggleInternal" use:enhance>
+														Make internal
+													</Button>
+												</form>
+											{/if}
+											<form method="post" action="?/removeMember" use:enhance>
 												<input type="hidden" name="userId" value={member.userId} />
-												<input type="hidden" name="isInternal" value="false" />
 												<Button
 													type="submit"
 													onclick={async (e) => {
 														e.preventDefault();
-														if (
-															await confirmDialog(
-																`Grant internal platform access to ${member.name}?`,
-																{ danger: false }
-															)
-														)
+														if (await confirmDialog(`Remove ${member.name} from this tenant?`))
 															(e.currentTarget as HTMLButtonElement).form?.requestSubmit();
 													}}
 													variant="ghost"
 													size="sm"
-													class="hidden text-indigo-500 hover:text-indigo-700 sm:inline-flex"
+													class="text-red-500 hover:text-red-700"
 												>
-													Make internal
+													Remove
 												</Button>
 											</form>
-										{/if}
-										<form method="post" action="?/removeMember" use:enhance>
-											<input type="hidden" name="userId" value={member.userId} />
-											<Button
-												type="submit"
-												onclick={async (e) => {
-													e.preventDefault();
-													if (await confirmDialog(`Remove ${member.name} from this tenant?`))
-														(e.currentTarget as HTMLButtonElement).form?.requestSubmit();
-												}}
-												variant="ghost"
-												size="sm"
-												class="text-red-500 hover:text-red-700"
-											>
-												Remove
-											</Button>
-										</form>
-									</div>
-								{/if}
-							</TableCell>
-						</TableRow>
-					{/each}
-				</TableBody>
-			</Table>
+										</div>
+									{/if}
+								</TableCell>
+							</TableRow>
+						{/each}
+					</TableBody>
+				</Table>
+			</CardContent>
 		</Card>
 
 		<!-- Pending invitations -->
@@ -351,65 +359,67 @@
 					Pending invitations
 					<Badge class="bg-yellow-100 text-yellow-700">{data.pendingInvitations.length}</Badge>
 				</h2>
-			<Card class="shadow-sm mt-3">
-					<Table>
-						<TableHeader class="bg-gray-50">
-							<TableRow class="hover:bg-transparent">
-								<TableHead class="px-4 py-2.5 text-gray-500">Email</TableHead>
-								<TableHead class="px-4 py-2.5 text-gray-500">Role</TableHead>
-								<TableHead class="hidden px-4 py-2.5 text-gray-500 sm:table-cell">Expires</TableHead>
-								<TableHead class="px-4 py-2.5"></TableHead>
-							</TableRow>
-						</TableHeader>
-						<TableBody>
-							{#each data.pendingInvitations as invite (invite.id)}
-								<TableRow>
-									<TableCell class="max-w-40 min-w-0 truncate px-4 py-3 text-gray-700">{invite.email}</TableCell>
-									<TableCell class="px-4 py-3">
-										<Badge class={roleColors[invite.role] ?? 'bg-gray-100 text-gray-600'}>
-											{roleLabels[invite.role] ?? invite.role}
-										</Badge>
-									</TableCell>
-									<TableCell class="hidden px-4 py-3 text-xs text-gray-400 sm:table-cell">
-										{new Date(invite.expiresAt).toLocaleDateString([], {
-											month: 'short',
-											day: 'numeric',
-											year: 'numeric'
-										})}
-									</TableCell>
-									<TableCell class="px-4 py-3 text-right">
-										<div class="flex items-center justify-end gap-3">
-											<Button
-												type="button"
-												onclick={() => copyLink(`${data.origin}/invite/${invite.id}`, invite.id)}
-												variant="ghost"
-												size="sm"
-												class="text-blue-500 hover:text-blue-700"
-											>
-												{copiedToken === invite.id ? 'Copied!' : 'Copy link'}
-											</Button>
-											<form method="post" action="?/cancelInvite" use:enhance>
-												<input type="hidden" name="id" value={invite.id} />
+				<Card class="shadow-sm">
+					<CardContent>
+						<Table>
+							<TableHeader class="bg-muted/50">
+								<TableRow class="hover:bg-transparent">
+									<TableHead>Email</TableHead>
+									<TableHead>Role</TableHead>
+									<TableHead class="hidden sm:table-cell">Expires</TableHead>
+									<TableHead></TableHead>
+								</TableRow>
+							</TableHeader>
+							<TableBody>
+								{#each data.pendingInvitations as invite (invite.id)}
+									<TableRow>
+										<TableCell class="max-w-40 min-w-0 truncate px-4 py-3 text-gray-700">{invite.email}</TableCell>
+										<TableCell class="px-4 py-3">
+											<Badge class={roleColors[invite.role] ?? 'bg-gray-100 text-gray-600'}>
+												{roleLabels[invite.role] ?? invite.role}
+											</Badge>
+										</TableCell>
+										<TableCell class="hidden px-4 py-3 text-xs text-gray-400 sm:table-cell">
+											{new Date(invite.expiresAt).toLocaleDateString([], {
+												month: 'short',
+												day: 'numeric',
+												year: 'numeric'
+											})}
+										</TableCell>
+										<TableCell class="px-4 py-3 text-right">
+											<div class="flex items-center justify-end gap-3">
 												<Button
-													type="submit"
-													onclick={async (e) => {
-														e.preventDefault();
-														if (await confirmDialog(`Cancel invite for ${invite.email}?`))
-															(e.currentTarget as HTMLButtonElement).form?.requestSubmit();
-													}}
+													type="button"
+													onclick={() => copyLink(`${data.origin}/invite/${invite.id}`, invite.id)}
 													variant="ghost"
 													size="sm"
-													class="text-red-500 hover:text-red-700"
+													class="text-blue-500 hover:text-blue-700"
 												>
-													Cancel
+													{copiedToken === invite.id ? 'Copied!' : 'Copy link'}
 												</Button>
-											</form>
-										</div>
-									</TableCell>
-								</TableRow>
-							{/each}
-						</TableBody>
-					</Table>
+												<form method="post" action="?/cancelInvite" use:enhance>
+													<input type="hidden" name="id" value={invite.id} />
+													<Button
+														type="submit"
+														onclick={async (e) => {
+															e.preventDefault();
+															if (await confirmDialog(`Cancel invite for ${invite.email}?`))
+																(e.currentTarget as HTMLButtonElement).form?.requestSubmit();
+														}}
+														variant="ghost"
+														size="sm"
+														class="text-red-500 hover:text-red-700"
+													>
+														Cancel
+													</Button>
+												</form>
+											</div>
+										</TableCell>
+									</TableRow>
+								{/each}
+							</TableBody>
+						</Table>
+					</CardContent>
 				</Card>
 			</div>
 		{/if}
@@ -434,51 +444,53 @@
 			</div>
 		{:else}
 			<Card class="mb-6 shadow-sm">
-				<Table>
-					<TableHeader class="bg-gray-50">
-						<TableRow class="hover:bg-transparent">
-							<TableHead class="px-4 py-2.5 text-gray-500">User</TableHead>
-							<TableHead class="hidden px-4 py-2.5 text-gray-500 sm:table-cell">Account created</TableHead>
-							<TableHead class="px-4 py-2.5"></TableHead>
-						</TableRow>
-					</TableHeader>
-					<TableBody>
-						{#each data.internalUsers as u (u.id)}
-							<TableRow>
-								<TableCell class="px-4 py-3">
-									<p class="font-medium text-gray-900">{u.name}</p>
-									<p class="text-xs text-gray-400">{u.email}</p>
-								</TableCell>
-								<TableCell class="hidden px-4 py-3 text-xs text-gray-400 sm:table-cell">
-									{new Date(u.createdAt).toLocaleDateString([], {
-										month: 'short',
-										day: 'numeric',
-										year: 'numeric'
-									})}
-								</TableCell>
-								<TableCell class="px-4 py-3 text-right">
-									<form method="post" action="?/toggleInternal" use:enhance>
-										<input type="hidden" name="userId" value={u.id} />
-										<input type="hidden" name="isInternal" value="true" />
-										<Button
-											type="submit"
-											onclick={async (e) => {
-												e.preventDefault();
-												if (await confirmDialog(`Revoke internal access for ${u.name}?`))
-													(e.currentTarget as HTMLButtonElement).form?.requestSubmit();
-											}}
-											variant="ghost"
-											size="sm"
-											class="text-red-500 hover:text-red-700"
-										>
-											Revoke internal
-										</Button>
-									</form>
-								</TableCell>
+				<CardContent>
+					<Table>
+						<TableHeader class="bg-muted/50">
+							<TableRow class="hover:bg-transparent">
+								<TableHead>User</TableHead>
+								<TableHead class="hidden sm:table-cell">Account created</TableHead>
+								<TableHead></TableHead>
 							</TableRow>
-						{/each}
-					</TableBody>
-				</Table>
+						</TableHeader>
+						<TableBody>
+							{#each data.internalUsers as u (u.id)}
+								<TableRow>
+									<TableCell class="px-4 py-3">
+										<p class="font-medium text-gray-900">{u.name}</p>
+										<p class="text-xs text-gray-400">{u.email}</p>
+									</TableCell>
+									<TableCell class="hidden px-4 py-3 text-xs text-gray-400 sm:table-cell">
+										{new Date(u.createdAt).toLocaleDateString([], {
+											month: 'short',
+											day: 'numeric',
+											year: 'numeric'
+										})}
+									</TableCell>
+									<TableCell class="px-4 py-3 text-right">
+										<form method="post" action="?/toggleInternal" use:enhance>
+											<input type="hidden" name="userId" value={u.id} />
+											<input type="hidden" name="isInternal" value="true" />
+											<Button
+												type="submit"
+												onclick={async (e) => {
+													e.preventDefault();
+													if (await confirmDialog(`Revoke internal access for ${u.name}?`))
+														(e.currentTarget as HTMLButtonElement).form?.requestSubmit();
+												}}
+												variant="ghost"
+												size="sm"
+												class="text-red-500 hover:text-red-700"
+											>
+												Revoke internal
+											</Button>
+										</form>
+									</TableCell>
+								</TableRow>
+							{/each}
+						</TableBody>
+					</Table>
+				</CardContent>
 			</Card>
 		{/if}
 
@@ -489,42 +501,44 @@
 					Promote a current member to internal
 				</h2>
 				<Card class="shadow-sm">
-					<Table>
-						<TableBody>
-							{#each nonInternalMembers as member (member.userId)}
-								<TableRow>
-									<TableCell class="px-4 py-3">
-										<p class="font-medium text-gray-900">{member.name}</p>
-										<p class="text-xs text-gray-400">{member.email}</p>
-									</TableCell>
-									<TableCell class="px-4 py-3 text-right">
-										<form method="post" action="?/toggleInternal" use:enhance>
-											<input type="hidden" name="userId" value={member.userId} />
-											<input type="hidden" name="isInternal" value="false" />
-											<Button
-												type="submit"
-												onclick={async (e) => {
-													e.preventDefault();
-													if (
-														await confirmDialog(
-															`Grant internal platform access to ${member.name}?`,
-															{ danger: false }
+					<CardContent>
+						<Table>
+							<TableBody>
+								{#each nonInternalMembers as member (member.userId)}
+									<TableRow>
+										<TableCell class="px-4 py-3">
+											<p class="font-medium text-gray-900">{member.name}</p>
+											<p class="text-xs text-gray-400">{member.email}</p>
+										</TableCell>
+										<TableCell class="px-4 py-3 text-right">
+											<form method="post" action="?/toggleInternal" use:enhance>
+												<input type="hidden" name="userId" value={member.userId} />
+												<input type="hidden" name="isInternal" value="false" />
+												<Button
+													type="submit"
+													onclick={async (e) => {
+														e.preventDefault();
+														if (
+															await confirmDialog(
+																`Grant internal platform access to ${member.name}?`,
+																{ danger: false }
+															)
 														)
-													)
-														(e.currentTarget as HTMLButtonElement).form?.requestSubmit();
-												}}
-												variant="outline"
-												size="sm"
-												class="border-indigo-300 text-indigo-600 hover:bg-indigo-50"
-											>
-												Make internal
-											</Button>
-										</form>
-									</TableCell>
-								</TableRow>
-							{/each}
-						</TableBody>
-					</Table>
+															(e.currentTarget as HTMLButtonElement).form?.requestSubmit();
+													}}
+													variant="outline"
+													size="sm"
+													class="border-indigo-300 text-indigo-600 hover:bg-indigo-50"
+												>
+													Make internal
+												</Button>
+											</form>
+										</TableCell>
+									</TableRow>
+								{/each}
+							</TableBody>
+						</Table>
+					</CardContent>
 				</Card>
 			</div>
 		{/if}

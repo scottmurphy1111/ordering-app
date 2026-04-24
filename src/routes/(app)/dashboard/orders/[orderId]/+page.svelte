@@ -5,6 +5,7 @@
 	import Icon from '@iconify/svelte';
 	import { Button } from '$lib/components/ui/button';
 	import { Badge } from '$lib/components/ui/badge';
+	import { Card, CardHeader, CardTitle, CardContent } from '$lib/components/ui/card';
 	import type { PageData, ActionData } from './$types';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
@@ -95,119 +96,127 @@
 	</div>
 
 	<!-- Customer info -->
-	<div class="mb-4 rounded-xl border border-gray-200 bg-white p-5">
-		<h2 class="mb-3 text-sm font-semibold tracking-wide text-gray-500 uppercase">Customer</h2>
-		<div class="space-y-1.5">
+	<Card class="mb-4">
+		<CardHeader>
+			<CardTitle class="text-xs font-semibold tracking-wide text-muted-foreground uppercase">Customer</CardTitle>
+		</CardHeader>
+		<CardContent class="space-y-1.5">
 			{#if order.customerName}
-				<div class="flex items-center gap-2 text-sm text-gray-700">
-					<Icon icon="mdi:account-outline" class="h-4 w-4 shrink-0 text-gray-400" />
+				<div class="flex items-center gap-2 text-sm">
+					<Icon icon="mdi:account-outline" class="h-4 w-4 shrink-0 text-muted-foreground" />
 					{order.customerName}
 				</div>
 			{/if}
 			{#if order.customerEmail}
-				<div class="flex items-center gap-2 text-sm text-gray-700">
-					<Icon icon="mdi:email-outline" class="h-4 w-4 shrink-0 text-gray-400" />
+				<div class="flex items-center gap-2 text-sm">
+					<Icon icon="mdi:email-outline" class="h-4 w-4 shrink-0 text-muted-foreground" />
 					<a href="mailto:{order.customerEmail}" class="hover:underline">{order.customerEmail}</a>
 				</div>
 			{/if}
 			{#if order.customerPhone}
-				<div class="flex items-center gap-2 text-sm text-gray-700">
-					<Icon icon="mdi:phone-outline" class="h-4 w-4 shrink-0 text-gray-400" />
+				<div class="flex items-center gap-2 text-sm">
+					<Icon icon="mdi:phone-outline" class="h-4 w-4 shrink-0 text-muted-foreground" />
 					<a href="tel:{order.customerPhone}" class="hover:underline">{order.customerPhone}</a>
 				</div>
 			{/if}
 			{#if !order.customerName && !order.customerEmail && !order.customerPhone}
-				<p class="text-sm text-gray-400">No customer info recorded.</p>
+				<p class="text-sm text-muted-foreground">No customer info recorded.</p>
 			{/if}
-		</div>
-	</div>
+		</CardContent>
+	</Card>
 
 	<!-- Items -->
-	<div class="mb-4 rounded-xl border border-gray-200 bg-white p-5">
-		<h2 class="mb-3 text-sm font-semibold tracking-wide text-gray-500 uppercase">Items</h2>
-		<div class="divide-y divide-gray-100">
-			{#each items as item, i (i)}
-				<div class="flex items-start justify-between py-3">
-					<div>
-						<p class="text-sm font-medium text-gray-900">{item.name}</p>
-						{#if item.selectedModifiers?.length}
-							<p class="mt-0.5 text-xs text-gray-400">
-								{item.selectedModifiers.map((m) => m.name).join(', ')}
+	<Card class="mb-4">
+		<CardHeader>
+			<CardTitle class="text-xs font-semibold tracking-wide text-muted-foreground uppercase">Items</CardTitle>
+		</CardHeader>
+		<CardContent>
+			<div class="divide-y">
+				{#each items as item, i (i)}
+					<div class="flex items-start justify-between py-3">
+						<div>
+							<p class="text-sm font-medium">{item.name}</p>
+							{#if item.selectedModifiers?.length}
+								<p class="mt-0.5 text-xs text-muted-foreground">
+									{item.selectedModifiers.map((m) => m.name).join(', ')}
+								</p>
+							{/if}
+						</div>
+						<div class="ml-4 shrink-0 text-right">
+							<p class="text-sm">×{item.quantity}</p>
+							<p class="text-xs text-muted-foreground">
+								{formatCents(
+									(item.basePrice +
+										(item.selectedModifiers?.reduce((s, m) => s + m.priceAdjustment, 0) ?? 0)) *
+										item.quantity
+								)}
 							</p>
-						{/if}
+						</div>
 					</div>
-					<div class="ml-4 shrink-0 text-right">
-						<p class="text-sm text-gray-700">×{item.quantity}</p>
-						<p class="text-xs text-gray-400">
-							{formatCents(
-								(item.basePrice +
-									(item.selectedModifiers?.reduce((s, m) => s + m.priceAdjustment, 0) ?? 0)) *
-									item.quantity
-							)}
-						</p>
-					</div>
-				</div>
-			{/each}
-		</div>
+				{/each}
+			</div>
 
-		<!-- Totals -->
-		<div class="mt-1 space-y-1.5 border-t border-gray-100 pt-3">
-			<div class="flex justify-between text-sm text-gray-500">
-				<span>Subtotal</span><span>{formatCents(order.subtotal)}</span>
+			<!-- Totals -->
+			<div class="mt-1 space-y-1.5 border-t pt-3">
+				<div class="flex justify-between text-sm text-muted-foreground">
+					<span>Subtotal</span><span>{formatCents(order.subtotal)}</span>
+				</div>
+				<div class="flex justify-between text-sm text-muted-foreground">
+					<span>Tax</span><span>{formatCents(order.tax)}</span>
+				</div>
+				{#if order.tip && order.tip > 0}
+					<div class="flex justify-between text-sm text-muted-foreground">
+						<span>Tip</span><span>{formatCents(order.tip)}</span>
+					</div>
+				{/if}
+				{#if order.discount && order.discount > 0}
+					<div class="flex justify-between text-sm font-medium text-green-600">
+						<span class="flex items-center gap-1">
+							<Icon icon="mdi:ticket-percent-outline" class="h-3.5 w-3.5" />
+							Promo{order.promoCode ? ` (${order.promoCode})` : ''}
+						</span>
+						<span>−{formatCents(order.discount)}</span>
+					</div>
+				{/if}
+				{#if order.deliveryFee && order.deliveryFee > 0}
+					<div class="flex justify-between text-sm text-muted-foreground">
+						<span>Delivery fee</span><span>{formatCents(order.deliveryFee)}</span>
+					</div>
+				{/if}
+				{#if order.deliveryAddress}
+					<div class="mt-2 flex items-start gap-1.5 rounded-md bg-muted px-3 py-2 text-sm text-muted-foreground">
+						<Icon icon="mdi:map-marker-outline" class="mt-0.5 h-4 w-4 shrink-0" />
+						{order.deliveryAddress}
+					</div>
+				{/if}
+				<div class="flex justify-between border-t pt-1.5 text-sm font-bold">
+					<span>Total</span><span>{formatCents(order.total)}</span>
+				</div>
 			</div>
-			<div class="flex justify-between text-sm text-gray-500">
-				<span>Tax</span><span>{formatCents(order.tax)}</span>
-			</div>
-			{#if order.tip && order.tip > 0}
-				<div class="flex justify-between text-sm text-gray-500">
-					<span>Tip</span><span>{formatCents(order.tip)}</span>
-				</div>
-			{/if}
-			{#if order.discount && order.discount > 0}
-				<div class="flex justify-between text-sm font-medium text-green-600">
-					<span class="flex items-center gap-1">
-						<Icon icon="mdi:ticket-percent-outline" class="h-3.5 w-3.5" />
-						Promo{order.promoCode ? ` (${order.promoCode})` : ''}
-					</span>
-					<span>−{formatCents(order.discount)}</span>
-				</div>
-			{/if}
-			{#if order.deliveryFee && order.deliveryFee > 0}
-				<div class="flex justify-between text-sm text-gray-500">
-					<span>Delivery fee</span><span>{formatCents(order.deliveryFee)}</span>
-				</div>
-			{/if}
-			{#if order.deliveryAddress}
-				<div
-					class="mt-2 flex items-start gap-1.5 rounded-md bg-gray-50 px-3 py-2 text-sm text-gray-600"
-				>
-					<Icon icon="mdi:map-marker-outline" class="mt-0.5 h-4 w-4 shrink-0 text-gray-400" />
-					{order.deliveryAddress}
-				</div>
-			{/if}
-			<div
-				class="flex justify-between border-t border-gray-200 pt-1.5 text-sm font-bold text-gray-900"
-			>
-				<span>Total</span><span>{formatCents(order.total)}</span>
-			</div>
-		</div>
-	</div>
+		</CardContent>
+	</Card>
 
 	<!-- Notes -->
 	{#if order.notes}
-		<div class="mb-4 rounded-xl border border-gray-200 bg-white p-5">
-			<h2 class="mb-2 text-sm font-semibold tracking-wide text-gray-500 uppercase">Notes</h2>
-			<p class="text-sm text-gray-700 italic">"{order.notes}"</p>
-		</div>
+		<Card class="mb-4">
+			<CardHeader>
+				<CardTitle class="text-xs font-semibold tracking-wide text-muted-foreground uppercase">Notes</CardTitle>
+			</CardHeader>
+			<CardContent>
+				<p class="text-sm italic">"{order.notes}"</p>
+			</CardContent>
+		</Card>
 	{/if}
 
 	<!-- Actions -->
 	{#if nextStatus[order.status] || !['fulfilled', 'cancelled'].includes(order.status) || (order.status === 'cancelled' && order.paymentStatus === 'paid')}
-		<div class="rounded-xl border border-gray-200 bg-white p-5">
-			<h2 class="mb-3 text-sm font-semibold tracking-wide text-gray-500 uppercase">Actions</h2>
-			<div class="flex flex-wrap gap-2">
+		<Card>
+			<CardHeader>
+				<CardTitle class="text-xs font-semibold tracking-wide text-muted-foreground uppercase">Actions</CardTitle>
+			</CardHeader>
+			<CardContent class="flex flex-wrap gap-2">
 				{#if nextStatus[order.status]}
-					<form method="post" action="?/updateStatus" use:enhance>
+					<form method="post" action="?/updateStatus" use:enhance autocomplete="off">
 						<input type="hidden" name="id" value={order.id} />
 						<input type="hidden" name="status" value={nextStatus[order.status]} />
 						<Button type="submit" variant="default">
@@ -216,14 +225,15 @@
 					</form>
 				{/if}
 				{#if !['fulfilled', 'cancelled'].includes(order.status)}
-					<form method="post" action="?/cancel" use:enhance>
+					<form method="post" action="?/cancel" use:enhance autocomplete="off">
 						<input type="hidden" name="id" value={order.id} />
 						<Button
 							type="submit"
 							onclick={async (e) => {
 								e.preventDefault();
+								const btn = e.currentTarget as HTMLButtonElement;
 								if (await confirmDialog('Cancel this order?'))
-									(e.currentTarget as HTMLButtonElement).form?.requestSubmit();
+									btn.form?.requestSubmit();
 							}}
 							variant="destructive"
 						>
@@ -232,14 +242,15 @@
 					</form>
 				{/if}
 				{#if order.status === 'cancelled' && order.paymentStatus === 'paid'}
-					<form method="post" action="?/refund" use:enhance>
+					<form method="post" action="?/refund" use:enhance autocomplete="off">
 						<input type="hidden" name="id" value={order.id} />
 						<Button
 							type="submit"
 							onclick={async (e) => {
 								e.preventDefault();
+								const btn = e.currentTarget as HTMLButtonElement;
 								if (await confirmDialog('Issue a full refund for this order?'))
-									(e.currentTarget as HTMLButtonElement).form?.requestSubmit();
+									btn.form?.requestSubmit();
 							}}
 							variant="outline"
 							class="border-orange-200 text-orange-600 hover:bg-orange-50"
@@ -248,7 +259,7 @@
 						</Button>
 					</form>
 				{/if}
-			</div>
-		</div>
+			</CardContent>
+		</Card>
 	{/if}
 </div>

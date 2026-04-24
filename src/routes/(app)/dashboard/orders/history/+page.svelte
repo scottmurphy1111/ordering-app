@@ -232,8 +232,9 @@
 									type="submit"
 									onclick={async (e) => {
 										e.preventDefault();
+										const btn = e.currentTarget as HTMLButtonElement;
 										if (await confirmDialog('Issue a full refund for this order?'))
-											(e.currentTarget as HTMLButtonElement).form?.requestSubmit();
+											btn.form?.requestSubmit();
 									}}
 									variant="outline"
 									size="sm"

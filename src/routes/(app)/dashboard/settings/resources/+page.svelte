@@ -8,7 +8,7 @@
 	import { Badge } from '$lib/components/ui/badge';
 	import { Input } from '$lib/components/ui/input';
 	import { Label } from '$lib/components/ui/label';
-	import { Card } from '$lib/components/ui/card';
+	import { Card, CardContent } from '$lib/components/ui/card';
 
 	const tenant = $derived(page.data.tenant);
 	const menuUrl = $derived(tenant?.slug ? `${page.url.origin}/${tenant.slug}/menu` : '');
@@ -107,7 +107,8 @@
 	<div class="space-y-6">
 		<!-- ── Menu QR code ──────────────────────────────────────────────────── -->
 		{#if tenant?.slug}
-			<Card class="p-6 shadow-sm">
+			<Card class="shadow-sm">
+				<CardContent>
 				<div class="mb-5 flex items-center gap-3">
 					<div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-green-100">
 						<Icon icon="mdi:qrcode" class="h-5 w-5 text-green-700" />
@@ -160,6 +161,7 @@
 						</div>
 					</div>
 				</div>
+				</CardContent>
 			</Card>
 		{/if}
 
@@ -205,7 +207,8 @@
 		<!-- ── Table QR codes ────────────────────────────────────────────────── -->
 		{#if tenant?.slug}
 			{#if hasTableQr}
-				<Card class="p-6 shadow-sm">
+				<Card class="shadow-sm">
+					<CardContent>
 					<div class="mb-5 flex items-start justify-between gap-4">
 						<div class="flex items-center gap-3">
 							<div
@@ -252,6 +255,7 @@
 							{/each}
 						</div>
 					{/if}
+					</CardContent>
 				</Card>
 			{:else}
 				<div class="rounded-xl border border-dashed border-gray-200 bg-gray-50 p-6">
@@ -284,7 +288,8 @@
 		<!-- ── Embed snippet ──────────────────────────────────────────────────── -->
 		{#if tenant?.slug}
 			{@const isPro = tenant.subscriptionTier === 'pro'}
-			<Card class="p-6 shadow-sm">
+			<Card class="shadow-sm">
+				<CardContent>
 				<div class="mb-5 flex items-center gap-3">
 					<div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-green-100">
 						<Icon icon="mdi:code-tags" class="h-5 w-5 text-green-700" />
@@ -319,6 +324,7 @@
 						</Button>
 					</div>
 				{/if}
+				</CardContent>
 			</Card>
 		{/if}
 

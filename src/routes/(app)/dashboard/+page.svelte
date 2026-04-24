@@ -162,38 +162,40 @@
 				</span>
 			</div>
 			<Card class="p-0 shadow-sm">
-				<Table>
-					<TableHeader class="bg-muted/50">
-						<TableRow class="hover:bg-transparent">
-							<TableHead>Order</TableHead>
-							<TableHead class="hidden sm:table-cell">Customer</TableHead>
-							<TableHead class="hidden md:table-cell">Type</TableHead>
-							<TableHead>Status</TableHead>
-							<TableHead class="text-right">Total</TableHead>
-						</TableRow>
-					</TableHeader>
-					<TableBody>
-						{#each data.recentOrders as order (order.id)}
-							<TableRow>
-								<TableCell class="font-mono text-xs">
-									<a href={resolve(`/dashboard/orders/${order.id}`)} class="hover:underline"
-										>{order.orderNumber}</a
-									>
-								</TableCell>
-								<TableCell class="hidden sm:table-cell">{order.customerName ?? '—'}</TableCell>
-								<TableCell class="hidden capitalize md:table-cell">{order.type}</TableCell>
-								<TableCell>
-									<Badge class={statusColors[order.status] ?? 'bg-muted text-muted-foreground'}>
-										{order.status}
-									</Badge>
-								</TableCell>
-								<TableCell class="text-right font-medium"
-									>${(order.total / 100).toFixed(2)}</TableCell
-								>
+				<CardContent>
+					<Table>
+						<TableHeader>
+							<TableRow class="hover:bg-transparent">
+								<TableHead>Order</TableHead>
+								<TableHead class="hidden sm:table-cell">Customer</TableHead>
+								<TableHead class="hidden md:table-cell">Type</TableHead>
+								<TableHead>Status</TableHead>
+								<TableHead class="text-right">Total</TableHead>
 							</TableRow>
-						{/each}
-					</TableBody>
-				</Table>
+						</TableHeader>
+						<TableBody>
+							{#each data.recentOrders as order (order.id)}
+								<TableRow>
+									<TableCell class="font-mono text-xs">
+										<a href={resolve(`/dashboard/orders/${order.id}`)} class="hover:underline"
+											>{order.orderNumber}</a
+										>
+									</TableCell>
+									<TableCell class="hidden sm:table-cell">{order.customerName ?? '—'}</TableCell>
+									<TableCell class="hidden capitalize md:table-cell">{order.type}</TableCell>
+									<TableCell>
+										<Badge class={statusColors[order.status] ?? 'bg-muted text-muted-foreground'}>
+											{order.status}
+										</Badge>
+									</TableCell>
+									<TableCell class="text-right font-medium"
+										>${(order.total / 100).toFixed(2)}</TableCell
+									>
+								</TableRow>
+							{/each}
+						</TableBody>
+					</Table>
+				</CardContent>
 			</Card>
 		</div>
 	{:else}

@@ -230,82 +230,84 @@
 	{:else}
 		<!-- ── Normal table view ───────────────────────────────────── -->
 		<Card class="p-0 shadow-sm">
-			<Table>
-				<TableHeader class="bg-gray-50">
-					<TableRow class="hover:bg-transparent">
-						{#each [['name', 'Name'], ['description', 'Description'], ['items', 'Items'], ['status', 'Status']] as const as [col, label] (col)}
-							<TableHead class="px-4 py-2.5">
-								<button
-									onclick={() => sortBy(col)}
-									class="inline-flex items-center gap-1 font-medium text-gray-500 transition-colors hover:text-gray-800"
-								>
-									{label}
-									<Icon
-										icon={sortCol === col
-											? sortDir === 'asc'
-												? 'mdi:chevron-up'
-												: 'mdi:chevron-down'
-											: 'mdi:unfold-more-horizontal'}
-										class="h-3.5 w-3.5 {sortCol === col ? 'text-gray-800' : 'text-gray-300'}"
-									/>
-								</button>
-							</TableHead>
-						{/each}
-						<TableHead class="px-4 py-2.5 text-gray-500">Actions</TableHead>
-					</TableRow>
-				</TableHeader>
-				<TableBody>
-					{#each sortedCategories as cat (cat.id)}
-						<TableRow>
-							<TableCell class="px-4 py-3">
-								<a
-									href={resolve(`/dashboard/menu/categories/${cat.id}` as `/${string}`)}
-									class="font-medium text-gray-900 hover:underline">{cat.name}</a
-								>
-							</TableCell>
-							<TableCell class="px-4 py-3 text-gray-500">{cat.description ?? '—'}</TableCell>
-							<TableCell class="px-4 py-3 text-gray-500">{cat.itemCount}</TableCell>
-							<TableCell class="px-4 py-3">
-								<form method="post" action="?/toggleActive" use:enhance>
-									<input type="hidden" name="id" value={cat.id} />
-									<input type="hidden" name="isActive" value={String(cat.isActive)} />
+			<CardContent>
+				<Table>
+					<TableHeader>
+						<TableRow class="hover:bg-transparent">
+							{#each [['name', 'Name'], ['description', 'Description'], ['items', 'Items'], ['status', 'Status']] as const as [col, label] (col)}
+								<TableHead class="px-4 py-2.5">
 									<button
-										type="submit"
-										class="rounded-full px-2 py-0.5 text-xs font-medium transition-colors {cat.isActive
-											? 'bg-green-100 text-green-700 hover:bg-green-200'
-											: 'bg-gray-100 text-gray-500 hover:bg-gray-200'}"
+										onclick={() => sortBy(col)}
+										class="inline-flex items-center gap-1 font-medium text-gray-500 transition-colors hover:text-gray-800"
 									>
-										{cat.isActive ? 'Active' : 'Hidden'}
+										{label}
+										<Icon
+											icon={sortCol === col
+												? sortDir === 'asc'
+													? 'mdi:chevron-up'
+													: 'mdi:chevron-down'
+												: 'mdi:unfold-more-horizontal'}
+											class="h-3.5 w-3.5 {sortCol === col ? 'text-gray-800' : 'text-gray-300'}"
+										/>
 									</button>
-								</form>
-							</TableCell>
-							<TableCell class="px-4 py-3">
-								<div class="flex items-center gap-3">
-									<a
-										href={resolve(`/dashboard/menu/categories/${cat.id}`)}
-										class="text-xs font-medium text-gray-600 transition-colors hover:text-gray-900"
-										>Edit</a
-									>
-									<form method="post" action="?/delete" use:enhance>
-										<input type="hidden" name="id" value={cat.id} />
-										<Button
-											type="submit"
-											onclick={async (e) => {
-												e.preventDefault();
-												if (await confirmDialog('Delete this category?'))
-													(e.currentTarget as HTMLButtonElement).form?.requestSubmit();
-											}}
-											variant="ghost"
-											size="sm"
-											class="text-red-500 hover:text-red-700">Delete</Button
-										>
-									</form>
-								</div>
-							</TableCell>
+								</TableHead>
+							{/each}
+							<TableHead class="px-4 py-2.5 text-gray-500">Actions</TableHead>
 						</TableRow>
-					{/each}
-				</TableBody>
-			</Table>
+					</TableHeader>
+					<TableBody>
+						{#each sortedCategories as cat (cat.id)}
+							<TableRow>
+								<TableCell class="px-4 py-3">
+									<a
+										href={resolve(`/dashboard/menu/categories/${cat.id}` as `/${string}`)}
+										class="font-medium text-gray-900 hover:underline">{cat.name}</a
+									>
+								</TableCell>
+								<TableCell class="px-4 py-3 text-gray-500">{cat.description ?? '—'}</TableCell>
+								<TableCell class="px-4 py-3 text-gray-500">{cat.itemCount}</TableCell>
+								<TableCell class="px-4 py-3">
+									<form method="post" action="?/toggleActive" use:enhance>
+										<input type="hidden" name="id" value={cat.id} />
+										<input type="hidden" name="isActive" value={String(cat.isActive)} />
+										<button
+											type="submit"
+											class="rounded-full px-2 py-0.5 text-xs font-medium transition-colors {cat.isActive
+												? 'bg-green-100 text-green-700 hover:bg-green-200'
+												: 'bg-gray-100 text-gray-500 hover:bg-gray-200'}"
+										>
+											{cat.isActive ? 'Active' : 'Hidden'}
+										</button>
+									</form>
+								</TableCell>
+								<TableCell class="px-4 py-3">
+									<div class="flex items-center gap-3">
+										<a
+											href={resolve(`/dashboard/menu/categories/${cat.id}`)}
+											class="text-xs font-medium text-gray-600 transition-colors hover:text-gray-900"
+											>Edit</a
+										>
+										<form method="post" action="?/delete" use:enhance>
+											<input type="hidden" name="id" value={cat.id} />
+											<Button
+												type="submit"
+												onclick={async (e) => {
+													e.preventDefault();
+													if (await confirmDialog('Delete this category?'))
+														(e.currentTarget as HTMLButtonElement).form?.requestSubmit();
+												}}
+												variant="ghost"
+												size="sm"
+												class="text-red-500 hover:text-red-700">Delete</Button
+											>
+										</form>
+									</div>
+								</TableCell>
+							</TableRow>
+						{/each}
+					</TableBody>
+				</Table>
+			</CardContent>
 		</Card>
 	{/if}
 </div>

@@ -128,6 +128,14 @@
 	onMount(() => {
 		mounted = true;
 	});
+
+	function scrollToSection(id: string) {
+		const el = document.getElementById(id);
+		if (!el) return;
+		const stickyBar = document.querySelector('.sticky') as HTMLElement | null;
+		const offset = (stickyBar?.offsetHeight ?? 0) + 16;
+		window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - offset, behavior: 'smooth' });
+	}
 </script>
 
 <svelte:head>
@@ -283,6 +291,7 @@
 							{#each filteredCategorized as category (category.id)}
 								<a
 									href="#{category.id}"
+									onclick={(e) => { e.preventDefault(); scrollToSection(String(category.id)); }}
 									class="category-pill shrink-0 rounded-full px-4 py-1.5 text-sm font-medium text-gray-600 transition-colors {activeCategoryId ===
 									String(category.id)
 										? 'active'
@@ -294,6 +303,7 @@
 							{#if filteredUncategorized.length > 0}
 								<a
 									href="#other"
+									onclick={(e) => { e.preventDefault(); scrollToSection('other'); }}
 									class="category-pill shrink-0 rounded-full px-4 py-1.5 text-sm font-medium text-gray-600 transition-colors {activeCategoryId ===
 									'other'
 										? 'active'

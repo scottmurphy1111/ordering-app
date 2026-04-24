@@ -14,7 +14,7 @@
 		SelectItem,
 		SelectValue
 	} from '$lib/components/ui/select';
-	import { Card } from '$lib/components/ui/card';
+	import { Card, CardContent } from '$lib/components/ui/card';
 	import { Table, TableHeader, TableHead, TableBody, TableRow, TableCell } from '$lib/components/ui/table';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
@@ -82,12 +82,14 @@
 
 		<!-- Create form -->
 		{#if showForm}
-			<form
-				method="post"
-				action="?/create"
-				use:enhance
-				class="mb-6 space-y-4 rounded-xl border border-gray-200 bg-white p-5 shadow-sm"
-			>
+			<Card class="mb-6 shadow-sm">
+				<CardContent>
+				<form
+					method="post"
+					action="?/create"
+					use:enhance
+					class="space-y-4"
+				>
 				<h2 class="font-semibold text-gray-800">New promo code</h2>
 
 				<div class="grid gap-4 sm:grid-cols-2">
@@ -169,6 +171,8 @@
 
 				<Button type="submit" variant="default">Create code</Button>
 			</form>
+			</CardContent>
+			</Card>
 		{/if}
 
 		<!-- Codes list -->
@@ -178,8 +182,9 @@
 			</div>
 		{:else}
 			<Card class="shadow-sm">
+			<CardContent>
 				<Table>
-					<TableHeader class="bg-gray-50">
+					<TableHeader class="bg-muted/50">
 						<TableRow class="hover:bg-transparent">
 							<TableHead class="px-4 py-3 text-gray-500">Code</TableHead>
 							<TableHead class="px-4 py-3 text-gray-500">Discount</TableHead>
@@ -256,6 +261,7 @@
 						{/each}
 					</TableBody>
 				</Table>
+			</CardContent>
 			</Card>
 		{/if}
 	{/if}

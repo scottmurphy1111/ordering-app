@@ -305,7 +305,7 @@
 				{@const currentIndex = TIERS.findIndex((t) => t.key === currentTierKey)}
 				{@const isUpgrade = tierIndex > currentIndex}
 				<Card
-					class="relative p-5 shadow-sm {isCurrent
+					class="relative shadow-sm {isCurrent
 						? 'ring-2 ring-green-400 ring-offset-0'
 						: ''}"
 				>
@@ -315,6 +315,7 @@
 							>Current</span
 						>
 					{/if}
+					<CardContent>
 					<div class="mb-4">
 						<p class="font-semibold text-gray-900">{tier.name}</p>
 						{#if tier.key === 'pro'}
@@ -388,6 +389,7 @@
 							</Button>
 						</form>
 					{/if}
+					</CardContent>
 				</Card>
 			{/each}
 		</div>
@@ -429,10 +431,11 @@
 				{@const isActive = hasAddon(activeAddons, addon.key)}
 				{@const canToggle = isPaidPlan && data.hasStripeSubscription}
 				<Card
-					class="p-5 shadow-sm {isActive
-						? 'ring-green-300 bg-green-50/40'
+					class="shadow-sm {isActive
+						? 'ring-2 ring-green-300 bg-green-50/40'
 						: ''}"
 				>
+					<CardContent>
 					<div class="mb-3 flex items-start justify-between gap-3">
 						<div class="flex items-center gap-3">
 							<div
@@ -476,6 +479,7 @@
 							Activate — ${addon.price}/mo
 						</Button>
 					{/if}
+					</CardContent>
 				</Card>
 			{/each}
 		</div>

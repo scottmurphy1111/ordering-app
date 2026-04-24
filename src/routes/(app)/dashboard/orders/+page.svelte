@@ -179,7 +179,7 @@
 					{#if nextStatus[order.status] || !['fulfilled', 'cancelled'].includes(order.status) || (order.status === 'cancelled' && order.paymentStatus === 'paid')}
 						<CardFooter class="gap-2">
 							{#if nextStatus[order.status]}
-								<form method="post" action="?/updateStatus" use:enhance>
+								<form method="post" action="?/updateStatus" use:enhance autocomplete="off">
 									<input type="hidden" name="id" value={order.id} />
 									<input type="hidden" name="status" value={nextStatus[order.status]} />
 									<Button type="submit" variant="outline" size="sm">
@@ -188,14 +188,15 @@
 								</form>
 							{/if}
 							{#if !['fulfilled', 'cancelled'].includes(order.status)}
-								<form method="post" action="?/cancel" use:enhance>
+								<form method="post" action="?/cancel" use:enhance autocomplete="off">
 									<input type="hidden" name="id" value={order.id} />
 									<Button
 										type="submit"
 										onclick={async (e) => {
 											e.preventDefault();
+											const btn = e.currentTarget as HTMLButtonElement;
 											if (await confirmDialog('Cancel this order?'))
-												(e.currentTarget as HTMLButtonElement).form?.requestSubmit();
+												btn.form?.requestSubmit();
 										}}
 										variant="ghost"
 										size="sm"
@@ -206,14 +207,15 @@
 								</form>
 							{/if}
 							{#if order.status === 'cancelled' && order.paymentStatus === 'paid'}
-								<form method="post" action="?/refund" use:enhance>
+								<form method="post" action="?/refund" use:enhance autocomplete="off">
 									<input type="hidden" name="id" value={order.id} />
 									<Button
 										type="submit"
 										onclick={async (e) => {
 											e.preventDefault();
+											const btn = e.currentTarget as HTMLButtonElement;
 											if (await confirmDialog('Issue a full refund for this order?'))
-												(e.currentTarget as HTMLButtonElement).form?.requestSubmit();
+												btn.form?.requestSubmit();
 										}}
 										variant="outline"
 										size="sm"
