@@ -2,6 +2,7 @@
 	import type { PageData } from './$types';
 	import Icon from '@iconify/svelte';
 	import { Card } from '$lib/components/ui/card';
+	import CardContent from '$lib/components/ui/card/card-content.svelte';
 
 	let { data }: { data: PageData } = $props();
 
@@ -66,187 +67,203 @@
 	<!-- ── KPI cards ────────────────────────────────────────────── -->
 	<div class="mb-8 grid grid-cols-2 gap-4 lg:grid-cols-4">
 		<!-- Revenue 30d -->
-		<Card class="p-5 shadow-sm">
-			<p class="text-xs font-medium tracking-wide text-gray-500 uppercase">Revenue (30d)</p>
-			<p class="mt-1.5 text-3xl font-bold text-gray-900">{fmt(kpis.revenue30)}</p>
-			{#if kpis.revenueChange !== null}
-				<p class="mt-1 text-xs {kpis.revenueChange >= 0 ? 'text-green-600' : 'text-red-500'}">
-					{fmtPct(kpis.revenueChange)} vs prev 30d
-				</p>
-			{:else}
-				<p class="mt-1 text-xs text-gray-400">No prior data</p>
-			{/if}
+		<Card class="shadow-sm">
+			<CardContent>
+				<p class="text-xs font-medium tracking-wide text-gray-500 uppercase">Revenue (30d)</p>
+				<p class="mt-1.5 text-3xl font-bold text-gray-900">{fmt(kpis.revenue30)}</p>
+				{#if kpis.revenueChange !== null}
+					<p class="mt-1 text-xs {kpis.revenueChange >= 0 ? 'text-green-600' : 'text-red-500'}">
+						{fmtPct(kpis.revenueChange)} vs prev 30d
+					</p>
+				{:else}
+					<p class="mt-1 text-xs text-gray-400">No prior data</p>
+				{/if}
+			</CardContent>
 		</Card>
 
 		<!-- Orders 30d -->
-		<Card class="p-5 shadow-sm">
-			<p class="text-xs font-medium tracking-wide text-gray-500 uppercase">Orders (30d)</p>
-			<p class="mt-1.5 text-3xl font-bold text-gray-900">{kpis.orders30}</p>
-			{#if kpis.ordersChange !== null}
-				<p class="mt-1 text-xs {kpis.ordersChange >= 0 ? 'text-green-600' : 'text-red-500'}">
-					{fmtPct(kpis.ordersChange)} vs prev 30d
-				</p>
-			{:else}
-				<p class="mt-1 text-xs text-gray-400">No prior data</p>
-			{/if}
+		<Card class="shadow-sm">
+			<CardContent>
+				<p class="text-xs font-medium tracking-wide text-gray-500 uppercase">Orders (30d)</p>
+				<p class="mt-1.5 text-3xl font-bold text-gray-900">{kpis.orders30}</p>
+				{#if kpis.ordersChange !== null}
+					<p class="mt-1 text-xs {kpis.ordersChange >= 0 ? 'text-green-600' : 'text-red-500'}">
+						{fmtPct(kpis.ordersChange)} vs prev 30d
+					</p>
+				{:else}
+					<p class="mt-1 text-xs text-gray-400">No prior data</p>
+				{/if}
+			</CardContent>
 		</Card>
 
 		<!-- Avg order value -->
-		<Card class="p-5 shadow-sm">
-			<p class="text-xs font-medium tracking-wide text-gray-500 uppercase">Avg Order</p>
-			<p class="mt-1.5 text-3xl font-bold text-gray-900">{fmt(kpis.avgOrderValue)}</p>
-			{#if kpis.avgChange !== null}
-				<p class="mt-1 text-xs {kpis.avgChange >= 0 ? 'text-green-600' : 'text-red-500'}">
-					{fmtPct(kpis.avgChange)} vs prev 30d
-				</p>
-			{:else}
-				<p class="mt-1 text-xs text-gray-400">No prior data</p>
-			{/if}
+		<Card class="shadow-sm">
+			<CardContent>
+				<p class="text-xs font-medium tracking-wide text-gray-500 uppercase">Avg Order</p>
+				<p class="mt-1.5 text-3xl font-bold text-gray-900">{fmt(kpis.avgOrderValue)}</p>
+				{#if kpis.avgChange !== null}
+					<p class="mt-1 text-xs {kpis.avgChange >= 0 ? 'text-green-600' : 'text-red-500'}">
+						{fmtPct(kpis.avgChange)} vs prev 30d
+					</p>
+				{:else}
+					<p class="mt-1 text-xs text-gray-400">No prior data</p>
+				{/if}
+			</CardContent>
 		</Card>
 
 		<!-- Revenue last 7d -->
-		<Card class="p-5 shadow-sm">
-			<p class="text-xs font-medium tracking-wide text-gray-500 uppercase">Revenue (7d)</p>
-			<p class="mt-1.5 text-3xl font-bold text-gray-900">{fmt(kpis.revenue7)}</p>
-			<p class="mt-1 text-xs text-gray-400">Last 7 days</p>
+		<Card class="shadow-sm">
+			<CardContent>
+				<p class="text-xs font-medium tracking-wide text-gray-500 uppercase">Revenue (7d)</p>
+				<p class="mt-1.5 text-3xl font-bold text-gray-900">{fmt(kpis.revenue7)}</p>
+				<p class="mt-1 text-xs text-gray-400">Last 7 days</p>
+			</CardContent>
 		</Card>
 	</div>
 
 	<!-- ── Daily revenue chart ──────────────────────────────────── -->
-	<Card class="mb-6 p-5 shadow-sm">
-		<h2 class="mb-4 text-sm font-semibold text-gray-800">Daily revenue — last 30 days</h2>
-		<div class="flex h-36 items-end gap-px">
-			{#each dailyData as day (day.date)}
-				{@const height =
-					day.revenue === 0 ? 2 : Math.max(4, Math.round((day.revenue / maxDailyRevenue) * 144))}
-				<div class="group relative flex flex-1 flex-col items-center justify-end">
-					<div
-						class="w-full rounded-sm bg-gray-800 transition-colors group-hover:bg-gray-600"
-						style="height: {height}px;"
-					></div>
-					<!-- Tooltip -->
-					{#if day.revenue > 0}
+	<Card class="mb-6 shadow-sm">
+		<CardContent>
+			<h2 class="mb-4 text-sm font-semibold text-gray-800">Daily revenue — last 30 days</h2>
+			<div class="flex h-36 items-end gap-px">
+				{#each dailyData as day (day.date)}
+					{@const height =
+						day.revenue === 0 ? 2 : Math.max(4, Math.round((day.revenue / maxDailyRevenue) * 144))}
+					<div class="group relative flex flex-1 flex-col items-center justify-end">
 						<div
-							class="pointer-events-none absolute bottom-full left-1/2 z-10 mb-1.5 hidden -translate-x-1/2 flex-col items-center group-hover:flex"
-						>
+							class="w-full rounded-sm bg-gray-800 transition-colors group-hover:bg-gray-600"
+							style="height: {height}px;"
+						></div>
+						<!-- Tooltip -->
+						{#if day.revenue > 0}
 							<div
-								class="rounded-md bg-gray-900 px-2 py-1 text-xs whitespace-nowrap text-white shadow-lg"
+								class="pointer-events-none absolute bottom-full left-1/2 z-10 mb-1.5 hidden -translate-x-1/2 flex-col items-center group-hover:flex"
 							>
-								<p>{fmt(day.revenue)}</p>
-								<p class="text-gray-400">{day.count} {day.count === 1 ? 'order' : 'orders'}</p>
+								<div
+									class="rounded-md bg-gray-900 px-2 py-1 text-xs whitespace-nowrap text-white shadow-lg"
+								>
+									<p>{fmt(day.revenue)}</p>
+									<p class="text-gray-400">{day.count} {day.count === 1 ? 'order' : 'orders'}</p>
+								</div>
+								<div class="-mt-1 h-1.5 w-1.5 rotate-45 bg-gray-900"></div>
 							</div>
-							<div class="-mt-1 h-1.5 w-1.5 rotate-45 bg-gray-900"></div>
-						</div>
-					{/if}
-				</div>
-			{/each}
-		</div>
-		<!-- X-axis labels: just first, middle, last -->
-		<div class="mt-1.5 flex justify-between text-xs text-gray-400">
-			<span>{dailyData[0]?.date.slice(5)}</span>
-			<span>{dailyData[14]?.date.slice(5)}</span>
-			<span>{dailyData[29]?.date.slice(5)}</span>
-		</div>
+						{/if}
+					</div>
+				{/each}
+			</div>
+			<!-- X-axis labels: just first, middle, last -->
+			<div class="mt-1.5 flex justify-between text-xs text-gray-400">
+				<span>{dailyData[0]?.date.slice(5)}</span>
+				<span>{dailyData[14]?.date.slice(5)}</span>
+				<span>{dailyData[29]?.date.slice(5)}</span>
+			</div>
+		</CardContent>
 	</Card>
 
 	<!-- ── Bottom grid ───────────────────────────────────────────── -->
 	<div class="grid gap-6 lg:grid-cols-3">
 		<!-- Top items -->
-		<Card class="p-5 shadow-sm lg:col-span-2">
-			<h2 class="mb-4 text-sm font-semibold text-gray-800">Top items</h2>
-			{#if topItems.length === 0}
-				<p class="text-sm text-gray-400">No order data yet.</p>
-			{:else}
-				<div class="space-y-3">
-					{#each topItems as item, i (item.name)}
-						<div>
-							<div class="mb-1 flex items-center justify-between gap-2">
-								<div class="flex min-w-0 items-center gap-2">
-									<span class="w-4 shrink-0 text-xs font-bold text-gray-400">#{i + 1}</span>
-									<span class="truncate text-sm font-medium text-gray-800">{item.name}</span>
+		<Card class="shadow-sm lg:col-span-2">
+			<CardContent>
+				<h2 class="mb-4 text-sm font-semibold text-gray-800">Top items</h2>
+				{#if topItems.length === 0}
+					<p class="text-sm text-gray-400">No order data yet.</p>
+				{:else}
+					<div class="space-y-3">
+						{#each topItems as item, i (item.name)}
+							<div>
+								<div class="mb-1 flex items-center justify-between gap-2">
+									<div class="flex min-w-0 items-center gap-2">
+										<span class="w-4 shrink-0 text-xs font-bold text-gray-400">#{i + 1}</span>
+										<span class="truncate text-sm font-medium text-gray-800">{item.name}</span>
+									</div>
+									<div class="flex shrink-0 items-center gap-3 text-xs text-gray-500">
+										<span>{item.totalQty} sold</span>
+										<span class="font-medium text-gray-700">{fmt(item.totalRevenue)}</span>
+									</div>
 								</div>
-								<div class="flex shrink-0 items-center gap-3 text-xs text-gray-500">
-									<span>{item.totalQty} sold</span>
-									<span class="font-medium text-gray-700">{fmt(item.totalRevenue)}</span>
+								<div class="h-1.5 w-full rounded-full bg-gray-100">
+									<div
+										class="h-1.5 rounded-full bg-gray-800 transition-all"
+										style="width: {Math.round((item.totalQty / maxItemQty) * 100)}%"
+									></div>
 								</div>
 							</div>
-							<div class="h-1.5 w-full rounded-full bg-gray-100">
-								<div
-									class="h-1.5 rounded-full bg-gray-800 transition-all"
-									style="width: {Math.round((item.totalQty / maxItemQty) * 100)}%"
-								></div>
-							</div>
-						</div>
-					{/each}
-				</div>
-			{/if}
+						{/each}
+					</div>
+				{/if}
+			</CardContent>
 		</Card>
 
 		<!-- Right column -->
 		<div class="space-y-6">
 			<!-- Order types -->
-			<Card class="p-5 shadow-sm">
-				<h2 class="mb-3 text-sm font-semibold text-gray-800">Order types</h2>
-				{#if typeBreakdown.length === 0}
-					<p class="text-sm text-gray-400">No data yet.</p>
-				{:else}
-					<div class="space-y-2.5">
-						{#each typeBreakdown as row (row.type)}
-							<div>
-								<div class="mb-1 flex items-center justify-between text-xs">
-									<span class="inline-flex items-center gap-1 text-gray-600">
-										<Icon icon={typeIcons[row.type] ?? 'mdi:food'} class="h-3.5 w-3.5" />
-										{typeLabels[row.type] ?? row.type}
-									</span>
-									<span class="font-medium text-gray-700">{fmt(row.revenue ?? 0)}</span>
+			<Card class="shadow-sm">
+				<CardContent>
+					<h2 class="mb-3 text-sm font-semibold text-gray-800">Order types</h2>
+					{#if typeBreakdown.length === 0}
+						<p class="text-sm text-gray-400">No data yet.</p>
+					{:else}
+						<div class="space-y-2.5">
+							{#each typeBreakdown as row (row.type)}
+								<div>
+									<div class="mb-1 flex items-center justify-between text-xs">
+										<span class="inline-flex items-center gap-1 text-gray-600">
+											<Icon icon={typeIcons[row.type] ?? 'mdi:food'} class="h-3.5 w-3.5" />
+											{typeLabels[row.type] ?? row.type}
+										</span>
+										<span class="font-medium text-gray-700">{fmt(row.revenue ?? 0)}</span>
+									</div>
+									<div class="h-1.5 w-full rounded-full bg-gray-100">
+										<div
+											class="h-1.5 rounded-full bg-gray-700"
+											style="width: {Math.round(((row.revenue ?? 0) / totalTypeRevenue) * 100)}%"
+										></div>
+									</div>
+									<p class="mt-0.5 text-right text-xs text-gray-400">{row.count} orders</p>
 								</div>
-								<div class="h-1.5 w-full rounded-full bg-gray-100">
-									<div
-										class="h-1.5 rounded-full bg-gray-700"
-										style="width: {Math.round(((row.revenue ?? 0) / totalTypeRevenue) * 100)}%"
-									></div>
-								</div>
-								<p class="mt-0.5 text-right text-xs text-gray-400">{row.count} orders</p>
-							</div>
-						{/each}
-					</div>
-				{/if}
+							{/each}
+						</div>
+					{/if}
+				</CardContent>
 			</Card>
 
 			<!-- Status breakdown -->
-			<Card class="p-5 shadow-sm">
-				<h2 class="mb-3 text-sm font-semibold text-gray-800">By status (30d)</h2>
-				{#if statusBreakdown.length === 0}
-					<p class="text-sm text-gray-400">No data yet.</p>
-				{:else}
-					<!-- Stacked bar -->
-					<div class="mb-3 flex h-3 w-full overflow-hidden rounded-full">
-						{#each statusBreakdown as row (row.status)}
-							<div
-								class="{statusColors[row.status] ?? 'bg-gray-200'} transition-all"
-								style="width: {Math.round((row.count / totalStatusCount) * 100)}%"
-								title="{row.status}: {row.count}"
-							></div>
-						{/each}
-					</div>
-					<div class="space-y-1.5">
-						{#each statusBreakdown as row (row.status)}
-							<div class="flex items-center justify-between text-xs">
-								<span class="inline-flex items-center gap-1.5">
-									<span class="h-2 w-2 rounded-full {statusColors[row.status] ?? 'bg-gray-300'}"
-									></span>
-									<span
-										class="rounded-full px-1.5 py-0.5 {statusBadge[row.status] ??
-											'bg-gray-100 text-gray-600'} capitalize"
-									>
-										{row.status}
+			<Card class="shadow-sm">
+				<CardContent>
+					<h2 class="mb-3 text-sm font-semibold text-gray-800">By status (30d)</h2>
+					{#if statusBreakdown.length === 0}
+						<p class="text-sm text-gray-400">No data yet.</p>
+					{:else}
+						<!-- Stacked bar -->
+						<div class="mb-3 flex h-3 w-full overflow-hidden rounded-full">
+							{#each statusBreakdown as row (row.status)}
+								<div
+									class="{statusColors[row.status] ?? 'bg-gray-200'} transition-all"
+									style="width: {Math.round((row.count / totalStatusCount) * 100)}%"
+									title="{row.status}: {row.count}"
+								></div>
+							{/each}
+						</div>
+						<div class="space-y-1.5">
+							{#each statusBreakdown as row (row.status)}
+								<div class="flex items-center justify-between text-xs">
+									<span class="inline-flex items-center gap-1.5">
+										<span class="h-2 w-2 rounded-full {statusColors[row.status] ?? 'bg-gray-300'}"
+										></span>
+										<span
+											class="rounded-full px-1.5 py-0.5 {statusBadge[row.status] ??
+												'bg-gray-100 text-gray-600'} capitalize"
+										>
+											{row.status}
+										</span>
 									</span>
-								</span>
-								<span class="font-medium text-gray-700">{row.count}</span>
-							</div>
-						{/each}
-					</div>
-				{/if}
+									<span class="font-medium text-gray-700">{row.count}</span>
+								</div>
+							{/each}
+						</div>
+					{/if}
+				</CardContent>
 			</Card>
 		</div>
 	</div>

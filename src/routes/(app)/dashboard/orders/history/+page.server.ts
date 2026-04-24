@@ -1,7 +1,7 @@
 import type { PageServerLoad, Actions } from './$types';
 import { fail } from '@sveltejs/kit';
 import { db } from '$lib/server/db';
-import { eq, and, or, desc, lt, gte, lte, ilike, not, inArray } from 'drizzle-orm';
+import { eq, and, or, desc, lt, gte, lte, ilike } from 'drizzle-orm';
 import { orders } from '$lib/server/db/schema';
 import { tenant } from '$lib/server/db/tenant';
 import Stripe from 'stripe';
@@ -47,7 +47,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 	}
 	if (to) {
 		const toDate = new Date(to);
-		toDate.setHours(23, 59, 59, 999);
+		toDate.setUTCHours(23, 59, 59, 999);
 		whereConditions.push(lte(orders.createdAt, toDate));
 	}
 

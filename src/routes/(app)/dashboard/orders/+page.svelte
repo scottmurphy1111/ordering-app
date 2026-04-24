@@ -8,6 +8,7 @@
 	import Icon from '@iconify/svelte';
 	import { Button } from '$lib/components/ui/button';
 	import { Badge } from '$lib/components/ui/badge';
+	import { Card, CardHeader, CardAction, CardFooter } from '$lib/components/ui/card';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
@@ -92,15 +93,11 @@
 	<!-- Status filter tabs -->
 	<div class="mb-5 flex gap-1 overflow-x-auto">
 		{#each statuses as s (s)}
-			<a
-				href={resolve(`/dashboard/orders${s ? `?status=${s}` : ''}`)}
-				class="rounded-md px-3 py-1.5 text-sm font-medium whitespace-nowrap transition-colors
-					{data.statusFilter === s
-					? 'bg-green-600 text-white'
-					: 'text-gray-500 hover:bg-gray-100 hover:text-gray-800'}"
-			>
-				{statusLabels[s]}
-			</a>
+			<Button
+				href={resolve(s ? `/dashboard/orders?status=${s}` : '/dashboard/orders')}
+				variant={data.statusFilter === s ? 'default' : 'ghost'}
+				size="sm"
+			>{statusLabels[s]}</Button>
 		{/each}
 	</div>
 
@@ -113,19 +110,19 @@
 	{:else}
 		<div class="space-y-3">
 			{#each data.orders as order (order.id)}
-				<div class="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
-					<div class="flex items-start justify-between gap-4">
-						<div class="min-w-0 flex-1">
+				<Card class="shadow-sm">
+					<CardHeader>
+						<div class="flex min-w-0 flex-1 flex-col gap-1">
 							<div class="flex flex-wrap items-center gap-2">
 								<a
 									href={resolve(`/dashboard/orders/${order.id}`)}
-									class="font-mono text-sm font-semibold text-gray-800 hover:underline"
+									class="font-mono text-sm font-semibold hover:underline"
 									>{order.orderNumber}</a
 								>
-								<Badge class={statusColors[order.status] ?? 'bg-gray-100'}>
+								<Badge class={statusColors[order.status] ?? 'bg-muted text-muted-foreground'}>
 									{order.status}
 								</Badge>
-								<Badge class="bg-gray-100 text-gray-500 capitalize">{order.type}</Badge>
+								<Badge class="bg-muted text-muted-foreground capitalize">{order.type}</Badge>
 								{#if order.paymentStatus === 'paid'}
 									<Badge class="bg-emerald-100 text-emerald-700">paid</Badge>
 								{:else if order.paymentStatus === 'refunded'}
@@ -135,12 +132,12 @@
 								{/if}
 							</div>
 							{#if order.customerName}
-								<p class="mt-1 text-sm text-gray-600">
+								<p class="text-sm text-muted-foreground">
 									{order.customerName}{order.customerPhone ? ` · ${order.customerPhone}` : ''}
 								</p>
 							{/if}
 							{#if order.scheduledFor}
-								<p class="mt-1 flex items-center gap-1 text-xs font-medium text-amber-600">
+								<p class="flex items-center gap-1 text-xs font-medium text-amber-600">
 									<Icon icon="mdi:calendar-clock" class="h-3.5 w-3.5 shrink-0" />
 									Scheduled: {new Date(order.scheduledFor).toLocaleString([], {
 										weekday: 'short',
@@ -152,18 +149,18 @@
 								</p>
 							{/if}
 							{#if order.deliveryAddress}
-								<p class="mt-1 flex items-center gap-1 text-xs text-gray-500">
-									<Icon icon="mdi:map-marker-outline" class="h-3.5 w-3.5 shrink-0 text-gray-400" />
+								<p class="flex items-center gap-1 text-xs text-muted-foreground">
+									<Icon icon="mdi:map-marker-outline" class="h-3.5 w-3.5 shrink-0" />
 									{order.deliveryAddress}
 								</p>
 							{/if}
 							{#if order.notes}
-								<p class="mt-1 text-xs text-gray-400 italic">"{order.notes}"</p>
+								<p class="text-xs text-muted-foreground italic">"{order.notes}"</p>
 							{/if}
 						</div>
-						<div class="shrink-0 text-right">
-							<p class="font-semibold text-gray-900">${(order.total / 100).toFixed(2)}</p>
-							<p class="mt-0.5 text-xs text-gray-400">
+						<CardAction class="text-right">
+							<p class="font-semibold">${(order.total / 100).toFixed(2)}</p>
+							<p class="mt-0.5 text-xs text-muted-foreground">
 								{new Date(order.createdAt).toLocaleString([], {
 									month: 'short',
 									day: 'numeric',
@@ -177,11 +174,10 @@
 							>
 								View <Icon icon="mdi:chevron-right" class="h-3 w-3" />
 							</a>
-						</div>
-					</div>
-
+						</CardAction>
+					</CardHeader>
 					{#if nextStatus[order.status] || !['fulfilled', 'cancelled'].includes(order.status) || (order.status === 'cancelled' && order.paymentStatus === 'paid')}
-						<div class="mt-3 flex items-center gap-2 border-t border-gray-100 pt-3">
+						<CardFooter class="gap-2">
 							{#if nextStatus[order.status]}
 								<form method="post" action="?/updateStatus" use:enhance>
 									<input type="hidden" name="id" value={order.id} />
@@ -201,8 +197,9 @@
 											if (await confirmDialog('Cancel this order?'))
 												(e.currentTarget as HTMLButtonElement).form?.requestSubmit();
 										}}
-										variant="destructive"
+										variant="ghost"
 										size="sm"
+										class="text-red-600 hover:bg-red-50 hover:text-red-500"
 									>
 										Cancel order
 									</Button>
@@ -226,9 +223,9 @@
 									</Button>
 								</form>
 							{/if}
-						</div>
+						</CardFooter>
 					{/if}
-				</div>
+				</Card>
 			{/each}
 		</div>
 	{/if}

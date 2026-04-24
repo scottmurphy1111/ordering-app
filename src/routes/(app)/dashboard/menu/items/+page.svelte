@@ -12,11 +12,24 @@
 	import { Button } from '$lib/components/ui/button';
 	import { Badge } from '$lib/components/ui/badge';
 	import { Card } from '$lib/components/ui/card';
-	import { Table, TableHeader, TableHead, TableBody, TableRow, TableCell } from '$lib/components/ui/table';
+	import {
+		Table,
+		TableHeader,
+		TableHead,
+		TableBody,
+		TableRow,
+		TableCell
+	} from '$lib/components/ui/table';
 	import { Input } from '$lib/components/ui/input';
 	import { Label } from '$lib/components/ui/label';
 	import { Textarea } from '$lib/components/ui/textarea';
-	import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '$lib/components/ui/select';
+	import {
+		Select,
+		SelectTrigger,
+		SelectContent,
+		SelectItem,
+		SelectValue
+	} from '$lib/components/ui/select';
 	import {
 		Dialog,
 		DialogContent,
@@ -424,7 +437,8 @@
 					variant="ghost"
 					size="icon-sm"
 					class="ml-4 text-green-500 hover:text-green-700"
-				><Icon icon="mdi:close" class="h-4 w-4" /></Button>
+					><Icon icon="mdi:close" class="h-4 w-4" /></Button
+				>
 			</div>
 		{/if}
 		{#if form?.error}
@@ -702,11 +716,11 @@
 					showForm = true;
 				}}
 				variant="link"
-				class="mt-3 gap-1"
-			><Icon icon="mdi:plus" class="h-3.5 w-3.5" /> Add your first item</Button>
+				class="mt-3 gap-1"><Icon icon="mdi:plus" class="h-3.5 w-3.5" /> Add your first item</Button
+			>
 		</div>
 	{:else}
-		<Card class="shadow-sm">
+		<Card class="p-0 shadow-sm">
 			<Table>
 				<TableHeader class="bg-gray-50">
 					<TableRow class="hover:bg-transparent">
@@ -817,8 +831,8 @@
 											}}
 											variant="ghost"
 											size="sm"
-											class="text-red-500 hover:text-red-700"
-										>Delete</Button>
+											class="text-red-500 hover:text-red-700">Delete</Button
+										>
 									</form>
 								</div>
 							</TableCell>
@@ -854,7 +868,12 @@
 </div>
 
 <!-- ── Import modal ───────────────────────────────────────────── -->
-<Dialog bind:open={showImport} onOpenChange={(open) => { if (!open) closeImport(); }}>
+<Dialog
+	bind:open={showImport}
+	onOpenChange={(open) => {
+		if (!open) closeImport();
+	}}
+>
 	<DialogContent class="max-w-lg">
 		<DialogHeader>
 			<DialogTitle>Import menu items from CSV</DialogTitle>
@@ -976,7 +995,12 @@
 </Dialog>
 
 <!-- ── Stripe discover modal ─── -->
-<Dialog bind:open={showDiscover} onOpenChange={(open) => { if (!open) closeDiscover(); }}>
+<Dialog
+	bind:open={showDiscover}
+	onOpenChange={(open) => {
+		if (!open) closeDiscover();
+	}}
+>
 	<DialogContent class="flex max-w-2xl flex-col" style="max-height: 90vh;">
 		<DialogHeader>
 			<DialogTitle>Discover Stripe Products</DialogTitle>
@@ -990,13 +1014,7 @@
 			{#if discovering}
 				<div class="flex flex-col items-center justify-center py-12 text-gray-400">
 					<svg class="mb-3 h-6 w-6 animate-spin" fill="none" viewBox="0 0 24 24">
-						<circle
-							class="opacity-25"
-							cx="12"
-							cy="12"
-							r="10"
-							stroke="currentColor"
-							stroke-width="4"
+						<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"
 						></circle>
 						<path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
 					</svg>

@@ -7,7 +7,14 @@
 	import Icon from '@iconify/svelte';
 	import { Badge } from '$lib/components/ui/badge';
 	import { Card, CardContent } from '$lib/components/ui/card';
-	import { Table, TableHeader, TableHead, TableBody, TableRow, TableCell } from '$lib/components/ui/table';
+	import {
+		Table,
+		TableHeader,
+		TableHead,
+		TableBody,
+		TableRow,
+		TableCell
+	} from '$lib/components/ui/table';
 
 	let { data }: { data: PageData } = $props();
 
@@ -106,7 +113,9 @@
 		<Card class="shadow-sm">
 			<CardContent>
 				<p class="text-xs font-medium tracking-wide text-gray-500 uppercase">Revenue</p>
-				<p class="mt-1 text-3xl font-bold text-gray-900">${(data.stats.revenue / 100).toFixed(2)}</p>
+				<p class="mt-1 text-3xl font-bold text-gray-900">
+					${(data.stats.revenue / 100).toFixed(2)}
+				</p>
 			</CardContent>
 		</Card>
 	</div>
@@ -152,31 +161,35 @@
 					})}
 				</span>
 			</div>
-			<Card class="shadow-sm">
+			<Card class="p-0 shadow-sm">
 				<Table>
-					<TableHeader class="bg-gray-50">
+					<TableHeader class="bg-muted/50">
 						<TableRow class="hover:bg-transparent">
-							<TableHead class="px-4 py-2.5 text-gray-500">Order</TableHead>
-							<TableHead class="hidden px-4 py-2.5 text-gray-500 sm:table-cell">Customer</TableHead>
-							<TableHead class="hidden px-4 py-2.5 text-gray-500 md:table-cell">Type</TableHead>
-							<TableHead class="px-4 py-2.5 text-gray-500">Status</TableHead>
-							<TableHead class="px-4 py-2.5 text-right text-gray-500">Total</TableHead>
+							<TableHead>Order</TableHead>
+							<TableHead class="hidden sm:table-cell">Customer</TableHead>
+							<TableHead class="hidden md:table-cell">Type</TableHead>
+							<TableHead>Status</TableHead>
+							<TableHead class="text-right">Total</TableHead>
 						</TableRow>
 					</TableHeader>
 					<TableBody>
 						{#each data.recentOrders as order (order.id)}
 							<TableRow>
-								<TableCell class="px-4 py-3 font-mono text-xs text-gray-600">
-									<a href={resolve(`/dashboard/orders/${order.id}`)} class="hover:underline">{order.orderNumber}</a>
+								<TableCell class="font-mono text-xs">
+									<a href={resolve(`/dashboard/orders/${order.id}`)} class="hover:underline"
+										>{order.orderNumber}</a
+									>
 								</TableCell>
-								<TableCell class="hidden px-4 py-3 text-gray-700 sm:table-cell">{order.customerName ?? '—'}</TableCell>
-								<TableCell class="hidden px-4 py-3 text-gray-500 capitalize md:table-cell">{order.type}</TableCell>
-								<TableCell class="px-4 py-3">
-									<Badge class={statusColors[order.status] ?? 'bg-gray-100 text-gray-600'}>
+								<TableCell class="hidden sm:table-cell">{order.customerName ?? '—'}</TableCell>
+								<TableCell class="hidden capitalize md:table-cell">{order.type}</TableCell>
+								<TableCell>
+									<Badge class={statusColors[order.status] ?? 'bg-muted text-muted-foreground'}>
 										{order.status}
 									</Badge>
 								</TableCell>
-								<TableCell class="px-4 py-3 text-right font-medium text-gray-900">${(order.total / 100).toFixed(2)}</TableCell>
+								<TableCell class="text-right font-medium"
+									>${(order.total / 100).toFixed(2)}</TableCell
+								>
 							</TableRow>
 						{/each}
 					</TableBody>

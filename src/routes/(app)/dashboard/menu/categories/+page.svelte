@@ -10,7 +10,14 @@
 	import { Input } from '$lib/components/ui/input';
 	import { Label } from '$lib/components/ui/label';
 	import { Card, CardContent } from '$lib/components/ui/card';
-	import { Table, TableHeader, TableHead, TableBody, TableRow, TableCell } from '$lib/components/ui/table';
+	import {
+		Table,
+		TableHeader,
+		TableHead,
+		TableBody,
+		TableRow,
+		TableCell
+	} from '$lib/components/ui/table';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
@@ -110,9 +117,7 @@
 				>
 					<Icon icon="mdi:drag-vertical" class="h-4 w-4" /> Reorder
 				</Button>
-				<Button onclick={() => (showForm = !showForm)} variant="default">
-					+ New category
-				</Button>
+				<Button onclick={() => (showForm = !showForm)} variant="default">+ New category</Button>
 			{:else}
 				<Button
 					onclick={() => {
@@ -123,12 +128,7 @@
 				>
 					Cancel
 				</Button>
-				<Button
-					onclick={saveSortOrder}
-					disabled={saving}
-					variant="default"
-					class="gap-1.5"
-				>
+				<Button onclick={saveSortOrder} disabled={saving} variant="default" class="gap-1.5">
 					<Icon icon="mdi:check" class="h-4 w-4" />
 					{saving ? 'Saving…' : 'Save order'}
 				</Button>
@@ -172,12 +172,7 @@
 			</div>
 			<div>
 				<Label class="mb-1 block" for="description">Description (optional)</Label>
-				<Input
-					id="description"
-					name="description"
-					type="text"
-					placeholder="Short description..."
-				/>
+				<Input id="description" name="description" type="text" placeholder="Short description..." />
 			</div>
 			<div class="flex items-center gap-2">
 				<input
@@ -223,7 +218,9 @@
 						</span>
 						<span class="flex-1 text-sm font-medium text-gray-900">{cat.name}</span>
 						<span class="text-xs text-gray-400">{cat.itemCount} items</span>
-						<Badge class={cat.isActive ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}>
+						<Badge
+							class={cat.isActive ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}
+						>
 							{cat.isActive ? 'Active' : 'Hidden'}
 						</Badge>
 					</li>
@@ -232,7 +229,7 @@
 		</Card>
 	{:else}
 		<!-- ── Normal table view ───────────────────────────────────── -->
-		<Card class="shadow-sm">
+		<Card class="p-0 shadow-sm">
 			<Table>
 				<TableHeader class="bg-gray-50">
 					<TableRow class="hover:bg-transparent">
@@ -300,8 +297,8 @@
 											}}
 											variant="ghost"
 											size="sm"
-											class="text-red-500 hover:text-red-700"
-										>Delete</Button>
+											class="text-red-500 hover:text-red-700">Delete</Button
+										>
 									</form>
 								</div>
 							</TableCell>
