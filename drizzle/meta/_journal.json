@@ -64,6 +64,13 @@
       "when": 1776975415470,
       "tag": "0008_small_earthquake",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1777117573870,
+      "tag": "0009_outgoing_synch",
+      "breakpoints": true
     }
   ]
 }

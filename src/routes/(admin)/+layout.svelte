@@ -10,7 +10,8 @@
 	let { data, children }: { data: LayoutData; children: import('svelte').Snippet } = $props();
 
 	const navItems = [
-		{ href: '/admin/tenants', label: 'Tenants', icon: 'mdi:store-outline' }
+		{ href: '/admin/tenants', label: 'Tenants', icon: 'mdi:store-outline' },
+		{ href: '/admin/users', label: 'Users', icon: 'mdi:account-group-outline' }
 	];
 
 	function isActive(href: string) {

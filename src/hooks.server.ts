@@ -1,10 +1,12 @@
 import type { Handle } from '@sveltejs/kit';
 import { building } from '$app/environment';
+import { redirect } from '@sveltejs/kit';
 import { auth } from '$lib/server/auth';
 import { svelteKitHandler } from 'better-auth/svelte-kit';
 import { db } from '$lib/server/db';
 import { eq, and } from 'drizzle-orm';
 import { tenant, tenantUsers } from '$lib/server/db/tenant';
+import { user as userTable } from '$lib/server/db/auth.schema';
 
 const handleBetterAuth: Handle = async ({ event, resolve }) => {
 	const session = await auth.api.getSession({ headers: event.request.headers });
@@ -17,6 +19,20 @@ const handleBetterAuth: Handle = async ({ event, resolve }) => {
 
 const handleTenantContext: Handle = async ({ event, resolve }) => {
 	const { url, params, cookies } = event;
+
+	// Ban check — direct DB query bypasses the 5-min session cookie cache
+	const banExempt =
+		url.pathname.startsWith('/banned') ||
+		url.pathname.startsWith('/api/auth') ||
+		url.pathname.startsWith('/login') ||
+		url.pathname.startsWith('/verify');
+	if (event.locals.user && !banExempt) {
+		const fresh = await db.query.user.findFirst({
+			where: eq(userTable.id, event.locals.user.id),
+			columns: { bannedAt: true }
+		});
+		if (fresh?.bannedAt) throw redirect(303, '/banned');
+	}
 
 	// Public routes: tenant comes from URL param [tenantSlug]
 	if (params.tenantSlug) {

@@ -9,6 +9,7 @@ export const user = pgTable('user', {
 	image: text('image'),
 	// Platform-level flag — internal team members can see all tenants
 	isInternal: boolean('is_internal').default(false).notNull(),
+	bannedAt: timestamp('banned_at'),
 	createdAt: timestamp('created_at').defaultNow().notNull(),
 	updatedAt: timestamp('updated_at')
 		.defaultNow()
