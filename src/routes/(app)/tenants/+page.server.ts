@@ -3,6 +3,7 @@ import { fail, redirect } from '@sveltejs/kit';
 import { db } from '$lib/server/db';
 import { eq } from 'drizzle-orm';
 import { tenant, tenantUsers } from '$lib/server/db/schema';
+import { seedDemoTenant } from '$lib/server/seed-demo';
 
 function canCreateTenant(
 	isInternal: boolean,
@@ -58,6 +59,7 @@ export const actions: Actions = {
 
 		const formData = await request.formData();
 
+		const seedDemo = formData.get('seedDemo') === '1';
 		const name = formData.get('name')?.toString().trim();
 		const slug = formData.get('slug')?.toString().trim().toLowerCase().replace(/\s+/g, '-');
 		const type =
@@ -90,6 +92,8 @@ export const actions: Actions = {
 			userId,
 			role: 'owner'
 		});
+
+		if (seedDemo) await seedDemoTenant(newTenant.id);
 
 		cookies.set('selected-tenant-id', String(newTenant.id), {
 			path: '/',

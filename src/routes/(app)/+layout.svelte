@@ -177,6 +177,15 @@
 			<Icon icon="mdi:account-circle-outline" class="h-3.5 w-3.5" />
 			Account
 		</a>
+		{#if data.user.isInternal}
+			<a
+				href={resolve('/admin/tenants')}
+				class="flex items-center gap-1.5 text-xs text-primary transition-colors hover:text-primary/80"
+			>
+				<Icon icon="mdi:shield-crown-outline" class="h-3.5 w-3.5" />
+				Admin
+			</a>
+		{/if}
 		<p class="truncate text-xs text-muted-foreground">{data.user.email}</p>
 		<Button
 			onclick={() =>

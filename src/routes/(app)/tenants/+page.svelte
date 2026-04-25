@@ -172,6 +172,14 @@
 							</select>
 						</div>
 
+						<label class="flex cursor-pointer items-center gap-2 rounded-lg border bg-muted/40 px-3 py-2.5">
+							<input type="checkbox" name="seedDemo" value="1" checked class="h-4 w-4 rounded accent-primary" />
+							<div>
+								<p class="text-sm font-medium text-foreground">Add example menu items</p>
+								<p class="text-xs text-muted-foreground">Pre-fill with demo categories and items you can edit or delete.</p>
+							</div>
+						</label>
+
 						<div class="flex gap-2 pt-1">
 							<Button type="submit" variant="default" class="flex-1">
 								Create & go to dashboard
