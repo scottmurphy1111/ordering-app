@@ -233,11 +233,10 @@
 					/>
 				</div>
 			</CardContent>
+			<CardFooter>
+				<Button type="submit" variant="default">Save changes</Button>
+			</CardFooter>
 		</Card>
-
-		<div>
-			<Button type="submit" variant="default">Save changes</Button>
-		</div>
 	</form>
 
 	<!-- Delivery — separate form/action -->

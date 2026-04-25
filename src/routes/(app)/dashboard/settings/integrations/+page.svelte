@@ -9,7 +9,7 @@
 	import { Badge } from '$lib/components/ui/badge';
 	import { Input } from '$lib/components/ui/input';
 	import { Label } from '$lib/components/ui/label';
-	import { Card, CardContent } from '$lib/components/ui/card';
+	import { Card, CardContent, CardFooter } from '$lib/components/ui/card';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
@@ -67,7 +67,7 @@
 					<div class="shrink-0">
 						{#if data.hasStripeKey}
 							<Badge class="bg-green-100 text-primary/90">
-								<span class="h-1.5 w-1.5 rounded-full bg-primary/100"></span>
+								<span class="h-1.5 w-1.5 rounded-full bg-primary"></span>
 								Connected
 							</Badge>
 						{:else}
@@ -204,53 +204,6 @@
 							}}
 					></form>
 
-					<div class="flex gap-2">
-						{#if editing}
-							<Button type="submit" form="save-stripe-form" variant="default" size="sm">
-								{data.hasStripeKey ? 'Save & verify' : 'Connect Stripe'}
-							</Button>
-							{#if data.hasStripeKey}
-								<Button
-									type="button"
-									onclick={() => {
-										editing = false;
-										showKey = false;
-									}}
-									variant="outline"
-									size="sm"
-								>
-									Cancel
-								</Button>
-							{/if}
-						{:else}
-							<Button
-								type="button"
-								onclick={() => {
-									editing = true;
-									showKey = false;
-								}}
-								variant="outline"
-								size="sm"
-							>
-								Replace key
-							</Button>
-							<Button
-								type="submit"
-								form="disconnect-stripe-form"
-								onclick={async (e) => {
-									e.preventDefault();
-									if (await confirmDialog('Remove Stripe connection?'))
-										(
-											document.getElementById('disconnect-stripe-form') as HTMLFormElement
-										)?.requestSubmit();
-								}}
-								variant="destructive"
-								size="sm"
-							>
-								Disconnect
-							</Button>
-						{/if}
-					</div>
 				</div>
 				<!-- Webhook status (auto-configured) -->
 				{#if data.hasStripeKey}
@@ -266,7 +219,7 @@
 							<div class="ml-4 shrink-0">
 								{#if data.hasWebhookEndpoint}
 									<Badge class="bg-green-100 text-primary/90">
-										<span class="h-1.5 w-1.5 rounded-full bg-primary/100"></span>
+										<span class="h-1.5 w-1.5 rounded-full bg-primary"></span>
 										Auto-configured
 									</Badge>
 								{:else}
@@ -277,5 +230,49 @@
 					</div>
 				{/if}
 		</CardContent>
+		<CardFooter class="gap-2">
+			{#if editing}
+				<Button type="submit" form="save-stripe-form" variant="default">
+					{data.hasStripeKey ? 'Save & verify' : 'Connect Stripe'}
+				</Button>
+				{#if data.hasStripeKey}
+					<Button
+						type="button"
+						onclick={() => {
+							editing = false;
+							showKey = false;
+						}}
+						variant="outline"
+					>
+						Cancel
+					</Button>
+				{/if}
+			{:else}
+				<Button
+					type="button"
+					onclick={() => {
+						editing = true;
+						showKey = false;
+					}}
+					variant="outline"
+				>
+					Replace key
+				</Button>
+				<Button
+					type="submit"
+					form="disconnect-stripe-form"
+					onclick={async (e) => {
+						e.preventDefault();
+						if (await confirmDialog('Remove Stripe connection?'))
+							(
+								document.getElementById('disconnect-stripe-form') as HTMLFormElement
+							)?.requestSubmit();
+					}}
+					variant="destructive"
+				>
+					Disconnect
+				</Button>
+			{/if}
+		</CardFooter>
 	</Card>
 </div>

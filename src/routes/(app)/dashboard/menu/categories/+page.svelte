@@ -9,7 +9,7 @@
 	import { Badge } from '$lib/components/ui/badge';
 	import { Input } from '$lib/components/ui/input';
 	import { Label } from '$lib/components/ui/label';
-	import { Card, CardContent } from '$lib/components/ui/card';
+	import { Card, CardContent, CardFooter } from '$lib/components/ui/card';
 	import {
 		Table,
 		TableHeader,
@@ -152,6 +152,7 @@
 	{/if}
 
 	{#if showForm && !sortMode}
+		<Card class="mb-6 shadow-sm">
 		<form
 			method="post"
 			action="?/create"
@@ -161,38 +162,40 @@
 					showForm = false;
 				};
 			}}
-			class="mb-6 space-y-3 rounded-lg border bg-background p-4 shadow-sm"
 		>
-			<h2 class="font-medium text-foreground">New category</h2>
-			<div>
-				<Label class="mb-1 block" for="name">Name</Label>
-				<Input
-					id="name"
-					name="name"
-					type="text"
-					required
-					placeholder="e.g. Burgers, Drinks, Desserts"
-				/>
-			</div>
-			<div>
-				<Label class="mb-1 block" for="description">Description (optional)</Label>
-				<Input id="description" name="description" type="text" placeholder="Short description..." />
-			</div>
-			<div class="flex items-center gap-2">
-				<input
-					type="checkbox"
-					name="isActive"
-					id="new-active"
-					bind:checked={newIsActive}
-					class="h-4 w-4 rounded"
-				/>
-				<label class="cursor-pointer text-sm text-muted-foreground" for="new-active">Active</label>
-			</div>
-			<div class="flex gap-2">
+			<CardContent class="space-y-3 pt-6 pb-2">
+				<h2 class="font-medium text-foreground">New category</h2>
+				<div>
+					<Label class="mb-1 block" for="name">Name</Label>
+					<Input
+						id="name"
+						name="name"
+						type="text"
+						required
+						placeholder="e.g. Burgers, Drinks, Desserts"
+					/>
+				</div>
+				<div>
+					<Label class="mb-1 block" for="description">Description (optional)</Label>
+					<Input id="description" name="description" type="text" placeholder="Short description..." />
+				</div>
+				<div class="flex items-center gap-2">
+					<input
+						type="checkbox"
+						name="isActive"
+						id="new-active"
+						bind:checked={newIsActive}
+						class="h-4 w-4 rounded"
+					/>
+					<label class="cursor-pointer text-sm text-muted-foreground" for="new-active">Active</label>
+				</div>
+			</CardContent>
+			<CardFooter class="gap-2">
 				<Button type="submit" variant="default">Create</Button>
 				<Button type="button" onclick={() => (showForm = false)} variant="outline">Cancel</Button>
-			</div>
+			</CardFooter>
 		</form>
+		</Card>
 	{/if}
 
 	{#if data.categories.length === 0}

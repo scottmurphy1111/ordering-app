@@ -8,6 +8,7 @@
 	import { Badge } from '$lib/components/ui/badge';
 	import { Input } from '$lib/components/ui/input';
 	import { Label } from '$lib/components/ui/label';
+	import { Card, CardContent, CardFooter } from '$lib/components/ui/card';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
@@ -60,111 +61,121 @@
 	{/if}
 
 	<!-- Category details -->
-	<section class="space-y-4 rounded-xl border bg-background p-6 shadow-sm">
-		<h2 class="font-semibold text-foreground">Details</h2>
+	<Card class="shadow-sm">
 		<form
+			id="details-form"
 			method="post"
 			action="?/update"
 			use:enhance={() =>
 				({ update }) =>
 					update({ reset: false })}
-			class="space-y-4"
 		>
-			<div>
-				<Label class="mb-1 block" for="name">Name</Label>
-				<Input id="name" name="name" type="text" required value={data.category.name} />
-			</div>
-			<div>
-				<Label class="mb-1 block" for="description">Description</Label>
-				<Input
-					id="description"
-					name="description"
-					type="text"
-					value={data.category.description ?? ''}
-					placeholder="Optional"
-				/>
-			</div>
-			<input type="hidden" name="sortOrder" value={data.category.sortOrder ?? 0} />
-
-			<!-- Active / Inactive toggle -->
-			<div class="flex items-center justify-between rounded-lg border px-4 py-3">
+			<CardContent class="space-y-4 pt-6">
+				<h2 class="font-semibold text-foreground">Details</h2>
 				<div>
-					<p class="text-sm font-medium text-muted-foreground">Status</p>
-					<p class="text-xs text-muted-foreground">Controls visibility on your public menu</p>
+					<Label class="mb-1 block" for="name">Name</Label>
+					<Input id="name" name="name" type="text" required value={data.category.name} />
 				</div>
-				<input type="hidden" name="isActive" value={isActive ? 'on' : ''} />
-				<button
-					type="button"
-					onclick={() => (isActiveOverride = !isActive)}
-					class="flex cursor-pointer items-center gap-3"
-				>
-					<div
-						class="relative h-6 w-11 rounded-full transition-colors duration-200 {isActive
-							? 'bg-primary'
-							: 'bg-muted'}"
-					>
-						<span
-							class="absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-background shadow transition-transform duration-200 {isActive
-								? 'translate-x-5'
-								: 'translate-x-0'}"
-						></span>
-					</div>
-					<span
-						class="w-14 text-sm font-medium {isActive
-							? 'text-primary/90'
-							: 'text-muted-foreground'}"
-					>
-						{isActive ? 'Active' : 'Inactive'}
-					</span>
-				</button>
-			</div>
+				<div>
+					<Label class="mb-1 block" for="description">Description</Label>
+					<Input
+						id="description"
+						name="description"
+						type="text"
+						value={data.category.description ?? ''}
+						placeholder="Optional"
+					/>
+				</div>
+				<input type="hidden" name="sortOrder" value={data.category.sortOrder ?? 0} />
 
-			<Button type="submit" variant="default">Save changes</Button>
+				<!-- Active / Inactive toggle -->
+				<div class="flex items-center justify-between rounded-lg border px-4 py-3">
+					<div>
+						<p class="text-sm font-medium text-muted-foreground">Status</p>
+						<p class="text-xs text-muted-foreground">Controls visibility on your public menu</p>
+					</div>
+					<input type="hidden" name="isActive" value={isActive ? 'on' : ''} />
+					<button
+						type="button"
+						onclick={() => (isActiveOverride = !isActive)}
+						class="flex cursor-pointer items-center gap-3"
+					>
+						<div
+							class="relative h-6 w-11 rounded-full transition-colors duration-200 {isActive
+								? 'bg-primary'
+								: 'bg-muted'}"
+						>
+							<span
+								class="absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-background shadow transition-transform duration-200 {isActive
+									? 'translate-x-5'
+									: 'translate-x-0'}"
+							></span>
+						</div>
+						<span
+							class="w-14 text-sm font-medium {isActive
+								? 'text-primary/90'
+								: 'text-muted-foreground'}"
+						>
+							{isActive ? 'Active' : 'Inactive'}
+						</span>
+					</button>
+				</div>
+			</CardContent>
+			<CardFooter>
+				<Button type="submit" variant="default">Save changes</Button>
+			</CardFooter>
 		</form>
-	</section>
+	</Card>
 
 	<!-- Item assignment -->
-	<section class="space-y-4 rounded-xl border bg-background p-6 shadow-sm">
-		<div>
-			<h2 class="font-semibold text-foreground">Assign items</h2>
-			<p class="mt-0.5 text-sm text-muted-foreground">Check items that belong to this category.</p>
-		</div>
-		{#if data.items.length === 0}
-			<p class="text-sm text-muted-foreground">No menu items yet.</p>
-		{:else}
-			<form
-				method="post"
-				action="?/assignItems"
-				use:enhance={() =>
-					({ result, update }) => {
-						if (result.type === 'success') resetOverrides();
-						return update({ reset: false });
-					}}
-			>
-				<div class="mb-4 space-y-2">
-					{#each data.items as item (item.id)}
-						<label
-							class="flex cursor-pointer items-center gap-3 rounded-lg border px-3 py-2.5 transition-colors
-								{selections.has(item.id) ? ' bg-muted/50' : ' hover:bg-muted/50'}"
-						>
-							<input
-								type="checkbox"
-								name="itemId"
-								value={item.id}
-								checked={selections.has(item.id)}
-								onchange={() => toggleItem(item.id)}
-								class="h-4 w-4 rounded"
-							/>
-							<span class="flex-1 text-sm text-foreground">{item.name}</span>
-							<span class="text-xs text-muted-foreground">${(item.price / 100).toFixed(2)}</span>
-							{#if item.categoryId !== null && item.categoryId !== data.category.id}
-								<Badge class="bg-yellow-100 text-yellow-700">Other category</Badge>
-							{/if}
-						</label>
-					{/each}
-				</div>
-				<Button type="submit" variant="default">Save assignments</Button>
-			</form>
+	<Card class="shadow-sm">
+		<CardContent class="space-y-4 pt-6">
+			<div>
+				<h2 class="font-semibold text-foreground">Assign items</h2>
+				<p class="mt-0.5 text-sm text-muted-foreground">Check items that belong to this category.</p>
+			</div>
+			{#if data.items.length === 0}
+				<p class="text-sm text-muted-foreground">No menu items yet.</p>
+			{:else}
+				<form
+					id="assign-form"
+					method="post"
+					action="?/assignItems"
+					use:enhance={() =>
+						({ result, update }) => {
+							if (result.type === 'success') resetOverrides();
+							return update({ reset: false });
+						}}
+				>
+					<div class="space-y-2">
+						{#each data.items as item (item.id)}
+							<label
+								class="flex cursor-pointer items-center gap-3 rounded-lg border px-3 py-2.5 transition-colors
+									{selections.has(item.id) ? ' bg-muted/50' : ' hover:bg-muted/50'}"
+							>
+								<input
+									type="checkbox"
+									name="itemId"
+									value={item.id}
+									checked={selections.has(item.id)}
+									onchange={() => toggleItem(item.id)}
+									class="h-4 w-4 rounded"
+								/>
+								<span class="flex-1 text-sm text-foreground">{item.name}</span>
+								<span class="text-xs text-muted-foreground">${(item.price / 100).toFixed(2)}</span>
+								{#if item.categoryId !== null && item.categoryId !== data.category.id}
+									<Badge class="bg-yellow-100 text-yellow-700">Other category</Badge>
+								{/if}
+							</label>
+						{/each}
+					</div>
+				</form>
+			{/if}
+		</CardContent>
+		{#if data.items.length > 0}
+			<CardFooter>
+				<Button type="submit" form="assign-form" variant="default">Save assignments</Button>
+			</CardFooter>
 		{/if}
-	</section>
+	</Card>
 </div>

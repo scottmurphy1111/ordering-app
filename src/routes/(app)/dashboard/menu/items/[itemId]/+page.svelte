@@ -7,6 +7,7 @@
 	import Icon from '@iconify/svelte';
 	import { Button } from '$lib/components/ui/button';
 	import { Badge } from '$lib/components/ui/badge';
+	import { Card, CardContent, CardFooter } from '$lib/components/ui/card';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
@@ -100,14 +101,15 @@
 	{/if}
 
 	<!-- ── Item details form ─────────────────────────────────── -->
+	<Card class="shadow-sm">
 	<form
 		method="post"
 		action="?/update"
 		use:enhance={() =>
 			({ update }) =>
 				update({ reset: false })}
-		class="space-y-5 rounded-xl border bg-background p-6 shadow-sm"
 	>
+	<CardContent class="space-y-5 pt-6 pb-2">
 		<!-- Image upload -->
 		<div>
 			<p class="mb-2 block text-sm font-medium text-muted-foreground">
@@ -335,12 +337,14 @@
 			</div>
 		{/if}
 
-		<div class="flex gap-2 pt-1">
-			<Button type="submit" disabled={uploading} variant="default" class="flex-1">
+		</CardContent>
+		<CardFooter>
+			<Button type="submit" disabled={uploading} variant="default">
 				Save changes
 			</Button>
-		</div>
+		</CardFooter>
 	</form>
+	</Card>
 
 	<!-- ── Modifier groups ───────────────────────────────────── -->
 	<div class="mt-8">

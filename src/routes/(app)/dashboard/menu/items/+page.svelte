@@ -11,7 +11,7 @@
 	import Sortable from 'sortablejs';
 	import { Button } from '$lib/components/ui/button';
 	import { Badge } from '$lib/components/ui/badge';
-	import { Card, CardContent } from '$lib/components/ui/card';
+	import { Card, CardContent, CardFooter } from '$lib/components/ui/card';
 	import {
 		Table,
 		TableHeader,
@@ -453,6 +453,7 @@
 				{form.error}
 			</div>
 		{/if}
+		<Card class="mb-6 shadow-sm">
 		<form
 			method="post"
 			action="?/create"
@@ -460,8 +461,8 @@
 			use:enhance={() =>
 				({ update }) =>
 					update({ reset: false })}
-			class="mb-6 space-y-4 rounded-xl border bg-background p-5 shadow-sm"
 		>
+		<CardContent class="space-y-4 pt-6 pb-2">
 			<h2 class="font-semibold text-foreground">New item</h2>
 
 			<!-- Image -->
@@ -608,25 +609,27 @@
 				>
 			</div>
 
-			<div class="flex gap-2 pt-1">
-				<Button type="submit" disabled={newUploading} variant="default">
-					Save &amp; add another
-				</Button>
-				<Button
-					type="submit"
-					name="closeAfter"
-					value="1"
-					disabled={newUploading}
-					variant="outline"
-					onclick={() =>
-						setTimeout(() => {
-							showForm = false;
-						}, 100)}
-				>
-					Save &amp; close
-				</Button>
-			</div>
+		</CardContent>
+		<CardFooter class="gap-2">
+			<Button type="submit" disabled={newUploading} variant="default">
+				Save &amp; add another
+			</Button>
+			<Button
+				type="submit"
+				name="closeAfter"
+				value="1"
+				disabled={newUploading}
+				variant="outline"
+				onclick={() =>
+					setTimeout(() => {
+						showForm = false;
+					}, 100)}
+			>
+				Save &amp; close
+			</Button>
+		</CardFooter>
 		</form>
+		</Card>
 	{/if}
 
 	<!-- Filters -->

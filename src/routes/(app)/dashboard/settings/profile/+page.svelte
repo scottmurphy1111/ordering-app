@@ -6,7 +6,7 @@
 	import { Button } from '$lib/components/ui/button';
 	import { Input } from '$lib/components/ui/input';
 	import { Label } from '$lib/components/ui/label';
-	import { Card, CardHeader, CardTitle, CardContent } from '$lib/components/ui/card';
+	import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '$lib/components/ui/card';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 </script>
@@ -45,7 +45,7 @@
 					</div>
 				{/if}
 
-				<form method="post" action="?/updateProfile" use:enhance class="space-y-4">
+				<form id="profile-form" method="post" action="?/updateProfile" use:enhance class="space-y-4">
 					<div>
 						<Label class="mb-1 block" for="name">Name</Label>
 						<Input id="name" name="name" type="text" required value={data.user.name} />
@@ -55,11 +55,11 @@
 						<Input id="email" type="email" value={data.user.email} disabled />
 						<p class="mt-1 text-xs text-muted-foreground">Email cannot be changed here.</p>
 					</div>
-					<div class="flex justify-end">
-						<Button type="submit" variant="default">Save changes</Button>
-					</div>
 				</form>
 			</CardContent>
+			<CardFooter>
+				<Button type="submit" form="profile-form" variant="default">Save changes</Button>
+			</CardFooter>
 		</Card>
 	</div>
 </div>

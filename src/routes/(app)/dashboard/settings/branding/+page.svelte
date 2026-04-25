@@ -11,7 +11,8 @@
 		CardTitle,
 		CardDescription,
 		CardAction,
-		CardContent
+		CardContent,
+		CardFooter
 	} from '$lib/components/ui/card';
 	import {
 		Dialog,
@@ -117,6 +118,7 @@
 			<CardContent>
 				<p class="mb-4 text-xs text-muted-foreground">Sets the colors on your public storefront.</p>
 				<form
+					id="colors-form"
 					method="post"
 					action="?/saveColors"
 					use:enhance={() =>
@@ -182,19 +184,15 @@
 						{/each}
 					</div>
 
-					<div class="flex items-center gap-3">
-						<Button type="submit" variant="default">Save colors</Button>
-						<Button
-							type="button"
-							variant="outline"
-							onclick={() => (previewOpen = true)}
-						>
-							<Icon icon="mdi:eye-outline" class="h-4 w-4" />
-							Preview
-						</Button>
-					</div>
 				</form>
 			</CardContent>
+			<CardFooter class="gap-3">
+				<Button type="submit" form="colors-form" variant="default">Save colors</Button>
+				<Button type="button" variant="outline" onclick={() => (previewOpen = true)}>
+					<Icon icon="mdi:eye-outline" class="h-4 w-4" />
+					Preview
+				</Button>
+			</CardFooter>
 		</Card>
 
 		<!-- ── Color preview dialog ────────────────────────────────────────────── -->

@@ -4,6 +4,7 @@
 	import { resolve } from'$app/paths';
 	import Icon from'@iconify/svelte';
 	import { Button } from'$lib/components/ui/button';
+	import { Card, CardContent, CardFooter } from '$lib/components/ui/card';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
@@ -64,11 +65,9 @@
 		</div>
 	{/if}
 
-	<form
-		method="post"
-		use:enhance
-		class="space-y-5 rounded-xl border bg-background p-6 shadow-sm"
-	>
+	<Card class="shadow-sm">
+	<form method="post" use:enhance>
+	<CardContent class="space-y-5 pt-6 pb-2">
 		<!-- Image upload -->
 		<div>
 			<p class="mb-2 block text-sm font-medium text-muted-foreground">
@@ -286,11 +285,13 @@
 			</div>
 		{/if}
 
-		<div class="flex gap-2 pt-1">
-			<Button type="submit" disabled={uploading} variant="default" class="flex-1">
+		</CardContent>
+		<CardFooter class="gap-3">
+			<Button type="submit" disabled={uploading} variant="default">
 				Create item
 			</Button>
 			<Button href={resolve('/dashboard/menu/items')} variant="outline">Cancel</Button>
-		</div>
+		</CardFooter>
 	</form>
+	</Card>
 </div>
