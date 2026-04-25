@@ -87,7 +87,7 @@
 									<div class="min-w-0">
 										<p class="font-medium text-foreground">{t.name}</p>
 										<p class="mt-0.5 text-xs text-muted-foreground">
-											/{t.slug} · {t.type?.replace('_','')} · {t.role}
+											/{t.slug} · {t.type?.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')} · {t.role.charAt(0).toUpperCase() + t.role.slice(1)}
 										</p>
 									</div>
 								</button>

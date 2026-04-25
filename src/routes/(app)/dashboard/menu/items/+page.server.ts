@@ -57,12 +57,20 @@ export const load: PageServerLoad = async (event) => {
 		orderBy: menuCategories.sortOrder
 	});
 
+	const tenantRecord = await db.query.tenant.findFirst({
+		where: eq(tenant.id, tenantId),
+		columns: { subscriptionTier: true }
+	});
+	const canImportCsv =
+		tenantRecord?.subscriptionTier === 'pro' || (event.locals.user?.isInternal ?? false);
+
 	return {
 		items,
 		categories,
 		pagination: { page, limit, totalItems, totalPages },
 		search,
-		selectedCategoryId: categoryId
+		selectedCategoryId: categoryId,
+		canImportCsv
 	};
 };
 

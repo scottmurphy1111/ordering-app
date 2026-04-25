@@ -397,14 +397,20 @@
 								method="post"
 								action="?/downgrade"
 								use:enhance={() =>
-									({ update }) =>
-										update({ invalidateAll: true })}
+									async ({ result, update }) => {
+										if (result.type === 'success') {
+											window.location.href = resolve('/dashboard/settings/billing') + '?downgraded=1';
+										} else {
+											await update({ invalidateAll: true });
+										}
+									}}
 							>
 								<input type="hidden" name="planKey" value={tier.key} />
 								<Button
 									type="submit"
 									onclick={async (e) => {
 										e.preventDefault();
+										const form = (e.currentTarget as HTMLButtonElement).closest('form') as HTMLFormElement;
 										if (
 											await confirmDialog(downgradeMsg, {
 												title: `Downgrade to ${tier.name}`,
@@ -413,7 +419,7 @@
 												danger: true
 											})
 										)
-											(e.currentTarget as HTMLButtonElement).form?.requestSubmit();
+											form.requestSubmit();
 									}}
 									variant="outline"
 									class="w-full text-muted-foreground hover:border-destructive/20 hover:bg-destructive/10 hover:text-red-600"

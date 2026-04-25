@@ -3,6 +3,7 @@ import type { RequestHandler } from './$types';
 import { db } from '$lib/server/db';
 import { eq } from 'drizzle-orm';
 import { menuItems, menuCategories } from '$lib/server/db/schema';
+import { tenant } from '$lib/server/db/tenant';
 
 // CSV columns (case-insensitive header matching):
 //   name*, price*, description, category, discounted_price, tags, available
@@ -62,6 +63,14 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 	if (!locals.user) throw error(401, 'Unauthorized');
 	const tenantId = locals.tenantId;
 	if (!tenantId) throw error(400, 'No tenant selected');
+
+	if (!locals.user.isInternal) {
+		const tenantRecord = await db.query.tenant.findFirst({
+			where: eq(tenant.id, tenantId),
+			columns: { subscriptionTier: true }
+		});
+		if (tenantRecord?.subscriptionTier !== 'pro') throw error(403, 'Pro plan required');
+	}
 
 	const formData = await request.formData();
 	const file = formData.get('file');

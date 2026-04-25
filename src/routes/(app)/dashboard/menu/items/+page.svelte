@@ -205,6 +205,7 @@
 
 	// ── CSV import ────────────────────────────────────────────────
 	let showImport = $state(false);
+	let showImportUpsell = $state(false);
 	let importFile = $state<File | null>(null);
 	let importing = $state(false);
 	let importResult = $state<{
@@ -376,7 +377,11 @@
 						>Discover from Stripe</span
 					><span class="sm:hidden">Discover</span>
 				</Button>
-				<Button onclick={() => (showImport = true)} variant="outline" class="gap-1.5">
+				<Button
+					onclick={() => (data.canImportCsv ? (showImport = true) : (showImportUpsell = true))}
+					variant="outline"
+					class="gap-1.5"
+				>
 					<Icon icon="mdi:upload" class="h-4 w-4" /><span class="hidden sm:inline">Import CSV</span
 					><span class="sm:hidden">Import</span>
 				</Button>
@@ -886,6 +891,34 @@
 		{/if}
 	{/if}
 </div>
+
+<!-- ── CSV import upsell ──────────────────────────────────────── -->
+<Dialog bind:open={showImportUpsell}>
+	<DialogContent class="max-w-sm">
+		<DialogHeader>
+			<DialogTitle>Pro plan required</DialogTitle>
+			<DialogDescription class="sr-only">Upgrade to import menu items via CSV</DialogDescription>
+		</DialogHeader>
+		<div class="space-y-3">
+			<div class="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
+				<Icon icon="mdi:upload" class="h-6 w-6 text-primary" />
+			</div>
+			<p class="text-sm text-muted-foreground">
+				CSV import is available on the <span class="font-semibold text-foreground">Pro plan</span>.
+				Upgrade to bulk-import unlimited menu items from a spreadsheet.
+			</p>
+		</div>
+		<DialogFooter class="flex gap-2 sm:flex-row">
+			<Button onclick={() => (showImportUpsell = false)} variant="outline">Cancel</Button>
+			<a
+				href={resolve('/dashboard/settings/billing')}
+				class="inline-flex items-center justify-center gap-1.5 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary/90"
+			>
+				<Icon icon="mdi:arrow-right" class="h-4 w-4" /> Upgrade to Pro
+			</a>
+		</DialogFooter>
+	</DialogContent>
+</Dialog>
 
 <!-- ── Import modal ───────────────────────────────────────────── -->
 <Dialog
