@@ -71,6 +71,13 @@
       "when": 1777117573870,
       "tag": "0009_outgoing_synch",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1777135999827,
+      "tag": "0010_glossy_living_lightning",
+      "breakpoints": true
     }
   ]
 }

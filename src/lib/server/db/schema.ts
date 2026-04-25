@@ -13,3 +13,4 @@ export * from './menu';
 export * from './orders';
 export * from './relations';
 export * from './promos';
+export * from './loyalty';

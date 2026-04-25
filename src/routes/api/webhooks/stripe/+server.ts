@@ -3,8 +3,12 @@ import type { RequestHandler } from './$types';
 import Stripe from 'stripe';
 import { env } from '$env/dynamic/private';
 import { db } from '$lib/server/db';
-import { eq } from 'drizzle-orm';
+import { eq, and } from 'drizzle-orm';
 import { orders } from '$lib/server/db/schema';
+import { loyaltyAccounts } from '$lib/server/db/loyalty';
+import { tenant } from '$lib/server/db/tenant';
+import { DEFAULT_LOYALTY_CONFIG } from '$lib/server/db/loyalty';
+import type { LoyaltyConfig } from '$lib/server/db/loyalty';
 
 function getStripe() {
 	if (!env.STRIPE_SECRET_KEY) throw error(500, 'STRIPE_SECRET_KEY not set');
@@ -121,11 +125,28 @@ async function handleEvent(event: Stripe.Event) {
 						updatedAt: new Date()
 					})
 					.where(eq(orders.id, orderId));
+
+				// Award loyalty — look up the order to get tenantId, email, and total
+				const order = await db.query.orders.findFirst({
+					where: eq(orders.id, orderId),
+					columns: { tenantId: true, customerEmail: true, customerName: true, total: true }
+				});
+				if (order?.customerEmail) {
+					await awardLoyalty(order.tenantId, order.customerEmail, order.customerName, order.total);
+				}
 			} else if (intentId) {
 				await db
 					.update(orders)
 					.set({ paymentStatus: 'paid', status: 'confirmed', updatedAt: new Date() })
 					.where(eq(orders.stripePaymentIntentId, intentId));
+
+				const order = await db.query.orders.findFirst({
+					where: eq(orders.stripePaymentIntentId, intentId),
+					columns: { tenantId: true, customerEmail: true, customerName: true, total: true }
+				});
+				if (order?.customerEmail) {
+					await awardLoyalty(order.tenantId, order.customerEmail, order.customerName, order.total);
+				}
 			}
 			break;
 		}
@@ -142,5 +163,100 @@ async function handleEvent(event: Stripe.Event) {
 
 		default:
 			console.log(`Unhandled Stripe webhook event: ${event.type}`);
+	}
+}
+
+async function awardLoyalty(
+	tenantId: number,
+	email: string,
+	name: string | null,
+	totalCents: number
+) {
+	const tenantRecord = await db.query.tenant.findFirst({
+		where: eq(tenant.id, tenantId),
+		columns: { addons: true, settings: true }
+	});
+
+	const { hasAddon } = await import('$lib/billing');
+	if (!hasAddon(tenantRecord?.addons as string[] | null, 'loyalty')) return;
+
+	const settings = tenantRecord?.settings as Record<string, unknown> | null;
+	const loyalty: LoyaltyConfig = (settings?.loyalty as LoyaltyConfig) ?? DEFAULT_LOYALTY_CONFIG;
+	if (!loyalty.enabled) return;
+
+	const existing = await db.query.loyaltyAccounts.findFirst({
+		where: and(eq(loyaltyAccounts.tenantId, tenantId), eq(loyaltyAccounts.email, email))
+	});
+
+	const now = new Date();
+
+	if (loyalty.type === 'stamps') {
+		const stamps = loyalty.stamps.stampsPerOrder ?? 1;
+		const newTotal = (existing?.totalStampsEarned ?? 0) + stamps;
+		const rewardAt = loyalty.stamps.rewardAt ?? 10;
+		const prevCurrent = existing?.currentStamps ?? 0;
+		const newCurrent = prevCurrent + stamps;
+		const rewardsEarned = Math.floor(newCurrent / rewardAt) - Math.floor(prevCurrent / rewardAt);
+
+		if (existing) {
+			await db
+				.update(loyaltyAccounts)
+				.set({
+					name: name ?? existing.name,
+					currentStamps: newCurrent % rewardAt === 0 ? 0 : newCurrent % rewardAt,
+					totalStampsEarned: newTotal,
+					totalRewardsEarned: existing.totalRewardsEarned + rewardsEarned,
+					lastOrderAt: now,
+					updatedAt: now
+				})
+				.where(and(eq(loyaltyAccounts.tenantId, tenantId), eq(loyaltyAccounts.email, email)));
+		} else {
+			await db.insert(loyaltyAccounts).values({
+				tenantId,
+				email,
+				name,
+				currentStamps: stamps % rewardAt,
+				totalStampsEarned: stamps,
+				currentPoints: 0,
+				totalPointsEarned: 0,
+				totalRewardsEarned: rewardsEarned,
+				lastOrderAt: now
+			});
+		}
+	} else {
+		const dollarSpent = Math.floor(totalCents / 100);
+		const pointsPerDollar = loyalty.points.pointsPerDollar ?? 1;
+		const earned = dollarSpent * pointsPerDollar;
+		const redeemAt = loyalty.points.redeemAt ?? 100;
+		const prevPoints = existing?.currentPoints ?? 0;
+		const newPoints = prevPoints + earned;
+		const rewardsEarned =
+			Math.floor(newPoints / redeemAt) - Math.floor(prevPoints / redeemAt);
+
+		if (existing) {
+			await db
+				.update(loyaltyAccounts)
+				.set({
+					name: name ?? existing.name,
+					currentPoints: newPoints,
+					totalPointsEarned: existing.totalPointsEarned + earned,
+					totalRewardsEarned: existing.totalRewardsEarned + rewardsEarned,
+					lastOrderAt: now,
+					updatedAt: now
+				})
+				.where(and(eq(loyaltyAccounts.tenantId, tenantId), eq(loyaltyAccounts.email, email)));
+		} else {
+			await db.insert(loyaltyAccounts).values({
+				tenantId,
+				email,
+				name,
+				currentStamps: 0,
+				totalStampsEarned: 0,
+				currentPoints: newPoints,
+				totalPointsEarned: earned,
+				totalRewardsEarned: rewardsEarned,
+				lastOrderAt: now
+			});
+		}
 	}
 }
