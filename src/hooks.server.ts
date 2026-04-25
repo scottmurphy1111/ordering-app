@@ -21,12 +21,13 @@ const handleTenantContext: Handle = async ({ event, resolve }) => {
 	const { url, params, cookies } = event;
 
 	// Ban check — direct DB query bypasses the 5-min session cookie cache
-	const banExempt =
+	const authExempt =
 		url.pathname.startsWith('/banned') ||
+		url.pathname.startsWith('/tenant-archived') ||
 		url.pathname.startsWith('/api/auth') ||
 		url.pathname.startsWith('/login') ||
 		url.pathname.startsWith('/verify');
-	if (event.locals.user && !banExempt) {
+	if (event.locals.user && !authExempt) {
 		const fresh = await db.query.user.findFirst({
 			where: eq(userTable.id, event.locals.user.id),
 			columns: { bannedAt: true }
@@ -86,6 +87,9 @@ const handleTenantContext: Handle = async ({ event, resolve }) => {
 									memberRecord.role as import('$lib/server/roles').TenantRole;
 							}
 						}
+					} else if (currentTenant && !url.pathname.startsWith('/tenant-archived')) {
+						// Tenant exists but has been archived or deleted
+						throw redirect(303, '/tenant-archived');
 					}
 				}
 			}
