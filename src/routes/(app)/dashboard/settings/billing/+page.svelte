@@ -17,7 +17,6 @@
 	import { Button } from '$lib/components/ui/button';
 	import { Badge } from '$lib/components/ui/badge';
 	import { Card, CardHeader, CardTitle, CardAction, CardContent } from '$lib/components/ui/card';
-	import { Tabs, TabsList, TabsTrigger } from '$lib/components/ui/tabs';
 	import {
 		Dialog,
 		DialogContent,
@@ -309,25 +308,8 @@
 
 	<!-- Plans -->
 	<div class="mb-8">
-		<div class="mb-4 flex items-center justify-between">
-			<h2 class="font-semibold text-foreground">Plans</h2>
-			<!-- Monthly / Annual toggle (only relevant for Starter users upgrading) -->
-			{#if !isPaidPlan}
-				<Tabs bind:value={selectedInterval}>
-					<TabsList>
-						<TabsTrigger value="monthly">Monthly</TabsTrigger>
-						<TabsTrigger value="annual" class="gap-1.5">
-							Annual
-							<span
-								class="rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-semibold text-primary"
-								>Save $168</span
-							>
-						</TabsTrigger>
-					</TabsList>
-				</Tabs>
-			{/if}
-		</div>
-		<div class="grid gap-4 pt-4 sm:grid-cols-2">
+		<h2 class="mb-4 font-semibold text-foreground">Plans</h2>
+		<div class="grid gap-4 sm:grid-cols-2">
 			{#each TIERS as tier (tier.key)}
 				{@const isCurrent = tier.key === currentTierKey}
 				{@const tierIndex = TIERS.findIndex((t) => t.key === tier.key)}
@@ -343,12 +325,37 @@
 					<Card class="h-full shadow-sm {isCurrent ? 'ring-2 ring-primary/70 ring-offset-0' : ''}">
 					<CardContent class="flex flex-1 flex-col">
 						<div class="mb-4">
-							<p class="font-semibold text-foreground">{tier.name}</p>
+							<div class="flex items-center justify-between gap-2">
+								<p class="font-semibold text-foreground">{tier.name}</p>
+								{#if tier.key === 'pro' && !isPaidPlan}
+									<div class="flex items-center rounded-lg border bg-muted/50 p-0.5">
+										<button
+											type="button"
+											onclick={() => (selectedInterval = 'monthly')}
+											class="rounded-md px-2.5 py-1 text-xs transition-colors {selectedInterval === 'monthly'
+												? 'bg-background font-medium text-foreground shadow-sm'
+												: 'text-muted-foreground hover:text-foreground'}"
+										>
+											Monthly
+										</button>
+										<button
+											type="button"
+											onclick={() => (selectedInterval = 'annual')}
+											class="flex items-center gap-1 rounded-md px-2.5 py-1 text-xs transition-colors {selectedInterval === 'annual'
+												? 'bg-background font-medium text-foreground shadow-sm'
+												: 'text-muted-foreground hover:text-foreground'}"
+										>
+											Annual
+											<span class="rounded-full bg-primary/10 px-1.5 py-0.5 text-[9px] font-semibold text-primary">
+												-$168
+											</span>
+										</button>
+									</div>
+								{/if}
+							</div>
 							{#if tier.key === 'pro'}
-								<p class="mt-0.5 text-2xl font-bold text-foreground">
-									${proDisplayPrice}<span class="text-sm font-normal text-muted-foreground"
-										>/mo</span
-									>
+								<p class="mt-1 text-2xl font-bold text-foreground">
+									${proDisplayPrice}<span class="text-sm font-normal text-muted-foreground">/mo</span>
 								</p>
 								{#if selectedInterval === 'annual'}
 									<p class="mt-0.5 text-xs font-medium text-primary">
