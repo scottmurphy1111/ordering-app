@@ -365,6 +365,21 @@
 			{/if}
 		</form>
 
+		<!-- How rewards are delivered -->
+		<div class="mb-6 flex gap-3 rounded-xl border border-blue-200 bg-blue-50 p-4 dark:border-blue-900/50 dark:bg-blue-950/30">
+			<div class="mt-0.5 shrink-0">
+				<Icon icon="mdi:email-fast-outline" class="h-5 w-5 text-blue-600 dark:text-blue-400" />
+			</div>
+			<div>
+				<p class="text-sm font-semibold text-blue-900 dark:text-blue-200">Rewards are sent by email</p>
+				<p class="mt-0.5 text-xs text-blue-700 dark:text-blue-400">
+					When a customer crosses the reward threshold on a completed order, they automatically receive an
+					email with a unique promo code. They apply it at checkout on their next order — no app or account
+					needed.
+				</p>
+			</div>
+		</div>
+
 		<!-- Member stats -->
 		<div class="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
 			<Card class="shadow-sm">

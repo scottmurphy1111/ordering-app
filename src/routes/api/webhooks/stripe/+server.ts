@@ -2,13 +2,16 @@ import { error, json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import Stripe from 'stripe';
 import { env } from '$env/dynamic/private';
+import { randomBytes } from 'crypto';
 import { db } from '$lib/server/db';
 import { eq, and } from 'drizzle-orm';
-import { orders } from '$lib/server/db/schema';
+import { orders, promoCodes } from '$lib/server/db/schema';
 import { loyaltyAccounts } from '$lib/server/db/loyalty';
 import { tenant } from '$lib/server/db/tenant';
 import { DEFAULT_LOYALTY_CONFIG } from '$lib/server/db/loyalty';
 import type { LoyaltyConfig } from '$lib/server/db/loyalty';
+import { sendEmail } from '$lib/server/email';
+import { loyaltyRewardEmail } from '$lib/server/email/templates/loyaltyReward';
 
 function getStripe() {
 	if (!env.STRIPE_SECRET_KEY) throw error(500, 'STRIPE_SECRET_KEY not set');
@@ -174,7 +177,7 @@ async function awardLoyalty(
 ) {
 	const tenantRecord = await db.query.tenant.findFirst({
 		where: eq(tenant.id, tenantId),
-		columns: { addons: true, settings: true }
+		columns: { addons: true, settings: true, name: true, backgroundColor: true }
 	});
 
 	const { hasAddon } = await import('$lib/billing');
@@ -189,6 +192,9 @@ async function awardLoyalty(
 	});
 
 	const now = new Date();
+
+	const tenantName = tenantRecord?.name ?? 'Your restaurant';
+	const primaryColor = tenantRecord?.backgroundColor ?? '#000000';
 
 	if (loyalty.type === 'stamps') {
 		const stamps = loyalty.stamps.stampsPerOrder ?? 1;
@@ -221,6 +227,19 @@ async function awardLoyalty(
 				totalPointsEarned: 0,
 				totalRewardsEarned: rewardsEarned,
 				lastOrderAt: now
+			});
+		}
+
+		if (rewardsEarned > 0) {
+			await issueRewardCode({
+				tenantId,
+				tenantName,
+				primaryColor,
+				email,
+				customerName: name ?? 'Valued customer',
+				loyaltyType: 'stamps',
+				rewardDescription: loyalty.stamps.rewardDescription,
+				rewardsEarned
 			});
 		}
 	} else {
@@ -258,5 +277,76 @@ async function awardLoyalty(
 				lastOrderAt: now
 			});
 		}
+
+		if (rewardsEarned > 0) {
+			await issueRewardCode({
+				tenantId,
+				tenantName,
+				primaryColor,
+				email,
+				customerName: name ?? 'Valued customer',
+				loyaltyType: 'points',
+				redeemValue: loyalty.points.redeemValue * rewardsEarned,
+				rewardsEarned
+			});
+		}
 	}
+}
+
+async function issueRewardCode({
+	tenantId,
+	tenantName,
+	primaryColor,
+	email,
+	customerName,
+	loyaltyType,
+	rewardDescription,
+	redeemValue,
+	rewardsEarned
+}: {
+	tenantId: number;
+	tenantName: string;
+	primaryColor: string;
+	email: string;
+	customerName: string;
+	loyaltyType: 'stamps' | 'points';
+	rewardDescription?: string;
+	redeemValue?: number;
+	rewardsEarned: number;
+}) {
+	const code = 'REWARD' + randomBytes(3).toString('hex').toUpperCase();
+
+	if (loyaltyType === 'stamps') {
+		await db.insert(promoCodes).values({
+			tenantId,
+			code,
+			description: rewardDescription ?? 'Loyalty reward',
+			type: 'percent',
+			amount: 100,
+			maxUses: rewardsEarned
+		});
+	} else {
+		await db.insert(promoCodes).values({
+			tenantId,
+			code,
+			description: 'Loyalty points reward',
+			type: 'flat',
+			amount: redeemValue ?? 0,
+			maxUses: rewardsEarned
+		});
+	}
+
+	await sendEmail({
+		to: email,
+		subject: `You've earned a reward at ${tenantName}!`,
+		html: loyaltyRewardEmail({
+			tenantName,
+			primaryColor,
+			customerName,
+			promoCode: code,
+			loyaltyType,
+			rewardDescription,
+			redeemValue
+		})
+	});
 }
