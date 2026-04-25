@@ -63,11 +63,11 @@
 		uploadError = '';
 	}
 
-	// Track which modifier group has the "add option" form open
+	// Track which modifier group has the"add option" form open
 	let addingOptionTo = $state<number | null>(null);
 	// Track which modifier is in edit mode
 	let editingModifier = $state<number | null>(null);
-	// Controls the "add group" panel
+	// Controls the"add group" panel
 	let showAddGroup = $state(false);
 
 	let isSubscription = $state(untrack(() => item.isSubscription ?? false));
@@ -78,20 +78,22 @@
 	<div class="mb-6 flex items-center gap-3">
 		<a
 			href={resolve('/dashboard/menu/items')}
-			class="inline-flex items-center gap-1 text-sm text-gray-400 transition-colors hover:text-gray-600"
+			class="inline-flex items-center gap-1 text-sm text-muted-foreground transition-colors hover:text-muted-foreground"
 			><Icon icon="mdi:arrow-left" class="h-4 w-4" /> Items</a
 		>
-		<h1 class="text-2xl font-bold text-gray-900">Edit item</h1>
+		<h1 class="text-2xl font-bold text-foreground">Edit item</h1>
 	</div>
 
 	{#if form?.error}
-		<div class="mb-4 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+		<div
+			class="mb-4 rounded-md border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive"
+		>
 			{form.error}
 		</div>
 	{/if}
 	{#if form?.success}
 		<div
-			class="mb-4 rounded-md border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700"
+			class="mb-4 rounded-md border border-primary/20 bg-primary/5 px-4 py-3 text-sm text-primary/90"
 		>
 			Saved.
 		</div>
@@ -104,12 +106,12 @@
 		use:enhance={() =>
 			({ update }) =>
 				update({ reset: false })}
-		class="space-y-5 rounded-xl border border-gray-200 bg-white p-6 shadow-sm"
+		class="space-y-5 rounded-xl border bg-background p-6 shadow-sm"
 	>
 		<!-- Image upload -->
 		<div>
-			<p class="mb-2 block text-sm font-medium text-gray-700">
-				Image <span class="font-normal text-gray-400">(optional)</span>
+			<p class="mb-2 block text-sm font-medium text-muted-foreground">
+				Image <span class="font-normal text-muted-foreground">(optional)</span>
 			</p>
 			<div class="flex items-start gap-4">
 				<div
@@ -120,7 +122,7 @@
 					onkeydown={(e) =>
 						e.key === 'Enter' &&
 						(document.getElementById('image-upload') as HTMLInputElement)?.click()}
-					class="relative flex h-24 w-24 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 transition-colors hover:border-gray-400 hover:bg-gray-100 {uploading
+					class="relative flex h-24 w-24 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-lg border-2 border-dashed bg-muted/50 transition-colors hover:border-gray-400 hover:bg-muted {uploading
 						? 'pointer-events-none opacity-60'
 						: ''}"
 				>
@@ -132,7 +134,7 @@
 							<Icon icon="mdi:pencil" class="h-5 w-5 text-white" />
 						</div>
 					{:else if uploading}
-						<svg class="h-5 w-5 animate-spin text-gray-400" fill="none" viewBox="0 0 24 24">
+						<svg class="h-5 w-5 animate-spin text-muted-foreground" fill="none" viewBox="0 0 24 24">
 							<circle
 								class="opacity-25"
 								cx="12"
@@ -144,7 +146,7 @@
 							<path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
 						</svg>
 					{:else}
-						<div class="flex flex-col items-center gap-1 text-gray-400">
+						<div class="flex flex-col items-center gap-1 text-muted-foreground">
 							<Icon icon="mdi:image-plus" class="h-6 w-6" />
 							<span class="text-xs">Add photo</span>
 						</div>
@@ -159,12 +161,18 @@
 					onchange={onImageChange}
 				/>
 				<div class="flex-1 space-y-1.5 pt-1">
-					<p class="text-xs text-gray-500">JPG, PNG, or WebP · max 5MB</p>
+					<p class="text-xs text-muted-foreground">JPG, PNG, or WebP · max 5MB</p>
 					{#if uploadError}
 						<p class="text-xs text-red-600">{uploadError}</p>
 					{/if}
 					{#if imagePreview}
-						<Button type="button" onclick={clearImage} variant="ghost" size="sm" class="h-auto p-0 text-xs text-red-500 hover:text-red-700">
+						<Button
+							type="button"
+							onclick={clearImage}
+							variant="ghost"
+							size="sm"
+							class="h-auto p-0 text-xs text-destructive hover:text-destructive/80"
+						>
 							Remove image
 						</Button>
 					{/if}
@@ -174,33 +182,35 @@
 		</div>
 
 		<div>
-			<label class="mb-1 block text-sm font-medium text-gray-700" for="name">Name *</label>
+			<label class="mb-1 block text-sm font-medium text-muted-foreground" for="name">Name *</label>
 			<input
 				id="name"
 				name="name"
 				type="text"
 				required
 				value={item.name}
-				class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
+				class="w-full rounded-md border px-3 py-2 text-sm focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
 			/>
 		</div>
 
 		<div>
-			<label class="mb-1 block text-sm font-medium text-gray-700" for="description"
+			<label class="mb-1 block text-sm font-medium text-muted-foreground" for="description"
 				>Description</label
 			>
 			<textarea
 				id="description"
 				name="description"
 				rows="2"
-				class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
+				class="w-full rounded-md border px-3 py-2 text-sm focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
 				>{item.description ?? ''}</textarea
 			>
 		</div>
 
 		<div class="grid grid-cols-2 gap-4">
 			<div>
-				<label class="mb-1 block text-sm font-medium text-gray-700" for="price">Price ($) *</label>
+				<label class="mb-1 block text-sm font-medium text-muted-foreground" for="price"
+					>Price ($) *</label
+				>
 				<input
 					id="price"
 					name="price"
@@ -209,11 +219,11 @@
 					step="0.01"
 					required
 					value={(item.price / 100).toFixed(2)}
-					class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
+					class="w-full rounded-md border px-3 py-2 text-sm focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
 				/>
 			</div>
 			<div>
-				<label class="mb-1 block text-sm font-medium text-gray-700" for="discountedPrice"
+				<label class="mb-1 block text-sm font-medium text-muted-foreground" for="discountedPrice"
 					>Sale price ($)</label
 				>
 				<input
@@ -223,19 +233,20 @@
 					min="0"
 					step="0.01"
 					value={item.discountedPrice ? (item.discountedPrice / 100).toFixed(2) : ''}
-					class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
+					class="w-full rounded-md border px-3 py-2 text-sm focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
 				/>
 			</div>
 		</div>
 
 		{#if data.categories.length > 0}
 			<div>
-				<label class="mb-1 block text-sm font-medium text-gray-700" for="categoryId">Category</label
+				<label class="mb-1 block text-sm font-medium text-muted-foreground" for="categoryId"
+					>Category</label
 				>
 				<select
 					id="categoryId"
 					name="categoryId"
-					class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
+					class="w-full rounded-md border px-3 py-2 text-sm focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
 				>
 					<option value="">No category</option>
 					{#each data.categories as cat (cat.id)}
@@ -248,14 +259,14 @@
 		{/if}
 
 		<div>
-			<label class="mb-1 block text-sm font-medium text-gray-700" for="tags">Tags</label>
+			<label class="mb-1 block text-sm font-medium text-muted-foreground" for="tags">Tags</label>
 			<input
 				id="tags"
 				name="tags"
 				type="text"
-				value={Array.isArray(item.tags) ? item.tags.join(', ') : ''}
+				value={Array.isArray(item.tags) ? item.tags.join(',') : ''}
 				placeholder="spicy, popular, vegetarian"
-				class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
+				class="w-full rounded-md border px-3 py-2 text-sm focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
 			/>
 		</div>
 
@@ -267,17 +278,17 @@
 				name="available"
 				type="checkbox"
 				checked={item.available ?? true}
-				class="h-4 w-4 rounded border-gray-300"
+				class="h-4 w-4 rounded"
 			/>
-			<label class="text-sm text-gray-700" for="available">Available for ordering</label>
+			<label class="text-sm text-muted-foreground" for="available">Available for ordering</label>
 		</div>
 
 		{#if data.hasSubscriptionsAddon}
-			<div class="space-y-3 rounded-lg border border-gray-200 p-4">
+			<div class="space-y-3 rounded-lg border p-4">
 				<div class="flex items-center justify-between">
 					<div>
-						<p class="text-sm font-medium text-gray-700">Recurring subscription</p>
-						<p class="text-xs text-gray-400">
+						<p class="text-sm font-medium text-muted-foreground">Recurring subscription</p>
+						<p class="text-xs text-muted-foreground">
 							Customers subscribe and are billed on a set interval.
 						</p>
 					</div>
@@ -289,11 +300,11 @@
 					>
 						<div
 							class="relative h-6 w-11 rounded-full transition-colors duration-200 {isSubscription
-								? 'bg-green-600'
-								: 'bg-gray-300'}"
+								? 'bg-primary'
+								: 'bg-muted'}"
 						>
 							<span
-								class="absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform duration-200 {isSubscription
+								class="absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-background shadow transition-transform duration-200 {isSubscription
 									? 'translate-x-5'
 									: 'translate-x-0'}"
 							></span>
@@ -303,7 +314,7 @@
 				<input type="hidden" name="isSubscription" value={isSubscription ? 'on' : ''} />
 				{#if isSubscription}
 					<div>
-						<p class="mb-2 text-xs font-medium text-gray-600">Billing interval</p>
+						<p class="mb-2 text-xs font-medium text-muted-foreground">Billing interval</p>
 						<div class="flex gap-2">
 							{#each [{ value: 'monthly', label: 'Monthly' }, { value: 'yearly', label: 'Yearly' }] as opt (opt.value)}
 								<button
@@ -311,8 +322,8 @@
 									onclick={() => (billingInterval = opt.value)}
 									class="rounded-md border px-4 py-1.5 text-sm transition-colors {billingInterval ===
 									opt.value
-										? 'border-green-500 bg-green-50 font-medium text-green-700'
-										: 'border-gray-200 text-gray-500 hover:border-gray-300'}"
+										? 'border-primary bg-primary/5 font-medium text-primary'
+										: ' text-muted-foreground hover:border-gray-300'}"
 								>
 									{opt.label}
 								</button>
@@ -335,8 +346,8 @@
 	<div class="mt-8">
 		<div class="mb-3 flex items-center justify-between">
 			<div>
-				<h2 class="text-base font-semibold text-gray-900">Modifier groups</h2>
-				<p class="mt-0.5 text-xs text-gray-400">e.g. Size, Add-ons, Doneness</p>
+				<h2 class="text-base font-semibold text-foreground">Modifier groups</h2>
+				<p class="mt-0.5 text-xs text-muted-foreground">e.g. Size, Add-ons, Doneness</p>
 			</div>
 			{#if !showAddGroup}
 				<Button onclick={() => (showAddGroup = true)} variant="outline" size="sm">
@@ -356,11 +367,11 @@
 						return update({ reset: false });
 					};
 				}}
-				class="mb-4 space-y-3 rounded-xl border border-gray-200 bg-gray-50 p-4"
+				class="mb-4 space-y-3 rounded-xl border bg-muted/50 p-4"
 			>
-				<p class="text-sm font-medium text-gray-800">New modifier group</p>
+				<p class="text-sm font-medium text-foreground">New modifier group</p>
 				<div>
-					<label class="mb-1 block text-xs font-medium text-gray-600" for="modifierName"
+					<label class="mb-1 block text-xs font-medium text-muted-foreground" for="modifierName"
 						>Group name *</label
 					>
 					<input
@@ -369,12 +380,12 @@
 						type="text"
 						required
 						placeholder="e.g. Size, Add-ons"
-						class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
+						class="w-full rounded-md border px-3 py-2 text-sm focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
 					/>
 				</div>
 				<div class="grid grid-cols-2 gap-3">
 					<div>
-						<label class="mb-1 block text-xs font-medium text-gray-600" for="maxSelections"
+						<label class="mb-1 block text-xs font-medium text-muted-foreground" for="maxSelections"
 							>Max selections</label
 						>
 						<input
@@ -383,35 +394,35 @@
 							type="number"
 							min="1"
 							value="1"
-							class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
+							class="w-full rounded-md border px-3 py-2 text-sm focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
 						/>
 					</div>
 					<div class="flex items-end pb-2">
-						<label class="flex cursor-pointer items-center gap-2 text-sm text-gray-700">
-							<input type="checkbox" name="isRequired" class="h-4 w-4 rounded border-gray-300" />
+						<label class="flex cursor-pointer items-center gap-2 text-sm text-muted-foreground">
+							<input type="checkbox" name="isRequired" class="h-4 w-4 rounded" />
 							Required
 						</label>
 					</div>
 				</div>
 				<div class="flex gap-2">
 					<Button type="submit" variant="default">Add group</Button>
-					<Button type="button" onclick={() => (showAddGroup = false)} variant="outline">Cancel</Button>
+					<Button type="button" onclick={() => (showAddGroup = false)} variant="outline"
+						>Cancel</Button
+					>
 				</div>
 			</form>
 		{/if}
 
 		<!-- Existing modifier groups -->
 		{#if itemModifiers.length === 0 && !showAddGroup}
-			<div
-				class="rounded-xl border border-dashed border-gray-200 p-8 text-center text-sm text-gray-400"
-			>
+			<div class="rounded-xl border border-dashed p-8 text-center text-sm text-muted-foreground">
 				No modifier groups yet. Add one to let customers customise this item.
 			</div>
 		{/if}
 
 		<div class="space-y-3">
 			{#each itemModifiers as mod (mod.id)}
-				<div class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+				<div class="overflow-hidden rounded-xl border bg-background shadow-sm">
 					<!-- Group header -->
 					{#if editingModifier === mod.id}
 						<form
@@ -423,12 +434,12 @@
 									return update({ reset: false });
 								};
 							}}
-							class="flex items-end gap-3 border-b border-gray-200 bg-gray-50 px-4 py-3"
+							class="flex items-end gap-3 border-b bg-muted/50 px-4 py-3"
 						>
 							<input type="hidden" name="modifierId" value={mod.id} />
 							<div class="flex-1">
 								<label
-									class="mb-1 block text-xs font-medium text-gray-600"
+									class="mb-1 block text-xs font-medium text-muted-foreground"
 									for="edit-modifier-name-{mod.id}">Group name</label
 								>
 								<input
@@ -437,12 +448,12 @@
 									type="text"
 									required
 									value={mod.name}
-									class="w-full rounded-md border border-gray-300 px-3 py-1.5 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
+									class="w-full rounded-md border px-3 py-1.5 text-sm focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
 								/>
 							</div>
 							<div class="w-20">
 								<label
-									class="mb-1 block text-xs font-medium text-gray-600"
+									class="mb-1 block text-xs font-medium text-muted-foreground"
 									for="edit-max-selections-{mod.id}">Max</label
 								>
 								<input
@@ -451,38 +462,52 @@
 									type="number"
 									min="1"
 									value={mod.maxSelections}
-									class="w-full rounded-md border border-gray-300 px-3 py-1.5 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
+									class="w-full rounded-md border px-3 py-1.5 text-sm focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
 								/>
 							</div>
-							<label class="flex cursor-pointer items-center gap-1.5 pb-1.5 text-sm text-gray-700">
+							<label
+								class="flex cursor-pointer items-center gap-1.5 pb-1.5 text-sm text-muted-foreground"
+							>
 								<input
 									type="checkbox"
 									name="isRequired"
 									checked={mod.isRequired ?? false}
-									class="h-4 w-4 rounded border-gray-300"
+									class="h-4 w-4 rounded"
 								/>
 								Required
 							</label>
 							<Button type="submit" variant="default" size="sm">Save</Button>
-							<Button type="button" onclick={() => (editingModifier = null)} variant="outline" size="sm">Cancel</Button>
+							<Button
+								type="button"
+								onclick={() => (editingModifier = null)}
+								variant="outline"
+								size="sm">Cancel</Button
+							>
 						</form>
 					{:else}
-						<div class="flex items-center justify-between gap-3 border-b border-gray-100 px-4 py-3">
+						<div class="flex items-center justify-between gap-3 border-b px-4 py-3">
 							<div class="flex items-center gap-2">
-								<p class="text-sm font-medium text-gray-900">{mod.name}</p>
+								<p class="text-sm font-medium text-foreground">{mod.name}</p>
 								{#if mod.isRequired}
-									<span class="rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700"
+									<span
+										class="rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-destructive"
 										>Required</span
 									>
 								{:else}
-									<span class="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-500"
+									<span class="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground"
 										>Optional</span
 									>
 								{/if}
-								<span class="text-xs text-gray-400">max {mod.maxSelections}</span>
+								<span class="text-xs text-muted-foreground">max {mod.maxSelections}</span>
 							</div>
 							<div class="flex items-center gap-2">
-								<Button type="button" onclick={() => (editingModifier = mod.id)} variant="ghost" size="sm" class="h-auto p-0 text-xs text-gray-400 hover:text-gray-700">
+								<Button
+									type="button"
+									onclick={() => (editingModifier = mod.id)}
+									variant="ghost"
+									size="sm"
+									class="h-auto p-0 text-xs text-muted-foreground hover:text-muted-foreground"
+								>
 									Edit
 								</Button>
 								<form method="post" action="?/deleteModifier" use:enhance>
@@ -491,7 +516,7 @@
 										type="submit"
 										onclick={async (e) => {
 											e.preventDefault();
-											if (await confirmDialog(`Delete "${mod.name}"? This cannot be undone.`))
+											if (await confirmDialog(`Delete"${mod.name}"? This cannot be undone.`))
 												(e.currentTarget as HTMLButtonElement).form?.requestSubmit();
 										}}
 										variant="ghost"
@@ -506,11 +531,11 @@
 					{/if}
 
 					<!-- Options list -->
-					<div class="divide-y divide-gray-50">
+					<div class="divide-y divide-border">
 						{#each mod.options as opt (opt.id)}
 							<div class="flex items-center justify-between gap-3 px-4 py-2.5">
 								<div class="flex min-w-0 items-center gap-2">
-									<span class="truncate text-sm text-gray-800">{opt.name}</span>
+									<span class="truncate text-sm text-foreground">{opt.name}</span>
 									{#if opt.isDefault}
 										<span class="rounded-full bg-blue-50 px-2 py-0.5 text-xs text-blue-600"
 											>Default</span
@@ -518,7 +543,7 @@
 									{/if}
 								</div>
 								<div class="flex shrink-0 items-center gap-3">
-									<span class="text-sm text-gray-500">
+									<span class="text-sm text-muted-foreground">
 										{(opt.priceAdjustment ?? 0) === 0
 											? 'No charge'
 											: (opt.priceAdjustment ?? 0) > 0
@@ -531,7 +556,7 @@
 											type="submit"
 											onclick={async (e) => {
 												e.preventDefault();
-												if (await confirmDialog(`Delete option "${opt.name}"?`))
+												if (await confirmDialog(`Delete option"${opt.name}"?`))
 													(e.currentTarget as HTMLButtonElement).form?.requestSubmit();
 											}}
 											variant="ghost"
@@ -554,13 +579,13 @@
 							use:enhance={() => {
 								return ({ update }) => update({ reset: true });
 							}}
-							class="space-y-2 border-t border-gray-100 bg-gray-50 px-4 py-3"
+							class="space-y-2 border-t bg-muted/50 px-4 py-3"
 						>
 							<input type="hidden" name="modifierId" value={mod.id} />
 							<div class="grid grid-cols-[1fr_auto_auto_auto] items-end gap-2">
 								<div>
 									<label
-										class="mb-1 block text-xs font-medium text-gray-600"
+										class="mb-1 block text-xs font-medium text-muted-foreground"
 										for="option-name-{mod.id}">Option name *</label
 									>
 									<input
@@ -569,12 +594,12 @@
 										type="text"
 										required
 										placeholder="e.g. Large"
-										class="w-full rounded-md border border-gray-300 px-2 py-1.5 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
+										class="w-full rounded-md border px-2 py-1.5 text-sm focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
 									/>
 								</div>
 								<div class="w-24">
 									<label
-										class="mb-1 block text-xs font-medium text-gray-600"
+										class="mb-1 block text-xs font-medium text-muted-foreground"
 										for="price-adj-{mod.id}">Price adj. ($)</label
 									>
 									<input
@@ -584,20 +609,23 @@
 										step="0.01"
 										value="0"
 										placeholder="0.00"
-										class="w-full rounded-md border border-gray-300 px-2 py-1.5 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
+										class="w-full rounded-md border px-2 py-1.5 text-sm focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
 									/>
 								</div>
-								<label class="flex cursor-pointer items-center gap-1 pb-1.5 text-xs text-gray-600">
-									<input
-										type="checkbox"
-										name="isDefault"
-										class="h-3.5 w-3.5 rounded border-gray-300"
-									/>
+								<label
+									class="flex cursor-pointer items-center gap-1 pb-1.5 text-xs text-muted-foreground"
+								>
+									<input type="checkbox" name="isDefault" class="h-3.5 w-3.5 rounded" />
 									Default
 								</label>
 								<div class="flex gap-1 pb-0.5">
 									<Button type="submit" variant="default" size="sm">Add</Button>
-									<Button type="button" onclick={() => (addingOptionTo = null)} variant="outline" size="sm">
+									<Button
+										type="button"
+										onclick={() => (addingOptionTo = null)}
+										variant="outline"
+										size="sm"
+									>
 										<Icon icon="mdi:close" class="h-3.5 w-3.5" />
 									</Button>
 								</div>
@@ -608,7 +636,7 @@
 							type="button"
 							onclick={() => (addingOptionTo = mod.id)}
 							variant="ghost"
-							class="w-full justify-start rounded-none border-t border-gray-100 px-4 py-2 text-xs text-gray-400 hover:bg-gray-50 hover:text-gray-600"
+							class="w-full justify-start rounded-none border-t px-4 py-2 text-xs text-muted-foreground hover:bg-muted/50 hover:text-muted-foreground"
 						>
 							+ Add option
 						</Button>
@@ -619,8 +647,8 @@
 	</div>
 
 	<!-- ── Danger zone ───────────────────────────────────────── -->
-	<div class="mt-6 rounded-xl border border-red-200 bg-white p-4">
-		<h2 class="mb-2 text-sm font-semibold text-red-700">Danger zone</h2>
+	<div class="mt-6 rounded-xl border border-destructive/20 bg-background p-4">
+		<h2 class="mb-2 text-sm font-semibold text-destructive">Danger zone</h2>
 		<form method="post" action="?/delete" use:enhance>
 			<Button
 				type="submit"

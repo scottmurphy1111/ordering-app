@@ -358,12 +358,12 @@
 		<div>
 			<a
 				href={resolve('/dashboard/menu')}
-				class="mb-1 inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700"
+				class="mb-1 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-muted-foreground"
 			>
 				<Icon icon="mdi:chevron-left" class="h-4 w-4" /> Menu
 			</a>
-			<h1 class="text-2xl font-bold text-gray-900">Menu Items</h1>
-			<p class="mt-0.5 text-sm text-gray-500">{data.pagination.totalItems} items total</p>
+			<h1 class="text-2xl font-bold text-foreground">Menu Items</h1>
+			<p class="mt-0.5 text-sm text-muted-foreground">{data.pagination.totalItems} items total</p>
 		</div>
 		<div class="flex flex-wrap gap-2">
 			{#if !sortMode}
@@ -423,26 +423,28 @@
 	{#if showForm}
 		{#if lastCreated}
 			<div
-				class="mb-3 flex items-center justify-between rounded-lg border border-green-200 bg-green-50 px-4 py-2.5 text-sm text-green-700"
+				class="mb-3 flex items-center justify-between rounded-lg border border-primary/20 bg-primary/5 px-4 py-2.5 text-sm text-primary/90"
 			>
 				<span
 					>✓ <strong>{lastCreated.name}</strong> created —
 					<a
 						href={resolve(`/dashboard/menu/items/${lastCreated.id}`)}
-						class="underline hover:text-green-900">edit item</a
+						class="underline hover:text-primary/80">edit item</a
 					></span
 				>
 				<Button
 					onclick={() => (lastCreated = null)}
 					variant="ghost"
 					size="icon-sm"
-					class="ml-4 text-green-500 hover:text-green-700"
+					class="ml-4 text-primary/80 hover:text-primary"
 					><Icon icon="mdi:close" class="h-4 w-4" /></Button
 				>
 			</div>
 		{/if}
 		{#if form?.error}
-			<div class="mb-3 rounded-lg border border-red-200 bg-red-50 px-4 py-2.5 text-sm text-red-700">
+			<div
+				class="mb-3 rounded-lg border border-destructive/20 bg-destructive/10 px-4 py-2.5 text-sm text-destructive"
+			>
 				{form.error}
 			</div>
 		{/if}
@@ -453,9 +455,9 @@
 			use:enhance={() =>
 				({ update }) =>
 					update({ reset: false })}
-			class="mb-6 space-y-4 rounded-xl border border-gray-200 bg-white p-5 shadow-sm"
+			class="mb-6 space-y-4 rounded-xl border bg-background p-5 shadow-sm"
 		>
-			<h2 class="font-semibold text-gray-800">New item</h2>
+			<h2 class="font-semibold text-foreground">New item</h2>
 
 			<!-- Image -->
 			<div class="flex items-start gap-4">
@@ -467,7 +469,7 @@
 					onkeydown={(e) =>
 						e.key === 'Enter' &&
 						(document.getElementById('new-image-upload') as HTMLInputElement)?.click()}
-					class="relative flex h-20 w-20 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 transition-colors hover:border-gray-400 hover:bg-gray-100 {newUploading
+					class="relative flex h-20 w-20 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-lg border-2 border-dashed bg-muted/50 transition-colors hover:border-gray-400 hover:bg-muted {newUploading
 						? 'pointer-events-none opacity-60'
 						: ''}"
 				>
@@ -479,7 +481,7 @@
 							<Icon icon="mdi:pencil" class="h-4 w-4 text-white" />
 						</div>
 					{:else if newUploading}
-						<svg class="h-4 w-4 animate-spin text-gray-400" fill="none" viewBox="0 0 24 24"
+						<svg class="h-4 w-4 animate-spin text-muted-foreground" fill="none" viewBox="0 0 24 24"
 							><circle
 								class="opacity-25"
 								cx="12"
@@ -491,7 +493,7 @@
 							></path></svg
 						>
 					{:else}
-						<Icon icon="mdi:image-plus" class="h-5 w-5 text-gray-400" />
+						<Icon icon="mdi:image-plus" class="h-5 w-5 text-muted-foreground" />
 					{/if}
 				</div>
 				<input
@@ -503,7 +505,7 @@
 				/>
 				<input type="hidden" name="imageUrl" value={newImageUrl} />
 				<div class="flex-1 space-y-1 pt-1">
-					<p class="text-xs text-gray-400">JPG, PNG, WebP · max 5MB</p>
+					<p class="text-xs text-muted-foreground">JPG, PNG, WebP · max 5MB</p>
 					{#if newUploadError}<p class="text-xs text-red-600">{newUploadError}</p>{/if}
 					{#if newImagePreview}<Button
 							type="button"
@@ -513,7 +515,7 @@
 							}}
 							variant="ghost"
 							size="sm"
-							class="text-red-500 hover:text-red-700">Remove</Button
+							class="text-destructive hover:text-destructive/80">Remove</Button
 						>{/if}
 				</div>
 			</div>
@@ -594,9 +596,11 @@
 					name="available"
 					type="checkbox"
 					checked
-					class="h-4 w-4 rounded border-gray-300"
+					class="h-4 w-4 rounded"
 				/>
-				<label class="text-sm text-gray-700" for="new-available">Available for ordering</label>
+				<label class="text-sm text-muted-foreground" for="new-available"
+					>Available for ordering</label
+				>
 			</div>
 
 			<div class="flex gap-2 pt-1">
@@ -652,7 +656,9 @@
 	</form>
 
 	{#if sortSaveError}
-		<div class="mb-4 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+		<div
+			class="mb-4 rounded-md border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive"
+		>
 			{sortSaveError}
 		</div>
 	{/if}
@@ -660,17 +666,17 @@
 	{#if sortMode}
 		<!-- ── Drag-and-drop reorder — grouped by category ─────────── -->
 		<div class="space-y-4" bind:this={sortContainerEl}>
-			<p class="text-sm text-gray-500">
+			<p class="text-sm text-muted-foreground">
 				Drag items within each category to reorder, then click <strong>Save order</strong>.
 			</p>
 			{#each groupedForSort() as group (group.id)}
-				<div class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
-					<div class="border-b border-gray-100 bg-gray-50 px-4 py-2.5">
-						<span class="text-xs font-semibold tracking-wide text-gray-500 uppercase"
+				<div class="overflow-hidden rounded-xl border bg-background shadow-sm">
+					<div class="border-b bg-muted/50 px-4 py-2.5">
+						<span class="text-xs font-semibold tracking-wide text-muted-foreground uppercase"
 							>{group.name}</span
 						>
 					</div>
-					<ul use:sortableGroup data-group={group.id ?? 'null'} class="divide-y divide-gray-100">
+					<ul use:sortableGroup data-group={group.id ?? 'null'} class="divide-y divide-border">
 						{#each group.items as item (item.id)}
 							{@const primaryImage =
 								(item.images as { url: string; isPrimary?: boolean }[] | null)?.find(
@@ -678,10 +684,10 @@
 								) ?? (item.images as { url: string }[] | null)?.[0]}
 							<li
 								data-id={item.id}
-								class="flex items-center gap-3 bg-white px-4 py-3 transition-colors hover:bg-gray-50"
+								class="flex items-center gap-3 bg-background px-4 py-3 transition-colors hover:bg-muted/50"
 							>
 								<span
-									class="drag-handle cursor-grab text-gray-300 transition-colors hover:text-gray-500 active:cursor-grabbing"
+									class="drag-handle cursor-grab text-muted-foreground/40 transition-colors hover:text-muted-foreground active:cursor-grabbing"
 								>
 									<Icon icon="mdi:drag-horizontal-variant" class="h-5 w-5" />
 								</span>
@@ -693,13 +699,16 @@
 									/>
 								{:else}
 									<div
-										class="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-gray-100"
+										class="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-muted"
 									>
-										<Icon icon="mdi:silverware-fork-knife" class="h-4 w-4 text-gray-300" />
+										<Icon
+											icon="mdi:silverware-fork-knife"
+											class="h-4 w-4 text-muted-foreground/40"
+										/>
 									</div>
 								{/if}
-								<span class="flex-1 text-sm font-medium text-gray-900">{item.name}</span>
-								<span class="text-xs font-medium text-gray-700"
+								<span class="flex-1 text-sm font-medium text-foreground">{item.name}</span>
+								<span class="text-xs font-medium text-muted-foreground"
 									>${(item.price / 100).toFixed(2)}</span
 								>
 							</li>
@@ -709,8 +718,8 @@
 			{/each}
 		</div>
 	{:else if data.items.length === 0}
-		<div class="rounded-xl border border-dashed border-gray-300 p-12 text-center">
-			<p class="text-sm text-gray-400">No items found.</p>
+		<div class="rounded-xl border border-dashed p-12 text-center">
+			<p class="text-sm text-muted-foreground">No items found.</p>
 			<Button
 				onclick={() => {
 					showForm = true;
@@ -730,7 +739,7 @@
 								<TableHead class="px-4 py-2.5">
 									<button
 										onclick={() => sortBy(col)}
-										class="inline-flex items-center gap-1 font-medium text-gray-500 transition-colors hover:text-gray-800"
+										class="inline-flex items-center gap-1 font-medium text-muted-foreground transition-colors hover:text-foreground"
 									>
 										{label}
 										<Icon
@@ -739,7 +748,9 @@
 													? 'mdi:chevron-up'
 													: 'mdi:chevron-down'
 												: 'mdi:unfold-more-horizontal'}
-											class="h-3.5 w-3.5 {sortCol === col ? 'text-gray-800' : 'text-gray-300'}"
+											class="h-3.5 w-3.5 {sortCol === col
+												? 'text-foreground'
+												: 'text-muted-foreground/40'}"
 										/>
 									</button>
 								</TableHead>
@@ -762,27 +773,34 @@
 											class="h-10 w-10 rounded-md object-cover"
 										/>
 									{:else}
-										<div class="flex h-10 w-10 items-center justify-center rounded-md bg-gray-100">
-											<Icon icon="mdi:silverware-fork-knife" class="h-5 w-5 text-gray-300" />
+										<div class="flex h-10 w-10 items-center justify-center rounded-md bg-muted">
+											<Icon
+												icon="mdi:silverware-fork-knife"
+												class="h-5 w-5 text-muted-foreground/40"
+											/>
 										</div>
 									{/if}
 								</TableCell>
 								<TableCell class="px-4 py-3">
 									<a
 										href={resolve(`/dashboard/menu/items/${item.id}`)}
-										class="font-medium text-gray-900 hover:underline"
+										class="font-medium text-foreground hover:underline"
 									>
 										{item.name}
 									</a>
 									{#if item.description}
-										<p class="mt-0.5 line-clamp-1 text-xs text-gray-400">{item.description}</p>
+										<p class="mt-0.5 line-clamp-1 text-xs text-muted-foreground">
+											{item.description}
+										</p>
 									{/if}
 								</TableCell>
-								<TableCell class="px-4 py-3 text-gray-500">{item.category?.name ?? '—'}</TableCell>
-								<TableCell class="px-4 py-3 text-gray-900">
+								<TableCell class="px-4 py-3 text-muted-foreground"
+									>{item.category?.name ?? '—'}</TableCell
+								>
+								<TableCell class="px-4 py-3 text-foreground">
 									${(item.price / 100).toFixed(2)}
 									{#if item.discountedPrice}
-										<span class="ml-1 text-xs text-green-600"
+										<span class="ml-1 text-xs text-primary"
 											>(sale ${(item.discountedPrice / 100).toFixed(2)})</span
 										>
 									{/if}
@@ -801,8 +819,8 @@
 											type="submit"
 											class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium transition-colors
 										{item.available
-												? 'bg-green-100 text-green-700 hover:bg-red-50 hover:text-red-600'
-												: 'bg-red-100 text-red-600 hover:bg-green-50 hover:text-green-700'}"
+												? 'bg-primary/10 text-primary hover:bg-destructive/10 hover:text-red-600'
+												: 'bg-red-100 text-red-600 hover:bg-primary/5 hover:text-primary'}"
 										>
 											<Icon
 												icon={item.available
@@ -818,7 +836,7 @@
 									<div class="flex items-center gap-3">
 										<a
 											href={resolve(`/dashboard/menu/items/${item.id}`)}
-											class="text-xs font-medium text-gray-600 transition-colors hover:text-gray-900"
+											class="text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
 											>Edit</a
 										>
 										<form method="post" action="?/delete" use:enhance>
@@ -832,7 +850,7 @@
 												}}
 												variant="ghost"
 												size="sm"
-												class="text-red-500 hover:text-red-700">Delete</Button
+												class="text-destructive hover:text-destructive/80">Delete</Button
 											>
 										</form>
 									</div>
@@ -846,20 +864,20 @@
 
 		<!-- Pagination -->
 		{#if data.pagination.totalPages > 1}
-			<div class="mt-4 flex items-center justify-between text-sm text-gray-500">
+			<div class="mt-4 flex items-center justify-between text-sm text-muted-foreground">
 				<span>Page {data.pagination.page} of {data.pagination.totalPages}</span>
 				<div class="flex gap-2">
 					{#if data.pagination.page > 1}
 						<a
 							href={resolve(`/dashboard/menu/items?page=${data.pagination.page - 1}`)}
-							class="rounded-md border border-gray-300 px-3 py-1.5 transition-colors hover:border-gray-400 hover:bg-gray-100"
+							class="rounded-md border px-3 py-1.5 transition-colors hover:border-gray-400 hover:bg-muted"
 							><Icon icon="mdi:chevron-left" class="h-4 w-4" /> Prev</a
 						>
 					{/if}
 					{#if data.pagination.page < data.pagination.totalPages}
 						<a
 							href={resolve(`/dashboard/menu/items?page=${data.pagination.page + 1}`)}
-							class="inline-flex items-center gap-1 rounded-md border border-gray-300 px-3 py-1.5 transition-colors hover:border-gray-400 hover:bg-gray-100"
+							class="inline-flex items-center gap-1 rounded-md border px-3 py-1.5 transition-colors hover:border-gray-400 hover:bg-muted"
 							>Next <Icon icon="mdi:chevron-right" class="h-4 w-4" /></a
 						>
 					{/if}
@@ -886,23 +904,23 @@
 			{#if !importResult}
 				<!-- Instructions -->
 				<div
-					class="space-y-1.5 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-600"
+					class="space-y-1.5 rounded-lg border bg-muted/50 px-4 py-3 text-sm text-muted-foreground"
 				>
-					<p class="font-medium text-gray-800">CSV format</p>
+					<p class="font-medium text-foreground">CSV format</p>
 					<p>
-						Required columns: <code class="rounded bg-gray-200 px-1 text-xs">name</code>,
-						<code class="rounded bg-gray-200 px-1 text-xs">price</code>
+						Required columns: <code class="rounded bg-muted px-1 text-xs">name</code>,
+						<code class="rounded bg-muted px-1 text-xs">price</code>
 					</p>
 					<p>
-						Optional: <code class="rounded bg-gray-200 px-1 text-xs">description</code>
-						<code class="rounded bg-gray-200 px-1 text-xs">category</code>
-						<code class="rounded bg-gray-200 px-1 text-xs">discounted_price</code>
-						<code class="rounded bg-gray-200 px-1 text-xs">tags</code>
-						<code class="rounded bg-gray-200 px-1 text-xs">available</code>
+						Optional: <code class="rounded bg-muted px-1 text-xs">description</code>
+						<code class="rounded bg-muted px-1 text-xs">category</code>
+						<code class="rounded bg-muted px-1 text-xs">discounted_price</code>
+						<code class="rounded bg-muted px-1 text-xs">tags</code>
+						<code class="rounded bg-muted px-1 text-xs">available</code>
 					</p>
-					<p class="text-xs text-gray-400">
-						Separate multiple tags with <code class="rounded bg-gray-200 px-1">|</code>. Existing
-						items are updated by name. New categories are created automatically. Max 500 rows.
+					<p class="text-xs text-muted-foreground">
+						Separate multiple tags with <code class="rounded bg-muted px-1">|</code>. Existing items
+						are updated by name. New categories are created automatically. Max 500 rows.
 					</p>
 				</div>
 
@@ -911,7 +929,7 @@
 				</Button>
 
 				<div>
-					<label class="mb-1.5 block text-sm font-medium text-gray-700" for="csv-file">
+					<label class="mb-1.5 block text-sm font-medium text-muted-foreground" for="csv-file">
 						Select CSV file
 					</label>
 					<input
@@ -919,17 +937,19 @@
 						type="file"
 						accept=".csv"
 						onchange={onFileChange}
-						class="block w-full text-sm text-gray-600 file:mr-3 file:rounded-md file:border file:border-gray-300 file:bg-white file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-gray-700 file:transition-colors hover:file:bg-gray-50"
+						class="block w-full text-sm text-muted-foreground file:mr-3 file:rounded-md file:border file:bg-background file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-muted-foreground file:transition-colors hover:file:bg-muted/50"
 					/>
 					{#if importFile}
-						<p class="mt-1.5 text-xs text-gray-400">
+						<p class="mt-1.5 text-xs text-muted-foreground">
 							{importFile.name} · {(importFile.size / 1024).toFixed(1)} KB
 						</p>
 					{/if}
 				</div>
 
 				{#if importError}
-					<div class="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+					<div
+						class="rounded-md border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive"
+					>
 						{importError}
 					</div>
 				{/if}
@@ -942,37 +962,37 @@
 				</DialogFooter>
 			{:else}
 				<!-- Results -->
-				<div class="flex items-center gap-4 rounded-lg border border-gray-200 px-4 py-3">
+				<div class="flex items-center gap-4 rounded-lg border px-4 py-3">
 					<div class="text-center">
-						<p class="text-2xl font-bold text-green-700">{importResult.created}</p>
-						<p class="mt-0.5 text-xs text-gray-500">Created</p>
+						<p class="text-2xl font-bold text-primary">{importResult.created}</p>
+						<p class="mt-0.5 text-xs text-muted-foreground">Created</p>
 					</div>
-					<div class="h-8 w-px bg-gray-200"></div>
+					<div class="h-8 w-px bg-muted"></div>
 					<div class="text-center">
 						<p class="text-2xl font-bold text-blue-700">{importResult.updated}</p>
-						<p class="mt-0.5 text-xs text-gray-500">Updated</p>
+						<p class="mt-0.5 text-xs text-muted-foreground">Updated</p>
 					</div>
-					<div class="h-8 w-px bg-gray-200"></div>
+					<div class="h-8 w-px bg-muted"></div>
 					<div class="text-center">
 						<p
 							class="text-2xl font-bold {importResult.skipped > 0
 								? 'text-red-600'
-								: 'text-gray-400'}"
+								: 'text-muted-foreground'}"
 						>
 							{importResult.skipped}
 						</p>
-						<p class="mt-0.5 text-xs text-gray-500">Skipped</p>
+						<p class="mt-0.5 text-xs text-muted-foreground">Skipped</p>
 					</div>
 				</div>
 
 				{#if hasErrors}
-					<div class="max-h-52 overflow-y-auto rounded-lg border border-red-100 bg-red-50">
+					<div class="max-h-52 overflow-y-auto rounded-lg border border-red-100 bg-destructive/10">
 						<table class="w-full text-xs">
 							<thead class="sticky top-0 bg-red-100">
 								<tr>
-									<th class="px-3 py-2 text-left font-medium text-red-700">Row</th>
-									<th class="px-3 py-2 text-left font-medium text-red-700">Name</th>
-									<th class="px-3 py-2 text-left font-medium text-red-700">Reason</th>
+									<th class="px-3 py-2 text-left font-medium text-destructive">Row</th>
+									<th class="px-3 py-2 text-left font-medium text-destructive">Name</th>
+									<th class="px-3 py-2 text-left font-medium text-destructive">Reason</th>
 								</tr>
 							</thead>
 							<tbody class="divide-y divide-red-100">
@@ -1014,7 +1034,7 @@
 		<!-- Body -->
 		<div class="flex-1 overflow-y-auto">
 			{#if discovering}
-				<div class="flex flex-col items-center justify-center py-12 text-gray-400">
+				<div class="flex flex-col items-center justify-center py-12 text-muted-foreground">
 					<svg class="mb-3 h-6 w-6 animate-spin" fill="none" viewBox="0 0 24 24">
 						<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"
 						></circle>
@@ -1023,12 +1043,14 @@
 					<p class="text-sm">Loading products from Stripe…</p>
 				</div>
 			{:else if discoverError}
-				<div class="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+				<div
+					class="rounded-md border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive"
+				>
 					{discoverError}
 				</div>
 			{:else if discoverResult}
 				<div
-					class="rounded-md border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700"
+					class="rounded-md border border-primary/20 bg-primary/5 px-4 py-3 text-sm text-primary/90"
 				>
 					<p class="font-medium">Import complete</p>
 					<p class="mt-0.5">
@@ -1039,13 +1061,13 @@
 					</p>
 				</div>
 			{:else if discoveredItems.length === 0}
-				<div class="py-10 text-center text-sm text-gray-500">
+				<div class="py-10 text-center text-sm text-muted-foreground">
 					No active one-time products found in your Stripe account.
 				</div>
 			{:else}
 				<!-- Select-all toggle -->
 				<div class="mb-3 flex items-center justify-between">
-					<p class="text-sm text-gray-600">
+					<p class="text-sm text-muted-foreground">
 						{discoveredItems.length} product{discoveredItems.length !== 1 ? 's' : ''} found
 					</p>
 					<Button
@@ -1065,7 +1087,7 @@
 						}}
 						variant="ghost"
 						size="sm"
-						class="h-auto p-0 text-xs text-gray-500 underline hover:text-gray-800"
+						class="h-auto p-0 text-xs text-muted-foreground underline hover:text-foreground"
 					>
 						{discoveredItems
 							.filter((i) => !i.alreadyImported)
@@ -1076,7 +1098,7 @@
 				</div>
 
 				<!-- Product list -->
-				<ul class="divide-y divide-gray-100 rounded-lg border border-gray-200">
+				<ul class="divide-y divide-border rounded-lg border">
 					{#each discoveredItems as item (item.stripeProductId)}
 						<li
 							class="flex items-center gap-3 px-4 py-3 {item.alreadyImported ? 'opacity-60' : ''}"
@@ -1087,7 +1109,7 @@
 								checked={selected.has(item.stripeProductId)}
 								disabled={item.alreadyImported}
 								onchange={() => toggleSelected(item.stripeProductId)}
-								class="h-4 w-4 rounded border-gray-300 accent-gray-900"
+								class="h-4 w-4 rounded accent-gray-900"
 							/>
 							{#if item.imageUrl}
 								<img
@@ -1096,24 +1118,22 @@
 									class="h-10 w-10 shrink-0 rounded object-cover"
 								/>
 							{:else}
-								<div
-									class="flex h-10 w-10 shrink-0 items-center justify-center rounded bg-gray-100"
-								>
-									<Icon icon="mdi:silverware-fork-knife" class="h-5 w-5 text-gray-400" />
+								<div class="flex h-10 w-10 shrink-0 items-center justify-center rounded bg-muted">
+									<Icon icon="mdi:silverware-fork-knife" class="h-5 w-5 text-muted-foreground" />
 								</div>
 							{/if}
 							<label for="discover-{item.stripeProductId}" class="min-w-0 flex-1 cursor-pointer">
-								<p class="truncate text-sm font-medium text-gray-900">{item.name}</p>
+								<p class="truncate text-sm font-medium text-foreground">{item.name}</p>
 								{#if item.description}
-									<p class="truncate text-xs text-gray-500">{item.description}</p>
+									<p class="truncate text-xs text-muted-foreground">{item.description}</p>
 								{/if}
 							</label>
 							<div class="flex shrink-0 flex-col items-end gap-1">
-								<span class="text-sm font-semibold text-gray-800"
+								<span class="text-sm font-semibold text-foreground"
 									>${(item.price / 100).toFixed(2)}</span
 								>
 								{#if item.alreadyImported}
-									<Badge class="bg-gray-100 text-gray-500">Already imported</Badge>
+									<Badge class="bg-muted text-muted-foreground">Already imported</Badge>
 								{/if}
 							</div>
 						</li>
@@ -1125,7 +1145,7 @@
 		<!-- Footer -->
 		{#if !discovering && !discoverResult}
 			<DialogFooter class="flex items-center justify-between sm:justify-between">
-				<p class="text-xs text-gray-500">
+				<p class="text-xs text-muted-foreground">
 					{selected.size} item{selected.size !== 1 ? 's' : ''} selected
 				</p>
 				<div class="flex gap-2">

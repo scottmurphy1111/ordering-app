@@ -184,7 +184,7 @@
 
 	<!-- Tooltip card -->
 	<div
-		class="fixed z-201 rounded-xl bg-white shadow-2xl {isMobile
+		class="fixed z-201 rounded-xl bg-background shadow-2xl {isMobile
 			? 'rounded-b-none p-5 pb-8'
 			: 'w-72 p-5'}"
 		style={tooltipStyle}
@@ -197,23 +197,23 @@
 					<span
 						class="h-1.5 w-1.5 rounded-full transition-colors {i === step
 							? 'bg-gray-900'
-							: 'bg-gray-200'}"
+							: 'bg-muted'}"
 					></span>
 				{/each}
 			</div>
-			<Button onclick={finish} variant="ghost" size="icon-sm" class="text-gray-300 hover:text-gray-500" aria-label="Close tour">
+			<Button onclick={finish} variant="ghost" size="icon-sm" class="text-muted-foreground/40 hover:text-muted-foreground" aria-label="Close tour">
 				<Icon icon="mdi:close" class="h-4 w-4" />
 			</Button>
 		</div>
 
-		<h3 class="mb-1.5 text-sm font-semibold text-gray-900">{steps[step].title}</h3>
-		<p class="mb-4 text-sm leading-relaxed text-gray-500">{steps[step].description}</p>
+		<h3 class="mb-1.5 text-sm font-semibold text-foreground">{steps[step].title}</h3>
+		<p class="mb-4 text-sm leading-relaxed text-muted-foreground">{steps[step].description}</p>
 
 		{#if steps[step].action}
 			<a
 				href={resolve(steps[step].action!.href as `/${string}`)}
 				onclick={finish}
-				class="mb-3 flex items-center gap-1.5 text-xs font-medium text-green-600 transition-colors hover:text-green-700"
+				class="mb-3 flex items-center gap-1.5 text-xs font-medium text-primary transition-colors hover:text-primary"
 			>
 				<Icon icon="mdi:arrow-right-circle-outline" class="h-4 w-4" />
 				{steps[step].action!.label}
@@ -226,7 +226,7 @@
 				disabled={step === 0}
 				variant="ghost"
 				size="sm"
-				class="gap-0.5 text-gray-400 hover:text-gray-600 disabled:pointer-events-none disabled:opacity-0"
+				class="gap-0.5 text-muted-foreground hover:text-muted-foreground disabled:pointer-events-none disabled:opacity-0"
 			>
 				<Icon icon="mdi:chevron-left" class="h-4 w-4" /> Back
 			</Button>

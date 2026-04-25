@@ -101,7 +101,7 @@
 	<title>Checkout — {data.tenant.name}</title>
 </svelte:head>
 
-<div class="min-h-screen bg-gray-50">
+<div class="min-h-screen bg-muted/50">
 	<!-- Branded header -->
 	<header class="border-b border-white/10" style="background-color: {backgroundColor};">
 		<div class="mx-auto flex max-w-4xl items-center gap-3 px-4 py-4">
@@ -122,7 +122,7 @@
 			<div class="space-y-4">
 				<Card class="shadow-sm">
 				<CardContent class="p-6">
-					<h2 class="mb-5 text-base font-semibold text-gray-900">Payment details</h2>
+					<h2 class="mb-5 text-base font-semibold text-foreground">Payment details</h2>
 
 					{#if !mountReady}
 						<div class="space-y-3">
@@ -140,7 +140,7 @@
 
 						{#if paymentError}
 							<div
-								class="mt-4 flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2.5 text-sm text-red-700"
+								class="mt-4 flex items-start gap-2 rounded-lg border border-destructive/20 bg-destructive/10 px-3 py-2.5 text-sm text-destructive"
 							>
 								<Icon icon="mdi:alert-circle-outline" class="mt-0.5 h-4 w-4 shrink-0" />
 								{paymentError}
@@ -168,8 +168,8 @@
 				</Card>
 
 				<div class="flex items-center justify-center gap-4 px-2">
-					<Icon icon="mdi:shield-check-outline" class="h-4 w-4 text-gray-400" />
-					<p class="text-xs text-gray-400">
+					<Icon icon="mdi:shield-check-outline" class="h-4 w-4 text-muted-foreground" />
+					<p class="text-xs text-muted-foreground">
 						Payments are encrypted and processed securely by Stripe. Your card details are never
 						stored by us.
 					</p>
@@ -181,7 +181,7 @@
 				<Card class="shadow-sm">
 				<CardContent class="p-6">
 					<div class="mb-5 flex items-center justify-between">
-						<h2 class="text-base font-semibold text-gray-900">Order summary</h2>
+						<h2 class="text-base font-semibold text-foreground">Order summary</h2>
 						<span
 							class="rounded-full px-2.5 py-0.5 text-xs font-medium"
 							style="background-color: {accentColor}1a; color: {accentColor};"
@@ -191,7 +191,7 @@
 					</div>
 
 					<!-- Items -->
-					<ul class="divide-y divide-gray-100">
+					<ul class="divide-y divide-border">
 						{#each data.order.items as item (item.itemId + item.name)}
 							<li class="flex items-start gap-3 py-3 first:pt-0">
 								<span
@@ -201,14 +201,14 @@
 									{item.quantity}
 								</span>
 								<div class="min-w-0 flex-1">
-									<p class="text-sm font-medium text-gray-900">{item.name}</p>
+									<p class="text-sm font-medium text-foreground">{item.name}</p>
 									{#if item.selectedModifiers.length}
-										<p class="mt-0.5 text-xs text-gray-400">
+										<p class="mt-0.5 text-xs text-muted-foreground">
 											{item.selectedModifiers.map((m) => m.name).join(', ')}
 										</p>
 									{/if}
 								</div>
-								<p class="text-sm font-medium text-gray-900">
+								<p class="text-sm font-medium text-foreground">
 									{fmt(
 										item.quantity *
 											(item.basePrice +
@@ -220,37 +220,37 @@
 					</ul>
 
 					<!-- Totals -->
-					<div class="mt-4 space-y-2 border-t border-gray-100 pt-4">
-						<div class="flex justify-between text-sm text-gray-600">
+					<div class="mt-4 space-y-2 border-t  pt-4">
+						<div class="flex justify-between text-sm text-muted-foreground">
 							<span>Subtotal</span>
 							<span>{fmt(data.order.subtotal)}</span>
 						</div>
 						{#if data.order.discount > 0}
-							<div class="flex justify-between text-sm text-green-600">
+							<div class="flex justify-between text-sm text-primary">
 								<span>Discount</span>
 								<span>-{fmt(data.order.discount)}</span>
 							</div>
 						{/if}
 						{#if data.order.deliveryFee > 0}
-							<div class="flex justify-between text-sm text-gray-600">
+							<div class="flex justify-between text-sm text-muted-foreground">
 								<span>Delivery fee</span>
 								<span>{fmt(data.order.deliveryFee)}</span>
 							</div>
 						{/if}
 						{#if data.order.tax > 0}
-							<div class="flex justify-between text-sm text-gray-600">
+							<div class="flex justify-between text-sm text-muted-foreground">
 								<span>Tax</span>
 								<span>{fmt(data.order.tax)}</span>
 							</div>
 						{/if}
 						{#if data.order.tip > 0}
-							<div class="flex justify-between text-sm text-gray-600">
+							<div class="flex justify-between text-sm text-muted-foreground">
 								<span>Tip</span>
 								<span>{fmt(data.order.tip)}</span>
 							</div>
 						{/if}
 						<div
-							class="flex justify-between border-t border-gray-200 pt-2 text-base font-semibold text-gray-900"
+							class="flex justify-between border-t  pt-2 text-base font-semibold text-foreground"
 						>
 							<span>Total</span>
 							<span>{fmt(data.order.total)}</span>
@@ -258,17 +258,17 @@
 					</div>
 
 					<!-- Customer info -->
-					<div class="mt-5 border-t border-gray-100 pt-4">
-						<p class="mb-1 text-xs font-medium tracking-wide text-gray-400 uppercase">Customer</p>
-						<p class="text-sm font-medium text-gray-800">{data.order.customerName}</p>
+					<div class="mt-5 border-t  pt-4">
+						<p class="mb-1 text-xs font-medium tracking-wide text-muted-foreground uppercase">Customer</p>
+						<p class="text-sm font-medium text-foreground">{data.order.customerName}</p>
 						{#if data.order.customerEmail}
-							<p class="text-xs text-gray-500">{data.order.customerEmail}</p>
+							<p class="text-xs text-muted-foreground">{data.order.customerEmail}</p>
 						{/if}
 					</div>
 
 					{#if data.order.notes}
-						<div class="mt-3 rounded-lg bg-gray-50 px-3 py-2">
-							<p class="text-xs text-gray-500">{data.order.notes}</p>
+						<div class="mt-3 rounded-lg bg-muted/50 px-3 py-2">
+							<p class="text-xs text-muted-foreground">{data.order.notes}</p>
 						</div>
 					{/if}
 				</CardContent>
@@ -277,7 +277,7 @@
 				<div class="mt-3 flex justify-center">
 					<a
 						href={resolve(`/${data.tenant.slug}/cart`)}
-						class="flex items-center gap-1 text-xs text-gray-400 transition-colors hover:text-gray-600"
+						class="flex items-center gap-1 text-xs text-muted-foreground transition-colors hover:text-muted-foreground"
 					>
 						<Icon icon="mdi:arrow-left" class="h-3.5 w-3.5" /> Back to cart
 					</a>

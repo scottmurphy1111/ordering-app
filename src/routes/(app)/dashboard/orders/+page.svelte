@@ -47,8 +47,8 @@
 		received: 'bg-blue-100 text-blue-700',
 		confirmed: 'bg-purple-100 text-purple-700',
 		preparing: 'bg-yellow-100 text-yellow-700',
-		ready: 'bg-green-100 text-green-700',
-		fulfilled: 'bg-gray-100 text-gray-600',
+		ready: 'bg-green-100 text-primary/90',
+		fulfilled: 'bg-muted text-muted-foreground',
 		cancelled: 'bg-red-100 text-red-600'
 	};
 	const nextStatus: Record<string, string> = {
@@ -61,31 +61,33 @@
 
 <div>
 	<div class="mb-6 flex items-center justify-between">
-		<h1 class="text-2xl font-bold text-gray-900">Orders</h1>
+		<h1 class="text-2xl font-bold text-foreground">Orders</h1>
 		<div class="flex items-center gap-2">
 			<a
 				href={resolve('/dashboard/orders/history')}
-				class="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-800"
+				class="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
 			>
 				<Icon icon="mdi:history" class="h-4 w-4" />
 				History
 			</a>
-			<span class="text-gray-200">|</span>
-			<span class="flex items-center gap-1.5 text-xs text-gray-400">
+			<span class="text-muted-foreground/30">|</span>
+			<span class="flex items-center gap-1.5 text-xs text-muted-foreground">
 				<span class="relative flex h-2 w-2">
 					<span
-						class="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-400 opacity-75"
+						class="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary/60 opacity-75"
 					></span>
-					<span class="relative inline-flex h-2 w-2 rounded-full bg-green-500"></span>
+					<span class="relative inline-flex h-2 w-2 rounded-full bg-primary/100"></span>
 				</span>
 				Live
 			</span>
-			<span class="text-sm text-gray-500">{data.orders.length} shown</span>
+			<span class="text-sm text-muted-foreground">{data.orders.length} shown</span>
 		</div>
 	</div>
 
 	{#if form?.error}
-		<div class="mb-4 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+		<div
+			class="mb-4 rounded-md border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive"
+		>
 			{form.error}
 		</div>
 	{/if}
@@ -96,15 +98,15 @@
 			<Button
 				href={resolve(s ? `/dashboard/orders?status=${s}` : '/dashboard/orders')}
 				variant={data.statusFilter === s ? 'default' : 'ghost'}
-				size="sm"
-			>{statusLabels[s]}</Button>
+				size="sm">{statusLabels[s]}</Button
+			>
 		{/each}
 	</div>
 
 	{#if data.orders.length === 0}
-		<div class="rounded-xl border border-dashed border-gray-300 p-12 text-center">
-			<p class="text-sm text-gray-400">
-				No orders{data.statusFilter ? ` with status "${data.statusFilter}"` : ''} yet.
+		<div class="rounded-xl border border-dashed p-12 text-center">
+			<p class="text-sm text-muted-foreground">
+				No orders{data.statusFilter ? ` with status"${data.statusFilter}"` : ''} yet.
 			</p>
 		</div>
 	{:else}
@@ -116,8 +118,7 @@
 							<div class="flex flex-wrap items-center gap-2">
 								<a
 									href={resolve(`/dashboard/orders/${order.id}`)}
-									class="font-mono text-sm font-semibold hover:underline"
-									>{order.orderNumber}</a
+									class="font-mono text-sm font-semibold hover:underline">{order.orderNumber}</a
 								>
 								<Badge class={statusColors[order.status] ?? 'bg-muted text-muted-foreground'}>
 									{order.status}
@@ -170,7 +171,7 @@
 							</p>
 							<a
 								href={resolve(`/dashboard/orders/${order.id}`)}
-								class="mt-1 inline-flex items-center gap-0.5 text-xs text-green-600 hover:underline"
+								class="mt-1 inline-flex items-center gap-0.5 text-xs text-primary hover:underline"
 							>
 								View <Icon icon="mdi:chevron-right" class="h-3 w-3" />
 							</a>
@@ -195,12 +196,11 @@
 										onclick={async (e) => {
 											e.preventDefault();
 											const btn = e.currentTarget as HTMLButtonElement;
-											if (await confirmDialog('Cancel this order?'))
-												btn.form?.requestSubmit();
+											if (await confirmDialog('Cancel this order?')) btn.form?.requestSubmit();
 										}}
 										variant="ghost"
 										size="sm"
-										class="text-red-600 hover:bg-red-50 hover:text-red-500"
+										class="text-red-600 hover:bg-destructive/10 hover:text-red-500"
 									>
 										Cancel order
 									</Button>

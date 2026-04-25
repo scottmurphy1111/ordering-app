@@ -120,23 +120,23 @@
 
 {#snippet sidebarContent()}
 	<!-- Logo / Tenant Name -->
-	<div class="flex items-center justify-between border-b border-gray-700 px-4 py-4">
+	<div class="flex items-center justify-between border-b border-white/10 px-4 py-4">
 		<a href={resolve('/tenants')} class="flex min-w-0 flex-1 items-center gap-3">
 			{#if data.tenant?.logoUrl}
 				<img
 					src={data.tenant.logoUrl}
 					alt={data.tenant.name}
-					class="h-9 w-9 shrink-0 rounded-md bg-white/10 object-contain p-0.5"
+					class="h-9 w-9 shrink-0 rounded-md bg-background/10 object-contain p-0.5"
 				/>
 			{/if}
 			<div class="min-w-0">
-				<p class="text-xs font-medium tracking-wider text-gray-400 uppercase">
-					Order<span class="text-green-400">Local</span>
+				<p class="text-xs font-medium tracking-wider text-muted-foreground uppercase">
+					Order<span class="text-primary">Local</span>
 				</p>
 				{#if data.tenant}
 					<p class="mt-0.5 truncate text-sm font-semibold text-white">{data.tenant.name}</p>
 				{:else}
-					<p class="mt-0.5 text-sm text-gray-500">No tenant selected</p>
+					<p class="mt-0.5 text-sm text-muted-foreground">No tenant selected</p>
 				{/if}
 			</div>
 		</a>
@@ -150,8 +150,8 @@
 				data-tour={item.tour}
 				class="flex items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium transition-colors
 					{isActive(item.href)
-					? 'bg-green-600 text-white'
-					: 'text-gray-400 hover:bg-gray-800 hover:text-white'}"
+					? 'bg-primary text-white'
+					: 'text-muted-foreground hover:bg-gray-800 hover:text-white'}"
 			>
 				<Icon icon={item.icon} class="h-4 w-4 shrink-0" />
 				{item.label}
@@ -160,11 +160,11 @@
 	</nav>
 
 	<!-- User + Switch Tenant -->
-	<div class="space-y-2 border-t border-gray-700 px-4 py-3">
+	<div class="space-y-2 border-t border-white/10 px-4 py-3">
 		{#if data.hasMultipleTenants}
 			<a
 				href={resolve('/tenants')}
-				class="flex items-center gap-1.5 text-xs text-gray-400 transition-colors hover:text-white"
+				class="flex items-center gap-1.5 text-xs text-muted-foreground transition-colors hover:text-white"
 			>
 				<Icon icon="mdi:swap-horizontal" class="h-3.5 w-3.5" />
 				Switch tenant
@@ -172,12 +172,12 @@
 		{/if}
 		<a
 			href={resolve('/dashboard/settings/profile')}
-			class="flex items-center gap-1.5 text-xs text-gray-400 transition-colors hover:text-white"
+			class="flex items-center gap-1.5 text-xs text-muted-foreground transition-colors hover:text-white"
 		>
 			<Icon icon="mdi:account-circle-outline" class="h-3.5 w-3.5" />
 			Account
 		</a>
-		<p class="truncate text-xs text-gray-500">{data.user.email}</p>
+		<p class="truncate text-xs text-muted-foreground">{data.user.email}</p>
 		<Button
 			onclick={() =>
 				signOut({
@@ -189,37 +189,39 @@
 				})}
 			variant="ghost"
 			size="sm"
-			class="text-xs text-gray-400 hover:bg-white/10 hover:text-red-400"
+			class="text-xs text-muted-foreground hover:bg-background/10 hover:text-red-400"
 		>
 			Sign out
 		</Button>
 	</div>
 {/snippet}
 
-<div class="flex h-screen bg-gray-50">
+<div class="flex h-screen bg-muted/50">
 	<!-- Mobile sidebar: Sheet -->
 	<Sheet bind:open={sidebarOpen}>
-		<SheetContent side="left" class="w-64 p-0 bg-gray-900 text-white border-none flex flex-col" showCloseButton={false}>
+		<SheetContent
+			side="left"
+			class="flex w-64 flex-col border-none bg-gray-900 p-0 text-white"
+			showCloseButton={false}
+		>
 			{@render sidebarContent()}
 		</SheetContent>
 	</Sheet>
 
 	<!-- Desktop sidebar: always-visible -->
-	<aside class="hidden md:flex w-56 flex-col bg-gray-900 text-white">
+	<aside class="hidden w-56 flex-col bg-gray-900 text-white md:flex">
 		{@render sidebarContent()}
 	</aside>
 
 	<!-- Main content -->
 	<main class="flex flex-1 flex-col overflow-y-auto">
 		<!-- Mobile top bar -->
-		<header
-			class="flex items-center gap-3 border-b border-gray-700 bg-gray-900 px-4 py-3 md:hidden"
-		>
+		<header class="flex items-center gap-3 border-b bg-gray-900 px-4 py-3 md:hidden">
 			<Button
 				onclick={() => (sidebarOpen = true)}
 				variant="ghost"
 				size="icon-sm"
-				class="shrink-0 text-gray-300 hover:text-white"
+				class="shrink-0 text-muted-foreground/40 hover:text-white"
 				aria-label="Open menu"
 			>
 				<Icon icon="mdi:menu" class="h-6 w-6" />
@@ -229,12 +231,12 @@
 					<img
 						src={data.tenant.logoUrl}
 						alt={data.tenant.name}
-						class="h-8 w-8 shrink-0 rounded-md bg-white/10 object-contain p-0.5"
+						class="h-8 w-8 shrink-0 rounded-md bg-background/10 object-contain p-0.5"
 					/>
 				{/if}
 				<div class="min-w-0">
-					<p class="text-xs font-medium tracking-wide text-gray-400 uppercase">
-						Order<span class="text-green-400">Local</span>
+					<p class="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+						Order<span class="text-primary">Local</span>
 					</p>
 					{#if data.tenant}
 						<p class="truncate text-sm leading-tight font-semibold text-white">
@@ -248,12 +250,12 @@
 		<div class="mx-auto w-full max-w-5xl flex-1 px-4 py-6 sm:px-6 sm:py-8">
 			{@render children()}
 		</div>
-		<footer class="border-t border-gray-200 bg-white px-6 py-4">
+		<footer class="border-t bg-background px-6 py-4">
 			<div class="mx-auto flex max-w-5xl items-center justify-center gap-4">
-				<p class="text-xs font-semibold tracking-wide text-gray-400 uppercase">
-					Order<span class="text-green-600">Local</span>
+				<p class="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+					Order<span class="text-primary">Local</span>
 				</p>
-				<p class="text-xs text-gray-400">
+				<p class="text-xs text-muted-foreground">
 					&copy; {new Date().getFullYear()} All rights reserved.
 				</p>
 			</div>
@@ -264,14 +266,14 @@
 <!-- New order toast -->
 {#if newOrderToast}
 	<div
-		class="fixed right-5 bottom-5 z-300 flex items-start gap-3 rounded-xl border border-green-200 bg-white px-4 py-3.5 shadow-xl"
+		class="fixed right-5 bottom-5 z-300 flex items-start gap-3 rounded-xl border border-primary/20 bg-background px-4 py-3.5 shadow-xl"
 	>
 		<div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-green-100">
-			<Icon icon="mdi:bell-ring-outline" class="h-5 w-5 text-green-600" />
+			<Icon icon="mdi:bell-ring-outline" class="h-5 w-5 text-primary" />
 		</div>
 		<div class="min-w-0">
-			<p class="text-sm font-semibold text-gray-900">New order!</p>
-			<p class="text-xs text-gray-500">
+			<p class="text-sm font-semibold text-foreground">New order!</p>
+			<p class="text-xs text-muted-foreground">
 				{newOrderToast.orderNumber}{newOrderToast.customerName
 					? ` · ${newOrderToast.customerName}`
 					: ''} · ${(newOrderToast.total / 100).toFixed(2)}
@@ -281,7 +283,7 @@
 				onclick={() => {
 					newOrderToast = null;
 				}}
-				class="mt-1 inline-block text-xs font-medium text-green-600 hover:text-green-700"
+				class="mt-1 inline-block text-xs font-medium text-primary hover:text-primary"
 			>
 				View orders
 			</a>
@@ -292,7 +294,7 @@
 			}}
 			variant="ghost"
 			size="icon-sm"
-			class="shrink-0 text-gray-300 hover:text-gray-500"
+			class="shrink-0 text-muted-foreground/40 hover:text-muted-foreground"
 		>
 			<Icon icon="mdi:close" class="h-4 w-4" />
 		</Button>

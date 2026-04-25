@@ -1,41 +1,41 @@
 <script lang="ts">
-	import { resolve } from '$app/paths';
-	import Icon from '@iconify/svelte';
+	import { resolve } from'$app/paths';
+	import Icon from'@iconify/svelte';
 
 	const integrationsHref = resolve('/dashboard/settings/integrations');
-	const stripeHref = 'https://stripe.com';
-	const stripeApiKeysHref = 'https://dashboard.stripe.com/apikeys';
+	const stripeHref ='https://stripe.com';
+	const stripeApiKeysHref ='https://dashboard.stripe.com/apikeys';
 
 	const steps = [
 		{
 			number: 1,
-			title: 'Create a Stripe account',
+			title:'Create a Stripe account',
 			description:
 				"Go to stripe.com and sign up. You'll need an email address and a password to get started."
 		},
 		{
 			number: 2,
-			title: 'Verify your identity',
+			title:'Verify your identity',
 			description:
 				"Stripe requires identity verification before you can accept live payments. You'll be prompted to provide your legal name, date of birth, and the last 4 digits of your SSN (or equivalent for your country). This is standard for any payment processor."
 		},
 		{
 			number: 3,
-			title: 'Add your bank account',
+			title:'Add your bank account',
 			description:
 				'To receive payouts, connect a bank account under Settings → Bank accounts and scheduling in your Stripe dashboard. Payouts typically arrive within 2 business days.'
 		},
 		{
 			number: 4,
-			title: 'Get your secret API key',
+			title:'Get your secret API key',
 			description:
 				"In your Stripe dashboard, go to Developers → API keys. You'll see a Publishable key and a Secret key. Copy the Secret key — it starts with sk_live_ for live mode or sk_test_ for test mode."
 		},
 		{
 			number: 5,
-			title: 'Paste it into OrderLocal',
+			title:'Paste it into OrderLocal',
 			description:
-				'Go back to Integrations, click "Connect Stripe", and paste your secret key. We\'ll verify it immediately. Use sk_test_ keys while testing and swap to sk_live_ when you\'re ready to go live.'
+				'Go back to Integrations, click"Connect Stripe", and paste your secret key. We\'ll verify it immediately. Use sk_test_ keys while testing and swap to sk_live_ when you\'re ready to go live.'
 		}
 	];
 </script>
@@ -44,7 +44,7 @@
 	<div class="mb-2">
 		<a
 			href={integrationsHref}
-			class="inline-flex items-center gap-1 text-sm text-gray-500 transition-colors hover:text-gray-800"
+			class="inline-flex items-center gap-1 text-sm text-muted-foreground transition-colors hover:text-foreground"
 		>
 			<Icon icon="mdi:arrow-left" class="h-4 w-4" /> Integrations
 		</a>
@@ -60,8 +60,8 @@
 				</svg>
 			</div>
 			<div>
-				<h1 class="text-2xl font-bold text-gray-900">Setting up Stripe</h1>
-				<p class="mt-0.5 text-sm text-gray-500">Follow these steps to start accepting payments.</p>
+				<h1 class="text-2xl font-bold text-foreground">Setting up Stripe</h1>
+				<p class="mt-0.5 text-sm text-muted-foreground">Follow these steps to start accepting payments.</p>
 			</div>
 		</div>
 	</div>
@@ -69,21 +69,21 @@
 	<!-- Steps -->
 	<div class="space-y-4">
 		{#each steps as step (step.number)}
-			<div class="flex gap-4 rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+			<div class="flex gap-4 rounded-xl border bg-background p-5 shadow-sm">
 				<div
 					class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gray-900 text-xs font-bold text-white"
 				>
 					{step.number}
 				</div>
 				<div class="min-w-0 flex-1">
-					<p class="font-semibold text-gray-900">{step.title}</p>
-					<p class="mt-1 text-sm leading-relaxed text-gray-500">{step.description}</p>
+					<p class="font-semibold text-foreground">{step.title}</p>
+					<p class="mt-1 text-sm leading-relaxed text-muted-foreground">{step.description}</p>
 					{#if step.number === 1}
 						<a
 							href={stripeHref}
 							target="_blank"
 							rel="noopener noreferrer"
-							class="mt-3 inline-flex items-center gap-1.5 rounded-md border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 transition-colors hover:border-gray-400 hover:bg-gray-100"
+							class="mt-3 inline-flex items-center gap-1.5 rounded-md border bg-background px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:border-gray-400 hover:bg-muted"
 						>
 							Go to stripe.com
 							<Icon icon="mdi:open-in-new" class="h-3.5 w-3.5" />
@@ -93,7 +93,7 @@
 							href={stripeApiKeysHref}
 							target="_blank"
 							rel="noopener noreferrer"
-							class="mt-3 inline-flex items-center gap-1.5 rounded-md border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 transition-colors hover:border-gray-400 hover:bg-gray-100"
+							class="mt-3 inline-flex items-center gap-1.5 rounded-md border bg-background px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:border-gray-400 hover:bg-muted"
 						>
 							Open Stripe API keys
 							<Icon icon="mdi:open-in-new" class="h-3.5 w-3.5" />

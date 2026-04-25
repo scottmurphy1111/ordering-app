@@ -85,18 +85,18 @@
 							<Icon icon="mdi:check-circle" class="h-8 w-8" style="color: var(--background-color);" />
 						</div>
 					</div>
-					<h1 class="text-xl font-bold text-gray-900">Payment confirmed!</h1>
-					<p class="mt-1 text-sm text-gray-500">
+					<h1 class="text-xl font-bold text-foreground">Payment confirmed!</h1>
+					<p class="mt-1 text-sm text-muted-foreground">
 						Thank you{order.customerName ? `, ${order.customerName}` : ''}. Your order is in.
 					</p>
 				{:else if isCancelled}
 					<div class="mb-3 flex justify-center">
-						<div class="flex h-14 w-14 items-center justify-center rounded-full bg-red-50">
+						<div class="flex h-14 w-14 items-center justify-center rounded-full bg-destructive/10">
 							<Icon icon="mdi:close-circle" class="h-8 w-8 text-red-400" />
 						</div>
 					</div>
-					<h1 class="text-xl font-bold text-gray-900">Order cancelled</h1>
-					<p class="mt-1 text-sm text-gray-500">
+					<h1 class="text-xl font-bold text-foreground">Order cancelled</h1>
+					<p class="mt-1 text-sm text-muted-foreground">
 						This order has been cancelled. Contact the vendor with any questions.
 					</p>
 				{:else if order.paymentStatus === 'pending'}
@@ -105,23 +105,23 @@
 							<Icon icon="mdi:clock-outline" class="h-8 w-8 text-yellow-500" />
 						</div>
 					</div>
-					<h1 class="text-xl font-bold text-gray-900">Awaiting payment</h1>
-					<p class="mt-1 text-sm text-gray-500">
+					<h1 class="text-xl font-bold text-foreground">Awaiting payment</h1>
+					<p class="mt-1 text-sm text-muted-foreground">
 						We'll update this page once your payment is confirmed.
 					</p>
 				{:else}
 					<div class="mb-3 flex justify-center">
-						<div class="flex h-14 w-14 items-center justify-center rounded-full bg-red-50">
+						<div class="flex h-14 w-14 items-center justify-center rounded-full bg-destructive/10">
 							<Icon icon="mdi:alert-circle-outline" class="h-8 w-8 text-red-400" />
 						</div>
 					</div>
-					<h1 class="text-xl font-bold text-gray-900">Payment issue</h1>
-					<p class="mt-1 text-sm text-gray-500">Your payment could not be processed.</p>
+					<h1 class="text-xl font-bold text-foreground">Payment issue</h1>
+					<p class="mt-1 text-sm text-muted-foreground">Your payment could not be processed.</p>
 				{/if}
 
 				<div class="mt-3 flex flex-wrap items-center justify-center gap-2">
-					<span class="font-mono text-sm font-semibold text-gray-700">{order.orderNumber}</span>
-					<span class="rounded-full bg-gray-100 px-2.5 py-0.5 text-xs text-gray-500 capitalize">
+					<span class="font-mono text-sm font-semibold text-muted-foreground">{order.orderNumber}</span>
+					<span class="rounded-full bg-muted px-2.5 py-0.5 text-xs text-muted-foreground capitalize">
 						{order.type}
 					</span>
 					{#if scheduledLabel}
@@ -141,9 +141,9 @@
 			<Card class="shadow-sm">
 				<CardContent class="p-5">
 					<div class="mb-4 flex items-center justify-between">
-						<h2 class="text-sm font-semibold text-gray-800">Order status</h2>
+						<h2 class="text-sm font-semibold text-foreground">Order status</h2>
 						{#if !isDone}
-							<span class="flex items-center gap-1 text-xs text-gray-400">
+							<span class="flex items-center gap-1 text-xs text-muted-foreground">
 								<Icon icon="mdi:refresh" class="h-3.5 w-3.5" /> Auto-refreshing
 							</span>
 						{/if}
@@ -151,7 +151,7 @@
 
 					<div class="relative flex items-start justify-between">
 						<!-- connector line behind steps -->
-						<div class="absolute top-5 right-0 left-0 h-0.5 bg-gray-200" aria-hidden="true">
+						<div class="absolute top-5 right-0 left-0 h-0.5 bg-muted" aria-hidden="true">
 							<div
 								class="h-full transition-all duration-500"
 								style="background-color: var(--background-color); width: {stepIndex >= 0
@@ -198,11 +198,11 @@
 							Your order is ready! Head over to pick it up.
 						</div>
 					{:else if order.status === 'preparing'}
-						<p class="mt-4 text-center text-xs text-gray-400">
+						<p class="mt-4 text-center text-xs text-muted-foreground">
 							Hang tight — your order is being prepared.
 						</p>
 					{:else if order.status === 'received'}
-						<p class="mt-4 text-center text-xs text-gray-400">
+						<p class="mt-4 text-center text-xs text-muted-foreground">
 							Your order has been received and is awaiting confirmation.
 						</p>
 					{/if}
@@ -212,27 +212,27 @@
 
 		<!-- Items -->
 		<Card class="shadow-sm">
-			<CardHeader class="border-b border-gray-100 px-4 py-3">
-				<CardTitle class="text-sm font-semibold text-gray-800">Items ordered</CardTitle>
+			<CardHeader class="border-b  px-4 py-3">
+				<CardTitle class="text-sm font-semibold text-foreground">Items ordered</CardTitle>
 			</CardHeader>
 			<CardContent class="p-0">
 				{#each data.items as item, i (item.id)}
 					<div
 						class="flex items-start justify-between gap-3 px-4 py-3 {i > 0
-							? 'border-t border-gray-100'
+							? 'border-t '
 							: ''}"
 					>
 						<div class="min-w-0 flex-1">
-							<p class="text-sm font-medium text-gray-900">{item.name}</p>
+							<p class="text-sm font-medium text-foreground">{item.name}</p>
 							{#if Array.isArray(item.selectedModifiers) && (item.selectedModifiers as { name: string }[]).length > 0}
-								<p class="mt-0.5 text-xs text-gray-400">
+								<p class="mt-0.5 text-xs text-muted-foreground">
 									{(item.selectedModifiers as { name: string }[]).map((m) => m.name).join(', ')}
 								</p>
 							{/if}
 						</div>
 						<div class="shrink-0 text-right">
-							<p class="text-sm text-gray-700">×{item.quantity}</p>
-							<p class="text-xs text-gray-400">
+							<p class="text-sm text-muted-foreground">×{item.quantity}</p>
+							<p class="text-xs text-muted-foreground">
 								${((item.unitPrice * item.quantity) / 100).toFixed(2)}
 							</p>
 						</div>
@@ -244,28 +244,28 @@
 		<!-- Totals -->
 		<Card class="shadow-sm">
 			<CardContent class="space-y-1.5 p-4 text-sm">
-				<div class="flex justify-between text-gray-600">
+				<div class="flex justify-between text-muted-foreground">
 					<span>Subtotal</span>
 					<span>${(order.subtotal / 100).toFixed(2)}</span>
 				</div>
-				<div class="flex justify-between text-gray-600">
+				<div class="flex justify-between text-muted-foreground">
 					<span>Tax</span>
 					<span>${(order.tax / 100).toFixed(2)}</span>
 				</div>
 				{#if order.deliveryFee && order.deliveryFee > 0}
-					<div class="flex justify-between text-gray-600">
+					<div class="flex justify-between text-muted-foreground">
 						<span>Delivery fee</span>
 						<span>${(order.deliveryFee / 100).toFixed(2)}</span>
 					</div>
 				{/if}
 				{#if order.tip && order.tip > 0}
-					<div class="flex justify-between text-gray-600">
+					<div class="flex justify-between text-muted-foreground">
 						<span>Tip</span>
 						<span>${(order.tip / 100).toFixed(2)}</span>
 					</div>
 				{/if}
 				{#if order.discount && order.discount > 0}
-					<div class="flex justify-between font-medium text-green-600">
+					<div class="flex justify-between font-medium text-primary">
 						<span class="flex items-center gap-1">
 							<Icon icon="mdi:ticket-percent-outline" class="h-3.5 w-3.5" />
 							Promo{order.promoCode ? ` (${order.promoCode})` : ''}
@@ -274,7 +274,7 @@
 					</div>
 				{/if}
 				<div
-					class="mt-1.5 flex justify-between border-t border-gray-100 pt-1.5 font-semibold"
+					class="mt-1.5 flex justify-between border-t  pt-1.5 font-semibold"
 					style="color: var(--background-color);"
 				>
 					<span>Total</span>
@@ -284,7 +284,7 @@
 		</Card>
 
 		{#if order.notes}
-			<div class="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-600">
+			<div class="rounded-lg border  bg-muted/50 px-4 py-3 text-sm text-muted-foreground">
 				<span class="font-medium">Notes: </span>{order.notes}
 			</div>
 		{/if}

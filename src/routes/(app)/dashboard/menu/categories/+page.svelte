@@ -98,12 +98,12 @@
 		<div>
 			<a
 				href={resolve('/dashboard/menu')}
-				class="mb-1 inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700"
+				class="mb-1 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-muted-foreground"
 			>
 				<Icon icon="mdi:chevron-left" class="h-4 w-4" /> Menu
 			</a>
-			<h1 class="text-2xl font-bold text-gray-900">Categories</h1>
-			<p class="mt-0.5 text-sm text-gray-500">Group your menu items into categories.</p>
+			<h1 class="text-2xl font-bold text-foreground">Categories</h1>
+			<p class="mt-0.5 text-sm text-muted-foreground">Group your menu items into categories.</p>
 		</div>
 		<div class="flex flex-wrap gap-2 self-start sm:self-auto">
 			{#if !sortMode}
@@ -137,12 +137,16 @@
 	</div>
 
 	{#if form?.error}
-		<div class="mb-4 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+		<div
+			class="mb-4 rounded-md border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive"
+		>
 			{form.error}
 		</div>
 	{/if}
 	{#if saveError}
-		<div class="mb-4 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+		<div
+			class="mb-4 rounded-md border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive"
+		>
 			{saveError}
 		</div>
 	{/if}
@@ -157,9 +161,9 @@
 					showForm = false;
 				};
 			}}
-			class="mb-6 space-y-3 rounded-lg border border-gray-200 bg-white p-4 shadow-sm"
+			class="mb-6 space-y-3 rounded-lg border bg-background p-4 shadow-sm"
 		>
-			<h2 class="font-medium text-gray-800">New category</h2>
+			<h2 class="font-medium text-foreground">New category</h2>
 			<div>
 				<Label class="mb-1 block" for="name">Name</Label>
 				<Input
@@ -180,9 +184,9 @@
 					name="isActive"
 					id="new-active"
 					bind:checked={newIsActive}
-					class="h-4 w-4 rounded border-gray-300"
+					class="h-4 w-4 rounded"
 				/>
-				<label class="cursor-pointer text-sm text-gray-700" for="new-active">Active</label>
+				<label class="cursor-pointer text-sm text-muted-foreground" for="new-active">Active</label>
 			</div>
 			<div class="flex gap-2">
 				<Button type="submit" variant="default">Create</Button>
@@ -192,34 +196,36 @@
 	{/if}
 
 	{#if data.categories.length === 0}
-		<div class="rounded-xl border border-dashed border-gray-300 p-12 text-center">
-			<p class="text-sm text-gray-400">
+		<div class="rounded-xl border border-dashed p-12 text-center">
+			<p class="text-sm text-muted-foreground">
 				No categories yet. Create one to organize your menu items.
 			</p>
 		</div>
 	{:else if sortMode}
 		<!-- ── Drag-and-drop reorder list ──────────────────────────── -->
 		<Card class="shadow-sm">
-			<CardContent class="border-b border-gray-100 py-3">
-				<p class="text-sm text-gray-500">
+			<CardContent class="border-b py-3">
+				<p class="text-sm text-muted-foreground">
 					Drag rows to reorder, then click <strong>Save order</strong>.
 				</p>
 			</CardContent>
-			<ul bind:this={sortListEl} class="divide-y divide-gray-100">
+			<ul bind:this={sortListEl} class="divide-y divide-border">
 				{#each data.categories as cat (cat.id)}
 					<li
 						data-id={cat.id}
-						class="flex items-center gap-3 bg-white px-4 py-3 transition-colors hover:bg-gray-50"
+						class="flex items-center gap-3 bg-background px-4 py-3 transition-colors hover:bg-muted/50"
 					>
 						<span
-							class="drag-handle cursor-grab text-gray-300 transition-colors hover:text-gray-500 active:cursor-grabbing"
+							class="drag-handle cursor-grab text-muted-foreground/40 transition-colors hover:text-muted-foreground active:cursor-grabbing"
 						>
 							<Icon icon="mdi:drag-horizontal-variant" class="h-5 w-5" />
 						</span>
-						<span class="flex-1 text-sm font-medium text-gray-900">{cat.name}</span>
-						<span class="text-xs text-gray-400">{cat.itemCount} items</span>
+						<span class="flex-1 text-sm font-medium text-foreground">{cat.name}</span>
+						<span class="text-xs text-muted-foreground">{cat.itemCount} items</span>
 						<Badge
-							class={cat.isActive ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}
+							class={cat.isActive
+								? 'bg-green-100 text-primary/90'
+								: 'bg-muted text-muted-foreground'}
 						>
 							{cat.isActive ? 'Active' : 'Hidden'}
 						</Badge>
@@ -238,7 +244,7 @@
 								<TableHead class="px-4 py-2.5">
 									<button
 										onclick={() => sortBy(col)}
-										class="inline-flex items-center gap-1 font-medium text-gray-500 transition-colors hover:text-gray-800"
+										class="inline-flex items-center gap-1 font-medium text-muted-foreground transition-colors hover:text-foreground"
 									>
 										{label}
 										<Icon
@@ -247,12 +253,14 @@
 													? 'mdi:chevron-up'
 													: 'mdi:chevron-down'
 												: 'mdi:unfold-more-horizontal'}
-											class="h-3.5 w-3.5 {sortCol === col ? 'text-gray-800' : 'text-gray-300'}"
+											class="h-3.5 w-3.5 {sortCol === col
+												? 'text-foreground'
+												: 'text-muted-foreground/40'}"
 										/>
 									</button>
 								</TableHead>
 							{/each}
-							<TableHead class="px-4 py-2.5 text-gray-500">Actions</TableHead>
+							<TableHead class="px-4 py-2.5 text-muted-foreground">Actions</TableHead>
 						</TableRow>
 					</TableHeader>
 					<TableBody>
@@ -261,11 +269,13 @@
 								<TableCell class="px-4 py-3">
 									<a
 										href={resolve(`/dashboard/menu/categories/${cat.id}` as `/${string}`)}
-										class="font-medium text-gray-900 hover:underline">{cat.name}</a
+										class="font-medium text-foreground hover:underline">{cat.name}</a
 									>
 								</TableCell>
-								<TableCell class="px-4 py-3 text-gray-500">{cat.description ?? '—'}</TableCell>
-								<TableCell class="px-4 py-3 text-gray-500">{cat.itemCount}</TableCell>
+								<TableCell class="px-4 py-3 text-muted-foreground"
+									>{cat.description ?? '—'}</TableCell
+								>
+								<TableCell class="px-4 py-3 text-muted-foreground">{cat.itemCount}</TableCell>
 								<TableCell class="px-4 py-3">
 									<form method="post" action="?/toggleActive" use:enhance>
 										<input type="hidden" name="id" value={cat.id} />
@@ -273,8 +283,8 @@
 										<button
 											type="submit"
 											class="rounded-full px-2 py-0.5 text-xs font-medium transition-colors {cat.isActive
-												? 'bg-green-100 text-green-700 hover:bg-green-200'
-												: 'bg-gray-100 text-gray-500 hover:bg-gray-200'}"
+												? 'bg-green-100 text-primary/90 hover:bg-primary/20'
+												: 'bg-muted text-muted-foreground hover:bg-muted'}"
 										>
 											{cat.isActive ? 'Active' : 'Hidden'}
 										</button>
@@ -284,7 +294,7 @@
 									<div class="flex items-center gap-3">
 										<a
 											href={resolve(`/dashboard/menu/categories/${cat.id}`)}
-											class="text-xs font-medium text-gray-600 transition-colors hover:text-gray-900"
+											class="text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
 											>Edit</a
 										>
 										<form method="post" action="?/delete" use:enhance>
@@ -298,7 +308,7 @@
 												}}
 												variant="ghost"
 												size="sm"
-												class="text-red-500 hover:text-red-700">Delete</Button
+												class="text-destructive hover:text-destructive/80">Delete</Button
 											>
 										</form>
 									</div>

@@ -7,7 +7,13 @@
 	import { Button } from '$lib/components/ui/button';
 	import { Input } from '$lib/components/ui/input';
 	import { Label } from '$lib/components/ui/label';
-	import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '$lib/components/ui/select';
+	import {
+		Select,
+		SelectTrigger,
+		SelectContent,
+		SelectItem,
+		SelectValue
+	} from '$lib/components/ui/select';
 	import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '$lib/components/ui/card';
 
 	let { data, form: _form }: { data: PageData; form: ActionData } = $props();
@@ -59,22 +65,26 @@
 	<div class="mb-6">
 		<a
 			href={resolve('/dashboard/settings')}
-			class="mb-1 inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700"
+			class="mb-1 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-muted-foreground"
 		>
 			<Icon icon="mdi:chevron-left" class="h-4 w-4" /> Settings
 		</a>
-		<h1 class="text-2xl font-bold text-gray-900">General</h1>
-		<p class="mt-0.5 text-sm text-gray-500">Your business details and contact information.</p>
+		<h1 class="text-2xl font-bold text-foreground">General</h1>
+		<p class="mt-0.5 text-sm text-muted-foreground">
+			Your business details and contact information.
+		</p>
 	</div>
 
 	{#if form?.error}
-		<div class="mb-4 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+		<div
+			class="mb-4 rounded-md border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive"
+		>
 			{form.error}
 		</div>
 	{/if}
 	{#if form?.success}
 		<div
-			class="mb-4 rounded-md border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700"
+			class="mb-4 rounded-md border border-primary/20 bg-primary/5 px-4 py-3 text-sm text-primary/90"
 		>
 			Changes saved.
 		</div>
@@ -97,13 +107,7 @@
 				<div class="grid gap-4 sm:grid-cols-2">
 					<div>
 						<Label class="mb-1 block" for="name">Business name *</Label>
-						<Input
-							id="name"
-							name="name"
-							type="text"
-							required
-							value={data.info?.name ?? ''}
-						/>
+						<Input id="name" name="name" type="text" required value={data.info?.name ?? ''} />
 					</div>
 					<div>
 						<Label class="mb-1 block" for="legalName">Legal name</Label>
@@ -163,10 +167,10 @@
 				<div>
 					<Label class="mb-1 block" for="website">Website</Label>
 					<div
-						class="flex rounded-md border border-gray-300 focus-within:border-green-500 focus-within:ring-1 focus-within:ring-green-500"
+						class="flex rounded-md border focus-within:border-ring focus-within:ring-1 focus-within:ring-ring"
 					>
 						<span
-							class="flex items-center rounded-l-md border-r border-gray-300 bg-gray-50 px-3 text-sm text-gray-500"
+							class="flex items-center rounded-l-md border-r bg-muted/50 px-3 text-sm text-muted-foreground"
 							>https://</span
 						>
 						<Input
@@ -201,12 +205,7 @@
 				<div class="grid gap-4 sm:grid-cols-3">
 					<div>
 						<Label class="mb-1 block" for="city">City</Label>
-						<Input
-							id="city"
-							name="city"
-							type="text"
-							value={address?.city ?? ''}
-						/>
+						<Input id="city" name="city" type="text" value={address?.city ?? ''} />
 					</div>
 					<div>
 						<Label class="mb-1 block" for="state">State</Label>
@@ -220,12 +219,7 @@
 					</div>
 					<div>
 						<Label class="mb-1 block" for="zip">ZIP</Label>
-						<Input
-							id="zip"
-							name="zip"
-							type="text"
-							value={address?.zip ?? ''}
-						/>
+						<Input id="zip" name="zip" type="text" value={address?.zip ?? ''} />
 					</div>
 				</div>
 				<div class="sm:w-1/3">
@@ -249,7 +243,7 @@
 	<!-- Delivery — separate form/action -->
 	{#if form?.deliverySuccess}
 		<div
-			class="mt-4 rounded-md border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700"
+			class="mt-4 rounded-md border border-primary/20 bg-primary/5 px-4 py-3 text-sm text-primary/90"
 		>
 			Delivery settings saved.
 		</div>
@@ -267,25 +261,25 @@
 				<CardTitle>Delivery</CardTitle>
 			</CardHeader>
 			<CardContent class="space-y-4">
-				<p class="text-xs text-gray-500">
+				<p class="text-xs text-muted-foreground">
 					Enable delivery as an order type at checkout and set a flat delivery fee.
 				</p>
 				<label class="flex cursor-pointer items-center gap-3">
 					<input
 						type="checkbox"
 						name="enableDelivery"
-						class="h-4 w-4 rounded border-gray-300 text-green-600"
+						class="h-4 w-4 rounded text-primary"
 						checked={savedDelivery.enableDelivery ?? false}
 					/>
-					<span class="text-sm font-medium text-gray-700">Enable delivery orders</span>
+					<span class="text-sm font-medium text-muted-foreground">Enable delivery orders</span>
 				</label>
 				<div class="sm:w-48">
 					<Label class="mb-1 block" for="deliveryFee">Delivery fee</Label>
 					<div
-						class="flex rounded-md border border-gray-300 focus-within:border-green-500 focus-within:ring-1 focus-within:ring-green-500"
+						class="flex rounded-md border focus-within:border-ring focus-within:ring-1 focus-within:ring-ring"
 					>
 						<span
-							class="flex items-center rounded-l-md border-r border-gray-300 bg-gray-50 px-3 text-sm text-gray-500"
+							class="flex items-center rounded-l-md border-r bg-muted/50 px-3 text-sm text-muted-foreground"
 							>$</span
 						>
 						<Input
@@ -310,7 +304,7 @@
 	<!-- Operating hours — separate form/action -->
 	{#if form?.hoursSuccess}
 		<div
-			class="mt-4 rounded-md border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700"
+			class="mt-4 rounded-md border border-primary/20 bg-primary/5 px-4 py-3 text-sm text-primary/90"
 		>
 			Hours saved.
 		</div>
@@ -328,21 +322,23 @@
 				<CardTitle>Operating hours</CardTitle>
 			</CardHeader>
 			<CardContent>
-				<p class="px-4 pb-3 text-xs text-gray-500">
+				<p class="px-4 pb-3 text-xs text-muted-foreground">
 					Customers will see open/closed status on your menu page. Leave all days unset to hide the
 					status.
 				</p>
-				<div class="divide-y divide-gray-100 px-5">
+				<div class="divide-y divide-border px-5">
 					{#each DAYS as day (day.key)}
 						{@const h = savedHours[day.key]}
 						<div class="flex flex-col gap-2 py-3 sm:flex-row sm:items-center sm:gap-4">
 							<div class="flex items-center justify-between sm:contents">
-								<span class="w-24 shrink-0 text-sm font-medium text-gray-700">{day.label}</span>
-								<label class="flex items-center gap-1.5 text-sm text-gray-500">
+								<span class="w-24 shrink-0 text-sm font-medium text-muted-foreground"
+									>{day.label}</span
+								>
+								<label class="flex items-center gap-1.5 text-sm text-muted-foreground">
 									<input
 										type="checkbox"
 										name="{day.key}_closed"
-										class="h-4 w-4 rounded border-gray-300"
+										class="h-4 w-4 rounded"
 										checked={h?.closed ?? false}
 									/>
 									Closed
@@ -355,7 +351,7 @@
 									value={h?.open ?? '09:00'}
 									class="flex-1 sm:flex-none"
 								/>
-								<span class="text-xs text-gray-400">to</span>
+								<span class="text-xs text-muted-foreground">to</span>
 								<Input
 									type="time"
 									name="{day.key}_close"

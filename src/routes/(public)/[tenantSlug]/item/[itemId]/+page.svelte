@@ -86,7 +86,7 @@
 		</div>
 	</header>
 
-	<main class="mx-auto max-w-lg space-y-6 rounded-2xl bg-white/80 px-4 py-6 backdrop-blur-sm">
+	<main class="mx-auto max-w-lg space-y-6 rounded-2xl bg-background/80 px-4 py-6 backdrop-blur-sm">
 		<!-- Image -->
 		{#if primaryImage}
 			<img
@@ -99,18 +99,18 @@
 
 		<!-- Item info -->
 		<div>
-			<h1 class="text-2xl font-bold text-gray-900">{data.item.name}</h1>
+			<h1 class="text-2xl font-bold text-foreground">{data.item.name}</h1>
 			{#if data.item.description}
-				<p class="mt-1 text-gray-500">{data.item.description}</p>
+				<p class="mt-1 text-muted-foreground">{data.item.description}</p>
 			{/if}
 			<div class="mt-2 flex items-center gap-2">
 				{#if data.item.discountedPrice}
 					<p class="text-xl font-bold" style="color: var(--background-color);">
 						${(data.item.discountedPrice / 100).toFixed(2)}
 					</p>
-					<p class="text-sm text-gray-400 line-through">${(data.item.price / 100).toFixed(2)}</p>
+					<p class="text-sm text-muted-foreground line-through">${(data.item.price / 100).toFixed(2)}</p>
 				{:else}
-					<p class="text-xl font-bold text-gray-900">${(data.item.price / 100).toFixed(2)}</p>
+					<p class="text-xl font-bold text-foreground">${(data.item.price / 100).toFixed(2)}</p>
 				{/if}
 			</div>
 			{#if Array.isArray(data.item.tags) && data.item.tags.length > 0}
@@ -130,11 +130,11 @@
 		{#each modifierGroups as group (group.id)}
 			{@const chosen = selections[group.id] ?? []}
 			{@const isMulti = group.maxSelections > 1}
-			<div class="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+			<div class="rounded-xl border  bg-background p-4 shadow-sm">
 				<div class="mb-3 flex items-center justify-between">
 					<div>
-						<h2 class="font-semibold text-gray-900">{group.name}</h2>
-						<p class="mt-0.5 text-xs text-gray-400">
+						<h2 class="font-semibold text-foreground">{group.name}</h2>
+						<p class="mt-0.5 text-xs text-muted-foreground">
 							{#if isMulti}
 								Choose up to {group.maxSelections}
 							{:else}
@@ -144,14 +144,14 @@
 					</div>
 					<div class="flex items-center gap-2">
 						{#if isMulti}
-							<span class="text-xs text-gray-400">{chosen.length}/{group.maxSelections}</span>
+							<span class="text-xs text-muted-foreground">{chosen.length}/{group.maxSelections}</span>
 						{/if}
 						{#if group.required}
 							<span class="rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-600"
 								>Required</span
 							>
 						{:else}
-							<span class="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-500"
+							<span class="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground"
 								>Optional</span
 							>
 						{/if}
@@ -166,7 +166,7 @@
 								? 'border-color: var(--background-color); background-color: color-mix(in srgb, var(--background-color) 6%, white);'
 								: ''}
 							class="flex cursor-pointer items-center justify-between rounded-lg border px-3 py-2.5 transition-colors
-								{isSelected ? '' : 'border-gray-200 hover:bg-gray-50'}
+								{isSelected ? '' : ' hover:bg-muted/50'}
 								{isDisabled ? 'cursor-not-allowed opacity-50' : ''}"
 						>
 							<div class="flex items-center gap-3">
@@ -178,7 +178,7 @@
 									style="accent-color: var(--background-color);"
 									class="h-4 w-4 rounded"
 								/>
-								<span class="text-sm text-gray-800">{option.name}</span>
+								<span class="text-sm text-foreground">{option.name}</span>
 								{#if option.isDefault}
 									<span
 										class="rounded-full px-1.5 py-0.5 text-xs font-medium"
@@ -188,7 +188,7 @@
 								{/if}
 							</div>
 							{#if option.priceAdjustment !== 0}
-								<span class="text-sm text-gray-500">
+								<span class="text-sm text-muted-foreground">
 									{option.priceAdjustment > 0 ? '+' : '−'}${(
 										Math.abs(option.priceAdjustment) / 100
 									).toFixed(2)}

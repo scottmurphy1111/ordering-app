@@ -4,7 +4,14 @@
 	import Icon from '@iconify/svelte';
 	import type { PageData, ActionData } from './$types';
 	import { untrack } from 'svelte';
-	import { TIERS, ADDONS, ANNUAL_ADDON_PRICING, getTier, hasAddon, type BillingInterval } from '$lib/billing';
+	import {
+		TIERS,
+		ADDONS,
+		ANNUAL_ADDON_PRICING,
+		getTier,
+		hasAddon,
+		type BillingInterval
+	} from '$lib/billing';
 	import { confirmDialog } from '$lib/confirm.svelte';
 	import { resolve } from '$app/paths';
 	import { Button } from '$lib/components/ui/button';
@@ -48,7 +55,7 @@
 	);
 
 	const statusColors: Record<string, string> = {
-		active: 'bg-green-100 text-green-700',
+		active: 'bg-green-100 text-primary/90',
 		past_due: 'bg-amber-100 text-amber-700',
 		cancelled: 'bg-red-100 text-red-600'
 	};
@@ -124,17 +131,17 @@
 	<div class="mb-6">
 		<a
 			href={resolve('/dashboard/settings')}
-			class="mb-1 inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700"
+			class="mb-1 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-muted-foreground"
 		>
 			<Icon icon="mdi:chevron-left" class="h-4 w-4" /> Settings
 		</a>
-		<h1 class="text-2xl font-bold text-gray-900">Billing</h1>
-		<p class="mt-0.5 text-sm text-gray-500">Manage your subscription plan and add-ons.</p>
+		<h1 class="text-2xl font-bold text-foreground">Billing</h1>
+		<p class="mt-0.5 text-sm text-muted-foreground">Manage your subscription plan and add-ons.</p>
 	</div>
 
 	{#if isUpgraded}
 		<div
-			class="mb-4 flex items-center gap-2 rounded-md border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700"
+			class="mb-4 flex items-center gap-2 rounded-md border border-primary/20 bg-primary/5 px-4 py-3 text-sm text-primary/90"
 		>
 			<Icon icon="mdi:check-circle-outline" class="h-4 w-4 shrink-0" />
 			Your plan has been upgraded. Welcome to {tierInfo.name}!
@@ -142,21 +149,23 @@
 	{/if}
 	{#if isDowngraded}
 		<div
-			class="mb-4 flex items-center gap-2 rounded-md border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-700"
+			class="mb-4 flex items-center gap-2 rounded-md border bg-muted/50 px-4 py-3 text-sm text-muted-foreground"
 		>
 			<Icon icon="mdi:check-circle-outline" class="h-4 w-4 shrink-0" />
 			Your plan has been changed to {tierInfo.name}.
 		</div>
 	{/if}
 	{#if form?.error}
-		<div class="mb-4 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+		<div
+			class="mb-4 rounded-md border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive"
+		>
 			{form.error}
 		</div>
 	{/if}
 
 	<!-- Current plan -->
 	<Card class="mb-8 shadow-sm">
-		<CardHeader class="border-b border-gray-100">
+		<CardHeader class="border-b">
 			<CardTitle>Current plan</CardTitle>
 			<CardAction>
 				{#if isPaidPlan}
@@ -172,21 +181,21 @@
 			<div class="flex flex-wrap items-start justify-between gap-4">
 				<div>
 					<div class="flex flex-wrap items-center gap-2">
-						<span class="text-xl font-bold text-gray-900">{tierInfo.name}</span>
+						<span class="text-xl font-bold text-foreground">{tierInfo.name}</span>
 						<Badge class={statusColors[data.subscriptionStatus ?? 'active'] ?? statusColors.active}>
-						{data.subscriptionStatus === 'past_due'
-							? 'Payment past due'
-							: data.subscriptionStatus === 'cancelled'
-								? 'Cancelled'
-								: 'Active'}
-					</Badge>
-					{#if isPaidPlan}
-						<Badge class="bg-gray-100 text-gray-600">
-							{data.billingInterval === 'annual' ? 'Annual' : 'Monthly'}
+							{data.subscriptionStatus === 'past_due'
+								? 'Payment past due'
+								: data.subscriptionStatus === 'cancelled'
+									? 'Cancelled'
+									: 'Active'}
 						</Badge>
-					{/if}
+						{#if isPaidPlan}
+							<Badge class="bg-muted text-muted-foreground">
+								{data.billingInterval === 'annual' ? 'Annual' : 'Monthly'}
+							</Badge>
+						{/if}
 					</div>
-					<p class="mt-0.5 text-sm text-gray-500">
+					<p class="mt-0.5 text-sm text-muted-foreground">
 						{#if tierInfo.price === 0}
 							Free
 						{:else if data.billingInterval === 'annual'}
@@ -195,11 +204,11 @@
 							${tierInfo.price}/month
 						{/if}
 						{#if addonMonthlyTotal > 0}
-							<span class="text-gray-400">+ ${addonMonthlyTotal}/mo add-ons</span>
+							<span class="text-muted-foreground">+ ${addonMonthlyTotal}/mo add-ons</span>
 						{/if}
 					</p>
 					{#if data.nextBillingDate && isPaidPlan}
-						<p class="mt-0.5 text-xs text-gray-400">
+						<p class="mt-0.5 text-xs text-muted-foreground">
 							Renews {fmtDate(data.nextBillingDate)}
 						</p>
 					{/if}
@@ -217,15 +226,32 @@
 			{#if isPaidPlan && data.hasStripeSubscription}
 				<div class="mt-4 flex items-center gap-3">
 					{#if data.billingInterval === 'monthly'}
-						<form method="post" action="?/switchInterval" use:enhance={() => ({ update }) => update({ invalidateAll: true })}>
+						<form
+							method="post"
+							action="?/switchInterval"
+							use:enhance={() =>
+								({ update }) =>
+									update({ invalidateAll: true })}
+						>
 							<input type="hidden" name="interval" value="annual" />
-							<Button type="submit" variant="outline" size="sm" class="gap-1.5 border-green-200 bg-green-50 text-green-700 hover:bg-green-100">
+							<Button
+								type="submit"
+								variant="outline"
+								size="sm"
+								class="gap-1.5 border-primary/20 bg-primary/5 text-primary/90 hover:bg-primary/10"
+							>
 								<Icon icon="mdi:arrow-up-circle-outline" class="h-3.5 w-3.5" />
 								Switch to annual — save ${proTier.annualSavings}/yr
 							</Button>
 						</form>
 					{:else}
-						<form method="post" action="?/switchInterval" use:enhance={() => ({ update }) => update({ invalidateAll: true })}>
+						<form
+							method="post"
+							action="?/switchInterval"
+							use:enhance={() =>
+								({ update }) =>
+									update({ invalidateAll: true })}
+						>
 							<input type="hidden" name="interval" value="monthly" />
 							<Button type="submit" variant="outline" size="sm" class="gap-1.5">
 								Switch to monthly
@@ -239,24 +265,24 @@
 			{#if itemLimit !== null}
 				<div class="mt-5">
 					<div class="mb-1.5 flex items-center justify-between text-sm">
-						<span class="font-medium text-gray-700">Menu items</span>
+						<span class="font-medium text-muted-foreground">Menu items</span>
 						<span
 							class={atLimit
 								? 'font-semibold text-red-600'
 								: nearLimit
 									? 'font-semibold text-amber-600'
-									: 'text-gray-500'}
+									: 'text-muted-foreground'}
 						>
 							{itemCount} / {itemLimit}
 						</span>
 					</div>
-					<div class="h-2 w-full rounded-full bg-gray-100">
+					<div class="h-2 w-full rounded-full bg-muted">
 						<div
 							class="h-2 rounded-full transition-all {atLimit
-								? 'bg-red-500'
+								? 'bg-destructive/100'
 								: nearLimit
 									? 'bg-amber-400'
-									: 'bg-green-500'}"
+									: 'bg-primary'}"
 							style="width: {usagePct}%"
 						></div>
 					</div>
@@ -273,8 +299,8 @@
 					{/if}
 				</div>
 			{:else}
-				<div class="mt-4 flex items-center gap-2 text-sm text-gray-500">
-					<Icon icon="mdi:infinity" class="h-4 w-4 text-green-600" />
+				<div class="mt-4 flex items-center gap-2 text-sm text-muted-foreground">
+					<Icon icon="mdi:infinity" class="h-4 w-4 text-primary" />
 					Unlimited menu items
 				</div>
 			{/if}
@@ -284,7 +310,7 @@
 	<!-- Plans -->
 	<div class="mb-8">
 		<div class="mb-4 flex items-center justify-between">
-			<h2 class="font-semibold text-gray-900">Plans</h2>
+			<h2 class="font-semibold text-foreground">Plans</h2>
 			<!-- Monthly / Annual toggle (only relevant for Starter users upgrading) -->
 			{#if !isPaidPlan}
 				<Tabs bind:value={selectedInterval}>
@@ -292,7 +318,10 @@
 						<TabsTrigger value="monthly">Monthly</TabsTrigger>
 						<TabsTrigger value="annual" class="gap-1.5">
 							Annual
-							<span class="rounded-full bg-green-100 px-1.5 py-0.5 text-[10px] font-semibold text-green-700">Save $168</span>
+							<span
+								class="rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-semibold text-primary"
+								>Save $168</span
+							>
 						</TabsTrigger>
 					</TabsList>
 				</Tabs>
@@ -304,96 +333,99 @@
 				{@const tierIndex = TIERS.findIndex((t) => t.key === tier.key)}
 				{@const currentIndex = TIERS.findIndex((t) => t.key === currentTierKey)}
 				{@const isUpgrade = tierIndex > currentIndex}
-				<Card
-					class="relative shadow-sm {isCurrent
-						? 'ring-2 ring-green-400 ring-offset-0'
-						: ''}"
-				>
+				<Card class="relative shadow-sm {isCurrent ? 'ring-2 ring-primary/70 ring-offset-0' : ''}">
 					{#if isCurrent}
 						<span
-							class="absolute -top-2.5 left-4 rounded-full bg-green-500 px-2.5 py-0.5 text-xs font-semibold text-white"
+							class="absolute -top-2.5 left-4 rounded-full bg-primary/100 px-2.5 py-0.5 text-xs font-semibold text-white"
 							>Current</span
 						>
 					{/if}
 					<CardContent>
-					<div class="mb-4">
-						<p class="font-semibold text-gray-900">{tier.name}</p>
-						{#if tier.key === 'pro'}
-							<p class="mt-0.5 text-2xl font-bold text-gray-900">
-								${proDisplayPrice}<span class="text-sm font-normal text-gray-500">/mo</span>
-							</p>
-							{#if selectedInterval === 'annual'}
-								<p class="mt-0.5 text-xs text-green-600 font-medium">
-									Billed ${proTier.annualTotal}/yr · 2 months free
+						<div class="mb-4">
+							<p class="font-semibold text-foreground">{tier.name}</p>
+							{#if tier.key === 'pro'}
+								<p class="mt-0.5 text-2xl font-bold text-foreground">
+									${proDisplayPrice}<span class="text-sm font-normal text-muted-foreground"
+										>/mo</span
+									>
 								</p>
+								{#if selectedInterval === 'annual'}
+									<p class="mt-0.5 text-xs font-medium text-primary">
+										Billed ${proTier.annualTotal}/yr · 2 months free
+									</p>
+								{/if}
+							{:else}
+								<p class="mt-0.5 text-2xl font-bold text-foreground">Free</p>
 							{/if}
-						{:else}
-							<p class="mt-0.5 text-2xl font-bold text-gray-900">Free</p>
-						{/if}
-					</div>
-					<ul class="mb-5 space-y-2">
-						{#each tier.features as feature (feature)}
-							<li class="flex items-start gap-2 text-sm text-gray-600">
-								<Icon
-									icon="mdi:check-circle-outline"
-									class="mt-0.5 h-4 w-4 shrink-0 text-green-500"
-								/>
-								{feature}
-							</li>
-						{/each}
-					</ul>
-					{#if isCurrent}
-						<Button disabled variant="outline" class="w-full cursor-default text-gray-400">
-							Current plan
-						</Button>
-					{:else if isUpgrade}
-						<form method="post" action="?/upgrade" use:enhance>
-							<input type="hidden" name="planKey" value={tier.key} />
-							<input type="hidden" name="interval" value={selectedInterval} />
-							<Button type="submit" variant="default" class="w-full">
-								Upgrade to {tier.name}
-								{#if selectedInterval === 'annual'} — Annual{/if}
-							</Button>
-						</form>
-					{:else}
-						{@const downgradeMsg =
-							activeAddons.length > 0
-								? `Downgrade to Starter? Your subscription will be cancelled immediately and all active add-ons will be removed.`
-								: `Downgrade to Starter? Your subscription will be cancelled immediately and you'll lose access to Pro features.`}
-						<form
-							method="post"
-							action="?/downgrade"
-							use:enhance={() =>
-								({ update }) =>
-									update({ invalidateAll: true })}
-						>
-							<input type="hidden" name="planKey" value={tier.key} />
+						</div>
+						<ul class="mb-5 space-y-2">
+							{#each tier.features as feature (feature)}
+								<li class="flex items-start gap-2 text-sm text-muted-foreground">
+									<Icon
+										icon="mdi:check-circle-outline"
+										class="mt-0.5 h-4 w-4 shrink-0 text-primary/80"
+									/>
+									{feature}
+								</li>
+							{/each}
+						</ul>
+						{#if isCurrent}
 							<Button
-								type="submit"
-								onclick={async (e) => {
-									e.preventDefault();
-									if (
-										await confirmDialog(downgradeMsg, {
-											title: `Downgrade to ${tier.name}`,
-											confirmLabel: 'Downgrade',
-											cancelLabel: 'Keep current plan',
-											danger: true
-										})
-									)
-										(e.currentTarget as HTMLButtonElement).form?.requestSubmit();
-								}}
+								disabled
 								variant="outline"
-								class="w-full text-gray-500 hover:border-red-200 hover:bg-red-50 hover:text-red-600"
+								class="w-full cursor-default text-muted-foreground"
 							>
-								Downgrade to {tier.name}
+								Current plan
 							</Button>
-						</form>
-					{/if}
+						{:else if isUpgrade}
+							<form method="post" action="?/upgrade" use:enhance>
+								<input type="hidden" name="planKey" value={tier.key} />
+								<input type="hidden" name="interval" value={selectedInterval} />
+								<Button type="submit" variant="default" class="w-full">
+									Upgrade to {tier.name}
+									{#if selectedInterval === 'annual'}
+										— Annual{/if}
+								</Button>
+							</form>
+						{:else}
+							{@const downgradeMsg =
+								activeAddons.length > 0
+									? `Downgrade to Starter? Your subscription will be cancelled immediately and all active add-ons will be removed.`
+									: `Downgrade to Starter? Your subscription will be cancelled immediately and you'll lose access to Pro features.`}
+							<form
+								method="post"
+								action="?/downgrade"
+								use:enhance={() =>
+									({ update }) =>
+										update({ invalidateAll: true })}
+							>
+								<input type="hidden" name="planKey" value={tier.key} />
+								<Button
+									type="submit"
+									onclick={async (e) => {
+										e.preventDefault();
+										if (
+											await confirmDialog(downgradeMsg, {
+												title: `Downgrade to ${tier.name}`,
+												confirmLabel: 'Downgrade',
+												cancelLabel: 'Keep current plan',
+												danger: true
+											})
+										)
+											(e.currentTarget as HTMLButtonElement).form?.requestSubmit();
+									}}
+									variant="outline"
+									class="w-full text-muted-foreground hover:border-destructive/20 hover:bg-destructive/10 hover:text-red-600"
+								>
+									Downgrade to {tier.name}
+								</Button>
+							</form>
+						{/if}
 					</CardContent>
 				</Card>
 			{/each}
 		</div>
-		<p class="mt-2 text-xs text-gray-400">
+		<p class="mt-2 text-xs text-muted-foreground">
 			All plans include Stripe payment processing. Stripe charges 2.9% + 30¢ per transaction — we
 			never take a cut.
 		</p>
@@ -401,7 +433,7 @@
 
 	<!-- Add-ons -->
 	<div>
-		<h2 class="mb-1 font-semibold text-gray-900">Add-ons</h2>
+		<h2 class="mb-1 font-semibold text-foreground">Add-ons</h2>
 		{#if !isPaidPlan}
 			<div
 				class="mb-4 flex items-start gap-3 rounded-lg border border-amber-100 bg-amber-50 px-4 py-3"
@@ -421,7 +453,7 @@
 				</p>
 			</div>
 		{:else}
-			<p class="mb-4 text-sm text-gray-500">
+			<p class="mb-4 text-sm text-muted-foreground">
 				Activate or deactivate features. Changes are prorated on your next invoice.
 			</p>
 		{/if}
@@ -430,55 +462,51 @@
 			{#each ADDONS as addon (addon.key)}
 				{@const isActive = hasAddon(activeAddons, addon.key)}
 				{@const canToggle = isPaidPlan && data.hasStripeSubscription}
-				<Card
-					class="shadow-sm {isActive
-						? 'ring-2 ring-green-300 bg-green-50/40'
-						: ''}"
-				>
+				<Card class="shadow-sm {isActive ? 'bg-primary/5 ring-2 ring-primary/50' : ''}">
 					<CardContent>
-					<div class="mb-3 flex items-start justify-between gap-3">
-						<div class="flex items-center gap-3">
-							<div
-								class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl {isActive
-									? 'bg-green-100'
-									: 'bg-gray-100'}"
-							>
-								<Icon
-									icon={addon.icon}
-									class="h-5 w-5 {isActive ? 'text-green-700' : 'text-gray-500'}"
-								/>
+						<div class="mb-3 flex items-start justify-between gap-3">
+							<div class="flex items-center gap-3">
+								<div
+									class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl {isActive
+										? 'bg-green-100'
+										: 'bg-muted'}"
+								>
+									<Icon
+										icon={addon.icon}
+										class="h-5 w-5 {isActive ? 'text-primary/90' : 'text-muted-foreground'}"
+									/>
+								</div>
+								<div>
+									<p class="text-sm font-semibold text-foreground">{addon.name}</p>
+									<p class="text-xs text-muted-foreground">${addon.price}/mo</p>
+								</div>
 							</div>
-							<div>
-								<p class="text-sm font-semibold text-gray-900">{addon.name}</p>
-								<p class="text-xs text-gray-500">${addon.price}/mo</p>
-							</div>
+							{#if isActive}
+								<Badge class="shrink-0 bg-green-100 text-primary/90">Active</Badge>
+							{/if}
 						</div>
+						<p class="mb-4 text-sm text-muted-foreground">{addon.description}</p>
 						{#if isActive}
-							<Badge class="shrink-0 bg-green-100 text-green-700">Active</Badge>
+							<Button
+								type="button"
+								disabled={!canToggle}
+								onclick={() => openModal(addon, 'deactivate')}
+								variant="destructive"
+								class="w-full"
+							>
+								Deactivate
+							</Button>
+						{:else}
+							<Button
+								type="button"
+								disabled={!canToggle}
+								onclick={() => openModal(addon, 'activate')}
+								variant="default"
+								class="w-full"
+							>
+								Activate — ${addon.price}/mo
+							</Button>
 						{/if}
-					</div>
-					<p class="mb-4 text-sm text-gray-500">{addon.description}</p>
-					{#if isActive}
-						<Button
-							type="button"
-							disabled={!canToggle}
-							onclick={() => openModal(addon, 'deactivate')}
-							variant="destructive"
-							class="w-full"
-						>
-							Deactivate
-						</Button>
-					{:else}
-						<Button
-							type="button"
-							disabled={!canToggle}
-							onclick={() => openModal(addon, 'activate')}
-							variant="default"
-							class="w-full"
-						>
-							Activate — ${addon.price}/mo
-						</Button>
-					{/if}
 					</CardContent>
 				</Card>
 			{/each}
@@ -495,7 +523,12 @@
 			: currentMonthly - addonEffectiveMonthly}
 	{@const isActivate = pendingAddon.action === 'activate'}
 
-	<Dialog open={!!pendingAddon} onOpenChange={(open) => { if (!open) closeModal(); }}>
+	<Dialog
+		open={!!pendingAddon}
+		onOpenChange={(open) => {
+			if (!open) closeModal();
+		}}
+	>
 		<DialogContent class="max-w-md">
 			<DialogHeader>
 				<DialogTitle>
@@ -508,14 +541,16 @@
 			<!-- Annual billing toggle (activate only, for supported add-ons) -->
 			{#if isActivate && pendingAddon.supportsAnnual}
 				<div class="flex items-center justify-between">
-					<p class="text-sm text-gray-600">Billing cycle</p>
-					<div class="flex items-center rounded-lg border border-gray-200 bg-gray-50 p-0.5">
+					<p class="text-sm text-muted-foreground">Billing cycle</p>
+					<div class="flex items-center rounded-lg border bg-muted/50 p-0.5">
 						<Button
 							type="button"
 							onclick={() => (addonInterval = 'monthly')}
 							variant="ghost"
 							size="sm"
-							class="rounded-md px-3 py-1 {addonInterval === 'monthly' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}"
+							class="rounded-md px-3 py-1 {addonInterval === 'monthly'
+								? 'bg-background text-foreground shadow-sm'
+								: 'text-muted-foreground hover:text-muted-foreground'}"
 						>
 							Monthly
 						</Button>
@@ -524,11 +559,15 @@
 							onclick={() => (addonInterval = 'annual')}
 							variant="ghost"
 							size="sm"
-							class="gap-1 rounded-md px-3 py-1 {addonInterval === 'annual' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}"
+							class="gap-1 rounded-md px-3 py-1 {addonInterval === 'annual'
+								? 'bg-background text-foreground shadow-sm'
+								: 'text-muted-foreground hover:text-muted-foreground'}"
 						>
 							Annual
 							{#if addonAnnualPricing}
-								<span class="rounded-full bg-green-100 px-1.5 py-0.5 text-[10px] font-semibold text-green-700">
+								<span
+									class="rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-semibold text-primary"
+								>
 									Save ${addonAnnualPricing.savings}/yr
 								</span>
 							{/if}
@@ -538,28 +577,32 @@
 			{/if}
 
 			<!-- Billing summary -->
-			<div class="space-y-2 rounded-xl border border-gray-100 bg-gray-50 px-4 py-4">
-				<p class="mb-3 text-xs font-medium tracking-wide text-gray-400 uppercase">
+			<div class="space-y-2 rounded-xl border bg-muted/50 px-4 py-4">
+				<p class="mb-3 text-xs font-medium tracking-wide text-muted-foreground uppercase">
 					Billing summary
 				</p>
-				<div class="flex items-center justify-between text-sm text-gray-600">
+				<div class="flex items-center justify-between text-sm text-muted-foreground">
 					<span>Current monthly bill</span>
 					<span class="font-medium">${currentMonthly}/mo</span>
 				</div>
 				<div
 					class="flex items-center justify-between text-sm {isActivate
-						? 'text-gray-800'
+						? 'text-foreground'
 						: 'text-red-600'}"
 				>
 					<span>{isActivate ? '+' : '−'} {pendingAddon.name}</span>
 					{#if isActivate && addonInterval === 'annual' && addonAnnualPricing}
-						<span class="font-medium">${addonAnnualPricing.total}/yr <span class="text-xs text-gray-400">(${addonAnnualPricing.monthly}/mo)</span></span>
+						<span class="font-medium"
+							>${addonAnnualPricing.total}/yr
+							<span class="text-xs text-muted-foreground">(${addonAnnualPricing.monthly}/mo)</span
+							></span
+						>
 					{:else}
 						<span class="font-medium">{isActivate ? '+' : '−'}${addonEffectiveMonthly}/mo</span>
 					{/if}
 				</div>
 				<div
-					class="flex items-center justify-between border-t border-gray-200 pt-2 text-sm font-semibold text-gray-900"
+					class="flex items-center justify-between border-t pt-2 text-sm font-semibold text-foreground"
 				>
 					<span>New monthly bill</span>
 					<span>~${newMonthly}/mo</span>
@@ -586,15 +629,13 @@
 
 			<!-- Next billing date -->
 			{#if data.nextBillingDate}
-				<p class="text-xs text-gray-400">
+				<p class="text-xs text-muted-foreground">
 					Next full charge of <strong>~${newMonthly}/mo</strong> on {fmtDate(data.nextBillingDate)}.
 				</p>
 			{/if}
 
 			<DialogFooter class="flex gap-3 sm:flex-row">
-				<Button type="button" onclick={closeModal} variant="outline" class="flex-1">
-					Cancel
-				</Button>
+				<Button type="button" onclick={closeModal} variant="outline" class="flex-1">Cancel</Button>
 				<form
 					method="post"
 					action={isActivate ? '?/activateAddon' : '?/deactivateAddon'}
@@ -609,11 +650,7 @@
 					{#if isActivate}
 						<input type="hidden" name="interval" value={addonInterval} />
 					{/if}
-					<Button
-						type="submit"
-						variant={isActivate ? 'default' : 'destructive'}
-						class="w-full"
-					>
+					<Button type="submit" variant={isActivate ? 'default' : 'destructive'} class="w-full">
 						{#if isActivate}
 							Confirm — {fmtMoney(proration ?? addonEffectiveTotal)} today
 						{:else}

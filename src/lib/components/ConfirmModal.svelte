@@ -32,14 +32,14 @@
 			<div
 				class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full {confirmState.danger
 					? 'bg-red-100'
-					: 'bg-gray-100'}"
+					: 'bg-muted'}"
 			>
 				<Icon
 					icon={confirmState.danger ? 'mdi:alert-outline' : 'mdi:help-circle-outline'}
-					class="h-5 w-5 {confirmState.danger ? 'text-red-600' : 'text-gray-500'}"
+					class="h-5 w-5 {confirmState.danger ? 'text-red-600' : 'text-muted-foreground'}"
 				/>
 			</div>
-			<p class="pt-1.5 text-sm leading-relaxed font-medium text-gray-900">
+			<p class="pt-1.5 text-sm leading-relaxed font-medium text-foreground">
 				{confirmState.message}
 			</p>
 		</div>

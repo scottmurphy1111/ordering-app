@@ -15,12 +15,12 @@
 	<div class="mb-6">
 		<a
 			href={resolve('/dashboard/settings')}
-			class="mb-1 inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700"
+			class="mb-1 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-muted-foreground"
 		>
 			<Icon icon="mdi:chevron-left" class="h-4 w-4" /> Settings
 		</a>
-		<h1 class="text-2xl font-bold text-gray-900">Profile</h1>
-		<p class="mt-0.5 text-sm text-gray-500">Update your personal information.</p>
+		<h1 class="text-2xl font-bold text-foreground">Profile</h1>
+		<p class="mt-0.5 text-sm text-muted-foreground">Update your personal information.</p>
 	</div>
 
 	<div class="space-y-6">
@@ -32,14 +32,14 @@
 			<CardContent>
 				{#if form?.profileError}
 					<div
-						class="mb-4 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700"
+						class="mb-4 rounded-md border border-destructive/20 bg-destructive/10 px-3 py-2 text-sm text-destructive"
 					>
 						{form.profileError}
 					</div>
 				{/if}
 				{#if form?.profileSuccess}
 					<div
-						class="mb-4 rounded-md border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-700"
+						class="mb-4 rounded-md border border-primary/20 bg-primary/5 px-3 py-2 text-sm text-primary/90"
 					>
 						Profile updated.
 					</div>
@@ -48,23 +48,12 @@
 				<form method="post" action="?/updateProfile" use:enhance class="space-y-4">
 					<div>
 						<Label class="mb-1 block" for="name">Name</Label>
-						<Input
-							id="name"
-							name="name"
-							type="text"
-							required
-							value={data.user.name}
-						/>
+						<Input id="name" name="name" type="text" required value={data.user.name} />
 					</div>
 					<div>
 						<Label class="mb-1 block" for="email">Email</Label>
-						<Input
-							id="email"
-							type="email"
-							value={data.user.email}
-							disabled
-						/>
-						<p class="mt-1 text-xs text-gray-400">Email cannot be changed here.</p>
+						<Input id="email" type="email" value={data.user.email} disabled />
+						<p class="mt-1 text-xs text-muted-foreground">Email cannot be changed here.</p>
 					</div>
 					<div class="flex justify-end">
 						<Button type="submit" variant="default">Save changes</Button>

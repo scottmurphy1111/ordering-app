@@ -38,28 +38,30 @@
 	<div class="flex items-center gap-3">
 		<a
 			href={resolve('/dashboard/menu/categories')}
-			class="inline-flex items-center gap-1 text-sm text-gray-500 transition-colors hover:text-gray-800"
+			class="inline-flex items-center gap-1 text-sm text-muted-foreground transition-colors hover:text-foreground"
 		>
 			<Icon icon="mdi:chevron-left" class="h-4 w-4" /> Categories
 		</a>
-		<span class="text-gray-300">/</span>
-		<h1 class="text-2xl font-bold text-gray-900">{data.category.name}</h1>
+		<span class="text-muted-foreground/40">/</span>
+		<h1 class="text-2xl font-bold text-foreground">{data.category.name}</h1>
 	</div>
 
 	{#if form?.error}
-		<div class="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+		<div
+			class="rounded-md border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive"
+		>
 			{form.error}
 		</div>
 	{/if}
 	{#if form?.success}
-		<div class="rounded-md border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
+		<div class="rounded-md border border-primary/20 bg-primary/5 px-4 py-3 text-sm text-primary/90">
 			Saved.
 		</div>
 	{/if}
 
 	<!-- Category details -->
-	<section class="space-y-4 rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-		<h2 class="font-semibold text-gray-800">Details</h2>
+	<section class="space-y-4 rounded-xl border bg-background p-6 shadow-sm">
+		<h2 class="font-semibold text-foreground">Details</h2>
 		<form
 			method="post"
 			action="?/update"
@@ -70,13 +72,7 @@
 		>
 			<div>
 				<Label class="mb-1 block" for="name">Name</Label>
-				<Input
-					id="name"
-					name="name"
-					type="text"
-					required
-					value={data.category.name}
-				/>
+				<Input id="name" name="name" type="text" required value={data.category.name} />
 			</div>
 			<div>
 				<Label class="mb-1 block" for="description">Description</Label>
@@ -91,10 +87,10 @@
 			<input type="hidden" name="sortOrder" value={data.category.sortOrder ?? 0} />
 
 			<!-- Active / Inactive toggle -->
-			<div class="flex items-center justify-between rounded-lg border border-gray-200 px-4 py-3">
+			<div class="flex items-center justify-between rounded-lg border px-4 py-3">
 				<div>
-					<p class="text-sm font-medium text-gray-700">Status</p>
-					<p class="text-xs text-gray-400">Controls visibility on your public menu</p>
+					<p class="text-sm font-medium text-muted-foreground">Status</p>
+					<p class="text-xs text-muted-foreground">Controls visibility on your public menu</p>
 				</div>
 				<input type="hidden" name="isActive" value={isActive ? 'on' : ''} />
 				<button
@@ -104,16 +100,20 @@
 				>
 					<div
 						class="relative h-6 w-11 rounded-full transition-colors duration-200 {isActive
-							? 'bg-green-600'
-							: 'bg-gray-300'}"
+							? 'bg-primary'
+							: 'bg-muted'}"
 					>
 						<span
-							class="absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform duration-200 {isActive
+							class="absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-background shadow transition-transform duration-200 {isActive
 								? 'translate-x-5'
 								: 'translate-x-0'}"
 						></span>
 					</div>
-					<span class="w-14 text-sm font-medium {isActive ? 'text-green-700' : 'text-gray-500'}">
+					<span
+						class="w-14 text-sm font-medium {isActive
+							? 'text-primary/90'
+							: 'text-muted-foreground'}"
+					>
 						{isActive ? 'Active' : 'Inactive'}
 					</span>
 				</button>
@@ -124,13 +124,13 @@
 	</section>
 
 	<!-- Item assignment -->
-	<section class="space-y-4 rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+	<section class="space-y-4 rounded-xl border bg-background p-6 shadow-sm">
 		<div>
-			<h2 class="font-semibold text-gray-800">Assign items</h2>
-			<p class="mt-0.5 text-sm text-gray-500">Check items that belong to this category.</p>
+			<h2 class="font-semibold text-foreground">Assign items</h2>
+			<p class="mt-0.5 text-sm text-muted-foreground">Check items that belong to this category.</p>
 		</div>
 		{#if data.items.length === 0}
-			<p class="text-sm text-gray-400">No menu items yet.</p>
+			<p class="text-sm text-muted-foreground">No menu items yet.</p>
 		{:else}
 			<form
 				method="post"
@@ -145,7 +145,7 @@
 					{#each data.items as item (item.id)}
 						<label
 							class="flex cursor-pointer items-center gap-3 rounded-lg border px-3 py-2.5 transition-colors
-								{selections.has(item.id) ? 'border-gray-400 bg-gray-50' : 'border-gray-200 hover:bg-gray-50'}"
+								{selections.has(item.id) ? ' bg-muted/50' : ' hover:bg-muted/50'}"
 						>
 							<input
 								type="checkbox"
@@ -155,8 +155,8 @@
 								onchange={() => toggleItem(item.id)}
 								class="h-4 w-4 rounded"
 							/>
-							<span class="flex-1 text-sm text-gray-800">{item.name}</span>
-							<span class="text-xs text-gray-400">${(item.price / 100).toFixed(2)}</span>
+							<span class="flex-1 text-sm text-foreground">{item.name}</span>
+							<span class="text-xs text-muted-foreground">${(item.price / 100).toFixed(2)}</span>
 							{#if item.categoryId !== null && item.categoryId !== data.category.id}
 								<Badge class="bg-yellow-100 text-yellow-700">Other category</Badge>
 							{/if}

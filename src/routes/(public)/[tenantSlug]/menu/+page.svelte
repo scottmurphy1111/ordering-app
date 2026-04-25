@@ -179,15 +179,15 @@
 					{#if openStatus !== null}
 						<span
 							class="rounded-full px-2.5 py-0.5 text-xs font-semibold {openStatus
-								? 'bg-green-500 text-white'
-								: 'bg-red-500 text-white'}"
+								? 'bg-primary text-primary-foreground'
+								: 'bg-destructive/100 text-white'}"
 						>
 							{openStatus ? 'Open' : 'Closed'}
 						</span>
 					{/if}
 					{#if tableParam}
 						<span
-							class="flex items-center gap-1 rounded-full bg-white/20 px-2.5 py-0.5 text-xs font-semibold text-white backdrop-blur-sm"
+							class="flex items-center gap-1 rounded-full bg-background/20 px-2.5 py-0.5 text-xs font-semibold text-white backdrop-blur-sm"
 						>
 							<Icon icon="mdi:table-chair" class="h-3 w-3" /> Table {tableParam}
 						</span>
@@ -237,15 +237,15 @@
 					{#if openStatus !== null}
 						<span
 							class="rounded-full px-2.5 py-0.5 text-xs font-semibold {openStatus
-								? 'bg-green-500 text-white'
-								: 'bg-red-500/90 text-white'}"
+								? 'bg-primary text-primary-foreground'
+								: 'bg-destructive/100/90 text-white'}"
 						>
 							{openStatus ? 'Open' : 'Closed'}
 						</span>
 					{/if}
 					{#if tableParam}
 						<span
-							class="flex items-center gap-1 rounded-full bg-white/20 px-2.5 py-0.5 text-xs font-semibold backdrop-blur-sm"
+							class="flex items-center gap-1 rounded-full bg-background/20 px-2.5 py-0.5 text-xs font-semibold backdrop-blur-sm"
 							style="color: var(--foreground-color);"
 						>
 							<Icon icon="mdi:table-chair" class="h-3 w-3" /> Table {tableParam}
@@ -258,26 +258,26 @@
 
 	<!-- ── Search bar ─────────────────────────────────────────────────────── -->
 	{#if data.items.length > 0}
-		<div class="sticky top-0 z-50 border-b border-gray-200 bg-white/95 backdrop-blur-sm">
+		<div class="sticky top-0 z-50 border-b  bg-background/95 backdrop-blur-sm">
 			<div class="mx-auto max-w-2xl px-4 pt-2">
 				<!-- Search input -->
 				<div class="relative mb-2">
 					<Icon
 						icon="mdi:magnify"
-						class="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-gray-400"
+						class="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground"
 					/>
 					<input
 						type="search"
 						placeholder="Search menu…"
 						bind:value={searchQuery}
-						class="w-full rounded-full border border-gray-200 bg-gray-50 py-2 pr-4 pl-9 text-sm transition-colors outline-none focus:border-gray-400 focus:bg-white"
+						class="w-full rounded-full border  bg-muted/50 py-2 pr-4 pl-9 text-sm transition-colors outline-none focus:border-gray-400 focus:bg-background"
 					/>
 					{#if searchQuery}
 						<button
 							onclick={() => {
 								searchQuery = '';
 							}}
-							class="absolute top-1/2 right-3 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+							class="absolute top-1/2 right-3 -translate-y-1/2 text-muted-foreground hover:text-muted-foreground"
 						>
 							<Icon icon="mdi:close-circle" class="h-4 w-4" />
 						</button>
@@ -292,7 +292,7 @@
 								<a
 									href="#{category.id}"
 									onclick={(e) => { e.preventDefault(); scrollToSection(String(category.id)); }}
-									class="category-pill shrink-0 rounded-full px-4 py-1.5 text-sm font-medium text-gray-600 transition-colors {activeCategoryId ===
+									class="category-pill shrink-0 rounded-full px-4 py-1.5 text-sm font-medium text-muted-foreground transition-colors {activeCategoryId ===
 									String(category.id)
 										? 'active'
 										: ''}"
@@ -304,7 +304,7 @@
 								<a
 									href="#other"
 									onclick={(e) => { e.preventDefault(); scrollToSection('other'); }}
-									class="category-pill shrink-0 rounded-full px-4 py-1.5 text-sm font-medium text-gray-600 transition-colors {activeCategoryId ===
+									class="category-pill shrink-0 rounded-full px-4 py-1.5 text-sm font-medium text-muted-foreground transition-colors {activeCategoryId ===
 									'other'
 										? 'active'
 										: ''}"
@@ -321,16 +321,16 @@
 
 	<!-- ── Menu items ─────────────────────────────────────────────────────── -->
 	<main
-		class="mx-auto my-8 max-w-2xl space-y-10 rounded-2xl bg-white/80 px-4 py-8 backdrop-blur-sm"
+		class="mx-auto my-8 max-w-2xl space-y-10 rounded-2xl bg-background/80 px-4 py-8 backdrop-blur-sm"
 	>
 		{#if data.items.length === 0}
-			<div class="rounded-xl border border-dashed border-gray-300 p-12 text-center">
-				<p class="text-gray-400">Menu coming soon.</p>
+			<div class="rounded-xl border border-dashed  p-12 text-center">
+				<p class="text-muted-foreground">Menu coming soon.</p>
 			</div>
 		{:else if !hasResults}
-			<div class="rounded-xl border border-dashed border-gray-300 p-12 text-center">
-				<Icon icon="mdi:magnify" class="mx-auto mb-3 h-8 w-8 text-gray-300" />
-				<p class="text-gray-400">No items match "<span class="font-medium">{searchQuery}</span>"</p>
+			<div class="rounded-xl border border-dashed  p-12 text-center">
+				<Icon icon="mdi:magnify" class="mx-auto mb-3 h-8 w-8 text-muted-foreground/40" />
+				<p class="text-muted-foreground">No items match "<span class="font-medium">{searchQuery}</span>"</p>
 				<button
 					onclick={() => {
 						searchQuery = '';
@@ -343,7 +343,7 @@
 			<!-- Skeleton -->
 			<div class="space-y-3">
 				{#each [0, 1, 2, 3, 4] as i (i)}
-					<div class="flex gap-4 rounded-xl border border-gray-100 bg-white p-4 shadow-sm">
+					<div class="flex gap-4 rounded-xl border  bg-background p-4 shadow-sm">
 						<Skeleton class="h-20 w-20 shrink-0 rounded-lg" />
 						<div class="flex-1 space-y-2 py-1">
 							<Skeleton class="h-4 w-3/4 rounded" />
@@ -357,7 +357,7 @@
 			{#each filteredCategorized as category (category.id)}
 				<section id={String(category.id)}>
 					<h2
-						class="mb-4 border-b-2 pb-2 text-lg font-semibold text-gray-800"
+						class="mb-4 border-b-2 pb-2 text-lg font-semibold text-foreground"
 						style="border-color: var(--background-color);"
 					>
 						{category.name}
@@ -367,7 +367,7 @@
 							{@const imgs = item.images as { url: string; isPrimary?: boolean }[] | null}
 							{@const primaryImage = imgs?.find((i) => i.isPrimary)?.url ?? imgs?.[0]?.url}
 							<div
-								class="item-card flex gap-4 rounded-xl border border-gray-200 bg-white p-4 shadow-sm"
+								class="item-card flex gap-4 rounded-xl border  bg-background p-4 shadow-sm"
 							>
 								{#if primaryImage}
 									<img
@@ -377,9 +377,9 @@
 									/>
 								{/if}
 								<div class="min-w-0 flex-1">
-									<p class="font-medium text-gray-900">{item.name}</p>
+									<p class="font-medium text-foreground">{item.name}</p>
 									{#if item.description}
-										<p class="mt-0.5 line-clamp-2 text-sm text-gray-500">{item.description}</p>
+										<p class="mt-0.5 line-clamp-2 text-sm text-muted-foreground">{item.description}</p>
 									{/if}
 									{#if Array.isArray(item.tags) && item.tags.length > 0}
 										<div class="mt-1.5 flex flex-wrap gap-1">
@@ -399,11 +399,11 @@
 											<p class="font-semibold" style="color: var(--background-color);">
 												${(item.discountedPrice / 100).toFixed(2)}
 											</p>
-											<p class="text-xs text-gray-400 line-through">
+											<p class="text-xs text-muted-foreground line-through">
 												${(item.price / 100).toFixed(2)}
 											</p>
 										{:else}
-											<p class="font-semibold text-gray-900">${(item.price / 100).toFixed(2)}</p>
+											<p class="font-semibold text-foreground">${(item.price / 100).toFixed(2)}</p>
 										{/if}
 									</div>
 									{#if hasModifiers(item)}
@@ -436,7 +436,7 @@
 				<section id="other">
 					{#if filteredCategorized.length > 0}
 						<h2
-							class="mb-4 border-b-2 pb-2 text-lg font-semibold text-gray-800"
+							class="mb-4 border-b-2 pb-2 text-lg font-semibold text-foreground"
 							style="border-color: var(--background-color);"
 						>
 							Other
@@ -447,7 +447,7 @@
 							{@const imgs = item.images as { url: string; isPrimary?: boolean }[] | null}
 							{@const primaryImage = imgs?.find((i) => i.isPrimary)?.url ?? imgs?.[0]?.url}
 							<div
-								class="item-card flex gap-4 rounded-xl border border-gray-200 bg-white p-4 shadow-sm"
+								class="item-card flex gap-4 rounded-xl border  bg-background p-4 shadow-sm"
 							>
 								{#if primaryImage}
 									<img
@@ -457,9 +457,9 @@
 									/>
 								{/if}
 								<div class="min-w-0 flex-1">
-									<p class="font-medium text-gray-900">{item.name}</p>
+									<p class="font-medium text-foreground">{item.name}</p>
 									{#if item.description}
-										<p class="mt-0.5 line-clamp-2 text-sm text-gray-500">{item.description}</p>
+										<p class="mt-0.5 line-clamp-2 text-sm text-muted-foreground">{item.description}</p>
 									{/if}
 									{#if Array.isArray(item.tags) && item.tags.length > 0}
 										<div class="mt-1.5 flex flex-wrap gap-1">
@@ -479,11 +479,11 @@
 											<p class="font-semibold" style="color: var(--background-color);">
 												${(item.discountedPrice / 100).toFixed(2)}
 											</p>
-											<p class="text-xs text-gray-400 line-through">
+											<p class="text-xs text-muted-foreground line-through">
 												${(item.price / 100).toFixed(2)}
 											</p>
 										{:else}
-											<p class="font-semibold text-gray-900">${(item.price / 100).toFixed(2)}</p>
+											<p class="font-semibold text-foreground">${(item.price / 100).toFixed(2)}</p>
 										{/if}
 									</div>
 									{#if hasModifiers(item)}
@@ -525,7 +525,7 @@
 				class="flex w-full max-w-2xl items-center justify-between rounded-xl px-5 py-3.5 shadow-lg transition-opacity hover:opacity-90"
 			>
 				<span
-					class="flex h-6 w-6 items-center justify-center rounded-full bg-white/20 text-sm font-bold"
+					class="flex h-6 w-6 items-center justify-center rounded-full bg-background/20 text-sm font-bold"
 					>{cart.count}</span
 				>
 				<span class="font-semibold">View Cart</span>

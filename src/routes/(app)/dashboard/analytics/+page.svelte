@@ -28,7 +28,7 @@
 		received: 'bg-blue-400',
 		confirmed: 'bg-purple-400',
 		preparing: 'bg-yellow-400',
-		ready: 'bg-green-400',
+		ready: 'bg-primary/70',
 		fulfilled: 'bg-gray-300',
 		cancelled: 'bg-red-300'
 	};
@@ -37,8 +37,8 @@
 		received: 'bg-blue-100 text-blue-700',
 		confirmed: 'bg-purple-100 text-purple-700',
 		preparing: 'bg-yellow-100 text-yellow-700',
-		ready: 'bg-green-100 text-green-700',
-		fulfilled: 'bg-gray-100 text-gray-600',
+		ready: 'bg-green-100 text-primary/90',
+		fulfilled: 'bg-muted text-muted-foreground',
 		cancelled: 'bg-red-100 text-red-500'
 	};
 
@@ -60,8 +60,8 @@
 
 <div>
 	<div class="mb-6">
-		<h1 class="text-2xl font-bold text-gray-900">Analytics</h1>
-		<p class="mt-0.5 text-sm text-gray-500">Last 30 days vs previous 30 days.</p>
+		<h1 class="text-2xl font-bold text-foreground">Analytics</h1>
+		<p class="mt-0.5 text-sm text-muted-foreground">Last 30 days vs previous 30 days.</p>
 	</div>
 
 	<!-- ── KPI cards ────────────────────────────────────────────── -->
@@ -69,14 +69,16 @@
 		<!-- Revenue 30d -->
 		<Card class="shadow-sm">
 			<CardContent>
-				<p class="text-xs font-medium tracking-wide text-gray-500 uppercase">Revenue (30d)</p>
-				<p class="mt-1.5 text-3xl font-bold text-gray-900">{fmt(kpis.revenue30)}</p>
+				<p class="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+					Revenue (30d)
+				</p>
+				<p class="mt-1.5 text-3xl font-bold text-foreground">{fmt(kpis.revenue30)}</p>
 				{#if kpis.revenueChange !== null}
-					<p class="mt-1 text-xs {kpis.revenueChange >= 0 ? 'text-green-600' : 'text-red-500'}">
+					<p class="mt-1 text-xs {kpis.revenueChange >= 0 ? 'text-primary' : 'text-red-500'}">
 						{fmtPct(kpis.revenueChange)} vs prev 30d
 					</p>
 				{:else}
-					<p class="mt-1 text-xs text-gray-400">No prior data</p>
+					<p class="mt-1 text-xs text-muted-foreground">No prior data</p>
 				{/if}
 			</CardContent>
 		</Card>
@@ -84,14 +86,16 @@
 		<!-- Orders 30d -->
 		<Card class="shadow-sm">
 			<CardContent>
-				<p class="text-xs font-medium tracking-wide text-gray-500 uppercase">Orders (30d)</p>
-				<p class="mt-1.5 text-3xl font-bold text-gray-900">{kpis.orders30}</p>
+				<p class="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+					Orders (30d)
+				</p>
+				<p class="mt-1.5 text-3xl font-bold text-foreground">{kpis.orders30}</p>
 				{#if kpis.ordersChange !== null}
-					<p class="mt-1 text-xs {kpis.ordersChange >= 0 ? 'text-green-600' : 'text-red-500'}">
+					<p class="mt-1 text-xs {kpis.ordersChange >= 0 ? 'text-primary' : 'text-red-500'}">
 						{fmtPct(kpis.ordersChange)} vs prev 30d
 					</p>
 				{:else}
-					<p class="mt-1 text-xs text-gray-400">No prior data</p>
+					<p class="mt-1 text-xs text-muted-foreground">No prior data</p>
 				{/if}
 			</CardContent>
 		</Card>
@@ -99,14 +103,14 @@
 		<!-- Avg order value -->
 		<Card class="shadow-sm">
 			<CardContent>
-				<p class="text-xs font-medium tracking-wide text-gray-500 uppercase">Avg Order</p>
-				<p class="mt-1.5 text-3xl font-bold text-gray-900">{fmt(kpis.avgOrderValue)}</p>
+				<p class="text-xs font-medium tracking-wide text-muted-foreground uppercase">Avg Order</p>
+				<p class="mt-1.5 text-3xl font-bold text-foreground">{fmt(kpis.avgOrderValue)}</p>
 				{#if kpis.avgChange !== null}
-					<p class="mt-1 text-xs {kpis.avgChange >= 0 ? 'text-green-600' : 'text-red-500'}">
+					<p class="mt-1 text-xs {kpis.avgChange >= 0 ? 'text-primary' : 'text-red-500'}">
 						{fmtPct(kpis.avgChange)} vs prev 30d
 					</p>
 				{:else}
-					<p class="mt-1 text-xs text-gray-400">No prior data</p>
+					<p class="mt-1 text-xs text-muted-foreground">No prior data</p>
 				{/if}
 			</CardContent>
 		</Card>
@@ -114,9 +118,11 @@
 		<!-- Revenue last 7d -->
 		<Card class="shadow-sm">
 			<CardContent>
-				<p class="text-xs font-medium tracking-wide text-gray-500 uppercase">Revenue (7d)</p>
-				<p class="mt-1.5 text-3xl font-bold text-gray-900">{fmt(kpis.revenue7)}</p>
-				<p class="mt-1 text-xs text-gray-400">Last 7 days</p>
+				<p class="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+					Revenue (7d)
+				</p>
+				<p class="mt-1.5 text-3xl font-bold text-foreground">{fmt(kpis.revenue7)}</p>
+				<p class="mt-1 text-xs text-muted-foreground">Last 7 days</p>
 			</CardContent>
 		</Card>
 	</div>
@@ -124,7 +130,7 @@
 	<!-- ── Daily revenue chart ──────────────────────────────────── -->
 	<Card class="mb-6 shadow-sm">
 		<CardContent>
-			<h2 class="mb-4 text-sm font-semibold text-gray-800">Daily revenue — last 30 days</h2>
+			<h2 class="mb-4 text-sm font-semibold text-foreground">Daily revenue — last 30 days</h2>
 			<div class="flex h-36 items-end gap-px">
 				{#each dailyData as day (day.date)}
 					{@const height =
@@ -143,7 +149,10 @@
 									class="rounded-md bg-gray-900 px-2 py-1 text-xs whitespace-nowrap text-white shadow-lg"
 								>
 									<p>{fmt(day.revenue)}</p>
-									<p class="text-gray-400">{day.count} {day.count === 1 ? 'order' : 'orders'}</p>
+									<p class="text-muted-foreground">
+										{day.count}
+										{day.count === 1 ? 'order' : 'orders'}
+									</p>
 								</div>
 								<div class="-mt-1 h-1.5 w-1.5 rotate-45 bg-gray-900"></div>
 							</div>
@@ -152,7 +161,7 @@
 				{/each}
 			</div>
 			<!-- X-axis labels: just first, middle, last -->
-			<div class="mt-1.5 flex justify-between text-xs text-gray-400">
+			<div class="mt-1.5 flex justify-between text-xs text-muted-foreground">
 				<span>{dailyData[0]?.date.slice(5)}</span>
 				<span>{dailyData[14]?.date.slice(5)}</span>
 				<span>{dailyData[29]?.date.slice(5)}</span>
@@ -165,24 +174,26 @@
 		<!-- Top items -->
 		<Card class="shadow-sm lg:col-span-2">
 			<CardContent>
-				<h2 class="mb-4 text-sm font-semibold text-gray-800">Top items</h2>
+				<h2 class="mb-4 text-sm font-semibold text-foreground">Top items</h2>
 				{#if topItems.length === 0}
-					<p class="text-sm text-gray-400">No order data yet.</p>
+					<p class="text-sm text-muted-foreground">No order data yet.</p>
 				{:else}
 					<div class="space-y-3">
 						{#each topItems as item, i (item.name)}
 							<div>
 								<div class="mb-1 flex items-center justify-between gap-2">
 									<div class="flex min-w-0 items-center gap-2">
-										<span class="w-4 shrink-0 text-xs font-bold text-gray-400">#{i + 1}</span>
-										<span class="truncate text-sm font-medium text-gray-800">{item.name}</span>
+										<span class="w-4 shrink-0 text-xs font-bold text-muted-foreground"
+											>#{i + 1}</span
+										>
+										<span class="truncate text-sm font-medium text-foreground">{item.name}</span>
 									</div>
-									<div class="flex shrink-0 items-center gap-3 text-xs text-gray-500">
+									<div class="flex shrink-0 items-center gap-3 text-xs text-muted-foreground">
 										<span>{item.totalQty} sold</span>
-										<span class="font-medium text-gray-700">{fmt(item.totalRevenue)}</span>
+										<span class="font-medium text-muted-foreground">{fmt(item.totalRevenue)}</span>
 									</div>
 								</div>
-								<div class="h-1.5 w-full rounded-full bg-gray-100">
+								<div class="h-1.5 w-full rounded-full bg-muted">
 									<div
 										class="h-1.5 rounded-full bg-gray-800 transition-all"
 										style="width: {Math.round((item.totalQty / maxItemQty) * 100)}%"
@@ -200,27 +211,27 @@
 			<!-- Order types -->
 			<Card class="shadow-sm">
 				<CardContent>
-					<h2 class="mb-3 text-sm font-semibold text-gray-800">Order types</h2>
+					<h2 class="mb-3 text-sm font-semibold text-foreground">Order types</h2>
 					{#if typeBreakdown.length === 0}
-						<p class="text-sm text-gray-400">No data yet.</p>
+						<p class="text-sm text-muted-foreground">No data yet.</p>
 					{:else}
 						<div class="space-y-2.5">
 							{#each typeBreakdown as row (row.type)}
 								<div>
 									<div class="mb-1 flex items-center justify-between text-xs">
-										<span class="inline-flex items-center gap-1 text-gray-600">
+										<span class="inline-flex items-center gap-1 text-muted-foreground">
 											<Icon icon={typeIcons[row.type] ?? 'mdi:food'} class="h-3.5 w-3.5" />
 											{typeLabels[row.type] ?? row.type}
 										</span>
-										<span class="font-medium text-gray-700">{fmt(row.revenue ?? 0)}</span>
+										<span class="font-medium text-muted-foreground">{fmt(row.revenue ?? 0)}</span>
 									</div>
-									<div class="h-1.5 w-full rounded-full bg-gray-100">
+									<div class="h-1.5 w-full rounded-full bg-muted">
 										<div
 											class="h-1.5 rounded-full bg-gray-700"
 											style="width: {Math.round(((row.revenue ?? 0) / totalTypeRevenue) * 100)}%"
 										></div>
 									</div>
-									<p class="mt-0.5 text-right text-xs text-gray-400">{row.count} orders</p>
+									<p class="mt-0.5 text-right text-xs text-muted-foreground">{row.count} orders</p>
 								</div>
 							{/each}
 						</div>
@@ -231,15 +242,15 @@
 			<!-- Status breakdown -->
 			<Card class="shadow-sm">
 				<CardContent>
-					<h2 class="mb-3 text-sm font-semibold text-gray-800">By status (30d)</h2>
+					<h2 class="mb-3 text-sm font-semibold text-foreground">By status (30d)</h2>
 					{#if statusBreakdown.length === 0}
-						<p class="text-sm text-gray-400">No data yet.</p>
+						<p class="text-sm text-muted-foreground">No data yet.</p>
 					{:else}
 						<!-- Stacked bar -->
 						<div class="mb-3 flex h-3 w-full overflow-hidden rounded-full">
 							{#each statusBreakdown as row (row.status)}
 								<div
-									class="{statusColors[row.status] ?? 'bg-gray-200'} transition-all"
+									class="{statusColors[row.status] ?? 'bg-muted'} transition-all"
 									style="width: {Math.round((row.count / totalStatusCount) * 100)}%"
 									title="{row.status}: {row.count}"
 								></div>
@@ -253,12 +264,12 @@
 										></span>
 										<span
 											class="rounded-full px-1.5 py-0.5 {statusBadge[row.status] ??
-												'bg-gray-100 text-gray-600'} capitalize"
+												'bg-muted text-muted-foreground'} capitalize"
 										>
 											{row.status}
 										</span>
 									</span>
-									<span class="font-medium text-gray-700">{row.count}</span>
+									<span class="font-medium text-muted-foreground">{row.count}</span>
 								</div>
 							{/each}
 						</div>

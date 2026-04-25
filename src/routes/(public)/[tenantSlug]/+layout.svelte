@@ -34,7 +34,7 @@
 	</div>
 
 	<!-- Footer -->
-	<footer class="relative z-10 border-t border-gray-200 bg-white/80 backdrop-blur-sm">
+	<footer class="relative z-10 border-t  bg-background/80 backdrop-blur-sm">
 		<div
 			class="mx-auto flex max-w-2xl flex-col items-center gap-1.5 px-4 py-5 sm:flex-row sm:justify-center"
 		>
@@ -43,16 +43,16 @@
 					href={data.tenant.website}
 					target="_blank"
 					rel="external noopener noreferrer"
-					class="text-xs font-semibold text-gray-700 hover:underline">{data.tenant.name}</a
+					class="text-xs font-semibold text-muted-foreground hover:underline">{data.tenant.name}</a
 				>
-				<span class="hidden text-gray-300 sm:inline">·</span>
+				<span class="hidden text-muted-foreground/40 sm:inline">·</span>
 			{/if}
 			{#if data.tenant.subscriptionTier !== 'pro'}
-				<p class="text-xs font-semibold tracking-wide text-gray-500 uppercase">
-					Order<span class="text-green-600">Local</span>
+				<p class="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+					Order<span class="text-primary">Local</span>
 				</p>
 			{/if}
-			<p class="text-xs text-gray-400">&copy; {new Date().getFullYear()} All rights reserved.</p>
+			<p class="text-xs text-muted-foreground">&copy; {new Date().getFullYear()} All rights reserved.</p>
 		</div>
 	</footer>
 </div>

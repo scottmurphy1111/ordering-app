@@ -5,7 +5,14 @@
 	import { resolve } from '$app/paths';
 	import { Button } from '$lib/components/ui/button';
 	import { Input } from '$lib/components/ui/input';
-	import { Card, CardHeader, CardTitle, CardDescription, CardAction, CardContent } from '$lib/components/ui/card';
+	import {
+		Card,
+		CardHeader,
+		CardTitle,
+		CardDescription,
+		CardAction,
+		CardContent
+	} from '$lib/components/ui/card';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
@@ -20,7 +27,6 @@
 	});
 
 	// suppress stale $state warning — branding data initialized from server
-
 
 	// ── Upload helpers ─────────────────────────────────────────────────────────
 	type UploadState = { uploading: boolean; error: string };
@@ -73,22 +79,24 @@
 	<div class="mb-6">
 		<a
 			href={resolve('/dashboard/settings')}
-			class="mb-1 inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700"
+			class="mb-1 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-muted-foreground"
 		>
 			<Icon icon="mdi:chevron-left" class="h-4 w-4" /> Settings
 		</a>
-		<h1 class="text-2xl font-bold text-gray-900">Branding</h1>
-		<p class="mt-0.5 text-sm text-gray-500">Customize your storefront's appearance.</p>
+		<h1 class="text-2xl font-bold text-foreground">Branding</h1>
+		<p class="mt-0.5 text-sm text-muted-foreground">Customize your storefront's appearance.</p>
 	</div>
 
 	{#if form?.error}
-		<div class="mb-4 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+		<div
+			class="mb-4 rounded-md border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive"
+		>
 			{form.error}
 		</div>
 	{/if}
 	{#if form?.success}
 		<div
-			class="mb-4 rounded-md border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700"
+			class="mb-4 rounded-md border border-primary/20 bg-primary/5 px-4 py-3 text-sm text-primary/90"
 		>
 			{form.message}
 		</div>
@@ -101,7 +109,7 @@
 				<CardTitle>Color scheme</CardTitle>
 			</CardHeader>
 			<CardContent>
-				<p class="mb-4 text-xs text-gray-500">Sets the colors on your public storefront.</p>
+				<p class="mb-4 text-xs text-muted-foreground">Sets the colors on your public storefront.</p>
 				<form
 					method="post"
 					action="?/saveColors"
@@ -111,18 +119,14 @@
 					class="space-y-5"
 				>
 					<div class="grid grid-cols-1 gap-6 sm:grid-cols-3">
-						{#each [
-							{ id: 'backgroundColor', label: 'Background', note: 'Header, buttons, and key elements.', value: backgroundColor },
-							{ id: 'foregroundColor', label: 'Foreground', note: 'Text and icons on the background color.', value: foregroundColor },
-							{ id: 'accentColor', label: 'Accent', note: 'Category pills, tags, and highlights.', value: accentColor }
-						] as col (col.id)}
+						{#each [{ id: 'backgroundColor', label: 'Background', note: 'Header, buttons, and key elements.', value: backgroundColor }, { id: 'foregroundColor', label: 'Foreground', note: 'Text and icons on the background color.', value: foregroundColor }, { id: 'accentColor', label: 'Accent', note: 'Category pills, tags, and highlights.', value: accentColor }] as col (col.id)}
 							<div>
-								<label class="mb-2 block text-sm font-medium text-gray-700" for={col.id}
+								<label class="mb-2 block text-sm font-medium text-muted-foreground" for={col.id}
 									>{col.label}</label
 								>
 								<div class="flex items-center gap-3">
 									<div
-										class="relative h-10 w-10 shrink-0 overflow-hidden rounded-md border border-gray-300 shadow-sm"
+										class="relative h-10 w-10 shrink-0 overflow-hidden rounded-md border shadow-sm"
 									>
 										<input
 											type="color"
@@ -167,20 +171,24 @@
 										class="w-28 font-mono"
 									/>
 								</div>
-								<p class="mt-1.5 text-xs text-gray-400">{col.note}</p>
+								<p class="mt-1.5 text-xs text-muted-foreground">{col.note}</p>
 							</div>
 						{/each}
 					</div>
 
 					<!-- Live preview -->
 					<div>
-						<p class="mb-2 text-xs font-medium tracking-wide text-gray-500 uppercase">Preview</p>
-						<div class="overflow-hidden rounded-lg border border-gray-200">
+						<p class="mb-2 text-xs font-medium tracking-wide text-muted-foreground uppercase">
+							Preview
+						</p>
+						<div class="overflow-hidden rounded-lg border">
 							<div
 								class="flex items-center gap-3 px-4 py-3"
 								style="background-color: {backgroundColor};"
 							>
-								<span class="text-sm font-bold" style="color: {foregroundColor};">My Restaurant</span>
+								<span class="text-sm font-bold" style="color: {foregroundColor};"
+									>My Restaurant</span
+								>
 								<span
 									class="rounded-full px-2 py-0.5 text-xs font-medium"
 									style="background-color: {accentColor}; color: {foregroundColor};"
@@ -193,7 +201,8 @@
 							>
 								<span
 									class="rounded-full px-3 py-1 text-xs font-medium"
-									style="background-color: color-mix(in srgb, {accentColor} 20%, {foregroundColor}); color: {accentColor};">Burgers</span
+									style="background-color: color-mix(in srgb, {accentColor} 20%, {foregroundColor}); color: {accentColor};"
+									>Burgers</span
 								>
 								<span
 									class="rounded-full border px-3 py-1 text-xs font-medium"
@@ -202,7 +211,8 @@
 								<button
 									type="button"
 									class="ml-auto rounded-md px-3 py-1.5 text-xs font-semibold shadow-sm"
-									style="background-color: {backgroundColor}; color: {foregroundColor};">+ Add</button
+									style="background-color: {backgroundColor}; color: {foregroundColor};"
+									>+ Add</button
 								>
 							</div>
 						</div>
@@ -215,14 +225,16 @@
 
 		<!-- ── Logo ─────────────────────────────────────────────────────────────── -->
 		<Card class="shadow-sm">
-			<CardHeader class="border-b border-gray-100">
+			<CardHeader class="border-b">
 				<CardTitle>Logo</CardTitle>
-				<CardDescription>Shown in your menu header and tiled as a subtle background pattern.</CardDescription>
+				<CardDescription
+					>Shown in your menu header and tiled as a subtle background pattern.</CardDescription
+				>
 				<CardAction>
 					<span
 						class="rounded-full px-2.5 py-0.5 text-xs font-medium {data.branding.logoUrl
-							? 'bg-green-100 text-green-700'
-							: 'bg-gray-100 text-gray-500'}"
+							? 'bg-green-100 text-primary/90'
+							: 'bg-muted text-muted-foreground'}"
 					>
 						{data.branding.logoUrl ? 'Active' : 'Not set'}
 					</span>
@@ -230,7 +242,7 @@
 			</CardHeader>
 			<CardContent class="space-y-4">
 				{#if data.branding.logoUrl}
-					<div class="flex items-center gap-4 rounded-lg border border-gray-200 bg-gray-50 p-4">
+					<div class="flex items-center gap-4 rounded-lg border bg-muted/50 p-4">
 						<img
 							src={data.branding.logoUrl}
 							alt="Logo"
@@ -270,7 +282,7 @@
 						</form>
 					{/if}
 				</div>
-				<p class="text-xs text-gray-400">
+				<p class="text-xs text-muted-foreground">
 					JPG, PNG, WebP, or SVG · max 2MB · transparent PNG or SVG recommended
 				</p>
 			</CardContent>
@@ -278,14 +290,14 @@
 
 		<!-- ── Banner image ──────────────────────────────────────────────────────── -->
 		<Card class="shadow-sm">
-			<CardHeader class="border-b border-gray-100">
+			<CardHeader class="border-b">
 				<CardTitle>Banner image</CardTitle>
 				<CardDescription>Full-bleed hero image shown at the top of your menu page.</CardDescription>
 				<CardAction>
 					<span
 						class="rounded-full px-2.5 py-0.5 text-xs font-medium {data.branding.bannerUrl
-							? 'bg-green-100 text-green-700'
-							: 'bg-gray-100 text-gray-500'}"
+							? 'bg-green-100 text-primary/90'
+							: 'bg-muted text-muted-foreground'}"
 					>
 						{data.branding.bannerUrl ? 'Active' : 'Not set'}
 					</span>
@@ -293,7 +305,7 @@
 			</CardHeader>
 			<CardContent class="space-y-4">
 				{#if data.branding.bannerUrl}
-					<div class="overflow-hidden rounded-lg border border-gray-200">
+					<div class="overflow-hidden rounded-lg border">
 						<img src={data.branding.bannerUrl} alt="Banner" class="h-36 w-full object-cover" />
 					</div>
 				{/if}
@@ -329,7 +341,7 @@
 						</form>
 					{/if}
 				</div>
-				<p class="text-xs text-gray-400">
+				<p class="text-xs text-muted-foreground">
 					JPG, PNG, or WebP · max 5MB · wide landscape image recommended (1600×600px or similar)
 				</p>
 			</CardContent>
@@ -337,14 +349,17 @@
 
 		<!-- ── Background image ──────────────────────────────────────────────────── -->
 		<Card class="shadow-sm">
-			<CardHeader class="border-b border-gray-100">
+			<CardHeader class="border-b">
 				<CardTitle>Background image</CardTitle>
-				<CardDescription>Subtle full-page texture behind your menu and cart. Works best with low-contrast images (wood, marble, linen).</CardDescription>
+				<CardDescription
+					>Subtle full-page texture behind your menu and cart. Works best with low-contrast images
+					(wood, marble, linen).</CardDescription
+				>
 				<CardAction>
 					<span
 						class="rounded-full px-2.5 py-0.5 text-xs font-medium {data.branding.backgroundImageUrl
-							? 'bg-green-100 text-green-700'
-							: 'bg-gray-100 text-gray-500'}"
+							? 'bg-green-100 text-primary/90'
+							: 'bg-muted text-muted-foreground'}"
 					>
 						{data.branding.backgroundImageUrl ? 'Active' : 'Not set'}
 					</span>
@@ -352,7 +367,7 @@
 			</CardHeader>
 			<CardContent class="space-y-4">
 				{#if data.branding.backgroundImageUrl}
-					<div class="overflow-hidden rounded-lg border border-gray-200">
+					<div class="overflow-hidden rounded-lg border">
 						<img
 							src={data.branding.backgroundImageUrl}
 							alt="Background"
@@ -392,7 +407,7 @@
 						</form>
 					{/if}
 				</div>
-				<p class="text-xs text-gray-400">
+				<p class="text-xs text-muted-foreground">
 					JPG, PNG, or WebP · max 5MB · tileable textures work best
 				</p>
 			</CardContent>

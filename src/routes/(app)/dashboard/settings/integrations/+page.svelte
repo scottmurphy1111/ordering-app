@@ -22,12 +22,14 @@
 	<div class="mb-6">
 		<a
 			href={resolve('/dashboard/settings')}
-			class="mb-1 inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700"
+			class="mb-1 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-muted-foreground"
 		>
 			<Icon icon="mdi:chevron-left" class="h-4 w-4" /> Settings
 		</a>
-		<h1 class="text-2xl font-bold text-gray-900">Integrations</h1>
-		<p class="mt-0.5 text-sm text-gray-500">Connect third-party services to your account.</p>
+		<h1 class="text-2xl font-bold text-foreground">Integrations</h1>
+		<p class="mt-0.5 text-sm text-muted-foreground">
+			Connect third-party services to your account.
+		</p>
 	</div>
 
 	<Card class="shadow-sm">
@@ -50,8 +52,8 @@
 							</svg>
 						</div>
 						<div>
-							<p class="font-medium text-gray-900">Stripe</p>
-							<p class="mt-0.5 text-xs text-gray-500">
+							<p class="font-medium text-foreground">Stripe</p>
+							<p class="mt-0.5 text-xs text-muted-foreground">
 								Discover and import products from your Stripe account
 							</p>
 							<a
@@ -65,34 +67,32 @@
 					</div>
 					<div class="shrink-0">
 						{#if data.hasStripeKey}
-							<Badge class="bg-green-100 text-green-700">
-								<span class="h-1.5 w-1.5 rounded-full bg-green-500"></span>
+							<Badge class="bg-green-100 text-primary/90">
+								<span class="h-1.5 w-1.5 rounded-full bg-primary/100"></span>
 								Connected
 							</Badge>
 						{:else}
-							<Badge class="bg-gray-100 text-gray-500">Not connected</Badge>
+							<Badge class="bg-muted text-muted-foreground">Not connected</Badge>
 						{/if}
 					</div>
 				</div>
 
 				{#if form?.error}
 					<div
-						class="mt-3 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700"
+						class="mt-3 rounded-md border border-destructive/20 bg-destructive/10 px-3 py-2 text-sm text-destructive"
 					>
 						{form.error}
 					</div>
 				{/if}
 				{#if form?.success}
 					<div
-						class="mt-3 rounded-md border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-700"
+						class="mt-3 rounded-md border border-primary/20 bg-primary/5 px-3 py-2 text-sm text-primary/90"
 					>
 						Stripe connected successfully.
 					</div>
 				{/if}
 				{#if form?.cleared}
-					<div
-						class="mt-3 rounded-md border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-600"
-					>
+					<div class="mt-3 rounded-md border bg-muted/50 px-3 py-2 text-sm text-muted-foreground">
 						Stripe key removed.
 					</div>
 				{/if}
@@ -127,14 +127,14 @@
 								autocomplete="off"
 								class="pr-16 font-mono {editing
 									? ''
-									: 'cursor-default bg-gray-50 text-gray-600 select-none'}"
+									: 'cursor-default bg-muted/50 text-muted-foreground select-none'}"
 							/>
 							<Button
 								type="button"
 								onclick={() => (showPk = !showPk)}
 								variant="ghost"
 								size="icon-sm"
-								class="absolute top-1/2 right-2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+								class="absolute top-1/2 right-2 -translate-y-1/2 text-muted-foreground hover:text-muted-foreground"
 							>
 								<Icon
 									icon={showPk ? 'mdi:eye-off-outline' : 'mdi:eye-outline'}
@@ -163,14 +163,14 @@
 								autocomplete="off"
 								class="pr-16 font-mono {editing
 									? ''
-									: 'cursor-default bg-gray-50 text-gray-600 select-none'}"
+									: 'cursor-default bg-muted/50 text-muted-foreground select-none'}"
 							/>
 							<Button
 								type="button"
 								onclick={() => (showKey = !showKey)}
 								variant="ghost"
 								size="icon-sm"
-								class="absolute top-1/2 right-2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+								class="absolute top-1/2 right-2 -translate-y-1/2 text-muted-foreground hover:text-muted-foreground"
 							>
 								<Icon
 									icon={showKey ? 'mdi:eye-off-outline' : 'mdi:eye-outline'}
@@ -179,13 +179,13 @@
 							</Button>
 						</div>
 						{#if editing}
-							<p class="mb-2 text-xs text-gray-400">
+							<p class="mb-2 text-xs text-muted-foreground">
 								Find both keys at
 								<a
 									href="https://dashboard.stripe.com/apikeys"
 									target="_blank"
 									rel="noopener noreferrer"
-									class="underline hover:text-gray-600"
+									class="underline hover:text-muted-foreground"
 								>
 									dashboard.stripe.com/apikeys
 								</a>.
@@ -255,19 +255,19 @@
 				</div>
 				<!-- Webhook status (auto-configured) -->
 				{#if data.hasStripeKey}
-					<div class="mt-5 border-t border-gray-100 pt-4">
+					<div class="mt-5 border-t pt-4">
 						<div class="flex items-center justify-between">
 							<div>
-								<p class="text-sm font-medium text-gray-900">Webhooks</p>
-								<p class="mt-0.5 text-xs text-gray-500">
+								<p class="text-sm font-medium text-foreground">Webhooks</p>
+								<p class="mt-0.5 text-xs text-muted-foreground">
 									Payment confirmations are received automatically via a registered Stripe webhook
 									endpoint.
 								</p>
 							</div>
 							<div class="ml-4 shrink-0">
 								{#if data.hasWebhookEndpoint}
-									<Badge class="bg-green-100 text-green-700">
-										<span class="h-1.5 w-1.5 rounded-full bg-green-500"></span>
+									<Badge class="bg-green-100 text-primary/90">
+										<span class="h-1.5 w-1.5 rounded-full bg-primary/100"></span>
 										Auto-configured
 									</Badge>
 								{:else}

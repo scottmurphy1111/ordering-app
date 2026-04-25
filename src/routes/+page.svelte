@@ -133,7 +133,10 @@
 				'Priority support',
 				'Access to all add-ons'
 			],
-			addonsNote: 'Table QR Codes · SMS Notifications · Custom Domain · Advanced Analytics · Loyalty Program · Subscriptions' as string | null,
+			addonsNote:
+				'Table QR Codes · SMS Notifications · Custom Domain · Advanced Analytics · Loyalty Program · Subscriptions' as
+					| string
+					| null,
 			cta: 'Get started',
 			href: loginHref,
 			highlight: true
@@ -187,27 +190,27 @@
 </svelte:head>
 
 <!-- Nav -->
-<header class="sticky top-0 z-50 border-b border-gray-100 bg-white/90 backdrop-blur-sm">
+<header class="sticky top-0 z-50 border-b bg-background/90 backdrop-blur-sm">
 	<div class="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-		<a href={resolve('/')} class="text-xl font-bold tracking-tight text-gray-900">
-			Order<span class="text-green-600">Local</span>
+		<a href={resolve('/')} class="text-xl font-bold tracking-tight text-foreground">
+			Order<span class="text-primary">Local</span>
 		</a>
-		<nav class="hidden items-center gap-6 text-sm font-medium text-gray-600 md:flex">
-			<a href="#features" class="transition-colors hover:text-gray-900">Features</a>
-			<a href="#how-it-works" class="transition-colors hover:text-gray-900">How it works</a>
-			<a href="#pricing" class="transition-colors hover:text-gray-900">Pricing</a>
-			<a href="#faq" class="transition-colors hover:text-gray-900">FAQ</a>
+		<nav class="hidden items-center gap-6 text-sm font-medium text-muted-foreground md:flex">
+			<a href="#features" class="transition-colors hover:text-foreground">Features</a>
+			<a href="#how-it-works" class="transition-colors hover:text-foreground">How it works</a>
+			<a href="#pricing" class="transition-colors hover:text-foreground">Pricing</a>
+			<a href="#faq" class="transition-colors hover:text-foreground">FAQ</a>
 		</nav>
 		<div class="flex items-center gap-3">
 			<a
 				href={loginHref}
-				class="text-sm font-medium text-gray-600 transition-colors hover:text-gray-900"
+				class="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
 			>
 				Sign in
 			</a>
 			<a
 				href={loginHref}
-				class="rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-green-700"
+				class="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-primary/90"
 			>
 				Get started free
 			</a>
@@ -216,20 +219,20 @@
 </header>
 
 <!-- Hero -->
-<section class="relative overflow-hidden bg-white px-6 pt-20 pb-24">
+<section class="relative overflow-hidden bg-background px-6 pt-20 pb-24">
 	<div
 		class="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(ellipse_80%_50%_at_50%_-10%,rgba(22,163,74,0.08),transparent)]"
 	></div>
 	<div class="mx-auto max-w-4xl text-center">
 		<span
-			class="mb-4 inline-block rounded-full bg-green-50 px-3 py-1 text-xs font-semibold tracking-wide text-green-700 uppercase"
+			class="mb-4 inline-block rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold tracking-wide text-primary/90 uppercase"
 		>
 			Built for local businesses
 		</span>
-		<h1 class="text-5xl leading-tight font-bold tracking-tight text-gray-900 sm:text-6xl">
+		<h1 class="text-5xl leading-tight font-bold tracking-tight text-foreground sm:text-6xl">
 			Online ordering,<br />without the big-platform fees.
 		</h1>
-		<p class="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-gray-500">
+		<p class="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-muted-foreground">
 			Order Local gives any local business — restaurant, cafe, food truck, bakery, boutique, or
 			pop-up — a branded online storefront and seamless checkout. Powered by Stripe, managed from a
 			simple dashboard. No app. No commission cuts. Yours.
@@ -237,54 +240,52 @@
 		<div class="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row">
 			<a
 				href={loginHref}
-				class="w-full rounded-xl bg-green-600 px-8 py-3.5 text-base font-semibold text-white shadow-md transition-colors hover:bg-green-700 sm:w-auto"
+				class="w-full rounded-xl bg-primary px-8 py-3.5 text-base font-semibold text-white shadow-md transition-colors hover:bg-primary/90 sm:w-auto"
 			>
 				Start for free
 			</a>
 			<a
 				href="#how-it-works"
-				class="w-full rounded-xl border border-gray-200 bg-white px-8 py-3.5 text-base font-semibold text-gray-700 transition-colors hover:bg-gray-50 sm:w-auto"
+				class="w-full rounded-xl border bg-background px-8 py-3.5 text-base font-semibold text-muted-foreground transition-colors hover:bg-muted/50 sm:w-auto"
 			>
 				See how it works
 			</a>
 		</div>
-		<p class="mt-4 text-xs text-gray-400">
+		<p class="mt-4 text-xs text-muted-foreground">
 			No credit card required · Free plan available · Live in minutes
 		</p>
 	</div>
 
 	<!-- Mock menu card -->
-	<div
-		class="mx-auto mt-16 max-w-sm overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-xl"
-	>
-		<div class="bg-green-600 px-5 py-4">
-			<p class="text-xs font-medium text-green-100">Your branded menu page</p>
+	<div class="mx-auto mt-16 max-w-sm overflow-hidden rounded-2xl border bg-background shadow-xl">
+		<div class="bg-primary px-5 py-4">
+			<p class="text-xs font-medium text-primary-foreground/80">Your branded menu page</p>
 			<p class="mt-0.5 text-lg font-bold text-white">The Corner Cafe</p>
 		</div>
-		<div class="divide-y divide-gray-100">
+		<div class="divide-y divide-border">
 			{#each mockItems as item (item.name)}
 				<div class="flex items-center justify-between px-5 py-3">
 					<div>
-						<p class="text-sm font-medium text-gray-900">{item.name}</p>
+						<p class="text-sm font-medium text-foreground">{item.name}</p>
 						{#if item.tag}
 							<span
-								class="rounded-full bg-green-50 px-1.5 py-0.5 text-xs font-medium text-green-700"
+								class="rounded-full bg-primary/10 px-1.5 py-0.5 text-xs font-medium text-primary/90"
 								>{item.tag}</span
 							>
 						{/if}
 					</div>
 					<div class="flex items-center gap-3">
-						<span class="text-sm font-semibold text-gray-700">{item.price}</span>
-						<button class="rounded-lg bg-green-600 px-3 py-1 text-xs font-semibold text-white"
+						<span class="text-sm font-semibold text-muted-foreground">{item.price}</span>
+						<button class="rounded-lg bg-primary px-3 py-1 text-xs font-semibold text-white"
 							>+ Add</button
 						>
 					</div>
 				</div>
 			{/each}
 		</div>
-		<div class="flex items-center justify-between bg-gray-50 px-5 py-3">
-			<span class="text-xs text-gray-500">2 items · $16.50</span>
-			<button class="rounded-lg bg-green-600 px-4 py-1.5 text-xs font-bold text-white"
+		<div class="flex items-center justify-between bg-muted/50 px-5 py-3">
+			<span class="text-xs text-muted-foreground">2 items · $16.50</span>
+			<button class="rounded-lg bg-primary px-4 py-1.5 text-xs font-bold text-white"
 				>View Cart</button
 			>
 		</div>
@@ -292,9 +293,9 @@
 </section>
 
 <!-- Social proof bar -->
-<div class="border-y border-gray-100 bg-gray-50 py-5">
+<div class="border-y bg-muted/50 py-5">
 	<div class="mx-auto max-w-4xl px-6 text-center">
-		<p class="text-sm font-medium text-gray-500">
+		<p class="text-sm font-medium text-muted-foreground">
 			Trusted by independent restaurants, cafes, food trucks, bakeries, boutiques, and local
 			businesses of all kinds
 		</p>
@@ -302,25 +303,25 @@
 </div>
 
 <!-- Features -->
-<section id="features" class="bg-white px-6 py-24">
+<section id="features" class="scroll-mt-20 bg-background px-6 py-24">
 	<div class="mx-auto max-w-6xl">
 		<div class="mb-14 text-center">
-			<h2 class="text-3xl font-bold text-gray-900 sm:text-4xl">
+			<h2 class="text-3xl font-bold text-foreground sm:text-4xl">
 				Everything you need to sell online
 			</h2>
-			<p class="mt-3 text-lg text-gray-500">
+			<p class="mt-3 text-lg text-muted-foreground">
 				No bloat. Just the tools a local business actually uses — whether you're selling food,
 				goods, or services.
 			</p>
 		</div>
 		<div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
 			{#each features as f (f.title)}
-				<div class="rounded-2xl border border-gray-100 bg-gray-50 p-6">
-					<div class="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-green-100">
-						<Icon icon={f.icon} class="h-5 w-5 text-green-700" />
+				<div class="rounded-2xl border bg-muted/50 p-6">
+					<div class="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
+						<Icon icon={f.icon} class="h-5 w-5 text-primary" />
 					</div>
-					<h3 class="font-semibold text-gray-900">{f.title}</h3>
-					<p class="mt-1.5 text-sm leading-relaxed text-gray-500">{f.desc}</p>
+					<h3 class="font-semibold text-foreground">{f.title}</h3>
+					<p class="mt-1.5 text-sm leading-relaxed text-muted-foreground">{f.desc}</p>
 				</div>
 			{/each}
 		</div>
@@ -328,22 +329,22 @@
 </section>
 
 <!-- How it works -->
-<section id="how-it-works" class="bg-gray-50 px-6 py-24">
+<section id="how-it-works" class="scroll-mt-20 bg-muted/50 px-6 py-24">
 	<div class="mx-auto max-w-4xl">
 		<div class="mb-14 text-center">
-			<h2 class="text-3xl font-bold text-gray-900 sm:text-4xl">Up and running in minutes</h2>
-			<p class="mt-3 text-lg text-gray-500">Four steps from sign-up to your first order.</p>
+			<h2 class="text-3xl font-bold text-foreground sm:text-4xl">Up and running in minutes</h2>
+			<p class="mt-3 text-lg text-muted-foreground">Four steps from sign-up to your first order.</p>
 		</div>
 		<div class="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
 			{#each steps as step (step.num)}
 				<div class="flex flex-col items-center text-center">
 					<div
-						class="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-green-600 text-lg font-bold text-white shadow-md"
+						class="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary text-lg font-bold text-white shadow-md"
 					>
 						{step.num}
 					</div>
-					<h3 class="font-semibold text-gray-900">{step.title}</h3>
-					<p class="mt-1.5 text-sm leading-relaxed text-gray-500">{step.desc}</p>
+					<h3 class="font-semibold text-foreground">{step.title}</h3>
+					<p class="mt-1.5 text-sm leading-relaxed text-muted-foreground">{step.desc}</p>
 				</div>
 			{/each}
 		</div>
@@ -351,62 +352,64 @@
 </section>
 
 <!-- Add-ons -->
-<section class="bg-white px-6 py-24">
+<section class="bg-background px-6 py-24">
 	<div class="mx-auto max-w-6xl">
 		<div class="mb-14 text-center">
 			<span
-				class="mb-3 inline-block rounded-full bg-green-50 px-3 py-1 text-xs font-semibold tracking-wide text-green-700 uppercase"
+				class="mb-3 inline-block rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold tracking-wide text-primary/90 uppercase"
 			>
 				Optional add-ons
 			</span>
-			<h2 class="text-3xl font-bold text-gray-900 sm:text-4xl">Only pay for what you need</h2>
-			<p class="mt-3 text-lg text-gray-500">
+			<h2 class="text-3xl font-bold text-foreground sm:text-4xl">Only pay for what you need</h2>
+			<p class="mt-3 text-lg text-muted-foreground">
 				Every plan starts lean. Add features as your business grows — activate or cancel anytime
 				from your dashboard.
 			</p>
 		</div>
 		<div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
 			{#each addons as addon (addon.name)}
-				<div class="flex flex-col gap-3 rounded-2xl border border-gray-100 bg-gray-50 p-6">
+				<div class="flex flex-col gap-3 rounded-2xl border bg-muted/50 p-6">
 					<div class="flex items-center justify-between">
-						<div class="flex h-10 w-10 items-center justify-center rounded-xl bg-green-100">
-							<Icon icon={addon.icon} class="h-5 w-5 text-green-700" />
+						<div class="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
+							<Icon icon={addon.icon} class="h-5 w-5 text-primary" />
 						</div>
 						<span
-							class="rounded-full border border-gray-200 bg-white px-2.5 py-0.5 text-xs font-semibold text-gray-600"
+							class="rounded-full border bg-background px-2.5 py-0.5 text-xs font-semibold text-muted-foreground"
 							>{addon.price}</span
 						>
 					</div>
 					<div>
-						<h3 class="font-semibold text-gray-900">{addon.name}</h3>
-						<p class="mt-1 text-sm leading-relaxed text-gray-500">{addon.desc}</p>
+						<h3 class="font-semibold text-foreground">{addon.name}</h3>
+						<p class="mt-1 text-sm leading-relaxed text-muted-foreground">{addon.desc}</p>
 					</div>
 				</div>
 			{/each}
 		</div>
-		<p class="mt-8 text-center text-sm text-gray-400">
+		<p class="mt-8 text-center text-sm text-muted-foreground">
 			Add-ons require an active Pro plan. Activate or cancel anytime from your dashboard.
 		</p>
 	</div>
 </section>
 
 <!-- Pricing -->
-<section id="pricing" class="bg-gray-50 px-6 py-24">
+<section id="pricing" class="scroll-mt-20 bg-muted/50 px-6 py-24">
 	<div class="mx-auto max-w-6xl">
 		<div class="mb-10 text-center">
-			<h2 class="text-3xl font-bold text-gray-900 sm:text-4xl">Simple, honest pricing</h2>
-			<p class="mt-3 text-lg text-gray-500">No commissions. No surprise fees. Cancel anytime.</p>
+			<h2 class="text-3xl font-bold text-foreground sm:text-4xl">Simple, honest pricing</h2>
+			<p class="mt-3 text-lg text-muted-foreground">
+				No commissions. No surprise fees. Cancel anytime.
+			</p>
 		</div>
 
 		<!-- Billing interval toggle -->
 		<div class="mb-10 flex justify-center">
-			<div class="flex items-center gap-1 rounded-xl border border-gray-200 bg-white p-1 shadow-sm">
+			<div class="flex items-center gap-1 rounded-xl border bg-background p-1 shadow-sm">
 				<button
 					onclick={() => (pricingInterval = 'monthly')}
 					class="rounded-lg px-5 py-2 text-sm font-medium transition-colors
 						{pricingInterval === 'monthly'
 						? 'bg-gray-900 text-white'
-						: 'text-gray-500 hover:text-gray-800'}"
+						: 'text-muted-foreground hover:text-foreground'}"
 				>
 					Monthly
 				</button>
@@ -415,12 +418,14 @@
 					class="flex items-center gap-2 rounded-lg px-5 py-2 text-sm font-medium transition-colors
 						{pricingInterval === 'annual'
 						? 'bg-gray-900 text-white'
-						: 'text-gray-500 hover:text-gray-800'}"
+						: 'text-muted-foreground hover:text-foreground'}"
 				>
 					Annual
 					<span
 						class="rounded-full px-2 py-0.5 text-xs font-semibold
-							{pricingInterval === 'annual' ? 'bg-green-500 text-white' : 'bg-green-100 text-green-700'}"
+							{pricingInterval === 'annual'
+							? 'bg-primary text-primary-foreground'
+							: 'bg-green-100 text-primary/90'}"
 					>
 						Save 2 months
 					</span>
@@ -430,36 +435,45 @@
 
 		<div class="mx-auto grid max-w-2xl gap-6 sm:grid-cols-2 lg:items-start">
 			{#each plans as plan (plan.name)}
-				{@const displayPrice = plan.highlight && pricingInterval === 'annual' && plan.annualPrice ? plan.annualPrice : plan.price}
+				{@const displayPrice =
+					plan.highlight && pricingInterval === 'annual' && plan.annualPrice
+						? plan.annualPrice
+						: plan.price}
 				<div
 					class="flex flex-col rounded-2xl border p-7
 						{plan.highlight
-						? 'border-green-500 bg-green-600 text-white shadow-xl'
-						: 'border-gray-200 bg-white text-gray-900'}"
+						? 'border-primary bg-primary text-white shadow-xl'
+						: ' bg-background text-foreground'}"
 				>
 					{#if plan.highlight}
 						<span
-							class="mb-3 self-start rounded-full bg-white/20 px-3 py-0.5 text-xs font-semibold text-white"
+							class="mb-3 self-start rounded-full bg-background/20 px-3 py-0.5 text-xs font-semibold text-white"
 							>Most popular</span
 						>
 					{/if}
-					<p class="text-lg font-bold {plan.highlight ? 'text-white' : 'text-gray-900'}">
+					<p class="text-lg font-bold {plan.highlight ? 'text-white' : 'text-foreground'}">
 						{plan.name}
 					</p>
 					<div class="mt-2 flex items-end gap-1">
-						<span class="text-4xl font-bold {plan.highlight ? 'text-white' : 'text-gray-900'}"
+						<span class="text-4xl font-bold {plan.highlight ? 'text-white' : 'text-foreground'}"
 							>{displayPrice}</span
 						>
 						{#if plan.period}
-							<span class="mb-1 text-sm {plan.highlight ? 'text-green-100' : 'text-gray-400'}"
-								>{plan.period}</span
+							<span
+								class="mb-1 text-sm {plan.highlight
+									? 'text-primary-foreground/80'
+									: 'text-muted-foreground'}">{plan.period}</span
 							>
 						{/if}
 					</div>
 					{#if plan.highlight && pricingInterval === 'annual' && plan.annualNote}
-						<p class="mt-1 text-sm text-green-200">{plan.annualNote}</p>
+						<p class="mt-1 text-sm text-primary-foreground/70">{plan.annualNote}</p>
 					{:else}
-						<p class="mt-1 text-sm {plan.highlight ? 'text-green-100' : 'text-gray-500'}">
+						<p
+							class="mt-1 text-sm {plan.highlight
+								? 'text-primary-foreground/80'
+								: 'text-muted-foreground'}"
+						>
 							{plan.description}
 						</p>
 					{/if}
@@ -469,13 +483,13 @@
 							<li
 								class="flex items-start gap-2 text-sm {plan.highlight
 									? 'text-white'
-									: 'text-gray-600'}"
+									: 'text-muted-foreground'}"
 							>
 								<Icon
 									icon="mdi:check-circle-outline"
 									class="mt-0.5 h-4 w-4 shrink-0 {plan.highlight
-										? 'text-green-200'
-										: 'text-green-500'}"
+										? 'text-primary-foreground/70'
+										: 'text-primary/80'}"
 								/>
 								{feat}
 							</li>
@@ -483,7 +497,11 @@
 					</ul>
 
 					{#if plan.addonsNote}
-						<p class="mt-4 text-xs leading-relaxed {plan.highlight ? 'text-green-200' : 'text-gray-400'}">
+						<p
+							class="mt-4 text-xs leading-relaxed {plan.highlight
+								? 'text-primary-foreground/70'
+								: 'text-muted-foreground'}"
+						>
 							Add-ons: {plan.addonsNote}
 						</p>
 					{/if}
@@ -492,7 +510,7 @@
 						href={loginHref}
 						class="mt-8 block rounded-xl px-5 py-3 text-center text-sm font-semibold transition-colors
 							{plan.highlight
-							? 'bg-white text-green-700 hover:bg-green-50'
+							? 'bg-background text-primary/90 hover:bg-primary/5'
 							: 'bg-gray-900 text-white hover:bg-gray-700'}"
 					>
 						{plan.cta}
@@ -500,7 +518,7 @@
 				</div>
 			{/each}
 		</div>
-		<p class="mt-8 text-center text-xs text-gray-400">
+		<p class="mt-8 text-center text-xs text-muted-foreground">
 			All plans include Stripe payment processing. Stripe charges 2.9% + 30¢ per transaction — we
 			never take a cut.
 		</p>
@@ -508,28 +526,28 @@
 </section>
 
 <!-- FAQ -->
-<section id="faq" class="bg-gray-50 px-6 py-24">
+<section id="faq" class="scroll-mt-20 bg-muted/50 px-6 py-24">
 	<div class="mx-auto max-w-2xl">
 		<div class="mb-12 text-center">
-			<h2 class="text-3xl font-bold text-gray-900 sm:text-4xl">Frequently asked questions</h2>
+			<h2 class="text-3xl font-bold text-foreground sm:text-4xl">Frequently asked questions</h2>
 		</div>
 		<div class="space-y-3">
 			{#each faqs as faq, i (faq.q)}
-				<div class="overflow-hidden rounded-xl border border-gray-200 bg-white">
+				<div class="overflow-hidden rounded-xl border bg-background">
 					<button
-						class="flex w-full items-center justify-between px-5 py-4 text-left text-sm font-semibold text-gray-900 transition-colors hover:bg-gray-50"
+						class="flex w-full items-center justify-between px-5 py-4 text-left text-sm font-semibold text-foreground transition-colors hover:bg-muted/50"
 						onclick={() => (openFaq = openFaq === i ? null : i)}
 					>
 						{faq.q}
 						<Icon
 							icon="mdi:chevron-down"
-							class="ml-4 h-5 w-5 shrink-0 text-gray-400 transition-transform {openFaq === i
+							class="ml-4 h-5 w-5 shrink-0 text-muted-foreground transition-transform {openFaq === i
 								? 'rotate-180'
 								: ''}"
 						/>
 					</button>
 					{#if openFaq === i}
-						<div class="border-t border-gray-100 px-5 py-4 text-sm leading-relaxed text-gray-500">
+						<div class="border-t px-5 py-4 text-sm leading-relaxed text-muted-foreground">
 							{faq.a}
 						</div>
 					{/if}
@@ -540,15 +558,15 @@
 </section>
 
 <!-- CTA -->
-<section class="bg-green-600 px-6 py-20">
+<section class="bg-primary px-6 py-20">
 	<div class="mx-auto max-w-2xl text-center">
 		<h2 class="text-3xl font-bold text-white sm:text-4xl">Ready to take your first order?</h2>
-		<p class="mt-4 text-lg text-green-100">
+		<p class="mt-4 text-lg text-primary-foreground/80">
 			Set up your menu today — free, no credit card required.
 		</p>
 		<a
 			href={loginHref}
-			class="mt-8 inline-block rounded-xl bg-white px-10 py-3.5 text-base font-bold text-green-700 shadow-md transition-colors hover:bg-green-50"
+			class="mt-8 inline-block rounded-xl bg-background px-10 py-3.5 text-base font-bold text-primary/90 shadow-md transition-colors hover:bg-primary/5"
 		>
 			Create your free account
 		</a>
@@ -556,21 +574,21 @@
 </section>
 
 <!-- Footer -->
-<footer class="border-t border-gray-200 bg-white px-6 py-10">
+<footer class="border-t bg-background px-6 py-10">
 	<div class="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 sm:flex-row">
-		<p class="text-sm font-semibold text-gray-900">
-			Order<span class="text-green-600">Local</span>
+		<p class="text-sm font-semibold text-foreground">
+			Order<span class="text-primary">Local</span>
 		</p>
-		<p class="text-xs text-gray-400">
-			© {new Date().getFullYear()} Order<span class="text-green-600">Local</span>. All rights
+		<p class="text-xs text-muted-foreground">
+			© {new Date().getFullYear()} Order<span class="text-primary">Local</span>. All rights
 			reserved.
 		</p>
-		<nav class="flex gap-4 text-xs text-gray-400">
-			<a href={loginHref} class="transition-colors hover:text-gray-700">Sign in</a>
+		<nav class="flex gap-4 text-xs text-muted-foreground">
+			<a href={loginHref} class="transition-colors hover:text-muted-foreground">Sign in</a>
 			<a
 				href="mailto:hello@getorderlocal.com"
 				rel="external"
-				class="transition-colors hover:text-gray-700">Contact</a
+				class="transition-colors hover:text-muted-foreground">Contact</a
 			>
 		</nav>
 	</div>

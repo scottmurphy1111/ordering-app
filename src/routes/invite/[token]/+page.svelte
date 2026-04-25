@@ -25,28 +25,28 @@
 	}
 </script>
 
-<div class="flex min-h-screen items-center justify-center bg-gray-50 px-4">
+<div class="flex min-h-screen items-center justify-center bg-muted/50 px-4">
 	<div class="w-full max-w-sm">
 		<div class="mb-8 text-center">
-			<h1 class="text-2xl font-bold text-gray-900">
-				Order<span class="text-green-600">Local</span>
+			<h1 class="text-2xl font-bold text-foreground">
+				Order<span class="text-primary">Local</span>
 			</h1>
 		</div>
 
 		{#if data.invalid}
-			<div class="rounded-2xl border border-gray-200 bg-white p-8 text-center shadow-sm">
+			<div class="rounded-2xl border  bg-background p-8 text-center shadow-sm">
 				<p class="mb-2 text-2xl">🔗</p>
-				<h2 class="mb-1 text-lg font-semibold text-gray-900">Invalid invite</h2>
-				<p class="text-sm text-gray-500">This invite link is not valid.</p>
+				<h2 class="mb-1 text-lg font-semibold text-foreground">Invalid invite</h2>
+				<p class="text-sm text-muted-foreground">This invite link is not valid.</p>
 				<a href={resolve('/login')} class="mt-4 inline-block text-sm text-blue-600 hover:underline"
 					>Go to sign in</a
 				>
 			</div>
 		{:else if data.expired}
-			<div class="rounded-2xl border border-gray-200 bg-white p-8 text-center shadow-sm">
+			<div class="rounded-2xl border  bg-background p-8 text-center shadow-sm">
 				<p class="mb-2 text-2xl">⏰</p>
-				<h2 class="mb-1 text-lg font-semibold text-gray-900">Invite expired</h2>
-				<p class="text-sm text-gray-500">
+				<h2 class="mb-1 text-lg font-semibold text-foreground">Invite expired</h2>
+				<p class="text-sm text-muted-foreground">
 					This invite link has expired. Ask the team admin to send a new one.
 				</p>
 				<a href={resolve('/login')} class="mt-4 inline-block text-sm text-blue-600 hover:underline"
@@ -54,23 +54,23 @@
 				>
 			</div>
 		{:else if data.alreadyAccepted}
-			<div class="rounded-2xl border border-gray-200 bg-white p-8 text-center shadow-sm">
+			<div class="rounded-2xl border  bg-background p-8 text-center shadow-sm">
 				<p class="mb-2 text-2xl">✅</p>
-				<h2 class="mb-1 text-lg font-semibold text-gray-900">Already accepted</h2>
-				<p class="text-sm text-gray-500">This invite has already been used.</p>
+				<h2 class="mb-1 text-lg font-semibold text-foreground">Already accepted</h2>
+				<p class="text-sm text-muted-foreground">This invite has already been used.</p>
 				<a
 					href={resolve('/tenants')}
 					class="mt-4 inline-block text-sm text-blue-600 hover:underline">Go to dashboard</a
 				>
 			</div>
 		{:else if data.wrongEmail}
-			<div class="rounded-2xl border border-gray-200 bg-white p-8 text-center shadow-sm">
+			<div class="rounded-2xl border  bg-background p-8 text-center shadow-sm">
 				<p class="mb-2 text-2xl">👤</p>
-				<h2 class="mb-1 text-lg font-semibold text-gray-900">Wrong account</h2>
-				<p class="mb-1 text-sm text-gray-500">
+				<h2 class="mb-1 text-lg font-semibold text-foreground">Wrong account</h2>
+				<p class="mb-1 text-sm text-muted-foreground">
 					This invite was sent to <strong>{data.invite?.email}</strong>.
 				</p>
-				<p class="text-sm text-gray-500">
+				<p class="text-sm text-muted-foreground">
 					You're signed in as <strong>{data.wrongEmail}</strong>. Please sign in with the correct
 					account.
 				</p>
@@ -79,17 +79,17 @@
 				>
 			</div>
 		{:else if data.invite}
-			<div class="rounded-2xl border border-gray-200 bg-white p-8 shadow-sm">
+			<div class="rounded-2xl border  bg-background p-8 shadow-sm">
 				<!-- Invite summary -->
 				<div class="mb-6 text-center">
-					<h2 class="text-lg font-semibold text-gray-900">You've been invited</h2>
-					<p class="mt-1 text-sm text-gray-500">
+					<h2 class="text-lg font-semibold text-foreground">You've been invited</h2>
+					<p class="mt-1 text-sm text-muted-foreground">
 						Join <strong>{data.tenantName}</strong> as
-						<span class="font-medium text-gray-700"
+						<span class="font-medium text-muted-foreground"
 							>{roleLabels[data.invite.role] ?? data.invite.role}</span
 						>
 					</p>
-					<p class="mt-1 text-xs text-gray-400">Invite sent to {data.invite.email}</p>
+					<p class="mt-1 text-xs text-muted-foreground">Invite sent to {data.invite.email}</p>
 				</div>
 
 				{#if form?.message}
@@ -129,27 +129,27 @@
 				</Button>
 
 				<div class="my-5 flex items-center gap-3">
-					<div class="h-px flex-1 bg-gray-200"></div>
-					<span class="text-xs text-gray-400">or</span>
-					<div class="h-px flex-1 bg-gray-200"></div>
+					<div class="h-px flex-1 bg-border"></div>
+					<span class="text-xs text-muted-foreground">or</span>
+					<div class="h-px flex-1 bg-border"></div>
 				</div>
 
 				{#if !showSignUp}
 					<!-- Sign in form -->
 					<form method="post" action="?/signInAndAccept" use:enhance class="space-y-3">
 						<div>
-							<label class="mb-1 block text-xs font-medium text-gray-600" for="email">Email</label>
+							<label class="mb-1 block text-xs font-medium text-muted-foreground" for="email">Email</label>
 							<input
 								id="email"
 								name="email"
 								type="email"
 								required
 								value={data.invite.email}
-								class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
+								class="w-full rounded-lg border  px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
 							/>
 						</div>
 						<div>
-							<label class="mb-1 block text-xs font-medium text-gray-600" for="password"
+							<label class="mb-1 block text-xs font-medium text-muted-foreground" for="password"
 								>Password</label
 							>
 							<input
@@ -158,7 +158,7 @@
 								type="password"
 								required
 								placeholder="••••••••"
-								class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
+								class="w-full rounded-lg border  px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
 							/>
 						</div>
 						<Button type="submit" variant="default" class="w-full">
@@ -171,7 +171,7 @@
 						onclick={() => (showSignUp = true)}
 						variant="ghost"
 						size="sm"
-						class="mt-4 w-full text-xs text-gray-400 hover:text-gray-600"
+						class="mt-4 w-full text-xs text-muted-foreground hover:text-muted-foreground"
 					>
 						Don't have an account? Create one
 					</Button>
@@ -179,18 +179,18 @@
 					<!-- Sign up form -->
 					<form method="post" action="?/signUpAndAccept" use:enhance class="space-y-3">
 						<div>
-							<label class="mb-1 block text-xs font-medium text-gray-600" for="name">Name</label>
+							<label class="mb-1 block text-xs font-medium text-muted-foreground" for="name">Name</label>
 							<input
 								id="name"
 								name="name"
 								type="text"
 								required
 								placeholder="Your name"
-								class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
+								class="w-full rounded-lg border  px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
 							/>
 						</div>
 						<div>
-							<label class="mb-1 block text-xs font-medium text-gray-600" for="signup-email"
+							<label class="mb-1 block text-xs font-medium text-muted-foreground" for="signup-email"
 								>Email</label
 							>
 							<input
@@ -199,11 +199,11 @@
 								type="email"
 								required
 								value={data.invite.email}
-								class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
+								class="w-full rounded-lg border  px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
 							/>
 						</div>
 						<div>
-							<label class="mb-1 block text-xs font-medium text-gray-600" for="signup-password"
+							<label class="mb-1 block text-xs font-medium text-muted-foreground" for="signup-password"
 								>Password</label
 							>
 							<input
@@ -212,7 +212,7 @@
 								type="password"
 								required
 								placeholder="••••••••"
-								class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
+								class="w-full rounded-lg border  px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
 							/>
 						</div>
 						<Button type="submit" variant="default" class="w-full">
@@ -225,7 +225,7 @@
 						onclick={() => (showSignUp = false)}
 						variant="ghost"
 						size="sm"
-						class="mt-4 w-full text-xs text-gray-400 hover:text-gray-600"
+						class="mt-4 w-full text-xs text-muted-foreground hover:text-muted-foreground"
 					>
 						Already have an account? Sign in
 					</Button>
