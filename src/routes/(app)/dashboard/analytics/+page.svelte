@@ -1,12 +1,26 @@
 <script lang="ts">
 	import type { PageData } from './$types';
 	import Icon from '@iconify/svelte';
-	import { Card } from '$lib/components/ui/card';
-	import CardContent from '$lib/components/ui/card/card-content.svelte';
+	import { resolve } from '$app/paths';
+	import { Card, CardHeader, CardTitle, CardContent } from '$lib/components/ui/card';
+	import { Badge } from '$lib/components/ui/badge';
+	import { Button } from '$lib/components/ui/button';
+	import { Tabs, TabsList, TabsTrigger, TabsContent } from '$lib/components/ui/tabs';
+	import { SvelteMap } from 'svelte/reactivity';
 
 	let { data }: { data: PageData } = $props();
 
-	const { kpis, dailyData, topItems, statusBreakdown, typeBreakdown } = $derived(data);
+	const {
+		kpis,
+		dailyData,
+		topItems,
+		statusBreakdown,
+		typeBreakdown,
+		hasAdvancedAnalytics,
+		peakHoursGrid,
+		customerRetention,
+		topItemsByRevenue
+	} = $derived(data);
 
 	function fmt(cents: number) {
 		return (
@@ -56,6 +70,37 @@
 
 	const totalTypeRevenue = $derived(typeBreakdown.reduce((s, r) => s + (r.revenue ?? 0), 0) || 1);
 	const maxItemQty = $derived(Math.max(...topItems.map((i) => i.totalQty), 1));
+	const maxItemRevenue = $derived(
+		Math.max(...(topItemsByRevenue ?? topItems).map((i) => i.totalRevenue), 1)
+	);
+
+	// ── Peak hours heatmap ───────────────────────────────────────────
+	// DOW order: Mon(1) → Sun(0)
+	const DOW_ORDER = [1, 2, 3, 4, 5, 6, 0];
+	const DOW_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+	const HOURS = Array.from({ length: 24 }, (_, i) => i);
+
+	const heatmapLookup = $derived.by(() => {
+		const map = new SvelteMap<string, number>();
+		for (const row of peakHoursGrid ?? []) {
+			map.set(`${row.dow}-${row.hour}`, row.count);
+		}
+		return map;
+	});
+
+	const maxHeatmapCount = $derived(Math.max(...(peakHoursGrid ?? []).map((r) => r.count), 1));
+
+	function heatmapCell(dow: number, hour: number): { count: number; opacity: number } {
+		const count = heatmapLookup.get(`${dow}-${hour}`) ?? 0;
+		const opacity = count === 0 ? 0 : Math.max(0.08, count / maxHeatmapCount);
+		return { count, opacity };
+	}
+
+	function fmtHour(h: number): string {
+		if (h === 0) return '12a';
+		if (h === 12) return '12p';
+		return h < 12 ? `${h}a` : `${h - 12}p`;
+	}
 </script>
 
 <div>
@@ -66,7 +111,6 @@
 
 	<!-- ── KPI cards ────────────────────────────────────────────── -->
 	<div class="mb-8 grid grid-cols-2 gap-4 lg:grid-cols-4">
-		<!-- Revenue 30d -->
 		<Card class="shadow-sm">
 			<CardContent>
 				<p class="text-xs font-medium tracking-wide text-muted-foreground uppercase">
@@ -83,7 +127,6 @@
 			</CardContent>
 		</Card>
 
-		<!-- Orders 30d -->
 		<Card class="shadow-sm">
 			<CardContent>
 				<p class="text-xs font-medium tracking-wide text-muted-foreground uppercase">
@@ -100,7 +143,6 @@
 			</CardContent>
 		</Card>
 
-		<!-- Avg order value -->
 		<Card class="shadow-sm">
 			<CardContent>
 				<p class="text-xs font-medium tracking-wide text-muted-foreground uppercase">Avg Order</p>
@@ -115,7 +157,6 @@
 			</CardContent>
 		</Card>
 
-		<!-- Revenue last 7d -->
 		<Card class="shadow-sm">
 			<CardContent>
 				<p class="text-xs font-medium tracking-wide text-muted-foreground uppercase">
@@ -137,10 +178,9 @@
 						day.revenue === 0 ? 2 : Math.max(4, Math.round((day.revenue / maxDailyRevenue) * 144))}
 					<div class="group relative flex flex-1 flex-col items-center justify-end">
 						<div
-							class="w-full rounded-sm bg-gray-800 transition-colors group-hover:bg-gray-600"
+							class="w-full rounded-sm bg-primary transition-colors group-hover:bg-primary/80"
 							style="height: {height}px;"
 						></div>
-						<!-- Tooltip -->
 						{#if day.revenue > 0}
 							<div
 								class="pointer-events-none absolute bottom-full left-1/2 z-10 mb-1.5 hidden -translate-x-1/2 flex-col items-center group-hover:flex"
@@ -160,7 +200,6 @@
 					</div>
 				{/each}
 			</div>
-			<!-- X-axis labels: just first, middle, last -->
 			<div class="mt-1.5 flex justify-between text-xs text-muted-foreground">
 				<span>{dailyData[0]?.date.slice(5)}</span>
 				<span>{dailyData[14]?.date.slice(5)}</span>
@@ -183,9 +222,7 @@
 							<div>
 								<div class="mb-1 flex items-center justify-between gap-2">
 									<div class="flex min-w-0 items-center gap-2">
-										<span class="w-4 shrink-0 text-xs font-bold text-muted-foreground"
-											>#{i + 1}</span
-										>
+										<span class="w-4 shrink-0 text-xs font-bold text-muted-foreground">#{i + 1}</span>
 										<span class="truncate text-sm font-medium text-foreground">{item.name}</span>
 									</div>
 									<div class="flex shrink-0 items-center gap-3 text-xs text-muted-foreground">
@@ -195,7 +232,7 @@
 								</div>
 								<div class="h-1.5 w-full rounded-full bg-muted">
 									<div
-										class="h-1.5 rounded-full bg-gray-800 transition-all"
+										class="h-1.5 rounded-full bg-primary transition-all"
 										style="width: {Math.round((item.totalQty / maxItemQty) * 100)}%"
 									></div>
 								</div>
@@ -227,7 +264,7 @@
 									</div>
 									<div class="h-1.5 w-full rounded-full bg-muted">
 										<div
-											class="h-1.5 rounded-full bg-gray-700"
+											class="h-1.5 rounded-full bg-primary"
 											style="width: {Math.round(((row.revenue ?? 0) / totalTypeRevenue) * 100)}%"
 										></div>
 									</div>
@@ -246,7 +283,6 @@
 					{#if statusBreakdown.length === 0}
 						<p class="text-sm text-muted-foreground">No data yet.</p>
 					{:else}
-						<!-- Stacked bar -->
 						<div class="mb-3 flex h-3 w-full overflow-hidden rounded-full">
 							{#each statusBreakdown as row (row.status)}
 								<div
@@ -278,4 +314,272 @@
 			</Card>
 		</div>
 	</div>
+
+	<!-- ── Advanced Analytics ────────────────────────────────────── -->
+	{#if hasAdvancedAnalytics}
+		<div class="mt-10">
+			<div class="mb-5 flex items-center gap-3">
+				<h2 class="text-lg font-semibold text-foreground">Advanced Analytics</h2>
+				<Badge class="bg-primary/10 text-primary/90">Add-on</Badge>
+			</div>
+
+			<!-- Peak hours heatmap -->
+			<Card class="mb-6 shadow-sm">
+				<CardHeader class="border-b pb-3">
+					<CardTitle class="text-sm font-semibold">Peak hours — last 90 days</CardTitle>
+				</CardHeader>
+				<CardContent class="pt-4">
+					{#if (peakHoursGrid ?? []).length === 0}
+						<p class="text-sm text-muted-foreground">Not enough order data yet.</p>
+					{:else}
+						<div class="overflow-x-auto">
+							<div class="min-w-130">
+								<!-- Hour labels -->
+								<div class="mb-1 flex">
+									<div class="w-10 shrink-0"></div>
+									<div class="flex flex-1 text-[10px] text-muted-foreground">
+										{#each HOURS as h (h)}
+											<div class="flex-1 text-center">
+												{h % 6 === 0 ? fmtHour(h) : ''}
+											</div>
+										{/each}
+									</div>
+								</div>
+								<!-- Grid rows -->
+								{#each DOW_ORDER as dow, di (dow)}
+									<div class="mb-0.5 flex items-center gap-1">
+										<div class="w-10 shrink-0 text-right text-[10px] text-muted-foreground">
+											{DOW_LABELS[di]}
+										</div>
+										<div class="flex flex-1 gap-0.5">
+											{#each HOURS as h (h)}
+												{@const cell = heatmapCell(dow, h)}
+												<div class="group relative flex-1">
+													<div
+														class="h-5 w-full rounded-sm"
+														style="background-color: oklch(0.612 0.17 152.75 / {cell.opacity});"
+													></div>
+													{#if cell.count > 0}
+														{#if di < 3}
+															<!-- top rows: tooltip below to avoid clipping -->
+															<div class="pointer-events-none absolute top-full left-1/2 z-10 mt-1.5 hidden -translate-x-1/2 flex-col items-center group-hover:flex">
+																<div class="-mb-1 h-1.5 w-1.5 rotate-45 bg-gray-900"></div>
+																<div class="rounded-md bg-gray-900 px-2 py-1 text-xs whitespace-nowrap text-white shadow-lg">
+																	<p>{DOW_LABELS[di]} {fmtHour(h)}</p>
+																	<p class="text-muted-foreground">{cell.count} {cell.count === 1 ? 'order' : 'orders'}</p>
+																</div>
+															</div>
+														{:else}
+															<!-- bottom rows: tooltip above -->
+															<div class="pointer-events-none absolute bottom-full left-1/2 z-10 mb-1.5 hidden -translate-x-1/2 flex-col items-center group-hover:flex">
+																<div class="rounded-md bg-gray-900 px-2 py-1 text-xs whitespace-nowrap text-white shadow-lg">
+																	<p>{DOW_LABELS[di]} {fmtHour(h)}</p>
+																	<p class="text-muted-foreground">{cell.count} {cell.count === 1 ? 'order' : 'orders'}</p>
+																</div>
+																<div class="-mt-1 h-1.5 w-1.5 rotate-45 bg-gray-900"></div>
+															</div>
+														{/if}
+													{/if}
+												</div>
+											{/each}
+										</div>
+									</div>
+								{/each}
+								<!-- Legend -->
+								<div class="mt-3 flex items-center justify-end gap-2 text-[10px] text-muted-foreground">
+									<span>Fewer</span>
+									<div class="flex gap-0.5">
+										{#each [0.08, 0.25, 0.45, 0.65, 1] as op (op)}
+											<div
+												class="h-3 w-4 rounded-sm"
+												style="background-color: oklch(0.612 0.17 152.75 / {op});"
+											></div>
+										{/each}
+									</div>
+									<span>More</span>
+								</div>
+							</div>
+						</div>
+					{/if}
+				</CardContent>
+			</Card>
+
+			<!-- Customer retention + Top items by revenue -->
+			<div class="grid gap-6 lg:grid-cols-3">
+				<!-- Customer retention -->
+				<Card class="shadow-sm">
+					<CardHeader class="border-b pb-3">
+						<CardTitle class="text-sm font-semibold">Customer retention</CardTitle>
+					</CardHeader>
+					<CardContent class="pt-4">
+						{#if !customerRetention || customerRetention.total === 0}
+							<p class="text-sm text-muted-foreground">Not enough customer data yet.</p>
+						{:else}
+							<div class="space-y-4">
+								<div>
+									<p class="text-3xl font-bold text-foreground">{customerRetention.returnRate}%</p>
+									<p class="mt-0.5 text-xs text-muted-foreground">return rate</p>
+								</div>
+
+								<!-- Bar visualization -->
+								<div class="space-y-2">
+									<div>
+										<div class="mb-1 flex items-center justify-between text-xs">
+											<span class="text-muted-foreground">Returning customers</span>
+											<span class="font-medium text-foreground">{customerRetention.returning}</span>
+										</div>
+										<div class="h-2 w-full rounded-full bg-muted">
+											<div
+												class="h-2 rounded-full bg-primary transition-all"
+												style="width: {customerRetention.returnRate}%"
+											></div>
+										</div>
+									</div>
+									<div>
+										<div class="mb-1 flex items-center justify-between text-xs">
+											<span class="text-muted-foreground">First-time customers</span>
+											<span class="font-medium text-foreground"
+												>{customerRetention.total - customerRetention.returning}</span
+											>
+										</div>
+										<div class="h-2 w-full rounded-full bg-muted">
+											<div
+												class="h-2 rounded-full bg-gray-400 transition-all"
+												style="width: {100 - customerRetention.returnRate}%"
+											></div>
+										</div>
+									</div>
+								</div>
+
+								<p class="text-xs text-muted-foreground">
+									{customerRetention.total} unique customers identified by email.
+								</p>
+							</div>
+						{/if}
+					</CardContent>
+				</Card>
+
+				<!-- Top items by revenue (with volume/revenue tabs) -->
+				<Card class="shadow-sm lg:col-span-2">
+					<CardHeader class="border-b pb-3">
+						<CardTitle class="text-sm font-semibold">Top items</CardTitle>
+					</CardHeader>
+					<CardContent class="pt-4">
+						<Tabs value="revenue">
+							<TabsList class="mb-4 h-8">
+								<TabsTrigger value="volume" class="text-xs">By volume</TabsTrigger>
+								<TabsTrigger value="revenue" class="text-xs">By revenue</TabsTrigger>
+							</TabsList>
+
+							<TabsContent value="volume">
+								{#if topItems.length === 0}
+									<p class="text-sm text-muted-foreground">No order data yet.</p>
+								{:else}
+									<div class="space-y-3">
+										{#each topItems as item, i (item.name)}
+											<div>
+												<div class="mb-1 flex items-center justify-between gap-2">
+													<div class="flex min-w-0 items-center gap-2">
+														<span class="w-4 shrink-0 text-xs font-bold text-muted-foreground"
+															>#{i + 1}</span
+														>
+														<span class="truncate text-sm font-medium text-foreground"
+															>{item.name}</span
+														>
+													</div>
+													<div class="flex shrink-0 items-center gap-3 text-xs text-muted-foreground">
+														<span class="font-medium text-foreground">{item.totalQty} sold</span>
+														<span>{fmt(item.totalRevenue)}</span>
+													</div>
+												</div>
+												<div class="h-1.5 w-full rounded-full bg-muted">
+													<div
+														class="h-1.5 rounded-full bg-primary transition-all"
+														style="width: {Math.round((item.totalQty / maxItemQty) * 100)}%"
+													></div>
+												</div>
+											</div>
+										{/each}
+									</div>
+								{/if}
+							</TabsContent>
+
+							<TabsContent value="revenue">
+								{#if !topItemsByRevenue || topItemsByRevenue.length === 0}
+									<p class="text-sm text-muted-foreground">No order data yet.</p>
+								{:else}
+									<div class="space-y-3">
+										{#each topItemsByRevenue as item, i (item.name)}
+											<div>
+												<div class="mb-1 flex items-center justify-between gap-2">
+													<div class="flex min-w-0 items-center gap-2">
+														<span class="w-4 shrink-0 text-xs font-bold text-muted-foreground"
+															>#{i + 1}</span
+														>
+														<span class="truncate text-sm font-medium text-foreground"
+															>{item.name}</span
+														>
+													</div>
+													<div class="flex shrink-0 items-center gap-3 text-xs text-muted-foreground">
+														<span class="font-medium text-foreground">{fmt(item.totalRevenue)}</span>
+														<span>{item.totalQty} sold</span>
+													</div>
+												</div>
+												<div class="h-1.5 w-full rounded-full bg-muted">
+													<div
+														class="h-1.5 rounded-full bg-primary transition-all"
+														style="width: {Math.round((item.totalRevenue / maxItemRevenue) * 100)}%"
+													></div>
+												</div>
+											</div>
+										{/each}
+									</div>
+									<p class="mt-4 text-xs text-muted-foreground">
+										Revenue ranking may differ from volume — high-ticket items earn more per sale.
+									</p>
+								{/if}
+							</TabsContent>
+						</Tabs>
+					</CardContent>
+				</Card>
+			</div>
+		</div>
+
+		<!-- ── Upsell card ───────────────────────────────────────────── -->
+	{:else}
+		<div class="mt-10">
+			<Card class="shadow-sm">
+				<CardContent class="py-8">
+					<div class="mx-auto max-w-md text-center">
+						<div
+							class="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10"
+						>
+							<Icon icon="mdi:chart-line" class="h-6 w-6 text-primary" />
+						</div>
+						<h3 class="mb-1 text-base font-semibold text-foreground">Advanced Analytics</h3>
+						<p class="mb-5 text-sm text-muted-foreground">
+							Go beyond the basics. Understand when your customers order, who keeps coming back, and
+							which items actually drive revenue.
+						</p>
+						<ul class="mb-6 space-y-2 text-left">
+							{#each [
+								{ icon: 'mdi:clock-outline', label: 'Peak hours heatmap — find your busiest day/time combinations' },
+								{ icon: 'mdi:account-group-outline', label: 'Customer retention — new vs. returning, return rate over time' },
+								{ icon: 'mdi:trophy-outline', label: 'Top items by revenue vs. volume — they rank differently' }
+							] as feat (feat.label)}
+								<li class="flex items-start gap-2.5 text-sm text-muted-foreground">
+									<Icon icon={feat.icon} class="mt-0.5 h-4 w-4 shrink-0 text-primary/70" />
+									{feat.label}
+								</li>
+							{/each}
+						</ul>
+						<Button href={resolve('/dashboard/settings/billing')} class="gap-2">
+							<Icon icon="mdi:arrow-up-circle-outline" class="h-4 w-4" />
+							Unlock for $19/mo
+						</Button>
+					</div>
+				</CardContent>
+			</Card>
+		</div>
+	{/if}
 </div>

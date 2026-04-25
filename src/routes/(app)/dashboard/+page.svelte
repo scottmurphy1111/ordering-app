@@ -62,9 +62,9 @@
 				href={resolve(`/${data.tenant.slug}/menu`)}
 				target="_blank"
 				rel="noopener noreferrer"
-				class="inline-flex items-center gap-1.5 rounded-md border border-primary/20 bg-primary/5 px-3 py-1.5 text-sm text-primary/90 transition-colors hover:bg-primary/10"
+				class="inline-flex items-center gap-1.5 rounded-md border border-primary px-4 py-2 text-sm font-semibold text-primary transition-colors hover:bg-primary/5"
 			>
-				View menu <Icon icon="mdi:open-in-new" class="h-3.5 w-3.5" />
+				Open live menu <Icon icon="mdi:open-in-new" class="h-3.5 w-3.5" />
 			</a>
 		{/if}
 	</div>

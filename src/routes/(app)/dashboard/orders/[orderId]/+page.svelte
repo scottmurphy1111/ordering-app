@@ -264,7 +264,7 @@
 									btn.form?.requestSubmit();
 							}}
 							variant="outline"
-							class="border-orange-200 text-orange-600 hover:bg-orange-50"
+							class="border-orange-200 text-orange-600 hover:bg-orange-50 hover:text-orange-600"
 						>
 							Refund payment
 						</Button>

@@ -33,10 +33,9 @@
 	</div>
 
 	<Card class="shadow-sm">
-		<CardContent class="divide-y">
+		<CardContent>
 			<!-- Stripe -->
-			<div class="px-5 py-4">
-				<div class="flex items-start justify-between gap-4">
+			<div class="flex items-start justify-between gap-4">
 					<div class="flex items-center gap-3">
 						<!-- Stripe logo mark -->
 						<div class="flex h-9 w-9 items-center justify-center rounded-lg bg-[#635BFF]">
@@ -277,7 +276,6 @@
 						</div>
 					</div>
 				{/if}
-			</div>
 		</CardContent>
 	</Card>
 </div>

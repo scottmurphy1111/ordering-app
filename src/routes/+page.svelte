@@ -172,12 +172,6 @@
 		}
 	];
 
-	const mockItems = [
-		{ name: 'Avocado Toast', price: '$12.00', tag: 'Popular' },
-		{ name: 'Flat White', price: '$4.50', tag: '' },
-		{ name: 'Acai Bowl', price: '$14.00', tag: 'New' }
-	];
-
 	let openFaq = $state<number | null>(null);
 </script>
 
@@ -223,71 +217,167 @@
 	<div
 		class="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(ellipse_80%_50%_at_50%_-10%,rgba(22,163,74,0.08),transparent)]"
 	></div>
-	<div class="mx-auto max-w-4xl text-center">
-		<span
-			class="mb-4 inline-block rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold tracking-wide text-primary/90 uppercase"
-		>
-			Built for local businesses
-		</span>
-		<h1 class="text-5xl leading-tight font-bold tracking-tight text-foreground sm:text-6xl">
-			Online ordering,<br />without the big-platform fees.
-		</h1>
-		<p class="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-muted-foreground">
-			Order Local gives any local business — restaurant, cafe, food truck, bakery, boutique, or
-			pop-up — a branded online storefront and seamless checkout. Powered by Stripe, managed from a
-			simple dashboard. No app. No commission cuts. Yours.
-		</p>
-		<div class="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row">
-			<a
-				href={loginHref}
-				class="w-full rounded-xl bg-primary px-8 py-3.5 text-base font-semibold text-white shadow-md transition-colors hover:bg-primary/90 sm:w-auto"
+	<div class="mx-auto grid max-w-6xl items-center gap-12 lg:grid-cols-2">
+		<!-- Text -->
+		<div class="flex flex-col items-center text-center">
+			<span
+				class="mb-4 inline-block rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold tracking-wide text-primary/90 uppercase"
 			>
-				Start for free
-			</a>
-			<a
-				href="#how-it-works"
-				class="w-full rounded-xl border bg-background px-8 py-3.5 text-base font-semibold text-muted-foreground transition-colors hover:bg-muted/50 sm:w-auto"
-			>
-				See how it works
-			</a>
+				Built for local businesses
+			</span>
+			<h1 class="text-5xl leading-tight font-bold tracking-tight text-foreground sm:text-6xl">
+				Online ordering,<br />without the<br />big-platform fees.
+			</h1>
+			<p class="mt-6 max-w-md text-lg leading-relaxed text-muted-foreground">
+				Order Local gives any local business a branded online storefront and seamless checkout.
+				Powered by Stripe, managed from a simple dashboard. No app. No commission cuts. Yours.
+			</p>
+			<div class="mt-10 flex flex-col items-center gap-3 sm:flex-row">
+				<a
+					href={loginHref}
+					class="w-full rounded-xl bg-primary px-8 py-3.5 text-base font-semibold text-white shadow-md transition-colors hover:bg-primary/90 sm:w-auto"
+				>
+					Start for free
+				</a>
+				<a
+					href="#how-it-works"
+					class="w-full rounded-xl border bg-background px-8 py-3.5 text-base font-semibold text-muted-foreground transition-colors hover:bg-muted/50 sm:w-auto"
+				>
+					See how it works
+				</a>
+			</div>
+			<p class="mt-4 text-xs text-muted-foreground">
+				No credit card required · Free plan available · Live in minutes
+			</p>
 		</div>
-		<p class="mt-4 text-xs text-muted-foreground">
-			No credit card required · Free plan available · Live in minutes
-		</p>
-	</div>
 
-	<!-- Mock menu card -->
-	<div class="mx-auto mt-16 max-w-sm overflow-hidden rounded-2xl border bg-background shadow-xl">
-		<div class="bg-primary px-5 py-4">
-			<p class="text-xs font-medium text-primary-foreground/80">Your branded menu page</p>
-			<p class="mt-0.5 text-lg font-bold text-white">The Corner Cafe</p>
-		</div>
-		<div class="divide-y divide-border">
-			{#each mockItems as item (item.name)}
-				<div class="flex items-center justify-between px-5 py-3">
-					<div>
-						<p class="text-sm font-medium text-foreground">{item.name}</p>
-						{#if item.tag}
-							<span
-								class="rounded-full bg-primary/10 px-1.5 py-0.5 text-xs font-medium text-primary/90"
-								>{item.tag}</span
-							>
-						{/if}
-					</div>
-					<div class="flex items-center gap-3">
-						<span class="text-sm font-semibold text-muted-foreground">{item.price}</span>
-						<button class="rounded-lg bg-primary px-3 py-1 text-xs font-semibold text-white"
-							>+ Add</button
-						>
+		<!-- Dashboard mock -->
+		<div class="relative mx-auto w-full max-w-lg pb-10 pr-2">
+			<!-- Subtle glow behind the card -->
+			<div
+				class="pointer-events-none absolute -inset-4 -z-10 rounded-3xl bg-primary/5 blur-2xl"
+			></div>
+			<div class="overflow-hidden rounded-2xl border bg-background shadow-2xl">
+				<!-- Browser chrome -->
+				<div class="flex items-center gap-1.5 border-b bg-muted/60 px-3 py-2.5">
+					<div class="h-2.5 w-2.5 rounded-full bg-red-400/70"></div>
+					<div class="h-2.5 w-2.5 rounded-full bg-yellow-400/70"></div>
+					<div class="h-2.5 w-2.5 rounded-full bg-green-400/70"></div>
+					<div
+						class="ml-2 flex-1 rounded-md bg-background px-2 py-0.5 text-[10px] text-muted-foreground/70"
+					>
+						app.orderlocal.com/dashboard
 					</div>
 				</div>
-			{/each}
-		</div>
-		<div class="flex items-center justify-between bg-muted/50 px-5 py-3">
-			<span class="text-xs text-muted-foreground">2 items · $16.50</span>
-			<button class="rounded-lg bg-primary px-4 py-1.5 text-xs font-bold text-white"
-				>View Cart</button
-			>
+				<!-- Dashboard layout -->
+				<div class="flex">
+					<!-- Sidebar -->
+					<div class="flex w-28 shrink-0 flex-col bg-gray-900 px-2 py-3">
+						<p class="mb-3 px-2 text-[10px] font-bold text-white">
+							Order<span class="text-primary">Local</span>
+						</p>
+						<div class="space-y-0.5">
+							<div class="rounded-md bg-primary px-2 py-1.5 text-[10px] font-medium text-white">Overview</div>
+							<div class="px-2 py-1.5 text-[10px] text-gray-400">Orders</div>
+							<div class="px-2 py-1.5 text-[10px] text-gray-400">Menu</div>
+							<div class="px-2 py-1.5 text-[10px] text-gray-400">Analytics</div>
+							<div class="px-2 py-1.5 text-[10px] text-gray-400">Settings</div>
+						</div>
+					</div>
+					<!-- Main content -->
+					<div class="flex-1 bg-muted/30 p-4">
+						<div class="mb-3 flex items-center justify-between">
+							<p class="text-xs font-semibold text-foreground">Overview</p>
+							<span
+								class="rounded-md border border-primary px-2 py-0.5 text-[10px] font-semibold text-primary"
+								>Open live menu ↗</span
+							>
+						</div>
+						<!-- KPI cards -->
+						<div class="mb-3 grid grid-cols-3 gap-2">
+							{#each [
+								{ label: 'Revenue (30d)', value: '$4,280', change: '+12.4%' },
+								{ label: 'Orders', value: '63', change: '+8.2%' },
+								{ label: 'Avg Order', value: '$67.90', change: '+3.1%' }
+							] as kpi (kpi.label)}
+								<div class="rounded-lg border bg-background p-2 shadow-sm">
+									<p class="text-[8px] font-medium text-muted-foreground uppercase">{kpi.label}</p>
+									<p class="mt-0.5 text-sm font-bold text-foreground">{kpi.value}</p>
+									<p class="text-[9px] font-medium text-primary">{kpi.change}</p>
+								</div>
+							{/each}
+						</div>
+						<!-- Recent orders -->
+						<div class="rounded-lg border bg-background p-2.5 shadow-sm">
+							<p class="mb-2 text-[10px] font-semibold text-foreground">Recent orders</p>
+							<div class="space-y-1.5">
+								{#each [
+									{ num: '#142', items: 'Avocado Toast, Flat White', status: 'New', color: 'bg-blue-100 text-blue-700' },
+									{ num: '#141', items: 'Acai Bowl', status: 'Preparing', color: 'bg-yellow-100 text-yellow-700' },
+									{ num: '#140', items: 'Flat White ×2', status: 'Ready', color: 'bg-green-100 text-green-700' }
+								] as order (order.num)}
+									<div class="flex items-center justify-between gap-2">
+										<div class="min-w-0">
+											<span class="text-[9px] font-medium text-foreground">{order.num}</span>
+											<span class="text-[9px] text-muted-foreground"> · {order.items}</span>
+										</div>
+										<span class="shrink-0 rounded-full px-1.5 py-0.5 text-[8px] font-semibold {order.color}"
+											>{order.status}</span
+										>
+									</div>
+								{/each}
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<!-- Floating customer menu mock -->
+			<div class="absolute right-0 -bottom-2 z-10 w-44 overflow-hidden rounded-2xl border bg-background shadow-2xl ring-1 ring-black/5">
+				<!-- Menu header -->
+				<div class="bg-gray-900 px-3 py-2.5">
+					<div class="flex items-center gap-2">
+						<div class="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-primary text-[9px] font-bold text-white">OL</div>
+						<div>
+							<p class="text-[10px] font-bold text-white">The Daily Brew</p>
+							<p class="text-[8px] text-gray-400">Order ahead · pickup</p>
+						</div>
+					</div>
+				</div>
+				<!-- Category pills -->
+				<div class="flex gap-1 border-b bg-muted/30 px-2 py-1.5">
+					<span class="rounded-full bg-primary px-2 py-0.5 text-[7px] font-semibold text-white">Coffee</span>
+					<span class="rounded-full bg-muted px-2 py-0.5 text-[7px] text-muted-foreground">Food</span>
+					<span class="rounded-full bg-muted px-2 py-0.5 text-[7px] text-muted-foreground">Extras</span>
+				</div>
+				<!-- Menu items -->
+				<div class="divide-y px-2">
+					{#each [
+						{ name: 'Flat White', desc: 'Double shot, steamed milk', price: '$5.50', color: 'bg-amber-100' },
+						{ name: 'Avocado Toast', desc: 'Sourdough, poached egg', price: '$14.00', color: 'bg-green-100' },
+						{ name: 'Acai Bowl', desc: 'Granola, banana, honey', price: '$12.50', color: 'bg-purple-100' }
+					] as item (item.name)}
+						<div class="flex items-center justify-between gap-2 py-2">
+							<div class="flex items-center gap-1.5">
+								<div class="h-8 w-8 shrink-0 rounded-lg {item.color}"></div>
+								<div>
+									<p class="text-[8px] font-semibold text-foreground">{item.name}</p>
+									<p class="text-[7px] leading-tight text-muted-foreground">{item.desc}</p>
+									<p class="mt-0.5 text-[8px] font-medium text-foreground">{item.price}</p>
+								</div>
+							</div>
+							<button class="shrink-0 rounded-full bg-primary p-1">
+								<Icon icon="mdi:plus" class="h-2.5 w-2.5 text-white" />
+							</button>
+						</div>
+					{/each}
+				</div>
+				<!-- Cart bar -->
+				<div class="bg-primary px-3 py-2">
+					<p class="text-center text-[8px] font-semibold text-white">View cart · 2 items · $19.50</p>
+				</div>
+			</div>
+
 		</div>
 	</div>
 </section>
@@ -351,48 +441,8 @@
 	</div>
 </section>
 
-<!-- Add-ons -->
-<section class="bg-background px-6 py-24">
-	<div class="mx-auto max-w-6xl">
-		<div class="mb-14 text-center">
-			<span
-				class="mb-3 inline-block rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold tracking-wide text-primary/90 uppercase"
-			>
-				Optional add-ons
-			</span>
-			<h2 class="text-3xl font-bold text-foreground sm:text-4xl">Only pay for what you need</h2>
-			<p class="mt-3 text-lg text-muted-foreground">
-				Every plan starts lean. Add features as your business grows — activate or cancel anytime
-				from your dashboard.
-			</p>
-		</div>
-		<div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-			{#each addons as addon (addon.name)}
-				<div class="flex flex-col gap-3 rounded-2xl border bg-muted/50 p-6">
-					<div class="flex items-center justify-between">
-						<div class="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
-							<Icon icon={addon.icon} class="h-5 w-5 text-primary" />
-						</div>
-						<span
-							class="rounded-full border bg-background px-2.5 py-0.5 text-xs font-semibold text-muted-foreground"
-							>{addon.price}</span
-						>
-					</div>
-					<div>
-						<h3 class="font-semibold text-foreground">{addon.name}</h3>
-						<p class="mt-1 text-sm leading-relaxed text-muted-foreground">{addon.desc}</p>
-					</div>
-				</div>
-			{/each}
-		</div>
-		<p class="mt-8 text-center text-sm text-muted-foreground">
-			Add-ons require an active Pro plan. Activate or cancel anytime from your dashboard.
-		</p>
-	</div>
-</section>
-
 <!-- Pricing -->
-<section id="pricing" class="scroll-mt-20 bg-muted/50 px-6 py-24">
+<section id="pricing" class="scroll-mt-20 bg-background px-6 py-24">
 	<div class="mx-auto max-w-6xl">
 		<div class="mb-10 text-center">
 			<h2 class="text-3xl font-bold text-foreground sm:text-4xl">Simple, honest pricing</h2>
@@ -433,7 +483,7 @@
 			</div>
 		</div>
 
-		<div class="mx-auto grid max-w-2xl gap-6 sm:grid-cols-2 lg:items-start">
+		<div class="mx-auto grid max-w-2xl items-stretch gap-6 sm:grid-cols-2">
 			{#each plans as plan (plan.name)}
 				{@const displayPrice =
 					plan.highlight && pricingInterval === 'annual' && plan.annualPrice
@@ -525,8 +575,48 @@
 	</div>
 </section>
 
+<!-- Add-ons -->
+<section class="bg-muted/50 px-6 py-24">
+	<div class="mx-auto max-w-6xl">
+		<div class="mb-14 text-center">
+			<span
+				class="mb-3 inline-block rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold tracking-wide text-primary/90 uppercase"
+			>
+				Optional add-ons
+			</span>
+			<h2 class="text-3xl font-bold text-foreground sm:text-4xl">Only pay for what you need</h2>
+			<p class="mt-3 text-lg text-muted-foreground">
+				Every plan starts lean. Add features as your business grows — activate or cancel anytime
+				from your dashboard.
+			</p>
+		</div>
+		<div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+			{#each addons as addon (addon.name)}
+				<div class="flex flex-col gap-3 rounded-2xl border bg-background p-6">
+					<div class="flex items-center justify-between">
+						<div class="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
+							<Icon icon={addon.icon} class="h-5 w-5 text-primary" />
+						</div>
+						<span
+							class="rounded-full border bg-background px-2.5 py-0.5 text-xs font-semibold text-muted-foreground"
+							>{addon.price}</span
+						>
+					</div>
+					<div>
+						<h3 class="font-semibold text-foreground">{addon.name}</h3>
+						<p class="mt-1 text-sm leading-relaxed text-muted-foreground">{addon.desc}</p>
+					</div>
+				</div>
+			{/each}
+		</div>
+		<p class="mt-8 text-center text-sm text-muted-foreground">
+			Add-ons require an active Pro plan. Activate or cancel anytime from your dashboard.
+		</p>
+	</div>
+</section>
+
 <!-- FAQ -->
-<section id="faq" class="scroll-mt-20 bg-muted/50 px-6 py-24">
+<section id="faq" class="scroll-mt-20 bg-background px-6 py-24">
 	<div class="mx-auto max-w-2xl">
 		<div class="mb-12 text-center">
 			<h2 class="text-3xl font-bold text-foreground sm:text-4xl">Frequently asked questions</h2>
@@ -566,7 +656,7 @@
 		</p>
 		<a
 			href={loginHref}
-			class="mt-8 inline-block rounded-xl bg-background px-10 py-3.5 text-base font-bold text-primary/90 shadow-md transition-colors hover:bg-primary/5"
+			class="mt-8 inline-block rounded-xl bg-background px-10 py-3.5 text-base font-bold text-primary/90 shadow-md transition-colors hover:bg-white/90"
 		>
 			Create your free account
 		</a>
@@ -576,9 +666,6 @@
 <!-- Footer -->
 <footer class="border-t bg-background px-6 py-10">
 	<div class="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 sm:flex-row">
-		<p class="text-sm font-semibold text-foreground">
-			Order<span class="text-primary">Local</span>
-		</p>
 		<p class="text-xs text-muted-foreground">
 			© {new Date().getFullYear()} Order<span class="text-primary">Local</span>. All rights
 			reserved.

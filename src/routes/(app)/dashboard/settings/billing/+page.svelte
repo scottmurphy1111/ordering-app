@@ -327,20 +327,21 @@
 				</Tabs>
 			{/if}
 		</div>
-		<div class="grid gap-4 sm:grid-cols-2">
+		<div class="grid gap-4 pt-4 sm:grid-cols-2">
 			{#each TIERS as tier (tier.key)}
 				{@const isCurrent = tier.key === currentTierKey}
 				{@const tierIndex = TIERS.findIndex((t) => t.key === tier.key)}
 				{@const currentIndex = TIERS.findIndex((t) => t.key === currentTierKey)}
 				{@const isUpgrade = tierIndex > currentIndex}
-				<Card class="relative shadow-sm {isCurrent ? 'ring-2 ring-primary/70 ring-offset-0' : ''}">
+				<div class="relative">
 					{#if isCurrent}
 						<span
-							class="absolute -top-2.5 left-4 rounded-full bg-primary/100 px-2.5 py-0.5 text-xs font-semibold text-white"
+							class="absolute -top-2.5 left-4 z-10 rounded-full bg-primary px-2.5 py-0.5 text-xs font-semibold text-white"
 							>Current</span
 						>
 					{/if}
-					<CardContent>
+					<Card class="h-full shadow-sm {isCurrent ? 'ring-2 ring-primary/70 ring-offset-0' : ''}">
+					<CardContent class="flex flex-1 flex-col">
 						<div class="mb-4">
 							<p class="font-semibold text-foreground">{tier.name}</p>
 							{#if tier.key === 'pro'}
@@ -358,7 +359,7 @@
 								<p class="mt-0.5 text-2xl font-bold text-foreground">Free</p>
 							{/if}
 						</div>
-						<ul class="mb-5 space-y-2">
+						<ul class="mb-5 flex-1 space-y-2">
 							{#each tier.features as feature (feature)}
 								<li class="flex items-start gap-2 text-sm text-muted-foreground">
 									<Icon
@@ -423,6 +424,7 @@
 						{/if}
 					</CardContent>
 				</Card>
+				</div>
 			{/each}
 		</div>
 		<p class="mt-2 text-xs text-muted-foreground">
@@ -462,18 +464,16 @@
 			{#each ADDONS as addon (addon.key)}
 				{@const isActive = hasAddon(activeAddons, addon.key)}
 				{@const canToggle = isPaidPlan && data.hasStripeSubscription}
-				<Card class="shadow-sm {isActive ? 'bg-primary/5 ring-2 ring-primary/50' : ''}">
+				<Card class="shadow-sm">
 					<CardContent>
 						<div class="mb-3 flex items-start justify-between gap-3">
 							<div class="flex items-center gap-3">
 								<div
-									class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl {isActive
-										? 'bg-green-100'
-										: 'bg-muted'}"
+									class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-green-100"
 								>
 									<Icon
 										icon={addon.icon}
-										class="h-5 w-5 {isActive ? 'text-primary/90' : 'text-muted-foreground'}"
+										class="h-5 w-5 text-primary/90"
 									/>
 								</div>
 								<div>

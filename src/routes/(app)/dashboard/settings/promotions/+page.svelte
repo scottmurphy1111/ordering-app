@@ -32,9 +32,16 @@
 </script>
 
 <div class="max-w-3xl">
-	<div class="mb-6 flex items-center justify-between">
-		<div>
-			<h1 class="text-2xl font-bold text-foreground">Promotions</h1>
+	<div class="mb-6">
+		<a
+			href={resolve('/dashboard/settings')}
+			class="mb-1 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-muted-foreground"
+		>
+			<Icon icon="mdi:chevron-left" class="h-4 w-4" /> Settings
+		</a>
+		<div class="flex items-center justify-between">
+			<div>
+				<h1 class="text-2xl font-bold text-foreground">Promotions</h1>
 			<p class="mt-0.5 text-sm text-muted-foreground">
 				Create discount codes for customers to apply at checkout.
 			</p>
@@ -51,6 +58,7 @@
 				{showForm ?'Cancel' :'New code'}
 			</Button>
 		{/if}
+		</div>
 	</div>
 
 	{#if !data.hasAccess}
@@ -181,17 +189,17 @@
 				<p class="text-sm text-muted-foreground">No promo codes yet. Create your first one above.</p>
 			</div>
 		{:else}
-			<Card class="shadow-sm">
+			<Card class="p-0 shadow-sm">
 			<CardContent>
 				<Table>
-					<TableHeader class="bg-muted/50">
+					<TableHeader>
 						<TableRow class="hover:bg-transparent">
-							<TableHead class="px-4 py-3 text-muted-foreground">Code</TableHead>
-							<TableHead class="px-4 py-3 text-muted-foreground">Discount</TableHead>
-							<TableHead class="hidden px-4 py-3 text-muted-foreground sm:table-cell">Usage</TableHead>
-							<TableHead class="hidden px-4 py-3 text-muted-foreground md:table-cell">Expires</TableHead>
-							<TableHead class="px-4 py-3 text-muted-foreground">Status</TableHead>
-							<TableHead class="px-4 py-3"></TableHead>
+							<TableHead class="px-4 py-2.5 text-muted-foreground">Code</TableHead>
+							<TableHead class="px-4 py-2.5 text-muted-foreground">Discount</TableHead>
+							<TableHead class="px-4 py-2.5 hidden text-muted-foreground sm:table-cell">Usage</TableHead>
+							<TableHead class="px-4 py-2.5 hidden text-muted-foreground md:table-cell">Expires</TableHead>
+							<TableHead class="px-4 py-2.5 text-muted-foreground">Status</TableHead>
+							<TableHead class="px-4 py-2.5"></TableHead>
 						</TableRow>
 					</TableHeader>
 					<TableBody>
@@ -212,10 +220,10 @@
 								<TableCell class="px-4 py-3 font-semibold text-foreground">
 									{formatAmount(promo.type, promo.amount)}
 								</TableCell>
-								<TableCell class="hidden px-4 py-3 text-muted-foreground sm:table-cell">
+								<TableCell class="px-4 py-3 hidden text-muted-foreground sm:table-cell">
 									{promo.usedCount}{promo.maxUses !== null ? ` / ${promo.maxUses}` :''}
 								</TableCell>
-								<TableCell class="hidden px-4 py-3 text-muted-foreground md:table-cell">
+								<TableCell class="px-4 py-3 hidden text-muted-foreground md:table-cell">
 									{promo.expiresAt ? new Date(promo.expiresAt).toLocaleDateString() :'—'}
 								</TableCell>
 								<TableCell class="px-4 py-3">

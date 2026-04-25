@@ -13,6 +13,12 @@
 		CardAction,
 		CardContent
 	} from '$lib/components/ui/card';
+	import {
+		Dialog,
+		DialogContent,
+		DialogHeader,
+		DialogTitle
+	} from '$lib/components/ui/dialog';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
@@ -26,10 +32,10 @@
 		foregroundColor = data.branding.foregroundColor ?? '#ffffff';
 	});
 
-	// suppress stale $state warning — branding data initialized from server
-
 	// ── Upload helpers ─────────────────────────────────────────────────────────
 	type UploadState = { uploading: boolean; error: string };
+
+	let previewOpen = $state(false);
 
 	let logoState = $state<UploadState>({ uploading: false, error: '' });
 	let bannerState = $state<UploadState>({ uploading: false, error: '' });
@@ -176,52 +182,100 @@
 						{/each}
 					</div>
 
-					<!-- Live preview -->
-					<div>
-						<p class="mb-2 text-xs font-medium tracking-wide text-muted-foreground uppercase">
+					<div class="flex items-center gap-3">
+						<Button type="submit" variant="default">Save colors</Button>
+						<Button
+							type="button"
+							variant="outline"
+							onclick={() => (previewOpen = true)}
+						>
+							<Icon icon="mdi:eye-outline" class="h-4 w-4" />
 							Preview
-						</p>
-						<div class="overflow-hidden rounded-lg border">
-							<div
-								class="flex items-center gap-3 px-4 py-3"
-								style="background-color: {backgroundColor};"
-							>
-								<span class="text-sm font-bold" style="color: {foregroundColor};"
-									>My Restaurant</span
-								>
-								<span
-									class="rounded-full px-2 py-0.5 text-xs font-medium"
-									style="background-color: {accentColor}; color: {foregroundColor};"
-									>Quick service</span
-								>
-							</div>
-							<div
-								class="flex items-center gap-3 px-4 py-4"
-								style="background-color: {foregroundColor};"
-							>
-								<span
-									class="rounded-full px-3 py-1 text-xs font-medium"
-									style="background-color: color-mix(in srgb, {accentColor} 20%, {foregroundColor}); color: {accentColor};"
-									>Burgers</span
-								>
-								<span
-									class="rounded-full border px-3 py-1 text-xs font-medium"
-									style="border-color: {accentColor}; color: {accentColor};">Drinks</span
-								>
-								<button
-									type="button"
-									class="ml-auto rounded-md px-3 py-1.5 text-xs font-semibold shadow-sm"
-									style="background-color: {backgroundColor}; color: {foregroundColor};"
-									>+ Add</button
-								>
-							</div>
-						</div>
+						</Button>
 					</div>
-
-					<Button type="submit" variant="default">Save colors</Button>
 				</form>
 			</CardContent>
 		</Card>
+
+		<!-- ── Color preview dialog ────────────────────────────────────────────── -->
+		<Dialog bind:open={previewOpen}>
+			<DialogContent class="max-w-sm overflow-hidden p-0">
+				<DialogHeader class="px-5 pt-5 pb-3">
+					<DialogTitle>Color preview</DialogTitle>
+				</DialogHeader>
+				<div class="mx-5 mb-5 overflow-hidden rounded-xl border shadow-sm">
+					<!-- Menu header -->
+					<div class="px-4 py-3" style="background-color: {backgroundColor};">
+						<div class="flex items-center gap-2.5">
+							<div
+								class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-xs font-bold"
+								style="background-color: {accentColor}; color: {foregroundColor};"
+							>
+								MR
+							</div>
+							<div>
+								<p class="text-sm font-bold" style="color: {foregroundColor};">My Restaurant</p>
+								<p class="text-xs opacity-70" style="color: {foregroundColor};">Order ahead · pickup</p>
+							</div>
+						</div>
+					</div>
+					<!-- Category pills -->
+					<div class="flex gap-2 border-b px-4 py-2.5" style="background-color: {foregroundColor};">
+						<span
+							class="rounded-full px-3 py-1 text-xs font-semibold"
+							style="background-color: {accentColor}; color: {foregroundColor};"
+						>
+							All
+						</span>
+						{#each ['Burgers', 'Drinks', 'Sides'] as cat (cat)}
+							<span
+								class="rounded-full border px-3 py-1 text-xs font-medium"
+								style="border-color: {accentColor}; color: {accentColor};"
+							>
+								{cat}
+							</span>
+						{/each}
+					</div>
+					<!-- Menu items -->
+					<div class="divide-y" style="background-color: {foregroundColor};">
+						{#each [
+							{ name: 'Classic Burger', desc: 'Beef patty, lettuce, tomato, pickles', price: '$14.00', color: '#fef3c7' },
+							{ name: 'Crispy Chicken', desc: 'Buttermilk fried, house slaw', price: '$13.50', color: '#dbeafe' },
+							{ name: 'Garden Salad', desc: 'Mixed greens, house vinaigrette', price: '$10.00', color: '#dcfce7' },
+							{ name: 'Lemonade', desc: 'Fresh squeezed, mint', price: '$4.50', color: '#fef9c3' }
+						] as item (item.name)}
+							<div class="flex items-center justify-between gap-3 px-4 py-3">
+								<div class="flex items-center gap-3">
+									<div class="h-12 w-12 shrink-0 rounded-lg" style="background-color: {item.color};"></div>
+									<div>
+										<p class="text-sm font-semibold" style="color: {accentColor};">{item.name}</p>
+										<p class="mt-0.5 text-xs leading-tight" style="color: {accentColor}; opacity: 0.6;">{item.desc}</p>
+										<p class="mt-1 text-sm font-medium" style="color: {accentColor};">{item.price}</p>
+									</div>
+								</div>
+								<button
+									type="button"
+									class="shrink-0 rounded-full p-1.5"
+									style="background-color: {backgroundColor};"
+								>
+									<Icon icon="mdi:plus" class="h-4 w-4" style="color: {foregroundColor};" />
+								</button>
+							</div>
+						{/each}
+					</div>
+					<!-- Cart bar -->
+					<div class="px-4 py-3" style="background-color: {backgroundColor};">
+						<button
+							type="button"
+							class="w-full rounded-xl py-2.5 text-sm font-semibold"
+							style="background-color: {accentColor}; color: {foregroundColor};"
+						>
+							View cart · 2 items · $27.50
+						</button>
+					</div>
+				</div>
+			</DialogContent>
+		</Dialog>
 
 		<!-- ── Logo ─────────────────────────────────────────────────────────────── -->
 		<Card class="shadow-sm">
@@ -278,7 +332,7 @@
 					</Button>
 					{#if data.branding.logoUrl}
 						<form method="post" action="?/removeLogo" use:enhance>
-							<Button type="submit" variant="destructive">Remove</Button>
+							<Button type="submit" variant="ghost" class="text-red-600 hover:bg-destructive/10 hover:text-red-500">Remove</Button>
 						</form>
 					{/if}
 				</div>
@@ -337,7 +391,7 @@
 					</Button>
 					{#if data.branding.bannerUrl}
 						<form method="post" action="?/removeBanner" use:enhance>
-							<Button type="submit" variant="destructive">Remove</Button>
+							<Button type="submit" variant="ghost" class="text-red-600 hover:bg-destructive/10 hover:text-red-500">Remove</Button>
 						</form>
 					{/if}
 				</div>
@@ -403,7 +457,7 @@
 					</Button>
 					{#if data.branding.backgroundImageUrl}
 						<form method="post" action="?/removeBackground" use:enhance>
-							<Button type="submit" variant="destructive">Remove</Button>
+							<Button type="submit" variant="ghost" class="text-red-600 hover:bg-destructive/10 hover:text-red-500">Remove</Button>
 						</form>
 					{/if}
 				</div>

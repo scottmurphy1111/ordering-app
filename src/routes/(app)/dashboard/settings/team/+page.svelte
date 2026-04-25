@@ -72,7 +72,7 @@
 	</div>
 
 	<Tabs bind:value={tab}>
-		<TabsList variant="line" class="mb-6 w-full justify-start border-b">
+		<TabsList class="mb-6">
 			<TabsTrigger value="members">Members</TabsTrigger>
 			{#if data.canManageInternal}
 				<TabsTrigger value="internal">
@@ -257,15 +257,15 @@
 				{/if}
 			{/if}
 
-			<Card class="shadow-sm">
+			<Card class="p-0 shadow-sm">
 				<CardContent>
 					<Table>
-						<TableHeader class="bg-muted/50">
+						<TableHeader>
 							<TableRow class="hover:bg-transparent">
-								<TableHead>User</TableHead>
-								<TableHead>Role</TableHead>
-								<TableHead class="hidden sm:table-cell">Added</TableHead>
-								<TableHead></TableHead>
+								<TableHead class="px-4 py-2.5">User</TableHead>
+								<TableHead class="px-4 py-2.5">Role</TableHead>
+								<TableHead class="px-4 py-2.5 hidden sm:table-cell">Added</TableHead>
+								<TableHead class="px-4 py-2.5"></TableHead>
 							</TableRow>
 						</TableHeader>
 						<TableBody>
@@ -307,7 +307,7 @@
 											</Badge>
 										{/if}
 									</TableCell>
-									<TableCell class="hidden px-4 py-3 text-xs text-muted-foreground sm:table-cell">
+									<TableCell class="px-4 py-3 hidden text-xs text-muted-foreground sm:table-cell">
 										{new Date(member.assignedAt).toLocaleDateString([], {
 											month: 'short',
 											day: 'numeric',
@@ -374,21 +374,21 @@
 						Pending invitations
 						<Badge class="bg-yellow-100 text-yellow-700">{data.pendingInvitations.length}</Badge>
 					</h2>
-					<Card class="shadow-sm">
+					<Card class="p-0 shadow-sm">
 						<CardContent>
 							<Table>
-								<TableHeader class="bg-muted/50">
+								<TableHeader>
 									<TableRow class="hover:bg-transparent">
-										<TableHead>Email</TableHead>
-										<TableHead>Role</TableHead>
-										<TableHead class="hidden sm:table-cell">Expires</TableHead>
-										<TableHead></TableHead>
+										<TableHead class="px-4 py-2.5">Email</TableHead>
+										<TableHead class="px-4 py-2.5">Role</TableHead>
+										<TableHead class="px-4 py-2.5 hidden sm:table-cell">Expires</TableHead>
+										<TableHead class="px-4 py-2.5"></TableHead>
 									</TableRow>
 								</TableHeader>
 								<TableBody>
 									{#each data.pendingInvitations as invite (invite.id)}
 										<TableRow>
-											<TableCell class="max-w-40 min-w-0 truncate px-4 py-3 text-muted-foreground"
+											<TableCell class="px-4 py-3 max-w-40 min-w-0 truncate text-muted-foreground"
 												>{invite.email}</TableCell
 											>
 											<TableCell class="px-4 py-3">
@@ -397,7 +397,7 @@
 												</Badge>
 											</TableCell>
 											<TableCell
-												class="hidden px-4 py-3 text-xs text-muted-foreground sm:table-cell"
+												class="px-4 py-3 hidden text-xs text-muted-foreground sm:table-cell"
 											>
 												{new Date(invite.expiresAt).toLocaleDateString([], {
 													month: 'short',
@@ -463,14 +463,14 @@
 						</p>
 					</div>
 				{:else}
-					<Card class="mb-6 shadow-sm">
+					<Card class="mb-6 p-0 shadow-sm">
 						<CardContent>
 							<Table>
-								<TableHeader class="bg-muted/50">
+								<TableHeader>
 									<TableRow class="hover:bg-transparent">
-										<TableHead>User</TableHead>
-										<TableHead class="hidden sm:table-cell">Account created</TableHead>
-										<TableHead></TableHead>
+										<TableHead class="px-4 py-2.5">User</TableHead>
+										<TableHead class="px-4 py-2.5 hidden sm:table-cell">Account created</TableHead>
+										<TableHead class="px-4 py-2.5"></TableHead>
 									</TableRow>
 								</TableHeader>
 								<TableBody>
@@ -481,7 +481,7 @@
 												<p class="text-xs text-muted-foreground">{u.email}</p>
 											</TableCell>
 											<TableCell
-												class="hidden px-4 py-3 text-xs text-muted-foreground sm:table-cell"
+												class="px-4 py-3 hidden text-xs text-muted-foreground sm:table-cell"
 											>
 												{new Date(u.createdAt).toLocaleDateString([], {
 													month: 'short',
@@ -522,7 +522,7 @@
 						<h2 class="mb-3 text-sm font-semibold text-muted-foreground">
 							Promote a current member to internal
 						</h2>
-						<Card class="shadow-sm">
+						<Card class="p-0 shadow-sm">
 							<CardContent>
 								<Table>
 									<TableBody>

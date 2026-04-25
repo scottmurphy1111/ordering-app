@@ -2,14 +2,17 @@ import type { PageServerLoad } from './$types';
 import { db } from '$lib/server/db';
 import { eq, and, gte, sql, desc } from 'drizzle-orm';
 import { orders, orderItems } from '$lib/server/db/schema';
+import { hasAddon } from '$lib/billing';
 
 export const load: PageServerLoad = async ({ locals }) => {
 	const tenantId = locals.tenantId!;
+	const hasAdvancedAnalytics = hasAddon(locals.tenant?.addons, 'analytics');
 
 	const now = new Date();
 	const startOf30Days = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
 	const startOfPrev30Days = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000);
 	const startOf7Days = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+	const startOf90Days = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
 
 	const [recentOrders, prev30Orders, topItems, statusBreakdown, typeBreakdown] = await Promise.all([
 		// All paid orders in last 30 days (full rows for chart + KPIs)
@@ -112,7 +115,79 @@ export const load: PageServerLoad = async ({ locals }) => {
 	}
 	const dailyData = Array.from(dailyMap.entries()).map(([date, v]) => ({ date, ...v }));
 
+	// ── Advanced analytics ───────────────────────────────────────────
+	let peakHoursGrid: Array<{ dow: number; hour: number; count: number }> | null = null;
+	let customerRetention: { total: number; returning: number; returnRate: number } | null = null;
+	let topItemsByRevenue: typeof topItems | null = null;
+
+	if (hasAdvancedAnalytics) {
+		const [peakHoursRaw, customerData, topByRevenue] = await Promise.all([
+			// Peak hours: orders by day-of-week (0=Sun) + hour (last 90 days)
+			db
+				.select({
+					dow: sql<number>`cast(EXTRACT(DOW FROM ${orders.createdAt}) as int)`,
+					hour: sql<number>`cast(EXTRACT(HOUR FROM ${orders.createdAt}) as int)`,
+					count: sql<number>`cast(count(*) as int)`
+				})
+				.from(orders)
+				.where(
+					and(
+						eq(orders.tenantId, tenantId),
+						eq(orders.paymentStatus, 'paid'),
+						gte(orders.createdAt, startOf90Days)
+					)
+				)
+				.groupBy(
+					sql`EXTRACT(DOW FROM ${orders.createdAt})`,
+					sql`EXTRACT(HOUR FROM ${orders.createdAt})`
+				),
+
+			// Customer retention: distinct customer emails with order counts (all time)
+			db
+				.select({
+					customerEmail: orders.customerEmail,
+					orderCount: sql<number>`cast(count(*) as int)`
+				})
+				.from(orders)
+				.where(
+					and(
+						eq(orders.tenantId, tenantId),
+						eq(orders.paymentStatus, 'paid'),
+						sql`${orders.customerEmail} is not null`
+					)
+				)
+				.groupBy(orders.customerEmail),
+
+			// Top 5 items by revenue (all time)
+			db
+				.select({
+					name: orderItems.name,
+					totalQty: sql<number>`cast(sum(${orderItems.quantity}) as int)`,
+					totalRevenue: sql<number>`cast(sum(${orderItems.quantity} * ${orderItems.unitPrice}) as int)`
+				})
+				.from(orderItems)
+				.innerJoin(orders, eq(orderItems.orderId, orders.id))
+				.where(and(eq(orders.tenantId, tenantId), eq(orders.paymentStatus, 'paid')))
+				.groupBy(orderItems.name)
+				.orderBy(desc(sql`sum(${orderItems.quantity} * ${orderItems.unitPrice})`))
+				.limit(5)
+		]);
+
+		peakHoursGrid = peakHoursRaw;
+
+		const total = customerData.length;
+		const returning = customerData.filter((c) => c.orderCount > 1).length;
+		customerRetention = {
+			total,
+			returning,
+			returnRate: total > 0 ? Math.round((returning / total) * 100) : 0
+		};
+
+		topItemsByRevenue = topByRevenue;
+	}
+
 	return {
+		hasAdvancedAnalytics,
 		kpis: {
 			revenue30,
 			revenuePrev30,
@@ -127,6 +202,9 @@ export const load: PageServerLoad = async ({ locals }) => {
 		dailyData,
 		topItems,
 		statusBreakdown,
-		typeBreakdown
+		typeBreakdown,
+		peakHoursGrid,
+		customerRetention,
+		topItemsByRevenue
 	};
 };
