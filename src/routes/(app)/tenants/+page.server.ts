@@ -5,14 +5,10 @@ import { eq } from 'drizzle-orm';
 import { tenant, tenantUsers } from '$lib/server/db/schema';
 import { seedDemoTenant } from '$lib/server/seed-demo';
 
-function canCreateTenant(
-	isInternal: boolean,
-	userTenants: Array<{ role: string; subscriptionTier: string | null }>
-) {
+function canCreateTenant(isInternal: boolean, userTenants: Array<{ role: string }>) {
 	if (isInternal) return true;
 	if (userTenants.length === 0) return true;
-	// Must own a Pro tenant to create additional tenants
-	return userTenants.some((t) => t.role === 'owner' && t.subscriptionTier === 'pro');
+	return userTenants.some((t) => t.role === 'owner');
 }
 
 export const load: PageServerLoad = async ({ locals }) => {
@@ -48,9 +44,8 @@ export const actions: Actions = {
 
 		if (!isInternal) {
 			const memberships = await db
-				.select({ role: tenantUsers.role, subscriptionTier: tenant.subscriptionTier })
+				.select({ role: tenantUsers.role })
 				.from(tenantUsers)
-				.innerJoin(tenant, eq(tenantUsers.tenantId, tenant.id))
 				.where(eq(tenantUsers.userId, userId));
 			if (!canCreateTenant(false, memberships)) {
 				return fail(403, { error: 'Upgrade to the Pro plan to create additional tenants.' });

@@ -34,11 +34,10 @@ export const TIERS = [
 		features: [
 			'Unlimited menu items',
 			'Everything in Starter',
-			'All add-ons available',
-			'Website embed',
-			'White-label (remove OrderLocal branding)',
-			'Webhooks — push orders to any endpoint',
-			'Menu scheduling (coming soon)',
+			'All add-ons unlocked',
+			'Bulk import menu items via CSV',
+			'White-label — remove OrderLocal branding',
+			'Integrations — QuickBooks, Xero, Mailchimp, Zapier & more (coming soon)',
 			'Dedicated support'
 		]
 	}
