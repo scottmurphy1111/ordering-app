@@ -66,12 +66,16 @@
 			icon: 'mdi:star-circle-outline',
 			name: 'Loyalty Program',
 			price: '$29/mo',
+			annualPrice: '$24/mo billed annually',
+			annualSavings: 'save $60/yr',
 			desc: 'Reward repeat customers with a digital stamp card or points system built into your ordering flow.'
 		},
 		{
 			icon: 'mdi:refresh-circle',
 			name: 'Subscriptions',
 			price: '$29/mo',
+			annualPrice: '$24/mo billed annually',
+			annualSavings: 'save $60/yr',
 			desc: 'Sell recurring items or services — meal plans, weekly boxes, retainers. Customers subscribe and are billed automatically.'
 		}
 	];
@@ -125,7 +129,7 @@
 			period: '/ month',
 			annualPrice: '$65' as string | null,
 			annualNote: 'Billed $780/yr — 2 months free' as string | null,
-			description: 'The full toolkit for serious operators.',
+			description: 'The full toolkit for your business.',
 			features: [
 				'Everything in Starter',
 				'Unlimited menu items',
@@ -586,21 +590,27 @@
 			</span>
 			<h2 class="text-3xl font-bold text-foreground sm:text-4xl">Only pay for what you need</h2>
 			<p class="mt-3 text-lg text-muted-foreground">
-				Every plan starts lean. Add features as your business grows — activate or cancel anytime
-				from your dashboard.
+				Only pay for what you need. Available on the Pro plan — activate or cancel anytime from
+				your dashboard.
 			</p>
 		</div>
 		<div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
 			{#each addons as addon (addon.name)}
 				<div class="flex flex-col gap-3 rounded-2xl border bg-background p-6">
-					<div class="flex items-center justify-between">
+					<div class="flex items-start justify-between">
 						<div class="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
 							<Icon icon={addon.icon} class="h-5 w-5 text-primary" />
 						</div>
-						<span
-							class="rounded-full border bg-background px-2.5 py-0.5 text-xs font-semibold text-muted-foreground"
-							>{addon.price}</span
-						>
+						<div class="flex flex-col items-end gap-0.5">
+							<span
+								class="rounded-full border bg-background px-2.5 py-0.5 text-xs font-semibold text-muted-foreground"
+								>{addon.price}</span
+							>
+							{#if 'annualPrice' in addon}
+								<span class="text-xs text-muted-foreground">or {addon.annualPrice}</span>
+								<span class="text-xs text-muted-foreground">{addon.annualSavings}</span>
+							{/if}
+						</div>
 					</div>
 					<div>
 						<h3 class="font-semibold text-foreground">{addon.name}</h3>

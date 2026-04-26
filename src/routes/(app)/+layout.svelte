@@ -148,10 +148,10 @@
 			<a
 				href={resolve(item.href as `/${string}`)}
 				data-tour={item.tour}
-				class="flex items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium transition-colors
+				class="flex items-center gap-2.5 rounded-md px-3 py-2 text-sm transition-colors
 					{isActive(item.href)
-					? 'bg-primary text-white'
-					: 'text-muted-foreground hover:bg-gray-800 hover:text-white'}"
+					? 'bg-primary font-medium text-white'
+					: 'font-normal text-muted-foreground hover:bg-gray-800 hover:text-white'}"
 			>
 				<Icon icon={item.icon} class="h-4 w-4 shrink-0" />
 				{item.label}
@@ -160,7 +160,7 @@
 	</nav>
 
 	<!-- User + Switch Tenant -->
-	<div class="space-y-2 border-t border-white/10 px-4 py-3">
+	<div class="space-y-2 border-t border-white/10 px-4 pt-6 pb-3">
 		{#if data.hasMultipleTenants}
 			<a
 				href={resolve('/tenants')}
@@ -180,13 +180,16 @@
 		{#if data.user.isInternal}
 			<a
 				href={resolve('/admin/tenants')}
-				class="flex items-center gap-1.5 text-xs text-primary transition-colors hover:text-primary/80"
+				class="flex items-center gap-1.5 text-xs text-muted-foreground transition-colors hover:text-white"
 			>
 				<Icon icon="mdi:shield-crown-outline" class="h-3.5 w-3.5" />
-				Admin
+				Admin panel
 			</a>
 		{/if}
-		<p class="truncate text-xs text-muted-foreground">{data.user.email}</p>
+		<div class="truncate">
+			<p class="text-xs text-muted-foreground/60">Signed in as</p>
+			<p class="truncate text-xs text-muted-foreground">{data.user.email}</p>
+		</div>
 		<Button
 			onclick={() =>
 				signOut({
