@@ -5,12 +5,12 @@
 	import { Card, CardHeader, CardTitle, CardContent } from '$lib/components/ui/card';
 	import { Badge } from '$lib/components/ui/badge';
 	import { Button } from '$lib/components/ui/button';
-	import { Tabs, TabsList, TabsTrigger, TabsContent } from '$lib/components/ui/tabs';
 	import { SvelteMap } from 'svelte/reactivity';
 
 	let { data }: { data: PageData } = $props();
 
 	const {
+		rangeDays,
 		kpis,
 		dailyData,
 		topItems,
@@ -19,7 +19,7 @@
 		hasAdvancedAnalytics,
 		peakHoursGrid,
 		customerRetention,
-		topItemsByRevenue
+		revenueByCategory
 	} = $derived(data);
 
 	function fmt(cents: number) {
@@ -70,8 +70,8 @@
 
 	const totalTypeRevenue = $derived(typeBreakdown.reduce((s, r) => s + (r.revenue ?? 0), 0) || 1);
 	const maxItemQty = $derived(Math.max(...topItems.map((i) => i.totalQty), 1));
-	const maxItemRevenue = $derived(
-		Math.max(...(topItemsByRevenue ?? topItems).map((i) => i.totalRevenue), 1)
+	const maxCategoryRevenue = $derived(
+		Math.max(...(revenueByCategory ?? []).map((c) => c.totalRevenue), 1)
 	);
 
 	// ── Peak hours heatmap ───────────────────────────────────────────
@@ -104,41 +104,48 @@
 </script>
 
 <div>
-	<div class="mb-6">
-		<h1 class="text-2xl font-bold text-foreground">Analytics</h1>
-		<p class="mt-0.5 text-sm text-muted-foreground">Last 30 days vs previous 30 days.</p>
+	<div class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+		<div>
+			<h1 class="text-2xl font-bold text-foreground">Analytics</h1>
+			<p class="mt-0.5 text-sm text-muted-foreground">
+				Last {rangeDays} days vs previous {rangeDays} days.
+			</p>
+		</div>
+		<div class="flex items-center gap-1 rounded-xl border bg-background p-1 shadow-sm self-start">
+			{#each [[7, '7 days'], [30, '30 days']] as const as [d, label] (d)}
+				<a
+					href={resolve(d === 30 ? '/dashboard/analytics' : `/dashboard/analytics?range=${d}`)}
+					class="rounded-lg px-4 py-1.5 text-xs font-medium transition-colors
+						{rangeDays === d
+						? 'bg-gray-900 text-white'
+						: 'text-muted-foreground hover:text-foreground'}"
+				>{label}</a>
+			{/each}
+		</div>
 	</div>
 
 	<!-- ── KPI cards ────────────────────────────────────────────── -->
 	<div class="mb-8 grid grid-cols-2 gap-4 lg:grid-cols-4">
 		<Card class="shadow-sm">
 			<CardContent>
-				<p class="text-xs font-medium tracking-wide text-muted-foreground uppercase">
-					Revenue (30d)
-				</p>
-				<p class="mt-1.5 text-3xl font-bold text-foreground">{fmt(kpis.revenue30)}</p>
+				<p class="text-xs font-medium tracking-wide text-muted-foreground uppercase">Revenue</p>
+				<p class="mt-1.5 text-3xl font-bold text-foreground">{fmt(kpis.revenue)}</p>
 				{#if kpis.revenueChange !== null}
 					<p class="mt-1 text-xs {kpis.revenueChange >= 0 ? 'text-primary' : 'text-red-500'}">
-						{fmtPct(kpis.revenueChange)} vs prev 30d
+						{fmtPct(kpis.revenueChange)} vs prior period
 					</p>
-				{:else}
-					<p class="mt-1 text-xs text-muted-foreground">No prior data</p>
 				{/if}
 			</CardContent>
 		</Card>
 
 		<Card class="shadow-sm">
 			<CardContent>
-				<p class="text-xs font-medium tracking-wide text-muted-foreground uppercase">
-					Orders (30d)
-				</p>
-				<p class="mt-1.5 text-3xl font-bold text-foreground">{kpis.orders30}</p>
+				<p class="text-xs font-medium tracking-wide text-muted-foreground uppercase">Orders</p>
+				<p class="mt-1.5 text-3xl font-bold text-foreground">{kpis.ordersCount}</p>
 				{#if kpis.ordersChange !== null}
 					<p class="mt-1 text-xs {kpis.ordersChange >= 0 ? 'text-primary' : 'text-red-500'}">
-						{fmtPct(kpis.ordersChange)} vs prev 30d
+						{fmtPct(kpis.ordersChange)} vs prior period
 					</p>
-				{:else}
-					<p class="mt-1 text-xs text-muted-foreground">No prior data</p>
 				{/if}
 			</CardContent>
 		</Card>
@@ -149,10 +156,8 @@
 				<p class="mt-1.5 text-3xl font-bold text-foreground">{fmt(kpis.avgOrderValue)}</p>
 				{#if kpis.avgChange !== null}
 					<p class="mt-1 text-xs {kpis.avgChange >= 0 ? 'text-primary' : 'text-red-500'}">
-						{fmtPct(kpis.avgChange)} vs prev 30d
+						{fmtPct(kpis.avgChange)} vs prior period
 					</p>
-				{:else}
-					<p class="mt-1 text-xs text-muted-foreground">No prior data</p>
 				{/if}
 			</CardContent>
 		</Card>
@@ -160,10 +165,14 @@
 		<Card class="shadow-sm">
 			<CardContent>
 				<p class="text-xs font-medium tracking-wide text-muted-foreground uppercase">
-					Revenue (7d)
+					Fulfilment rate
 				</p>
-				<p class="mt-1.5 text-3xl font-bold text-foreground">{fmt(kpis.revenue7)}</p>
-				<p class="mt-1 text-xs text-muted-foreground">Last 7 days</p>
+				{#if kpis.fulfilledRate !== null}
+					<p class="mt-1.5 text-3xl font-bold text-foreground">{kpis.fulfilledRate}%</p>
+					<p class="mt-1 text-xs text-muted-foreground">of paid orders fulfilled</p>
+				{:else}
+					<p class="mt-1.5 text-3xl font-bold text-foreground">—</p>
+				{/if}
 			</CardContent>
 		</Card>
 	</div>
@@ -171,7 +180,7 @@
 	<!-- ── Daily revenue chart ──────────────────────────────────── -->
 	<Card class="mb-6 shadow-sm">
 		<CardContent>
-			<h2 class="mb-4 text-sm font-semibold text-foreground">Daily revenue — last 30 days</h2>
+			<h2 class="mb-4 text-sm font-semibold text-foreground">Daily revenue — last {rangeDays} days</h2>
 			<div class="flex h-36 items-end gap-px">
 				{#each dailyData as day (day.date)}
 					{@const height =
@@ -202,8 +211,8 @@
 			</div>
 			<div class="mt-1.5 flex justify-between text-xs text-muted-foreground">
 				<span>{dailyData[0]?.date.slice(5)}</span>
-				<span>{dailyData[14]?.date.slice(5)}</span>
-				<span>{dailyData[29]?.date.slice(5)}</span>
+				<span>{dailyData[Math.floor(dailyData.length / 2)]?.date.slice(5)}</span>
+				<span>{dailyData[dailyData.length - 1]?.date.slice(5)}</span>
 			</div>
 		</CardContent>
 	</Card>
@@ -320,7 +329,9 @@
 		<div class="mt-10">
 			<div class="mb-5 flex items-center gap-3">
 				<h2 class="text-lg font-semibold text-foreground">Advanced Analytics</h2>
-				<Badge class="bg-primary/10 text-primary/90">Add-on</Badge>
+				<Badge class="inline-flex items-center gap-1 bg-amber-100 text-amber-800">
+					<Icon icon="mdi:star" class="h-3 w-3" />Pro
+				</Badge>
 			</div>
 
 			<!-- Peak hours heatmap -->
@@ -418,7 +429,9 @@
 							<div class="space-y-4">
 								<div>
 									<p class="text-3xl font-bold text-foreground">{customerRetention.returnRate}%</p>
-									<p class="mt-0.5 text-xs text-muted-foreground">return rate</p>
+									<p class="mt-0.5 text-xs text-muted-foreground">
+										return rate · {customerRetention.returning} customers
+									</p>
 								</div>
 
 								<!-- Bar visualization -->
@@ -459,87 +472,35 @@
 					</CardContent>
 				</Card>
 
-				<!-- Top items by revenue (with volume/revenue tabs) -->
+				<!-- Revenue by category -->
 				<Card class="shadow-sm lg:col-span-2">
 					<CardHeader class="border-b pb-3">
-						<CardTitle class="text-sm font-semibold">Top items</CardTitle>
+						<CardTitle class="text-sm font-semibold">Revenue by category</CardTitle>
 					</CardHeader>
 					<CardContent class="pt-4">
-						<Tabs value="revenue">
-							<TabsList class="mb-4 h-8">
-								<TabsTrigger value="volume" class="text-xs">By volume</TabsTrigger>
-								<TabsTrigger value="revenue" class="text-xs">By revenue</TabsTrigger>
-							</TabsList>
-
-							<TabsContent value="volume">
-								{#if topItems.length === 0}
-									<p class="text-sm text-muted-foreground">No order data yet.</p>
-								{:else}
-									<div class="space-y-3">
-										{#each topItems as item, i (item.name)}
-											<div>
-												<div class="mb-1 flex items-center justify-between gap-2">
-													<div class="flex min-w-0 items-center gap-2">
-														<span class="w-4 shrink-0 text-xs font-bold text-muted-foreground"
-															>#{i + 1}</span
-														>
-														<span class="truncate text-sm font-medium text-foreground"
-															>{item.name}</span
-														>
-													</div>
-													<div class="flex shrink-0 items-center gap-3 text-xs text-muted-foreground">
-														<span class="font-medium text-foreground">{item.totalQty} sold</span>
-														<span>{fmt(item.totalRevenue)}</span>
-													</div>
-												</div>
-												<div class="h-1.5 w-full rounded-full bg-muted">
-													<div
-														class="h-1.5 rounded-full bg-primary transition-all"
-														style="width: {Math.round((item.totalQty / maxItemQty) * 100)}%"
-													></div>
-												</div>
+						{#if !revenueByCategory || revenueByCategory.length === 0}
+							<p class="text-sm text-muted-foreground">No order data yet.</p>
+						{:else}
+							<div class="space-y-3">
+								{#each revenueByCategory as cat (cat.category)}
+									<div>
+										<div class="mb-1 flex items-center justify-between gap-2">
+											<span class="truncate text-sm font-medium text-foreground">{cat.category}</span>
+											<div class="flex shrink-0 items-center gap-3 text-xs text-muted-foreground">
+												<span>{cat.totalQty} sold</span>
+												<span class="font-medium text-foreground">{fmt(cat.totalRevenue)}</span>
 											</div>
-										{/each}
+										</div>
+										<div class="h-1.5 w-full rounded-full bg-muted">
+											<div
+												class="h-1.5 rounded-full bg-primary transition-all"
+												style="width: {Math.round((cat.totalRevenue / maxCategoryRevenue) * 100)}%"
+											></div>
+										</div>
 									</div>
-								{/if}
-							</TabsContent>
-
-							<TabsContent value="revenue">
-								{#if !topItemsByRevenue || topItemsByRevenue.length === 0}
-									<p class="text-sm text-muted-foreground">No order data yet.</p>
-								{:else}
-									<div class="space-y-3">
-										{#each topItemsByRevenue as item, i (item.name)}
-											<div>
-												<div class="mb-1 flex items-center justify-between gap-2">
-													<div class="flex min-w-0 items-center gap-2">
-														<span class="w-4 shrink-0 text-xs font-bold text-muted-foreground"
-															>#{i + 1}</span
-														>
-														<span class="truncate text-sm font-medium text-foreground"
-															>{item.name}</span
-														>
-													</div>
-													<div class="flex shrink-0 items-center gap-3 text-xs text-muted-foreground">
-														<span class="font-medium text-foreground">{fmt(item.totalRevenue)}</span>
-														<span>{item.totalQty} sold</span>
-													</div>
-												</div>
-												<div class="h-1.5 w-full rounded-full bg-muted">
-													<div
-														class="h-1.5 rounded-full bg-primary transition-all"
-														style="width: {Math.round((item.totalRevenue / maxItemRevenue) * 100)}%"
-													></div>
-												</div>
-											</div>
-										{/each}
-									</div>
-									<p class="mt-4 text-xs text-muted-foreground">
-										Revenue ranking may differ from volume — high-ticket items earn more per sale.
-									</p>
-								{/if}
-							</TabsContent>
-						</Tabs>
+								{/each}
+							</div>
+						{/if}
 					</CardContent>
 				</Card>
 			</div>

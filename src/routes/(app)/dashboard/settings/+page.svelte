@@ -38,7 +38,7 @@
 			href: '/dashboard/settings/promos-and-loyalty',
 			icon: 'mdi:ticket-percent-outline',
 			label: 'Promos & Loyalty',
-			description: 'Discount codes and loyalty programs to reward your customers.'
+			description: 'Create discount codes and set up customer loyalty rewards.'
 		},
 		{
 			href: '/dashboard/settings/resources',
@@ -53,7 +53,7 @@
 	<div class="mb-6">
 		<h1 class="text-2xl font-bold text-foreground">Settings</h1>
 		<p class="mt-0.5 text-sm text-muted-foreground">
-			Manage your account and tenant configuration.
+			Manage your business settings and account.
 		</p>
 	</div>
 
@@ -61,7 +61,7 @@
 		{#each sections as section (section.href)}
 			<a href={resolve(section.href as `/${string}`)} class="group block h-full">
 				<Card
-					class="h-full shadow-sm transition-colors group-hover:border-gray-300 group-hover:bg-muted/50"
+					class="h-full shadow-sm transition-all duration-150 group-hover:-translate-y-0.5 group-hover:border-gray-300 group-hover:bg-muted/50 group-hover:shadow-md"
 				>
 					<CardContent class="flex items-start gap-4">
 						<div

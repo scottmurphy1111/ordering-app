@@ -44,11 +44,15 @@ export const load: PageServerLoad = async (event) => {
 		offset
 	});
 
-	const totalCountResult = await db
-		.select({ count: sql<number>`count(*)` })
-		.from(menuItems)
-		.where(whereClause);
+	const [totalCountResult, unfilteredCountResult] = await Promise.all([
+		db.select({ count: sql<number>`count(*)` }).from(menuItems).where(whereClause),
+		db
+			.select({ count: sql<number>`count(*)` })
+			.from(menuItems)
+			.where(eq(menuItems.tenantId, tenantId))
+	]);
 	const totalItems = totalCountResult[0]?.count || 0;
+	const totalItemsUnfiltered = Number(unfilteredCountResult[0]?.count ?? 0);
 	const totalPages = Math.ceil(totalItems / limit);
 
 	const categories = await db.query.menuCategories.findMany({
@@ -70,7 +74,8 @@ export const load: PageServerLoad = async (event) => {
 		pagination: { page, limit, totalItems, totalPages },
 		search,
 		selectedCategoryId: categoryId,
-		canImportCsv
+		canImportCsv,
+		totalItemsUnfiltered
 	};
 };
 

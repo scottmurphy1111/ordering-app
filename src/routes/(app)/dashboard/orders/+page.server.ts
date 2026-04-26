@@ -28,28 +28,49 @@ export const load: PageServerLoad = async ({ locals, url, depends }) => {
 		whereConditions.push(eq(orders.status, statusFilter as typeof orders.status._.data));
 	}
 
-	const allOrders = await db.query.orders.findMany({
-		where: and(...whereConditions),
-		orderBy: [desc(orders.createdAt)],
-		limit: 50,
-		columns: {
-			id: true,
-			orderNumber: true,
-			customerName: true,
-			customerPhone: true,
-			total: true,
-			status: true,
-			paymentStatus: true,
-			type: true,
-			createdAt: true,
-			notes: true,
-			scheduledFor: true,
-			deliveryAddress: true,
-			stripePaymentIntentId: true
-		}
-	});
+	const baseConditions = [
+		eq(orders.tenantId, tenantId),
+		or(not(inArray(orders.status, ['fulfilled', 'cancelled'])), gte(orders.updatedAt, cutoff))!
+	];
 
-	return { orders: allOrders, statusFilter };
+	const [allOrders, countRows] = await Promise.all([
+		db.query.orders.findMany({
+			where: and(...whereConditions),
+			orderBy: [desc(orders.createdAt)],
+			limit: 50,
+			columns: {
+				id: true,
+				orderNumber: true,
+				customerName: true,
+				customerPhone: true,
+				total: true,
+				status: true,
+				paymentStatus: true,
+				type: true,
+				createdAt: true,
+				notes: true,
+				scheduledFor: true,
+				deliveryAddress: true,
+				stripePaymentIntentId: true
+			},
+			with: {
+				items: {
+					columns: { name: true, quantity: true }
+				}
+			}
+		}),
+		db.query.orders.findMany({
+			where: and(...baseConditions),
+			columns: { status: true }
+		})
+	]);
+
+	const statusCounts = countRows.reduce<Record<string, number>>((acc, o) => {
+		acc[o.status] = (acc[o.status] ?? 0) + 1;
+		return acc;
+	}, {});
+
+	return { orders: allOrders, statusFilter, statusCounts };
 };
 
 export const actions: Actions = {

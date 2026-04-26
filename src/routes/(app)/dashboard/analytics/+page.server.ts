@@ -1,43 +1,42 @@
 import type { PageServerLoad } from './$types';
 import { db } from '$lib/server/db';
 import { eq, and, gte, sql, desc } from 'drizzle-orm';
-import { orders, orderItems } from '$lib/server/db/schema';
+import { orders, orderItems, menuItems, menuCategories } from '$lib/server/db/schema';
 import { hasAddon } from '$lib/billing';
 
-export const load: PageServerLoad = async ({ locals }) => {
+export const load: PageServerLoad = async ({ locals, url }) => {
 	const tenantId = locals.tenantId!;
 	const hasAdvancedAnalytics = hasAddon(locals.tenant?.addons, 'analytics');
 
+	const rangeStr = url.searchParams.get('range');
+	const rangeDays = rangeStr === '7' ? 7 : 30;
+
 	const now = new Date();
-	const startOf30Days = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-	const startOfPrev30Days = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000);
-	const startOf7Days = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+	const startOfRange = new Date(now.getTime() - rangeDays * 24 * 60 * 60 * 1000);
+	const startOfPrevRange = new Date(now.getTime() - 2 * rangeDays * 24 * 60 * 60 * 1000);
 	const startOf90Days = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
 
-	const [recentOrders, prev30Orders, topItems, statusBreakdown, typeBreakdown] = await Promise.all([
-		// All paid orders in last 30 days (full rows for chart + KPIs)
+	const [recentOrders, prevOrders, topItems, statusBreakdown, typeBreakdown] = await Promise.all([
 		db.query.orders.findMany({
 			where: and(
 				eq(orders.tenantId, tenantId),
 				eq(orders.paymentStatus, 'paid'),
-				gte(orders.createdAt, startOf30Days)
+				gte(orders.createdAt, startOfRange)
 			),
 			columns: { id: true, total: true, type: true, status: true, createdAt: true },
 			orderBy: [orders.createdAt]
 		}),
 
-		// Previous 30-day window for comparison
 		db.query.orders.findMany({
 			where: and(
 				eq(orders.tenantId, tenantId),
 				eq(orders.paymentStatus, 'paid'),
-				gte(orders.createdAt, startOfPrev30Days),
-				sql`${orders.createdAt} < ${startOf30Days}`
+				gte(orders.createdAt, startOfPrevRange),
+				sql`${orders.createdAt} < ${startOfRange}`
 			),
 			columns: { id: true, total: true }
 		}),
 
-		// Top 5 items by quantity ordered (all time)
 		db
 			.select({
 				name: orderItems.name,
@@ -51,17 +50,15 @@ export const load: PageServerLoad = async ({ locals }) => {
 			.orderBy(desc(sql`sum(${orderItems.quantity})`))
 			.limit(5),
 
-		// Order count by status (last 30 days, all payment statuses)
 		db
 			.select({
 				status: orders.status,
 				count: sql<number>`cast(count(*) as int)`
 			})
 			.from(orders)
-			.where(and(eq(orders.tenantId, tenantId), gte(orders.createdAt, startOf30Days)))
+			.where(and(eq(orders.tenantId, tenantId), gte(orders.createdAt, startOfRange)))
 			.groupBy(orders.status),
 
-		// Order count by type (last 30 days, paid only)
 		db
 			.select({
 				type: orders.type,
@@ -73,37 +70,35 @@ export const load: PageServerLoad = async ({ locals }) => {
 				and(
 					eq(orders.tenantId, tenantId),
 					eq(orders.paymentStatus, 'paid'),
-					gte(orders.createdAt, startOf30Days)
+					gte(orders.createdAt, startOfRange)
 				)
 			)
 			.groupBy(orders.type)
 	]);
 
 	// ── KPI calculations ────────────────────────────────────────────
-	const revenue30 = recentOrders.reduce((s, o) => s + o.total, 0);
-	const revenuePrev30 = prev30Orders.reduce((s, o) => s + o.total, 0);
-	const revenueChange =
-		revenuePrev30 > 0 ? ((revenue30 - revenuePrev30) / revenuePrev30) * 100 : null;
+	const revenue = recentOrders.reduce((s, o) => s + o.total, 0);
+	const revenuePrev = prevOrders.reduce((s, o) => s + o.total, 0);
+	const revenueChange = revenuePrev > 0 ? ((revenue - revenuePrev) / revenuePrev) * 100 : null;
 
-	const orders30 = recentOrders.length;
-	const ordersPrev30 = prev30Orders.length;
-	const ordersChange = ordersPrev30 > 0 ? ((orders30 - ordersPrev30) / ordersPrev30) * 100 : null;
+	const ordersCount = recentOrders.length;
+	const ordersPrev = prevOrders.length;
+	const ordersChange = ordersPrev > 0 ? ((ordersCount - ordersPrev) / ordersPrev) * 100 : null;
 
-	const avgOrderValue = orders30 > 0 ? Math.round(revenue30 / orders30) : 0;
-	const avgPrev = ordersPrev30 > 0 ? Math.round(revenuePrev30 / ordersPrev30) : 0;
+	const avgOrderValue = ordersCount > 0 ? Math.round(revenue / ordersCount) : 0;
+	const avgPrev = ordersPrev > 0 ? Math.round(revenuePrev / ordersPrev) : 0;
 	const avgChange = avgPrev > 0 ? ((avgOrderValue - avgPrev) / avgPrev) * 100 : null;
 
-	const revenue7 = recentOrders
-		.filter((o) => new Date(o.createdAt) >= startOf7Days)
-		.reduce((s, o) => s + o.total, 0);
+	const fulfilledCount = recentOrders.filter((o) => o.status === 'fulfilled').length;
+	const fulfilledRate =
+		ordersCount > 0 ? Math.round((fulfilledCount / ordersCount) * 100) : null;
 
-	// ── Daily chart data (last 30 days) ─────────────────────────────
+	// ── Daily chart data ─────────────────────────────────────────────
 	const dailyMap = new Map<string, { revenue: number; count: number }>();
-	for (let i = 29; i >= 0; i--) {
+	for (let i = rangeDays - 1; i >= 0; i--) {
 		const d = new Date(now);
 		d.setDate(d.getDate() - i);
-		const key = d.toISOString().slice(0, 10);
-		dailyMap.set(key, { revenue: 0, count: 0 });
+		dailyMap.set(d.toISOString().slice(0, 10), { revenue: 0, count: 0 });
 	}
 	for (const o of recentOrders) {
 		const key = new Date(o.createdAt).toISOString().slice(0, 10);
@@ -119,10 +114,14 @@ export const load: PageServerLoad = async ({ locals }) => {
 	let peakHoursGrid: Array<{ dow: number; hour: number; count: number }> | null = null;
 	let customerRetention: { total: number; returning: number; returnRate: number } | null = null;
 	let topItemsByRevenue: typeof topItems | null = null;
+	let revenueByCategory: Array<{
+		category: string;
+		totalRevenue: number;
+		totalQty: number;
+	}> | null = null;
 
 	if (hasAdvancedAnalytics) {
-		const [peakHoursRaw, customerData, topByRevenue] = await Promise.all([
-			// Peak hours: orders by day-of-week (0=Sun) + hour (last 90 days)
+		const [peakHoursRaw, customerData, topByRevenue, revByCategoryRaw] = await Promise.all([
 			db
 				.select({
 					dow: sql<number>`cast(EXTRACT(DOW FROM ${orders.createdAt}) as int)`,
@@ -142,7 +141,6 @@ export const load: PageServerLoad = async ({ locals }) => {
 					sql`EXTRACT(HOUR FROM ${orders.createdAt})`
 				),
 
-			// Customer retention: distinct customer emails with order counts (all time)
 			db
 				.select({
 					customerEmail: orders.customerEmail,
@@ -158,7 +156,6 @@ export const load: PageServerLoad = async ({ locals }) => {
 				)
 				.groupBy(orders.customerEmail),
 
-			// Top 5 items by revenue (all time)
 			db
 				.select({
 					name: orderItems.name,
@@ -170,7 +167,22 @@ export const load: PageServerLoad = async ({ locals }) => {
 				.where(and(eq(orders.tenantId, tenantId), eq(orders.paymentStatus, 'paid')))
 				.groupBy(orderItems.name)
 				.orderBy(desc(sql`sum(${orderItems.quantity} * ${orderItems.unitPrice})`))
-				.limit(5)
+				.limit(5),
+
+			db
+				.select({
+					category: sql<string>`coalesce(${menuCategories.name}, 'Uncategorized')`,
+					totalRevenue: sql<number>`cast(sum(${orderItems.quantity} * ${orderItems.unitPrice}) as int)`,
+					totalQty: sql<number>`cast(sum(${orderItems.quantity}) as int)`
+				})
+				.from(orderItems)
+				.innerJoin(orders, eq(orderItems.orderId, orders.id))
+				.leftJoin(menuItems, eq(orderItems.menuItemId, menuItems.id))
+				.leftJoin(menuCategories, eq(menuItems.categoryId, menuCategories.id))
+				.where(and(eq(orders.tenantId, tenantId), eq(orders.paymentStatus, 'paid')))
+				.groupBy(sql`coalesce(${menuCategories.name}, 'Uncategorized')`)
+				.orderBy(desc(sql`sum(${orderItems.quantity} * ${orderItems.unitPrice})`))
+				.limit(6)
 		]);
 
 		peakHoursGrid = peakHoursRaw;
@@ -184,20 +196,22 @@ export const load: PageServerLoad = async ({ locals }) => {
 		};
 
 		topItemsByRevenue = topByRevenue;
+		revenueByCategory = revByCategoryRaw;
 	}
 
 	return {
+		rangeDays,
 		hasAdvancedAnalytics,
 		kpis: {
-			revenue30,
-			revenuePrev30,
+			revenue,
+			revenuePrev,
 			revenueChange,
-			orders30,
-			ordersPrev30,
+			ordersCount,
+			ordersPrev,
 			ordersChange,
 			avgOrderValue,
 			avgChange,
-			revenue7
+			fulfilledRate
 		},
 		dailyData,
 		topItems,
@@ -205,6 +219,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 		typeBreakdown,
 		peakHoursGrid,
 		customerRetention,
-		topItemsByRevenue
+		topItemsByRevenue,
+		revenueByCategory
 	};
 };

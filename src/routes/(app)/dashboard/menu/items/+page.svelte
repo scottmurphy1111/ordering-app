@@ -371,9 +371,9 @@
 				<Button
 					onclick={openDiscover}
 					variant="outline"
-					class="gap-1.5 border-purple-300 bg-purple-50 text-purple-700 hover:bg-purple-100"
+					class="gap-1.5"
 				>
-					<Icon icon="mdi:lightning-bolt" class="h-4 w-4" /><span class="hidden sm:inline"
+					<Icon icon="mdi:lightning-bolt" class="h-4 w-4 text-primary" /><span class="hidden sm:inline"
 						>Discover from Stripe</span
 					><span class="sm:hidden">Discover</span>
 				</Button>
@@ -663,6 +663,12 @@
 		{/if}
 	</form>
 
+	{#if data.search || data.selectedCategoryId}
+		<p class="mb-4 text-sm text-muted-foreground">
+			Showing {data.pagination.totalItems} of {data.totalItemsUnfiltered} items
+		</p>
+	{/if}
+
 	{#if sortSaveError}
 		<div
 			class="mb-4 rounded-md border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive"
@@ -726,15 +732,18 @@
 			{/each}
 		</div>
 	{:else if data.items.length === 0}
-		<div class="rounded-xl border border-dashed p-12 text-center">
-			<p class="text-sm text-muted-foreground">No items found.</p>
+		<div class="flex flex-col items-center py-16 text-center">
+			<div class="flex h-16 w-16 items-center justify-center rounded-2xl bg-muted">
+				<Icon icon="mdi:silverware-fork-knife" class="h-8 w-8 text-muted-foreground/40" />
+			</div>
+			<h2 class="mt-4 text-base font-semibold text-foreground">No menu items yet</h2>
+			<p class="mt-1 text-sm text-muted-foreground">Add your first item to start building your menu.</p>
 			<Button
-				onclick={() => {
-					showForm = true;
-				}}
-				variant="link"
-				class="mt-3 gap-1"><Icon icon="mdi:plus" class="h-3.5 w-3.5" /> Add your first item</Button
+				onclick={() => { showForm = true; }}
+				class="mt-6 gap-1.5"
 			>
+				<Icon icon="mdi:plus" class="h-4 w-4" /> Add your first item
+			</Button>
 		</div>
 	{:else}
 		<Card class="p-0 shadow-sm">
@@ -781,12 +790,13 @@
 											class="h-10 w-10 rounded-md object-cover"
 										/>
 									{:else}
-										<div class="flex h-10 w-10 items-center justify-center rounded-md bg-muted">
-											<Icon
-												icon="mdi:silverware-fork-knife"
-												class="h-5 w-5 text-muted-foreground/40"
-											/>
-										</div>
+										<a
+											href={resolve(`/dashboard/menu/items/${item.id}`)}
+											aria-label="Add image for {item.name}"
+											class="flex h-10 w-10 items-center justify-center rounded-md border-2 border-dashed border-muted-foreground/20 transition-colors hover:border-primary/40 hover:bg-primary/5"
+										>
+											<Icon icon="mdi:plus" class="h-3.5 w-3.5 text-muted-foreground/40" />
+										</a>
 									{/if}
 								</TableCell>
 								<TableCell class="px-4 py-3">
@@ -849,17 +859,18 @@
 										>
 										<form method="post" action="?/delete" use:enhance>
 											<input type="hidden" name="id" value={item.id} />
-											<Button
+											<button
 												type="submit"
 												onclick={async (e) => {
 													e.preventDefault();
 													if (await confirmDialog('Delete this item?'))
 														(e.currentTarget as HTMLButtonElement).form?.requestSubmit();
 												}}
-												variant="ghost"
-												size="sm"
-												class="text-destructive hover:text-destructive/80">Delete</Button
+												aria-label="Delete item"
+												class="rounded-md p-1 text-red-500 transition-colors hover:bg-red-50 hover:text-red-600"
 											>
+												<Icon icon="mdi:trash-can-outline" class="h-3.5 w-3.5" />
+											</button>
 										</form>
 									</div>
 								</TableCell>

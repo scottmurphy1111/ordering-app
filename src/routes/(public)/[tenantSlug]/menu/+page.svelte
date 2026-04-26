@@ -107,6 +107,15 @@
 		}, 2500);
 	}
 
+	// ── Cart preview ─────────────────────────────────────────────────────────
+	const cartFirstItem = $derived(
+		cart.items[0]?.name
+			? cart.items[0].name.length > 20
+				? cart.items[0].name.slice(0, 20) + '…'
+				: cart.items[0].name
+			: ''
+	);
+
 	// ── IntersectionObserver: active category nav ────────────────────────────
 	let activeCategoryId = $state<string | null>(null);
 
@@ -177,13 +186,11 @@
 				</div>
 				<div class="flex flex-wrap items-center gap-2">
 					{#if openStatus !== null}
-						<span
-							class="rounded-full px-2.5 py-0.5 text-xs font-semibold {openStatus
-								? 'bg-primary text-primary-foreground'
-								: 'bg-destructive/100 text-white'}"
-						>
-							{openStatus ? 'Open' : 'Closed'}
-						</span>
+						{#if openStatus}
+							<span class="rounded-full bg-primary px-2.5 py-0.5 text-xs font-semibold text-primary-foreground">Open</span>
+						{:else}
+							<span class="rounded-full bg-red-600 px-2 py-0.5 text-xs font-semibold text-white">Closed</span>
+						{/if}
 					{/if}
 					{#if tableParam}
 						<span
@@ -235,13 +242,11 @@
 						</p>
 					{/if}
 					{#if openStatus !== null}
-						<span
-							class="rounded-full px-2.5 py-0.5 text-xs font-semibold {openStatus
-								? 'bg-primary text-primary-foreground'
-								: 'bg-destructive/100/90 text-white'}"
-						>
-							{openStatus ? 'Open' : 'Closed'}
-						</span>
+						{#if openStatus}
+							<span class="rounded-full bg-primary px-2.5 py-0.5 text-xs font-semibold text-primary-foreground">Open</span>
+						{:else}
+							<span class="rounded-full bg-red-600 px-2 py-0.5 text-xs font-semibold text-white">Closed</span>
+						{/if}
 					{/if}
 					{#if tableParam}
 						<span
@@ -375,6 +380,10 @@
 										alt={item.name}
 										class="h-20 w-20 shrink-0 rounded-lg object-cover"
 									/>
+								{:else}
+									<div class="flex h-20 w-20 shrink-0 items-center justify-center rounded-lg bg-muted">
+										<Icon icon="mdi:silverware-fork-knife" class="h-5 w-5 text-muted-foreground/40" />
+									</div>
 								{/if}
 								<div class="min-w-0 flex-1">
 									<p class="font-medium text-foreground">{item.name}</p>
@@ -385,9 +394,9 @@
 										<div class="mt-1.5 flex flex-wrap gap-1">
 											{#each item.tags as tag (tag)}
 												<span
-													class="rounded-full px-2 py-0.5 text-xs"
+													class="capitalize rounded-full px-2 py-0.5 text-xs"
 													style="background-color: color-mix(in srgb, var(--accent-color) 15%, white); color: var(--accent-color);"
-													>{tag}</span
+													>{tag.toLowerCase()}</span
 												>
 											{/each}
 										</div>
@@ -455,6 +464,10 @@
 										alt={item.name}
 										class="h-20 w-20 shrink-0 rounded-lg object-cover"
 									/>
+								{:else}
+									<div class="flex h-20 w-20 shrink-0 items-center justify-center rounded-lg bg-muted">
+										<Icon icon="mdi:silverware-fork-knife" class="h-5 w-5 text-muted-foreground/40" />
+									</div>
 								{/if}
 								<div class="min-w-0 flex-1">
 									<p class="font-medium text-foreground">{item.name}</p>
@@ -465,9 +478,9 @@
 										<div class="mt-1.5 flex flex-wrap gap-1">
 											{#each item.tags as tag (tag)}
 												<span
-													class="rounded-full px-2 py-0.5 text-xs"
+													class="capitalize rounded-full px-2 py-0.5 text-xs"
 													style="background-color: color-mix(in srgb, var(--accent-color) 15%, white); color: var(--accent-color);"
-													>{tag}</span
+													>{tag.toLowerCase()}</span
 												>
 											{/each}
 										</div>
@@ -524,12 +537,12 @@
 				style="background-color: var(--background-color); color: var(--foreground-color);"
 				class="flex w-full max-w-2xl items-center justify-between rounded-xl px-5 py-3.5 shadow-lg transition-opacity hover:opacity-90"
 			>
-				<span
-					class="flex h-6 w-6 items-center justify-center rounded-full bg-background/20 text-sm font-bold"
-					>{cart.count}</span
-				>
-				<span class="font-semibold">View Cart</span>
-				<span class="font-semibold">${(cart.subtotal / 100).toFixed(2)}</span>
+				<span class="flex items-center gap-1.5">
+					<span class="flex h-6 w-6 items-center justify-center rounded-full bg-background/20 text-sm font-bold">{cart.count}</span>
+					<span class="text-sm font-medium opacity-80">{cart.count === 1 ? 'item' : 'items'}</span>
+				</span>
+				<span class="min-w-0 truncate px-2 text-sm font-medium opacity-80">{cartFirstItem}</span>
+				<span class="shrink-0 font-semibold">View Cart → ${(cart.subtotal / 100).toFixed(2)}</span>
 			</a>
 		</div>
 	{/if}

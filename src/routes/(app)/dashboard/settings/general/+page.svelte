@@ -41,24 +41,32 @@
 	);
 
 	const DAYS = [
-		{ key: 'monday', label: 'Monday' },
-		{ key: 'tuesday', label: 'Tuesday' },
-		{ key: 'wednesday', label: 'Wednesday' },
-		{ key: 'thursday', label: 'Thursday' },
-		{ key: 'friday', label: 'Friday' },
-		{ key: 'saturday', label: 'Saturday' },
-		{ key: 'sunday', label: 'Sunday' }
+		{ key: 'monday', label: 'Mon' },
+		{ key: 'tuesday', label: 'Tue' },
+		{ key: 'wednesday', label: 'Wed' },
+		{ key: 'thursday', label: 'Thu' },
+		{ key: 'friday', label: 'Fri' },
+		{ key: 'saturday', label: 'Sat' },
+		{ key: 'sunday', label: 'Sun' }
 	];
 
 	const businessTypes = [
-		{ value: 'quick_service', label: 'Quick service' },
-		{ value: 'full_service', label: 'Full service' },
+		{ value: 'quick_service', label: 'Quick Service' },
+		{ value: 'full_service', label: 'Full Service' },
 		{ value: 'cafe', label: 'Café' },
-		{ value: 'food_truck', label: 'Food truck' },
+		{ value: 'food_truck', label: 'Food Truck' },
 		{ value: 'bar', label: 'Bar' },
 		{ value: 'bakery', label: 'Bakery' },
 		{ value: 'other', label: 'Other' }
 	];
+
+	let closedDays = $state<Record<string, boolean>>({});
+
+	$effect(() => {
+		for (const day of DAYS) {
+			closedDays[day.key] = savedHours[day.key]?.closed ?? false;
+		}
+	});
 </script>
 
 <div class="max-w-2xl">
@@ -234,7 +242,7 @@
 				</div>
 			</CardContent>
 			<CardFooter>
-				<Button type="submit" variant="default">Save changes</Button>
+				<Button type="submit" variant="default">Save business info</Button>
 			</CardFooter>
 		</Card>
 	</form>
@@ -295,7 +303,7 @@
 				</div>
 			</CardContent>
 			<CardFooter>
-				<Button type="submit" variant="default">Save delivery settings</Button>
+				<Button type="submit" variant="default">Save delivery</Button>
 			</CardFooter>
 		</Card>
 	</form>
@@ -325,41 +333,44 @@
 					Customers will see open/closed status on your menu page. Leave all days unset to hide the
 					status.
 				</p>
-				<div class="divide-y divide-border px-5">
-					{#each DAYS as day (day.key)}
-						{@const h = savedHours[day.key]}
-						<div class="flex flex-col gap-2 py-3 sm:flex-row sm:items-center sm:gap-4">
-							<div class="flex items-center justify-between sm:contents">
-								<span class="w-24 shrink-0 text-sm font-medium text-muted-foreground"
-									>{day.label}</span
-								>
-								<label class="flex items-center gap-1.5 text-sm text-muted-foreground">
-									<input
-										type="checkbox"
-										name="{day.key}_closed"
-										class="h-4 w-4 rounded"
-										checked={h?.closed ?? false}
+				<div class="overflow-x-auto">
+					<div class="divide-y divide-border px-4">
+						{#each DAYS as day (day.key)}
+							{@const h = savedHours[day.key]}
+							<div class="flex flex-col gap-2 py-4 sm:flex-row sm:items-center sm:gap-3">
+								<div class="flex items-center justify-between sm:contents">
+									<span class="w-12 shrink-0 text-sm font-medium text-muted-foreground"
+										>{day.label}</span
+									>
+									<label class="flex items-center gap-1.5 text-sm text-muted-foreground">
+										<input
+											type="checkbox"
+											name="{day.key}_closed"
+											class="h-4 w-4 rounded"
+											checked={closedDays[day.key] ?? false}
+											onchange={(e) => { closedDays[day.key] = e.currentTarget.checked; }}
+										/>
+										Closed
+									</label>
+								</div>
+								<div class="flex flex-1 items-center gap-2 transition-opacity {closedDays[day.key] ? 'pointer-events-none opacity-40' : ''}">
+									<Input
+										type="time"
+										name="{day.key}_open"
+										value={h?.open ?? '09:00'}
+										class="flex-1"
 									/>
-									Closed
-								</label>
+									<span class="shrink-0 text-xs text-muted-foreground">to</span>
+									<Input
+										type="time"
+										name="{day.key}_close"
+										value={h?.close ?? '21:00'}
+										class="flex-1"
+									/>
+								</div>
 							</div>
-							<div class="flex items-center gap-2">
-								<Input
-									type="time"
-									name="{day.key}_open"
-									value={h?.open ?? '09:00'}
-									class="flex-1 sm:flex-none"
-								/>
-								<span class="text-xs text-muted-foreground">to</span>
-								<Input
-									type="time"
-									name="{day.key}_close"
-									value={h?.close ?? '21:00'}
-									class="flex-1 sm:flex-none"
-								/>
-							</div>
-						</div>
-					{/each}
+						{/each}
+					</div>
 				</div>
 			</CardContent>
 			<CardFooter>

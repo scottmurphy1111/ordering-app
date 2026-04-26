@@ -39,8 +39,12 @@
 
 <div class="flex min-h-screen flex-col items-center justify-center bg-muted/50 px-4 py-16">
 	<div class="w-full max-w-lg">
-		<h1 class="mb-1 text-2xl font-bold text-foreground">Your tenants</h1>
-		<p class="mb-6 text-sm text-muted-foreground">Select a tenant to manage, or create a new one.</p>
+		<div class="mb-6">
+			<h1 class="text-2xl font-bold text-foreground">Your tenants</h1>
+			{#if data.tenants.length > 1}
+				<p class="mt-1 text-sm text-muted-foreground">{data.tenants.length} tenants</p>
+			{/if}
+		</div>
 
 		{#if form?.error}
 			<div class="mb-4 rounded-md border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive">
@@ -87,7 +91,7 @@
 									<div class="min-w-0">
 										<p class="font-medium text-foreground">{t.name}</p>
 										<p class="mt-0.5 text-xs text-muted-foreground">
-											/{t.slug} · {t.type?.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')} · {t.role.charAt(0).toUpperCase() + t.role.slice(1)}
+											getorderlocal.com/{t.slug} · {t.type?.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')} · {t.role.charAt(0).toUpperCase() + t.role.slice(1)}
 										</p>
 									</div>
 								</button>
@@ -104,7 +108,7 @@
 				data-tour="create-tenant"
 				onclick={() => (showCreate = true)}
 				variant="outline"
-				class="w-full border-2 border-dashed text-muted-foreground hover:border-gray-400 hover:text-muted-foreground"
+				class="w-full border-primary text-primary hover:bg-primary/5 hover:text-primary"
 			>
 				<Icon icon="mdi:plus" class="h-4 w-4" /> Create new tenant
 			</Button>

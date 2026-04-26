@@ -262,16 +262,6 @@
 		<div class="mx-auto w-full max-w-5xl flex-1 px-4 py-6 sm:px-6 sm:py-8">
 			{@render children()}
 		</div>
-		<footer class="border-t bg-background px-6 py-4">
-			<div class="mx-auto flex max-w-5xl items-center justify-center gap-4">
-				<p class="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
-					Order<span class="text-primary">Local</span>
-				</p>
-				<p class="text-xs text-muted-foreground">
-					&copy; {new Date().getFullYear()} All rights reserved.
-				</p>
-			</div>
-		</footer>
 	</main>
 </div>
 
