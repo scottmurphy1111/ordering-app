@@ -3,9 +3,9 @@
 	import Icon from '@iconify/svelte';
 	import { resolve } from '$app/paths';
 	import { Card, CardHeader, CardTitle, CardContent } from '$lib/components/ui/card';
-	import { Badge } from '$lib/components/ui/badge';
 	import { Button } from '$lib/components/ui/button';
 	import { SvelteMap } from 'svelte/reactivity';
+	import OrdersSummaryBar from '$lib/components/OrdersSummaryBar.svelte';
 
 	let { data }: { data: PageData } = $props();
 
@@ -37,7 +37,20 @@
 
 	const maxDailyRevenue = $derived(Math.max(...dailyData.map((d) => d.revenue), 1));
 	const totalStatusCount = $derived(statusBreakdown.reduce((s, r) => s + r.count, 0));
+	const dataPointsWithRevenue = $derived(dailyData.filter((d) => d.revenue > 0).length);
 
+	const summaryStats = $derived([
+		{ label: 'Revenue', value: fmt(kpis.revenue), positive: true },
+		{ label: 'Orders', value: kpis.ordersCount },
+		{ label: 'Avg order', value: fmt(kpis.avgOrderValue) },
+		{
+			label: 'Fulfilment rate',
+			value: kpis.fulfilledRate !== null ? `${kpis.fulfilledRate}%` : '—',
+			sublabel: kpis.fulfilledRate !== null ? 'of paid orders fulfilled' : undefined
+		}
+	]);
+
+	// Uses the CLAUDE.md canonical statusStyles map
 	const statusColors: Record<string, string> = {
 		received: 'bg-blue-400',
 		confirmed: 'bg-purple-400',
@@ -49,11 +62,11 @@
 
 	const statusBadge: Record<string, string> = {
 		received: 'bg-blue-100 text-blue-700',
-		confirmed: 'bg-purple-100 text-purple-700',
-		preparing: 'bg-yellow-100 text-yellow-700',
-		ready: 'bg-green-100 text-primary/90',
-		fulfilled: 'bg-muted text-muted-foreground',
-		cancelled: 'bg-red-100 text-red-500'
+		confirmed: 'bg-indigo-100 text-indigo-700',
+		preparing: 'bg-amber-100 text-amber-700',
+		ready: 'bg-purple-100 text-purple-700',
+		fulfilled: 'bg-green-100 text-green-700',
+		cancelled: 'bg-red-100 text-red-700'
 	};
 
 	const typeIcons: Record<string, string> = {
@@ -74,8 +87,11 @@
 		Math.max(...(revenueByCategory ?? []).map((c) => c.totalRevenue), 1)
 	);
 
+	const isUncategorized = $derived(
+		(revenueByCategory ?? []).length > 0 && (revenueByCategory ?? [])[0].category === 'Uncategorized'
+	);
+
 	// ── Peak hours heatmap ───────────────────────────────────────────
-	// DOW order: Mon(1) → Sun(0)
 	const DOW_ORDER = [1, 2, 3, 4, 5, 6, 0];
 	const DOW_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 	const HOURS = Array.from({ length: 24 }, (_, i) => i);
@@ -104,83 +120,55 @@
 </script>
 
 <div>
-	<div class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+	<!-- ── Page header ───────────────────────────────────────────── -->
+	<div class="mb-6 flex items-center justify-between">
 		<div>
-			<h1 class="text-2xl font-bold text-foreground">Analytics</h1>
-			<p class="mt-0.5 text-sm text-muted-foreground">
-				Last {rangeDays} days vs previous {rangeDays} days.
+			<h1 class="text-2xl font-bold text-gray-900">Analytics</h1>
+			<p class="mt-0.5 text-sm text-gray-500">
+				Last {rangeDays} days vs previous {rangeDays} days
 			</p>
 		</div>
-		<div class="flex items-center gap-1 rounded-xl border bg-background p-1 shadow-sm self-start">
-			{#each [[7, '7 days'], [30, '30 days']] as const as [d, label] (d)}
-				<a
-					href={resolve(d === 30 ? '/dashboard/analytics' : `/dashboard/analytics?range=${d}`)}
-					class="rounded-lg px-4 py-1.5 text-xs font-medium transition-colors
-						{rangeDays === d
-						? 'bg-gray-900 text-white'
-						: 'text-muted-foreground hover:text-foreground'}"
-				>{label}</a>
-			{/each}
+		<div class="flex items-center gap-2">
+			<!-- Period toggle — standard segmented control -->
+			<div class="flex items-center overflow-hidden rounded-lg border border-gray-200">
+				{#each [[7, '7 days'], [30, '30 days']] as const as [d, label] (d)}
+					<a
+						href={resolve(d === 30 ? '/dashboard/analytics' : `/dashboard/analytics?range=${d}`)}
+						class="flex items-center gap-1.5 px-4 py-2 text-sm font-medium transition-colors
+							{rangeDays === d
+							? 'bg-gray-900 text-white'
+							: 'bg-white text-gray-500 hover:bg-gray-50'}"
+					>
+						<Icon icon="mdi:calendar-outline" class="h-3.5 w-3.5" />
+						{label}
+					</a>
+				{/each}
+			</div>
+			<button
+				class="flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-600 transition-colors hover:bg-gray-50"
+			>
+				<Icon icon="mdi:download-outline" class="h-3.5 w-3.5" />
+				Export
+			</button>
 		</div>
 	</div>
 
-	<!-- ── KPI cards ────────────────────────────────────────────── -->
-	<div class="mb-8 grid grid-cols-2 gap-4 lg:grid-cols-4">
-		<Card class="shadow-sm">
-			<CardContent>
-				<p class="text-xs font-medium tracking-wide text-muted-foreground uppercase">Revenue</p>
-				<p class="mt-1.5 text-3xl font-bold text-foreground">{fmt(kpis.revenue)}</p>
-				{#if kpis.revenueChange !== null}
-					<p class="mt-1 text-xs {kpis.revenueChange >= 0 ? 'text-primary' : 'text-red-500'}">
-						{fmtPct(kpis.revenueChange)} vs prior period
-					</p>
-				{/if}
-			</CardContent>
-		</Card>
-
-		<Card class="shadow-sm">
-			<CardContent>
-				<p class="text-xs font-medium tracking-wide text-muted-foreground uppercase">Orders</p>
-				<p class="mt-1.5 text-3xl font-bold text-foreground">{kpis.ordersCount}</p>
-				{#if kpis.ordersChange !== null}
-					<p class="mt-1 text-xs {kpis.ordersChange >= 0 ? 'text-primary' : 'text-red-500'}">
-						{fmtPct(kpis.ordersChange)} vs prior period
-					</p>
-				{/if}
-			</CardContent>
-		</Card>
-
-		<Card class="shadow-sm">
-			<CardContent>
-				<p class="text-xs font-medium tracking-wide text-muted-foreground uppercase">Avg Order</p>
-				<p class="mt-1.5 text-3xl font-bold text-foreground">{fmt(kpis.avgOrderValue)}</p>
-				{#if kpis.avgChange !== null}
-					<p class="mt-1 text-xs {kpis.avgChange >= 0 ? 'text-primary' : 'text-red-500'}">
-						{fmtPct(kpis.avgChange)} vs prior period
-					</p>
-				{/if}
-			</CardContent>
-		</Card>
-
-		<Card class="shadow-sm">
-			<CardContent>
-				<p class="text-xs font-medium tracking-wide text-muted-foreground uppercase">
-					Fulfilment rate
-				</p>
-				{#if kpis.fulfilledRate !== null}
-					<p class="mt-1.5 text-3xl font-bold text-foreground">{kpis.fulfilledRate}%</p>
-					<p class="mt-1 text-xs text-muted-foreground">of paid orders fulfilled</p>
-				{:else}
-					<p class="mt-1.5 text-3xl font-bold text-foreground">—</p>
-				{/if}
-			</CardContent>
-		</Card>
-	</div>
+	<!-- ── KPI summary bar ─────────────────────────────────────── -->
+	<OrdersSummaryBar stats={summaryStats} />
 
 	<!-- ── Daily revenue chart ──────────────────────────────────── -->
 	<Card class="mb-6 shadow-sm">
 		<CardContent>
-			<h2 class="mb-4 text-sm font-semibold text-foreground">Daily revenue — last {rangeDays} days</h2>
+			<div class="mb-4 flex items-center justify-between">
+				<div>
+					<h2 class="text-sm font-semibold text-gray-900">Daily revenue</h2>
+					<p class="mt-0.5 text-xs text-gray-400">Last {rangeDays} days</p>
+				</div>
+				<div class="text-right">
+					<p class="text-lg font-semibold text-gray-900">{fmt(kpis.revenue)}</p>
+					<p class="text-xs text-gray-400">total this period</p>
+				</div>
+			</div>
 			<div class="flex h-36 items-end gap-px">
 				{#each dailyData as day (day.date)}
 					{@const height =
@@ -214,15 +202,20 @@
 				<span>{dailyData[Math.floor(dailyData.length / 2)]?.date.slice(5)}</span>
 				<span>{dailyData[dailyData.length - 1]?.date.slice(5)}</span>
 			</div>
+			{#if dataPointsWithRevenue < 5}
+				<p class="mt-2 text-center text-xs text-gray-400">
+					Not enough data yet — charts fill in as more orders come through.
+				</p>
+			{/if}
 		</CardContent>
 	</Card>
 
 	<!-- ── Bottom grid ───────────────────────────────────────────── -->
 	<div class="grid gap-6 lg:grid-cols-3">
 		<!-- Top items -->
-		<Card class="shadow-sm lg:col-span-2">
+		<Card class="self-start shadow-sm lg:col-span-2">
 			<CardContent>
-				<h2 class="mb-4 text-sm font-semibold text-foreground">Top items</h2>
+				<h2 class="mb-4 text-sm font-semibold text-gray-900">Top items</h2>
 				{#if topItems.length === 0}
 					<p class="text-sm text-muted-foreground">No order data yet.</p>
 				{:else}
@@ -247,6 +240,14 @@
 								</div>
 							</div>
 						{/each}
+					</div>
+					{#if topItems.length < 5}
+						<p class="mt-3 text-xs text-gray-400">Only {topItems.length} {topItems.length === 1 ? 'item' : 'items'} ordered this period</p>
+					{/if}
+					<div class="mt-3 border-t border-gray-100 pt-3">
+						<a href={resolve('/dashboard/menu/items')} class="text-sm text-green-600 hover:underline">
+							View all menu items →
+						</a>
 					</div>
 				{/if}
 			</CardContent>
@@ -288,7 +289,9 @@
 			<!-- Status breakdown -->
 			<Card class="shadow-sm">
 				<CardContent>
-					<h2 class="mb-3 text-sm font-semibold text-foreground">By status (30d)</h2>
+					<h2 class="mb-3 text-sm font-semibold text-foreground">
+						Orders by status — last {rangeDays} days
+					</h2>
 					{#if statusBreakdown.length === 0}
 						<p class="text-sm text-muted-foreground">No data yet.</p>
 					{:else}
@@ -308,8 +311,8 @@
 										<span class="h-2 w-2 rounded-full {statusColors[row.status] ?? 'bg-gray-300'}"
 										></span>
 										<span
-											class="rounded-full px-1.5 py-0.5 {statusBadge[row.status] ??
-												'bg-muted text-muted-foreground'} capitalize"
+											class="rounded-full px-1.5 py-0.5 capitalize {statusBadge[row.status] ??
+												'bg-muted text-muted-foreground'}"
 										>
 											{row.status}
 										</span>
@@ -327,11 +330,16 @@
 	<!-- ── Advanced Analytics ────────────────────────────────────── -->
 	{#if hasAdvancedAnalytics}
 		<div class="mt-10">
-			<div class="mb-5 flex items-center gap-3">
-				<h2 class="text-lg font-semibold text-foreground">Advanced Analytics</h2>
-				<Badge class="inline-flex items-center gap-1 bg-amber-100 text-amber-800">
-					<Icon icon="mdi:star" class="h-3 w-3" />Pro
-				</Badge>
+			<!-- Pro section divider -->
+			<div class="my-6 flex items-center gap-3">
+				<div class="flex-1 border-t border-gray-200"></div>
+				<div
+					class="flex items-center gap-2 rounded-full border border-amber-200 bg-amber-50 px-3 py-1.5"
+				>
+					<Icon icon="mdi:star" class="h-3.5 w-3.5 text-amber-500" />
+					<span class="text-xs font-semibold text-amber-700">Pro features</span>
+				</div>
+				<div class="flex-1 border-t border-gray-200"></div>
 			</div>
 
 			<!-- Peak hours heatmap -->
@@ -415,7 +423,7 @@
 				</CardContent>
 			</Card>
 
-			<!-- Customer retention + Top items by revenue -->
+			<!-- Customer retention + Revenue by category -->
 			<div class="grid gap-6 lg:grid-cols-3">
 				<!-- Customer retention -->
 				<Card class="shadow-sm">
@@ -428,45 +436,44 @@
 						{:else}
 							<div class="space-y-4">
 								<div>
-									<p class="text-3xl font-bold text-foreground">{customerRetention.returnRate}%</p>
-									<p class="mt-0.5 text-xs text-muted-foreground">
-										return rate · {customerRetention.returning} customers
+									<div class="flex items-end gap-2 mb-1">
+										<p class="text-3xl font-bold text-gray-900">{customerRetention.returnRate}%</p>
+										<p class="mb-1 text-sm text-gray-500">return rate</p>
+									</div>
+									<p class="text-xs text-gray-400">
+										Based on {customerRetention.total} customers identified by email
 									</p>
 								</div>
 
 								<!-- Bar visualization -->
-								<div class="space-y-2">
+								<div class="space-y-3">
 									<div>
 										<div class="mb-1 flex items-center justify-between text-xs">
-											<span class="text-muted-foreground">Returning customers</span>
+											<span class="text-muted-foreground">Returning</span>
 											<span class="font-medium text-foreground">{customerRetention.returning}</span>
 										</div>
-										<div class="h-2 w-full rounded-full bg-muted">
+										<div class="h-1.5 w-full rounded-full bg-muted">
 											<div
-												class="h-2 rounded-full bg-primary transition-all"
+												class="h-1.5 rounded-full bg-green-500 transition-all"
 												style="width: {customerRetention.returnRate}%"
 											></div>
 										</div>
 									</div>
 									<div>
 										<div class="mb-1 flex items-center justify-between text-xs">
-											<span class="text-muted-foreground">First-time customers</span>
+											<span class="text-muted-foreground">First-time</span>
 											<span class="font-medium text-foreground"
 												>{customerRetention.total - customerRetention.returning}</span
 											>
 										</div>
-										<div class="h-2 w-full rounded-full bg-muted">
+										<div class="h-1.5 w-full rounded-full bg-muted">
 											<div
-												class="h-2 rounded-full bg-gray-400 transition-all"
+												class="h-1.5 rounded-full bg-gray-400 transition-all"
 												style="width: {100 - customerRetention.returnRate}%"
 											></div>
 										</div>
 									</div>
 								</div>
-
-								<p class="text-xs text-muted-foreground">
-									{customerRetention.total} unique customers identified by email.
-								</p>
 							</div>
 						{/if}
 					</CardContent>
@@ -481,6 +488,23 @@
 						{#if !revenueByCategory || revenueByCategory.length === 0}
 							<p class="text-sm text-muted-foreground">No order data yet.</p>
 						{:else}
+							{#if isUncategorized}
+								<div
+									class="mb-3 flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-700"
+								>
+									<Icon icon="mdi:alert-outline" class="mt-0.5 h-4 w-4 shrink-0" />
+									<span>
+										Your menu items aren't assigned to categories yet.
+										<a
+											href={resolve('/dashboard/menu/categories')}
+											class="font-medium underline"
+										>
+											Set up categories
+										</a>
+										to see revenue broken down by section.
+									</span>
+								</div>
+							{/if}
 							<div class="space-y-3">
 								{#each revenueByCategory as cat (cat.category)}
 									<div>

@@ -4,6 +4,7 @@
 		value: string | number;
 		urgent?: boolean;
 		positive?: boolean;
+		sublabel?: string;
 	}
 
 	let { stats }: { stats: StatItem[] } = $props();
@@ -17,6 +18,9 @@
 		<div>
 			<p class="text-xs text-muted-foreground">{stat.label}</p>
 			<p class="text-sm font-semibold {stat.urgent ? 'text-amber-600' : stat.positive ? 'text-emerald-600' : 'text-foreground'}">{stat.value}</p>
+			{#if stat.sublabel}
+				<p class="text-xs text-gray-400">{stat.sublabel}</p>
+			{/if}
 		</div>
 	{/each}
 </div>

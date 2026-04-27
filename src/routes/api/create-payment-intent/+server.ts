@@ -132,6 +132,7 @@ export const POST: RequestHandler = async ({ request }) => {
 	await db.insert(orderItems).values(
 		items.map((item) => ({
 			orderId: newOrder.id,
+			menuItemId: item.itemId ?? null,
 			name: item.name,
 			quantity: item.quantity,
 			unitPrice: itemUnitPrice(item),

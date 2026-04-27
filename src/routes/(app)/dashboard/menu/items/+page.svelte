@@ -369,7 +369,10 @@
 				<MenuViewToggle />
 				<DropdownMenu>
 					<DropdownMenuTrigger>
-						<button type="button" class="flex items-center gap-1.5 rounded-md border px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted">
+						<button
+							type="button"
+							class="flex items-center gap-1.5 rounded-md border px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted"
+						>
 							<Icon icon="mdi:dots-horizontal" class="h-4 w-4" /> More
 						</button>
 					</DropdownMenuTrigger>
@@ -377,10 +380,17 @@
 						<DropdownMenuItem onclick={openDiscover}>
 							<Icon icon="mdi:lightning-bolt" class="h-4 w-4 text-primary" /> Discover from Stripe
 						</DropdownMenuItem>
-						<DropdownMenuItem onclick={() => (data.canImportCsv ? (showImport = true) : (showImportUpsell = true))}>
+						<DropdownMenuItem
+							onclick={() => (data.canImportCsv ? (showImport = true) : (showImportUpsell = true))}
+						>
 							<Icon icon="mdi:upload" class="h-4 w-4" /> Import CSV
 						</DropdownMenuItem>
-						<DropdownMenuItem onclick={() => { sortMode = true; showForm = false; }}>
+						<DropdownMenuItem
+							onclick={() => {
+								sortMode = true;
+								showForm = false;
+							}}
+						>
 							<Icon icon="mdi:drag-vertical" class="h-4 w-4" /> Reorder items
 						</DropdownMenuItem>
 					</DropdownMenuContent>
@@ -444,188 +454,194 @@
 			</div>
 		{/if}
 		<Card class="mb-6 shadow-sm">
-		<form
-			method="post"
-			action="?/create"
-			bind:this={createFormEl}
-			use:enhance={() =>
-				({ update }) =>
-					update({ reset: false })}
-		>
-		<CardContent class="space-y-4 pt-6 pb-2">
-			<h2 class="font-semibold text-foreground">New item</h2>
-
-			<!-- Image -->
-			<div class="flex items-start gap-4">
-				<div
-					role="button"
-					tabindex="0"
-					aria-label="Upload item image"
-					onclick={() => (document.getElementById('new-image-upload') as HTMLInputElement)?.click()}
-					onkeydown={(e) =>
-						e.key === 'Enter' &&
-						(document.getElementById('new-image-upload') as HTMLInputElement)?.click()}
-					class="relative flex h-20 w-20 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-lg border-2 border-dashed bg-muted/50 transition-colors hover:border-gray-400 hover:bg-muted {newUploading
-						? 'pointer-events-none opacity-60'
-						: ''}"
-				>
-					{#if newImagePreview}
-						<img src={newImagePreview} alt="Preview" class="h-full w-full object-cover" />
-						<div
-							class="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity hover:opacity-100"
-						>
-							<Icon icon="mdi:pencil" class="h-4 w-4 text-white" />
-						</div>
-					{:else if newUploading}
-						<svg class="h-4 w-4 animate-spin text-muted-foreground" fill="none" viewBox="0 0 24 24"
-							><circle
-								class="opacity-25"
-								cx="12"
-								cy="12"
-								r="10"
-								stroke="currentColor"
-								stroke-width="4"
-							></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"
-							></path></svg
-						>
-					{:else}
-						<Icon icon="mdi:image-plus" class="h-5 w-5 text-muted-foreground" />
-					{/if}
-				</div>
-				<input
-					id="new-image-upload"
-					type="file"
-					accept="image/jpeg,image/png,image/webp"
-					class="sr-only"
-					onchange={onNewImageChange}
-				/>
-				<input type="hidden" name="imageUrl" value={newImageUrl} />
-				<div class="flex-1 space-y-1 pt-1">
-					<p class="text-xs text-muted-foreground">JPG, PNG, WebP · max 5MB</p>
-					{#if newUploadError}<p class="text-xs text-red-600">{newUploadError}</p>{/if}
-					{#if newImagePreview}<Button
-							type="button"
-							onclick={() => {
-								newImageUrl = '';
-								newImagePreview = '';
-							}}
-							variant="ghost"
-							size="sm"
-							class="text-destructive hover:text-destructive/80">Remove</Button
-						>{/if}
-				</div>
-			</div>
-
-			<div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-				<div class="sm:col-span-2">
-					<Label class="mb-1 block" for="new-name">Name *</Label>
-					<Input
-						id="new-name"
-						name="name"
-						type="text"
-						required
-						placeholder="e.g. Classic Cheeseburger"
-					/>
-				</div>
-				<div class="sm:col-span-2">
-					<Label class="mb-1 block" for="new-description">Description</Label>
-					<Textarea
-						id="new-description"
-						name="description"
-						rows={2}
-						placeholder="Short description..."
-					/>
-				</div>
-				<div>
-					<Label class="mb-1 block" for="new-price">Price ($) *</Label>
-					<Input
-						id="new-price"
-						name="price"
-						type="number"
-						min={0}
-						step="0.01"
-						required
-						placeholder="9.99"
-					/>
-				</div>
-				<div>
-					<Label class="mb-1 block" for="new-sale">Sale price ($)</Label>
-					<Input
-						id="new-sale"
-						name="discountedPrice"
-						type="number"
-						min={0}
-						step="0.01"
-						placeholder="Optional"
-					/>
-				</div>
-				{#if data.categories.length > 0}
-					<div>
-						<Label class="mb-1 block" for="new-category">Category</Label>
-						<Select type="single" name="categoryId">
-							<SelectTrigger id="new-category" class="w-full">
-								<SelectValue placeholder="No category" />
-							</SelectTrigger>
-							<SelectContent>
-								<SelectItem value="">No category</SelectItem>
-								{#each data.categories as cat (cat.id)}
-									<SelectItem value={String(cat.id)}>{cat.name}</SelectItem>
-								{/each}
-							</SelectContent>
-						</Select>
-					</div>
-				{/if}
-				<div>
-					<Label class="mb-1 block" for="new-tags">Tags</Label>
-					<Input
-						id="new-tags"
-						name="tags"
-						type="text"
-						placeholder="spicy, popular (comma-separated)"
-					/>
-				</div>
-			</div>
-
-			<div class="flex items-center gap-2">
-				<input
-					id="new-available"
-					name="available"
-					type="checkbox"
-					checked
-					class="h-4 w-4 rounded"
-				/>
-				<label class="text-sm text-muted-foreground" for="new-available"
-					>Available for ordering</label
-				>
-			</div>
-
-		</CardContent>
-		<CardFooter class="gap-2">
-			<Button type="submit" disabled={newUploading} variant="default">
-				Save &amp; add another
-			</Button>
-			<Button
-				type="submit"
-				name="closeAfter"
-				value="1"
-				disabled={newUploading}
-				variant="outline"
-				onclick={() =>
-					setTimeout(() => {
-						showForm = false;
-					}, 100)}
+			<form
+				method="post"
+				action="?/create"
+				bind:this={createFormEl}
+				use:enhance={() =>
+					({ update }) =>
+						update({ reset: false })}
 			>
-				Save &amp; close
-			</Button>
-		</CardFooter>
-		</form>
+				<CardContent class="space-y-4 pt-6 pb-2">
+					<h2 class="font-semibold text-foreground">New item</h2>
+
+					<!-- Image -->
+					<div class="flex items-start gap-4">
+						<div
+							role="button"
+							tabindex="0"
+							aria-label="Upload item image"
+							onclick={() =>
+								(document.getElementById('new-image-upload') as HTMLInputElement)?.click()}
+							onkeydown={(e) =>
+								e.key === 'Enter' &&
+								(document.getElementById('new-image-upload') as HTMLInputElement)?.click()}
+							class="relative flex h-20 w-20 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-lg border-2 border-dashed bg-muted/50 transition-colors hover:border-gray-400 hover:bg-muted {newUploading
+								? 'pointer-events-none opacity-60'
+								: ''}"
+						>
+							{#if newImagePreview}
+								<img src={newImagePreview} alt="Preview" class="h-full w-full object-cover" />
+								<div
+									class="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity hover:opacity-100"
+								>
+									<Icon icon="mdi:pencil" class="h-4 w-4 text-white" />
+								</div>
+							{:else if newUploading}
+								<svg
+									class="h-4 w-4 animate-spin text-muted-foreground"
+									fill="none"
+									viewBox="0 0 24 24"
+									><circle
+										class="opacity-25"
+										cx="12"
+										cy="12"
+										r="10"
+										stroke="currentColor"
+										stroke-width="4"
+									></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"
+									></path></svg
+								>
+							{:else}
+								<Icon icon="mdi:image-plus" class="h-5 w-5 text-muted-foreground" />
+							{/if}
+						</div>
+						<input
+							id="new-image-upload"
+							type="file"
+							accept="image/jpeg,image/png,image/webp"
+							class="sr-only"
+							onchange={onNewImageChange}
+						/>
+						<input type="hidden" name="imageUrl" value={newImageUrl} />
+						<div class="flex-1 space-y-1 pt-1">
+							<p class="text-xs text-muted-foreground">JPG, PNG, WebP · max 5MB</p>
+							{#if newUploadError}<p class="text-xs text-red-600">{newUploadError}</p>{/if}
+							{#if newImagePreview}<Button
+									type="button"
+									onclick={() => {
+										newImageUrl = '';
+										newImagePreview = '';
+									}}
+									variant="ghost"
+									size="sm"
+									class="text-destructive hover:text-destructive/80">Remove</Button
+								>{/if}
+						</div>
+					</div>
+
+					<div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+						<div class="sm:col-span-2">
+							<Label class="mb-1 block" for="new-name">Name *</Label>
+							<Input
+								id="new-name"
+								name="name"
+								type="text"
+								required
+								placeholder="e.g. Classic Cheeseburger"
+							/>
+						</div>
+						<div class="sm:col-span-2">
+							<Label class="mb-1 block" for="new-description">Description</Label>
+							<Textarea
+								id="new-description"
+								name="description"
+								rows={2}
+								placeholder="Short description..."
+							/>
+						</div>
+						<div>
+							<Label class="mb-1 block" for="new-price">Price ($) *</Label>
+							<Input
+								id="new-price"
+								name="price"
+								type="number"
+								min={0}
+								step="0.01"
+								required
+								placeholder="9.99"
+							/>
+						</div>
+						<div>
+							<Label class="mb-1 block" for="new-sale">Sale price ($)</Label>
+							<Input
+								id="new-sale"
+								name="discountedPrice"
+								type="number"
+								min={0}
+								step="0.01"
+								placeholder="Optional"
+							/>
+						</div>
+						{#if data.categories.length > 0}
+							<div>
+								<Label class="mb-1 block" for="new-category">Category</Label>
+								<Select type="single" name="categoryId">
+									<SelectTrigger id="new-category" class="w-full">
+										<SelectValue placeholder="No category" />
+									</SelectTrigger>
+									<SelectContent>
+										<SelectItem value="">No category</SelectItem>
+										{#each data.categories as cat (cat.id)}
+											<SelectItem value={String(cat.id)}>{cat.name}</SelectItem>
+										{/each}
+									</SelectContent>
+								</Select>
+							</div>
+						{/if}
+						<div>
+							<Label class="mb-1 block" for="new-tags">Tags</Label>
+							<Input
+								id="new-tags"
+								name="tags"
+								type="text"
+								placeholder="spicy, popular (comma-separated)"
+							/>
+						</div>
+					</div>
+
+					<div class="flex items-center gap-2">
+						<input
+							id="new-available"
+							name="available"
+							type="checkbox"
+							checked
+							class="h-4 w-4 rounded"
+						/>
+						<label class="text-sm text-muted-foreground" for="new-available"
+							>Available for ordering</label
+						>
+					</div>
+				</CardContent>
+				<CardFooter class="gap-2">
+					<Button type="submit" disabled={newUploading} variant="default">
+						Save &amp; add another
+					</Button>
+					<Button
+						type="submit"
+						name="closeAfter"
+						value="1"
+						disabled={newUploading}
+						variant="outline"
+						onclick={() =>
+							setTimeout(() => {
+								showForm = false;
+							}, 100)}
+					>
+						Save &amp; close
+					</Button>
+				</CardFooter>
+			</form>
 		</Card>
 	{/if}
 
 	<!-- Filters -->
 	<form bind:this={searchForm} method="get" class="mb-5 flex min-w-0 gap-2">
 		<div class="relative min-w-0 flex-1">
-			<Icon icon="mdi:magnify" class="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+			<Icon
+				icon="mdi:magnify"
+				class="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+			/>
 			<input
 				bind:this={searchInput}
 				type="text"
@@ -633,7 +649,7 @@
 				value={data.search ?? ''}
 				placeholder="Search items..."
 				oninput={onSearchInput}
-				class="w-full rounded-lg border border-gray-200 bg-background py-2.5 pr-4 pl-9 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:border-transparent focus:ring-2 focus:ring-primary/50"
+				class="w-full rounded-lg border border-gray-200 bg-background py-2.5 pr-4 pl-9 text-sm text-foreground outline-none placeholder:text-muted-foreground focus:border-transparent focus:ring-2 focus:ring-primary/50"
 			/>
 		</div>
 		{#if data.categories.length > 0}
@@ -731,9 +747,13 @@
 				<Icon icon="mdi:silverware-fork-knife" class="h-8 w-8 text-muted-foreground/40" />
 			</div>
 			<h2 class="mt-4 text-base font-semibold text-foreground">No menu items yet</h2>
-			<p class="mt-1 text-sm text-muted-foreground">Add your first item to start building your menu.</p>
+			<p class="mt-1 text-sm text-muted-foreground">
+				Add your first item to start building your menu.
+			</p>
 			<Button
-				onclick={() => { showForm = true; }}
+				onclick={() => {
+					showForm = true;
+				}}
 				class="mt-6 gap-1.5"
 			>
 				<Icon icon="mdi:plus" class="h-4 w-4" /> Add your first item
@@ -742,131 +762,149 @@
 	{:else}
 		<div class="overflow-hidden rounded-xl border shadow-sm">
 			<Table>
-					<TableHeader class="">
-						<TableRow class="hover:bg-transparent">
-							<TableHead class="w-12 px-4 py-2.5"></TableHead>
-							{#each [['name', 'Name'], ['category', 'Category'], ['price', 'Price'], ['status', 'Status']] as const as [col, label] (col)}
-								<TableHead class="px-4 py-2.5">
-									<button
-										onclick={() => sortBy(col)}
-										class="inline-flex items-center gap-1 font-medium text-muted-foreground transition-colors hover:text-foreground"
-									>
-										{label}
-										<Icon
-											icon={sortCol === col
-												? sortDir === 'asc'
-													? 'mdi:chevron-up'
-													: 'mdi:chevron-down'
-												: 'mdi:unfold-more-horizontal'}
-											class="h-3.5 w-3.5 {sortCol === col
-												? 'text-foreground'
-												: 'text-muted-foreground/40'}"
-										/>
-									</button>
-								</TableHead>
-							{/each}
-							<TableHead class="px-4 py-2.5"></TableHead>
-						</TableRow>
-					</TableHeader>
-					<TableBody>
-						{#each sortedItems as item (item.id)}
-							{@const primaryImage =
-								(item.images as { url: string; isPrimary?: boolean }[] | null)?.find(
-									(img) => img.isPrimary
-								) ?? (item.images as { url: string }[] | null)?.[0]}
-							<TableRow class="group">
-								<TableCell class="px-4 py-3">
-									{#if primaryImage}
-										<img
-											src={primaryImage.url}
-											alt={item.name}
-											class="h-10 w-10 rounded-md object-cover"
-										/>
-									{:else}
-										<a
-											href={resolve(`/dashboard/menu/items/${item.id}`)}
-											aria-label="Add photo for {item.name}"
-											title="Add photo"
-											class="group flex h-10 w-10 flex-col items-center justify-center rounded-md border-2 border-dashed border-muted-foreground/20 transition-colors hover:border-primary/40 hover:bg-primary/5"
-										>
-											<Icon icon="mdi:camera-outline" class="h-4 w-4 text-muted-foreground/30 transition-colors group-hover:text-primary/60" />
-										</a>
-									{/if}
-								</TableCell>
-								<TableCell class="px-4 py-3">
+				<TableHeader class="">
+					<TableRow class="hover:bg-transparent">
+						<TableHead class="w-12 px-4 py-2.5"></TableHead>
+						{#each [['name', 'Name'], ['category', 'Category'], ['price', 'Price'], ['status', 'Status']] as const as [col, label] (col)}
+							<TableHead class="px-4 py-2.5">
+								<button
+									onclick={() => sortBy(col)}
+									class="inline-flex items-center gap-1 font-medium text-muted-foreground transition-colors hover:text-foreground"
+								>
+									{label}
+									<Icon
+										icon={sortCol === col
+											? sortDir === 'asc'
+												? 'mdi:chevron-up'
+												: 'mdi:chevron-down'
+											: 'mdi:unfold-more-horizontal'}
+										class="h-3.5 w-3.5 {sortCol === col
+											? 'text-foreground'
+											: 'text-muted-foreground/40'}"
+									/>
+								</button>
+							</TableHead>
+						{/each}
+						<TableHead class="px-4 py-2.5 text-muted-foreground">Actions</TableHead>
+					</TableRow>
+				</TableHeader>
+				<TableBody>
+					{#each sortedItems as item (item.id)}
+						{@const primaryImage =
+							(item.images as { url: string; isPrimary?: boolean }[] | null)?.find(
+								(img) => img.isPrimary
+							) ?? (item.images as { url: string }[] | null)?.[0]}
+						<TableRow class="group">
+							<TableCell class="px-4 py-3">
+								{#if primaryImage}
+									<img
+										src={primaryImage.url}
+										alt={item.name}
+										class="h-10 w-10 rounded-md object-cover"
+									/>
+								{:else}
 									<a
 										href={resolve(`/dashboard/menu/items/${item.id}`)}
-										class="font-medium text-foreground hover:underline"
+										aria-label="Add photo for {item.name}"
+										title="Add photo"
+										class="group flex h-10 w-10 flex-col items-center justify-center rounded-md border-2 border-dashed border-muted-foreground/20 transition-colors hover:border-primary/40 hover:bg-primary/5"
 									>
-										{item.name}
+										<Icon
+											icon="mdi:camera-outline"
+											class="h-4 w-4 text-muted-foreground/30 transition-colors group-hover:text-primary/60"
+										/>
 									</a>
-									{#if item.description}
-										<p class="mt-0.5 line-clamp-1 text-xs text-muted-foreground">
-											{item.description}
-										</p>
-									{/if}
-								</TableCell>
-								<TableCell class="px-4 py-3 text-muted-foreground"
-									>{item.category?.name ?? '—'}</TableCell
+								{/if}
+							</TableCell>
+							<TableCell class="px-4 py-3">
+								<a
+									href={resolve(`/dashboard/menu/items/${item.id}`)}
+									class="font-medium text-foreground hover:underline"
 								>
-								<TableCell class="px-4 py-3">
-									{#if item.discountedPrice}
-										<div class="flex items-center gap-1.5">
-											<span class="text-sm text-muted-foreground line-through">${(item.price / 100).toFixed(2)}</span>
-											<span class="font-semibold text-emerald-600">${(item.discountedPrice / 100).toFixed(2)}</span>
-											<span class="rounded bg-red-100 px-1 py-0.5 text-[10px] font-semibold text-red-600">SALE</span>
-										</div>
-									{:else}
-										${(item.price / 100).toFixed(2)}
-									{/if}
-								</TableCell>
-								<TableCell class="px-4 py-3">
-									<form
-										method="post"
-										action="?/toggleAvailable"
-										use:enhance={() =>
-											({ update }) =>
-												update({ reset: false })}
+									{item.name}
+								</a>
+								{#if item.description}
+									<p class="mt-0.5 line-clamp-1 text-xs text-muted-foreground">
+										{item.description}
+									</p>
+								{/if}
+							</TableCell>
+							<TableCell class="px-4 py-3 text-muted-foreground"
+								>{item.category?.name ?? '—'}</TableCell
+							>
+							<TableCell class="px-4 py-3">
+								{#if item.discountedPrice}
+									<div class="flex items-center gap-1.5">
+										<span class="text-sm text-muted-foreground line-through"
+											>${(item.price / 100).toFixed(2)}</span
+										>
+										<span class="font-semibold text-emerald-600"
+											>${(item.discountedPrice / 100).toFixed(2)}</span
+										>
+										<span
+											class="rounded bg-red-100 px-1 py-0.5 text-[10px] font-semibold text-red-600"
+											>SALE</span
+										>
+									</div>
+								{:else}
+									${(item.price / 100).toFixed(2)}
+								{/if}
+							</TableCell>
+							<TableCell class="px-4 py-3">
+								<form
+									method="post"
+									action="?/toggleAvailable"
+									use:enhance={() =>
+										({ update }) =>
+											update({ reset: false })}
+								>
+									<input type="hidden" name="id" value={item.id} />
+									<input type="hidden" name="available" value={String(!item.available)} />
+									<button
+										type="submit"
+										title={item.available ? 'Available — click to 86' : "86'd — click to restore"}
+										class="relative inline-flex h-5 w-9 items-center rounded-full transition-colors {item.available
+											? 'bg-primary'
+											: 'bg-gray-200'}"
 									>
+										<span
+											class="inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform {item.available
+												? 'translate-x-4.5'
+												: 'translate-x-0.5'}"
+										></span>
+									</button>
+								</form>
+							</TableCell>
+							<TableCell class="px-4 py-3">
+								<div
+									class="flex items-center gap-3 opacity-0 transition-opacity group-hover:opacity-100"
+								>
+									<a
+										href={resolve(`/dashboard/menu/items/${item.id}`)}
+										class="text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
+										>Edit</a
+									>
+									<form method="post" action="?/delete" use:enhance>
 										<input type="hidden" name="id" value={item.id} />
-										<input type="hidden" name="available" value={String(!item.available)} />
 										<button
 											type="submit"
-											title={item.available ? 'Available — click to 86' : "86'd — click to restore"}
-											class="relative inline-flex h-5 w-9 items-center rounded-full transition-colors {item.available ? 'bg-primary' : 'bg-gray-200'}"
+											onclick={async (e) => {
+												e.preventDefault();
+												if (await confirmDialog('Delete this item?'))
+													(e.currentTarget as HTMLButtonElement).form?.requestSubmit();
+											}}
+											aria-label="Delete item"
+											class="rounded-md p-1 text-red-500 transition-colors hover:bg-red-50 hover:text-red-600"
 										>
-											<span class="inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform {item.available ? 'translate-x-4.5' : 'translate-x-0.5'}"></span>
+											<Icon icon="mdi:trash-can-outline" class="h-3.5 w-3.5" />
 										</button>
 									</form>
-								</TableCell>
-								<TableCell class="px-4 py-3">
-									<div class="flex items-center gap-3 opacity-0 transition-opacity group-hover:opacity-100">
-										<a
-											href={resolve(`/dashboard/menu/items/${item.id}`)}
-											class="text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
-											>Edit</a
-										>
-										<form method="post" action="?/delete" use:enhance>
-											<input type="hidden" name="id" value={item.id} />
-											<button
-												type="submit"
-												onclick={async (e) => {
-													e.preventDefault();
-													if (await confirmDialog('Delete this item?'))
-														(e.currentTarget as HTMLButtonElement).form?.requestSubmit();
-												}}
-												aria-label="Delete item"
-												class="rounded-md p-1 text-red-500 transition-colors hover:bg-red-50 hover:text-red-600"
-											>
-												<Icon icon="mdi:trash-can-outline" class="h-3.5 w-3.5" />
-											</button>
-										</form>
-									</div>
-								</TableCell>
-							</TableRow>
-						{/each}
-					</TableBody>
-				</Table>
+								</div>
+							</TableCell>
+						</TableRow>
+					{/each}
+				</TableBody>
+			</Table>
 		</div>
 
 		<!-- Pagination -->

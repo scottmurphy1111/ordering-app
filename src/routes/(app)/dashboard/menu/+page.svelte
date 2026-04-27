@@ -1,28 +1,28 @@
 <script lang="ts">
-	import { resolve } from '$app/paths';
-	import Icon from '@iconify/svelte';
-	import { Card, CardContent } from '$lib/components/ui/card';
-	import type { PageData } from './$types';
+	// import { resolve } from '$app/paths';
+	// import Icon from '@iconify/svelte';
+	// import { Card, CardContent } from '$lib/components/ui/card';
+	// import type { PageData } from './$types';
 
-	let { data }: { data: PageData } = $props();
+	// let { data }: { data: PageData } = $props();
 
-	const sections = [
-		{
-			href: '/dashboard/menu/items',
-			icon: 'mdi:silverware-fork-knife',
-			label: 'Menu Items',
-			description: 'Add, edit, and organize your menu items.'
-		},
-		{
-			href: '/dashboard/menu/categories',
-			icon: 'mdi:tag-multiple-outline',
-			label: 'Categories',
-			description: 'Group your menu items into categories.'
-		}
-	];
+	// const sections = [
+	// 	{
+	// 		href: '/dashboard/menu/items',
+	// 		icon: 'mdi:silverware-fork-knife',
+	// 		label: 'Menu Items',
+	// 		description: 'Add, edit, and organize your menu items.'
+	// 	},
+	// 	{
+	// 		href: '/dashboard/menu/categories',
+	// 		icon: 'mdi:tag-multiple-outline',
+	// 		label: 'Categories',
+	// 		description: 'Group your menu items into categories.'
+	// 	}
+	// ];
 </script>
 
-<div>
+<!-- <div>
 	<div class="mb-6">
 		<h1 class="text-2xl font-bold text-foreground">Menu Management</h1>
 		<p class="mt-0.5 text-sm text-muted-foreground">
@@ -56,4 +56,4 @@
 			</a>
 		{/each}
 	</div>
-</div>
+</div> -->
