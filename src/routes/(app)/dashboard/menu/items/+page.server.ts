@@ -1,6 +1,6 @@
 import type { PageServerLoad, Actions } from './$types';
 import { db } from '$lib/server/db';
-import { eq, desc, like, and, sql, count } from 'drizzle-orm';
+import { eq, desc, like, and, sql, count, isNull } from 'drizzle-orm';
 import { requireTenant } from '$lib/server/tenant';
 import { fail } from '@sveltejs/kit';
 import { menuCategories, menuItems } from '$lib/server/db/schema';
@@ -12,9 +12,9 @@ export const load: PageServerLoad = async (event) => {
 	const { searchParams } = event.url;
 
 	const search = searchParams.get('search')?.trim() || '';
-	const categoryId = searchParams.get('categoryId')
-		? parseInt(searchParams.get('categoryId')!)
-		: null;
+	const rawCategoryId = searchParams.get('categoryId') || '';
+	const filterUncategorised = rawCategoryId === 'uncategorised';
+	const categoryId = rawCategoryId && !filterUncategorised ? parseInt(rawCategoryId) : null;
 	const page = Math.max(1, parseInt(searchParams.get('page') || '1'));
 	const limit = Math.min(50, parseInt(searchParams.get('limit') || '20'));
 	const offset = (page - 1) * limit;
@@ -22,7 +22,8 @@ export const load: PageServerLoad = async (event) => {
 	const whereConditions = [eq(menuItems.tenantId, tenantId)];
 	if (search)
 		whereConditions.push(like(sql`LOWER(${menuItems.name})`, `%${search.toLowerCase()}%`));
-	if (categoryId) whereConditions.push(eq(menuItems.categoryId, categoryId));
+	if (filterUncategorised) whereConditions.push(isNull(menuItems.categoryId));
+	else if (categoryId) whereConditions.push(eq(menuItems.categoryId, categoryId));
 	const whereClause = and(...whereConditions);
 
 	const items = await db.query.menuItems.findMany({
@@ -73,7 +74,7 @@ export const load: PageServerLoad = async (event) => {
 		categories,
 		pagination: { page, limit, totalItems, totalPages },
 		search,
-		selectedCategoryId: categoryId,
+		selectedCategoryId: filterUncategorised ? 'uncategorised' : categoryId,
 		canImportCsv,
 		totalItemsUnfiltered
 	};

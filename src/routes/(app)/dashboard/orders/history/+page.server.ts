@@ -1,7 +1,7 @@
 import type { PageServerLoad, Actions } from './$types';
 import { fail } from '@sveltejs/kit';
 import { db } from '$lib/server/db';
-import { eq, and, or, desc, lt, gte, lte, ilike } from 'drizzle-orm';
+import { eq, and, or, desc, lt, gte, lte, ilike, sql } from 'drizzle-orm';
 import { orders } from '$lib/server/db/schema';
 import { tenant } from '$lib/server/db/tenant';
 import Stripe from 'stripe';
@@ -51,30 +51,48 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		whereConditions.push(lte(orders.createdAt, toDate));
 	}
 
-	const historyOrders = await db.query.orders.findMany({
-		where: and(...whereConditions),
-		orderBy: [desc(orders.createdAt)],
-		limit: 100,
-		columns: {
-			id: true,
-			orderNumber: true,
-			customerName: true,
-			customerEmail: true,
-			customerPhone: true,
-			total: true,
-			status: true,
-			paymentStatus: true,
-			type: true,
-			createdAt: true,
-			updatedAt: true,
-			notes: true,
-			scheduledFor: true,
-			deliveryAddress: true,
-			stripePaymentIntentId: true
-		}
-	});
+	const [historyOrders, summaryRow] = await Promise.all([
+		db.query.orders.findMany({
+			where: and(...whereConditions),
+			orderBy: [desc(orders.createdAt)],
+			limit: 100,
+			columns: {
+				id: true,
+				orderNumber: true,
+				customerName: true,
+				customerEmail: true,
+				customerPhone: true,
+				total: true,
+				status: true,
+				paymentStatus: true,
+				type: true,
+				createdAt: true,
+				updatedAt: true,
+				scheduledFor: true,
+				deliveryAddress: true,
+				stripePaymentIntentId: true
+			},
+			with: {
+				items: {
+					columns: { name: true, quantity: true }
+				}
+			}
+		}),
+		db
+			.select({
+				total: sql<number>`count(*)`,
+				fulfilled: sql<number>`count(*) filter (where ${orders.status} = 'fulfilled')`,
+				cancelled: sql<number>`count(*) filter (where ${orders.status} = 'cancelled')`,
+				revenue: sql<number>`coalesce(sum(${orders.total}) filter (where ${orders.status} = 'fulfilled'), 0)`,
+				refunded: sql<number>`count(*) filter (where ${orders.paymentStatus} = 'refunded')`
+			})
+			.from(orders)
+			.where(and(...whereConditions))
+	]);
 
-	return { orders: historyOrders, search, from, to, statusFilter };
+	const summary = summaryRow[0] ?? { total: 0, fulfilled: 0, cancelled: 0, revenue: 0, refunded: 0 };
+
+	return { orders: historyOrders, search, from, to, statusFilter, summary };
 };
 
 export const actions: Actions = {

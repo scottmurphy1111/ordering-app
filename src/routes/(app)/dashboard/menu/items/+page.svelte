@@ -9,8 +9,15 @@
 	import { enhance } from '$app/forms';
 	import { confirmDialog } from '$lib/confirm.svelte';
 	import Sortable from 'sortablejs';
+	import MenuViewToggle from '$lib/components/MenuViewToggle.svelte';
 	import { Button } from '$lib/components/ui/button';
 	import { Badge } from '$lib/components/ui/badge';
+	import {
+		DropdownMenu,
+		DropdownMenuContent,
+		DropdownMenuTrigger,
+		DropdownMenuItem
+	} from '$lib/components/ui/dropdown-menu';
 	import { Card, CardContent, CardFooter } from '$lib/components/ui/card';
 	import {
 		Table,
@@ -355,46 +362,29 @@
 </script>
 
 <div>
-	<div class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-		<div>
-			<a
-				href={resolve('/dashboard/menu')}
-				class="mb-1 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-muted-foreground"
-			>
-				<Icon icon="mdi:chevron-left" class="h-4 w-4" /> Menu
-			</a>
-			<h1 class="text-2xl font-bold text-foreground">Menu Items</h1>
-			<p class="mt-0.5 text-sm text-muted-foreground">{data.pagination.totalItems} items total</p>
-		</div>
-		<div class="flex flex-wrap gap-2">
+	<div class="mb-6 flex items-center justify-between gap-4">
+		<h1 class="text-2xl font-bold text-foreground">Menu</h1>
+		<div class="flex items-center gap-2">
 			{#if !sortMode}
-				<Button
-					onclick={openDiscover}
-					variant="outline"
-					class="gap-1.5"
-				>
-					<Icon icon="mdi:lightning-bolt" class="h-4 w-4 text-primary" /><span class="hidden sm:inline"
-						>Discover from Stripe</span
-					><span class="sm:hidden">Discover</span>
-				</Button>
-				<Button
-					onclick={() => (data.canImportCsv ? (showImport = true) : (showImportUpsell = true))}
-					variant="outline"
-					class="gap-1.5"
-				>
-					<Icon icon="mdi:upload" class="h-4 w-4" /><span class="hidden sm:inline">Import CSV</span
-					><span class="sm:hidden">Import</span>
-				</Button>
-				<Button
-					onclick={() => {
-						sortMode = true;
-						showForm = false;
-					}}
-					variant="outline"
-					class="gap-1.5"
-				>
-					<Icon icon="mdi:drag-vertical" class="h-4 w-4" /> Reorder
-				</Button>
+				<MenuViewToggle />
+				<DropdownMenu>
+					<DropdownMenuTrigger>
+						<button type="button" class="flex items-center gap-1.5 rounded-md border px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted">
+							<Icon icon="mdi:dots-horizontal" class="h-4 w-4" /> More
+						</button>
+					</DropdownMenuTrigger>
+					<DropdownMenuContent align="end">
+						<DropdownMenuItem onclick={openDiscover}>
+							<Icon icon="mdi:lightning-bolt" class="h-4 w-4 text-primary" /> Discover from Stripe
+						</DropdownMenuItem>
+						<DropdownMenuItem onclick={() => (data.canImportCsv ? (showImport = true) : (showImportUpsell = true))}>
+							<Icon icon="mdi:upload" class="h-4 w-4" /> Import CSV
+						</DropdownMenuItem>
+						<DropdownMenuItem onclick={() => { sortMode = true; showForm = false; }}>
+							<Icon icon="mdi:drag-vertical" class="h-4 w-4" /> Reorder items
+						</DropdownMenuItem>
+					</DropdownMenuContent>
+				</DropdownMenu>
 				<Button
 					onclick={() => {
 						showForm = !showForm;
@@ -634,15 +624,18 @@
 
 	<!-- Filters -->
 	<form bind:this={searchForm} method="get" class="mb-5 flex min-w-0 gap-2">
-		<Input
-			bind:ref={searchInput}
-			type="text"
-			name="search"
-			value={data.search ?? ''}
-			placeholder="Search items..."
-			oninput={onSearchInput}
-			class="min-w-0 flex-1"
-		/>
+		<div class="relative min-w-0 flex-1">
+			<Icon icon="mdi:magnify" class="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+			<input
+				bind:this={searchInput}
+				type="text"
+				name="search"
+				value={data.search ?? ''}
+				placeholder="Search items..."
+				oninput={onSearchInput}
+				class="w-full rounded-lg border border-gray-200 bg-background py-2.5 pr-4 pl-9 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:border-transparent focus:ring-2 focus:ring-primary/50"
+			/>
+		</div>
 		{#if data.categories.length > 0}
 			<Select
 				type="single"
@@ -650,7 +643,7 @@
 				value={data.selectedCategoryId ? String(data.selectedCategoryId) : ''}
 				onValueChange={onCategoryChange}
 			>
-				<SelectTrigger class="w-36 shrink-0">
+				<SelectTrigger class="h-auto w-36 shrink-0 border-gray-200 py-2.5">
 					<SelectValue placeholder="All categories" />
 				</SelectTrigger>
 				<SelectContent>
@@ -658,6 +651,7 @@
 					{#each data.categories as cat (cat.id)}
 						<SelectItem value={String(cat.id)}>{cat.name}</SelectItem>
 					{/each}
+					<SelectItem value="uncategorised">— Uncategorised</SelectItem>
 				</SelectContent>
 			</Select>
 		{/if}
@@ -746,9 +740,8 @@
 			</Button>
 		</div>
 	{:else}
-		<Card class="p-0 shadow-sm">
-			<CardContent>
-				<Table>
+		<div class="overflow-hidden rounded-xl border shadow-sm">
+			<Table>
 					<TableHeader class="">
 						<TableRow class="hover:bg-transparent">
 							<TableHead class="w-12 px-4 py-2.5"></TableHead>
@@ -781,7 +774,7 @@
 								(item.images as { url: string; isPrimary?: boolean }[] | null)?.find(
 									(img) => img.isPrimary
 								) ?? (item.images as { url: string }[] | null)?.[0]}
-							<TableRow>
+							<TableRow class="group">
 								<TableCell class="px-4 py-3">
 									{#if primaryImage}
 										<img
@@ -792,10 +785,11 @@
 									{:else}
 										<a
 											href={resolve(`/dashboard/menu/items/${item.id}`)}
-											aria-label="Add image for {item.name}"
-											class="flex h-10 w-10 items-center justify-center rounded-md border-2 border-dashed border-muted-foreground/20 transition-colors hover:border-primary/40 hover:bg-primary/5"
+											aria-label="Add photo for {item.name}"
+											title="Add photo"
+											class="group flex h-10 w-10 flex-col items-center justify-center rounded-md border-2 border-dashed border-muted-foreground/20 transition-colors hover:border-primary/40 hover:bg-primary/5"
 										>
-											<Icon icon="mdi:plus" class="h-3.5 w-3.5 text-muted-foreground/40" />
+											<Icon icon="mdi:camera-outline" class="h-4 w-4 text-muted-foreground/30 transition-colors group-hover:text-primary/60" />
 										</a>
 									{/if}
 								</TableCell>
@@ -815,12 +809,15 @@
 								<TableCell class="px-4 py-3 text-muted-foreground"
 									>{item.category?.name ?? '—'}</TableCell
 								>
-								<TableCell class="px-4 py-3 text-foreground">
-									${(item.price / 100).toFixed(2)}
+								<TableCell class="px-4 py-3">
 									{#if item.discountedPrice}
-										<span class="ml-1 text-xs text-primary"
-											>(sale ${(item.discountedPrice / 100).toFixed(2)})</span
-										>
+										<div class="flex items-center gap-1.5">
+											<span class="text-sm text-muted-foreground line-through">${(item.price / 100).toFixed(2)}</span>
+											<span class="font-semibold text-emerald-600">${(item.discountedPrice / 100).toFixed(2)}</span>
+											<span class="rounded bg-red-100 px-1 py-0.5 text-[10px] font-semibold text-red-600">SALE</span>
+										</div>
+									{:else}
+										${(item.price / 100).toFixed(2)}
 									{/if}
 								</TableCell>
 								<TableCell class="px-4 py-3">
@@ -835,23 +832,15 @@
 										<input type="hidden" name="available" value={String(!item.available)} />
 										<button
 											type="submit"
-											class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium transition-colors
-										{item.available
-												? 'bg-primary/10 text-primary hover:bg-destructive/10 hover:text-red-600'
-												: 'bg-red-100 text-red-600 hover:bg-primary/5 hover:text-primary'}"
+											title={item.available ? 'Available — click to 86' : "86'd — click to restore"}
+											class="relative inline-flex h-5 w-9 items-center rounded-full transition-colors {item.available ? 'bg-primary' : 'bg-gray-200'}"
 										>
-											<Icon
-												icon={item.available
-													? 'mdi:check-circle-outline'
-													: 'mdi:close-circle-outline'}
-												class="h-3.5 w-3.5"
-											/>
-											{item.available ? 'Available' : "86'd"}
+											<span class="inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform {item.available ? 'translate-x-4.5' : 'translate-x-0.5'}"></span>
 										</button>
 									</form>
 								</TableCell>
 								<TableCell class="px-4 py-3">
-									<div class="flex items-center gap-3">
+									<div class="flex items-center gap-3 opacity-0 transition-opacity group-hover:opacity-100">
 										<a
 											href={resolve(`/dashboard/menu/items/${item.id}`)}
 											class="text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
@@ -878,8 +867,7 @@
 						{/each}
 					</TableBody>
 				</Table>
-			</CardContent>
-		</Card>
+		</div>
 
 		<!-- Pagination -->
 		{#if data.pagination.totalPages > 1}

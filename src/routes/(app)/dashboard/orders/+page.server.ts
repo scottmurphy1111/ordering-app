@@ -1,7 +1,7 @@
 import type { PageServerLoad, Actions } from './$types';
 import { fail } from '@sveltejs/kit';
 import { db } from '$lib/server/db';
-import { eq, and, desc, or, not, inArray, gte } from 'drizzle-orm';
+import { eq, and, desc, or, not, inArray, gte, isNotNull, sql } from 'drizzle-orm';
 import { orders } from '$lib/server/db/schema';
 import { tenant } from '$lib/server/db/tenant';
 import Stripe from 'stripe';
@@ -18,6 +18,8 @@ export const load: PageServerLoad = async ({ locals, url, depends }) => {
 	const statusFilter = url.searchParams.get('status') ?? '';
 
 	const cutoff = new Date(Date.now() - HISTORY_CUTOFF_MS);
+	const todayStart = new Date();
+	todayStart.setHours(0, 0, 0, 0);
 
 	const whereConditions = [
 		eq(orders.tenantId, tenantId),
@@ -33,7 +35,7 @@ export const load: PageServerLoad = async ({ locals, url, depends }) => {
 		or(not(inArray(orders.status, ['fulfilled', 'cancelled'])), gte(orders.updatedAt, cutoff))!
 	];
 
-	const [allOrders, countRows] = await Promise.all([
+	const [allOrders, countRows, scheduledRow, todayRevenueRow] = await Promise.all([
 		db.query.orders.findMany({
 			where: and(...whereConditions),
 			orderBy: [desc(orders.createdAt)],
@@ -62,7 +64,24 @@ export const load: PageServerLoad = async ({ locals, url, depends }) => {
 		db.query.orders.findMany({
 			where: and(...baseConditions),
 			columns: { status: true }
-		})
+		}),
+		db
+			.select({ count: sql<number>`count(*)` })
+			.from(orders)
+			.where(
+				and(
+					eq(orders.tenantId, tenantId),
+					isNotNull(orders.scheduledFor),
+					or(
+						not(inArray(orders.status, ['fulfilled', 'cancelled'])),
+						gte(orders.updatedAt, cutoff)
+					)!
+				)
+			),
+		db
+			.select({ total: sql<number>`coalesce(sum(total), 0)` })
+			.from(orders)
+			.where(and(eq(orders.tenantId, tenantId), gte(orders.createdAt, todayStart)))
 	]);
 
 	const statusCounts = countRows.reduce<Record<string, number>>((acc, o) => {
@@ -70,7 +89,13 @@ export const load: PageServerLoad = async ({ locals, url, depends }) => {
 		return acc;
 	}, {});
 
-	return { orders: allOrders, statusFilter, statusCounts };
+	return {
+		orders: allOrders,
+		statusFilter,
+		statusCounts,
+		scheduledCount: Number(scheduledRow[0]?.count ?? 0),
+		todayRevenue: Number(todayRevenueRow[0]?.total ?? 0)
+	};
 };
 
 export const actions: Actions = {

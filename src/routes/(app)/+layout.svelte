@@ -233,7 +233,7 @@
 				onclick={() => (sidebarOpen = true)}
 				variant="ghost"
 				size="icon-sm"
-				class="shrink-0 text-muted-foreground/40 hover:text-white"
+				class="shrink-0 text-white/70 hover:text-white"
 				aria-label="Open menu"
 			>
 				<Icon icon="mdi:menu" class="h-6 w-6" />
@@ -262,6 +262,18 @@
 		<div class="mx-auto w-full max-w-5xl flex-1 px-4 py-6 sm:px-6 sm:py-8">
 			{@render children()}
 		</div>
+		<footer class="border-t px-6 py-4">
+			<div class="mx-auto flex max-w-5xl items-center justify-between gap-4">
+				<p class="text-xs text-muted-foreground">
+					© {new Date().getFullYear()} Order<span class="text-primary">Local</span>
+				</p>
+				<nav class="flex gap-4 text-xs text-muted-foreground">
+					<a href={resolve('/privacy')} class="transition-colors hover:text-foreground">Privacy</a>
+					<a href={resolve('/terms')} class="transition-colors hover:text-foreground">Terms</a>
+					<a href="mailto:hello@getorderlocal.com" rel="external" class="transition-colors hover:text-foreground">Contact</a>
+				</nav>
+			</div>
+		</footer>
 	</main>
 </div>
 

@@ -4,8 +4,15 @@
 	import type { PageData, ActionData } from './$types';
 	import Icon from '@iconify/svelte';
 	import { resolve } from '$app/paths';
+	import MenuViewToggle from '$lib/components/MenuViewToggle.svelte';
 	import Sortable from 'sortablejs';
 	import { Button } from '$lib/components/ui/button';
+	import {
+		DropdownMenu,
+		DropdownMenuContent,
+		DropdownMenuTrigger,
+		DropdownMenuItem
+	} from '$lib/components/ui/dropdown-menu';
 	import { Badge } from '$lib/components/ui/badge';
 	import { Input } from '$lib/components/ui/input';
 	import { Label } from '$lib/components/ui/label';
@@ -94,30 +101,26 @@
 </script>
 
 <div>
-	<div class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-		<div>
-			<a
-				href={resolve('/dashboard/menu')}
-				class="mb-1 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-muted-foreground"
-			>
-				<Icon icon="mdi:chevron-left" class="h-4 w-4" /> Menu
-			</a>
-			<h1 class="text-2xl font-bold text-foreground">Categories</h1>
-			<p class="mt-0.5 text-sm text-muted-foreground">Group your menu items into categories.</p>
-		</div>
-		<div class="flex flex-wrap gap-2 self-start sm:self-auto">
+	<div class="mb-6 flex items-center justify-between gap-4">
+		<h1 class="text-2xl font-bold text-foreground">Menu</h1>
+		<div class="flex items-center gap-2">
 			{#if !sortMode}
-				<Button
-					onclick={() => {
-						sortMode = true;
-						showForm = false;
-					}}
-					variant="outline"
-					class="gap-1.5"
-				>
-					<Icon icon="mdi:drag-vertical" class="h-4 w-4" /> Reorder
+				<MenuViewToggle />
+				<DropdownMenu>
+					<DropdownMenuTrigger>
+						<button type="button" class="flex items-center gap-1.5 rounded-md border px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted">
+							<Icon icon="mdi:dots-horizontal" class="h-4 w-4" /> More
+						</button>
+					</DropdownMenuTrigger>
+					<DropdownMenuContent align="end">
+						<DropdownMenuItem onclick={() => { sortMode = true; showForm = false; }}>
+							<Icon icon="mdi:drag-vertical" class="h-4 w-4" /> Reorder categories
+						</DropdownMenuItem>
+					</DropdownMenuContent>
+				</DropdownMenu>
+				<Button onclick={() => (showForm = !showForm)} variant="default" class="gap-1.5">
+					<Icon icon="mdi:plus" class="h-4 w-4" /> New category
 				</Button>
-				<Button onclick={() => (showForm = !showForm)} variant="default">+ New category</Button>
 			{:else}
 				<Button
 					onclick={() => {
@@ -238,12 +241,11 @@
 		</Card>
 	{:else}
 		<!-- ── Normal table view ───────────────────────────────────── -->
-		<Card class="p-0 shadow-sm">
-			<CardContent>
-				<Table>
+		<div class="overflow-hidden rounded-xl border shadow-sm">
+			<Table>
 					<TableHeader>
 						<TableRow class="hover:bg-transparent">
-							{#each [['name', 'Name'], ['description', 'Description'], ['items', 'Items'], ['status', 'Status']] as const as [col, label] (col)}
+							{#each [['name', 'Name'], ['items', 'Items'], ['status', 'Status']] as const as [col, label] (col)}
 								<TableHead class="px-4 py-2.5">
 									<button
 										onclick={() => sortBy(col)}
@@ -268,33 +270,37 @@
 					</TableHeader>
 					<TableBody>
 						{#each sortedCategories as cat (cat.id)}
-							<TableRow>
+							<TableRow class="group">
 								<TableCell class="px-4 py-3">
 									<a
 										href={resolve(`/dashboard/menu/categories/${cat.id}` as `/${string}`)}
 										class="font-medium text-foreground hover:underline">{cat.name}</a
 									>
+									{#if cat.description}
+										<p class="mt-0.5 text-xs text-muted-foreground">{cat.description}</p>
+									{/if}
 								</TableCell>
-								<TableCell class="px-4 py-3 text-muted-foreground"
-									>{cat.description ?? '—'}</TableCell
-								>
-								<TableCell class="px-4 py-3 text-muted-foreground">{cat.itemCount}</TableCell>
+								<TableCell class="px-4 py-3">
+									<a
+										href={resolve(`/dashboard/menu/items?categoryId=${cat.id}` as `/${string}`)}
+										class="text-sm text-muted-foreground transition-colors hover:text-primary hover:underline"
+									>{cat.itemCount} {Number(cat.itemCount) === 1 ? 'item' : 'items'}</a>
+								</TableCell>
 								<TableCell class="px-4 py-3">
 									<form method="post" action="?/toggleActive" use:enhance>
 										<input type="hidden" name="id" value={cat.id} />
 										<input type="hidden" name="isActive" value={String(cat.isActive)} />
 										<button
 											type="submit"
-											class="rounded-full px-2 py-0.5 text-xs font-medium transition-colors {cat.isActive
-												? 'bg-green-100 text-primary/90 hover:bg-primary/20'
-												: 'bg-muted text-muted-foreground hover:bg-muted'}"
+											title={cat.isActive ? 'Active — click to hide' : 'Hidden — click to show'}
+											class="relative inline-flex h-5 w-9 items-center rounded-full transition-colors {cat.isActive ? 'bg-primary' : 'bg-gray-200'}"
 										>
-											{cat.isActive ? 'Active' : 'Hidden'}
+											<span class="inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform {cat.isActive ? 'translate-x-4.5' : 'translate-x-0.5'}"></span>
 										</button>
 									</form>
 								</TableCell>
 								<TableCell class="px-4 py-3">
-									<div class="flex items-center gap-3">
+									<div class="flex items-center gap-2 opacity-0 transition-opacity group-hover:opacity-100">
 										<a
 											href={resolve(`/dashboard/menu/categories/${cat.id}`)}
 											class="text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
@@ -302,17 +308,22 @@
 										>
 										<form method="post" action="?/delete" use:enhance>
 											<input type="hidden" name="id" value={cat.id} />
-											<Button
+											<button
 												type="submit"
 												onclick={async (e) => {
 													e.preventDefault();
-													if (await confirmDialog('Delete this category?'))
+													const itemCount = Number(cat.itemCount);
+													const msg = itemCount > 0
+														? `Delete '${cat.name}'? This category contains ${itemCount} ${itemCount === 1 ? 'item' : 'items'}. They will become uncategorised.`
+														: `Delete '${cat.name}'?`;
+													if (await confirmDialog(msg))
 														(e.currentTarget as HTMLButtonElement).form?.requestSubmit();
 												}}
-												variant="ghost"
-												size="sm"
-												class="text-destructive hover:text-destructive/80">Delete</Button
+												aria-label="Delete category"
+												class="rounded-md p-1 text-red-400 transition-colors hover:bg-red-50 hover:text-red-600"
 											>
+												<Icon icon="mdi:trash-can-outline" class="h-3.5 w-3.5" />
+											</button>
 										</form>
 									</div>
 								</TableCell>
@@ -320,7 +331,6 @@
 						{/each}
 					</TableBody>
 				</Table>
-			</CardContent>
-		</Card>
+		</div>
 	{/if}
 </div>

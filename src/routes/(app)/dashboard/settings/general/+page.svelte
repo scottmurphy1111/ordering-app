@@ -333,44 +333,40 @@
 					Customers will see open/closed status on your menu page. Leave all days unset to hide the
 					status.
 				</p>
-				<div class="overflow-x-auto">
-					<div class="divide-y divide-border px-4">
-						{#each DAYS as day (day.key)}
-							{@const h = savedHours[day.key]}
-							<div class="flex flex-col gap-2 py-4 sm:flex-row sm:items-center sm:gap-3">
-								<div class="flex items-center justify-between sm:contents">
-									<span class="w-12 shrink-0 text-sm font-medium text-muted-foreground"
-										>{day.label}</span
-									>
-									<label class="flex items-center gap-1.5 text-sm text-muted-foreground">
-										<input
-											type="checkbox"
-											name="{day.key}_closed"
-											class="h-4 w-4 rounded"
-											checked={closedDays[day.key] ?? false}
-											onchange={(e) => { closedDays[day.key] = e.currentTarget.checked; }}
-										/>
-										Closed
-									</label>
-								</div>
-								<div class="flex flex-1 items-center gap-2 transition-opacity {closedDays[day.key] ? 'pointer-events-none opacity-40' : ''}">
-									<Input
-										type="time"
-										name="{day.key}_open"
-										value={h?.open ?? '09:00'}
-										class="flex-1"
+				<div class="divide-y divide-border px-4">
+					{#each DAYS as day (day.key)}
+						{@const h = savedHours[day.key]}
+						<div class="flex flex-col gap-2 py-4 sm:flex-row sm:items-center sm:gap-3">
+							<div class="flex items-center justify-between sm:contents">
+								<span class="w-12 shrink-0 text-sm font-medium text-muted-foreground">{day.label}</span>
+								<label class="flex items-center gap-1.5 text-sm text-muted-foreground">
+									<input
+										type="checkbox"
+										name="{day.key}_closed"
+										class="h-4 w-4 rounded"
+										checked={closedDays[day.key] ?? false}
+										onchange={(e) => { closedDays[day.key] = e.currentTarget.checked; }}
 									/>
-									<span class="shrink-0 text-xs text-muted-foreground">to</span>
-									<Input
-										type="time"
-										name="{day.key}_close"
-										value={h?.close ?? '21:00'}
-										class="flex-1"
-									/>
-								</div>
+									Closed
+								</label>
 							</div>
-						{/each}
-					</div>
+							<div class="flex min-w-0 flex-1 items-center gap-2 transition-opacity {closedDays[day.key] ? 'pointer-events-none opacity-40' : ''}">
+								<Input
+									type="time"
+									name="{day.key}_open"
+									value={h?.open ?? '09:00'}
+									class="min-w-0 flex-1"
+								/>
+								<span class="shrink-0 text-xs text-muted-foreground">to</span>
+								<Input
+									type="time"
+									name="{day.key}_close"
+									value={h?.close ?? '21:00'}
+									class="min-w-0 flex-1"
+								/>
+							</div>
+						</div>
+					{/each}
 				</div>
 			</CardContent>
 			<CardFooter>
