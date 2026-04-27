@@ -199,8 +199,8 @@
 
 		<div class="mt-6 flex justify-center">
 			<Button onclick={startTour} variant="ghost" size="sm" class="gap-1.5 text-muted-foreground hover:text-muted-foreground">
-				<Icon icon="mdi:compass-outline" class="h-4 w-4" />
-				Take the tour
+				<Icon icon="mdi:rocket-launch-outline" class="h-4 w-4" />
+				Getting Started
 			</Button>
 		</div>
 	</div>

@@ -1,109 +1,57 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
 	import Icon from '@iconify/svelte';
 	import { resolve } from '$app/paths';
 	import { Button } from '$lib/components/ui/button';
 	import { tourState } from '$lib/tour-state.svelte';
 
 	const STORAGE_KEY = 'ol_tour_done';
-	const PAD = 10;
-
-	type Rect = { top: number; left: number; width: number; height: number };
 
 	const steps = [
 		{
 			selector: '[data-tour="create-tenant"]',
-			title: 'First — Create a tenant',
+			title: 'Welcome to Order Local',
 			description:
-				'A tenant is your business profile on Order Local. Create one now to get your ordering page, menu, and dashboard set up.',
+				"Let's get your business set up in a few quick steps. First, create a tenant — this is your business profile that powers your ordering page, menu, and dashboard.",
 			action: null
 		},
 		{
 			selector: '[data-tour="overview"]',
-			title: "You're in!",
+			title: 'Your dashboard',
 			description:
-				"This is your dashboard overview. Once orders start coming in you'll see live stats and recent activity here.",
+				"This overview shows live order stats and recent activity. It'll fill up fast once customers start ordering — for now, let's get everything configured.",
 			action: null
 		},
 		{
 			selector: '[data-tour="settings"]',
 			title: 'Step 1 — Connect Stripe',
 			description:
-				'Go to Settings → Integrations to connect your Stripe account. This is required before customers can pay for their orders.',
+				"Head to Settings → Integrations to connect your Stripe account. Stripe handles all payments securely — customers can't check out until this is done.",
 			action: { label: 'Go to Integrations', href: '/dashboard/settings/integrations' }
 		},
 		{
 			selector: '[data-tour="menu"]',
 			title: 'Step 2 — Build your menu',
 			description:
-				'Head to Menu to create categories and add items with photos, descriptions, and pricing. This is what customers browse when placing an order.',
+				'Go to Menu to add categories, items, photos, and prices. This is exactly what your customers will browse when they place an order.',
 			action: { label: 'Go to Menu', href: '/dashboard/menu' }
 		},
 		{
 			selector: '[data-tour="settings"]',
-			title: 'Step 3 — Customize branding',
+			title: 'Step 3 — Add your branding',
 			description:
-				'Go to Settings → Branding to upload your logo and choose your brand colors. This personalizes the customer-facing ordering page.',
+				'Visit Settings → Branding to upload your logo and pick your brand colors. A branded ordering page builds trust and looks professional.',
 			action: { label: 'Go to Branding', href: '/dashboard/settings/branding' }
 		},
 		{
 			selector: '[data-tour="view-menu"]',
-			title: "You're ready to go!",
+			title: "You're all set!",
 			description:
-				'Once your menu is built, click View menu to see exactly what your customers see when they scan your QR code or visit your ordering page.',
+				"That's everything you need to start taking orders. Click Open Live View button menu anytime to preview your ordering page exactly as your customers see it.",
 			action: null
 		}
 	];
 
 	let step = $state(0);
-	let rect = $state<Rect | null>(null);
-	let isMobile = $state(false);
-
-	function checkMobile() {
-		isMobile = window.innerWidth < 768;
-	}
-
-	function updateSidebar() {
-		if (!isMobile) {
-			tourState.openSidebar = false;
-			return;
-		}
-		// Open sidebar only when the target element lives inside <aside>
-		const el = document.querySelector(steps[step].selector);
-		const sidebar = document.querySelector('aside');
-		tourState.openSidebar = el ? (sidebar?.contains(el) ?? false) : false;
-	}
-
-	function measureRect() {
-		const el = document.querySelector(steps[step].selector);
-		if (el) {
-			const r = el.getBoundingClientRect();
-			rect = {
-				top: r.top - PAD,
-				left: r.left - PAD,
-				width: r.width + PAD * 2,
-				height: r.height + PAD * 2
-			};
-		} else {
-			rect = null;
-		}
-	}
-
-	$effect(() => {
-		const active = tourState.active;
-		const currentStep = step;
-		if (active) {
-			void currentStep;
-			requestAnimationFrame(() => {
-				updateSidebar();
-				// Give sidebar animation time to finish before measuring
-				setTimeout(measureRect, isMobile ? 220 : 0);
-			});
-		} else {
-			rect = null;
-			tourState.openSidebar = false;
-		}
-	});
 
 	function next() {
 		if (step < steps.length - 1) step++;
@@ -121,99 +69,58 @@
 		localStorage.setItem(STORAGE_KEY, 'true');
 	}
 
-	onMount(() => {
-		checkMobile();
-		const handler = () => {
-			checkMobile();
-			measureRect();
-		};
-		window.addEventListener('resize', handler);
-		return () => window.removeEventListener('resize', handler);
-	});
-
 	function handleKeydown(e: KeyboardEvent) {
 		if (!tourState.active) return;
 		if (e.key === 'Escape') finish();
 		if (e.key === 'ArrowRight') next();
 		if (e.key === 'ArrowLeft') prev();
 	}
-
-	const tooltipStyle = $derived.by(() => {
-		if (isMobile) {
-			// Bottom sheet on mobile — ignore rect position
-			return 'bottom:0;left:0;right:0;border-bottom-left-radius:0;border-bottom-right-radius:0';
-		}
-		if (rect) {
-			// Right of spotlight on desktop, clamped to viewport
-			const top = Math.max(8, rect.top + rect.height / 2 - 80);
-			const left = rect.left + rect.width + 16;
-			return `top:${top}px;left:${left}px`;
-		}
-		// Centered fallback (element not in DOM)
-		return 'top:50%;left:50%;transform:translate(-50%,-50%)';
-	});
 </script>
 
 <svelte:window onkeydown={handleKeydown} />
 
 {#if tourState.active}
-	{#if rect}
-		<!-- 4-quadrant spotlight overlay -->
-		<div class="pointer-events-none fixed inset-0 z-200" aria-hidden="true">
-			<div class="absolute bg-black/70" style="top:0;left:0;right:0;height:{rect.top}px"></div>
-			<div
-				class="absolute bg-black/70"
-				style="top:{rect.top + rect.height}px;left:0;right:0;bottom:0"
-			></div>
-			<div
-				class="absolute bg-black/70"
-				style="top:{rect.top}px;left:0;width:{rect.left}px;height:{rect.height}px"
-			></div>
-			<div
-				class="absolute bg-black/70"
-				style="top:{rect.top}px;left:{rect.left + rect.width}px;right:0;height:{rect.height}px"
-			></div>
-			<div
-				class="absolute rounded-lg ring-2 ring-white/70"
-				style="top:{rect.top}px;left:{rect.left}px;width:{rect.width}px;height:{rect.height}px"
-			></div>
-		</div>
-	{:else}
-		<div class="pointer-events-none fixed inset-0 z-200 bg-black/70" aria-hidden="true"></div>
-	{/if}
+	<!-- Backdrop -->
+	<div class="fixed inset-0 z-200 bg-black/70" aria-hidden="true" onclick={finish}></div>
 
-	<!-- Tooltip card -->
+	<!-- Centered modal -->
 	<div
-		class="fixed z-201 rounded-xl bg-background shadow-2xl {isMobile
-			? 'rounded-b-none p-5 pb-8'
-			: 'w-72 p-5'}"
-		style={tooltipStyle}
+		class="fixed top-1/2 left-1/2 z-201 w-[min(22rem,calc(100vw-2rem))] -translate-x-1/2 -translate-y-1/2 rounded-xl bg-background p-6 shadow-2xl"
 		role="dialog"
 		aria-label="Tour step {step + 1} of {steps.length}"
 	>
-		<div class="mb-3 flex items-center justify-between">
-			<div class="flex gap-1">
+		<div class="mb-4 flex items-center justify-between">
+			<div class="flex gap-1.5">
 				{#each steps.map((_, i) => i) as i (i)}
 					<span
 						class="h-1.5 w-1.5 rounded-full transition-colors {i === step
-							? 'bg-gray-900'
-							: 'bg-muted'}"
+							? 'bg-foreground'
+							: 'bg-muted-foreground/30'}"
 					></span>
 				{/each}
 			</div>
-			<Button onclick={finish} variant="ghost" size="icon-sm" class="text-muted-foreground/40 hover:text-muted-foreground" aria-label="Close tour">
+			<Button
+				onclick={finish}
+				variant="ghost"
+				size="icon-sm"
+				class="text-muted-foreground/40 hover:text-muted-foreground"
+				aria-label="Close tour"
+			>
 				<Icon icon="mdi:close" class="h-4 w-4" />
 			</Button>
 		</div>
 
-		<h3 class="mb-1.5 text-sm font-semibold text-foreground">{steps[step].title}</h3>
-		<p class="mb-4 text-sm leading-relaxed text-muted-foreground">{steps[step].description}</p>
+		<p class="mb-0.5 text-xs font-medium text-muted-foreground">
+			Step {step + 1} of {steps.length}
+		</p>
+		<h3 class="mb-2 text-base font-semibold text-foreground">{steps[step].title}</h3>
+		<p class="mb-5 text-sm leading-relaxed text-muted-foreground">{steps[step].description}</p>
 
 		{#if steps[step].action}
 			<a
 				href={resolve(steps[step].action!.href as `/${string}`)}
 				onclick={finish}
-				class="mb-3 flex items-center gap-1.5 text-xs font-medium text-primary transition-colors hover:text-primary"
+				class="mb-4 flex items-center gap-1.5 text-xs font-medium text-primary transition-colors hover:text-primary/80"
 			>
 				<Icon icon="mdi:arrow-right-circle-outline" class="h-4 w-4" />
 				{steps[step].action!.label}
