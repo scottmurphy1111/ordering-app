@@ -35,7 +35,7 @@
 	const steps = [
 		{
 			num: '1',
-			title: 'Build your weekly menu',
+			title: 'Build your weekly catalog',
 			desc: 'Add what you\'re bringing this week — products, photos, prices, and how many of each. Set your pickup window for market day.'
 		},
 		{
@@ -75,8 +75,8 @@
 
 	const faqs = [
 		{
-			q: 'My menu changes every week. Is that a problem?',
-			a: 'No — you can add, hide, or edit items anytime from your dashboard. Many market vendors update their menu each week to reflect what they have available. Takes about two minutes.'
+			q: 'My catalog changes every week. Is that a problem?',
+			a: 'No — you can add, hide, or edit items anytime from your dashboard. Many market vendors update their catalog each week to reflect what they have available. Takes about two minutes.'
 		},
 		{
 			q: 'Do I need to be at the market every week to use this?',
@@ -96,7 +96,7 @@
 		},
 		{
 			q: 'Can I pause in winter and pick up where I left off in spring?',
-			a: 'Yes. Market and Pro plans can be paused anytime. When you resume, your menu, settings, and order history are all still there.'
+			a: 'Yes. Market and Pro plans can be paused anytime. When you resume, your catalog, settings, and order history are all still there.'
 		}
 	];
 
@@ -384,7 +384,7 @@
 						<span class="text-4xl font-bold text-foreground">Free</span>
 					</div>
 					<ul class="mt-6 flex-1 space-y-2.5">
-						{#each ['Up to 10 menu items', 'Online ordering & payments', 'Order management dashboard', 'Customer email receipts', 'Menu QR code', 'Standard Stripe fees only (2.9% + 30¢)'] as feat (feat)}
+						{#each ['Up to 10 catalog items', 'Online ordering & payments', 'Order management dashboard', 'Customer email receipts', 'Catalog QR code', 'Standard Stripe fees only (2.9% + 30¢)'] as feat (feat)}
 							<li class="flex items-start gap-2 text-sm text-muted-foreground">
 								<Icon icon="mdi:check-circle-outline" class="mt-0.5 h-4 w-4 shrink-0 text-primary/80" />
 								{feat}
@@ -415,7 +415,7 @@
 						<span class="mb-1 text-sm text-muted-foreground">/ month</span>
 					</div>
 					<ul class="mt-6 flex-1 space-y-2.5">
-						{#each ['Everything in Starter', 'Up to 30 menu items', 'Pickup windows & cutoff times', 'Inventory limits per item', 'Single pickup location', 'Eligible for select add-ons', 'Standard Stripe fees only'] as feat (feat)}
+						{#each ['Everything in Starter', 'Up to 30 catalog items', 'Pickup windows & cutoff times', 'Inventory limits per item', 'Single pickup location', 'Eligible for select add-ons', 'Standard Stripe fees only'] as feat (feat)}
 							<li class="flex items-start gap-2 text-sm text-muted-foreground">
 								<Icon icon="mdi:check-circle-outline" class="mt-0.5 h-4 w-4 shrink-0 text-primary/80" />
 								{feat}

@@ -35,7 +35,7 @@
 	const steps = [
 		{
 			num: '1',
-			title: 'Set up your menu',
+			title: 'Set up your catalog',
 			desc: 'Add your products, photos, prices, and modifier options — sizes, flavors, fillings. Set inventory caps and pickup windows.'
 		},
 		{
@@ -361,7 +361,7 @@
 						<span class="mb-1 text-sm text-muted-foreground">/ month</span>
 					</div>
 					<ul class="mt-6 flex-1 space-y-2.5">
-						{#each ['Up to 30 menu items', 'Pickup windows & cutoff times', 'Inventory limits per item', 'Online ordering & Stripe checkout', 'Customer email receipts', 'Menu QR code', 'Standard Stripe fees only (2.9% + 30¢)'] as feat (feat)}
+						{#each ['Up to 30 catalog items', 'Pickup windows & cutoff times', 'Inventory limits per item', 'Online ordering & Stripe checkout', 'Customer email receipts', 'Catalog QR code', 'Standard Stripe fees only (2.9% + 30¢)'] as feat (feat)}
 							<li class="flex items-start gap-2 text-sm text-muted-foreground">
 								<Icon icon="mdi:check-circle-outline" class="mt-0.5 h-4 w-4 shrink-0 text-primary/80" />
 								{feat}
@@ -392,7 +392,7 @@
 						<span class="mb-1 text-sm text-muted-foreground">/ month</span>
 					</div>
 					<ul class="mt-6 flex-1 space-y-2.5">
-						{#each ['Everything in Market', 'Unlimited menu items', 'Multiple pickup locations', 'Website embed', 'Priority support', 'Eligible for all add-ons', 'Standard Stripe fees only'] as feat (feat)}
+						{#each ['Everything in Market', 'Unlimited catalog items', 'Multiple pickup locations', 'Website embed', 'Priority support', 'Eligible for all add-ons', 'Standard Stripe fees only'] as feat (feat)}
 							<li class="flex items-start gap-2 text-sm text-muted-foreground">
 								<Icon icon="mdi:check-circle-outline" class="mt-0.5 h-4 w-4 shrink-0 text-primary/80" />
 								{feat}

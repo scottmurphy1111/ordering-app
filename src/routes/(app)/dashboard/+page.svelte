@@ -23,7 +23,7 @@
 	const lastUpdated = new SvelteDate();
 	let mounted = $state(false);
 	let copied = $state(false);
-	let menuUrl = $state('');
+	let catalogUrl = $state('');
 
 	const greeting = $derived.by(() => {
 		const h = new Date().getHours();
@@ -37,7 +37,7 @@
 	onMount(() => {
 		mounted = true;
 		if (data.vendor?.slug) {
-			menuUrl = `${window.location.origin}${resolve(`/${data.vendor.slug}/menu`)}`;
+			catalogUrl = `${window.location.origin}${resolve(`/${data.vendor.slug}/catalog`)}`;
 		}
 		let interval: ReturnType<typeof setInterval> | null = null;
 		function refresh() {
@@ -61,9 +61,9 @@
 		};
 	});
 
-	function copyMenuLink() {
-		if (!menuUrl) return;
-		navigator.clipboard.writeText(menuUrl).then(() => {
+	function copyCatalogLink() {
+		if (!catalogUrl) return;
+		navigator.clipboard.writeText(catalogUrl).then(() => {
 			copied = true;
 			setTimeout(() => {
 				copied = false;
@@ -124,29 +124,29 @@
 					Here's what's happening with {data.vendor.name}.
 				</p>
 			{/if}
-			{#if menuUrl}
+			{#if catalogUrl}
 				<p class="mt-0.5 text-xs text-muted-foreground/70">
-					{menuUrl.replace(/^https?:\/\//, '')}
+					{catalogUrl.replace(/^https?:\/\//, '')}
 				</p>
 			{/if}
 		</div>
 		{#if data.vendor?.slug}
 			<div class="flex shrink-0 items-center gap-2">
 				<button
-					onclick={copyMenuLink}
+					onclick={copyCatalogLink}
 					class="inline-flex items-center gap-1.5 rounded-md border px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:border-gray-400 hover:bg-muted"
 				>
 					<Icon icon={copied ? 'mdi:check' : 'mdi:content-copy'} class="h-3.5 w-3.5" />
 					{copied ? 'Copied!' : 'Copy link'}
 				</button>
 				<a
-					data-tour="view-menu"
-					href={resolve(`/${data.vendor.slug}/menu`)}
+					data-tour="view-catalog"
+					href={resolve(`/${data.vendor.slug}/catalog`)}
 					target="_blank"
 					rel="noopener noreferrer"
 					class="inline-flex items-center gap-1.5 rounded-md border border-primary px-4 py-2 text-sm font-semibold text-primary transition-colors hover:bg-primary/5"
 				>
-					Open live menu <Icon icon="mdi:open-in-new" class="h-3.5 w-3.5" />
+					Open live catalog <Icon icon="mdi:open-in-new" class="h-3.5 w-3.5" />
 				</a>
 			</div>
 		{/if}
@@ -408,7 +408,7 @@
 			{:else}
 				<div class="rounded-xl border border-dashed p-10 text-center">
 					<p class="text-sm text-muted-foreground">
-						No orders yet. Share your menu to start receiving orders.
+						No orders yet. Share your catalog to start receiving orders.
 					</p>
 				</div>
 			{/if}

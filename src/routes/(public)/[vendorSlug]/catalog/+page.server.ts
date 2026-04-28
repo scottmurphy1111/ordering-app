@@ -44,6 +44,6 @@ export const load: PageServerLoad = async ({ locals, params }) => {
 		categories,
 		items,
 		itemsByCategory: Object.fromEntries(itemsByCategory),
-		tenantSlug: params.tenantSlug
+		vendorSlug: params.vendorSlug
 	};
 };

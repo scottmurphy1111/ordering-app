@@ -330,7 +330,7 @@
 			</CardHeader>
 			<CardContent>
 				<p class="px-4 pb-3 text-xs text-muted-foreground">
-					Customers will see open/closed status on your menu page. Leave all days unset to hide the
+					Customers will see open/closed status on your catalog page. Leave all days unset to hide the
 					status.
 				</p>
 				<div class="divide-y divide-border px-4">

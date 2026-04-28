@@ -8,13 +8,13 @@
 	import { Badge } from'$lib/components/ui/badge';
 	import { Card, CardContent } from'$lib/components/ui/card';
 
-	const tenant = $derived(page.data.vendor);
-	const menuUrl = $derived(tenant?.slug ? `${page.url.origin}/${tenant.slug}/menu` :'');
+	const vendor = $derived(page.data.vendor);
+	const catalogUrl = $derived(vendor?.slug ? `${page.url.origin}/${vendor.slug}/catalog` :'');
 
 	// ── Menu QR ──────────────────────────────────────────────────────────────
 	const qrDataUrl = $derived(
-		menuUrl
-			? QRCode.toDataURL(menuUrl, {
+		catalogUrl
+			? QRCode.toDataURL(catalogUrl, {
 					width: 256,
 					margin: 2,
 					color: { dark:'#111827', light:'#ffffff' }
@@ -22,34 +22,34 @@
 			: Promise.resolve('')
 	);
 
-	let menuUrlCopied = $state(false);
+	let catalogUrlCopied = $state(false);
 
-	function copyMenuUrl() {
-		navigator.clipboard.writeText(menuUrl).then(() => {
-			menuUrlCopied = true;
-			setTimeout(() => (menuUrlCopied = false), 2000);
+	function copyCatalogUrl() {
+		navigator.clipboard.writeText(catalogUrl).then(() => {
+			catalogUrlCopied = true;
+			setTimeout(() => (catalogUrlCopied = false), 2000);
 		});
 	}
 
-	async function downloadMenuQr() {
+	async function downloadCatalogQr() {
 		const dataUrl = await qrDataUrl;
 		if (!dataUrl) return;
 		const a = document.createElement('a');
 		a.href = dataUrl;
-		a.download = `${tenant?.slug ??'menu'}-qr-code.png`;
+		a.download = `${vendor?.slug ?? 'catalog'}-qr-code.png`;
 		a.click();
 	}
 
 	// ── Social share card ────────────────────────────────────────────────────
-	const bgColor = $derived(tenant?.backgroundColor ?? '#000000');
-	const fgColor = $derived(tenant?.foregroundColor ?? '#ffffff');
-	const acColor = $derived(tenant?.accentColor ?? '#374151');
+	const bgColor = $derived(vendor?.backgroundColor ?? '#000000');
+	const fgColor = $derived(vendor?.foregroundColor ?? '#ffffff');
+	const acColor = $derived(vendor?.accentColor ?? '#374151');
 
 	let captionCopied = $state(false);
 
 	const shareCaption = $derived(
-		tenant
-			? `We're now taking online orders! 🎉 Visit ${menuUrl} or scan the QR code to order. – ${tenant.name}`
+		vendor
+			? `We're now taking online orders! 🎉 Visit ${catalogUrl} or scan the QR code to order. – ${vendor.name}`
 			: ''
 	);
 
@@ -62,7 +62,7 @@
 
 	async function downloadSocialCard() {
 		const qrUrl = await qrDataUrl;
-		if (!qrUrl || !tenant) return;
+		if (!qrUrl || !vendor) return;
 
 		const size = 1080;
 		const canvas = document.createElement('canvas');
@@ -84,14 +84,14 @@
 
 		// Logo (optional, best-effort — skip if CORS blocked)
 		let logoLoaded = false;
-		if (tenant.logoUrl) {
+		if (vendor.logoUrl) {
 			try {
 				const logoImg = new Image();
 				logoImg.crossOrigin = 'anonymous';
 				await new Promise<void>((res) => {
 					logoImg.onload = () => res();
 					logoImg.onerror = () => res();
-					logoImg.src = tenant.logoUrl!;
+					logoImg.src = vendor.logoUrl!;
 				});
 				if (logoImg.naturalWidth > 0) {
 					const maxH = 120;
@@ -110,7 +110,7 @@
 		ctx.textAlign = 'center';
 		ctx.font = `bold 88px system-ui, sans-serif`;
 		const nameY = logoLoaded ? 292 : 240;
-		ctx.fillText(tenant.name, size / 2, nameY, size - 80);
+		ctx.fillText(vendor.name, size / 2, nameY, size - 80);
 
 		// Tagline
 		ctx.fillStyle = acColor;
@@ -133,22 +133,22 @@
 		ctx.fill();
 		ctx.drawImage(qrImg, qrX, qrY, qrSize, qrSize);
 
-		// Menu URL
+		// Catalog URL
 		ctx.fillStyle = fgColor;
 		ctx.globalAlpha = 0.75;
 		ctx.font = `28px system-ui, sans-serif`;
-		ctx.fillText(menuUrl, size / 2, qrY + qrSize + pad + 52);
+		ctx.fillText(catalogUrl, size / 2, qrY + qrSize + pad + 52);
 		ctx.globalAlpha = 1;
 
 		const a = document.createElement('a');
 		a.href = canvas.toDataURL('image/png');
-		a.download = `${tenant.slug}-social-card.png`;
+		a.download = `${vendor.slug}-social-card.png`;
 		a.click();
 	}
 
 	async function downloadLandscapeCard() {
 		const qrUrl = await qrDataUrl;
-		if (!qrUrl || !tenant) return;
+		if (!qrUrl || !vendor) return;
 
 		const w = 1200, h = 628;
 		const canvas = document.createElement('canvas');
@@ -166,14 +166,14 @@
 
 		// Logo (left side, best-effort)
 		let leftContentY = 100;
-		if (tenant.logoUrl) {
+		if (vendor.logoUrl) {
 			try {
 				const logoImg = new Image();
 				logoImg.crossOrigin = 'anonymous';
 				await new Promise<void>((res) => {
 					logoImg.onload = () => res();
 					logoImg.onerror = () => res();
-					logoImg.src = tenant.logoUrl!;
+					logoImg.src = vendor.logoUrl!;
 				});
 				if (logoImg.naturalWidth > 0) {
 					const maxH = 72;
@@ -189,18 +189,18 @@
 		ctx.fillStyle = fgColor;
 		ctx.textAlign = 'left';
 		ctx.font = `bold 76px system-ui, sans-serif`;
-		ctx.fillText(tenant.name, 60, h / 2 + 10, 640);
+		ctx.fillText(vendor.name, 60, h / 2 + 10, 640);
 
 		// Tagline
 		ctx.fillStyle = acColor;
 		ctx.font = `500 38px system-ui, sans-serif`;
 		ctx.fillText('Order online now →', 60, h / 2 + 66);
 
-		// Menu URL bottom-left
+		// Catalog URL bottom-left
 		ctx.fillStyle = fgColor;
 		ctx.globalAlpha = 0.5;
 		ctx.font = `24px system-ui, sans-serif`;
-		ctx.fillText(menuUrl, 60, h - 48, 640);
+		ctx.fillText(catalogUrl, 60, h - 48, 640);
 		ctx.globalAlpha = 1;
 
 		// Right white panel
@@ -233,14 +233,14 @@
 
 		const a = document.createElement('a');
 		a.href = canvas.toDataURL('image/png');
-		a.download = `${tenant.slug}-social-card-landscape.png`;
+		a.download = `${vendor.slug}-social-card-landscape.png`;
 		a.click();
 	}
 
 	// ── Embed snippet ─────────────────────────────────────────────────────────
 	const embedSnippet = $derived(
-		menuUrl
-			? `<iframe\n  src="${menuUrl}"\n  width="100%"\n  height="800"\n  frameborder="0"\n  style="border: none; border-radius: 12px;"\n  title="${tenant?.name ??'Menu'}"\n></iframe>`
+		catalogUrl
+			? `<iframe\n  src="${catalogUrl}"\n  width="100%"\n  height="800"\n  frameborder="0"\n  style="border: none; border-radius: 12px;"\n  title="${vendor?.name ??'Catalog'}"\n></iframe>`
 			:''
 	);
 
@@ -269,8 +269,8 @@
 	</div>
 
 	<div class="space-y-6">
-		<!-- ── Menu QR code ──────────────────────────────────────────────────── -->
-		{#if tenant?.slug}
+		<!-- ── Catalog QR code ──────────────────────────────────────────────────── -->
+		{#if vendor?.slug}
 			<Card class="shadow-sm">
 				<CardContent>
 				<div class="mb-5 flex items-center gap-3">
@@ -278,9 +278,9 @@
 						<Icon icon="mdi:qrcode" class="h-5 w-5 text-primary" />
 					</div>
 					<div>
-						<h2 class="font-semibold text-foreground">Menu QR Code</h2>
+						<h2 class="font-semibold text-foreground">Catalog QR Code</h2>
 						<p class="text-sm text-muted-foreground">
-							Print or share so customers can scan directly to your menu.
+							Print or share so customers can scan directly to your catalog.
 						</p>
 					</div>
 				</div>
@@ -292,35 +292,35 @@
 								<Icon icon="mdi:loading" class="h-8 w-8 animate-spin text-muted-foreground/40" />
 							</div>
 						{:then dataUrl}
-							<img src={dataUrl} alt="QR code for {tenant.slug} menu" class="h-40 w-40" />
+							<img src={dataUrl} alt="QR code for {vendor.slug} catalog" class="h-40 w-40" />
 						{/await}
 					</div>
 
 					<div class="flex w-full min-w-0 flex-col gap-3 sm:w-auto">
 						<div>
-							<p class="mb-1 text-xs font-medium tracking-wide text-muted-foreground uppercase">Menu URL</p>
+							<p class="mb-1 text-xs font-medium tracking-wide text-muted-foreground uppercase">Catalog URL</p>
 							<div class="flex items-center gap-2">
 								<span
 									class="max-w-xs truncate rounded-md border bg-muted/50 px-3 py-1.5 font-mono text-sm text-muted-foreground"
 								>
-									{menuUrl}
+									{catalogUrl}
 								</span>
-								<Button onclick={copyMenuUrl} variant="outline" size="sm" class="shrink-0 gap-1.5">
-									<Icon icon={menuUrlCopied ?'mdi:check' :'mdi:content-copy'} class="h-4 w-4" />
-									{menuUrlCopied ?'Copied' :'Copy'}
+								<Button onclick={copyCatalogUrl} variant="outline" size="sm" class="shrink-0 gap-1.5">
+									<Icon icon={catalogUrlCopied ?'mdi:check' :'mdi:content-copy'} class="h-4 w-4" />
+									{catalogUrlCopied ?'Copied' :'Copy'}
 								</Button>
 							</div>
 						</div>
 						<div class="flex gap-2">
-							<Button onclick={downloadMenuQr} variant="default" class="gap-2">
+							<Button onclick={downloadCatalogQr} variant="default" class="gap-2">
 								<Icon icon="mdi:download" class="h-4 w-4" /> Download PNG
 							</Button>
 							<Button
-								href={resolve(`/${tenant.slug}/menu` as `/${string}`)}
+								href={resolve(`/${vendor.slug}/catalog` as `/${string}`)}
 								variant="outline"
 								class="gap-2"
 							>
-								<Icon icon="mdi:open-in-new" class="h-4 w-4" /> Preview menu
+								<Icon icon="mdi:open-in-new" class="h-4 w-4" /> Preview catalog
 							</Button>
 						</div>
 					</div>
@@ -330,7 +330,7 @@
 		{/if}
 
 		<!-- ── Google Business Profile ──────────────────────────────────────────── -->
-		{#if tenant?.slug}
+		{#if vendor?.slug}
 			<div class="rounded-xl border border-blue-100 bg-blue-50 p-6">
 				<div class="flex items-start gap-4">
 					<div
@@ -343,24 +343,24 @@
 						<p class="mt-1 text-sm text-muted-foreground">
 							Google Business Profile lets you add an <span class="font-medium">"Order online"</span
 							> button directly to your Maps listing and search result. Customers can tap it to go straight
-							to your menu.
+							to your catalog page.
 						</p>
 						<ol class="mt-3 list-inside list-decimal space-y-1 text-sm text-muted-foreground">
 							<li>Go to <span class="font-medium">Google Business Profile</span> and sign in</li>
 							<li>Select your business → <span class="font-medium">Edit profile → Links</span></li>
 							<li>
-								Paste your menu URL into the <span class="font-medium">Order online</span> field
+								Paste your catalog URL into the <span class="font-medium">Order online</span> field
 							</li>
 						</ol>
 						<div class="mt-3 flex items-center gap-2">
 							<span
 								class="max-w-xs truncate rounded-md border border-blue-200 bg-background px-3 py-1.5 font-mono text-xs text-muted-foreground"
 							>
-								{menuUrl}
+								{catalogUrl}
 							</span>
-							<Button onclick={copyMenuUrl} variant="outline" size="sm" class="shrink-0 gap-1.5">
-								<Icon icon={menuUrlCopied ?'mdi:check' :'mdi:content-copy'} class="h-3.5 w-3.5" />
-								{menuUrlCopied ?'Copied' :'Copy URL'}
+							<Button onclick={copyCatalogUrl} variant="outline" size="sm" class="shrink-0 gap-1.5">
+								<Icon icon={catalogUrlCopied ?'mdi:check' :'mdi:content-copy'} class="h-3.5 w-3.5" />
+								{catalogUrlCopied ?'Copied' :'Copy URL'}
 							</Button>
 						</div>
 					</div>
@@ -370,8 +370,8 @@
 
 
 		<!-- ── Embed snippet ──────────────────────────────────────────────────── -->
-		{#if tenant?.slug}
-			{@const isPro = tenant.subscriptionTier ==='pro'}
+		{#if vendor?.slug}
+			{@const isPro = vendor.subscriptionTier ==='pro'}
 			<Card class="shadow-sm">
 				<CardContent>
 				<div class="mb-5 flex items-center gap-3">
@@ -381,7 +381,7 @@
 					<div>
 						<h2 class="font-semibold text-foreground">Embed on Your Website</h2>
 						<p class="text-sm text-muted-foreground">
-							Paste this snippet into any webpage to embed your menu.
+							Paste this snippet into any webpage to embed your catalog.
 						</p>
 					</div>
 				</div>
@@ -402,7 +402,7 @@
 					<div class="rounded-lg border border-dashed bg-muted/50 px-5 py-8 text-center">
 						<Icon icon="mdi:lock-outline" class="mx-auto mb-2 h-6 w-6 text-muted-foreground" />
 						<p class="text-sm font-medium text-muted-foreground">Website embed is a Pro feature</p>
-						<p class="mt-1 text-sm text-muted-foreground">Upgrade to Pro to embed your menu on any website.</p>
+						<p class="mt-1 text-sm text-muted-foreground">Upgrade to Pro to embed your catalog on any website.</p>
 						<Button href={resolve('/dashboard/account/billing')} variant="default" class="mt-4">
 							Upgrade to Pro
 						</Button>
@@ -412,7 +412,7 @@
 			</Card>
 		{/if}
 
-		<!-- ── Printable menu (coming soon) ──────────────────────────────────── -->
+		<!-- ── Printable catalog (coming soon) ──────────────────────────────────── -->
 		<div class="rounded-xl border border-dashed bg-muted/50 p-6">
 			<div class="flex items-center gap-3">
 				<div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-muted">
@@ -420,16 +420,16 @@
 				</div>
 				<div>
 					<div class="flex items-center gap-2">
-						<h2 class="font-semibold text-muted-foreground">Printable Menu</h2>
+						<h2 class="font-semibold text-muted-foreground">Printable Catalog</h2>
 						<Badge class="bg-muted text-muted-foreground">Coming soon</Badge>
 					</div>
-					<p class="text-sm text-muted-foreground">Generate a print-ready PDF of your full menu.</p>
+					<p class="text-sm text-muted-foreground">Generate a print-ready PDF of your full catalog.</p>
 				</div>
 			</div>
 		</div>
 
 		<!-- ── Social share cards ────────────────────────────────────────────── -->
-		{#if tenant?.slug}
+		{#if vendor?.slug}
 			<Card class="shadow-sm">
 				<CardContent>
 					<div class="mb-5 flex items-center gap-3">
@@ -465,11 +465,11 @@
 								<div class="absolute inset-x-0 top-0 h-4" style="background-color: {acColor};"></div>
 								<div class="absolute inset-x-0 bottom-0 h-3" style="background-color: {acColor};"></div>
 								<div class="flex h-full flex-col items-center justify-center gap-1.5 px-3 pb-3 pt-5">
-									{#if tenant.logoUrl}
-										<img src={tenant.logoUrl} alt={tenant.name} class="max-h-8 max-w-24 object-contain" />
+									{#if vendor.logoUrl}
+										<img src={vendor.logoUrl} alt={vendor.name} class="max-h-8 max-w-24 object-contain" />
 									{/if}
 									<p class="text-center text-sm font-bold leading-tight" style="color: {fgColor};">
-										{tenant.name}
+										{vendor.name}
 									</p>
 									<p class="text-center text-[10px] font-medium" style="color: {acColor};">
 										Order online now →
@@ -480,7 +480,7 @@
 										{/await}
 									</div>
 									<p class="truncate font-mono text-[7px] opacity-60" style="color: {fgColor}; max-width: 160px;">
-										{menuUrl}
+										{catalogUrl}
 									</p>
 								</div>
 							</div>
@@ -505,12 +505,12 @@
 								<div class="absolute inset-x-0 top-0 h-1.5" style="background-color: {acColor};"></div>
 								<!-- Left content -->
 								<div class="absolute inset-y-0 left-0 flex flex-col justify-center px-4" style="width: 58%;">
-									{#if tenant.logoUrl}
-										<img src={tenant.logoUrl} alt={tenant.name} class="mb-1.5 max-h-6 max-w-20 object-contain" />
+									{#if vendor.logoUrl}
+										<img src={vendor.logoUrl} alt={vendor.name} class="mb-1.5 max-h-6 max-w-20 object-contain" />
 									{/if}
-									<p class="text-sm font-bold leading-tight" style="color: {fgColor};">{tenant.name}</p>
+									<p class="text-sm font-bold leading-tight" style="color: {fgColor};">{vendor.name}</p>
 									<p class="mt-1 text-[10px] font-medium" style="color: {acColor};">Order online now →</p>
-									<p class="mt-auto truncate font-mono text-[7px] opacity-50" style="color: {fgColor};">{menuUrl}</p>
+									<p class="mt-auto truncate font-mono text-[7px] opacity-50" style="color: {fgColor};">{catalogUrl}</p>
 								</div>
 								<!-- Right QR panel -->
 								<div class="absolute inset-y-2 right-2 flex w-28 flex-col items-center justify-center gap-1 rounded-lg bg-white shadow-sm">
@@ -546,7 +546,7 @@
 								<Icon icon="mdi:whatsapp" class="h-4 w-4" /> Share on WhatsApp
 							</Button>
 							<Button
-								href="https://www.facebook.com/sharer/sharer.php?u={encodeURIComponent(menuUrl)}"
+								href="https://www.facebook.com/sharer/sharer.php?u={encodeURIComponent(catalogUrl)}"
 								variant="outline"
 								class="gap-2"
 								target="_blank"

@@ -68,7 +68,7 @@
 			<Icon icon="mdi:chevron-left" class="h-4 w-4" /> Settings
 		</a>
 		<h1 class="text-2xl font-bold text-foreground">Team</h1>
-		<p class="mt-0.5 text-sm text-muted-foreground">Manage who has access to this tenant.</p>
+		<p class="mt-0.5 text-sm text-muted-foreground">Manage who has access to this vendor.</p>
 	</div>
 
 	<Tabs bind:value={tab}>
@@ -347,7 +347,7 @@
 														type="submit"
 														onclick={async (e) => {
 															e.preventDefault();
-															if (await confirmDialog(`Remove ${member.name} from this tenant?`))
+															if (await confirmDialog(`Remove ${member.name} from this vendor?`))
 																(e.currentTarget as HTMLButtonElement).form?.requestSubmit();
 														}}
 														variant="ghost"
@@ -451,15 +451,15 @@
 				<div
 					class="mb-5 rounded-md border border-indigo-200 bg-indigo-50 px-4 py-3 text-sm text-indigo-700"
 				>
-					Internal users are platform-level staff with access to all tenants. This is separate from
-					tenant membership roles.
+					Internal users are platform-level staff with access to all vendors. This is separate from
+					vendor membership roles.
 				</div>
 
 				{#if data.internalUsers.length === 0}
 					<div class="mb-6 rounded-xl border border-dashed p-10 text-center">
 						<p class="text-sm text-muted-foreground">No internal users yet.</p>
 						<p class="mt-1 text-xs text-muted-foreground">
-							Promote a tenant member using"Make internal" on the Members tab.
+							Promote a vendor member using"Make internal" on the Members tab.
 						</p>
 					</div>
 				{:else}
@@ -516,7 +516,7 @@
 					</Card>
 				{/if}
 
-				<!-- Quick promote from current tenant members -->
+				<!-- Quick promote from current vendor members -->
 				{#if nonInternalMembers.length > 0}
 					<div>
 						<h2 class="mb-3 text-sm font-semibold text-muted-foreground">

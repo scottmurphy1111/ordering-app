@@ -71,7 +71,7 @@
 			<div class="mb-6 space-y-2">
 				{#each filteredVendors as t (t.id)}
 					<form method="post" action="?/select" use:enhance>
-						<input type="hidden" name="tenantId" value={t.id} />
+						<input type="hidden" name="vendorId" value={t.id} />
 						<Card class="shadow-sm transition-all hover:border-gray-400 hover:shadow">
 							<CardContent class="flex cursor-pointer items-center justify-between">
 								<button type="submit" class="flex min-w-0 flex-1 items-center gap-3 text-left">

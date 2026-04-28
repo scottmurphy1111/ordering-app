@@ -45,7 +45,7 @@
 		fd.append('image', file);
 
 		try {
-			const res = await fetch('/api/upload-menu-item-image', { method: 'POST', body: fd });
+			const res = await fetch('/api/upload-catalog-item-image', { method: 'POST', body: fd });
 			const json = await res.json();
 			if (!res.ok) {
 				uploadError = json.message ?? 'Upload failed';

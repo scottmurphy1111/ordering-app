@@ -45,5 +45,5 @@ export const load: PageServerLoad = async ({ locals, params }) => {
 			}))
 		}));
 
-	return { item, modifierGroups, tenantSlug: params.tenantSlug };
+	return { item, modifierGroups, vendorSlug: params.vendorSlug };
 };

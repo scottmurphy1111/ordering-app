@@ -10,10 +10,10 @@
 
 	let { data }: { data: PageData } = $props();
 
-	onMount(() => cart.init(data.tenantSlug));
+	onMount(() => cart.init(data.vendorSlug));
 
-	const tenant = $derived(data.vendor);
-	const settings = $derived(tenant.settings as Record<string, unknown> | null);
+	const vendor = $derived(data.vendor);
+	const settings = $derived(vendor.settings as Record<string, unknown> | null);
 
 	// ── Open/closed status ───────────────────────────────────────────────────
 	let openStatus = $state<boolean | null>(null);
@@ -146,39 +146,39 @@
 </script>
 
 <svelte:head>
-	<title>{tenant.name} — Menu</title>
+	<title>{vendor.name} — Catalog</title>
 </svelte:head>
 
 <div class="min-h-screen">
 	<!-- ── Banner hero or colored header ──────────────────────────────────── -->
-	{#if tenant.bannerUrl}
+	{#if vendor.bannerUrl}
 		<div class="relative h-56 overflow-hidden sm:h-72">
 			<img
-				src={tenant.bannerUrl}
-				alt={tenant.name}
+				src={vendor.bannerUrl}
+				alt={vendor.name}
 				class="absolute inset-0 h-full w-full object-cover"
 			/>
 			<div class="absolute inset-0 bg-linear-to-t from-black/75 via-black/25 to-transparent"></div>
 			<div class="absolute inset-x-0 bottom-0 mx-auto max-w-2xl px-4 pb-5">
 				<div class="mb-2 flex items-center gap-4">
-					{#if tenant.logoUrl}
+					{#if vendor.logoUrl}
 						<img
-							src={tenant.logoUrl}
-							alt={tenant.name}
+							src={vendor.logoUrl}
+							alt={vendor.name}
 							class="h-16 w-auto max-w-48 object-contain drop-shadow"
 							style="filter: brightness(0) invert(1);"
 						/>
 					{/if}
 					<div class="flex flex-wrap items-center gap-2">
-						{#if tenant.website}
+						{#if vendor.website}
 							<a
-								href={resolve(tenant.website as `/${string}`)}
+								href={resolve(vendor.website as `/${string}`)}
 								target="_blank"
 								rel="noopener noreferrer"
-								class="text-2xl font-bold text-white drop-shadow hover:underline">{tenant.name}</a
+								class="text-2xl font-bold text-white drop-shadow hover:underline">{vendor.name}</a
 							>
 						{:else}
-							<h1 class="text-2xl font-bold text-white drop-shadow">{tenant.name}</h1>
+							<h1 class="text-2xl font-bold text-white drop-shadow">{vendor.name}</h1>
 						{/if}
 					</div>
 				</div>
@@ -191,8 +191,8 @@
 						{/if}
 					{/if}
 				</div>
-				{#if tenant.type}
-					<p class="mt-0.5 text-sm text-white/70 capitalize">{tenant.type.replace('_', ' ')}</p>
+				{#if vendor.type}
+					<p class="mt-0.5 text-sm text-white/70 capitalize">{vendor.type.replace('_', ' ')}</p>
 				{/if}
 			</div>
 		</div>
@@ -200,36 +200,36 @@
 		<header style="background-color: var(--background-color);">
 			<div class="mx-auto max-w-2xl px-4 py-5">
 				<div class="flex items-center gap-4">
-					{#if tenant.logoUrl}
+					{#if vendor.logoUrl}
 						<img
-							src={tenant.logoUrl}
-							alt={tenant.name}
+							src={vendor.logoUrl}
+							alt={vendor.name}
 							class="h-16 w-auto max-w-48 shrink-0 object-contain"
 						/>
 					{/if}
 					<div>
-						{#if tenant.website}
+						{#if vendor.website}
 							<a
-								href={resolve(tenant.website as `/${string}`)}
+								href={resolve(vendor.website as `/${string}`)}
 								target="_blank"
 								rel="noopener noreferrer"
 								class="transition-opacity hover:opacity-80"
 							>
 								<h1 class="text-2xl font-bold" style="color: var(--foreground-color);">
-									{tenant.name}
+									{vendor.name}
 								</h1>
 							</a>
 						{:else}
 							<h1 class="text-2xl font-bold" style="color: var(--foreground-color);">
-								{tenant.name}
+								{vendor.name}
 							</h1>
 						{/if}
 					</div>
 				</div>
 				<div class="mt-2 flex flex-wrap items-center gap-2">
-					{#if tenant.type}
+					{#if vendor.type}
 						<p class="text-sm capitalize opacity-75" style="color: var(--foreground-color);">
-							{tenant.type.replace('_', ' ')}
+							{vendor.type.replace('_', ' ')}
 						</p>
 					{/if}
 					{#if openStatus !== null}
@@ -400,7 +400,7 @@
 									</div>
 									{#if hasModifiers(item)}
 										<a
-											href={resolve(`/${data.tenantSlug}/item/${item.id}`)}
+											href={resolve(`/${data.vendorSlug}/item/${item.id}`)}
 											style="border-color: var(--background-color); color: var(--background-color);"
 											class="rounded-lg border px-3 py-1.5 text-xs font-medium transition-opacity hover:opacity-75"
 											>Options</a
@@ -484,7 +484,7 @@
 									</div>
 									{#if hasModifiers(item)}
 										<a
-											href={resolve(`/${data.tenantSlug}/item/${item.id}`)}
+											href={resolve(`/${data.vendorSlug}/item/${item.id}`)}
 											style="border-color: var(--background-color); color: var(--background-color);"
 											class="rounded-lg border px-3 py-1.5 text-xs font-medium transition-opacity hover:opacity-75"
 											>Options</a
@@ -514,7 +514,7 @@
 	{#if cart.count > 0}
 		<div class="sticky bottom-0 flex justify-center p-4">
 			<a
-				href={resolve(`/${data.tenantSlug}/cart` as `/${string}`)}
+				href={resolve(`/${data.vendorSlug}/cart` as `/${string}`)}
 				style="background-color: var(--background-color); color: var(--foreground-color);"
 				class="flex w-full max-w-2xl items-center justify-between rounded-xl px-5 py-3.5 shadow-lg transition-opacity hover:opacity-90"
 			>

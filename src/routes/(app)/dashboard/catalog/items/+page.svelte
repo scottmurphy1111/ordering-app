@@ -165,7 +165,7 @@
 		const fd = new FormData();
 		fd.append('image', file);
 		try {
-			const res = await fetch('/api/upload-menu-item-image', { method: 'POST', body: fd });
+			const res = await fetch('/api/upload-catalog-item-image', { method: 'POST', body: fd });
 			const json = await res.json();
 			if (!res.ok) {
 				newUploadError = json.message ?? 'Upload failed';
@@ -240,7 +240,7 @@
 		form.append('file', importFile);
 
 		try {
-			const res = await fetch('/api/import-menu-items', { method: 'POST', body: form });
+			const res = await fetch('/api/import-catalog-items', { method: 'POST', body: form });
 			const json = await res.json();
 			if (!res.ok) {
 				importError = json.message ?? 'Import failed';

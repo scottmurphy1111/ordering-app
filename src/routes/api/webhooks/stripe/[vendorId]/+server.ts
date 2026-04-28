@@ -13,9 +13,9 @@ import { sendSms } from '$lib/server/sms';
 import { env } from '$env/dynamic/private';
 
 export const POST: RequestHandler = async ({ request, params }) => {
-	const numericId = parseInt(params.tenantId);
+	const numericId = parseInt(params.vendorId);
 	const vendorRecord = await db.query.vendor.findFirst({
-		where: isNaN(numericId) ? eq(vendor.slug, params.tenantId) : eq(vendor.id, numericId),
+		where: isNaN(numericId) ? eq(vendor.slug, params.vendorId) : eq(vendor.id, numericId),
 		columns: {
 			id: true,
 			stripeSecretKey: true,

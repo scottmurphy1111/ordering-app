@@ -46,10 +46,10 @@ const handleVendorContext: Handle = async ({ event, resolve }) => {
 		if (fresh?.bannedAt) throw redirect(303, '/banned');
 	}
 
-	// Public routes: vendor comes from URL param [tenantSlug]
-	if (params.tenantSlug) {
+	// Public routes: vendor comes from URL param [vendorSlug]
+	if (params.vendorSlug) {
 		const currentVendor = await db.query.vendor.findFirst({
-			where: eq(vendor.slug, params.tenantSlug)
+			where: eq(vendor.slug, params.vendorSlug)
 		});
 		if (currentVendor?.isActive) {
 			event.locals.vendorId = currentVendor.id;

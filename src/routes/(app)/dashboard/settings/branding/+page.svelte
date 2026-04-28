@@ -202,7 +202,7 @@
 					<DialogTitle>Color preview</DialogTitle>
 				</DialogHeader>
 				<div class="mx-5 mb-5 overflow-hidden rounded-xl border shadow-sm">
-					<!-- Menu header -->
+					<!-- Catalog header -->
 					<div class="px-4 py-3" style="background-color: {backgroundColor};">
 						<div class="flex items-center gap-2.5">
 							<div
@@ -234,7 +234,7 @@
 							</span>
 						{/each}
 					</div>
-					<!-- Menu items -->
+					<!-- Catalog items -->
 					<div class="divide-y" style="background-color: {foregroundColor};">
 						{#each [
 							{ name: 'Classic Burger', desc: 'Beef patty, lettuce, tomato, pickles', price: '$14.00', color: '#fef3c7' },
@@ -280,7 +280,7 @@
 			<CardHeader class="border-b">
 				<CardTitle>Logo</CardTitle>
 				<CardDescription
-					>Shown in your menu header and tiled as a subtle background pattern.</CardDescription
+					>Shown in your catalog header and tiled as a subtle background pattern.</CardDescription
 				>
 				<CardAction>
 					<span
@@ -344,7 +344,7 @@
 		<Card class="shadow-sm">
 			<CardHeader class="border-b">
 				<CardTitle>Banner image</CardTitle>
-				<CardDescription>Full-bleed hero image shown at the top of your menu page.</CardDescription>
+				<CardDescription>Full-bleed hero image shown at the top of your catalog page.</CardDescription>
 				<CardAction>
 					<span
 						class="rounded-full px-2.5 py-0.5 text-xs font-medium {data.branding.bannerUrl
@@ -404,7 +404,7 @@
 			<CardHeader class="border-b">
 				<CardTitle>Background image</CardTitle>
 				<CardDescription
-					>Subtle full-page texture behind your menu and cart. Works best with low-contrast images
+					>Subtle full-page texture behind your catalog and cart. Works best with low-contrast images
 					(wood, marble, linen).</CardDescription
 				>
 				<CardAction>

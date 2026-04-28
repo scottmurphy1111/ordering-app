@@ -119,7 +119,7 @@
 </script>
 
 {#snippet sidebarContent()}
-	<!-- Logo / Tenant Name -->
+	<!-- Logo / Vendor Name -->
 	<div class="flex items-center justify-between border-b border-white/10 px-4 py-4">
 		<a href={resolve('/vendors')} class="flex min-w-0 flex-1 items-center gap-3">
 			{#if data.vendor?.logoUrl}
@@ -179,7 +179,7 @@
 		</a>
 		{#if data.user.isInternal}
 			<a
-				href={resolve('/admin/tenants')}
+				href={resolve('/admin/vendors')}
 				class="flex items-center gap-1.5 text-xs text-muted-foreground transition-colors hover:text-white"
 			>
 				<Icon icon="mdi:shield-crown-outline" class="h-3.5 w-3.5" />

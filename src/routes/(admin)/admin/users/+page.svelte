@@ -74,7 +74,7 @@
 					<TableHeader>
 						<TableRow class="hover:bg-transparent">
 							<TableHead class="px-4 py-2.5 text-muted-foreground">User</TableHead>
-							<TableHead class="hidden px-4 py-2.5 text-muted-foreground sm:table-cell">Tenants</TableHead>
+							<TableHead class="hidden px-4 py-2.5 text-muted-foreground sm:table-cell">Vendors</TableHead>
 							<TableHead class="hidden px-4 py-2.5 text-muted-foreground md:table-cell">Joined</TableHead>
 							<TableHead class="px-4 py-2.5 text-muted-foreground">Status</TableHead>
 							<TableHead class="px-4 py-2.5"></TableHead>

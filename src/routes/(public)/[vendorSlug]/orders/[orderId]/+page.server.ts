@@ -21,5 +21,5 @@ export const load: PageServerLoad = async ({ locals, params, depends }) => {
 		where: eq(orderItems.orderId, orderId)
 	});
 
-	return { order, items, tenantSlug: params.tenantSlug };
+	return { order, items, vendorSlug: params.vendorSlug };
 };

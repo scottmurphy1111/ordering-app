@@ -10,7 +10,7 @@
 	let { data }: { data: PageData } = $props();
 
 	onMount(() => {
-		cart.init(data.tenantSlug);
+		cart.init(data.vendorSlug);
 	});
 
 	let customerName = $state('');
@@ -164,7 +164,7 @@
 
 		try {
 			const commonPayload = {
-				tenantSlug: data.tenantSlug,
+				vendorSlug: data.vendorSlug,
 				items: cart.items,
 				customer: { name: customerName, email, phone },
 				notes: notes || null,
@@ -217,7 +217,7 @@
 					return;
 				}
 				cart.clear();
-				window.location.href = `/${data.tenantSlug}/checkout?orderId=${json.orderId}`;
+				window.location.href = `/${data.vendorSlug}/checkout?orderId=${json.orderId}`;
 			}
 		} catch {
 			checkoutError = 'Network error. Please try again.';
@@ -235,11 +235,11 @@
 	<header style="background-color: var(--background-color);">
 		<div class="mx-auto flex max-w-lg items-center justify-between px-4 py-4">
 			<a
-				href={resolve(`/${data.tenantSlug}/menu`)}
+				href={resolve(`/${data.vendorSlug}/catalog`)}
 				class="inline-flex items-center gap-1 text-sm font-medium transition-opacity hover:opacity-75"
 				style="color: var(--foreground-color);"
 			>
-				<Icon icon="mdi:arrow-left" class="h-4 w-4" /> Back to menu
+				<Icon icon="mdi:arrow-left" class="h-4 w-4" /> Back to catalog
 			</a>
 			<div class="flex flex-col items-center gap-1">
 				<h1 class="text-lg font-semibold" style="color: var(--foreground-color);">Your Cart</h1>
@@ -253,11 +253,11 @@
 			<div class="rounded-xl border border-dashed  p-12 text-center">
 				<p class="mb-3 text-muted-foreground">Your cart is empty.</p>
 				<a
-					href={resolve(`/${data.tenantSlug}/menu`)}
+					href={resolve(`/${data.vendorSlug}/catalog`)}
 					class="text-sm font-medium transition-opacity hover:opacity-75"
 					style="color: var(--background-color);"
 				>
-					Browse the menu
+					Browse the catalog
 				</a>
 			</div>
 		{:else}

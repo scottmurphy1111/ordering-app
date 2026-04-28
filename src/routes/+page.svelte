@@ -70,7 +70,7 @@
 		},
 		{
 			num: '3',
-			title: 'Build your menu',
+			title: 'Build your catalog',
 			desc: 'Add products, photos, prices, and pickup windows. Set inventory limits and cutoff times.'
 		},
 		{
@@ -88,11 +88,11 @@
 			annualYearlyPrice: null as number | null,
 			annualSavings: null as string | null,
 			features: [
-				'Up to 10 menu items',
+				'Up to 10 catalog items',
 				'Online ordering & payments',
 				'Order management',
 				'Customer email receipts',
-				'Menu QR code',
+				'Catalog QR code',
 				'Standard Stripe fees only (2.9% + 30¢)'
 			],
 			cta: 'Start for free',
@@ -106,7 +106,7 @@
 			annualSavings: 'Save $58/yr',
 			features: [
 				'Everything in Starter',
-				'Up to 30 menu items',
+				'Up to 30 catalog items',
 				'Pickup windows & cutoff times',
 				'Inventory limits per item',
 				'Single pickup location',
@@ -124,7 +124,7 @@
 			annualSavings: 'Save $158/yr',
 			features: [
 				'Everything in Market',
-				'Unlimited menu items',
+				'Unlimited catalog items',
 				'Multiple pickup locations',
 				'Website embed',
 				'Priority support',
@@ -204,11 +204,11 @@
 		},
 		{
 			q: 'Do my customers need to download an app?',
-			a: 'No. Customers order from any phone or laptop browser. Share your link, your QR code, or embed the menu on your website.'
+			a: 'No. Customers order from any phone or laptop browser. Share your link, your QR code, or embed the catalog on your website.'
 		},
 		{
 			q: 'What happens when I hit 10 items on the Starter plan?',
-			a: 'Upgrade to Market ($29/mo) for 30 items or Pro ($79/mo) for unlimited. Your existing menu and orders carry over.'
+			a: 'Upgrade to Market ($29/mo) for 30 items or Pro ($79/mo) for unlimited. Your existing catalog and orders carry over.'
 		},
 		{
 			q: 'Can I pause my subscription in the off-season?',
@@ -428,7 +428,7 @@
 					<div class="flex-1 bg-muted/30 p-4">
 						<div class="mb-3 flex items-center justify-between">
 							<p class="text-xs font-semibold text-foreground">Overview</p>
-							<span class="rounded-md border border-primary px-2 py-0.5 text-[10px] font-semibold text-primary">Open live menu ↗</span>
+							<span class="rounded-md border border-primary px-2 py-0.5 text-[10px] font-semibold text-primary">Open live catalog ↗</span>
 						</div>
 						<div class="mb-3 grid grid-cols-3 gap-2">
 							{#each [{ label: 'Revenue (30d)', value: '$4,280', change: '+12.4%' }, { label: 'Orders', value: '63', change: '+8.2%' }, { label: 'Avg Order', value: '$67.90', change: '+3.1%' }] as kpi (kpi.label)}

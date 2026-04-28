@@ -7,7 +7,7 @@ export const user = pgTable('user', {
 	email: text('email').notNull().unique(),
 	emailVerified: boolean('email_verified').default(false).notNull(),
 	image: text('image'),
-	// Platform-level flag — internal team members can see all tenants
+	// Platform-level flag — internal team members can see all vendors
 	isInternal: boolean('is_internal').default(false).notNull(),
 	bannedAt: timestamp('banned_at'),
 	createdAt: timestamp('created_at').defaultNow().notNull(),

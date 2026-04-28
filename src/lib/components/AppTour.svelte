@@ -43,10 +43,10 @@
 			action: { label: 'Go to Branding', href: '/dashboard/settings/branding' }
 		},
 		{
-			selector: '[data-tour="view-menu"]',
+			selector: '[data-tour="view-catalog"]',
 			title: "You're all set!",
 			description:
-				"That's everything you need to start taking orders. Click Open Live View button menu anytime to preview your ordering page exactly as your customers see it.",
+				"That's everything you need to start taking orders. Click Open Live Catalog anytime to preview your ordering page exactly as your customers see it.",
 			action: null
 		}
 	];

@@ -46,7 +46,7 @@ function persist() {
 }
 
 export const cart = {
-	/** Call once per page/layout when the tenant slug is known */
+	/** Call once per page/layout when the vendor slug is known */
 	init(slug: string) {
 		if (_slug === slug) return;
 		_slug = slug;

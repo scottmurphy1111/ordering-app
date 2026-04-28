@@ -16,11 +16,11 @@ export const TIERS = [
 		price: 0,
 		itemLimit: 10,
 		features: [
-			'Up to 10 menu items',
+			'Up to 10 catalog items',
 			'Online ordering & payments',
 			'Order management',
 			'Customer email receipts',
-			'Menu QR code'
+			'Catalog QR code'
 		]
 	},
 	{
@@ -32,10 +32,10 @@ export const TIERS = [
 		annualSavings: 168,
 		itemLimit: null,
 		features: [
-			'Unlimited menu items',
+			'Unlimited catalog items',
 			'Everything in Starter',
 			'All add-ons unlocked',
-			'Bulk import menu items via CSV',
+			'Bulk import catalog items via CSV',
 			'White-label — remove OrderLocal branding',
 			'Integrations — QuickBooks, Xero, Mailchimp, Zapier & more (coming soon)',
 			'Dedicated support'

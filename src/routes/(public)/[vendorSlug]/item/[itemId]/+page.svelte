@@ -8,7 +8,7 @@
 
 	let { data }: { data: PageData } = $props();
 
-	onMount(() => cart.init(data.tenantSlug));
+	onMount(() => cart.init(data.vendorSlug));
 
 	const modifierGroups = $derived(data.modifierGroups);
 	const basePrice = $derived(data.item.discountedPrice ?? data.item.price);
@@ -64,7 +64,7 @@
 			selectedModifiers,
 			imageUrl: primaryImage?.url
 		});
-		goto(resolve(`/${data.tenantSlug}/menu`));
+		goto(resolve(`/${data.vendorSlug}/catalog`));
 	}
 </script>
 
@@ -77,11 +77,11 @@
 	<header style="background-color: var(--background-color);">
 		<div class="mx-auto max-w-lg px-4 py-4">
 			<a
-				href={resolve(`/${data.tenantSlug}/menu`)}
+				href={resolve(`/${data.vendorSlug}/catalog`)}
 				class="inline-flex items-center gap-1 text-sm font-medium transition-opacity hover:opacity-75"
 				style="color: var(--foreground-color);"
 			>
-				<Icon icon="mdi:arrow-left" class="h-4 w-4" /> Back to menu
+				<Icon icon="mdi:arrow-left" class="h-4 w-4" /> Back to catalog
 			</a>
 		</div>
 	</header>

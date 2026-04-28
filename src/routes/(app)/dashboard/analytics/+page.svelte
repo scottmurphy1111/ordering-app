@@ -246,7 +246,7 @@
 					{/if}
 					<div class="mt-3 border-t border-gray-100 pt-3">
 						<a href={resolve('/dashboard/catalog/items')} class="text-sm text-green-600 hover:underline">
-							View all menu items →
+							View all catalog items →
 						</a>
 					</div>
 				{/if}
@@ -494,7 +494,7 @@
 								>
 									<Icon icon="mdi:alert-outline" class="mt-0.5 h-4 w-4 shrink-0" />
 									<span>
-										Your menu items aren't assigned to categories yet.
+										Your catalog items aren't assigned to categories yet.
 										<a
 											href={resolve('/dashboard/catalog/categories')}
 											class="font-medium underline"

@@ -19,7 +19,7 @@
 
 	let search = $state('');
 
-	const filteredTenants = $derived(
+	const filteredVendors = $derived(
 		search.trim()
 			? data.vendors.filter(
 					(t) =>
@@ -45,7 +45,7 @@
 <div class="max-w-5xl">
 	<div class="mb-6 flex items-center justify-between">
 		<div>
-			<h1 class="text-2xl font-bold text-foreground">Tenants</h1>
+			<h1 class="text-2xl font-bold text-foreground">Vendors</h1>
 			<p class="mt-0.5 text-sm text-muted-foreground">
 				{data.vendors.length} vendor{data.vendors.length === 1 ? '' : 's'} total
 			</p>
@@ -59,7 +59,7 @@
 				/>
 				<input
 					type="search"
-					placeholder="Search tenants..."
+					placeholder="Search vendors..."
 					bind:value={search}
 					class="w-full rounded-lg border bg-background py-2 pr-3 pl-9 text-sm focus:border-gray-400 focus:ring-1 focus:ring-ring focus:outline-none"
 				/>
@@ -75,9 +75,9 @@
 		</div>
 	{/if}
 
-	{#if filteredTenants.length === 0}
+	{#if filteredVendors.length === 0}
 		<div class="rounded-xl border border-dashed p-10 text-center">
-			<p class="text-sm text-muted-foreground">No tenants found.</p>
+			<p class="text-sm text-muted-foreground">No vendors found.</p>
 		</div>
 	{:else}
 		<Card class="p-0 shadow-sm">
@@ -85,7 +85,7 @@
 				<Table>
 					<TableHeader>
 						<TableRow class="hover:bg-transparent">
-							<TableHead class="px-4 py-2.5 text-muted-foreground">Tenant</TableHead>
+							<TableHead class="px-4 py-2.5 text-muted-foreground">Vendor</TableHead>
 							<TableHead class="px-4 py-2.5 text-muted-foreground">Type</TableHead>
 							<TableHead class="hidden px-4 py-2.5 text-muted-foreground sm:table-cell">Plan</TableHead>
 							<TableHead class="hidden px-4 py-2.5 text-muted-foreground md:table-cell">Created</TableHead>
@@ -94,7 +94,7 @@
 						</TableRow>
 					</TableHeader>
 					<TableBody>
-						{#each filteredTenants as t (t.id)}
+						{#each filteredVendors as t (t.id)}
 							<TableRow>
 								<TableCell class="px-4 py-3">
 									<p class="font-medium text-foreground">{t.name}</p>
@@ -127,7 +127,7 @@
 													type="submit"
 													onclick={async (e) => {
 														e.preventDefault();
-														if (await confirmDialog('Restore this tenant?'))
+														if (await confirmDialog('Restore this vendor?'))
 															(e.currentTarget as HTMLButtonElement).form?.requestSubmit();
 													}}
 													variant="outline"
@@ -144,7 +144,7 @@
 													type="submit"
 													onclick={async (e) => {
 														e.preventDefault();
-														if (await confirmDialog('Archive this tenant? It will be deactivated but not deleted.'))
+														if (await confirmDialog('Archive this vendor? It will be deactivated but not deleted.'))
 															(e.currentTarget as HTMLButtonElement).form?.requestSubmit();
 													}}
 													variant="ghost"
@@ -166,7 +166,7 @@
 														e.preventDefault();
 														if (
 															await confirmDialog(
-																`Delete "${t.name}"? This is a soft delete — the tenant can be restored.`
+																`Delete "${t.name}"? This is a soft delete — the vendor can be restored.`
 															)
 														)
 															(e.currentTarget as HTMLButtonElement).form?.requestSubmit();
