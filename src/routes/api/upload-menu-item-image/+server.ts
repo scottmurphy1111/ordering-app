@@ -6,7 +6,7 @@ export async function POST(event: RequestEvent) {
 	const { request, locals } = event;
 
 	if (!locals.user) throw error(401, 'Unauthorized');
-	if (!locals.tenantId) throw error(400, 'No tenant selected');
+	if (!locals.vendorId) throw error(400, 'No vendor selected');
 
 	const formData = await request.formData();
 	const file = formData.get('image');
@@ -18,10 +18,10 @@ export async function POST(event: RequestEvent) {
 	if (file.size > 5 * 1024 * 1024) throw error(400, 'File too large (max 5MB)');
 
 	try {
-		const url = await uploadToR2(file, `${locals.tenant!.slug}/menu-items/item-${locals.tenantId}`);
+		const url = await uploadToR2(file, `${locals.vendor!.slug}/catalog-items/item-${locals.vendorId}`);
 		return json({ url });
 	} catch (err) {
-		console.error('Menu item image upload error:', err);
+		console.error('Catalog item image upload error:', err);
 		throw error(500, 'Failed to upload image');
 	}
 }

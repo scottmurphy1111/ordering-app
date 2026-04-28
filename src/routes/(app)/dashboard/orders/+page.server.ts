@@ -3,7 +3,7 @@ import { fail } from '@sveltejs/kit';
 import { db } from '$lib/server/db';
 import { eq, and, desc, or, not, inArray, gte, isNotNull, sql } from 'drizzle-orm';
 import { orders } from '$lib/server/db/schema';
-import { tenant } from '$lib/server/db/tenant';
+import { vendor } from '$lib/server/db/vendor';
 import Stripe from 'stripe';
 import { sendEmail } from '$lib/server/email';
 import { orderReadyEmail } from '$lib/server/email/templates/orderReady';
@@ -14,7 +14,7 @@ const HISTORY_CUTOFF_MS = 24 * 60 * 60 * 1000;
 
 export const load: PageServerLoad = async ({ locals, url, depends }) => {
 	depends('app:orders');
-	const tenantId = locals.tenantId!;
+	const vendorId = locals.vendorId!;
 	const statusFilter = url.searchParams.get('status') ?? '';
 
 	const cutoff = new Date(Date.now() - HISTORY_CUTOFF_MS);
@@ -22,8 +22,7 @@ export const load: PageServerLoad = async ({ locals, url, depends }) => {
 	todayStart.setHours(0, 0, 0, 0);
 
 	const whereConditions = [
-		eq(orders.tenantId, tenantId),
-		// Exclude terminal orders older than 24h — those belong in /orders/history
+		eq(orders.vendorId, vendorId),
 		or(not(inArray(orders.status, ['fulfilled', 'cancelled'])), gte(orders.updatedAt, cutoff))!
 	];
 	if (statusFilter) {
@@ -31,7 +30,7 @@ export const load: PageServerLoad = async ({ locals, url, depends }) => {
 	}
 
 	const baseConditions = [
-		eq(orders.tenantId, tenantId),
+		eq(orders.vendorId, vendorId),
 		or(not(inArray(orders.status, ['fulfilled', 'cancelled'])), gte(orders.updatedAt, cutoff))!
 	];
 
@@ -70,7 +69,7 @@ export const load: PageServerLoad = async ({ locals, url, depends }) => {
 			.from(orders)
 			.where(
 				and(
-					eq(orders.tenantId, tenantId),
+					eq(orders.vendorId, vendorId),
 					isNotNull(orders.scheduledFor),
 					or(
 						not(inArray(orders.status, ['fulfilled', 'cancelled'])),
@@ -81,7 +80,7 @@ export const load: PageServerLoad = async ({ locals, url, depends }) => {
 		db
 			.select({ total: sql<number>`coalesce(sum(total), 0)` })
 			.from(orders)
-			.where(and(eq(orders.tenantId, tenantId), gte(orders.createdAt, todayStart)))
+			.where(and(eq(orders.vendorId, vendorId), gte(orders.createdAt, todayStart)))
 	]);
 
 	const statusCounts = countRows.reduce<Record<string, number>>((acc, o) => {
@@ -100,7 +99,7 @@ export const load: PageServerLoad = async ({ locals, url, depends }) => {
 
 export const actions: Actions = {
 	updateStatus: async ({ request, locals }) => {
-		const tenantId = locals.tenantId!;
+		const vendorId = locals.vendorId!;
 		const formData = await request.formData();
 		const id = parseInt(formData.get('id')?.toString() ?? '');
 		const status = formData.get('status')?.toString();
@@ -109,21 +108,21 @@ export const actions: Actions = {
 		const [order] = await db
 			.update(orders)
 			.set({ status: status as typeof orders.status._.data, updatedAt: new Date() })
-			.where(and(eq(orders.id, id), eq(orders.tenantId, tenantId)))
+			.where(and(eq(orders.id, id), eq(orders.vendorId, vendorId)))
 			.returning();
 
 		if (status === 'ready' && order?.customerEmail) {
-			const tenantRecord = await db.query.tenant.findFirst({
-				where: eq(tenant.id, tenantId),
+			const vendorRecord = await db.query.vendor.findFirst({
+				where: eq(vendor.id, vendorId),
 				columns: { name: true, backgroundColor: true }
 			});
-			if (tenantRecord) {
+			if (vendorRecord) {
 				await sendEmail({
 					to: order.customerEmail,
-					subject: `Your order is ready — ${tenantRecord.name}`,
+					subject: `Your order is ready — ${vendorRecord.name}`,
 					html: orderReadyEmail({
-						tenantName: tenantRecord.name,
-						primaryColor: tenantRecord.backgroundColor ?? undefined,
+						tenantName: vendorRecord.name,
+						primaryColor: vendorRecord.backgroundColor ?? undefined,
 						orderNumber: order.orderNumber,
 						customerName: order.customerName ?? 'there',
 						total: order.total,
@@ -137,7 +136,7 @@ export const actions: Actions = {
 	},
 
 	cancel: async ({ request, locals }) => {
-		const tenantId = locals.tenantId!;
+		const vendorId = locals.vendorId!;
 		const formData = await request.formData();
 		const id = parseInt(formData.get('id')?.toString() ?? '');
 		if (isNaN(id)) return fail(400, { error: 'Invalid' });
@@ -145,21 +144,21 @@ export const actions: Actions = {
 		const [order] = await db
 			.update(orders)
 			.set({ status: 'cancelled', updatedAt: new Date() })
-			.where(and(eq(orders.id, id), eq(orders.tenantId, tenantId)))
+			.where(and(eq(orders.id, id), eq(orders.vendorId, vendorId)))
 			.returning();
 
 		if (order?.customerEmail) {
-			const tenantRecord = await db.query.tenant.findFirst({
-				where: eq(tenant.id, tenantId),
+			const vendorRecord = await db.query.vendor.findFirst({
+				where: eq(vendor.id, vendorId),
 				columns: { name: true, backgroundColor: true }
 			});
-			if (tenantRecord) {
+			if (vendorRecord) {
 				await sendEmail({
 					to: order.customerEmail,
-					subject: `Order ${order.orderNumber} cancelled — ${tenantRecord.name}`,
+					subject: `Order ${order.orderNumber} cancelled — ${vendorRecord.name}`,
 					html: orderCancelledEmail({
-						tenantName: tenantRecord.name,
-						primaryColor: tenantRecord.backgroundColor ?? undefined,
+						tenantName: vendorRecord.name,
+						primaryColor: vendorRecord.backgroundColor ?? undefined,
 						orderNumber: order.orderNumber,
 						customerName: order.customerName ?? 'there',
 						total: order.total
@@ -172,17 +171,17 @@ export const actions: Actions = {
 	},
 
 	refund: async ({ request, locals }) => {
-		const tenantId = locals.tenantId!;
+		const vendorId = locals.vendorId!;
 		const formData = await request.formData();
 		const id = parseInt(formData.get('id')?.toString() ?? '');
 		if (isNaN(id)) return fail(400, { error: 'Invalid' });
 
-		const [orderRow, tenantRecord] = await Promise.all([
+		const [orderRow, vendorRecord] = await Promise.all([
 			db.query.orders.findFirst({
-				where: and(eq(orders.id, id), eq(orders.tenantId, tenantId))
+				where: and(eq(orders.id, id), eq(orders.vendorId, vendorId))
 			}),
-			db.query.tenant.findFirst({
-				where: eq(tenant.id, tenantId),
+			db.query.vendor.findFirst({
+				where: eq(vendor.id, vendorId),
 				columns: { stripeSecretKey: true, name: true, backgroundColor: true }
 			})
 		]);
@@ -193,10 +192,10 @@ export const actions: Actions = {
 		if (orderRow.paymentStatus !== 'paid') return fail(400, { error: 'Order has not been paid' });
 		if (!orderRow.stripePaymentIntentId)
 			return fail(400, { error: 'No payment found for this order' });
-		if (!tenantRecord?.stripeSecretKey)
-			return fail(500, { error: 'Stripe not configured for this tenant' });
+		if (!vendorRecord?.stripeSecretKey)
+			return fail(500, { error: 'Stripe not configured for this vendor' });
 
-		const stripe = new Stripe(tenantRecord.stripeSecretKey);
+		const stripe = new Stripe(vendorRecord.stripeSecretKey);
 
 		let paymentIntentId = orderRow.stripePaymentIntentId;
 		if (paymentIntentId.startsWith('cs_')) {
@@ -227,13 +226,13 @@ export const actions: Actions = {
 			.where(eq(orders.id, id))
 			.returning();
 
-		if (refundedOrder?.customerEmail && tenantRecord) {
+		if (refundedOrder?.customerEmail && vendorRecord) {
 			await sendEmail({
 				to: refundedOrder.customerEmail,
-				subject: `Refund processed for order ${refundedOrder.orderNumber} — ${tenantRecord.name}`,
+				subject: `Refund processed for order ${refundedOrder.orderNumber} — ${vendorRecord.name}`,
 				html: orderRefundedEmail({
-					tenantName: tenantRecord.name,
-					primaryColor: tenantRecord.backgroundColor ?? undefined,
+					tenantName: vendorRecord.name,
+					primaryColor: vendorRecord.backgroundColor ?? undefined,
 					orderNumber: refundedOrder.orderNumber,
 					customerName: refundedOrder.customerName ?? 'there',
 					total: refundedOrder.total

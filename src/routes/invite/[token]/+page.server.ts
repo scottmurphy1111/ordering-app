@@ -2,34 +2,32 @@ import type { PageServerLoad, Actions } from './$types';
 import { fail, redirect } from '@sveltejs/kit';
 import { db } from '$lib/server/db';
 import { eq, and } from 'drizzle-orm';
-import { tenantUsers, tenantInvitations } from '$lib/server/db/tenant';
-import { tenant } from '$lib/server/db/schema';
+import { vendorUsers, vendorInvitations, vendor } from '$lib/server/db/vendor';
 import { user } from '$lib/server/db/auth.schema';
 import { auth } from '$lib/server/auth';
 import { APIError } from 'better-auth/api';
 
 async function acceptInvite(token: string, userId: string) {
-	const invite = await db.query.tenantInvitations.findFirst({
-		where: eq(tenantInvitations.id, token)
+	const invite = await db.query.vendorInvitations.findFirst({
+		where: eq(vendorInvitations.id, token)
 	});
 	if (!invite || invite.acceptedAt || invite.expiresAt < new Date()) return false;
 
-	// Add to tenant (ignore if already a member)
-	const existing = await db.query.tenantUsers.findFirst({
-		where: and(eq(tenantUsers.tenantId, invite.tenantId), eq(tenantUsers.userId, userId))
+	const existing = await db.query.vendorUsers.findFirst({
+		where: and(eq(vendorUsers.vendorId, invite.vendorId), eq(vendorUsers.userId, userId))
 	});
 	if (!existing) {
-		await db.insert(tenantUsers).values({
-			tenantId: invite.tenantId,
+		await db.insert(vendorUsers).values({
+			vendorId: invite.vendorId,
 			userId,
 			role: invite.role as 'owner' | 'manager' | 'kitchen' | 'staff' | 'viewer'
 		});
 	}
 
 	await db
-		.update(tenantInvitations)
+		.update(vendorInvitations)
 		.set({ acceptedAt: new Date() })
-		.where(eq(tenantInvitations.id, token));
+		.where(eq(vendorInvitations.id, token));
 
 	return true;
 }
@@ -37,36 +35,35 @@ async function acceptInvite(token: string, userId: string) {
 export const load: PageServerLoad = async ({ params, locals }) => {
 	const { token } = params;
 
-	const invite = await db.query.tenantInvitations.findFirst({
-		where: eq(tenantInvitations.id, token)
+	const invite = await db.query.vendorInvitations.findFirst({
+		where: eq(vendorInvitations.id, token)
 	});
 
 	if (!invite) return { invalid: true };
 	if (invite.acceptedAt) return { alreadyAccepted: true };
 	if (invite.expiresAt < new Date()) return { expired: true };
 
-	const tenantRecord = await db.query.tenant.findFirst({
-		where: eq(tenant.id, invite.tenantId)
+	const vendorRecord = await db.query.vendor.findFirst({
+		where: eq(vendor.id, invite.vendorId)
 	});
 
-	// If already logged in, try to auto-accept
 	if (locals.user) {
 		if (locals.user.email.toLowerCase() !== invite.email.toLowerCase()) {
 			return {
 				invite: { email: invite.email, role: invite.role, expiresAt: invite.expiresAt },
-				tenantName: tenantRecord?.name ?? '',
+				tenantName: vendorRecord?.name ?? '',
 				wrongEmail: locals.user.email
 			};
 		}
 		const accepted = await acceptInvite(token, locals.user.id);
 		if (accepted) {
-			redirect(302, '/tenants');
+			redirect(302, '/vendors');
 		}
 	}
 
 	return {
 		invite: { email: invite.email, role: invite.role, expiresAt: invite.expiresAt },
-		tenantName: tenantRecord?.name ?? ''
+		tenantName: vendorRecord?.name ?? ''
 	};
 };
 
@@ -78,8 +75,8 @@ export const actions: Actions = {
 		const email = formData.get('email')?.toString() ?? '';
 		const password = formData.get('password')?.toString() ?? '';
 
-		const invite = await db.query.tenantInvitations.findFirst({
-			where: eq(tenantInvitations.id, token)
+		const invite = await db.query.vendorInvitations.findFirst({
+			where: eq(vendorInvitations.id, token)
 		});
 		if (!invite || invite.acceptedAt || invite.expiresAt < new Date()) {
 			return fail(400, { message: 'This invite is no longer valid.' });
@@ -103,7 +100,7 @@ export const actions: Actions = {
 		if (!foundUser) return fail(400, { message: 'Sign in failed' });
 
 		await acceptInvite(token, foundUser.id);
-		redirect(302, '/tenants');
+		redirect(302, '/vendors');
 	},
 
 	signUpAndAccept: async (event) => {
@@ -114,8 +111,8 @@ export const actions: Actions = {
 		const password = formData.get('password')?.toString() ?? '';
 		const name = formData.get('name')?.toString() ?? '';
 
-		const invite = await db.query.tenantInvitations.findFirst({
-			where: eq(tenantInvitations.id, token)
+		const invite = await db.query.vendorInvitations.findFirst({
+			where: eq(vendorInvitations.id, token)
 		});
 		if (!invite || invite.acceptedAt || invite.expiresAt < new Date()) {
 			return fail(400, { message: 'This invite is no longer valid.' });
@@ -139,6 +136,6 @@ export const actions: Actions = {
 		if (!foundUser) return fail(400, { message: 'Account created but could not sign in' });
 
 		await acceptInvite(token, foundUser.id);
-		redirect(302, '/tenants');
+		redirect(302, '/vendors');
 	}
 };

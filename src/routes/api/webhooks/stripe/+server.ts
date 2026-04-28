@@ -7,7 +7,7 @@ import { db } from '$lib/server/db';
 import { eq, and } from 'drizzle-orm';
 import { orders, promoCodes } from '$lib/server/db/schema';
 import { loyaltyAccounts } from '$lib/server/db/loyalty';
-import { tenant } from '$lib/server/db/tenant';
+import { vendor } from '$lib/server/db/vendor';
 import { DEFAULT_LOYALTY_CONFIG } from '$lib/server/db/loyalty';
 import type { LoyaltyConfig } from '$lib/server/db/loyalty';
 import { sendEmail } from '$lib/server/email';
@@ -23,7 +23,6 @@ export const POST: RequestHandler = async ({ request }) => {
 
 	if (!env.STRIPE_WEBHOOK_SECRET) throw error(500, 'STRIPE_WEBHOOK_SECRET not set');
 
-	// Read raw body — must be text, not parsed, for signature verification
 	const body = await request.text();
 	const signature = request.headers.get('stripe-signature');
 
@@ -53,13 +52,8 @@ async function handleEvent(event: Stripe.Event) {
 			const intent = event.data.object as Stripe.PaymentIntent;
 			await db
 				.update(orders)
-				.set({
-					paymentStatus: 'paid',
-					status: 'confirmed',
-					updatedAt: new Date()
-				})
+				.set({ paymentStatus: 'paid', status: 'confirmed', updatedAt: new Date() })
 				.where(eq(orders.stripePaymentIntentId, intent.id));
-			console.log(`Order confirmed for PaymentIntent ${intent.id}`);
 			break;
 		}
 
@@ -67,13 +61,8 @@ async function handleEvent(event: Stripe.Event) {
 			const intent = event.data.object as Stripe.PaymentIntent;
 			await db
 				.update(orders)
-				.set({
-					paymentStatus: 'failed',
-					status: 'cancelled',
-					updatedAt: new Date()
-				})
+				.set({ paymentStatus: 'failed', status: 'cancelled', updatedAt: new Date() })
 				.where(eq(orders.stripePaymentIntentId, intent.id));
-			console.log(`Payment failed for PaymentIntent ${intent.id}`);
 			break;
 		}
 
@@ -81,11 +70,7 @@ async function handleEvent(event: Stripe.Event) {
 			const intent = event.data.object as Stripe.PaymentIntent;
 			await db
 				.update(orders)
-				.set({
-					paymentStatus: 'failed',
-					status: 'cancelled',
-					updatedAt: new Date()
-				})
+				.set({ paymentStatus: 'failed', status: 'cancelled', updatedAt: new Date() })
 				.where(eq(orders.stripePaymentIntentId, intent.id));
 			break;
 		}
@@ -99,16 +84,11 @@ async function handleEvent(event: Stripe.Event) {
 					: charge.payment_intent.id;
 			await db
 				.update(orders)
-				.set({
-					paymentStatus: 'refunded',
-					updatedAt: new Date()
-				})
+				.set({ paymentStatus: 'refunded', updatedAt: new Date() })
 				.where(eq(orders.stripePaymentIntentId, intentId));
-			console.log(`Order refunded for charge ${charge.id}`);
 			break;
 		}
 
-		// Primary path: match by metadata.orderId stored when session was created
 		case 'checkout.session.completed': {
 			const session = event.data.object as Stripe.Checkout.Session;
 			const orderId = session.metadata?.orderId ? parseInt(session.metadata.orderId) : null;
@@ -129,13 +109,12 @@ async function handleEvent(event: Stripe.Event) {
 					})
 					.where(eq(orders.id, orderId));
 
-				// Award loyalty — look up the order to get tenantId, email, and total
 				const order = await db.query.orders.findFirst({
 					where: eq(orders.id, orderId),
-					columns: { tenantId: true, customerEmail: true, customerName: true, total: true }
+					columns: { vendorId: true, customerEmail: true, customerName: true, total: true }
 				});
 				if (order?.customerEmail) {
-					await awardLoyalty(order.tenantId, order.customerEmail, order.customerName, order.total);
+					await awardLoyalty(order.vendorId, order.customerEmail, order.customerName, order.total);
 				}
 			} else if (intentId) {
 				await db
@@ -145,16 +124,15 @@ async function handleEvent(event: Stripe.Event) {
 
 				const order = await db.query.orders.findFirst({
 					where: eq(orders.stripePaymentIntentId, intentId),
-					columns: { tenantId: true, customerEmail: true, customerName: true, total: true }
+					columns: { vendorId: true, customerEmail: true, customerName: true, total: true }
 				});
 				if (order?.customerEmail) {
-					await awardLoyalty(order.tenantId, order.customerEmail, order.customerName, order.total);
+					await awardLoyalty(order.vendorId, order.customerEmail, order.customerName, order.total);
 				}
 			}
 			break;
 		}
 
-		// These fire as part of a normal Checkout/PaymentIntent flow — no action needed
 		case 'product.created':
 		case 'product.updated':
 		case 'price.created':
@@ -170,31 +148,31 @@ async function handleEvent(event: Stripe.Event) {
 }
 
 async function awardLoyalty(
-	tenantId: number,
+	vendorId: number,
 	email: string,
 	name: string | null,
 	totalCents: number
 ) {
-	const tenantRecord = await db.query.tenant.findFirst({
-		where: eq(tenant.id, tenantId),
+	const vendorRecord = await db.query.vendor.findFirst({
+		where: eq(vendor.id, vendorId),
 		columns: { addons: true, settings: true, name: true, backgroundColor: true }
 	});
 
 	const { hasAddon } = await import('$lib/billing');
-	if (!hasAddon(tenantRecord?.addons as string[] | null, 'loyalty')) return;
+	if (!hasAddon(vendorRecord?.addons as string[] | null, 'loyalty')) return;
 
-	const settings = tenantRecord?.settings as Record<string, unknown> | null;
+	const settings = vendorRecord?.settings as Record<string, unknown> | null;
 	const loyalty: LoyaltyConfig = (settings?.loyalty as LoyaltyConfig) ?? DEFAULT_LOYALTY_CONFIG;
 	if (!loyalty.enabled) return;
 
 	const existing = await db.query.loyaltyAccounts.findFirst({
-		where: and(eq(loyaltyAccounts.tenantId, tenantId), eq(loyaltyAccounts.email, email))
+		where: and(eq(loyaltyAccounts.vendorId, vendorId), eq(loyaltyAccounts.email, email))
 	});
 
 	const now = new Date();
 
-	const tenantName = tenantRecord?.name ?? 'Your restaurant';
-	const primaryColor = tenantRecord?.backgroundColor ?? '#000000';
+	const vendorName = vendorRecord?.name ?? 'Your store';
+	const primaryColor = vendorRecord?.backgroundColor ?? '#000000';
 
 	if (loyalty.type === 'stamps') {
 		const stamps = loyalty.stamps.stampsPerOrder ?? 1;
@@ -215,10 +193,10 @@ async function awardLoyalty(
 					lastOrderAt: now,
 					updatedAt: now
 				})
-				.where(and(eq(loyaltyAccounts.tenantId, tenantId), eq(loyaltyAccounts.email, email)));
+				.where(and(eq(loyaltyAccounts.vendorId, vendorId), eq(loyaltyAccounts.email, email)));
 		} else {
 			await db.insert(loyaltyAccounts).values({
-				tenantId,
+				vendorId,
 				email,
 				name,
 				currentStamps: stamps % rewardAt,
@@ -232,8 +210,8 @@ async function awardLoyalty(
 
 		if (rewardsEarned > 0) {
 			await issueRewardCode({
-				tenantId,
-				tenantName,
+				vendorId,
+				vendorName,
 				primaryColor,
 				email,
 				customerName: name ?? 'Valued customer',
@@ -249,8 +227,7 @@ async function awardLoyalty(
 		const redeemAt = loyalty.points.redeemAt ?? 100;
 		const prevPoints = existing?.currentPoints ?? 0;
 		const newPoints = prevPoints + earned;
-		const rewardsEarned =
-			Math.floor(newPoints / redeemAt) - Math.floor(prevPoints / redeemAt);
+		const rewardsEarned = Math.floor(newPoints / redeemAt) - Math.floor(prevPoints / redeemAt);
 
 		if (existing) {
 			await db
@@ -263,10 +240,10 @@ async function awardLoyalty(
 					lastOrderAt: now,
 					updatedAt: now
 				})
-				.where(and(eq(loyaltyAccounts.tenantId, tenantId), eq(loyaltyAccounts.email, email)));
+				.where(and(eq(loyaltyAccounts.vendorId, vendorId), eq(loyaltyAccounts.email, email)));
 		} else {
 			await db.insert(loyaltyAccounts).values({
-				tenantId,
+				vendorId,
 				email,
 				name,
 				currentStamps: 0,
@@ -280,8 +257,8 @@ async function awardLoyalty(
 
 		if (rewardsEarned > 0) {
 			await issueRewardCode({
-				tenantId,
-				tenantName,
+				vendorId,
+				vendorName,
 				primaryColor,
 				email,
 				customerName: name ?? 'Valued customer',
@@ -294,8 +271,8 @@ async function awardLoyalty(
 }
 
 async function issueRewardCode({
-	tenantId,
-	tenantName,
+	vendorId,
+	vendorName,
 	primaryColor,
 	email,
 	customerName,
@@ -304,8 +281,8 @@ async function issueRewardCode({
 	redeemValue,
 	rewardsEarned
 }: {
-	tenantId: number;
-	tenantName: string;
+	vendorId: number;
+	vendorName: string;
 	primaryColor: string;
 	email: string;
 	customerName: string;
@@ -318,7 +295,7 @@ async function issueRewardCode({
 
 	if (loyaltyType === 'stamps') {
 		await db.insert(promoCodes).values({
-			tenantId,
+			vendorId,
 			code,
 			description: rewardDescription ?? 'Loyalty reward',
 			type: 'percent',
@@ -327,7 +304,7 @@ async function issueRewardCode({
 		});
 	} else {
 		await db.insert(promoCodes).values({
-			tenantId,
+			vendorId,
 			code,
 			description: 'Loyalty points reward',
 			type: 'flat',
@@ -338,9 +315,9 @@ async function issueRewardCode({
 
 	await sendEmail({
 		to: email,
-		subject: `You've earned a reward at ${tenantName}!`,
+		subject: `You've earned a reward at ${vendorName}!`,
 		html: loyaltyRewardEmail({
-			tenantName,
+			tenantName: vendorName,
 			primaryColor,
 			customerName,
 			promoCode: code,

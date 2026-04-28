@@ -2,12 +2,12 @@ import type { PageServerLoad, Actions } from './$types';
 import { fail } from '@sveltejs/kit';
 import { db } from '$lib/server/db';
 import { eq } from 'drizzle-orm';
-import { tenant } from '$lib/server/db/schema';
+import { vendor } from '$lib/server/db/vendor';
 
 export const load: PageServerLoad = async ({ locals }) => {
-	const tenantId = locals.tenantId!;
-	const record = await db.query.tenant.findFirst({
-		where: eq(tenant.id, tenantId),
+	const vendorId = locals.vendorId!;
+	const record = await db.query.vendor.findFirst({
+		where: eq(vendor.id, vendorId),
 		columns: {
 			name: true,
 			legalName: true,
@@ -25,7 +25,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 
 export const actions: Actions = {
 	save: async ({ request, locals }) => {
-		const tenantId = locals.tenantId!;
+		const vendorId = locals.vendorId!;
 		const formData = await request.formData();
 
 		const name = formData.get('name')?.toString().trim();
@@ -51,24 +51,24 @@ export const actions: Actions = {
 		const address = { street, city, state, zip, country };
 
 		await db
-			.update(tenant)
+			.update(vendor)
 			.set({
 				name,
 				legalName,
-				type: type as typeof tenant.$inferSelect.type,
+				type: type as typeof vendor.$inferSelect.type,
 				phone,
 				email,
 				website,
 				address,
 				updatedAt: new Date()
 			})
-			.where(eq(tenant.id, tenantId));
+			.where(eq(vendor.id, vendorId));
 
 		return { success: true };
 	},
 
 	saveHours: async ({ request, locals }) => {
-		const tenantId = locals.tenantId!;
+		const vendorId = locals.vendorId!;
 		const formData = await request.formData();
 
 		const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
@@ -80,36 +80,36 @@ export const actions: Actions = {
 			hours[day] = closed ? { open, close, closed: true } : { open, close };
 		}
 
-		const record = await db.query.tenant.findFirst({
-			where: eq(tenant.id, tenantId),
+		const record = await db.query.vendor.findFirst({
+			where: eq(vendor.id, vendorId),
 			columns: { settings: true }
 		});
 		const current = (record?.settings ?? {}) as Record<string, unknown>;
 		await db
-			.update(tenant)
+			.update(vendor)
 			.set({ settings: { ...current, hours }, updatedAt: new Date() })
-			.where(eq(tenant.id, tenantId));
+			.where(eq(vendor.id, vendorId));
 
 		return { hoursSuccess: true };
 	},
 
 	saveDelivery: async ({ request, locals }) => {
-		const tenantId = locals.tenantId!;
+		const vendorId = locals.vendorId!;
 		const formData = await request.formData();
 
 		const enableDelivery = formData.get('enableDelivery') === 'on';
 		const deliveryFeeRaw = parseFloat(formData.get('deliveryFee')?.toString() ?? '0');
 		const deliveryFee = isNaN(deliveryFeeRaw) ? 0 : Math.round(deliveryFeeRaw * 100);
 
-		const record = await db.query.tenant.findFirst({
-			where: eq(tenant.id, tenantId),
+		const record = await db.query.vendor.findFirst({
+			where: eq(vendor.id, vendorId),
 			columns: { settings: true }
 		});
 		const current = (record?.settings ?? {}) as Record<string, unknown>;
 		await db
-			.update(tenant)
+			.update(vendor)
 			.set({ settings: { ...current, enableDelivery, deliveryFee }, updatedAt: new Date() })
-			.where(eq(tenant.id, tenantId));
+			.where(eq(vendor.id, vendorId));
 
 		return { deliverySuccess: true };
 	}

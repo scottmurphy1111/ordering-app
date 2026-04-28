@@ -6,7 +6,7 @@ import { auth } from '$lib/server/auth';
 import { svelteKitHandler } from 'better-auth/svelte-kit';
 import { db } from '$lib/server/db';
 import { eq, and } from 'drizzle-orm';
-import { tenant, tenantUsers } from '$lib/server/db/tenant';
+import { vendor, vendorUsers } from '$lib/server/db/vendor';
 import { user as userTable } from '$lib/server/db/auth.schema';
 import { ensureDevSeed, DEV_FAKE_USER, DEV_FAKE_SESSION } from '$lib/server/dev-bypass';
 
@@ -28,13 +28,13 @@ const handleBetterAuth: Handle = async ({ event, resolve }) => {
 	return svelteKitHandler({ event, resolve, auth, building });
 };
 
-const handleTenantContext: Handle = async ({ event, resolve }) => {
+const handleVendorContext: Handle = async ({ event, resolve }) => {
 	const { url, params, cookies } = event;
 
 	// Ban check — direct DB query bypasses the 5-min session cookie cache
 	const authExempt =
 		url.pathname.startsWith('/banned') ||
-		url.pathname.startsWith('/tenant-archived') ||
+		url.pathname.startsWith('/vendor-archived') ||
 		url.pathname.startsWith('/api/auth') ||
 		url.pathname.startsWith('/login') ||
 		url.pathname.startsWith('/verify');
@@ -46,61 +46,60 @@ const handleTenantContext: Handle = async ({ event, resolve }) => {
 		if (fresh?.bannedAt) throw redirect(303, '/banned');
 	}
 
-	// Public routes: tenant comes from URL param [tenantSlug]
+	// Public routes: vendor comes from URL param [tenantSlug]
 	if (params.tenantSlug) {
-		const currentTenant = await db.query.tenant.findFirst({
-			where: eq(tenant.slug, params.tenantSlug)
+		const currentVendor = await db.query.vendor.findFirst({
+			where: eq(vendor.slug, params.tenantSlug)
 		});
-		if (currentTenant?.isActive) {
-			event.locals.tenantId = currentTenant.id;
-			event.locals.tenant = currentTenant;
+		if (currentVendor?.isActive) {
+			event.locals.vendorId = currentVendor.id;
+			event.locals.vendor = currentVendor;
 		}
 	}
 
-	// Dashboard routes: tenant comes from selected-tenant cookie
+	// Dashboard routes: vendor comes from selected-vendor cookie
 	const isDashboard =
 		url.pathname.startsWith('/dashboard') ||
 		url.pathname.startsWith('/tenants') ||
 		url.pathname.startsWith('/api/');
-	if (isDashboard && !event.locals.tenantId) {
-		const tenantIdCookie = cookies.get('selected-tenant-id');
-		if (tenantIdCookie) {
-			const tenantId = parseInt(tenantIdCookie);
-			if (!isNaN(tenantId)) {
+	if (isDashboard && !event.locals.vendorId) {
+		const vendorIdCookie = cookies.get('selected-tenant-id');
+		if (vendorIdCookie) {
+			const vendorId = parseInt(vendorIdCookie);
+			if (!isNaN(vendorId)) {
 				const userId = event.locals.user?.id;
 				const isInternal = event.locals.user?.isInternal ?? false;
 
-				// Verify the user is actually a member of this tenant (internal users can access any)
+				// Verify the user is actually a member of this vendor (internal users can access any)
 				const membership =
 					userId && !isInternal
-						? await db.query.tenantUsers.findFirst({
-								where: and(eq(tenantUsers.tenantId, tenantId), eq(tenantUsers.userId, userId)),
-								columns: { tenantId: true }
+						? await db.query.vendorUsers.findFirst({
+								where: and(eq(vendorUsers.vendorId, vendorId), eq(vendorUsers.userId, userId)),
+								columns: { vendorId: true }
 							})
-						: { tenantId }; // internal users skip the membership check
+						: { vendorId }; // internal users skip the membership check
 
 				if (membership) {
-					const currentTenant = await db.query.tenant.findFirst({
-						where: eq(tenant.id, tenantId)
+					const currentVendor = await db.query.vendor.findFirst({
+						where: eq(vendor.id, vendorId)
 					});
-					if (currentTenant?.isActive) {
-						event.locals.tenantId = currentTenant.id;
-						event.locals.tenant = currentTenant;
+					if (currentVendor?.isActive) {
+						event.locals.vendorId = currentVendor.id;
+						event.locals.vendor = currentVendor;
 
-						// Resolve the user's role within this tenant
+						// Resolve the user's role within this vendor
 						if (userId && !isInternal) {
-							const memberRecord = await db.query.tenantUsers.findFirst({
-								where: and(eq(tenantUsers.tenantId, tenantId), eq(tenantUsers.userId, userId)),
+							const memberRecord = await db.query.vendorUsers.findFirst({
+								where: and(eq(vendorUsers.vendorId, vendorId), eq(vendorUsers.userId, userId)),
 								columns: { role: true }
 							});
 							if (memberRecord) {
-								event.locals.tenantRole =
-									memberRecord.role as import('$lib/server/roles').TenantRole;
+								event.locals.vendorRole =
+									memberRecord.role as import('$lib/server/roles').VendorRole;
 							}
 						}
-					} else if (currentTenant && !url.pathname.startsWith('/tenant-archived')) {
-						// Tenant exists but has been archived or deleted
-						throw redirect(303, '/tenant-archived');
+					} else if (currentVendor && !url.pathname.startsWith('/vendor-archived')) {
+						throw redirect(303, '/vendor-archived');
 					}
 				}
 			}
@@ -113,17 +112,17 @@ const handleTenantContext: Handle = async ({ event, resolve }) => {
 export const handle: Handle = async ({ event, resolve }) => {
 	if (BYPASS_AUTH) {
 		console.warn(`[DEV AUTH BYPASS ACTIVE] ${event.request.method} ${event.url.pathname}`);
-		const devTenant = await ensureDevSeed();
+		const devVendor = await ensureDevSeed();
 		event.locals.user = DEV_FAKE_USER;
 		event.locals.session = DEV_FAKE_SESSION;
-		event.locals.tenantId = devTenant.id;
-		event.locals.tenant = devTenant;
-		event.locals.tenantRole = 'owner';
+		event.locals.vendorId = devVendor.id;
+		event.locals.vendor = devVendor;
+		event.locals.vendorRole = 'owner';
 		return resolve(event);
 	}
 
 	return handleBetterAuth({
 		event,
-		resolve: (event) => handleTenantContext({ event, resolve })
+		resolve: (event) => handleVendorContext({ event, resolve })
 	});
 };

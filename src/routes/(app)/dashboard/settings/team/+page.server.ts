@@ -2,36 +2,33 @@ import type { PageServerLoad, Actions } from './$types';
 import { fail } from '@sveltejs/kit';
 import { db } from '$lib/server/db';
 import { eq, and, gt, isNull } from 'drizzle-orm';
-import { tenantUsers, tenantInvitations } from '$lib/server/db/tenant';
+import { vendorUsers, vendorInvitations, vendor } from '$lib/server/db/vendor';
 import { user } from '$lib/server/db/auth.schema';
 import { env } from '$env/dynamic/private';
 import { sendEmail } from '$lib/server/email';
 import { inviteEmail } from '$lib/server/email/templates/invite';
-import { tenant } from '$lib/server/db/tenant';
 
 import { ROLES, requireOwner } from '$lib/server/roles';
 type Role = 'owner' | 'admin' | 'staff' | 'viewer';
 
 export const load: PageServerLoad = async ({ locals }) => {
-	const tenantId = locals.tenantId!;
+	const vendorId = locals.vendorId!;
 	const currentUserId = locals.user!.id;
 
-	// Fetch current tenant members with user details
 	const members = await db
 		.select({
-			userId: tenantUsers.userId,
-			role: tenantUsers.role,
-			assignedAt: tenantUsers.assignedAt,
+			userId: vendorUsers.userId,
+			role: vendorUsers.role,
+			assignedAt: vendorUsers.assignedAt,
 			name: user.name,
 			email: user.email,
 			isInternal: user.isInternal
 		})
-		.from(tenantUsers)
-		.innerJoin(user, eq(tenantUsers.userId, user.id))
-		.where(eq(tenantUsers.tenantId, tenantId))
-		.orderBy(tenantUsers.assignedAt);
+		.from(vendorUsers)
+		.innerJoin(user, eq(vendorUsers.userId, user.id))
+		.where(eq(vendorUsers.vendorId, vendorId))
+		.orderBy(vendorUsers.assignedAt);
 
-	// Fetch all internal (platform) users — visible to owners and internal users
 	const currentMember = members.find((m) => m.userId === currentUserId);
 	const canManageInternal = currentMember?.role === 'owner' || locals.user?.isInternal === true;
 
@@ -43,26 +40,25 @@ export const load: PageServerLoad = async ({ locals }) => {
 			.where(eq(user.isInternal, true));
 	}
 
-	// Fetch pending (not yet accepted, not expired) invitations for this tenant
 	const pendingInvitations =
 		currentMember?.role === 'owner' || locals.user?.isInternal
 			? await db
 					.select({
-						id: tenantInvitations.id,
-						email: tenantInvitations.email,
-						role: tenantInvitations.role,
-						expiresAt: tenantInvitations.expiresAt,
-						createdAt: tenantInvitations.createdAt
+						id: vendorInvitations.id,
+						email: vendorInvitations.email,
+						role: vendorInvitations.role,
+						expiresAt: vendorInvitations.expiresAt,
+						createdAt: vendorInvitations.createdAt
 					})
-					.from(tenantInvitations)
+					.from(vendorInvitations)
 					.where(
 						and(
-							eq(tenantInvitations.tenantId, tenantId),
-							isNull(tenantInvitations.acceptedAt),
-							gt(tenantInvitations.expiresAt, new Date())
+							eq(vendorInvitations.vendorId, vendorId),
+							isNull(vendorInvitations.acceptedAt),
+							gt(vendorInvitations.expiresAt, new Date())
 						)
 					)
-					.orderBy(tenantInvitations.createdAt)
+					.orderBy(vendorInvitations.createdAt)
 			: [];
 
 	return {
@@ -78,10 +74,9 @@ export const load: PageServerLoad = async ({ locals }) => {
 };
 
 export const actions: Actions = {
-	// Add an existing user to this tenant by email
 	addMember: async ({ request, locals }) => {
 		requireOwner(locals);
-		const tenantId = locals.tenantId!;
+		const vendorId = locals.vendorId!;
 		const formData = await request.formData();
 		const email = formData.get('email')?.toString().trim().toLowerCase();
 		const role = formData.get('role')?.toString() as Role;
@@ -92,19 +87,18 @@ export const actions: Actions = {
 		const foundUser = await db.query.user.findFirst({ where: eq(user.email, email) });
 		if (!foundUser) return fail(404, { addError: `No account found for ${email}` });
 
-		const existing = await db.query.tenantUsers.findFirst({
-			where: and(eq(tenantUsers.tenantId, tenantId), eq(tenantUsers.userId, foundUser.id))
+		const existing = await db.query.vendorUsers.findFirst({
+			where: and(eq(vendorUsers.vendorId, vendorId), eq(vendorUsers.userId, foundUser.id))
 		});
 		if (existing) return fail(409, { addError: `${email} is already a member` });
 
-		await db.insert(tenantUsers).values({ tenantId, userId: foundUser.id, role });
+		await db.insert(vendorUsers).values({ vendorId, userId: foundUser.id, role });
 		return { addSuccess: true };
 	},
 
-	// Send an invite link to an email (works for users who don't have an account yet)
 	sendInvite: async ({ request, locals }) => {
 		requireOwner(locals);
-		const tenantId = locals.tenantId!;
+		const vendorId = locals.vendorId!;
 		const currentUserId = locals.user!.id;
 		const formData = await request.formData();
 		const email = formData.get('email')?.toString().trim().toLowerCase();
@@ -113,26 +107,24 @@ export const actions: Actions = {
 		if (!email) return fail(400, { inviteError: 'Email is required' });
 		if (!ROLES.includes(role)) return fail(400, { inviteError: 'Invalid role' });
 
-		// Don't invite someone already a member
 		const existingUser = await db.query.user.findFirst({ where: eq(user.email, email) });
 		if (existingUser) {
-			const existingMember = await db.query.tenantUsers.findFirst({
-				where: and(eq(tenantUsers.tenantId, tenantId), eq(tenantUsers.userId, existingUser.id))
+			const existingMember = await db.query.vendorUsers.findFirst({
+				where: and(eq(vendorUsers.vendorId, vendorId), eq(vendorUsers.userId, existingUser.id))
 			});
 			if (existingMember) return fail(409, { inviteError: `${email} is already a member` });
 		}
 
-		// Cancel any existing pending invite for the same email in this tenant
 		await db
-			.delete(tenantInvitations)
-			.where(and(eq(tenantInvitations.tenantId, tenantId), eq(tenantInvitations.email, email)));
+			.delete(vendorInvitations)
+			.where(and(eq(vendorInvitations.vendorId, vendorId), eq(vendorInvitations.email, email)));
 
 		const token = crypto.randomUUID();
-		const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
+		const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
 
-		await db.insert(tenantInvitations).values({
+		await db.insert(vendorInvitations).values({
 			id: token,
-			tenantId,
+			vendorId,
 			email,
 			role,
 			invitedByUserId: currentUserId,
@@ -141,19 +133,19 @@ export const actions: Actions = {
 
 		const inviteUrl = `${env.ORIGIN}/invite/${token}`;
 
-		const tenantRecord = await db.query.tenant.findFirst({
-			where: eq(tenant.id, tenantId),
+		const vendorRecord = await db.query.vendor.findFirst({
+			where: eq(vendor.id, vendorId),
 			columns: { name: true, backgroundColor: true }
 		});
 		const inviterName = locals.user!.name ?? locals.user!.email;
 
-		if (tenantRecord) {
+		if (vendorRecord) {
 			await sendEmail({
 				to: email,
-				subject: `You're invited to join ${tenantRecord.name}`,
+				subject: `You're invited to join ${vendorRecord.name}`,
 				html: inviteEmail({
-					tenantName: tenantRecord.name,
-					primaryColor: tenantRecord.backgroundColor ?? undefined,
+					tenantName: vendorRecord.name,
+					primaryColor: vendorRecord.backgroundColor ?? undefined,
 					invitedByName: inviterName,
 					role,
 					inviteUrl
@@ -164,26 +156,24 @@ export const actions: Actions = {
 		return { inviteSuccess: true, inviteUrl, inviteEmail: email };
 	},
 
-	// Cancel a pending invitation
 	cancelInvite: async ({ request, locals }) => {
 		requireOwner(locals);
-		const tenantId = locals.tenantId!;
+		const vendorId = locals.vendorId!;
 		const formData = await request.formData();
 		const id = formData.get('id')?.toString();
 
 		if (!id) return fail(400, { error: 'Invalid' });
 
 		await db
-			.delete(tenantInvitations)
-			.where(and(eq(tenantInvitations.id, id), eq(tenantInvitations.tenantId, tenantId)));
+			.delete(vendorInvitations)
+			.where(and(eq(vendorInvitations.id, id), eq(vendorInvitations.vendorId, vendorId)));
 
 		return { success: true };
 	},
 
-	// Change an existing member's role
 	changeRole: async ({ request, locals }) => {
 		requireOwner(locals);
-		const tenantId = locals.tenantId!;
+		const vendorId = locals.vendorId!;
 		const formData = await request.formData();
 		const userId = formData.get('userId')?.toString();
 		const role = formData.get('role')?.toString() as Role;
@@ -191,17 +181,16 @@ export const actions: Actions = {
 		if (!userId || !ROLES.includes(role)) return fail(400, { error: 'Invalid' });
 
 		await db
-			.update(tenantUsers)
+			.update(vendorUsers)
 			.set({ role })
-			.where(and(eq(tenantUsers.tenantId, tenantId), eq(tenantUsers.userId, userId)));
+			.where(and(eq(vendorUsers.vendorId, vendorId), eq(vendorUsers.userId, userId)));
 
 		return { success: true };
 	},
 
-	// Remove a member from this tenant
 	removeMember: async ({ request, locals }) => {
 		requireOwner(locals);
-		const tenantId = locals.tenantId!;
+		const vendorId = locals.vendorId!;
 		const currentUserId = locals.user!.id;
 		const formData = await request.formData();
 		const userId = formData.get('userId')?.toString();
@@ -209,28 +198,26 @@ export const actions: Actions = {
 		if (!userId) return fail(400, { error: 'Invalid' });
 		if (userId === currentUserId) return fail(400, { error: "You can't remove yourself" });
 
-		// Prevent removing the last owner
-		const targetMember = await db.query.tenantUsers.findFirst({
-			where: and(eq(tenantUsers.tenantId, tenantId), eq(tenantUsers.userId, userId))
+		const targetMember = await db.query.vendorUsers.findFirst({
+			where: and(eq(vendorUsers.vendorId, vendorId), eq(vendorUsers.userId, userId))
 		});
 		if (targetMember?.role === 'owner') {
 			const ownerCount = await db
 				.select()
-				.from(tenantUsers)
-				.where(and(eq(tenantUsers.tenantId, tenantId), eq(tenantUsers.role, 'owner')));
+				.from(vendorUsers)
+				.where(and(eq(vendorUsers.vendorId, vendorId), eq(vendorUsers.role, 'owner')));
 			if (ownerCount.length <= 1) {
 				return fail(400, { error: 'Cannot remove the last owner' });
 			}
 		}
 
 		await db
-			.delete(tenantUsers)
-			.where(and(eq(tenantUsers.tenantId, tenantId), eq(tenantUsers.userId, userId)));
+			.delete(vendorUsers)
+			.where(and(eq(vendorUsers.vendorId, vendorId), eq(vendorUsers.userId, userId)));
 
 		return { success: true };
 	},
 
-	// Toggle isInternal on a user (platform-level, owner/internal only)
 	toggleInternal: async ({ request, locals }) => {
 		requireOwner(locals);
 		const formData = await request.formData();

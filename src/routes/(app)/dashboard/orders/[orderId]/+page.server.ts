@@ -3,7 +3,7 @@ import { error, fail } from '@sveltejs/kit';
 import { db } from '$lib/server/db';
 import { eq, and } from 'drizzle-orm';
 import { orders } from '$lib/server/db/schema';
-import { tenant } from '$lib/server/db/tenant';
+import { vendor } from '$lib/server/db/vendor';
 import Stripe from 'stripe';
 import { sendEmail } from '$lib/server/email';
 import { orderReadyEmail } from '$lib/server/email/templates/orderReady';
@@ -12,12 +12,12 @@ import { orderRefundedEmail } from '$lib/server/email/templates/orderRefunded';
 import { sendSms } from '$lib/server/sms';
 
 export const load: PageServerLoad = async ({ locals, params }) => {
-	const tenantId = locals.tenantId!;
+	const vendorId = locals.vendorId!;
 	const orderId = parseInt(params.orderId);
 	if (isNaN(orderId)) throw error(404, 'Order not found');
 
 	const order = await db.query.orders.findFirst({
-		where: and(eq(orders.id, orderId), eq(orders.tenantId, tenantId))
+		where: and(eq(orders.id, orderId), eq(orders.vendorId, vendorId))
 	});
 
 	if (!order) throw error(404, 'Order not found');
@@ -27,7 +27,7 @@ export const load: PageServerLoad = async ({ locals, params }) => {
 
 export const actions: Actions = {
 	updateStatus: async ({ request, locals }) => {
-		const tenantId = locals.tenantId!;
+		const vendorId = locals.vendorId!;
 		const formData = await request.formData();
 		const id = parseInt(formData.get('id')?.toString() ?? '');
 		const status = formData.get('status')?.toString();
@@ -36,22 +36,22 @@ export const actions: Actions = {
 		const [order] = await db
 			.update(orders)
 			.set({ status: status as typeof orders.status._.data, updatedAt: new Date() })
-			.where(and(eq(orders.id, id), eq(orders.tenantId, tenantId)))
+			.where(and(eq(orders.id, id), eq(orders.vendorId, vendorId)))
 			.returning();
 
 		if (status === 'ready' && (order?.customerEmail || order?.customerPhone)) {
-			const tenantRecord = await db.query.tenant.findFirst({
-				where: eq(tenant.id, tenantId),
+			const vendorRecord = await db.query.vendor.findFirst({
+				where: eq(vendor.id, vendorId),
 				columns: { name: true, backgroundColor: true, slug: true }
 			});
-			if (tenantRecord) {
+			if (vendorRecord) {
 				if (order.customerEmail) {
 					await sendEmail({
 						to: order.customerEmail,
-						subject: `Your order is ready — ${tenantRecord.name}`,
+						subject: `Your order is ready — ${vendorRecord.name}`,
 						html: orderReadyEmail({
-							tenantName: tenantRecord.name,
-							primaryColor: tenantRecord.backgroundColor ?? undefined,
+							tenantName: vendorRecord.name,
+							primaryColor: vendorRecord.backgroundColor ?? undefined,
 							orderNumber: order.orderNumber,
 							customerName: order.customerName ?? 'there',
 							total: order.total,
@@ -62,7 +62,7 @@ export const actions: Actions = {
 				if (order.customerPhone) {
 					await sendSms(
 						order.customerPhone,
-						`${tenantRecord.name}: Your order ${order.orderNumber} is ready for pickup!`
+						`${vendorRecord.name}: Your order ${order.orderNumber} is ready for pickup!`
 					).catch(console.error);
 				}
 			}
@@ -72,7 +72,7 @@ export const actions: Actions = {
 	},
 
 	cancel: async ({ request, locals }) => {
-		const tenantId = locals.tenantId!;
+		const vendorId = locals.vendorId!;
 		const formData = await request.formData();
 		const id = parseInt(formData.get('id')?.toString() ?? '');
 		if (isNaN(id)) return fail(400, { error: 'Invalid' });
@@ -80,22 +80,22 @@ export const actions: Actions = {
 		const [order] = await db
 			.update(orders)
 			.set({ status: 'cancelled', updatedAt: new Date() })
-			.where(and(eq(orders.id, id), eq(orders.tenantId, tenantId)))
+			.where(and(eq(orders.id, id), eq(orders.vendorId, vendorId)))
 			.returning();
 
 		if (order?.customerEmail || order?.customerPhone) {
-			const tenantRecord = await db.query.tenant.findFirst({
-				where: eq(tenant.id, tenantId),
+			const vendorRecord = await db.query.vendor.findFirst({
+				where: eq(vendor.id, vendorId),
 				columns: { name: true, backgroundColor: true, slug: true }
 			});
-			if (tenantRecord) {
+			if (vendorRecord) {
 				if (order.customerEmail) {
 					await sendEmail({
 						to: order.customerEmail,
-						subject: `Order ${order.orderNumber} cancelled — ${tenantRecord.name}`,
+						subject: `Order ${order.orderNumber} cancelled — ${vendorRecord.name}`,
 						html: orderCancelledEmail({
-							tenantName: tenantRecord.name,
-							primaryColor: tenantRecord.backgroundColor ?? undefined,
+							tenantName: vendorRecord.name,
+							primaryColor: vendorRecord.backgroundColor ?? undefined,
 							orderNumber: order.orderNumber,
 							customerName: order.customerName ?? 'there',
 							total: order.total
@@ -105,7 +105,7 @@ export const actions: Actions = {
 				if (order.customerPhone) {
 					await sendSms(
 						order.customerPhone,
-						`${tenantRecord.name}: Your order ${order.orderNumber} has been cancelled.`
+						`${vendorRecord.name}: Your order ${order.orderNumber} has been cancelled.`
 					).catch(console.error);
 				}
 			}
@@ -115,17 +115,17 @@ export const actions: Actions = {
 	},
 
 	refund: async ({ request, locals }) => {
-		const tenantId = locals.tenantId!;
+		const vendorId = locals.vendorId!;
 		const formData = await request.formData();
 		const id = parseInt(formData.get('id')?.toString() ?? '');
 		if (isNaN(id)) return fail(400, { error: 'Invalid' });
 
-		const [orderRow, tenantRecord] = await Promise.all([
+		const [orderRow, vendorRecord] = await Promise.all([
 			db.query.orders.findFirst({
-				where: and(eq(orders.id, id), eq(orders.tenantId, tenantId))
+				where: and(eq(orders.id, id), eq(orders.vendorId, vendorId))
 			}),
-			db.query.tenant.findFirst({
-				where: eq(tenant.id, tenantId),
+			db.query.vendor.findFirst({
+				where: eq(vendor.id, vendorId),
 				columns: { stripeSecretKey: true, name: true, backgroundColor: true }
 			})
 		]);
@@ -136,10 +136,10 @@ export const actions: Actions = {
 		if (orderRow.paymentStatus !== 'paid') return fail(400, { error: 'Order has not been paid' });
 		if (!orderRow.stripePaymentIntentId)
 			return fail(400, { error: 'No payment found for this order' });
-		if (!tenantRecord?.stripeSecretKey)
-			return fail(500, { error: 'Stripe not configured for this tenant' });
+		if (!vendorRecord?.stripeSecretKey)
+			return fail(500, { error: 'Stripe not configured for this vendor' });
 
-		const stripe = new Stripe(tenantRecord.stripeSecretKey);
+		const stripe = new Stripe(vendorRecord.stripeSecretKey);
 
 		let paymentIntentId = orderRow.stripePaymentIntentId;
 		if (paymentIntentId.startsWith('cs_')) {
@@ -170,13 +170,13 @@ export const actions: Actions = {
 			.where(eq(orders.id, id))
 			.returning();
 
-		if (refundedOrder?.customerEmail && tenantRecord) {
+		if (refundedOrder?.customerEmail && vendorRecord) {
 			await sendEmail({
 				to: refundedOrder.customerEmail,
-				subject: `Refund processed for order ${refundedOrder.orderNumber} — ${tenantRecord.name}`,
+				subject: `Refund processed for order ${refundedOrder.orderNumber} — ${vendorRecord.name}`,
 				html: orderRefundedEmail({
-					tenantName: tenantRecord.name,
-					primaryColor: tenantRecord.backgroundColor ?? undefined,
+					tenantName: vendorRecord.name,
+					primaryColor: vendorRecord.backgroundColor ?? undefined,
 					orderNumber: refundedOrder.orderNumber,
 					customerName: refundedOrder.customerName ?? 'there',
 					total: refundedOrder.total

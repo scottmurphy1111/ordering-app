@@ -2,39 +2,39 @@ import type { PageServerLoad, Actions } from './$types';
 import { fail, redirect } from '@sveltejs/kit';
 import { db } from '$lib/server/db';
 import { eq } from 'drizzle-orm';
-import { tenant, tenantUsers } from '$lib/server/db/schema';
-import { seedDemoTenant } from '$lib/server/seed-demo';
+import { vendor, vendorUsers } from '$lib/server/db/schema';
+import { seedDemoVendor } from '$lib/server/seed-demo';
 
-function canCreateTenant(isInternal: boolean, userTenants: Array<{ role: string }>) {
+function canCreateVendor(isInternal: boolean, userVendors: Array<{ role: string }>) {
 	if (isInternal) return true;
-	if (userTenants.length === 0) return true;
-	return userTenants.some((t) => t.role === 'owner');
+	if (userVendors.length === 0) return true;
+	return userVendors.some((v) => v.role === 'owner');
 }
 
 export const load: PageServerLoad = async ({ locals }) => {
 	const userId = locals.user!.id;
 
-	const userTenants = await db
+	const userVendors = await db
 		.select({
-			id: tenant.id,
-			name: tenant.name,
-			slug: tenant.slug,
-			type: tenant.type,
-			isActive: tenant.isActive,
-			logoUrl: tenant.logoUrl,
-			subscriptionTier: tenant.subscriptionTier,
-			role: tenantUsers.role,
-			createdAt: tenant.createdAt
+			id: vendor.id,
+			name: vendor.name,
+			slug: vendor.slug,
+			type: vendor.type,
+			isActive: vendor.isActive,
+			logoUrl: vendor.logoUrl,
+			subscriptionTier: vendor.subscriptionTier,
+			role: vendorUsers.role,
+			createdAt: vendor.createdAt
 		})
-		.from(tenantUsers)
-		.innerJoin(tenant, eq(tenantUsers.tenantId, tenant.id))
-		.where(eq(tenantUsers.userId, userId));
+		.from(vendorUsers)
+		.innerJoin(vendor, eq(vendorUsers.vendorId, vendor.id))
+		.where(eq(vendorUsers.userId, userId));
 
-	userTenants.sort((a, b) => a.name.localeCompare(b.name));
+	userVendors.sort((a, b) => a.name.localeCompare(b.name));
 
 	const isInternal = locals.user!.isInternal;
-	const canCreate = canCreateTenant(isInternal, userTenants);
-	return { tenants: userTenants, isInternal, canCreate };
+	const canCreate = canCreateVendor(isInternal, userVendors);
+	return { vendors: userVendors, isInternal, canCreate };
 };
 
 export const actions: Actions = {
@@ -44,11 +44,11 @@ export const actions: Actions = {
 
 		if (!isInternal) {
 			const memberships = await db
-				.select({ role: tenantUsers.role })
-				.from(tenantUsers)
-				.where(eq(tenantUsers.userId, userId));
-			if (!canCreateTenant(false, memberships)) {
-				return fail(403, { error: 'Upgrade to the Pro plan to create additional tenants.' });
+				.select({ role: vendorUsers.role })
+				.from(vendorUsers)
+				.where(eq(vendorUsers.userId, userId));
+			if (!canCreateVendor(false, memberships)) {
+				return fail(403, { error: 'Upgrade to the Pro plan to create additional vendors.' });
 			}
 		}
 
@@ -73,28 +73,28 @@ export const actions: Actions = {
 			return fail(400, { error: 'Slug may only contain lowercase letters, numbers, and hyphens' });
 
 		// Check slug uniqueness
-		const existing = await db.query.tenant.findFirst({ where: eq(tenant.slug, slug) });
+		const existing = await db.query.vendor.findFirst({ where: eq(vendor.slug, slug) });
 		if (existing) return fail(400, { error: 'That slug is already taken' });
 
-		// Create tenant + assign owner in one transaction
-		const [newTenant] = await db
-			.insert(tenant)
+		// Create vendor + assign owner in one transaction
+		const [newVendor] = await db
+			.insert(vendor)
 			.values({ name, slug, type, address: {} })
-			.returning({ id: tenant.id });
+			.returning({ id: vendor.id });
 
-		await db.insert(tenantUsers).values({
-			tenantId: newTenant.id,
+		await db.insert(vendorUsers).values({
+			vendorId: newVendor.id,
 			userId,
 			role: 'owner'
 		});
 
-		if (seedDemo) await seedDemoTenant(newTenant.id);
+		if (seedDemo) await seedDemoVendor(newVendor.id);
 
-		cookies.set('selected-tenant-id', String(newTenant.id), {
+		cookies.set('selected-tenant-id', String(newVendor.id), {
 			path: '/',
 			httpOnly: true,
 			sameSite: 'lax',
-			maxAge: 60 * 60 * 24 * 30 // 30 days
+			maxAge: 60 * 60 * 24 * 30
 		});
 
 		throw redirect(303, '/dashboard');
@@ -102,22 +102,22 @@ export const actions: Actions = {
 
 	select: async ({ request, cookies, locals }) => {
 		const formData = await request.formData();
-		const tenantId = formData.get('tenantId')?.toString();
-		if (!tenantId) return fail(400, { error: 'No tenant selected' });
+		const vendorId = formData.get('vendorId')?.toString();
+		if (!vendorId) return fail(400, { error: 'No vendor selected' });
 
 		const userId = locals.user!.id;
 		const isInternal = locals.user!.isInternal;
 
-		// Verify the user is a member of this tenant (internal users can select any)
+		// Verify the user is a member of this vendor (internal users can select any)
 		if (!isInternal) {
-			const membership = await db.query.tenantUsers.findFirst({
-				where: (tu) => eq(tu.tenantId, Number(tenantId)) && eq(tu.userId, userId),
-				columns: { tenantId: true }
+			const membership = await db.query.vendorUsers.findFirst({
+				where: (vu) => eq(vu.vendorId, Number(vendorId)) && eq(vu.userId, userId),
+				columns: { vendorId: true }
 			});
-			if (!membership) return fail(403, { error: 'You do not have access to that tenant' });
+			if (!membership) return fail(403, { error: 'You do not have access to that vendor' });
 		}
 
-		cookies.set('selected-tenant-id', tenantId, {
+		cookies.set('selected-tenant-id', vendorId, {
 			path: '/',
 			httpOnly: true,
 			sameSite: 'lax',

@@ -7,9 +7,9 @@ declare global {
 		interface Locals {
 			user?: User;
 			session?: Session;
-			tenantId?: number;
-			tenant?: import('./lib/server/db/tenant').Tenant;
-			tenantRole?: import('./lib/server/roles').TenantRole;
+			vendorId?: number;
+			vendor?: import('./lib/server/db/vendor').Vendor;
+			vendorRole?: import('./lib/server/roles').VendorRole;
 		}
 
 		// interface Error {}

@@ -14,12 +14,12 @@
 
 	const filteredTenants = $derived(
 		search.trim()
-			? data.tenants.filter(
+			? data.vendors.filter(
 					(t) =>
 						t.name.toLowerCase().includes(search.toLowerCase()) ||
 						t.slug.toLowerCase().includes(search.toLowerCase())
 				)
-			: data.tenants
+			: data.vendors
 	);
 
 	function startTour() {
@@ -41,8 +41,8 @@
 	<div class="w-full max-w-lg">
 		<div class="mb-6">
 			<h1 class="text-2xl font-bold text-foreground">Your tenants</h1>
-			{#if data.tenants.length > 1}
-				<p class="mt-1 text-sm text-muted-foreground">{data.tenants.length} tenants</p>
+			{#if data.vendors.length > 1}
+				<p class="mt-1 text-sm text-muted-foreground">{data.vendors.length} tenants</p>
 			{/if}
 		</div>
 
@@ -52,7 +52,7 @@
 			</div>
 		{/if}
 
-		{#if data.tenants.length > 4}
+		{#if data.vendors.length > 4}
 			<div class="relative mb-4">
 				<Icon
 					icon="mdi:magnify"
@@ -67,7 +67,7 @@
 			</div>
 		{/if}
 
-		{#if data.tenants.length > 0}
+		{#if data.vendors.length > 0}
 			<div class="mb-6 space-y-2">
 				{#each filteredTenants as t (t.id)}
 					<form method="post" action="?/select" use:enhance>

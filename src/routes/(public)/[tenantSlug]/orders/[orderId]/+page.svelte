@@ -48,7 +48,7 @@
 </script>
 
 <svelte:head>
-	<title>Order {order.orderNumber} — {data.tenant.name}</title>
+	<title>Order {order.orderNumber} — {data.vendor.name}</title>
 </svelte:head>
 
 <div class="min-h-screen">

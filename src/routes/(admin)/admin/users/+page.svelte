@@ -94,7 +94,7 @@
 									{/if}
 								</TableCell>
 								<TableCell class="hidden px-4 py-3 text-sm text-muted-foreground sm:table-cell">
-									{u.tenantCount}
+									{u.vendorCount}
 								</TableCell>
 								<TableCell class="hidden px-4 py-3 text-sm text-muted-foreground md:table-cell">
 									{new Date(u.createdAt).toLocaleDateString()}

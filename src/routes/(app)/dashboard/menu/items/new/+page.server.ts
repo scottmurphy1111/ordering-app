@@ -2,37 +2,37 @@ import type { PageServerLoad, Actions } from './$types';
 import { fail, redirect } from '@sveltejs/kit';
 import { db } from '$lib/server/db';
 import { eq, count } from 'drizzle-orm';
-import { menuItems, menuCategories } from '$lib/server/db/schema';
+import { catalogItems, catalogCategories } from '$lib/server/db/schema';
 import { isAtItemLimit, hasAddon, type AddonItem } from '$lib/billing';
-import { tenant } from '$lib/server/db/tenant';
+import { vendor } from '$lib/server/db/vendor';
 
 export const load: PageServerLoad = async ({ locals }) => {
-	const tenantId = locals.tenantId!;
-	const [categories, tenantRecord] = await Promise.all([
-		db.query.menuCategories.findMany({
-			where: eq(menuCategories.tenantId, tenantId),
+	const vendorId = locals.vendorId!;
+	const [categories, vendorRecord] = await Promise.all([
+		db.query.catalogCategories.findMany({
+			where: eq(catalogCategories.vendorId, vendorId),
 			columns: { id: true, name: true },
 			orderBy: (c, { asc }) => [asc(c.sortOrder), asc(c.name)]
 		}),
-		db.query.tenant.findFirst({ where: eq(tenant.id, tenantId), columns: { addons: true } })
+		db.query.vendor.findFirst({ where: eq(vendor.id, vendorId), columns: { addons: true } })
 	]);
-	const addons = (tenantRecord?.addons ?? []) as AddonItem[];
+	const addons = (vendorRecord?.addons ?? []) as AddonItem[];
 	return { categories, hasSubscriptionsAddon: hasAddon(addons, 'subscriptions') };
 };
 
 export const actions: Actions = {
 	default: async ({ request, locals }) => {
-		const tenantId = locals.tenantId!;
+		const vendorId = locals.vendorId!;
 
-		const [tenantRecord, countResult] = await Promise.all([
-			db.query.tenant.findFirst({
-				where: eq(tenant.id, tenantId),
+		const [vendorRecord, countResult] = await Promise.all([
+			db.query.vendor.findFirst({
+				where: eq(vendor.id, vendorId),
 				columns: { subscriptionTier: true }
 			}),
-			db.select({ count: count() }).from(menuItems).where(eq(menuItems.tenantId, tenantId))
+			db.select({ count: count() }).from(catalogItems).where(eq(catalogItems.vendorId, vendorId))
 		]);
 
-		const tierKey = tenantRecord?.subscriptionTier ?? 'starter';
+		const tierKey = vendorRecord?.subscriptionTier ?? 'starter';
 		const itemCount = countResult[0]?.count ?? 0;
 
 		if (isAtItemLimit(tierKey, itemCount)) {
@@ -75,9 +75,9 @@ export const actions: Actions = {
 			: null;
 
 		const [item] = await db
-			.insert(menuItems)
+			.insert(catalogItems)
 			.values({
-				tenantId,
+				vendorId,
 				name,
 				description,
 				price,
@@ -90,7 +90,7 @@ export const actions: Actions = {
 				isSubscription,
 				billingInterval
 			})
-			.returning({ id: menuItems.id });
+			.returning({ id: catalogItems.id });
 
 		throw redirect(303, `/dashboard/menu/items/${item.id}`);
 	}

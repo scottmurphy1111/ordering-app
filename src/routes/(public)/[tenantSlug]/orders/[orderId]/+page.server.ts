@@ -6,13 +6,13 @@ import { orders, orderItems } from '$lib/server/db/orders';
 
 export const load: PageServerLoad = async ({ locals, params, depends }) => {
 	depends('app:order-status');
-	const tenantId = locals.tenantId!;
+	const vendorId = locals.vendorId!;
 	const orderId = parseInt(params.orderId);
 
 	if (isNaN(orderId)) throw error(404, 'Order not found');
 
 	const order = await db.query.orders.findFirst({
-		where: and(eq(orders.id, orderId), eq(orders.tenantId, tenantId))
+		where: and(eq(orders.id, orderId), eq(orders.vendorId, vendorId))
 	});
 
 	if (!order) throw error(404, 'Order not found');

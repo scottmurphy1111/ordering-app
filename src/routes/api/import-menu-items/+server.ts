@@ -2,8 +2,8 @@ import { error, json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { db } from '$lib/server/db';
 import { eq } from 'drizzle-orm';
-import { menuItems, menuCategories } from '$lib/server/db/schema';
-import { tenant } from '$lib/server/db/tenant';
+import { catalogItems, catalogCategories } from '$lib/server/db/schema';
+import { vendor } from '$lib/server/db/vendor';
 
 // CSV columns (case-insensitive header matching):
 //   name*, price*, description, category, discounted_price, tags, available
@@ -20,7 +20,6 @@ function parseCSV(text: string): Record<string, string>[] {
 	const lines = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
 	if (lines.length < 2) return [];
 
-	// Parse a single CSV line respecting quoted fields
 	function parseLine(line: string): string[] {
 		const fields: string[] = [];
 		let current = '';
@@ -61,15 +60,15 @@ function parseCSV(text: string): Record<string, string>[] {
 
 export const POST: RequestHandler = async ({ request, locals }) => {
 	if (!locals.user) throw error(401, 'Unauthorized');
-	const tenantId = locals.tenantId;
-	if (!tenantId) throw error(400, 'No tenant selected');
+	const vendorId = locals.vendorId;
+	if (!vendorId) throw error(400, 'No vendor selected');
 
 	if (!locals.user.isInternal) {
-		const tenantRecord = await db.query.tenant.findFirst({
-			where: eq(tenant.id, tenantId),
+		const vendorRecord = await db.query.vendor.findFirst({
+			where: eq(vendor.id, vendorId),
 			columns: { subscriptionTier: true }
 		});
-		if (tenantRecord?.subscriptionTier !== 'pro') throw error(403, 'Pro plan required');
+		if (vendorRecord?.subscriptionTier !== 'pro') throw error(403, 'Pro plan required');
 	}
 
 	const formData = await request.formData();
@@ -85,16 +84,14 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 	if (rows.length === 0) throw error(400, 'CSV is empty or has no data rows');
 	if (rows.length > 500) throw error(400, 'Too many rows (max 500 per import)');
 
-	// Pre-load categories for this tenant so we can resolve names → IDs
-	const existingCategories = await db.query.menuCategories.findMany({
-		where: eq(menuCategories.tenantId, tenantId),
+	const existingCategories = await db.query.catalogCategories.findMany({
+		where: eq(catalogCategories.vendorId, vendorId),
 		columns: { id: true, name: true }
 	});
 	const categoryByName = new Map(existingCategories.map((c) => [c.name.toLowerCase(), c.id]));
 
-	// Pre-load existing items by name for upsert
-	const existingItems = await db.query.menuItems.findMany({
-		where: eq(menuItems.tenantId, tenantId),
+	const existingItems = await db.query.catalogItems.findMany({
+		where: eq(catalogItems.vendorId, vendorId),
 		columns: { id: true, name: true }
 	});
 	const itemByName = new Map(existingItems.map((i) => [i.name.toLowerCase(), i.id]));
@@ -106,7 +103,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 
 	for (let i = 0; i < rows.length; i++) {
 		const row = rows[i];
-		const rowNum = i + 2; // 1-indexed, +1 for header
+		const rowNum = i + 2;
 
 		const name = row['name']?.trim();
 		const priceStr = row['price']?.trim();
@@ -148,7 +145,6 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 				? true
 				: availableStr !== 'false' && availableStr !== '0' && availableStr !== 'no';
 
-		// Resolve category — create it if it doesn't exist yet
 		let categoryId: number | null = null;
 		const categoryName = row['category']?.trim();
 		if (categoryName) {
@@ -156,11 +152,10 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 			if (categoryByName.has(key)) {
 				categoryId = categoryByName.get(key)!;
 			} else {
-				// Create the category on the fly
 				const [newCat] = await db
-					.insert(menuCategories)
-					.values({ tenantId, name: categoryName })
-					.returning({ id: menuCategories.id });
+					.insert(catalogCategories)
+					.values({ vendorId, name: categoryName })
+					.returning({ id: catalogCategories.id });
 				categoryId = newCat.id;
 				categoryByName.set(key, categoryId);
 			}
@@ -171,7 +166,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 		try {
 			if (existingId) {
 				await db
-					.update(menuItems)
+					.update(catalogItems)
 					.set({
 						description,
 						price,
@@ -181,14 +176,14 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 						available,
 						updatedAt: new Date()
 					})
-					.where(eq(menuItems.id, existingId));
+					.where(eq(catalogItems.id, existingId));
 				results.push({ row: rowNum, name, status: 'updated' });
 				updated++;
 			} else {
 				const [newItem] = await db
-					.insert(menuItems)
+					.insert(catalogItems)
 					.values({
-						tenantId,
+						vendorId,
 						name,
 						description,
 						price,
@@ -197,7 +192,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 						tags,
 						available
 					})
-					.returning({ id: menuItems.id });
+					.returning({ id: catalogItems.id });
 				itemByName.set(name.toLowerCase(), newItem.id);
 				results.push({ row: rowNum, name, status: 'created' });
 				created++;

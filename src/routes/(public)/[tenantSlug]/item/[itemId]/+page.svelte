@@ -69,7 +69,7 @@
 </script>
 
 <svelte:head>
-	<title>{data.item.name} — {data.tenant.name}</title>
+	<title>{data.item.name} — {data.vendor.name}</title>
 </svelte:head>
 
 <div class="min-h-screen">

@@ -3,11 +3,11 @@
 
 	let { data, children }: { data: LayoutData; children: import('svelte').Snippet } = $props();
 
-	const backgroundColor = $derived(data.tenant.backgroundColor ?? '#000000');
-	const accentColor = $derived(data.tenant.accentColor ?? '#374151');
-	const foregroundColor = $derived(data.tenant.foregroundColor ?? '#ffffff');
-	const logoUrl = $derived(data.tenant.logoUrl ?? '');
-	const backgroundImageUrl = $derived(data.tenant.backgroundImageUrl ?? '');
+	const backgroundColor = $derived(data.vendor.backgroundColor ?? '#000000');
+	const accentColor = $derived(data.vendor.accentColor ?? '#374151');
+	const foregroundColor = $derived(data.vendor.foregroundColor ?? '#ffffff');
+	const logoUrl = $derived(data.vendor.logoUrl ?? '');
+	const backgroundImageUrl = $derived(data.vendor.backgroundImageUrl ?? '');
 </script>
 
 <div
@@ -38,16 +38,16 @@
 		<div
 			class="mx-auto flex max-w-2xl flex-col items-center gap-1.5 px-4 py-5 sm:flex-row sm:justify-center"
 		>
-			{#if data.tenant.website}
+			{#if data.vendor.website}
 				<a
-					href={data.tenant.website}
+					href={data.vendor.website}
 					target="_blank"
 					rel="external noopener noreferrer"
-					class="text-xs font-semibold text-muted-foreground hover:underline">{data.tenant.name}</a
+					class="text-xs font-semibold text-muted-foreground hover:underline">{data.vendor.name}</a
 				>
 				<span class="hidden text-muted-foreground/40 sm:inline">·</span>
 			{/if}
-			{#if data.tenant.subscriptionTier !== 'pro'}
+			{#if data.vendor.subscriptionTier !== 'pro'}
 				<p class="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
 					Order<span class="text-primary">Local</span>
 				</p>

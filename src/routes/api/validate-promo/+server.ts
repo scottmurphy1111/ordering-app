@@ -6,14 +6,14 @@ import { promoCodes } from '$lib/server/db/schema';
 import { calcDiscount } from '$lib/server/promo';
 
 export const POST: RequestHandler = async ({ request, locals }) => {
-	if (!locals.tenantId) throw error(401, 'Unauthorized');
+	if (!locals.vendorId) throw error(401, 'Unauthorized');
 
 	const { code, subtotal } = (await request.json()) as { code: string; subtotal: number };
 	if (!code?.trim()) return json({ valid: false, message: 'Enter a promo code.' });
 
 	const promo = await db.query.promoCodes.findFirst({
 		where: and(
-			eq(promoCodes.tenantId, locals.tenantId),
+			eq(promoCodes.vendorId, locals.vendorId),
 			eq(promoCodes.code, code.trim().toUpperCase())
 		)
 	});

@@ -1,41 +1,9 @@
 {
-  "id": "9a267c27-70c1-4ba2-b6f8-5434dbbb5a61",
+  "id": "508dba70-18ff-4919-9bdd-5e7b1017cc44",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
-    "public.task": {
-      "name": "task",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "serial",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "title": {
-          "name": "title",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "priority": {
-          "name": "priority",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "default": 1
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {},
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
     "public.account": {
       "name": "account",
       "schema": "",
@@ -300,6 +268,12 @@
           "notNull": true,
           "default": false
         },
+        "banned_at": {
+          "name": "banned_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
         "created_at": {
           "name": "created_at",
           "type": "timestamp",
@@ -398,8 +372,8 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.tenants": {
-      "name": "tenants",
+    "public.vendors": {
+      "name": "vendors",
       "schema": "",
       "columns": {
         "id": {
@@ -428,7 +402,7 @@
         },
         "type": {
           "name": "type",
-          "type": "tenant_type",
+          "type": "vendor_type",
           "typeSchema": "public",
           "primaryKey": false,
           "notNull": false,
@@ -483,22 +457,22 @@
           "primaryKey": false,
           "notNull": false
         },
-        "primary_color": {
-          "name": "primary_color",
+        "background_color": {
+          "name": "background_color",
           "type": "varchar(7)",
           "primaryKey": false,
           "notNull": false,
           "default": "'#000000'"
         },
-        "secondary_color": {
-          "name": "secondary_color",
+        "accent_color": {
+          "name": "accent_color",
           "type": "varchar(7)",
           "primaryKey": false,
           "notNull": false,
           "default": "'#374151'"
         },
-        "accent_color": {
-          "name": "accent_color",
+        "foreground_color": {
+          "name": "foreground_color",
           "type": "varchar(7)",
           "primaryKey": false,
           "notNull": false,
@@ -569,11 +543,30 @@
           "primaryKey": false,
           "notNull": false
         },
+        "stripe_publishable_key": {
+          "name": "stripe_publishable_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
         "stripe_webhook_secret": {
           "name": "stripe_webhook_secret",
           "type": "text",
           "primaryKey": false,
           "notNull": false
+        },
+        "stripe_webhook_endpoint_id": {
+          "name": "stripe_webhook_endpoint_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "addons": {
+          "name": "addons",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "'[]'::jsonb"
         },
         "created_at": {
           "name": "created_at",
@@ -597,8 +590,8 @@
         }
       },
       "indexes": {
-        "tenants_slug_idx": {
-          "name": "tenants_slug_idx",
+        "vendors_slug_idx": {
+          "name": "vendors_slug_idx",
           "columns": [
             {
               "expression": "slug",
@@ -612,8 +605,8 @@
           "method": "btree",
           "with": {}
         },
-        "tenants_active_idx": {
-          "name": "tenants_active_idx",
+        "vendors_active_idx": {
+          "name": "vendors_active_idx",
           "columns": [
             {
               "expression": "is_active",
@@ -627,8 +620,8 @@
           "method": "btree",
           "with": {}
         },
-        "tenants_tenant_lookup_idx": {
-          "name": "tenants_tenant_lookup_idx",
+        "vendors_vendor_lookup_idx": {
+          "name": "vendors_vendor_lookup_idx",
           "columns": [
             {
               "expression": "slug",
@@ -652,8 +645,8 @@
       "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
-        "tenants_slug_unique": {
-          "name": "tenants_slug_unique",
+        "vendors_slug_unique": {
+          "name": "vendors_slug_unique",
           "nullsNotDistinct": false,
           "columns": [
             "slug"
@@ -664,8 +657,8 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.tenant_invitations": {
-      "name": "tenant_invitations",
+    "public.vendor_invitations": {
+      "name": "vendor_invitations",
       "schema": "",
       "columns": {
         "id": {
@@ -674,8 +667,8 @@
           "primaryKey": true,
           "notNull": true
         },
-        "tenant_id": {
-          "name": "tenant_id",
+        "vendor_id": {
+          "name": "vendor_id",
           "type": "integer",
           "primaryKey": false,
           "notNull": true
@@ -721,12 +714,12 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "tenant_invitations_tenant_id_tenants_id_fk": {
-          "name": "tenant_invitations_tenant_id_tenants_id_fk",
-          "tableFrom": "tenant_invitations",
-          "tableTo": "tenants",
+        "vendor_invitations_vendor_id_vendors_id_fk": {
+          "name": "vendor_invitations_vendor_id_vendors_id_fk",
+          "tableFrom": "vendor_invitations",
+          "tableTo": "vendors",
           "columnsFrom": [
-            "tenant_id"
+            "vendor_id"
           ],
           "columnsTo": [
             "id"
@@ -734,9 +727,9 @@
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
-        "tenant_invitations_invited_by_user_id_user_id_fk": {
-          "name": "tenant_invitations_invited_by_user_id_user_id_fk",
-          "tableFrom": "tenant_invitations",
+        "vendor_invitations_invited_by_user_id_user_id_fk": {
+          "name": "vendor_invitations_invited_by_user_id_user_id_fk",
+          "tableFrom": "vendor_invitations",
           "tableTo": "user",
           "columnsFrom": [
             "invited_by_user_id"
@@ -754,12 +747,12 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.tenant_users": {
-      "name": "tenant_users",
+    "public.vendor_users": {
+      "name": "vendor_users",
       "schema": "",
       "columns": {
-        "tenant_id": {
-          "name": "tenant_id",
+        "vendor_id": {
+          "name": "vendor_id",
           "type": "integer",
           "primaryKey": false,
           "notNull": true
@@ -787,12 +780,12 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "tenant_users_tenant_id_tenants_id_fk": {
-          "name": "tenant_users_tenant_id_tenants_id_fk",
-          "tableFrom": "tenant_users",
-          "tableTo": "tenants",
+        "vendor_users_vendor_id_vendors_id_fk": {
+          "name": "vendor_users_vendor_id_vendors_id_fk",
+          "tableFrom": "vendor_users",
+          "tableTo": "vendors",
           "columnsFrom": [
-            "tenant_id"
+            "vendor_id"
           ],
           "columnsTo": [
             "id"
@@ -800,9 +793,9 @@
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
-        "tenant_users_user_id_user_id_fk": {
-          "name": "tenant_users_user_id_user_id_fk",
-          "tableFrom": "tenant_users",
+        "vendor_users_user_id_user_id_fk": {
+          "name": "vendor_users_user_id_user_id_fk",
+          "tableFrom": "vendor_users",
           "tableTo": "user",
           "columnsFrom": [
             "user_id"
@@ -815,10 +808,10 @@
         }
       },
       "compositePrimaryKeys": {
-        "tenant_users_tenant_id_user_id_pk": {
-          "name": "tenant_users_tenant_id_user_id_pk",
+        "vendor_users_vendor_id_user_id_pk": {
+          "name": "vendor_users_vendor_id_user_id_pk",
           "columns": [
-            "tenant_id",
+            "vendor_id",
             "user_id"
           ]
         }
@@ -828,8 +821,8 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.menu_categories": {
-      "name": "menu_categories",
+    "public.catalog_categories": {
+      "name": "catalog_categories",
       "schema": "",
       "columns": {
         "id": {
@@ -838,8 +831,8 @@
           "primaryKey": true,
           "notNull": true
         },
-        "tenant_id": {
-          "name": "tenant_id",
+        "vendor_id": {
+          "name": "vendor_id",
           "type": "integer",
           "primaryKey": false,
           "notNull": true
@@ -879,11 +872,11 @@
         }
       },
       "indexes": {
-        "menu_categories_tenant_idx": {
-          "name": "menu_categories_tenant_idx",
+        "catalog_categories_vendor_idx": {
+          "name": "catalog_categories_vendor_idx",
           "columns": [
             {
-              "expression": "tenant_id",
+              "expression": "vendor_id",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -896,12 +889,12 @@
         }
       },
       "foreignKeys": {
-        "menu_categories_tenant_id_tenants_id_fk": {
-          "name": "menu_categories_tenant_id_tenants_id_fk",
-          "tableFrom": "menu_categories",
-          "tableTo": "tenants",
+        "catalog_categories_vendor_id_vendors_id_fk": {
+          "name": "catalog_categories_vendor_id_vendors_id_fk",
+          "tableFrom": "catalog_categories",
+          "tableTo": "vendors",
           "columnsFrom": [
-            "tenant_id"
+            "vendor_id"
           ],
           "columnsTo": [
             "id"
@@ -916,12 +909,12 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.menu_item_modifiers": {
-      "name": "menu_item_modifiers",
+    "public.catalog_item_modifiers": {
+      "name": "catalog_item_modifiers",
       "schema": "",
       "columns": {
-        "menu_item_id": {
-          "name": "menu_item_id",
+        "catalog_item_id": {
+          "name": "catalog_item_id",
           "type": "integer",
           "primaryKey": false,
           "notNull": true
@@ -935,12 +928,12 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "menu_item_modifiers_menu_item_id_menu_items_id_fk": {
-          "name": "menu_item_modifiers_menu_item_id_menu_items_id_fk",
-          "tableFrom": "menu_item_modifiers",
-          "tableTo": "menu_items",
+        "catalog_item_modifiers_catalog_item_id_catalog_items_id_fk": {
+          "name": "catalog_item_modifiers_catalog_item_id_catalog_items_id_fk",
+          "tableFrom": "catalog_item_modifiers",
+          "tableTo": "catalog_items",
           "columnsFrom": [
-            "menu_item_id"
+            "catalog_item_id"
           ],
           "columnsTo": [
             "id"
@@ -948,9 +941,9 @@
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
-        "menu_item_modifiers_modifier_id_modifiers_id_fk": {
-          "name": "menu_item_modifiers_modifier_id_modifiers_id_fk",
-          "tableFrom": "menu_item_modifiers",
+        "catalog_item_modifiers_modifier_id_modifiers_id_fk": {
+          "name": "catalog_item_modifiers_modifier_id_modifiers_id_fk",
+          "tableFrom": "catalog_item_modifiers",
           "tableTo": "modifiers",
           "columnsFrom": [
             "modifier_id"
@@ -963,10 +956,10 @@
         }
       },
       "compositePrimaryKeys": {
-        "menu_item_modifiers_menu_item_id_modifier_id_pk": {
-          "name": "menu_item_modifiers_menu_item_id_modifier_id_pk",
+        "catalog_item_modifiers_catalog_item_id_modifier_id_pk": {
+          "name": "catalog_item_modifiers_catalog_item_id_modifier_id_pk",
           "columns": [
-            "menu_item_id",
+            "catalog_item_id",
             "modifier_id"
           ]
         }
@@ -976,8 +969,8 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.menu_items": {
-      "name": "menu_items",
+    "public.catalog_items": {
+      "name": "catalog_items",
       "schema": "",
       "columns": {
         "id": {
@@ -986,8 +979,8 @@
           "primaryKey": true,
           "notNull": true
         },
-        "tenant_id": {
-          "name": "tenant_id",
+        "vendor_id": {
+          "name": "vendor_id",
           "type": "integer",
           "primaryKey": false,
           "notNull": true
@@ -1061,6 +1054,19 @@
           "notNull": false,
           "default": "'[]'::jsonb"
         },
+        "is_subscription": {
+          "name": "is_subscription",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false,
+          "default": false
+        },
+        "billing_interval": {
+          "name": "billing_interval",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": false
+        },
         "available": {
           "name": "available",
           "type": "boolean",
@@ -1091,11 +1097,11 @@
         }
       },
       "indexes": {
-        "menu_items_restaurant_idx": {
-          "name": "menu_items_restaurant_idx",
+        "catalog_items_vendor_idx": {
+          "name": "catalog_items_vendor_idx",
           "columns": [
             {
-              "expression": "tenant_id",
+              "expression": "vendor_id",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -1106,8 +1112,8 @@
           "method": "btree",
           "with": {}
         },
-        "menu_items_category_idx": {
-          "name": "menu_items_category_idx",
+        "catalog_items_category_idx": {
+          "name": "catalog_items_category_idx",
           "columns": [
             {
               "expression": "category_id",
@@ -1121,11 +1127,11 @@
           "method": "btree",
           "with": {}
         },
-        "menu_items_restaurant_name_idx": {
-          "name": "menu_items_restaurant_name_idx",
+        "catalog_items_vendor_name_idx": {
+          "name": "catalog_items_vendor_name_idx",
           "columns": [
             {
-              "expression": "tenant_id",
+              "expression": "vendor_id",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -1144,12 +1150,12 @@
         }
       },
       "foreignKeys": {
-        "menu_items_tenant_id_tenants_id_fk": {
-          "name": "menu_items_tenant_id_tenants_id_fk",
-          "tableFrom": "menu_items",
-          "tableTo": "tenants",
+        "catalog_items_vendor_id_vendors_id_fk": {
+          "name": "catalog_items_vendor_id_vendors_id_fk",
+          "tableFrom": "catalog_items",
+          "tableTo": "vendors",
           "columnsFrom": [
-            "tenant_id"
+            "vendor_id"
           ],
           "columnsTo": [
             "id"
@@ -1157,10 +1163,10 @@
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
-        "menu_items_category_id_menu_categories_id_fk": {
-          "name": "menu_items_category_id_menu_categories_id_fk",
-          "tableFrom": "menu_items",
-          "tableTo": "menu_categories",
+        "catalog_items_category_id_catalog_categories_id_fk": {
+          "name": "catalog_items_category_id_catalog_categories_id_fk",
+          "tableFrom": "catalog_items",
+          "tableTo": "catalog_categories",
           "columnsFrom": [
             "category_id"
           ],
@@ -1246,8 +1252,8 @@
           "primaryKey": true,
           "notNull": true
         },
-        "tenant_id": {
-          "name": "tenant_id",
+        "vendor_id": {
+          "name": "vendor_id",
           "type": "integer",
           "primaryKey": false,
           "notNull": true
@@ -1282,12 +1288,12 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "modifiers_tenant_id_tenants_id_fk": {
-          "name": "modifiers_tenant_id_tenants_id_fk",
+        "modifiers_vendor_id_vendors_id_fk": {
+          "name": "modifiers_vendor_id_vendors_id_fk",
           "tableFrom": "modifiers",
-          "tableTo": "tenants",
+          "tableTo": "vendors",
           "columnsFrom": [
-            "tenant_id"
+            "vendor_id"
           ],
           "columnsTo": [
             "id"
@@ -1318,8 +1324,8 @@
           "primaryKey": false,
           "notNull": true
         },
-        "menu_item_id": {
-          "name": "menu_item_id",
+        "catalog_item_id": {
+          "name": "catalog_item_id",
           "type": "integer",
           "primaryKey": false,
           "notNull": false
@@ -1372,12 +1378,12 @@
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
-        "order_items_menu_item_id_menu_items_id_fk": {
-          "name": "order_items_menu_item_id_menu_items_id_fk",
+        "order_items_catalog_item_id_catalog_items_id_fk": {
+          "name": "order_items_catalog_item_id_catalog_items_id_fk",
           "tableFrom": "order_items",
-          "tableTo": "menu_items",
+          "tableTo": "catalog_items",
           "columnsFrom": [
-            "menu_item_id"
+            "catalog_item_id"
           ],
           "columnsTo": [
             "id"
@@ -1402,8 +1408,8 @@
           "primaryKey": true,
           "notNull": true
         },
-        "tenant_id": {
-          "name": "tenant_id",
+        "vendor_id": {
+          "name": "vendor_id",
           "type": "integer",
           "primaryKey": false,
           "notNull": true
@@ -1492,9 +1498,34 @@
           "primaryKey": false,
           "notNull": true
         },
+        "discount": {
+          "name": "discount",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "default": 0
+        },
+        "promo_code": {
+          "name": "promo_code",
+          "type": "varchar(50)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "delivery_address": {
+          "name": "delivery_address",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
         "notes": {
           "name": "notes",
           "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "scheduled_for": {
+          "name": "scheduled_for",
+          "type": "timestamp",
           "primaryKey": false,
           "notNull": false
         },
@@ -1533,11 +1564,11 @@
         }
       },
       "indexes": {
-        "orders_tenant_idx": {
-          "name": "orders_tenant_idx",
+        "orders_vendor_idx": {
+          "name": "orders_vendor_idx",
           "columns": [
             {
-              "expression": "tenant_id",
+              "expression": "vendor_id",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -1552,7 +1583,7 @@
           "name": "orders_status_idx",
           "columns": [
             {
-              "expression": "tenant_id",
+              "expression": "vendor_id",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -1573,7 +1604,7 @@
           "name": "orders_created_idx",
           "columns": [
             {
-              "expression": "tenant_id",
+              "expression": "vendor_id",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -1592,12 +1623,12 @@
         }
       },
       "foreignKeys": {
-        "orders_tenant_id_tenants_id_fk": {
-          "name": "orders_tenant_id_tenants_id_fk",
+        "orders_vendor_id_vendors_id_fk": {
+          "name": "orders_vendor_id_vendors_id_fk",
           "tableFrom": "orders",
-          "tableTo": "tenants",
+          "tableTo": "vendors",
           "columnsFrom": [
-            "tenant_id"
+            "vendor_id"
           ],
           "columnsTo": [
             "id"
@@ -1616,6 +1647,289 @@
           ]
         }
       },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.promo_codes": {
+      "name": "promo_codes",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "vendor_id": {
+          "name": "vendor_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "code": {
+          "name": "code",
+          "type": "varchar(50)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "description": {
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "type": {
+          "name": "type",
+          "type": "varchar(10)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "amount": {
+          "name": "amount",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "min_order_amount": {
+          "name": "min_order_amount",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "max_uses": {
+          "name": "max_uses",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "used_count": {
+          "name": "used_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "expires_at": {
+          "name": "expires_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "is_active": {
+          "name": "is_active",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "promo_codes_vendor_idx": {
+          "name": "promo_codes_vendor_idx",
+          "columns": [
+            {
+              "expression": "vendor_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "promo_codes_code_idx": {
+          "name": "promo_codes_code_idx",
+          "columns": [
+            {
+              "expression": "vendor_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "code",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "promo_codes_vendor_id_vendors_id_fk": {
+          "name": "promo_codes_vendor_id_vendors_id_fk",
+          "tableFrom": "promo_codes",
+          "tableTo": "vendors",
+          "columnsFrom": [
+            "vendor_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.loyalty_accounts": {
+      "name": "loyalty_accounts",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "vendor_id": {
+          "name": "vendor_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "email": {
+          "name": "email",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "current_stamps": {
+          "name": "current_stamps",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "total_stamps_earned": {
+          "name": "total_stamps_earned",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "current_points": {
+          "name": "current_points",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "total_points_earned": {
+          "name": "total_points_earned",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "total_rewards_earned": {
+          "name": "total_rewards_earned",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "last_order_at": {
+          "name": "last_order_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "loyalty_accounts_vendor_email_idx": {
+          "name": "loyalty_accounts_vendor_email_idx",
+          "columns": [
+            {
+              "expression": "vendor_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "email",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "loyalty_accounts_vendor_idx": {
+          "name": "loyalty_accounts_vendor_idx",
+          "columns": [
+            {
+              "expression": "vendor_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "loyalty_accounts_vendor_id_vendors_id_fk": {
+          "name": "loyalty_accounts_vendor_id_vendors_id_fk",
+          "tableFrom": "loyalty_accounts",
+          "tableTo": "vendors",
+          "columnsFrom": [
+            "vendor_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
@@ -1644,8 +1958,8 @@
         "refunded"
       ]
     },
-    "public.tenant_type": {
-      "name": "tenant_type",
+    "public.vendor_type": {
+      "name": "vendor_type",
       "schema": "public",
       "values": [
         "quick_service",

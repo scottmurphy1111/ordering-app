@@ -3,8 +3,8 @@ import type { RequestHandler } from './$types';
 import Stripe from 'stripe';
 import { db } from '$lib/server/db';
 import { eq } from 'drizzle-orm';
-import { tenant } from '$lib/server/db/tenant';
-import { menuItems } from '$lib/server/db/schema';
+import { vendor } from '$lib/server/db/vendor';
+import { catalogItems } from '$lib/server/db/schema';
 
 export type DiscoveredItem = {
 	stripeProductId: string;
@@ -17,11 +17,11 @@ export type DiscoveredItem = {
 
 export const GET: RequestHandler = async ({ locals }) => {
 	if (!locals.user) throw error(401, 'Unauthorized');
-	const tenantId = locals.tenantId;
-	if (!tenantId) throw error(400, 'No tenant selected');
+	const vendorId = locals.vendorId;
+	if (!vendorId) throw error(400, 'No vendor selected');
 
-	const record = await db.query.tenant.findFirst({
-		where: eq(tenant.id, tenantId),
+	const record = await db.query.vendor.findFirst({
+		where: eq(vendor.id, vendorId),
 		columns: { stripeSecretKey: true }
 	});
 
@@ -34,7 +34,6 @@ export const GET: RequestHandler = async ({ locals }) => {
 
 	const stripe = new Stripe(record.stripeSecretKey);
 
-	// Fetch all active products with their default prices, auto-paginating
 	const products: Stripe.Product[] = [];
 	for await (const product of stripe.products.list({
 		active: true,
@@ -44,9 +43,8 @@ export const GET: RequestHandler = async ({ locals }) => {
 		products.push(product);
 	}
 
-	// Get existing menu item names to flag already-imported ones
-	const existingItems = await db.query.menuItems.findMany({
-		where: eq(menuItems.tenantId, tenantId),
+	const existingItems = await db.query.catalogItems.findMany({
+		where: eq(catalogItems.vendorId, vendorId),
 		columns: { name: true }
 	});
 	const existingNames = new Set(existingItems.map((i) => i.name.toLowerCase()));
@@ -56,7 +54,6 @@ export const GET: RequestHandler = async ({ locals }) => {
 	for (const product of products) {
 		const defaultPrice = product.default_price as Stripe.Price | null;
 
-		// Only include products with a one-time price in unit_amount
 		if (!defaultPrice || defaultPrice.type !== 'one_time' || defaultPrice.unit_amount === null) {
 			continue;
 		}
@@ -71,7 +68,6 @@ export const GET: RequestHandler = async ({ locals }) => {
 		});
 	}
 
-	// Sort: not-yet-imported first, then alphabetically
 	discovered.sort((a, b) => {
 		if (a.alreadyImported !== b.alreadyImported) return a.alreadyImported ? 1 : -1;
 		return a.name.localeCompare(b.name);
@@ -82,11 +78,11 @@ export const GET: RequestHandler = async ({ locals }) => {
 
 export const POST: RequestHandler = async ({ request, locals }) => {
 	if (!locals.user) throw error(401, 'Unauthorized');
-	const tenantId = locals.tenantId;
-	if (!tenantId) throw error(400, 'No tenant selected');
+	const vendorId = locals.vendorId;
+	if (!vendorId) throw error(400, 'No vendor selected');
 
-	const record = await db.query.tenant.findFirst({
-		where: eq(tenant.id, tenantId),
+	const record = await db.query.vendor.findFirst({
+		where: eq(vendor.id, vendorId),
 		columns: { stripeSecretKey: true }
 	});
 	if (!record?.stripeSecretKey) throw error(400, 'No Stripe key connected');
@@ -96,9 +92,8 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 		throw error(400, 'No items provided');
 	}
 
-	// Get existing names to avoid duplicates
-	const existingItems = await db.query.menuItems.findMany({
-		where: eq(menuItems.tenantId, tenantId),
+	const existingItems = await db.query.catalogItems.findMany({
+		where: eq(catalogItems.vendorId, vendorId),
 		columns: { name: true }
 	});
 	const existingNames = new Set(existingItems.map((i) => i.name.toLowerCase()));
@@ -106,9 +101,9 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 	const toInsert = body.items.filter((i) => !existingNames.has(i.name.toLowerCase()));
 
 	if (toInsert.length > 0) {
-		await db.insert(menuItems).values(
+		await db.insert(catalogItems).values(
 			toInsert.map((item) => ({
-				tenantId,
+				vendorId,
 				name: item.name,
 				description: item.description,
 				price: item.price,

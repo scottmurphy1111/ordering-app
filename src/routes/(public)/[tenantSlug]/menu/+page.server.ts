@@ -1,18 +1,18 @@
 import type { PageServerLoad } from './$types';
 import { db } from '$lib/server/db';
 import { eq, and, ne } from 'drizzle-orm';
-import { menuItems, menuCategories } from '$lib/server/db/schema';
+import { catalogItems, catalogCategories } from '$lib/server/db/schema';
 
 export const load: PageServerLoad = async ({ locals, params }) => {
-	const tenantId = locals.tenantId!;
+	const vendorId = locals.vendorId!;
 
 	const [categories, items] = await Promise.all([
-		db.query.menuCategories.findMany({
-			where: and(eq(menuCategories.tenantId, tenantId), ne(menuCategories.isActive, false)),
+		db.query.catalogCategories.findMany({
+			where: and(eq(catalogCategories.vendorId, vendorId), ne(catalogCategories.isActive, false)),
 			orderBy: (c, { asc }) => [asc(c.sortOrder), asc(c.name)]
 		}),
-		db.query.menuItems.findMany({
-			where: and(eq(menuItems.tenantId, tenantId), eq(menuItems.available, true)),
+		db.query.catalogItems.findMany({
+			where: and(eq(catalogItems.vendorId, vendorId), eq(catalogItems.available, true)),
 			orderBy: (i, { asc }) => [asc(i.sortOrder), asc(i.name)],
 			columns: {
 				id: true,

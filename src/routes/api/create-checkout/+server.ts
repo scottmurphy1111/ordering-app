@@ -4,7 +4,7 @@ import Stripe from 'stripe';
 import { env } from '$env/dynamic/private';
 import { db } from '$lib/server/db';
 import { eq, and, sql } from 'drizzle-orm';
-import { tenant } from '$lib/server/db/schema';
+import { vendor } from '$lib/server/db/vendor';
 import { orders, orderItems } from '$lib/server/db/orders';
 import { promoCodes } from '$lib/server/db/promos';
 import { calcDiscount } from '$lib/server/promo';
@@ -28,7 +28,7 @@ export const POST: RequestHandler = async ({ request }) => {
 	const origin = env.ORIGIN;
 
 	const body = (await request.json()) as {
-		tenantSlug: string;
+		vendorSlug: string;
 		items: CartItem[];
 		customer: { name: string; email?: string; phone?: string };
 		notes?: string;
@@ -47,7 +47,7 @@ export const POST: RequestHandler = async ({ request }) => {
 	};
 
 	const {
-		tenantSlug,
+		vendorSlug,
 		items,
 		customer,
 		notes,
@@ -62,28 +62,25 @@ export const POST: RequestHandler = async ({ request }) => {
 		billingInterval
 	} = body;
 
-	if (!tenantSlug || !items?.length || !customer?.name) {
+	if (!vendorSlug || !items?.length || !customer?.name) {
 		throw error(400, 'Missing required fields');
 	}
 
-	// Resolve tenant
-	const tenantRecord = await db.query.tenant.findFirst({ where: eq(tenant.slug, tenantSlug) });
-	if (!tenantRecord?.isActive) throw error(404, 'Store not found');
-	if (!tenantRecord.stripeSecretKey) throw error(400, 'Stripe not configured for this store');
+	const vendorRecord = await db.query.vendor.findFirst({ where: eq(vendor.slug, vendorSlug) });
+	if (!vendorRecord?.isActive) throw error(404, 'Store not found');
+	if (!vendorRecord.stripeSecretKey) throw error(400, 'Stripe not configured for this store');
 
-	const stripe = getStripe(tenantRecord.stripeSecretKey);
+	const stripe = getStripe(vendorRecord.stripeSecretKey);
 
-	// Re-validate delivery fee server-side
-	const tenantSettings = tenantRecord.settings as {
+	const vendorSettings = vendorRecord.settings as {
 		deliveryFee?: number;
 		enableDelivery?: boolean;
 	} | null;
 	const verifiedDeliveryFee =
-		orderType === 'delivery' && tenantSettings?.enableDelivery
-			? (tenantSettings.deliveryFee ?? 0)
+		orderType === 'delivery' && vendorSettings?.enableDelivery
+			? (vendorSettings.deliveryFee ?? 0)
 			: 0;
 
-	// Re-validate promo code server-side (never trust client discount amount)
 	let verifiedDiscount = 0;
 	let verifiedPromoCode: string | null = null;
 	let promoRecord: typeof promoCodes.$inferSelect | null = null;
@@ -92,7 +89,7 @@ export const POST: RequestHandler = async ({ request }) => {
 		promoRecord =
 			(await db.query.promoCodes.findFirst({
 				where: and(
-					eq(promoCodes.tenantId, tenantRecord.id),
+					eq(promoCodes.vendorId, vendorRecord.id),
 					eq(promoCodes.code, promoCode.toUpperCase())
 				)
 			})) ?? null;
@@ -116,13 +113,12 @@ export const POST: RequestHandler = async ({ request }) => {
 		subtotal + tax + (tip ?? 0) + verifiedDeliveryFee - verifiedDiscount
 	);
 
-	// Create order in DB (payment_status = pending until webhook confirms)
 	const orderNumber = generateOrderNumber();
 
 	const [newOrder] = await db
 		.insert(orders)
 		.values({
-			tenantId: tenantRecord.id,
+			vendorId: vendorRecord.id,
 			orderNumber,
 			customerName: customer.name,
 			customerEmail: customer.email || null,
@@ -144,11 +140,10 @@ export const POST: RequestHandler = async ({ request }) => {
 		})
 		.returning({ id: orders.id });
 
-	// Also insert normalised order items
 	await db.insert(orderItems).values(
 		items.map((item) => ({
 			orderId: newOrder.id,
-			menuItemId: item.itemId ?? null,
+			catalogItemId: item.itemId ?? null,
 			name: item.name,
 			quantity: item.quantity,
 			unitPrice: itemUnitPrice(item),
@@ -160,7 +155,6 @@ export const POST: RequestHandler = async ({ request }) => {
 	let session: Awaited<ReturnType<typeof stripe.checkout.sessions.create>>;
 
 	if (isSubscription) {
-		// Subscription mode — recurring line items, no tax/tip/promo
 		const stripeInterval = billingInterval === 'yearly' ? 'year' : 'month';
 		const subLineItems = items.map((item) => ({
 			quantity: item.quantity,
@@ -180,12 +174,11 @@ export const POST: RequestHandler = async ({ request }) => {
 			mode: 'subscription',
 			line_items: subLineItems,
 			...(customer.email ? { customer_email: customer.email } : {}),
-			success_url: `${origin}/${tenantSlug}/orders/${newOrder.id}?session_id={CHECKOUT_SESSION_ID}`,
-			cancel_url: `${origin}/${tenantSlug}/cart`,
-			metadata: { orderId: String(newOrder.id), tenantSlug, isSubscription: 'true' }
+			success_url: `${origin}/${vendorSlug}/orders/${newOrder.id}?session_id={CHECKOUT_SESSION_ID}`,
+			cancel_url: `${origin}/${vendorSlug}/cart`,
+			metadata: { orderId: String(newOrder.id), vendorSlug, isSubscription: 'true' }
 		});
 
-		// Subscription sessions have no payment_intent — store session ID as placeholder
 		await db
 			.update(orders)
 			.set({
@@ -194,7 +187,6 @@ export const POST: RequestHandler = async ({ request }) => {
 			})
 			.where(eq(orders.id, newOrder.id));
 	} else {
-		// One-time payment mode
 		const lineItems = items.map((item) => ({
 			quantity: item.quantity,
 			price_data: {
@@ -246,9 +238,9 @@ export const POST: RequestHandler = async ({ request }) => {
 			line_items: lineItems,
 			...(stripeCouponId ? { discounts: [{ coupon: stripeCouponId }] } : {}),
 			...(customer.email ? { customer_email: customer.email } : {}),
-			success_url: `${origin}/${tenantSlug}/orders/${newOrder.id}?session_id={CHECKOUT_SESSION_ID}`,
-			cancel_url: `${origin}/${tenantSlug}/cart`,
-			metadata: { orderId: String(newOrder.id), tenantSlug }
+			success_url: `${origin}/${vendorSlug}/orders/${newOrder.id}?session_id={CHECKOUT_SESSION_ID}`,
+			cancel_url: `${origin}/${vendorSlug}/cart`,
+			metadata: { orderId: String(newOrder.id), vendorSlug }
 		});
 
 		const paymentIntentId =

@@ -2,19 +2,19 @@ import type { PageServerLoad, Actions } from './$types';
 import { fail, error } from '@sveltejs/kit';
 import { db } from '$lib/server/db';
 import { eq, and } from 'drizzle-orm';
-import { menuCategories, menuItems } from '$lib/server/db/schema';
+import { catalogCategories, catalogItems } from '$lib/server/db/schema';
 
 export const load: PageServerLoad = async ({ locals, params }) => {
-	const tenantId = locals.tenantId!;
+	const vendorId = locals.vendorId!;
 	const categoryId = parseInt(params.categoryId);
 	if (isNaN(categoryId)) throw error(404, 'Not found');
 
 	const [category, items] = await Promise.all([
-		db.query.menuCategories.findFirst({
-			where: and(eq(menuCategories.id, categoryId), eq(menuCategories.tenantId, tenantId))
+		db.query.catalogCategories.findFirst({
+			where: and(eq(catalogCategories.id, categoryId), eq(catalogCategories.vendorId, vendorId))
 		}),
-		db.query.menuItems.findMany({
-			where: eq(menuItems.tenantId, tenantId),
+		db.query.catalogItems.findMany({
+			where: eq(catalogItems.vendorId, vendorId),
 			columns: { id: true, name: true, categoryId: true, price: true },
 			orderBy: (i, { asc }) => [asc(i.name)]
 		})
@@ -27,7 +27,7 @@ export const load: PageServerLoad = async ({ locals, params }) => {
 
 export const actions: Actions = {
 	update: async ({ request, locals, params }) => {
-		const tenantId = locals.tenantId!;
+		const vendorId = locals.vendorId!;
 		const categoryId = parseInt(params.categoryId);
 		const formData = await request.formData();
 
@@ -39,28 +39,25 @@ export const actions: Actions = {
 		if (!name) return fail(400, { error: 'Name is required' });
 
 		await db
-			.update(menuCategories)
+			.update(catalogCategories)
 			.set({ name, description, sortOrder, isActive })
-			.where(and(eq(menuCategories.id, categoryId), eq(menuCategories.tenantId, tenantId)));
+			.where(and(eq(catalogCategories.id, categoryId), eq(catalogCategories.vendorId, vendorId)));
 
 		return { success: true };
 	},
 
 	assignItems: async ({ request, locals, params }) => {
-		const tenantId = locals.tenantId!;
+		const vendorId = locals.vendorId!;
 		const categoryId = parseInt(params.categoryId);
 		const formData = await request.formData();
 
-		// Selected item IDs to assign to this category
 		const selectedIds = formData.getAll('itemId').map((v) => parseInt(v.toString()));
 
-		// Get all items for this tenant
-		const allItems = await db.query.menuItems.findMany({
-			where: eq(menuItems.tenantId, tenantId),
+		const allItems = await db.query.catalogItems.findMany({
+			where: eq(catalogItems.vendorId, vendorId),
 			columns: { id: true, categoryId: true }
 		});
 
-		// Assign selected items to this category; remove this category from deselected items
 		await Promise.all(
 			allItems.map((item) => {
 				const shouldBeInCategory = selectedIds.includes(item.id);
@@ -68,14 +65,14 @@ export const actions: Actions = {
 
 				if (shouldBeInCategory && !isCurrentlyInCategory) {
 					return db
-						.update(menuItems)
+						.update(catalogItems)
 						.set({ categoryId })
-						.where(and(eq(menuItems.id, item.id), eq(menuItems.tenantId, tenantId)));
+						.where(and(eq(catalogItems.id, item.id), eq(catalogItems.vendorId, vendorId)));
 				} else if (!shouldBeInCategory && isCurrentlyInCategory) {
 					return db
-						.update(menuItems)
+						.update(catalogItems)
 						.set({ categoryId: null })
-						.where(and(eq(menuItems.id, item.id), eq(menuItems.tenantId, tenantId)));
+						.where(and(eq(catalogItems.id, item.id), eq(catalogItems.vendorId, vendorId)));
 				}
 			})
 		);

@@ -3,7 +3,7 @@ import type { RequestHandler } from './$types';
 import Stripe from 'stripe';
 import { db } from '$lib/server/db';
 import { eq, and, sql } from 'drizzle-orm';
-import { tenant } from '$lib/server/db/schema';
+import { vendor } from '$lib/server/db/vendor';
 import { orders, orderItems } from '$lib/server/db/orders';
 import { promoCodes } from '$lib/server/db/promos';
 import { calcDiscount } from '$lib/server/promo';
@@ -21,7 +21,7 @@ function itemUnitPrice(item: CartItem): number {
 
 export const POST: RequestHandler = async ({ request }) => {
 	const body = (await request.json()) as {
-		tenantSlug: string;
+		vendorSlug: string;
 		items: CartItem[];
 		customer: { name: string; email?: string; phone?: string };
 		notes?: string;
@@ -38,7 +38,7 @@ export const POST: RequestHandler = async ({ request }) => {
 	};
 
 	const {
-		tenantSlug,
+		vendorSlug,
 		items,
 		customer,
 		notes,
@@ -51,23 +51,23 @@ export const POST: RequestHandler = async ({ request }) => {
 		promoCode
 	} = body;
 
-	if (!tenantSlug || !items?.length || !customer?.name) {
+	if (!vendorSlug || !items?.length || !customer?.name) {
 		throw error(400, 'Missing required fields');
 	}
 
-	const tenantRecord = await db.query.tenant.findFirst({ where: eq(tenant.slug, tenantSlug) });
-	if (!tenantRecord?.isActive) throw error(404, 'Store not found');
-	if (!tenantRecord.stripeSecretKey) throw error(400, 'Stripe not configured for this store');
+	const vendorRecord = await db.query.vendor.findFirst({ where: eq(vendor.slug, vendorSlug) });
+	if (!vendorRecord?.isActive) throw error(404, 'Store not found');
+	if (!vendorRecord.stripeSecretKey) throw error(400, 'Stripe not configured for this store');
 
-	const stripe = new Stripe(tenantRecord.stripeSecretKey);
+	const stripe = new Stripe(vendorRecord.stripeSecretKey);
 
-	const tenantSettings = tenantRecord.settings as {
+	const vendorSettings = vendorRecord.settings as {
 		deliveryFee?: number;
 		enableDelivery?: boolean;
 	} | null;
 	const verifiedDeliveryFee =
-		orderType === 'delivery' && tenantSettings?.enableDelivery
-			? (tenantSettings.deliveryFee ?? 0)
+		orderType === 'delivery' && vendorSettings?.enableDelivery
+			? (vendorSettings.deliveryFee ?? 0)
 			: 0;
 
 	let verifiedDiscount = 0;
@@ -78,7 +78,7 @@ export const POST: RequestHandler = async ({ request }) => {
 		promoRecord =
 			(await db.query.promoCodes.findFirst({
 				where: and(
-					eq(promoCodes.tenantId, tenantRecord.id),
+					eq(promoCodes.vendorId, vendorRecord.id),
 					eq(promoCodes.code, promoCode.toUpperCase())
 				)
 			})) ?? null;
@@ -107,7 +107,7 @@ export const POST: RequestHandler = async ({ request }) => {
 	const [newOrder] = await db
 		.insert(orders)
 		.values({
-			tenantId: tenantRecord.id,
+			vendorId: vendorRecord.id,
 			orderNumber,
 			customerName: customer.name,
 			customerEmail: customer.email || null,
@@ -132,7 +132,7 @@ export const POST: RequestHandler = async ({ request }) => {
 	await db.insert(orderItems).values(
 		items.map((item) => ({
 			orderId: newOrder.id,
-			menuItemId: item.itemId ?? null,
+			catalogItemId: item.itemId ?? null,
 			name: item.name,
 			quantity: item.quantity,
 			unitPrice: itemUnitPrice(item),
@@ -147,7 +147,7 @@ export const POST: RequestHandler = async ({ request }) => {
 		...(customer.email ? { receipt_email: customer.email } : {}),
 		metadata: {
 			orderId: String(newOrder.id),
-			tenantSlug,
+			vendorSlug,
 			orderNumber
 		}
 	});

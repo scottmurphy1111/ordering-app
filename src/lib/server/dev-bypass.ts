@@ -5,11 +5,11 @@
 import { db } from '$lib/server/db';
 import { eq } from 'drizzle-orm';
 import { user as userTable } from '$lib/server/db/auth.schema';
-import { tenant as tenantTable, tenantUsers } from '$lib/server/db/tenant';
-import type { Tenant } from '$lib/server/db/tenant';
+import { vendor as vendorTable, vendorUsers } from '$lib/server/db/vendor';
+import type { Vendor } from '$lib/server/db/vendor';
 
 const DEV_USER_ID = 'dev-bypass-user';
-const DEV_TENANT_SLUG = 'dev-shop';
+const DEV_VENDOR_SLUG = 'sunrise-bread';
 
 export const DEV_FAKE_USER = {
 	id: DEV_USER_ID,
@@ -35,10 +35,10 @@ export const DEV_FAKE_SESSION = {
 };
 
 // Cached after first successful seed so we only hit the DB once per server process.
-let cachedDevTenant: Tenant | null = null;
+let cachedDevVendor: Vendor | null = null;
 
-export async function ensureDevSeed(): Promise<Tenant> {
-	if (cachedDevTenant) return cachedDevTenant;
+export async function ensureDevSeed(): Promise<Vendor> {
+	if (cachedDevVendor) return cachedDevVendor;
 
 	await db
 		.insert(userTable)
@@ -54,30 +54,30 @@ export async function ensureDevSeed(): Promise<Tenant> {
 		.onConflictDoNothing();
 
 	await db
-		.insert(tenantTable)
+		.insert(vendorTable)
 		.values({
-			name: 'Dev Shop',
-			slug: DEV_TENANT_SLUG,
+			name: 'Sunrise Bread Co.',
+			slug: DEV_VENDOR_SLUG,
 			isActive: true,
 			subscriptionTier: 'pro'
 		})
 		.onConflictDoNothing();
 
-	const devTenant = await db.query.tenant.findFirst({
-		where: eq(tenantTable.slug, DEV_TENANT_SLUG)
+	const devVendor = await db.query.vendor.findFirst({
+		where: eq(vendorTable.slug, DEV_VENDOR_SLUG)
 	});
 
-	if (!devTenant) throw new Error('[DEV BYPASS] Failed to find dev tenant after upsert.');
+	if (!devVendor) throw new Error('[DEV BYPASS] Failed to find dev vendor after upsert.');
 
 	await db
-		.insert(tenantUsers)
+		.insert(vendorUsers)
 		.values({
-			tenantId: devTenant.id,
+			vendorId: devVendor.id,
 			userId: DEV_USER_ID,
 			role: 'owner'
 		})
 		.onConflictDoNothing();
 
-	cachedDevTenant = devTenant;
-	return devTenant;
+	cachedDevVendor = devVendor;
+	return devVendor;
 }

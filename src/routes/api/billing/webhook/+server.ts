@@ -4,7 +4,7 @@ import Stripe from 'stripe';
 import { env } from '$env/dynamic/private';
 import { db } from '$lib/server/db';
 import { eq } from 'drizzle-orm';
-import { tenant } from '$lib/server/db/tenant';
+import { vendor } from '$lib/server/db/vendor';
 import { getOrderLocalStripe } from '$lib/server/stripe-billing';
 import { sendEmail } from '$lib/server/email';
 import { subscriptionConfirmedEmail } from '$lib/server/email/templates/subscriptionConfirmed';
@@ -45,9 +45,9 @@ export const POST: RequestHandler = async ({ request }) => {
 		switch (event.type) {
 			case 'checkout.session.completed': {
 				const session = event.data.object as Stripe.Checkout.Session;
-				const tenantId = parseInt(session.metadata?.tenantId ?? '');
+				const vendorId = parseInt(session.metadata?.vendorId ?? '');
 				const planKey = session.metadata?.planKey;
-				if (isNaN(tenantId) || !planKey || !PAID_TIERS.has(planKey)) break;
+				if (isNaN(vendorId) || !planKey || !PAID_TIERS.has(planKey)) break;
 
 				const subscriptionId =
 					typeof session.subscription === 'string'
@@ -57,7 +57,7 @@ export const POST: RequestHandler = async ({ request }) => {
 					typeof session.customer === 'string' ? session.customer : session.customer?.id;
 
 				await db
-					.update(tenant)
+					.update(vendor)
 					.set({
 						subscriptionTier: planKey,
 						subscriptionStatus: 'active',
@@ -65,24 +65,23 @@ export const POST: RequestHandler = async ({ request }) => {
 						stripeCustomerId: customerId ?? null,
 						updatedAt: new Date()
 					})
-					.where(eq(tenant.id, tenantId));
+					.where(eq(vendor.id, vendorId));
 
-				// Send confirmation email
-				const tenantRecord = await db.query.tenant.findFirst({
-					where: eq(tenant.id, tenantId),
+				const vendorRecord = await db.query.vendor.findFirst({
+					where: eq(vendor.id, vendorId),
 					columns: { name: true, email: true }
 				});
 
-				if (tenantRecord?.email && subscriptionId) {
+				if (vendorRecord?.email && subscriptionId) {
 					const subscription = await stripe.subscriptions.retrieve(subscriptionId);
 					const item = subscription.items.data[0];
 					const amount = item?.price?.unit_amount ?? 0;
 
 					await sendEmail({
-						to: tenantRecord.email,
+						to: vendorRecord.email,
 						subject: `You're on Order Local ${planKey.charAt(0).toUpperCase() + planKey.slice(1)}`,
 						html: subscriptionConfirmedEmail({
-							tenantName: tenantRecord.name,
+							tenantName: vendorRecord.name,
 							planName: planKey.charAt(0).toUpperCase() + planKey.slice(1),
 							amount: formatAmount(amount)
 						})
@@ -98,11 +97,11 @@ export const POST: RequestHandler = async ({ request }) => {
 						? subscription.customer
 						: subscription.customer.id;
 
-				const tenantRecord = await db.query.tenant.findFirst({
-					where: eq(tenant.stripeCustomerId, customerId),
+				const vendorRecord = await db.query.vendor.findFirst({
+					where: eq(vendor.stripeCustomerId, customerId),
 					columns: { id: true }
 				});
-				if (!tenantRecord) break;
+				if (!vendorRecord) break;
 
 				const status =
 					subscription.status === 'active'
@@ -114,9 +113,9 @@ export const POST: RequestHandler = async ({ request }) => {
 								: subscription.status;
 
 				await db
-					.update(tenant)
+					.update(vendor)
 					.set({ subscriptionStatus: status, updatedAt: new Date() })
-					.where(eq(tenant.id, tenantRecord.id));
+					.where(eq(vendor.id, vendorRecord.id));
 				break;
 			}
 
@@ -127,15 +126,14 @@ export const POST: RequestHandler = async ({ request }) => {
 						? subscription.customer
 						: subscription.customer.id;
 
-				const tenantRecord = await db.query.tenant.findFirst({
-					where: eq(tenant.stripeCustomerId, customerId),
+				const vendorRecord = await db.query.vendor.findFirst({
+					where: eq(vendor.stripeCustomerId, customerId),
 					columns: { id: true }
 				});
-				if (!tenantRecord) break;
+				if (!vendorRecord) break;
 
-				// Downgrade to Starter and clear all paid add-ons
 				await db
-					.update(tenant)
+					.update(vendor)
 					.set({
 						subscriptionTier: 'starter',
 						subscriptionStatus: 'cancelled',
@@ -143,7 +141,7 @@ export const POST: RequestHandler = async ({ request }) => {
 						addons: [],
 						updatedAt: new Date()
 					})
-					.where(eq(tenant.id, tenantRecord.id));
+					.where(eq(vendor.id, vendorRecord.id));
 				break;
 			}
 
@@ -153,30 +151,30 @@ export const POST: RequestHandler = async ({ request }) => {
 					typeof invoice.customer === 'string' ? invoice.customer : invoice.customer?.id;
 				if (!customerId) break;
 
-				const tenantRecord = await db.query.tenant.findFirst({
-					where: eq(tenant.stripeCustomerId, customerId),
+				const vendorRecord = await db.query.vendor.findFirst({
+					where: eq(vendor.stripeCustomerId, customerId),
 					columns: { id: true, name: true, email: true, subscriptionTier: true }
 				});
-				if (!tenantRecord) break;
+				if (!vendorRecord) break;
 
 				await db
-					.update(tenant)
+					.update(vendor)
 					.set({ subscriptionStatus: 'past_due', updatedAt: new Date() })
-					.where(eq(tenant.id, tenantRecord.id));
+					.where(eq(vendor.id, vendorRecord.id));
 
-				if (tenantRecord.email) {
+				if (vendorRecord.email) {
 					const amount = invoice.amount_due ?? 0;
 					const nextRetry = (invoice as Stripe.Invoice & { next_payment_attempt?: number })
 						.next_payment_attempt;
 					const planName =
-						(tenantRecord.subscriptionTier ?? 'plan').charAt(0).toUpperCase() +
-						(tenantRecord.subscriptionTier ?? 'plan').slice(1);
+						(vendorRecord.subscriptionTier ?? 'plan').charAt(0).toUpperCase() +
+						(vendorRecord.subscriptionTier ?? 'plan').slice(1);
 
 					await sendEmail({
-						to: tenantRecord.email,
+						to: vendorRecord.email,
 						subject: 'Order Local — payment failed',
 						html: paymentFailedEmail({
-							tenantName: tenantRecord.name,
+							tenantName: vendorRecord.name,
 							planName,
 							amount: formatAmount(amount),
 							nextRetryDate: nextRetry ? formatDate(nextRetry) : undefined

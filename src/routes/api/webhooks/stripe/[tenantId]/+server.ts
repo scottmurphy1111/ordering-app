@@ -3,7 +3,7 @@ import type { RequestHandler } from './$types';
 import Stripe from 'stripe';
 import { db } from '$lib/server/db';
 import { eq, sql } from 'drizzle-orm';
-import { tenant } from '$lib/server/db/tenant';
+import { vendor } from '$lib/server/db/vendor';
 import { orders } from '$lib/server/db/schema';
 import { sendEmail } from '$lib/server/email';
 import { orderConfirmedEmail } from '$lib/server/email/templates/orderConfirmed';
@@ -14,8 +14,8 @@ import { env } from '$env/dynamic/private';
 
 export const POST: RequestHandler = async ({ request, params }) => {
 	const numericId = parseInt(params.tenantId);
-	const tenantRecord = await db.query.tenant.findFirst({
-		where: isNaN(numericId) ? eq(tenant.slug, params.tenantId) : eq(tenant.id, numericId),
+	const vendorRecord = await db.query.vendor.findFirst({
+		where: isNaN(numericId) ? eq(vendor.slug, params.tenantId) : eq(vendor.id, numericId),
 		columns: {
 			id: true,
 			stripeSecretKey: true,
@@ -27,12 +27,12 @@ export const POST: RequestHandler = async ({ request, params }) => {
 		}
 	});
 
-	if (!tenantRecord?.isActive) throw error(404, 'Tenant not found');
-	if (!tenantRecord.stripeSecretKey) throw error(400, 'Stripe not configured for this tenant');
-	if (!tenantRecord.stripeWebhookSecret)
-		throw error(400, 'Webhook secret not configured for this tenant');
+	if (!vendorRecord?.isActive) throw error(404, 'Vendor not found');
+	if (!vendorRecord.stripeSecretKey) throw error(400, 'Stripe not configured for this vendor');
+	if (!vendorRecord.stripeWebhookSecret)
+		throw error(400, 'Webhook secret not configured for this vendor');
 
-	const stripe = new Stripe(tenantRecord.stripeSecretKey);
+	const stripe = new Stripe(vendorRecord.stripeSecretKey);
 
 	const body = await request.text();
 	const signature = request.headers.get('stripe-signature');
@@ -41,21 +41,21 @@ export const POST: RequestHandler = async ({ request, params }) => {
 
 	let event: Stripe.Event;
 	try {
-		event = stripe.webhooks.constructEvent(body, signature, tenantRecord.stripeWebhookSecret);
+		event = stripe.webhooks.constructEvent(body, signature, vendorRecord.stripeWebhookSecret);
 	} catch (err) {
 		console.error('Webhook signature verification failed:', err);
 		throw error(400, 'Invalid webhook signature');
 	}
 
-	const tenantCtx = {
-		id: tenantRecord.id,
-		name: tenantRecord.name,
-		primaryColor: tenantRecord.backgroundColor ?? undefined,
-		slug: tenantRecord.slug
+	const vendorCtx = {
+		id: vendorRecord.id,
+		name: vendorRecord.name,
+		primaryColor: vendorRecord.backgroundColor ?? undefined,
+		slug: vendorRecord.slug
 	};
 
 	try {
-		await handleEvent(event, tenantCtx);
+		await handleEvent(event, vendorCtx);
 	} catch (err) {
 		console.error(`Error handling webhook event ${event.type}:`, err);
 		throw error(500, 'Webhook handler failed');
@@ -64,7 +64,7 @@ export const POST: RequestHandler = async ({ request, params }) => {
 	return json({ received: true });
 };
 
-type TenantCtx = { id: number; name: string; primaryColor?: string; slug: string };
+type VendorCtx = { id: number; name: string; primaryColor?: string; slug: string };
 
 function generateOrderNumber(): string {
 	const ts = Date.now().toString(36).toUpperCase();
@@ -72,11 +72,11 @@ function generateOrderNumber(): string {
 	return `#${ts}-${rand}`;
 }
 
-function orderUrl(tenantSlug: string, orderId: number) {
-	return `${env.ORIGIN}/${tenantSlug}/orders/${orderId}`;
+function orderUrl(vendorSlug: string, orderId: number) {
+	return `${env.ORIGIN}/${vendorSlug}/orders/${orderId}`;
 }
 
-async function handleEvent(event: Stripe.Event, tenant: TenantCtx) {
+async function handleEvent(event: Stripe.Event, ctx: VendorCtx) {
 	switch (event.type) {
 		case 'payment_intent.succeeded': {
 			const intent = event.data.object as Stripe.PaymentIntent;
@@ -88,10 +88,10 @@ async function handleEvent(event: Stripe.Event, tenant: TenantCtx) {
 			if (order?.customerEmail) {
 				await sendEmail({
 					to: order.customerEmail,
-					subject: `Order ${order.orderNumber} confirmed — ${tenant.name}`,
+					subject: `Order ${order.orderNumber} confirmed — ${ctx.name}`,
 					html: orderConfirmedEmail({
-						tenantName: tenant.name,
-						primaryColor: tenant.primaryColor,
+						tenantName: ctx.name,
+						primaryColor: ctx.primaryColor,
 						orderNumber: order.orderNumber,
 						customerName: order.customerName ?? 'there',
 						items: order.items as Parameters<typeof orderConfirmedEmail>[0]['items'],
@@ -107,7 +107,7 @@ async function handleEvent(event: Stripe.Event, tenant: TenantCtx) {
 			if (order?.customerPhone) {
 				await sendSms(
 					order.customerPhone,
-					`${tenant.name}: Order ${order.orderNumber} confirmed! We'll text you when it's ready. Track: ${orderUrl(tenant.slug, order.id)}`
+					`${ctx.name}: Order ${order.orderNumber} confirmed! We'll text you when it's ready. Track: ${orderUrl(ctx.slug, order.id)}`
 				).catch(console.error);
 			}
 			break;
@@ -124,10 +124,10 @@ async function handleEvent(event: Stripe.Event, tenant: TenantCtx) {
 			if (order?.customerEmail) {
 				await sendEmail({
 					to: order.customerEmail,
-					subject: `Order ${order.orderNumber} cancelled — ${tenant.name}`,
+					subject: `Order ${order.orderNumber} cancelled — ${ctx.name}`,
 					html: orderCancelledEmail({
-						tenantName: tenant.name,
-						primaryColor: tenant.primaryColor,
+						tenantName: ctx.name,
+						primaryColor: ctx.primaryColor,
 						orderNumber: order.orderNumber,
 						customerName: order.customerName ?? 'there',
 						total: order.total
@@ -137,7 +137,7 @@ async function handleEvent(event: Stripe.Event, tenant: TenantCtx) {
 			if (order?.customerPhone) {
 				await sendSms(
 					order.customerPhone,
-					`${tenant.name}: Your order ${order.orderNumber} has been cancelled.`
+					`${ctx.name}: Your order ${order.orderNumber} has been cancelled.`
 				).catch(console.error);
 			}
 			break;
@@ -158,10 +158,10 @@ async function handleEvent(event: Stripe.Event, tenant: TenantCtx) {
 			if (order?.customerEmail) {
 				await sendEmail({
 					to: order.customerEmail,
-					subject: `Refund processed for order ${order.orderNumber} — ${tenant.name}`,
+					subject: `Refund processed for order ${order.orderNumber} — ${ctx.name}`,
 					html: orderRefundedEmail({
-						tenantName: tenant.name,
-						primaryColor: tenant.primaryColor,
+						tenantName: ctx.name,
+						primaryColor: ctx.primaryColor,
 						orderNumber: order.orderNumber,
 						customerName: order.customerName ?? 'there',
 						total: order.total
@@ -171,7 +171,7 @@ async function handleEvent(event: Stripe.Event, tenant: TenantCtx) {
 			if (order?.customerPhone) {
 				await sendSms(
 					order.customerPhone,
-					`${tenant.name}: Your refund for order ${order.orderNumber} has been processed.`
+					`${ctx.name}: Your refund for order ${order.orderNumber} has been processed.`
 				).catch(console.error);
 			}
 			break;
@@ -180,7 +180,7 @@ async function handleEvent(event: Stripe.Event, tenant: TenantCtx) {
 		case 'checkout.session.completed': {
 			const session = event.data.object as Stripe.Checkout.Session;
 			const orderId = session.metadata?.orderId ? parseInt(session.metadata.orderId) : null;
-			const tenantSlug = session.metadata?.tenantSlug ?? '';
+			const vendorSlug = session.metadata?.vendorSlug ?? '';
 			const intentId = session.payment_intent
 				? typeof session.payment_intent === 'string'
 					? session.payment_intent
@@ -217,10 +217,10 @@ async function handleEvent(event: Stripe.Event, tenant: TenantCtx) {
 			if (order?.customerEmail) {
 				await sendEmail({
 					to: order.customerEmail,
-					subject: `Order ${order.orderNumber} confirmed — ${tenant.name}`,
+					subject: `Order ${order.orderNumber} confirmed — ${ctx.name}`,
 					html: orderConfirmedEmail({
-						tenantName: tenant.name,
-						primaryColor: tenant.primaryColor,
+						tenantName: ctx.name,
+						primaryColor: ctx.primaryColor,
 						orderNumber: order.orderNumber,
 						customerName: order.customerName ?? 'there',
 						items: order.items as Parameters<typeof orderConfirmedEmail>[0]['items'],
@@ -236,7 +236,7 @@ async function handleEvent(event: Stripe.Event, tenant: TenantCtx) {
 			if (order?.customerPhone) {
 				await sendSms(
 					order.customerPhone,
-					`${tenant.name}: Order ${order.orderNumber} confirmed! We'll text you when it's ready. Track: ${orderUrl(tenantSlug, order.id)}`
+					`${ctx.name}: Order ${order.orderNumber} confirmed! We'll text you when it's ready. Track: ${orderUrl(vendorSlug, order.id)}`
 				).catch(console.error);
 			}
 			break;
@@ -244,7 +244,6 @@ async function handleEvent(event: Stripe.Event, tenant: TenantCtx) {
 
 		case 'invoice.payment_succeeded': {
 			const invoice = event.data.object as Stripe.Invoice;
-			// Skip first payment — already handled by checkout.session.completed
 			if (invoice.billing_reason === 'subscription_create') break;
 
 			const subDetails =
@@ -255,9 +254,8 @@ async function handleEvent(event: Stripe.Event, tenant: TenantCtx) {
 			const subId = subRaw ? (typeof subRaw === 'string' ? subRaw : subRaw.id) : null;
 			if (!subId) break;
 
-			// Find the original order for this subscription
 			const original = await db.query.orders.findFirst({
-				where: sql`${orders.tenantId} = ${tenant.id} AND ${orders.metadata}->>'stripeSubscriptionId' = ${subId}`
+				where: sql`${orders.vendorId} = ${ctx.id} AND ${orders.metadata}->>'stripeSubscriptionId' = ${subId}`
 			});
 			if (!original) {
 				console.warn(
@@ -270,7 +268,7 @@ async function handleEvent(event: Stripe.Event, tenant: TenantCtx) {
 			const [recurring] = await db
 				.insert(orders)
 				.values({
-					tenantId: original.tenantId,
+					vendorId: original.vendorId,
 					orderNumber,
 					customerName: original.customerName,
 					customerEmail: original.customerEmail,
@@ -292,10 +290,10 @@ async function handleEvent(event: Stripe.Event, tenant: TenantCtx) {
 			if (recurring?.customerEmail) {
 				await sendEmail({
 					to: recurring.customerEmail,
-					subject: `Subscription renewed — ${tenant.name}`,
+					subject: `Subscription renewed — ${ctx.name}`,
 					html: orderConfirmedEmail({
-						tenantName: tenant.name,
-						primaryColor: tenant.primaryColor,
+						tenantName: ctx.name,
+						primaryColor: ctx.primaryColor,
 						orderNumber: recurring.orderNumber,
 						customerName: recurring.customerName ?? 'there',
 						items: recurring.items as Parameters<typeof orderConfirmedEmail>[0]['items'],
@@ -311,7 +309,7 @@ async function handleEvent(event: Stripe.Event, tenant: TenantCtx) {
 			if (recurring?.customerPhone) {
 				await sendSms(
 					recurring.customerPhone,
-					`${tenant.name}: Your subscription has renewed. Order ${recurring.orderNumber} — ${orderUrl(tenant.slug, recurring.id)}`
+					`${ctx.name}: Your subscription has renewed. Order ${recurring.orderNumber} — ${orderUrl(ctx.slug, recurring.id)}`
 				).catch(console.error);
 			}
 			break;

@@ -1,23 +1,23 @@
 import type { PageServerLoad } from './$types';
 import { db } from '$lib/server/db';
 import { eq, sql } from 'drizzle-orm';
-import { menuItems, menuCategories, orders, orderItems } from '$lib/server/db/schema';
+import { catalogItems, catalogCategories, orders, orderItems } from '$lib/server/db/schema';
 
 export const load: PageServerLoad = async ({ locals, depends }) => {
 	depends('app:overview');
-	const tenantId = locals.tenantId!;
+	const vendorId = locals.vendorId!;
 
 	const [itemCount, categoryCount, orderStats, topItemsRows, orderTypeSplitRows] =
 		await Promise.all([
 			db
 				.select({ count: sql<number>`count(*)` })
-				.from(menuItems)
-				.where(eq(menuItems.tenantId, tenantId)),
+				.from(catalogItems)
+				.where(eq(catalogItems.vendorId, vendorId)),
 
 			db
 				.select({ count: sql<number>`count(*)` })
-				.from(menuCategories)
-				.where(eq(menuCategories.tenantId, tenantId)),
+				.from(catalogCategories)
+				.where(eq(catalogCategories.vendorId, vendorId)),
 
 			db
 				.select({
@@ -26,7 +26,7 @@ export const load: PageServerLoad = async ({ locals, depends }) => {
 					pending: sql<number>`count(*) filter (where status in ('received','confirmed','preparing'))`
 				})
 				.from(orders)
-				.where(eq(orders.tenantId, tenantId)),
+				.where(eq(orders.vendorId, vendorId)),
 
 			db
 				.select({
@@ -35,7 +35,7 @@ export const load: PageServerLoad = async ({ locals, depends }) => {
 				})
 				.from(orderItems)
 				.innerJoin(orders, eq(orderItems.orderId, orders.id))
-				.where(eq(orders.tenantId, tenantId))
+				.where(eq(orders.vendorId, vendorId))
 				.groupBy(orderItems.name)
 				.orderBy(sql`sum(${orderItems.quantity}) desc`)
 				.limit(5),
@@ -46,12 +46,12 @@ export const load: PageServerLoad = async ({ locals, depends }) => {
 					count: sql<number>`count(*)`
 				})
 				.from(orders)
-				.where(eq(orders.tenantId, tenantId))
+				.where(eq(orders.vendorId, vendorId))
 				.groupBy(orders.type)
 		]);
 
 	const recentOrders = await db.query.orders.findMany({
-		where: eq(orders.tenantId, tenantId),
+		where: eq(orders.vendorId, vendorId),
 		orderBy: (o, { desc }) => [desc(o.createdAt)],
 		limit: 5,
 		columns: {
@@ -66,7 +66,7 @@ export const load: PageServerLoad = async ({ locals, depends }) => {
 	});
 
 	return {
-		stripeConnected: !!locals.tenant?.stripeSecretKey,
+		stripeConnected: !!locals.vendor?.stripeSecretKey,
 		stats: {
 			items: Number(itemCount[0]?.count ?? 0),
 			categories: Number(categoryCount[0]?.count ?? 0),

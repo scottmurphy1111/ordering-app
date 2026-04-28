@@ -13,8 +13,7 @@ import {
 } from 'drizzle-orm/pg-core';
 import { user } from './auth.schema';
 
-// Optional: Enum for business types / cuisines (expand as needed)
-export const tenantTypeEnum = pgEnum('tenant_type', [
+export const vendorTypeEnum = pgEnum('vendor_type', [
 	'quick_service',
 	'full_service',
 	'cafe',
@@ -24,17 +23,16 @@ export const tenantTypeEnum = pgEnum('tenant_type', [
 	'other'
 ]);
 
-// Main tenants table (this is your "tenant" root)
-export const tenant = pgTable(
-	'tenants',
+export const vendor = pgTable(
+	'vendors',
 	{
 		id: serial('id').primaryKey(),
 
 		// Core identity & branding
 		name: varchar('name', { length: 255 }).notNull(),
-		slug: varchar('slug', { length: 100 }).unique().notNull(), // Used for URLs: yourapp.com/{slug}/menu
-		legalName: varchar('legal_name', { length: 255 }), // For invoices/tax
-		type: tenantTypeEnum('type').default('quick_service'),
+		slug: varchar('slug', { length: 100 }).unique().notNull(),
+		legalName: varchar('legal_name', { length: 255 }),
+		type: vendorTypeEnum('type').default('quick_service'),
 
 		// Contact & location
 		address: jsonb('address').default({}),
@@ -47,11 +45,11 @@ export const tenant = pgTable(
 		bannerUrl: text('banner_url'),
 		faviconUrl: text('favicon_url'),
 		backgroundImageUrl: text('background_image_url'),
-		backgroundColor: varchar('background_color', { length: 7 }).default('#000000'), // hex — header/button fill
-		accentColor: varchar('accent_color', { length: 7 }).default('#374151'), // hex — badge/pill highlight
-		foregroundColor: varchar('foreground_color', { length: 7 }).default('#ffffff'), // hex — text on background
+		backgroundColor: varchar('background_color', { length: 7 }).default('#000000'),
+		accentColor: varchar('accent_color', { length: 7 }).default('#374151'),
+		foregroundColor: varchar('foreground_color', { length: 7 }).default('#ffffff'),
 
-		// Business settings (flexible JSONB for future-proofing)
+		// Business settings
 		settings: jsonb('settings').default({
 			currency: 'USD',
 			taxRate: 0.0825,
@@ -77,7 +75,7 @@ export const tenant = pgTable(
 		stripeCustomerId: varchar('stripe_customer_id', { length: 255 }),
 		stripeSubscriptionId: varchar('stripe_subscription_id', { length: 255 }),
 
-		// Per-tenant Stripe integration (for product discovery and payments)
+		// Per-vendor Stripe integration
 		stripeSecretKey: text('stripe_secret_key'),
 		stripePublishableKey: text('stripe_publishable_key'),
 		stripeWebhookSecret: text('stripe_webhook_secret'),
@@ -89,40 +87,40 @@ export const tenant = pgTable(
 		// Timestamps
 		createdAt: timestamp('created_at').defaultNow().notNull(),
 		updatedAt: timestamp('updated_at').defaultNow().notNull(),
-		deletedAt: timestamp('deleted_at') // soft delete support
+		deletedAt: timestamp('deleted_at')
 	},
 	(table) => ({
-		slugIdx: index('tenants_slug_idx').on(table.slug),
-		activeIdx: index('tenants_active_idx').on(table.isActive),
-		tenantLookupIdx: index('tenants_tenant_lookup_idx').on(table.slug, table.isActive)
+		slugIdx: index('vendors_slug_idx').on(table.slug),
+		activeIdx: index('vendors_active_idx').on(table.isActive),
+		vendorLookupIdx: index('vendors_vendor_lookup_idx').on(table.slug, table.isActive)
 	})
 );
 
-export type Tenant = typeof tenant.$inferSelect;
-export type NewTenant = typeof tenant.$inferInsert;
+export type Vendor = typeof vendor.$inferSelect;
+export type NewVendor = typeof vendor.$inferInsert;
 
-// Many-to-many junction: Users <-> tenants
-export const tenantUsers = pgTable(
-	'tenant_users',
+// Many-to-many junction: Users <-> vendors
+export const vendorUsers = pgTable(
+	'vendor_users',
 	{
-		tenantId: integer('tenant_id')
+		vendorId: integer('vendor_id')
 			.notNull()
-			.references(() => tenant.id, { onDelete: 'cascade' }),
+			.references(() => vendor.id, { onDelete: 'cascade' }),
 		userId: text('user_id')
 			.notNull()
 			.references(() => user.id, { onDelete: 'cascade' }),
-		role: varchar('role', { length: 50 }).default('owner').notNull(), // owner, manager, kitchen, staff, viewer
+		role: varchar('role', { length: 50 }).default('owner').notNull(),
 		assignedAt: timestamp('assigned_at').defaultNow().notNull()
 	},
-	(table) => [primaryKey({ columns: [table.tenantId, table.userId] })]
+	(table) => [primaryKey({ columns: [table.vendorId, table.userId] })]
 );
 
-// Pending invitations — allows admins to invite users who don't yet have accounts
-export const tenantInvitations = pgTable('tenant_invitations', {
-	id: text('id').primaryKey(), // random UUID used as the invite token
-	tenantId: integer('tenant_id')
+// Pending invitations
+export const vendorInvitations = pgTable('vendor_invitations', {
+	id: text('id').primaryKey(),
+	vendorId: integer('vendor_id')
 		.notNull()
-		.references(() => tenant.id, { onDelete: 'cascade' }),
+		.references(() => vendor.id, { onDelete: 'cascade' }),
 	email: varchar('email', { length: 255 }).notNull(),
 	role: varchar('role', { length: 50 }).default('staff').notNull(),
 	invitedByUserId: text('invited_by_user_id')

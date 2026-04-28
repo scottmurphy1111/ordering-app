@@ -18,10 +18,10 @@
 	const fmt = (cents: number) =>
 		new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(cents / 100);
 
-	const backgroundColor = $derived(data.tenant.backgroundColor ?? '#000000');
-	const accentColor = $derived(data.tenant.accentColor ?? '#374151');
-	const foregroundColor = $derived(data.tenant.foregroundColor ?? '#ffffff');
-	const logoUrl = $derived(data.tenant.logoUrl ?? '');
+	const backgroundColor = $derived(data.vendor.backgroundColor ?? '#000000');
+	const accentColor = $derived(data.vendor.accentColor ?? '#374151');
+	const foregroundColor = $derived(data.vendor.foregroundColor ?? '#ffffff');
+	const logoUrl = $derived(data.vendor.logoUrl ?? '');
 
 	onMount(async () => {
 		const stripeInstance = await loadStripe(data.publishableKey);
@@ -86,7 +86,7 @@
 		const { error: stripeError } = await stripe.confirmPayment({
 			elements,
 			confirmParams: {
-				return_url: `${window.location.origin}/${data.tenant.slug}/orders/${data.order.id}`
+				return_url: `${window.location.origin}/${data.vendor.slug}/orders/${data.order.id}`
 			}
 		});
 
@@ -98,7 +98,7 @@
 </script>
 
 <svelte:head>
-	<title>Checkout — {data.tenant.name}</title>
+	<title>Checkout — {data.vendor.name}</title>
 </svelte:head>
 
 <div class="min-h-screen bg-muted/50">
@@ -106,10 +106,10 @@
 	<header class="border-b border-white/10" style="background-color: {backgroundColor};">
 		<div class="mx-auto flex max-w-4xl items-center gap-3 px-4 py-4">
 			{#if logoUrl}
-				<img src={logoUrl} alt={data.tenant.name} class="h-8 w-8 rounded object-contain" />
+				<img src={logoUrl} alt={data.vendor.name} class="h-8 w-8 rounded object-contain" />
 			{/if}
 			<span class="text-lg font-semibold" style="color: {foregroundColor};"
-				>{data.tenant.name}</span
+				>{data.vendor.name}</span
 			>
 			<span class="ml-auto text-sm opacity-60" style="color: {foregroundColor};">Secure checkout</span>
 			<Icon icon="mdi:lock" class="h-4 w-4 opacity-60" style="color: {foregroundColor};" />
@@ -276,7 +276,7 @@
 
 				<div class="mt-3 flex justify-center">
 					<a
-						href={resolve(`/${data.tenant.slug}/cart`)}
+						href={resolve(`/${data.vendor.slug}/cart`)}
 						class="flex items-center gap-1 text-xs text-muted-foreground transition-colors hover:text-muted-foreground"
 					>
 						<Icon icon="mdi:arrow-left" class="h-3.5 w-3.5" /> Back to cart

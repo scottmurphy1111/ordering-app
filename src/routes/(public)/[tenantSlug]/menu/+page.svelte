@@ -12,7 +12,7 @@
 
 	onMount(() => cart.init(data.tenantSlug));
 
-	const tenant = $derived(data.tenant);
+	const tenant = $derived(data.vendor);
 	const settings = $derived(tenant.settings as Record<string, unknown> | null);
 
 	// ── Open/closed status ───────────────────────────────────────────────────

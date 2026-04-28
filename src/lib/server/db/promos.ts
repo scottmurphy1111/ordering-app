@@ -8,28 +8,28 @@ import {
 	timestamp,
 	index
 } from 'drizzle-orm/pg-core';
-import { tenant } from './tenant';
+import { vendor } from './vendor';
 
 export const promoCodes = pgTable(
 	'promo_codes',
 	{
 		id: serial('id').primaryKey(),
-		tenantId: integer('tenant_id')
+		vendorId: integer('vendor_id')
 			.notNull()
-			.references(() => tenant.id, { onDelete: 'cascade' }),
+			.references(() => vendor.id, { onDelete: 'cascade' }),
 		code: varchar('code', { length: 50 }).notNull(),
 		description: text('description'),
-		type: varchar('type', { length: 10 }).notNull(), // 'percent' | 'flat'
-		amount: integer('amount').notNull(), // percent (1-100) or cents
+		type: varchar('type', { length: 10 }).notNull(),
+		amount: integer('amount').notNull(),
 		minOrderAmount: integer('min_order_amount').default(0).notNull(),
-		maxUses: integer('max_uses'), // null = unlimited
+		maxUses: integer('max_uses'),
 		usedCount: integer('used_count').default(0).notNull(),
 		expiresAt: timestamp('expires_at'),
 		isActive: boolean('is_active').default(true).notNull(),
 		createdAt: timestamp('created_at').defaultNow().notNull()
 	},
-	(table) => ({
-		tenantIdx: index('promo_codes_tenant_idx').on(table.tenantId),
-		codeIdx: index('promo_codes_code_idx').on(table.tenantId, table.code)
-	})
+	(table) => [
+		index('promo_codes_vendor_idx').on(table.vendorId),
+		index('promo_codes_code_idx').on(table.vendorId, table.code)
+	]
 );

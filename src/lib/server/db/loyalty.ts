@@ -7,15 +7,15 @@ import {
 	uniqueIndex,
 	index
 } from 'drizzle-orm/pg-core';
-import { tenant } from './tenant';
+import { vendor } from './vendor';
 
 export const loyaltyAccounts = pgTable(
 	'loyalty_accounts',
 	{
 		id: serial('id').primaryKey(),
-		tenantId: integer('tenant_id')
+		vendorId: integer('vendor_id')
 			.notNull()
-			.references(() => tenant.id, { onDelete: 'cascade' }),
+			.references(() => vendor.id, { onDelete: 'cascade' }),
 		email: varchar('email', { length: 255 }).notNull(),
 		name: varchar('name', { length: 255 }),
 		currentStamps: integer('current_stamps').default(0).notNull(),
@@ -28,8 +28,8 @@ export const loyaltyAccounts = pgTable(
 		updatedAt: timestamp('updated_at').defaultNow().notNull()
 	},
 	(table) => [
-		uniqueIndex('loyalty_accounts_tenant_email_idx').on(table.tenantId, table.email),
-		index('loyalty_accounts_tenant_idx').on(table.tenantId)
+		uniqueIndex('loyalty_accounts_vendor_email_idx').on(table.vendorId, table.email),
+		index('loyalty_accounts_vendor_idx').on(table.vendorId)
 	]
 );
 
@@ -47,7 +47,7 @@ export interface LoyaltyConfig {
 	points: {
 		pointsPerDollar: number;
 		redeemAt: number;
-		redeemValue: number; // cents
+		redeemValue: number;
 	};
 }
 

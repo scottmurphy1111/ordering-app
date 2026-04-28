@@ -122,10 +122,10 @@
 	<!-- Logo / Tenant Name -->
 	<div class="flex items-center justify-between border-b border-white/10 px-4 py-4">
 		<a href={resolve('/tenants')} class="flex min-w-0 flex-1 items-center gap-3">
-			{#if data.tenant?.logoUrl}
+			{#if data.vendor?.logoUrl}
 				<img
-					src={data.tenant.logoUrl}
-					alt={data.tenant.name}
+					src={data.vendor.logoUrl}
+					alt={data.vendor.name}
 					class="h-9 w-9 shrink-0 rounded-md bg-background/10 object-contain p-0.5"
 				/>
 			{/if}
@@ -133,8 +133,8 @@
 				<p class="text-xs font-medium tracking-wider text-muted-foreground uppercase">
 					Order<span class="text-primary">Local</span>
 				</p>
-				{#if data.tenant}
-					<p class="mt-0.5 truncate text-sm font-semibold text-white">{data.tenant.name}</p>
+				{#if data.vendor}
+					<p class="mt-0.5 truncate text-sm font-semibold text-white">{data.vendor.name}</p>
 				{:else}
 					<p class="mt-0.5 text-sm text-muted-foreground">No tenant selected</p>
 				{/if}
@@ -161,7 +161,7 @@
 
 	<!-- User + Switch Tenant -->
 	<div class="space-y-2 border-t border-white/10 px-4 pt-6 pb-3">
-		{#if data.hasMultipleTenants}
+		{#if data.hasMultipleVendors}
 			<a
 				href={resolve('/tenants')}
 				class="flex items-center gap-1.5 text-xs text-muted-foreground transition-colors hover:text-white"
@@ -239,10 +239,10 @@
 				<Icon icon="mdi:menu" class="h-6 w-6" />
 			</Button>
 			<a href={resolve('/tenants')} class="flex min-w-0 flex-1 items-center gap-2.5">
-				{#if data.tenant?.logoUrl}
+				{#if data.vendor?.logoUrl}
 					<img
-						src={data.tenant.logoUrl}
-						alt={data.tenant.name}
+						src={data.vendor.logoUrl}
+						alt={data.vendor.name}
 						class="h-8 w-8 shrink-0 rounded-md bg-background/10 object-contain p-0.5"
 					/>
 				{/if}
@@ -250,9 +250,9 @@
 					<p class="text-xs font-medium tracking-wide text-muted-foreground uppercase">
 						Order<span class="text-primary">Local</span>
 					</p>
-					{#if data.tenant}
+					{#if data.vendor}
 						<p class="truncate text-sm leading-tight font-semibold text-white">
-							{data.tenant.name}
+							{data.vendor.name}
 						</p>
 					{/if}
 				</div>

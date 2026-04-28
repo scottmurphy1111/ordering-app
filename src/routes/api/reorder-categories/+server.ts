@@ -2,13 +2,13 @@ import { json, error } from '@sveltejs/kit';
 import type { RequestEvent } from '@sveltejs/kit';
 import { db } from '$lib/server/db';
 import { eq, and } from 'drizzle-orm';
-import { menuCategories } from '$lib/server/db/schema';
+import { catalogCategories } from '$lib/server/db/schema';
 
 export async function POST(event: RequestEvent) {
 	if (!event.locals.user) throw error(401, 'Unauthorized');
-	if (!event.locals.tenantId) throw error(400, 'No tenant selected');
+	if (!event.locals.vendorId) throw error(400, 'No vendor selected');
 
-	const tenantId = event.locals.tenantId;
+	const vendorId = event.locals.vendorId;
 	const body = await event.request.json();
 	const order: { id: number; sortOrder: number }[] = body.order;
 
@@ -17,9 +17,9 @@ export async function POST(event: RequestEvent) {
 	await Promise.all(
 		order.map(({ id, sortOrder }) =>
 			db
-				.update(menuCategories)
+				.update(catalogCategories)
 				.set({ sortOrder })
-				.where(and(eq(menuCategories.id, id), eq(menuCategories.tenantId, tenantId)))
+				.where(and(eq(catalogCategories.id, id), eq(catalogCategories.vendorId, vendorId)))
 		)
 	);
 

@@ -21,12 +21,12 @@
 
 	const filteredTenants = $derived(
 		search.trim()
-			? data.tenants.filter(
+			? data.vendors.filter(
 					(t) =>
 						t.name.toLowerCase().includes(search.toLowerCase()) ||
 						t.slug.toLowerCase().includes(search.toLowerCase())
 				)
-			: data.tenants
+			: data.vendors
 	);
 
 	function statusLabel(t: { isActive: boolean; deletedAt: Date | null }) {
@@ -47,11 +47,11 @@
 		<div>
 			<h1 class="text-2xl font-bold text-foreground">Tenants</h1>
 			<p class="mt-0.5 text-sm text-muted-foreground">
-				{data.tenants.length} tenant{data.tenants.length === 1 ? '' : 's'} total
+				{data.vendors.length} vendor{data.vendors.length === 1 ? '' : 's'} total
 			</p>
 		</div>
 
-		{#if data.tenants.length > 6}
+		{#if data.vendors.length > 6}
 			<div class="relative w-64">
 				<Icon
 					icon="mdi:magnify"

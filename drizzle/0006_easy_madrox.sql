@@ -1,1 +1,0 @@
-ALTER TABLE "tenants" ADD COLUMN "stripe_webhook_endpoint_id" text;

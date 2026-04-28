@@ -36,8 +36,8 @@
 
 	onMount(() => {
 		mounted = true;
-		if (data.tenant?.slug) {
-			menuUrl = `${window.location.origin}${resolve(`/${data.tenant.slug}/menu`)}`;
+		if (data.vendor?.slug) {
+			menuUrl = `${window.location.origin}${resolve(`/${data.vendor.slug}/menu`)}`;
 		}
 		let interval: ReturnType<typeof setInterval> | null = null;
 		function refresh() {
@@ -119,9 +119,9 @@
 			<h1 class="text-2xl font-bold text-foreground">
 				{greeting}{firstName ? `, ${firstName}` : ''} 👋
 			</h1>
-			{#if data.tenant?.name}
+			{#if data.vendor?.name}
 				<p class="mt-0.5 text-sm text-muted-foreground">
-					Here's what's happening with {data.tenant.name}.
+					Here's what's happening with {data.vendor.name}.
 				</p>
 			{/if}
 			{#if menuUrl}
@@ -130,7 +130,7 @@
 				</p>
 			{/if}
 		</div>
-		{#if data.tenant?.slug}
+		{#if data.vendor?.slug}
 			<div class="flex shrink-0 items-center gap-2">
 				<button
 					onclick={copyMenuLink}
@@ -141,7 +141,7 @@
 				</button>
 				<a
 					data-tour="view-menu"
-					href={resolve(`/${data.tenant.slug}/menu`)}
+					href={resolve(`/${data.vendor.slug}/menu`)}
 					target="_blank"
 					rel="noopener noreferrer"
 					class="inline-flex items-center gap-1.5 rounded-md border border-primary px-4 py-2 text-sm font-semibold text-primary transition-colors hover:bg-primary/5"

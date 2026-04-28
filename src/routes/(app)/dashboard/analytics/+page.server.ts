@@ -1,12 +1,12 @@
 import type { PageServerLoad } from './$types';
 import { db } from '$lib/server/db';
 import { eq, and, gte, sql, desc } from 'drizzle-orm';
-import { orders, orderItems, menuItems, menuCategories } from '$lib/server/db/schema';
+import { orders, orderItems, catalogItems, catalogCategories } from '$lib/server/db/schema';
 import { hasAddon } from '$lib/billing';
 
 export const load: PageServerLoad = async ({ locals, url }) => {
-	const tenantId = locals.tenantId!;
-	const hasAdvancedAnalytics = hasAddon(locals.tenant?.addons, 'analytics');
+	const vendorId = locals.vendorId!;
+	const hasAdvancedAnalytics = hasAddon(locals.vendor?.addons, 'analytics');
 
 	const rangeStr = url.searchParams.get('range');
 	const rangeDays = rangeStr === '7' ? 7 : 30;
@@ -19,7 +19,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 	const [recentOrders, prevOrders, topItems, statusBreakdown, typeBreakdown] = await Promise.all([
 		db.query.orders.findMany({
 			where: and(
-				eq(orders.tenantId, tenantId),
+				eq(orders.vendorId, vendorId),
 				eq(orders.paymentStatus, 'paid'),
 				gte(orders.createdAt, startOfRange)
 			),
@@ -29,7 +29,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 
 		db.query.orders.findMany({
 			where: and(
-				eq(orders.tenantId, tenantId),
+				eq(orders.vendorId, vendorId),
 				eq(orders.paymentStatus, 'paid'),
 				gte(orders.createdAt, startOfPrevRange),
 				sql`${orders.createdAt} < ${startOfRange}`
@@ -45,7 +45,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 			})
 			.from(orderItems)
 			.innerJoin(orders, eq(orderItems.orderId, orders.id))
-			.where(and(eq(orders.tenantId, tenantId), eq(orders.paymentStatus, 'paid')))
+			.where(and(eq(orders.vendorId, vendorId), eq(orders.paymentStatus, 'paid')))
 			.groupBy(orderItems.name)
 			.orderBy(desc(sql`sum(${orderItems.quantity})`))
 			.limit(5),
@@ -56,7 +56,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 				count: sql<number>`cast(count(*) as int)`
 			})
 			.from(orders)
-			.where(and(eq(orders.tenantId, tenantId), gte(orders.createdAt, startOfRange)))
+			.where(and(eq(orders.vendorId, vendorId), gte(orders.createdAt, startOfRange)))
 			.groupBy(orders.status),
 
 		db
@@ -68,7 +68,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 			.from(orders)
 			.where(
 				and(
-					eq(orders.tenantId, tenantId),
+					eq(orders.vendorId, vendorId),
 					eq(orders.paymentStatus, 'paid'),
 					gte(orders.createdAt, startOfRange)
 				)
@@ -131,7 +131,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 				.from(orders)
 				.where(
 					and(
-						eq(orders.tenantId, tenantId),
+						eq(orders.vendorId, vendorId),
 						eq(orders.paymentStatus, 'paid'),
 						gte(orders.createdAt, startOf90Days)
 					)
@@ -149,7 +149,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 				.from(orders)
 				.where(
 					and(
-						eq(orders.tenantId, tenantId),
+						eq(orders.vendorId, vendorId),
 						eq(orders.paymentStatus, 'paid'),
 						sql`${orders.customerEmail} is not null`
 					)
@@ -164,23 +164,23 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 				})
 				.from(orderItems)
 				.innerJoin(orders, eq(orderItems.orderId, orders.id))
-				.where(and(eq(orders.tenantId, tenantId), eq(orders.paymentStatus, 'paid')))
+				.where(and(eq(orders.vendorId, vendorId), eq(orders.paymentStatus, 'paid')))
 				.groupBy(orderItems.name)
 				.orderBy(desc(sql`sum(${orderItems.quantity} * ${orderItems.unitPrice})`))
 				.limit(5),
 
 			db
 				.select({
-					category: sql<string>`coalesce(${menuCategories.name}, 'Uncategorized')`,
+					category: sql<string>`coalesce(${catalogCategories.name}, 'Uncategorized')`,
 					totalRevenue: sql<number>`cast(sum(${orderItems.quantity} * ${orderItems.unitPrice}) as int)`,
 					totalQty: sql<number>`cast(sum(${orderItems.quantity}) as int)`
 				})
 				.from(orderItems)
 				.innerJoin(orders, eq(orderItems.orderId, orders.id))
-				.leftJoin(menuItems, eq(orderItems.menuItemId, menuItems.id))
-				.leftJoin(menuCategories, eq(menuItems.categoryId, menuCategories.id))
-				.where(and(eq(orders.tenantId, tenantId), eq(orders.paymentStatus, 'paid')))
-				.groupBy(sql`coalesce(${menuCategories.name}, 'Uncategorized')`)
+				.leftJoin(catalogItems, eq(orderItems.catalogItemId, catalogItems.id))
+				.leftJoin(catalogCategories, eq(catalogItems.categoryId, catalogCategories.id))
+				.where(and(eq(orders.vendorId, vendorId), eq(orders.paymentStatus, 'paid')))
+				.groupBy(sql`coalesce(${catalogCategories.name}, 'Uncategorized')`)
 				.orderBy(desc(sql`sum(${orderItems.quantity} * ${orderItems.unitPrice})`))
 				.limit(6)
 		]);

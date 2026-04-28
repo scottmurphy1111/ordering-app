@@ -3,23 +3,23 @@ import { fail, redirect, error } from '@sveltejs/kit';
 import { db } from '$lib/server/db';
 import { eq, and } from 'drizzle-orm';
 import {
-	menuItems,
-	menuCategories,
+	catalogItems,
+	catalogCategories,
 	modifiers,
 	modifierOptions,
-	menuItemModifiers
+	catalogItemModifiers
 } from '$lib/server/db/schema';
 import { hasAddon, type AddonItem } from '$lib/billing';
-import { tenant } from '$lib/server/db/tenant';
+import { vendor } from '$lib/server/db/vendor';
 
 export const load: PageServerLoad = async ({ locals, params }) => {
-	const tenantId = locals.tenantId!;
+	const vendorId = locals.vendorId!;
 	const itemId = parseInt(params.itemId);
 	if (isNaN(itemId)) throw error(404, 'Not found');
 
-	const [item, categories, tenantRecord] = await Promise.all([
-		db.query.menuItems.findFirst({
-			where: and(eq(menuItems.id, itemId), eq(menuItems.tenantId, tenantId)),
+	const [item, categories, vendorRecord] = await Promise.all([
+		db.query.catalogItems.findFirst({
+			where: and(eq(catalogItems.id, itemId), eq(catalogItems.vendorId, vendorId)),
 			with: {
 				category: { columns: { id: true, name: true } },
 				modifiers: {
@@ -31,22 +31,22 @@ export const load: PageServerLoad = async ({ locals, params }) => {
 				}
 			}
 		}),
-		db.query.menuCategories.findMany({
-			where: eq(menuCategories.tenantId, tenantId),
+		db.query.catalogCategories.findMany({
+			where: eq(catalogCategories.vendorId, vendorId),
 			columns: { id: true, name: true },
 			orderBy: (c, { asc }) => [asc(c.sortOrder), asc(c.name)]
 		}),
-		db.query.tenant.findFirst({ where: eq(tenant.id, tenantId), columns: { addons: true } })
+		db.query.vendor.findFirst({ where: eq(vendor.id, vendorId), columns: { addons: true } })
 	]);
 
 	if (!item) throw error(404, 'Item not found');
-	const addons = (tenantRecord?.addons ?? []) as AddonItem[];
+	const addons = (vendorRecord?.addons ?? []) as AddonItem[];
 	return { item, categories, hasSubscriptionsAddon: hasAddon(addons, 'subscriptions') };
 };
 
 export const actions: Actions = {
 	update: async ({ request, locals, params }) => {
-		const tenantId = locals.tenantId!;
+		const vendorId = locals.vendorId!;
 		const itemId = parseInt(params.itemId);
 		const formData = await request.formData();
 
@@ -82,7 +82,7 @@ export const actions: Actions = {
 			: null;
 
 		await db
-			.update(menuItems)
+			.update(catalogItems)
 			.set({
 				name,
 				description,
@@ -97,24 +97,24 @@ export const actions: Actions = {
 				billingInterval,
 				updatedAt: new Date()
 			})
-			.where(and(eq(menuItems.id, itemId), eq(menuItems.tenantId, tenantId)));
+			.where(and(eq(catalogItems.id, itemId), eq(catalogItems.vendorId, vendorId)));
 
 		return { success: true };
 	},
 
 	delete: async ({ locals, params }) => {
-		const tenantId = locals.tenantId!;
+		const vendorId = locals.vendorId!;
 		const itemId = parseInt(params.itemId);
 
 		await db
-			.delete(menuItems)
-			.where(and(eq(menuItems.id, itemId), eq(menuItems.tenantId, tenantId)));
+			.delete(catalogItems)
+			.where(and(eq(catalogItems.id, itemId), eq(catalogItems.vendorId, vendorId)));
 
 		throw redirect(303, '/dashboard/menu/items');
 	},
 
 	addModifier: async ({ request, locals, params }) => {
-		const tenantId = locals.tenantId!;
+		const vendorId = locals.vendorId!;
 		const itemId = parseInt(params.itemId);
 		const formData = await request.formData();
 
@@ -126,16 +126,16 @@ export const actions: Actions = {
 
 		const [mod] = await db
 			.insert(modifiers)
-			.values({ tenantId, name, isRequired, maxSelections })
+			.values({ vendorId, name, isRequired, maxSelections })
 			.returning({ id: modifiers.id });
 
-		await db.insert(menuItemModifiers).values({ menuItemId: itemId, modifierId: mod.id });
+		await db.insert(catalogItemModifiers).values({ catalogItemId: itemId, modifierId: mod.id });
 
 		return { success: true };
 	},
 
 	updateModifier: async ({ request, locals }) => {
-		const tenantId = locals.tenantId!;
+		const vendorId = locals.vendorId!;
 		const formData = await request.formData();
 
 		const modifierId = parseInt(formData.get('modifierId')?.toString() ?? '');
@@ -148,37 +148,35 @@ export const actions: Actions = {
 		await db
 			.update(modifiers)
 			.set({ name, isRequired, maxSelections })
-			.where(and(eq(modifiers.id, modifierId), eq(modifiers.tenantId, tenantId)));
+			.where(and(eq(modifiers.id, modifierId), eq(modifiers.vendorId, vendorId)));
 
 		return { success: true };
 	},
 
 	deleteModifier: async ({ request, locals }) => {
-		const tenantId = locals.tenantId!;
+		const vendorId = locals.vendorId!;
 		const formData = await request.formData();
 
 		const modifierId = parseInt(formData.get('modifierId')?.toString() ?? '');
 		if (!modifierId) return fail(400, { modifierError: 'Invalid request' });
 
-		// Cascade deletes options + junction row
 		await db
 			.delete(modifiers)
-			.where(and(eq(modifiers.id, modifierId), eq(modifiers.tenantId, tenantId)));
+			.where(and(eq(modifiers.id, modifierId), eq(modifiers.vendorId, vendorId)));
 
 		return { success: true };
 	},
 
 	addOption: async ({ request, locals }) => {
-		const tenantId = locals.tenantId!;
+		const vendorId = locals.vendorId!;
 		const formData = await request.formData();
 
 		const modifierId = parseInt(formData.get('modifierId')?.toString() ?? '');
 		const name = formData.get('optionName')?.toString().trim();
 		if (!modifierId || !name) return fail(400, { modifierError: 'Invalid request' });
 
-		// Verify modifier belongs to this tenant
 		const mod = await db.query.modifiers.findFirst({
-			where: and(eq(modifiers.id, modifierId), eq(modifiers.tenantId, tenantId)),
+			where: and(eq(modifiers.id, modifierId), eq(modifiers.vendorId, vendorId)),
 			columns: { id: true }
 		});
 		if (!mod) return fail(403, { modifierError: 'Not found' });
@@ -193,18 +191,17 @@ export const actions: Actions = {
 	},
 
 	deleteOption: async ({ request, locals }) => {
-		const tenantId = locals.tenantId!;
+		const vendorId = locals.vendorId!;
 		const formData = await request.formData();
 
 		const optionId = parseInt(formData.get('optionId')?.toString() ?? '');
 		if (!optionId) return fail(400, { modifierError: 'Invalid request' });
 
-		// Verify option belongs to a modifier owned by this tenant
 		const option = await db.query.modifierOptions.findFirst({
 			where: eq(modifierOptions.id, optionId),
-			with: { modifier: { columns: { tenantId: true } } }
+			with: { modifier: { columns: { vendorId: true } } }
 		});
-		if (!option || option.modifier.tenantId !== tenantId)
+		if (!option || option.modifier.vendorId !== vendorId)
 			return fail(403, { modifierError: 'Not found' });
 
 		await db.delete(modifierOptions).where(eq(modifierOptions.id, optionId));

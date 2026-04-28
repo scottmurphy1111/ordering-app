@@ -3,7 +3,7 @@ import { fail } from '@sveltejs/kit';
 import { db } from '$lib/server/db';
 import { eq, and, or, desc, lt, gte, lte, ilike, sql } from 'drizzle-orm';
 import { orders } from '$lib/server/db/schema';
-import { tenant } from '$lib/server/db/tenant';
+import { vendor } from '$lib/server/db/vendor';
 import Stripe from 'stripe';
 import { sendEmail } from '$lib/server/email';
 import { orderRefundedEmail } from '$lib/server/email/templates/orderRefunded';
@@ -11,7 +11,7 @@ import { orderRefundedEmail } from '$lib/server/email/templates/orderRefunded';
 const HISTORY_CUTOFF_MS = 24 * 60 * 60 * 1000;
 
 export const load: PageServerLoad = async ({ locals, url }) => {
-	const tenantId = locals.tenantId!;
+	const vendorId = locals.vendorId!;
 	const search = url.searchParams.get('q') ?? '';
 	const from = url.searchParams.get('from') ?? '';
 	const to = url.searchParams.get('to') ?? '';
@@ -19,16 +19,12 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 
 	const cutoff = new Date(Date.now() - HISTORY_CUTOFF_MS);
 
-	const whereConditions = [eq(orders.tenantId, tenantId), lt(orders.updatedAt, cutoff)];
+	const whereConditions = [eq(orders.vendorId, vendorId), lt(orders.updatedAt, cutoff)];
 
 	if (statusFilter === 'fulfilled' || statusFilter === 'cancelled') {
-		whereConditions.push(
-			eq(orders.status, statusFilter as typeof orders.status._.data)
-		);
+		whereConditions.push(eq(orders.status, statusFilter as typeof orders.status._.data));
 	} else {
-		whereConditions.push(
-			or(eq(orders.status, 'fulfilled'), eq(orders.status, 'cancelled'))!
-		);
+		whereConditions.push(or(eq(orders.status, 'fulfilled'), eq(orders.status, 'cancelled'))!);
 	}
 
 	if (search) {
@@ -42,9 +38,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		);
 	}
 
-	if (from) {
-		whereConditions.push(gte(orders.createdAt, new Date(from)));
-	}
+	if (from) whereConditions.push(gte(orders.createdAt, new Date(from)));
 	if (to) {
 		const toDate = new Date(to);
 		toDate.setUTCHours(23, 59, 59, 999);
@@ -72,11 +66,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 				deliveryAddress: true,
 				stripePaymentIntentId: true
 			},
-			with: {
-				items: {
-					columns: { name: true, quantity: true }
-				}
-			}
+			with: { items: { columns: { name: true, quantity: true } } }
 		}),
 		db
 			.select({
@@ -97,17 +87,17 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 
 export const actions: Actions = {
 	refund: async ({ request, locals }) => {
-		const tenantId = locals.tenantId!;
+		const vendorId = locals.vendorId!;
 		const formData = await request.formData();
 		const id = parseInt(formData.get('id')?.toString() ?? '');
 		if (isNaN(id)) return fail(400, { error: 'Invalid' });
 
-		const [orderRow, tenantRecord] = await Promise.all([
+		const [orderRow, vendorRecord] = await Promise.all([
 			db.query.orders.findFirst({
-				where: and(eq(orders.id, id), eq(orders.tenantId, tenantId))
+				where: and(eq(orders.id, id), eq(orders.vendorId, vendorId))
 			}),
-			db.query.tenant.findFirst({
-				where: eq(tenant.id, tenantId),
+			db.query.vendor.findFirst({
+				where: eq(vendor.id, vendorId),
 				columns: { stripeSecretKey: true, name: true, backgroundColor: true }
 			})
 		]);
@@ -118,10 +108,10 @@ export const actions: Actions = {
 		if (orderRow.paymentStatus !== 'paid') return fail(400, { error: 'Order has not been paid' });
 		if (!orderRow.stripePaymentIntentId)
 			return fail(400, { error: 'No payment found for this order' });
-		if (!tenantRecord?.stripeSecretKey)
-			return fail(500, { error: 'Stripe not configured for this tenant' });
+		if (!vendorRecord?.stripeSecretKey)
+			return fail(500, { error: 'Stripe not configured for this vendor' });
 
-		const stripe = new Stripe(tenantRecord.stripeSecretKey);
+		const stripe = new Stripe(vendorRecord.stripeSecretKey);
 
 		let paymentIntentId = orderRow.stripePaymentIntentId;
 		if (paymentIntentId.startsWith('cs_')) {
@@ -152,13 +142,13 @@ export const actions: Actions = {
 			.where(eq(orders.id, id))
 			.returning();
 
-		if (refundedOrder?.customerEmail && tenantRecord) {
+		if (refundedOrder?.customerEmail && vendorRecord) {
 			await sendEmail({
 				to: refundedOrder.customerEmail,
-				subject: `Refund processed for order ${refundedOrder.orderNumber} — ${tenantRecord.name}`,
+				subject: `Refund processed for order ${refundedOrder.orderNumber} — ${vendorRecord.name}`,
 				html: orderRefundedEmail({
-					tenantName: tenantRecord.name,
-					primaryColor: tenantRecord.backgroundColor ?? undefined,
+					tenantName: vendorRecord.name,
+					primaryColor: vendorRecord.backgroundColor ?? undefined,
 					orderNumber: refundedOrder.orderNumber,
 					customerName: refundedOrder.customerName ?? 'there',
 					total: refundedOrder.total

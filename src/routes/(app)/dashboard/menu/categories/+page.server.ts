@@ -2,33 +2,33 @@ import type { PageServerLoad, Actions } from './$types';
 import { fail } from '@sveltejs/kit';
 import { db } from '$lib/server/db';
 import { and, eq, desc, sql } from 'drizzle-orm';
-import { menuCategories, menuItems } from '$lib/server/db/schema';
+import { catalogCategories, catalogItems } from '$lib/server/db/schema';
 
 export const load: PageServerLoad = async ({ locals }) => {
-	const tenantId = locals.tenantId!;
+	const vendorId = locals.vendorId!;
 
 	const categories = await db
 		.select({
-			id: menuCategories.id,
-			name: menuCategories.name,
-			description: menuCategories.description,
-			sortOrder: menuCategories.sortOrder,
-			isActive: menuCategories.isActive,
-			createdAt: menuCategories.createdAt,
-			itemCount: sql<number>`count(${menuItems.id})`
+			id: catalogCategories.id,
+			name: catalogCategories.name,
+			description: catalogCategories.description,
+			sortOrder: catalogCategories.sortOrder,
+			isActive: catalogCategories.isActive,
+			createdAt: catalogCategories.createdAt,
+			itemCount: sql<number>`count(${catalogItems.id})`
 		})
-		.from(menuCategories)
-		.leftJoin(menuItems, eq(menuItems.categoryId, menuCategories.id))
-		.where(eq(menuCategories.tenantId, tenantId))
-		.groupBy(menuCategories.id)
-		.orderBy(menuCategories.sortOrder, desc(menuCategories.createdAt));
+		.from(catalogCategories)
+		.leftJoin(catalogItems, eq(catalogItems.categoryId, catalogCategories.id))
+		.where(eq(catalogCategories.vendorId, vendorId))
+		.groupBy(catalogCategories.id)
+		.orderBy(catalogCategories.sortOrder, desc(catalogCategories.createdAt));
 
 	return { categories };
 };
 
 export const actions: Actions = {
 	create: async ({ request, locals }) => {
-		const tenantId = locals.tenantId!;
+		const vendorId = locals.vendorId!;
 		const formData = await request.formData();
 		const name = formData.get('name')?.toString().trim();
 		const description = formData.get('description')?.toString().trim() || null;
@@ -36,33 +36,33 @@ export const actions: Actions = {
 
 		if (!name) return fail(400, { error: 'Category name is required' });
 
-		await db.insert(menuCategories).values({ tenantId, name, description, isActive });
+		await db.insert(catalogCategories).values({ vendorId, name, description, isActive });
 		return { success: true };
 	},
 
 	delete: async ({ request, locals }) => {
-		const tenantId = locals.tenantId!;
+		const vendorId = locals.vendorId!;
 		const formData = await request.formData();
 		const id = parseInt(formData.get('id')?.toString() ?? '');
 		if (isNaN(id)) return fail(400, { error: 'Invalid ID' });
 
 		await db
-			.delete(menuCategories)
-			.where(and(eq(menuCategories.id, id), eq(menuCategories.tenantId, tenantId)));
+			.delete(catalogCategories)
+			.where(and(eq(catalogCategories.id, id), eq(catalogCategories.vendorId, vendorId)));
 		return { success: true };
 	},
 
 	toggleActive: async ({ request, locals }) => {
-		const tenantId = locals.tenantId!;
+		const vendorId = locals.vendorId!;
 		const formData = await request.formData();
 		const id = parseInt(formData.get('id')?.toString() ?? '');
 		const current = formData.get('isActive') === 'true';
 		if (isNaN(id)) return fail(400, { error: 'Invalid ID' });
 
 		await db
-			.update(menuCategories)
+			.update(catalogCategories)
 			.set({ isActive: !current })
-			.where(and(eq(menuCategories.id, id), eq(menuCategories.tenantId, tenantId)));
+			.where(and(eq(catalogCategories.id, id), eq(catalogCategories.vendorId, vendorId)));
 		return { success: true };
 	}
 };

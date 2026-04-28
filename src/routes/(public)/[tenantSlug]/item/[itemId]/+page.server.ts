@@ -2,19 +2,19 @@ import type { PageServerLoad } from './$types';
 import { error } from '@sveltejs/kit';
 import { db } from '$lib/server/db';
 import { eq, and } from 'drizzle-orm';
-import { menuItems } from '$lib/server/db/schema';
+import { catalogItems } from '$lib/server/db/schema';
 
 export const load: PageServerLoad = async ({ locals, params }) => {
-	const tenantId = locals.tenantId!;
+	const vendorId = locals.vendorId!;
 	const itemId = parseInt(params.itemId);
 
 	if (isNaN(itemId)) throw error(404, 'Item not found');
 
-	const item = await db.query.menuItems.findFirst({
+	const item = await db.query.catalogItems.findFirst({
 		where: and(
-			eq(menuItems.id, itemId),
-			eq(menuItems.tenantId, tenantId),
-			eq(menuItems.available, true)
+			eq(catalogItems.id, itemId),
+			eq(catalogItems.vendorId, vendorId),
+			eq(catalogItems.available, true)
 		),
 		with: {
 			modifiers: {

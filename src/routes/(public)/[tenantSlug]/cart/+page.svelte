@@ -55,7 +55,7 @@
 	});
 
 	const settings = $derived(
-		data.tenant.settings as {
+		data.vendor.settings as {
 			taxRate?: number;
 			enableTips?: boolean;
 			defaultTipPercentages?: number[];
@@ -227,7 +227,7 @@
 </script>
 
 <svelte:head>
-	<title>Your Cart — {data.tenant.name}</title>
+	<title>Your Cart — {data.vendor.name}</title>
 </svelte:head>
 
 <div class="min-h-screen">

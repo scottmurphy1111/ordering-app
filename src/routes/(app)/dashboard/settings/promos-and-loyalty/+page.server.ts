@@ -3,37 +3,37 @@ import { fail } from '@sveltejs/kit';
 import { db } from '$lib/server/db';
 import { eq, and, desc, count } from 'drizzle-orm';
 import { promoCodes } from '$lib/server/db/schema';
-import { tenant } from '$lib/server/db/tenant';
+import { vendor } from '$lib/server/db/vendor';
 import { hasAddon } from '$lib/billing';
 import { loyaltyAccounts, DEFAULT_LOYALTY_CONFIG } from '$lib/server/db/loyalty';
 import type { LoyaltyConfig } from '$lib/server/db/loyalty';
 
 export const load: PageServerLoad = async ({ locals }) => {
-	const tenantId = locals.tenantId!;
-	const tenantRecord = await db.query.tenant.findFirst({
-		where: eq(tenant.id, tenantId),
+	const vendorId = locals.vendorId!;
+	const vendorRecord = await db.query.vendor.findFirst({
+		where: eq(vendor.id, vendorId),
 		columns: { addons: true, settings: true }
 	});
 
-	const hasPromos = hasAddon(tenantRecord?.addons as string[] | null, 'promo_codes');
-	const hasLoyalty = hasAddon(tenantRecord?.addons as string[] | null, 'loyalty');
-	const settings = tenantRecord?.settings as Record<string, unknown> | null;
+	const hasPromos = hasAddon(vendorRecord?.addons as string[] | null, 'promo_codes');
+	const hasLoyalty = hasAddon(vendorRecord?.addons as string[] | null, 'loyalty');
+	const settings = vendorRecord?.settings as Record<string, unknown> | null;
 	const loyalty: LoyaltyConfig = (settings?.loyalty as LoyaltyConfig) ?? DEFAULT_LOYALTY_CONFIG;
 
 	const codes = hasPromos
 		? await db.query.promoCodes.findMany({
-				where: eq(promoCodes.tenantId, tenantId),
+				where: eq(promoCodes.vendorId, vendorId),
 				orderBy: [desc(promoCodes.createdAt)]
 			})
 		: [];
 
 	const [memberCountRow] = hasLoyalty
-		? await db.select({ value: count() }).from(loyaltyAccounts).where(eq(loyaltyAccounts.tenantId, tenantId))
+		? await db.select({ value: count() }).from(loyaltyAccounts).where(eq(loyaltyAccounts.vendorId, vendorId))
 		: [{ value: 0 }];
 
 	const members = hasLoyalty
 		? await db.query.loyaltyAccounts.findMany({
-				where: eq(loyaltyAccounts.tenantId, tenantId),
+				where: eq(loyaltyAccounts.vendorId, vendorId),
 				orderBy: [desc(loyaltyAccounts.updatedAt)]
 			})
 		: [];
@@ -42,14 +42,13 @@ export const load: PageServerLoad = async ({ locals }) => {
 };
 
 export const actions: Actions = {
-	// ── Promo code actions ────────────────────────────────────────────────────
 	create: async ({ request, locals }) => {
-		const tenantId = locals.tenantId!;
-		const tenantRecord = await db.query.tenant.findFirst({
-			where: eq(tenant.id, tenantId),
+		const vendorId = locals.vendorId!;
+		const vendorRecord = await db.query.vendor.findFirst({
+			where: eq(vendor.id, vendorId),
 			columns: { addons: true }
 		});
-		if (!hasAddon(tenantRecord?.addons as string[] | null, 'promo_codes')) {
+		if (!hasAddon(vendorRecord?.addons as string[] | null, 'promo_codes')) {
 			return fail(403, { error: 'Promo codes add-on not active.' });
 		}
 
@@ -77,41 +76,40 @@ export const actions: Actions = {
 		const expiresAt = expiresAtStr ? new Date(expiresAtStr) : null;
 
 		const existing = await db.query.promoCodes.findFirst({
-			where: and(eq(promoCodes.tenantId, tenantId), eq(promoCodes.code, code))
+			where: and(eq(promoCodes.vendorId, vendorId), eq(promoCodes.code, code))
 		});
 		if (existing) return fail(400, { error: `Code "${code}" already exists.` });
 
-		await db.insert(promoCodes).values({ tenantId, code, description, type, amount: amountStored, minOrderAmount, maxUses, expiresAt });
+		await db.insert(promoCodes).values({ vendorId, code, description, type, amount: amountStored, minOrderAmount, maxUses, expiresAt });
 		return { success: true };
 	},
 
 	toggle: async ({ request, locals }) => {
-		const tenantId = locals.tenantId!;
+		const vendorId = locals.vendorId!;
 		const fd = await request.formData();
 		const id = parseInt(fd.get('id')?.toString() ?? '');
 		const isActive = fd.get('isActive') === 'true';
 		if (isNaN(id)) return fail(400, { error: 'Invalid ID.' });
-		await db.update(promoCodes).set({ isActive }).where(and(eq(promoCodes.id, id), eq(promoCodes.tenantId, tenantId)));
+		await db.update(promoCodes).set({ isActive }).where(and(eq(promoCodes.id, id), eq(promoCodes.vendorId, vendorId)));
 		return { success: true };
 	},
 
 	delete: async ({ request, locals }) => {
-		const tenantId = locals.tenantId!;
+		const vendorId = locals.vendorId!;
 		const fd = await request.formData();
 		const id = parseInt(fd.get('id')?.toString() ?? '');
 		if (isNaN(id)) return fail(400, { error: 'Invalid ID.' });
-		await db.delete(promoCodes).where(and(eq(promoCodes.id, id), eq(promoCodes.tenantId, tenantId)));
+		await db.delete(promoCodes).where(and(eq(promoCodes.id, id), eq(promoCodes.vendorId, vendorId)));
 		return { success: true };
 	},
 
-	// ── Loyalty actions ───────────────────────────────────────────────────────
 	saveLoyalty: async ({ request, locals }) => {
-		const tenantId = locals.tenantId!;
-		const tenantRecord = await db.query.tenant.findFirst({
-			where: eq(tenant.id, tenantId),
+		const vendorId = locals.vendorId!;
+		const vendorRecord = await db.query.vendor.findFirst({
+			where: eq(vendor.id, vendorId),
 			columns: { addons: true, settings: true }
 		});
-		if (!hasAddon(tenantRecord?.addons as string[] | null, 'loyalty')) {
+		if (!hasAddon(vendorRecord?.addons as string[] | null, 'loyalty')) {
 			return fail(403, { error: 'Loyalty add-on not active.' });
 		}
 
@@ -139,23 +137,23 @@ export const actions: Actions = {
 			points: { pointsPerDollar, redeemAt, redeemValue: Math.round(redeemValueDollars * 100) }
 		};
 
-		const currentSettings = (tenantRecord?.settings as Record<string, unknown>) ?? {};
-		await db.update(tenant).set({ settings: { ...currentSettings, loyalty: loyaltyConfig }, updatedAt: new Date() }).where(eq(tenant.id, tenantId));
+		const currentSettings = (vendorRecord?.settings as Record<string, unknown>) ?? {};
+		await db.update(vendor).set({ settings: { ...currentSettings, loyalty: loyaltyConfig }, updatedAt: new Date() }).where(eq(vendor.id, vendorId));
 		return { success: true };
 	},
 
 	disableLoyalty: async ({ locals }) => {
-		const tenantId = locals.tenantId!;
-		const tenantRecord = await db.query.tenant.findFirst({
-			where: eq(tenant.id, tenantId),
+		const vendorId = locals.vendorId!;
+		const vendorRecord = await db.query.vendor.findFirst({
+			where: eq(vendor.id, vendorId),
 			columns: { settings: true }
 		});
-		const currentSettings = (tenantRecord?.settings as Record<string, unknown>) ?? {};
+		const currentSettings = (vendorRecord?.settings as Record<string, unknown>) ?? {};
 		const currentLoyalty = (currentSettings.loyalty as LoyaltyConfig) ?? DEFAULT_LOYALTY_CONFIG;
-		await db.update(tenant).set({
+		await db.update(vendor).set({
 			settings: { ...currentSettings, loyalty: { ...currentLoyalty, enabled: false } },
 			updatedAt: new Date()
-		}).where(eq(tenant.id, tenantId));
+		}).where(eq(vendor.id, vendorId));
 		return { success: true };
 	}
 };

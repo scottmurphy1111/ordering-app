@@ -2,7 +2,7 @@ import type { PageServerLoad, Actions } from './$types';
 import { fail } from '@sveltejs/kit';
 import { db } from '$lib/server/db';
 import { eq } from 'drizzle-orm';
-import { tenant } from '$lib/server/db/tenant';
+import { vendor } from '$lib/server/db/vendor';
 import Stripe from 'stripe';
 import { requireOwner } from '$lib/server/roles';
 import { env } from '$env/dynamic/private';
@@ -17,9 +17,9 @@ const WEBHOOK_EVENTS: Stripe.WebhookEndpointCreateParams.EnabledEvent[] = [
 ];
 
 export const load: PageServerLoad = async ({ locals }) => {
-	const tenantId = locals.tenantId!;
-	const record = await db.query.tenant.findFirst({
-		where: eq(tenant.id, tenantId),
+	const vendorId = locals.vendorId!;
+	const record = await db.query.vendor.findFirst({
+		where: eq(vendor.id, vendorId),
 		columns: {
 			stripeSecretKey: true,
 			stripePublishableKey: true,
@@ -48,7 +48,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 export const actions: Actions = {
 	saveStripeKey: async ({ request, locals }) => {
 		requireOwner(locals);
-		const tenantId = locals.tenantId!;
+		const vendorId = locals.vendorId!;
 		const formData = await request.formData();
 		const newKey = formData.get('stripeSecretKey')?.toString().trim() || null;
 		const publishableKey = formData.get('stripePublishableKey')?.toString().trim() || null;
@@ -58,8 +58,8 @@ export const actions: Actions = {
 		if (publishableKey && !publishableKey.startsWith('pk_'))
 			return fail(400, { error: 'Publishable key must start with pk_' });
 
-		const existing = await db.query.tenant.findFirst({
-			where: eq(tenant.id, tenantId),
+		const existing = await db.query.vendor.findFirst({
+			where: eq(vendor.id, vendorId),
 			columns: {
 				stripeSecretKey: true,
 				stripePublishableKey: true,
@@ -72,13 +72,11 @@ export const actions: Actions = {
 		const effectiveKey = newKey ?? existing?.stripeSecretKey ?? null;
 		if (!effectiveKey) return fail(400, { error: 'Secret key is required' });
 
-		// Preserve existing publishable key when the field was left empty
 		const effectivePublishableKey = publishableKey ?? existing?.stripePublishableKey ?? null;
 
 		const keyChanged = newKey !== null && newKey !== existing?.stripeSecretKey;
 		const isPublicUrl = env.ORIGIN?.startsWith('https://');
 
-		// Verify new key when it changes
 		if (keyChanged) {
 			try {
 				const stripe = new Stripe(newKey!);
@@ -88,14 +86,12 @@ export const actions: Actions = {
 					error: 'Could not connect to Stripe with that key. Please check it and try again.'
 				});
 			}
-			// Delete old webhook so we can register a fresh one under the new key
 			if (existing?.stripeWebhookEndpointId && existing.stripeSecretKey) {
 				const oldStripe = new Stripe(existing.stripeSecretKey);
 				await oldStripe.webhookEndpoints.del(existing.stripeWebhookEndpointId).catch(() => {});
 			}
 		}
 
-		// Webhook: create when on a public URL and (key changed OR no webhook yet)
 		let webhookSecret: string | null = existing?.stripeWebhookSecret ?? null;
 		let webhookEndpointId: string | null = existing?.stripeWebhookEndpointId ?? null;
 
@@ -109,31 +105,29 @@ export const actions: Actions = {
 			webhookSecret = endpoint.secret ?? null;
 			webhookEndpointId = endpoint.id;
 		} else if (keyChanged && !isPublicUrl) {
-			// Key changed on a non-public URL — old webhook is gone, can't register a new one
 			webhookSecret = null;
 			webhookEndpointId = null;
 		}
 
 		await db
-			.update(tenant)
+			.update(vendor)
 			.set({
 				stripeSecretKey: effectiveKey,
 				stripePublishableKey: effectivePublishableKey,
 				stripeWebhookSecret: webhookSecret,
 				stripeWebhookEndpointId: webhookEndpointId
 			})
-			.where(eq(tenant.id, tenantId));
+			.where(eq(vendor.id, vendorId));
 
 		return { success: true };
 	},
 
 	clearStripeKey: async ({ locals }) => {
 		requireOwner(locals);
-		const tenantId = locals.tenantId!;
+		const vendorId = locals.vendorId!;
 
-		// Delete Stripe webhook endpoint before clearing the key
-		const record = await db.query.tenant.findFirst({
-			where: eq(tenant.id, tenantId),
+		const record = await db.query.vendor.findFirst({
+			where: eq(vendor.id, vendorId),
 			columns: { stripeSecretKey: true, stripeWebhookEndpointId: true }
 		});
 		if (record?.stripeWebhookEndpointId && record.stripeSecretKey) {
@@ -142,14 +136,14 @@ export const actions: Actions = {
 		}
 
 		await db
-			.update(tenant)
+			.update(vendor)
 			.set({
 				stripeSecretKey: null,
 				stripePublishableKey: null,
 				stripeWebhookSecret: null,
 				stripeWebhookEndpointId: null
 			})
-			.where(eq(tenant.id, tenantId));
+			.where(eq(vendor.id, vendorId));
 		return { cleared: true };
 	}
 };

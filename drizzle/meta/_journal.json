@@ -5,78 +5,8 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1776544458047,
-      "tag": "0000_baseline",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1776600972210,
-      "tag": "0001_add_tenant_addons",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1776720874941,
-      "tag": "0002_fancy_plazm",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "7",
-      "when": 1776735385153,
-      "tag": "0003_sloppy_ogun",
-      "breakpoints": true
-    },
-    {
-      "idx": 4,
-      "version": "7",
-      "when": 1776780058749,
-      "tag": "0004_pink_lionheart",
-      "breakpoints": true
-    },
-    {
-      "idx": 5,
-      "version": "7",
-      "when": 1776824786184,
-      "tag": "0005_worthless_harrier",
-      "breakpoints": true
-    },
-    {
-      "idx": 6,
-      "version": "7",
-      "when": 1776825957734,
-      "tag": "0006_easy_madrox",
-      "breakpoints": true
-    },
-    {
-      "idx": 7,
-      "version": "7",
-      "when": 1776956327563,
-      "tag": "0007_rename_brand_colors",
-      "breakpoints": true
-    },
-    {
-      "idx": 8,
-      "version": "7",
-      "when": 1776975415470,
-      "tag": "0008_small_earthquake",
-      "breakpoints": true
-    },
-    {
-      "idx": 9,
-      "version": "7",
-      "when": 1777117573870,
-      "tag": "0009_outgoing_synch",
-      "breakpoints": true
-    },
-    {
-      "idx": 10,
-      "version": "7",
-      "when": 1777135999827,
-      "tag": "0010_glossy_living_lightning",
+      "when": 1777350361426,
+      "tag": "0000_striped_martin_li",
       "breakpoints": true
     }
   ]

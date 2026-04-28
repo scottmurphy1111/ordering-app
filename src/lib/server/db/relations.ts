@@ -1,45 +1,45 @@
 import { relations } from 'drizzle-orm';
-import { tenant, tenantUsers } from './tenant';
-import { menuCategories, menuItems, modifiers, modifierOptions, menuItemModifiers } from './menu';
+import { vendor, vendorUsers } from './vendor';
+import { catalogCategories, catalogItems, modifiers, modifierOptions, catalogItemModifiers } from './catalog';
 import { orders, orderItems } from './orders';
 import { user, session, account } from './auth.schema';
 
-export const tenantRelations = relations(tenant, ({ many }) => ({
-	users: many(tenantUsers),
-	categories: many(menuCategories),
-	items: many(menuItems),
+export const vendorRelations = relations(vendor, ({ many }) => ({
+	users: many(vendorUsers),
+	categories: many(catalogCategories),
+	items: many(catalogItems),
 	orders: many(orders),
 	modifiers: many(modifiers)
 }));
 
-export const tenantUsersRelations = relations(tenantUsers, ({ one }) => ({
-	tenant: one(tenant, { fields: [tenantUsers.tenantId], references: [tenant.id] }),
-	user: one(user, { fields: [tenantUsers.userId], references: [user.id] })
+export const vendorUsersRelations = relations(vendorUsers, ({ one }) => ({
+	vendor: one(vendor, { fields: [vendorUsers.vendorId], references: [vendor.id] }),
+	user: one(user, { fields: [vendorUsers.userId], references: [user.id] })
 }));
 
 export const userRelations = relations(user, ({ many }) => ({
-	tenants: many(tenantUsers),
+	vendors: many(vendorUsers),
 	sessions: many(session),
 	accounts: many(account)
 }));
 
-export const menuCategoriesRelations = relations(menuCategories, ({ one, many }) => ({
-	tenant: one(tenant, { fields: [menuCategories.tenantId], references: [tenant.id] }),
-	items: many(menuItems)
+export const catalogCategoriesRelations = relations(catalogCategories, ({ one, many }) => ({
+	vendor: one(vendor, { fields: [catalogCategories.vendorId], references: [vendor.id] }),
+	items: many(catalogItems)
 }));
 
-export const menuItemsRelations = relations(menuItems, ({ one, many }) => ({
-	tenant: one(tenant, { fields: [menuItems.tenantId], references: [tenant.id] }),
-	category: one(menuCategories, {
-		fields: [menuItems.categoryId],
-		references: [menuCategories.id]
+export const catalogItemsRelations = relations(catalogItems, ({ one, many }) => ({
+	vendor: one(vendor, { fields: [catalogItems.vendorId], references: [vendor.id] }),
+	category: one(catalogCategories, {
+		fields: [catalogItems.categoryId],
+		references: [catalogCategories.id]
 	}),
-	modifiers: many(menuItemModifiers)
+	modifiers: many(catalogItemModifiers)
 }));
 
 export const modifiersRelations = relations(modifiers, ({ one, many }) => ({
-	tenant: one(tenant, { fields: [modifiers.tenantId], references: [tenant.id] }),
-	items: many(menuItemModifiers),
+	vendor: one(vendor, { fields: [modifiers.vendorId], references: [vendor.id] }),
+	items: many(catalogItemModifiers),
 	options: many(modifierOptions)
 }));
 
@@ -47,13 +47,13 @@ export const modifierOptionsRelations = relations(modifierOptions, ({ one }) => 
 	modifier: one(modifiers, { fields: [modifierOptions.modifierId], references: [modifiers.id] })
 }));
 
-export const menuItemModifiersRelations = relations(menuItemModifiers, ({ one }) => ({
-	menuItem: one(menuItems, { fields: [menuItemModifiers.menuItemId], references: [menuItems.id] }),
-	modifier: one(modifiers, { fields: [menuItemModifiers.modifierId], references: [modifiers.id] })
+export const catalogItemModifiersRelations = relations(catalogItemModifiers, ({ one }) => ({
+	catalogItem: one(catalogItems, { fields: [catalogItemModifiers.catalogItemId], references: [catalogItems.id] }),
+	modifier: one(modifiers, { fields: [catalogItemModifiers.modifierId], references: [modifiers.id] })
 }));
 
 export const ordersRelations = relations(orders, ({ one, many }) => ({
-	tenant: one(tenant, { fields: [orders.tenantId], references: [tenant.id] }),
+	vendor: one(vendor, { fields: [orders.vendorId], references: [vendor.id] }),
 	items: many(orderItems)
 }));
 

@@ -1,142 +1,141 @@
 import { db } from '$lib/server/db';
-import { menuCategories, menuItems } from '$lib/server/db/menu';
+import { catalogCategories, catalogItems } from '$lib/server/db/catalog';
 import { orders, orderItems } from '$lib/server/db/orders';
 
-export async function seedDemoTenant(tenantId: number) {
-	const [drinks, food] = await db
-		.insert(menuCategories)
+export async function seedDemoVendor(vendorId: number) {
+	const [breads, pastries] = await db
+		.insert(catalogCategories)
 		.values([
-			{ tenantId, name: 'Drinks', sortOrder: 1 },
-			{ tenantId, name: 'Food', sortOrder: 2 }
+			{ vendorId, name: 'Breads', sortOrder: 1 },
+			{ vendorId, name: 'Pastries', sortOrder: 2 }
 		])
-		.returning({ id: menuCategories.id });
+		.returning({ id: catalogCategories.id });
 
 	const seededItems = await db
-		.insert(menuItems)
+		.insert(catalogItems)
 		.values([
 			{
-				tenantId,
-				categoryId: drinks.id,
-				name: 'Flat White',
-				description: 'Double ristretto, steamed whole milk, silky microfoam.',
-				price: 550,
+				vendorId,
+				categoryId: breads.id,
+				name: 'Sourdough Loaf',
+				description: 'Country-style sourdough with a crackling crust and open crumb. Baked fresh each morning.',
+				price: 1200,
 				sortOrder: 1
 			},
 			{
-				tenantId,
-				categoryId: drinks.id,
-				name: 'Iced Latte',
-				description: 'Espresso over ice with your choice of milk.',
-				price: 600,
+				vendorId,
+				categoryId: breads.id,
+				name: 'Classic Baguette',
+				description: 'Traditional French baguette — crisp outside, pillowy inside. Best enjoyed same day.',
+				price: 550,
 				sortOrder: 2
 			},
 			{
-				tenantId,
-				categoryId: drinks.id,
-				name: 'Fresh Orange Juice',
-				description: 'Cold-pressed, served immediately.',
-				price: 500,
+				vendorId,
+				categoryId: breads.id,
+				name: 'Honey-Lavender Focaccia',
+				description: 'Thick, pillowy focaccia drizzled with local honey and studded with dried lavender buds.',
+				price: 900,
 				sortOrder: 3
 			},
 			{
-				tenantId,
-				categoryId: food.id,
-				name: 'Avocado Toast',
-				description: 'Sourdough, smashed avo, chilli flakes, poached egg.',
-				price: 1400,
+				vendorId,
+				categoryId: pastries.id,
+				name: 'Cinnamon Rolls',
+				description: 'Soft brioche dough, cinnamon-brown sugar filling, finished with cream cheese glaze. 2-pack.',
+				price: 750,
 				sortOrder: 1
 			},
 			{
-				tenantId,
-				categoryId: food.id,
-				name: 'Acai Bowl',
-				description: 'Blended acai, banana, granola, honey, fresh berries.',
-				price: 1250,
+				vendorId,
+				categoryId: pastries.id,
+				name: 'Blueberry Scones',
+				description: 'Buttermilk scones loaded with wild blueberries and a lemon-sugar glaze. 2-pack.',
+				price: 650,
 				sortOrder: 2
 			},
 			{
-				tenantId,
-				categoryId: food.id,
-				name: 'Granola Parfait',
-				description: 'House granola, Greek yoghurt, seasonal fruit compote.',
-				price: 900,
+				vendorId,
+				categoryId: pastries.id,
+				name: 'Butter Croissants',
+				description: 'Laminated with European-style butter for a shattery, flaky exterior. 2-pack.',
+				price: 700,
 				sortOrder: 3
 			}
 		])
-		.returning({ id: menuItems.id, name: menuItems.name, price: menuItems.price });
+		.returning({ id: catalogItems.id, name: catalogItems.name, price: catalogItems.price });
 
-	// Map by name for convenience
 	const byName = Object.fromEntries(seededItems.map((i) => [i.name, i]));
 
-	// Seed 4 demo orders with mixed statuses
-	const suffix = String(tenantId).padStart(3, '0');
+	const suffix = String(vendorId).padStart(3, '0');
 
 	const demoOrders = [
 		{
-			tenantId,
+			vendorId,
 			orderNumber: `DEMO-${suffix}-1001`,
-			customerName: 'Jamie Chen',
-			customerEmail: 'jamie@example.com',
+			customerName: 'Maya Hoffman',
+			customerEmail: 'maya@example.com',
 			type: 'pickup',
 			status: 'received' as const,
 			paymentStatus: 'paid' as const,
-			subtotal: 1100,
-			tax: 99,
-			total: 1199,
+			subtotal: 1900,
+			tax: 157,
+			total: 2057,
 			items: [
-				{ name: 'Flat White', quantity: 1, unitPrice: 550 },
-				{ name: 'Iced Latte', quantity: 1, unitPrice: 550 }
+				{ name: 'Sourdough Loaf', quantity: 1, unitPrice: 1200 },
+				{ name: 'Butter Croissants', quantity: 1, unitPrice: 700 }
 			]
 		},
 		{
-			tenantId,
+			vendorId,
 			orderNumber: `DEMO-${suffix}-1002`,
-			customerName: 'Priya Nair',
-			customerEmail: 'priya@example.com',
-			type: 'dine-in',
+			customerName: 'Tomás Rivera',
+			customerEmail: 'tomas@example.com',
+			type: 'pickup',
 			status: 'preparing' as const,
 			paymentStatus: 'paid' as const,
 			subtotal: 2300,
-			tax: 207,
-			total: 2507,
+			tax: 190,
+			total: 2490,
 			items: [
-				{ name: 'Avocado Toast', quantity: 1, unitPrice: 1400 },
-				{ name: 'Fresh Orange Juice', quantity: 1, unitPrice: 500 },
-				{ name: 'Flat White', quantity: 1, unitPrice: 550 }
+				{ name: 'Honey-Lavender Focaccia', quantity: 1, unitPrice: 900 },
+				{ name: 'Cinnamon Rolls', quantity: 1, unitPrice: 750 },
+				{ name: 'Blueberry Scones', quantity: 1, unitPrice: 650 }
 			]
 		},
 		{
-			tenantId,
+			vendorId,
 			orderNumber: `DEMO-${suffix}-1003`,
-			customerName: 'Marcus Webb',
-			customerEmail: 'marcus@example.com',
+			customerName: 'Cleo Okafor',
+			customerEmail: 'cleo@example.com',
 			type: 'pickup',
 			status: 'ready' as const,
 			paymentStatus: 'paid' as const,
-			subtotal: 2150,
-			tax: 194,
-			total: 2344,
+			subtotal: 1750,
+			tax: 144,
+			total: 1894,
 			items: [
-				{ name: 'Acai Bowl', quantity: 1, unitPrice: 1250 },
-				{ name: 'Iced Latte', quantity: 1, unitPrice: 600 },
-				{ name: 'Granola Parfait', quantity: 1, unitPrice: 900 }
+				{ name: 'Classic Baguette', quantity: 1, unitPrice: 550 },
+				{ name: 'Butter Croissants', quantity: 1, unitPrice: 700 },
+				{ name: 'Blueberry Scones', quantity: 1, unitPrice: 650 }
 			]
 		},
 		{
-			tenantId,
+			vendorId,
 			orderNumber: `DEMO-${suffix}-1004`,
-			customerName: 'Sofia Lindqvist',
-			customerEmail: 'sofia@example.com',
+			customerName: 'James Sutton',
+			customerEmail: 'james@example.com',
 			type: 'pickup',
 			status: 'fulfilled' as const,
 			paymentStatus: 'paid' as const,
-			subtotal: 1800,
-			tax: 162,
-			total: 1962,
+			subtotal: 2650,
+			tax: 219,
+			total: 2869,
 			items: [
-				{ name: 'Granola Parfait', quantity: 1, unitPrice: 900 },
-				{ name: 'Flat White', quantity: 1, unitPrice: 550 },
-				{ name: 'Avocado Toast', quantity: 1, unitPrice: 1400 }
+				{ name: 'Sourdough Loaf', quantity: 1, unitPrice: 1200 },
+				{ name: 'Classic Baguette', quantity: 1, unitPrice: 550 },
+				{ name: 'Cinnamon Rolls', quantity: 1, unitPrice: 750 },
+				{ name: 'Honey-Lavender Focaccia', quantity: 1, unitPrice: 900 }
 			]
 		}
 	];
@@ -151,7 +150,7 @@ export async function seedDemoTenant(tenantId: number) {
 		await db.insert(orderItems).values(
 			lineItems.map((li) => ({
 				orderId: newOrder.id,
-				menuItemId: byName[li.name]?.id ?? null,
+				catalogItemId: byName[li.name]?.id ?? null,
 				name: li.name,
 				quantity: li.quantity,
 				unitPrice: li.unitPrice

@@ -3,10 +3,11 @@ import { fail, redirect } from '@sveltejs/kit';
 import { db } from '$lib/server/db';
 import { eq, sql } from 'drizzle-orm';
 import { user as userTable } from '$lib/server/db/auth.schema';
-import { session, tenantUsers } from '$lib/server/db/schema';
+import { session } from '$lib/server/db/schema';
+import { vendorUsers } from '$lib/server/db/vendor';
 
 export const load: PageServerLoad = async ({ locals }) => {
-	if (!locals.user?.isInternal) throw redirect(303, '/tenants');
+	if (!locals.user?.isInternal) throw redirect(303, '/vendors');
 
 	const users = await db
 		.select({
@@ -17,10 +18,10 @@ export const load: PageServerLoad = async ({ locals }) => {
 			emailVerified: userTable.emailVerified,
 			bannedAt: userTable.bannedAt,
 			createdAt: userTable.createdAt,
-			tenantCount: sql<number>`count(distinct ${tenantUsers.tenantId})::int`
+			vendorCount: sql<number>`count(distinct ${vendorUsers.vendorId})::int`
 		})
 		.from(userTable)
-		.leftJoin(tenantUsers, eq(tenantUsers.userId, userTable.id))
+		.leftJoin(vendorUsers, eq(vendorUsers.userId, userTable.id))
 		.groupBy(userTable.id)
 		.orderBy(userTable.createdAt);
 
@@ -44,7 +45,6 @@ export const actions: Actions = {
 		if (!userId) return fail(400, { error: 'Missing id' });
 		if (userId === locals.user.id) return fail(400, { error: 'Cannot ban yourself' });
 		await db.update(userTable).set({ bannedAt: new Date() }).where(eq(userTable.id, userId));
-		// Kill all active sessions immediately
 		await db.delete(session).where(eq(session.userId, userId));
 	},
 
