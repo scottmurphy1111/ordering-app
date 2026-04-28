@@ -1,12 +1,23 @@
 import type { Handle } from '@sveltejs/kit';
 import { building } from '$app/environment';
 import { redirect } from '@sveltejs/kit';
+import { env } from '$env/dynamic/private';
 import { auth } from '$lib/server/auth';
 import { svelteKitHandler } from 'better-auth/svelte-kit';
 import { db } from '$lib/server/db';
 import { eq, and } from 'drizzle-orm';
 import { tenant, tenantUsers } from '$lib/server/db/tenant';
 import { user as userTable } from '$lib/server/db/auth.schema';
+import { ensureDevSeed, DEV_FAKE_USER, DEV_FAKE_SESSION } from '$lib/server/dev-bypass';
+
+// ── Dev auth bypass ──────────────────────────────────────────────────────────
+const BYPASS_AUTH = env.DEV_BYPASS_AUTH === 'true';
+
+if (BYPASS_AUTH && env.NODE_ENV === 'production') {
+	throw new Error(
+		'[DEV AUTH BYPASS] DEV_BYPASS_AUTH cannot be enabled in production. Refusing to start.'
+	);
+}
 
 const handleBetterAuth: Handle = async ({ event, resolve }) => {
 	const session = await auth.api.getSession({ headers: event.request.headers });
@@ -100,6 +111,17 @@ const handleTenantContext: Handle = async ({ event, resolve }) => {
 };
 
 export const handle: Handle = async ({ event, resolve }) => {
+	if (BYPASS_AUTH) {
+		console.warn(`[DEV AUTH BYPASS ACTIVE] ${event.request.method} ${event.url.pathname}`);
+		const devTenant = await ensureDevSeed();
+		event.locals.user = DEV_FAKE_USER;
+		event.locals.session = DEV_FAKE_SESSION;
+		event.locals.tenantId = devTenant.id;
+		event.locals.tenant = devTenant;
+		event.locals.tenantRole = 'owner';
+		return resolve(event);
+	}
+
 	return handleBetterAuth({
 		event,
 		resolve: (event) => handleTenantContext({ event, resolve })

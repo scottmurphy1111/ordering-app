@@ -30,7 +30,6 @@ export function getAddonPriceId(
 	interval: 'monthly' | 'annual' = 'monthly'
 ): string | undefined {
 	const monthlyMap: Record<string, string | undefined> = {
-		table_qr: env.STRIPE_PRICE_ADDON_TABLE_QR,
 		sms_notifications: env.STRIPE_PRICE_ADDON_SMS,
 		custom_domain: env.STRIPE_PRICE_ADDON_CUSTOM_DOMAIN,
 		analytics: env.STRIPE_PRICE_ADDON_ANALYTICS,

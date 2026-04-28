@@ -6,8 +6,6 @@
 	import { hasAddon } from'$lib/billing';
 	import { Button } from'$lib/components/ui/button';
 	import { Badge } from'$lib/components/ui/badge';
-	import { Input } from'$lib/components/ui/input';
-	import { Label } from'$lib/components/ui/label';
 	import { Card, CardContent } from'$lib/components/ui/card';
 
 	const tenant = $derived(page.data.tenant);
@@ -39,37 +37,6 @@
 		const a = document.createElement('a');
 		a.href = dataUrl;
 		a.download = `${tenant?.slug ??'menu'}-qr-code.png`;
-		a.click();
-	}
-
-	const hasTableQr = $derived(hasAddon(tenant?.addons as string[] | null,'table_qr'));
-
-	// ── Table QR codes ───────────────────────────────────────────────────────
-	let tableCount = $state(10);
-	let tableQrDataUrls = $state<string[]>([]);
-
-	$effect(() => {
-		if (!menuUrl) return;
-		const count = tableCount;
-		Promise.all(
-			Array.from({ length: count }, (_, i) =>
-				QRCode.toDataURL(`${menuUrl}?table=${i + 1}`, {
-					width: 200,
-					margin: 2,
-					color: { dark:'#111827', light:'#ffffff' }
-				})
-			)
-		).then((urls) => {
-			tableQrDataUrls = urls;
-		});
-	});
-
-	function downloadTableQr(index: number) {
-		const dataUrl = tableQrDataUrls[index];
-		if (!dataUrl) return;
-		const a = document.createElement('a');
-		a.href = dataUrl;
-		a.download = `${tenant?.slug ??'menu'}-table-${index + 1}-qr.png`;
 		a.click();
 	}
 
@@ -401,86 +368,6 @@
 			</div>
 		{/if}
 
-		<!-- ── Table QR codes ────────────────────────────────────────────────── -->
-		{#if tenant?.slug}
-			{#if hasTableQr}
-				<Card class="shadow-sm">
-					<CardContent>
-					<div class="mb-5 flex items-start justify-between gap-4">
-						<div class="flex items-center gap-3">
-							<div
-								class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10"
-							>
-								<Icon icon="mdi:table-chair" class="h-5 w-5 text-primary" />
-							</div>
-							<div>
-								<h2 class="font-semibold text-foreground">Table QR Codes</h2>
-								<p class="text-sm text-muted-foreground">
-									One QR per table — scans to your menu with dine-in pre-selected.
-								</p>
-							</div>
-						</div>
-						<div class="flex shrink-0 items-center gap-2">
-							<Label class="text-sm" for="table-count">Tables:</Label>
-							<Input
-								id="table-count"
-								type="number"
-								min={1}
-								max={50}
-								bind:value={tableCount}
-								class="w-16 text-center"
-							/>
-						</div>
-					</div>
-
-					{#if tableQrDataUrls.length === 0}
-						<div class="flex items-center justify-center py-8">
-							<Icon icon="mdi:loading" class="h-6 w-6 animate-spin text-muted-foreground/40" />
-						</div>
-					{:else}
-						<div class="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
-							{#each tableQrDataUrls as dataUrl, i (i)}
-								<div
-									class="flex flex-col items-center gap-2 rounded-lg border bg-muted/50 p-3"
-								>
-									<img src={dataUrl} alt="Table {i + 1} QR code" class="h-24 w-24" />
-									<p class="text-xs font-semibold text-muted-foreground">Table {i + 1}</p>
-									<Button onclick={() => downloadTableQr(i)} variant="outline" size="xs" class="gap-1">
-										<Icon icon="mdi:download" class="h-3 w-3" /> PNG
-									</Button>
-								</div>
-							{/each}
-						</div>
-					{/if}
-					</CardContent>
-				</Card>
-			{:else}
-				<div class="rounded-xl border border-dashed bg-muted/50 p-6">
-					<div class="flex items-start gap-4">
-						<div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-muted">
-							<Icon icon="mdi:table-chair" class="h-5 w-5 text-muted-foreground" />
-						</div>
-						<div class="flex-1">
-							<div class="flex flex-wrap items-center gap-2">
-								<h2 class="font-semibold text-muted-foreground">Table QR Codes</h2>
-								<Badge class="bg-muted text-muted-foreground">Add-on</Badge>
-							</div>
-							<p class="mt-1 text-sm text-muted-foreground">
-								Per-table QR codes for dine-in ordering. Activate this add-on in Billing to unlock.
-							</p>
-							<Button
-								href={resolve('/dashboard/settings/billing')}
-								variant="default"
-								size="sm"
-								class="mt-3 gap-1.5"
-							>
-								<Icon icon="mdi:arrow-right" class="h-3.5 w-3.5" /> Go to Billing
-							</Button>
-						</div>
-					</div>
-				</div>
-			{/if}
-		{/if}
 
 		<!-- ── Embed snippet ──────────────────────────────────────────────────── -->
 		{#if tenant?.slug}

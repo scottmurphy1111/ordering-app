@@ -13,15 +13,15 @@
 	const loginHref = resolve('/login');
 
 	const audiences = [
-		{ icon: 'mdi:bread-slice-outline', label: 'Bakeries' },
-		{ icon: 'mdi:barley', label: 'Farm stands' },
-		{ icon: 'mdi:food-steak', label: 'Butchers' },
-		{ icon: 'mdi:flower-outline', label: 'Florists' },
-		{ icon: 'mdi:package-variant-closed', label: 'CSA boxes' },
-		{ icon: 'mdi:truck-outline', label: 'Food trucks' },
-		{ icon: 'mdi:coffee-outline', label: 'Coffee shops' },
-		{ icon: 'mdi:silverware-fork-knife', label: 'Specialty makers' },
-		{ icon: 'mdi:tent', label: 'Market vendors' }
+		{ icon: 'mdi:bread-slice-outline', label: 'Bakeries', path: '/for-bakeries' as string | undefined },
+		{ icon: 'mdi:barley', label: 'Farm stands', path: undefined },
+		{ icon: 'mdi:food-steak', label: 'Butchers', path: undefined },
+		{ icon: 'mdi:flower-outline', label: 'Florists', path: undefined },
+		{ icon: 'mdi:package-variant-closed', label: 'CSA boxes', path: undefined },
+		{ icon: 'mdi:truck-outline', label: 'Food trucks', path: undefined },
+		{ icon: 'mdi:coffee-outline', label: 'Coffee shops', path: undefined },
+		{ icon: 'mdi:silverware-fork-knife', label: 'Specialty makers', path: undefined },
+		{ icon: 'mdi:tent', label: 'Market vendors', path: '/for-farmers-markets' as string | undefined }
 	];
 
 	const features = [
@@ -137,16 +137,6 @@
 	];
 
 	const addons = [
-		{
-			icon: 'mdi:table-chair',
-			name: 'Table QR Codes',
-			monthlyPrice: 9,
-			annualMonthlyPrice: 7,
-			price: '$9/mo',
-			annualPrice: '$7/mo billed annually',
-			annualSavings: 'save $24/yr',
-			desc: 'One QR code per table — customers scan and order with their table number pre-filled.'
-		},
 		{
 			icon: 'mdi:message-text-outline',
 			name: 'SMS Notifications',
@@ -515,10 +505,17 @@
 	</p>
 	<div class="flex flex-wrap justify-center gap-2 px-6">
 		{#each audiences as a (a.label)}
-			<span class="inline-flex items-center gap-1.5 rounded-full border border-border bg-background px-3 py-1.5 text-sm font-medium text-foreground">
-				<Icon icon={a.icon} class="h-3.5 w-3.5 text-primary" aria-hidden="true" />
-				{a.label}
-			</span>
+			{#if a.path}
+				<a href={resolve(a.path as '/for-bakeries' | '/for-farmers-markets')} class="inline-flex items-center gap-1.5 rounded-full border border-border bg-background px-3 py-1.5 text-sm font-medium text-foreground transition-colors hover:border-primary/40 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2">
+					<Icon icon={a.icon} class="h-3.5 w-3.5 text-primary" aria-hidden="true" />
+					{a.label}
+				</a>
+			{:else}
+				<span class="inline-flex items-center gap-1.5 rounded-full border border-border bg-background px-3 py-1.5 text-sm font-medium text-foreground">
+					<Icon icon={a.icon} class="h-3.5 w-3.5 text-primary" aria-hidden="true" />
+					{a.label}
+				</span>
+			{/if}
 		{/each}
 	</div>
 </div>
@@ -666,7 +663,7 @@
 		<div class="mt-8 text-center">
 			<p class="text-sm text-muted-foreground">Add-ons billed separately. Activate or cancel anytime.</p>
 			<p class="mt-1 text-xs text-muted-foreground">
-				Add-ons: Table QR Codes · SMS Notifications · Custom Domain · Advanced Analytics · Loyalty Program · Subscriptions
+				Add-ons: SMS Notifications · Custom Domain · Advanced Analytics · Loyalty Program · Subscriptions
 			</p>
 		</div>
 	</div>
@@ -817,8 +814,8 @@
 <!-- Footer -->
 <footer class="border-t bg-background px-6 py-12">
 	<div class="mx-auto max-w-6xl">
-		<div class="grid gap-10 sm:grid-cols-2 lg:grid-cols-4">
-			<div>
+		<div class="grid gap-10 sm:grid-cols-2 lg:grid-cols-5">
+			<div class="lg:col-span-1">
 				<a href={resolve('/')} class="text-xl font-bold tracking-tight text-foreground">
 					Order<span class="text-primary">Local</span>
 				</a>
@@ -834,6 +831,13 @@
 					<a href="#pricing" class="transition-colors hover:text-foreground">Pricing</a>
 					<a href="#faq" class="transition-colors hover:text-foreground">FAQ</a>
 					<a href={resolve('/login')} class="transition-colors hover:text-foreground">Sign in</a>
+				</nav>
+			</div>
+			<div>
+				<p class="mb-3 text-xs font-semibold tracking-wide text-foreground uppercase">Solutions</p>
+				<nav class="flex flex-col gap-2 text-sm text-muted-foreground">
+					<a href={resolve('/for-bakeries')} class="transition-colors hover:text-foreground">For Bakeries</a>
+					<a href={resolve('/for-farmers-markets')} class="transition-colors hover:text-foreground">For Farmers Markets</a>
 				</nav>
 			</div>
 			<div>

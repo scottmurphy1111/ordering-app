@@ -3,7 +3,6 @@
 	import type { PageData } from './$types';
 	import { cart } from '$lib/cart.svelte';
 	import { resolve } from '$app/paths';
-	import { page } from '$app/state';
 	import Icon from '@iconify/svelte';
 	import { getOpenStatus } from '$lib/hours';
 	import type { WeekHours } from '$lib/hours';
@@ -14,7 +13,6 @@
 	onMount(() => cart.init(data.tenantSlug));
 
 	const tenant = $derived(data.tenant);
-	const tableParam = $derived(page.url.searchParams.get('table'));
 	const settings = $derived(tenant.settings as Record<string, unknown> | null);
 
 	// ── Open/closed status ───────────────────────────────────────────────────
@@ -192,13 +190,6 @@
 							<span class="rounded-full bg-red-600 px-2 py-0.5 text-xs font-semibold text-white">Closed</span>
 						{/if}
 					{/if}
-					{#if tableParam}
-						<span
-							class="flex items-center gap-1 rounded-full bg-background/20 px-2.5 py-0.5 text-xs font-semibold text-white backdrop-blur-sm"
-						>
-							<Icon icon="mdi:table-chair" class="h-3 w-3" /> Table {tableParam}
-						</span>
-					{/if}
 				</div>
 				{#if tenant.type}
 					<p class="mt-0.5 text-sm text-white/70 capitalize">{tenant.type.replace('_', ' ')}</p>
@@ -247,14 +238,6 @@
 						{:else}
 							<span class="rounded-full bg-red-600 px-2 py-0.5 text-xs font-semibold text-white">Closed</span>
 						{/if}
-					{/if}
-					{#if tableParam}
-						<span
-							class="flex items-center gap-1 rounded-full bg-background/20 px-2.5 py-0.5 text-xs font-semibold backdrop-blur-sm"
-							style="color: var(--foreground-color);"
-						>
-							<Icon icon="mdi:table-chair" class="h-3 w-3" /> Table {tableParam}
-						</span>
 					{/if}
 				</div>
 			</div>
@@ -531,9 +514,7 @@
 	{#if cart.count > 0}
 		<div class="sticky bottom-0 flex justify-center p-4">
 			<a
-				href={resolve(
-					`/${data.tenantSlug}/cart${tableParam ? `?table=${encodeURIComponent(tableParam)}` : ''}` as `/${string}`
-				)}
+				href={resolve(`/${data.tenantSlug}/cart` as `/${string}`)}
 				style="background-color: var(--background-color); color: var(--foreground-color);"
 				class="flex w-full max-w-2xl items-center justify-between rounded-xl px-5 py-3.5 shadow-lg transition-opacity hover:opacity-90"
 			>

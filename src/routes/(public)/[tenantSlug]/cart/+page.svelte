@@ -4,7 +4,6 @@
 	import type { PageData } from './$types';
 	import { cart, itemUnitPrice } from '$lib/cart.svelte';
 	import { resolve } from '$app/paths';
-	import { page } from '$app/state';
 	import Icon from '@iconify/svelte';
 	import { Card, CardContent } from '$lib/components/ui/card';
 
@@ -12,17 +11,12 @@
 
 	onMount(() => {
 		cart.init(data.tenantSlug);
-		const t = page.url.searchParams.get('table');
-		tableParam = t;
-		if (t) tableNumber = t;
 	});
 
 	let customerName = $state('');
 	let email = $state('');
 	let phone = $state('');
 	let notes = $state('');
-	let tableNumber = $state('');
-	let tableParam = $state<string | null>(null);
 	let orderType = $state<'pickup' | 'delivery'>('pickup');
 	let deliveryStreet = $state('');
 	let deliveryApt = $state('');
@@ -173,7 +167,7 @@
 				tenantSlug: data.tenantSlug,
 				items: cart.items,
 				customer: { name: customerName, email, phone },
-				notes: [tableNumber ? `Table ${tableNumber}` : '', notes].filter(Boolean).join(' | '),
+				notes: notes || null,
 				orderType: isSubscriptionCart ? 'subscription' : orderType,
 				deliveryAddress:
 					orderType === 'delivery' && !isSubscriptionCart
@@ -249,15 +243,7 @@
 			</a>
 			<div class="flex flex-col items-center gap-1">
 				<h1 class="text-lg font-semibold" style="color: var(--foreground-color);">Your Cart</h1>
-				{#if tableParam}
-					<span
-						class="rounded-full px-2.5 py-0.5 text-xs font-medium"
-						style="background-color: var(--foreground-color); color: var(--background-color);"
-					>
-						<Icon icon="mdi:table-chair" class="mr-0.5 inline h-3 w-3" />Table {tableParam}
-					</span>
-				{/if}
-			</div>
+				</div>
 			<span class="w-20"></span>
 		</div>
 	</header>

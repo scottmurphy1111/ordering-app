@@ -47,13 +47,6 @@ export type TierKey = (typeof TIERS)[number]['key'];
 
 export const ADDONS = [
 	{
-		key: 'table_qr',
-		name: 'Table QR Codes',
-		price: 9,
-		icon: 'mdi:table-chair',
-		description: 'Per-table QR codes for dine-in ordering with the table number pre-selected.'
-	},
-	{
 		key: 'sms_notifications',
 		name: 'SMS Notifications',
 		price: 19,
