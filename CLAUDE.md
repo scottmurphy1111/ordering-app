@@ -1,113 +1,242 @@
-## Project Configuration
+# CLAUDE.md — Order Local
 
-- **Language**: TypeScript
-- **Package Manager**: bun
-- **Add-ons**: prettier, eslint, vitest, playwright, tailwindcss, sveltekit-adapter, devtools-json, drizzle, better-auth, mdsvex, mcp
-
-## Svelte href Rule
-
-**Always** use `resolve()` from `$app/paths` for every `href` attribute that points to an internal route. Never write `href="/some/path"` — always write `href={resolve('/some/path')}`. For dynamic segments use a template literal: `href={resolve(\`/dashboard/orders/${id}\`)}`. Import `resolve` in the `<script>` block: `import { resolve } from '$app/paths';`.
+This file tells Claude Code how to write code for this project. Read it before
+making changes. Follow it exactly.
 
 ---
 
-You are able to use the Svelte MCP server, where you have access to comprehensive Svelte 5 and SvelteKit documentation. Here's how to use the available tools effectively:
+## Project Configuration
 
-## Available MCP Tools:
+- **Language:** TypeScript
+- **Framework:** SvelteKit (Svelte 5)
+- **Package manager / runtime:** **Bun** — use `bun` for every script command,
+  never `npm`. Examples: `bun run dev`, `bun run check`, `bun run build`.
+- **Database:** Postgres on Neon, Drizzle ORM
+- **Auth:** BetterAuth
+- **Styling:** Tailwind CSS v4
+- **Components:** shadcn-svelte primitives + Iconify (`@iconify/svelte`)
+- **Tooling add-ons:** prettier, eslint, vitest, playwright, mdsvex,
+  drizzle-kit, MCP
 
-### 1. list-sections
+---
 
-Use this FIRST to discover all available documentation sections. Returns a structured list with titles, use_cases, and paths.
-When asked about Svelte or SvelteKit topics, ALWAYS use this tool at the start of the chat to find relevant sections.
+## What Order Local Is
 
-### 2. get-documentation
+Order Local is a B2B SaaS that gives local businesses a branded online
+ordering page with Stripe checkout. **It is not a marketplace.** It is not
+DoorDash. We do not take a percentage of vendor sales — vendors pay a flat
+monthly subscription and Stripe's standard processing fees, nothing else.
 
-Retrieves full documentation content for specific sections. Accepts single or multiple sections.
-After calling the list-sections tool, you MUST analyze the returned documentation sections (especially the use_cases field) and then use the get-documentation tool to fetch ALL documentation sections that are relevant for the user's task.
+### Audience
 
-### 3. svelte-autofixer
+The product is built for **makers, bakers, and growers** — local businesses
+that sell pre-orders for pickup at farmers markets, shops, or by appointment.
+Specifically:
 
-Analyzes Svelte code and returns issues and suggestions.
-You MUST use this tool whenever writing Svelte code before sending it to the user. Keep calling it until no issues or suggestions are returned.
+- Independent bakeries
+- Farmers market vendors (farms, butchers, jam makers, etc.)
+- Florists, CSAs, breweries, food trucks, specialty makers
 
-### 4. playground-link
+This audience does **not** include:
 
-Generates a Svelte Playground link with the provided code.
-After completing the code, ask the user if they want a playground link. Only call this tool after user confirmation and NEVER if code was written to files in their project.
+- Sit-down restaurants
+- Quick-service restaurants doing delivery
+- Anyone running a dine-in operation
 
-## UI Consistency Rules
+When making product decisions, optimize for the bakery and farmers market
+vendor first. If a feature would be useful for a sit-down restaurant but
+adds complexity for a baker, do not add it.
 
-### Shared Components — Never Duplicate, Always Extract
+### What we don't build
 
-When the same UI pattern appears on more than one page, it MUST be extracted into a
-shared component in `components/` and imported on both pages. Never copy-paste
-styles or markup between pages. If you add a feature to one page that logically
-belongs on a sibling page, add it to both in the same commit.
+- Delivery dispatch / driver networks
+- POS hardware integrations (out of scope for v1)
+- Reservations / table management
+- Marketplace discovery (no consumer-facing directory)
+- Anything that assumes a restaurant context (tables, dine-in, service modes)
+
+---
+
+## Core Vocabulary
+
+These naming choices are deliberate. Use them everywhere.
+
+| Concept                                              | We say                                             | We do NOT say                       |
+| ---------------------------------------------------- | -------------------------------------------------- | ----------------------------------- |
+| The business that uses Order Local (entity)          | **vendor** (`vendors` table)                       | tenant, restaurant, store, merchant |
+| The business in user-facing dashboard copy           | **shop** (sometimes "your shop")                   | your tenant, your restaurant        |
+| The list of things a vendor sells (entity & feature) | **catalog** (`catalogItems` table)                 | menu (in code, schema, dashboard)   |
+| The customer-facing public page                      | **storefront**                                     | restaurant page, microsite          |
+| The URL path for the storefront                      | `/[vendorSlug]/catalog`                            | `/[vendorSlug]/menu`                |
+| Pickup time slots (planned feature)                  | **pickup windows**                                 | service hours, table reservations   |
+| Customer-facing dashboard nav item                   | **Catalog**                                        | Menu                                |
+| Settings hub                                         | shop-level: **Settings** · user-level: **Account** | mixing the two                      |
+
+The word "menu" appears in two acceptable places only:
+
+1. shadcn-svelte's `<DropdownMenu>` UI primitive (generic dropdown)
+2. Comments or docs referring to the historical name
+
+If you find "menu" anywhere else and it's referring to the catalog feature,
+rename it. If you find "tenant" anywhere referring to our `vendors` entity,
+rename it. Both are technical debt.
+
+---
+
+## Brand Voice & Aesthetic
+
+The product voice is **confident and clean, modern SaaS, minimal fluff.** The
+storefront and dashboard should feel designed, not templated. When making
+visual or copy decisions:
+
+### Voice
+
+- Direct and specific. "Pickup windows that match your schedule" — not
+  "powerful scheduling capabilities."
+- Honest about what we do and don't do. We are pickup-only. We don't deliver.
+  Don't write copy that hedges this.
+- Practical, not aspirational. A baker should read our copy and feel like
+  we understand their Saturday morning, not like we're selling them a vision.
+- No emoji in product UI unless the user has used emoji in their own data
+  (e.g., a vendor's menu item description). Marketing pages allow emoji
+  sparingly.
+
+### Aesthetic
+
+- Editorial, type-forward, generous whitespace
+- Photo-forward when photos exist; type-forward when they don't
+- No AI-generic patterns: no purple gradients, no glassmorphism, no centered
+  hero with a neon button, no Inter as a default body font
+- Functional first. Mobile-first. A vendor checking orders one-handed at a
+  market booth at 9am should be able to do it without thinking.
+
+### What we don't build (UX edition)
+
+- "Confetti when an order arrives" gimmicks
+- Onboarding tours that block real work
+- Empty states that read like marketing copy ("Welcome to your journey…")
+- Animations longer than 200ms
+- Anything that requires a help article to understand
+
+---
+
+## SvelteKit Conventions
+
+### `href` rule (non-negotiable)
+
+**Always** use `resolve()` from `$app/paths` for every `href` attribute that
+points to an internal route.
+
+✅ Correct:
+
+```svelte
+<script>
+	import { resolve } from '$app/paths';
+</script>
+
+<a href={resolve('/dashboard/catalog')}>Catalog</a>
+<a href={resolve(`/dashboard/orders/${id}`)}>Order #{id}</a>
+```
+
+❌ Wrong:
+
+```svelte
+<a href="/dashboard/catalog">Catalog</a>
+<a href={`/dashboard/orders/${id}`}>Order #{id}</a>
+```
+
+This applies to every internal link, every `goto()` call, and every redirect.
+
+### URL is the source of truth for state
+
+Use the URL for any state that should survive a page refresh, deep-link, or
+share. Specifically:
+
+- Active filter on a list page: `?status=received` (read via `$page.url.searchParams`)
+- Active sort: `?sort=newest`
+- Active mode toggle: derive from `$page.url.pathname` (e.g., `/orders` vs `/orders/history`)
+- Pagination: `?page=2`
+
+Do **not** use local component state for any of the above. The URL is canonical.
+
+### Svelte 5 runes
+
+This project uses Svelte 5. Use runes (`$state`, `$derived`, `$props`,
+`$effect`) for reactive state. Do not use Svelte 4 `let` reactive declarations
+or `$:` blocks in new code.
+
+### MCP tools available
+
+You have access to the Svelte MCP server with these tools:
+
+- **`list-sections`** — call this FIRST when working on Svelte/SvelteKit
+  to find relevant docs
+- **`get-documentation`** — fetch full docs for sections matched by your task
+- **`svelte-autofixer`** — run on every Svelte file you write before
+  considering it done. Keep calling it until no issues remain.
+- **`playground-link`** — only after user confirmation, and never if code
+  was written to project files
+
+When the user asks about Svelte or SvelteKit topics, start with `list-sections`.
+When writing Svelte code, finish with `svelte-autofixer`.
+
+---
+
+## Core Philosophy
+
+- **Consistency over creativity.** When a UI pattern already exists in the
+  codebase, use it exactly. Do not invent a new variant.
+- **Extract, don't duplicate.** If the same component or layout appears on more
+  than one page, extract it into a shared component immediately.
+- **Sibling parity.** When you change a UI element on one page, check every
+  sibling or related page for the same element and apply the identical change.
+  Explicitly confirm parity in your response.
+- **Smallest diff.** Make the minimal change required. Do not refactor unrelated
+  code, rename variables, or restructure files unless explicitly asked.
+- **No redirects from old routes.** Project policy: when a route is renamed or
+  removed, old URLs 404. Do not add `redirect(...)` rules to preserve old
+  paths.
+
+---
+
+## Shared Components — Never Duplicate
+
+When the same UI pattern appears on more than one page, it MUST be extracted
+into a shared component in `src/lib/components/` and imported on both pages.
+Never copy-paste markup between pages.
 
 Current shared components that must stay in sync:
 
-- `OrdersSummaryBar` — used on `/orders` and `/orders/history`
-- `OrdersFilterTabs` — used on `/orders` and `/orders/history`
+- `OrdersSummaryBar` — used on `/dashboard/orders` and `/dashboard/orders/history`
+- `OrdersFilterTabs` — used on both pages
 - `OrdersViewToggle` — (Live | History) used on both pages
 - `OrdersSearchRow` — search input, used on both pages
 
-### Page Layout Structure — Orders Pages
+If you add a feature to one page that logically belongs on a sibling page, add
+it to both in the same task.
 
-Both `/orders` (live) and `/orders/history` must follow this exact section order:
+---
+
+## Page Layout Structure — Orders Pages
+
+Both `/dashboard/orders` (live) and `/dashboard/orders/history` follow this
+exact section order:
 
 1. Page header row (`<h1>` left, toggle + bell right)
 2. `<OrdersSummaryBar>` — one row, divider-separated stats
 3. Search input — full width, single row
 4. Filter pills (left) + date range (right) — single row, space-between
-5. Order cards list
+5. Order list
 
-Never place filter pills and date pickers on separate rows.
-Never place "From" / "To" as bare text labels outside a styled input container.
-The date range inputs must always be wrapped in a single bordered pill/container.
-
-### Style Tokens — Use These Exactly
-
-- Active filter pill: `bg-green-600 text-white rounded-full`
-- Inactive filter pill: `bg-gray-100 text-gray-600 border border-gray-200 rounded-full hover:bg-gray-200`
-- Summary bar container: `bg-gray-50 border border-gray-200 rounded-xl px-4 py-3`
-- Summary bar divider: `border-l border-gray-200`
-- Search input: `border border-gray-200 rounded-lg pl-9 py-2.5 text-sm focus:ring-2 focus:ring-green-500`
-- Date range wrapper: `flex items-center border border-gray-200 rounded-lg px-3 py-2 bg-white`
-
-### 1-to-1 Style Parity Rule
-
-When asked to add or change a UI element on one page, check if a sibling or related
-page has the same element. If it does, apply the identical change to both pages in
-the same task. Do not leave sibling pages with mismatched implementations.
-Explicitly confirm parity has been applied in your response.
-
-❌ Do not wrap pill count numbers in a `bg-white rounded-full` badge span —
-render counts as plain text directly inside the pill button
-
-- ❌ Do not apply dark borders (`border-gray-900`, `border-black`) to any input
-- ❌ Do not use bare `<input type="date">` without suppressing the native border
-  with `border-none focus:ring-0` — always nest date inputs inside a shared
-  styled container div
-- ❌ Do not forget `outline-none` on inputs — browser default outlines must always
-  be suppressed and replaced with `focus:ring-2 focus:ring-green-500`
-
-## 1. Core Philosophy
-
-- **Consistency over creativity.** When a UI pattern already exists in the codebase,
-  use it exactly. Do not invent a new variant.
-- **Extract, don't duplicate.** If the same component or layout appears on more than
-  one page, extract it into a shared component immediately. Never copy-paste markup
-  between pages.
-- **Sibling parity.** When you change a UI element on one page, check every sibling
-  or related page for the same element and apply the identical change. Explicitly
-  confirm parity in your response.
-- **Smallest diff.** Make the minimal change required. Do not refactor unrelated code,
-  rename variables, or restructure files unless explicitly asked.
+Never place filter pills and date pickers on separate rows. Never place "From"
+/ "To" as bare text labels outside a styled input container. The date range
+inputs must always be wrapped in a single bordered pill/container.
 
 ---
 
-## 2. Colour Palette
+## Color Palette
 
-Use only these values. Do not introduce new colours.
+Use only these values. Do not introduce new colors.
 
 | Role             | Tailwind class     | Hex     |
 | ---------------- | ------------------ | ------- |
@@ -128,11 +257,15 @@ Use only these values. Do not introduce new colours.
 | Border           | `border-gray-200`  | #e5e7eb |
 | Subtle bg        | `bg-gray-50`       | #f9fafb |
 | White            | `bg-white`         | #ffffff |
-| Sidebar bg       | `bg-gray-900`      | #111827 |
+
+**Storefront-specific colors:** the public storefront (`/[vendorSlug]/catalog`)
+uses CSS variables driven by the vendor's branding settings (background,
+foreground, accent). The palette above applies only to the dashboard, marketing
+site, and admin areas.
 
 ---
 
-## 3. Typography
+## Typography
 
 - Page titles (`<h1>`): `text-2xl font-bold text-gray-900`
 - Section headings (`<h2>`): `text-sm font-medium text-gray-500 uppercase tracking-wide`
@@ -143,298 +276,281 @@ Use only these values. Do not introduce new colours.
 - Monospace (order IDs, codes): `font-mono text-xs text-gray-400`
 - Currency values: `font-semibold text-gray-900` (large: `text-lg` or `text-2xl`)
 
+The marketing site and storefront use a custom font pairing (display + body)
+that may differ from the dashboard. Do not change the dashboard typography
+unless explicitly asked.
+
 ---
 
-## 4. Spacing & Layout
+## Spacing & Layout
 
-- Main content area left padding: the sidebar is fixed-width; main content starts
-  after it with `p-6` or `px-6 py-6`.
+- Main content padding: `p-6` or `px-6 py-6` (sidebar is fixed-width to its left)
 - Between page header and first content section: `mb-6`
 - Between major sections: `mb-6` or `gap-6` in a grid
 - Between related elements within a section: `mb-3` or `gap-3`
 - Card internal padding: `p-4` (compact) or `p-6` (spacious)
-- Standard border radius: `rounded-xl` for cards, `rounded-lg` for inputs/buttons,
+- Border radius: `rounded-xl` for cards, `rounded-lg` for inputs/buttons,
   `rounded-full` for pills/badges
 
 ---
 
-## 5. Page Header Pattern
+## Page Header Pattern
 
-Every dashboard page must follow this exact header structure:
+Every dashboard page follows this exact header structure:
 
-```tsx
+```svelte
+<div class="mb-6 flex items-center justify-between">
+	<!-- Left: title + optional subtitle -->
+	<div>
+		<h1 class="text-2xl font-bold text-gray-900">{title}</h1>
+		{#if subtitle}
+			<p class="mt-1 text-sm text-gray-500">{subtitle}</p>
+		{/if}
+	</div>
 
-  {/* Left: title + optional subtitle */}
-
-    {title}
-    {subtitle && {subtitle}}
-
-  {/* Right: mode toggle (if applicable) + primary CTA */}
-
-    {modeToggle}
-    {primaryAction}
-
-
+	<!-- Right: mode toggle (if applicable) + primary CTA -->
+	<div class="flex items-center gap-3">
+		{#if modeToggle}{@render modeToggle()}{/if}
+		{#if primaryAction}{@render primaryAction()}{/if}
+	</div>
+</div>
 ```
 
-- The primary CTA button always sits at the far right.
-- Mode toggles (e.g. Live/History, Items/Categories) sit immediately left of the CTA.
-- Do not put breadcrumbs inside the main content area. Use the header left side only.
-- Do not stack a separate `<p>` subtitle unless it adds real context — page titles
-  should be self-explanatory.
+- The primary CTA always sits at the far right.
+- Mode toggles sit immediately left of the CTA.
+- Do not put breadcrumbs inside the main content area.
+- Do not stack a separate `<p>` subtitle unless it adds real context.
 
 ---
 
-## 6. Buttons
+## Buttons
 
-### Primary button
+### Primary
 
-```tsx
-className="flex items-center gap-1.5 px-4 py-2 bg-green-600 hover:bg-green-700
-           text-white text-sm font-medium rounded-lg transition-colors"
+```
+class="flex items-center gap-1.5 px-4 py-2 bg-green-600 hover:bg-green-700
+       text-white text-sm font-medium rounded-lg transition-colors"
 ```
 
-### Secondary / outline button
+### Secondary / outline
 
-```tsx
-className="flex items-center gap-1.5 px-4 py-2 border border-gray-200
-           bg-white hover:bg-gray-50 text-gray-700 text-sm font-medium
-           rounded-lg transition-colors"
+```
+class="flex items-center gap-1.5 px-4 py-2 border border-gray-200
+       bg-white hover:bg-gray-50 text-gray-700 text-sm font-medium
+       rounded-lg transition-colors"
 ```
 
-### Ghost button (icon-only or low-emphasis)
+### Ghost (icon-only or low-emphasis)
 
-```tsx
-className="p-2 hover:bg-gray-100 text-gray-500 hover:text-gray-700
-           rounded-lg transition-colors"
+```
+class="p-2 hover:bg-gray-100 text-gray-500 hover:text-gray-700
+       rounded-lg transition-colors"
 ```
 
-### Small inline action (e.g. table row actions)
+### Small inline action (table row actions)
 
-```tsx
-className="px-2.5 py-1 text-xs font-medium border border-gray-200
-           hover:bg-gray-50 rounded-md transition-colors"
+```
+class="px-2.5 py-1 text-xs font-medium border border-gray-200
+       hover:bg-gray-50 rounded-md transition-colors"
 ```
 
-### Destructive button (always behind a confirmation dialog)
+### Destructive (always behind a confirmation dialog)
 
-```tsx
-className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white
-           text-sm font-medium rounded-lg transition-colors"
+```
+class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white
+       text-sm font-medium rounded-lg transition-colors"
 ```
 
 **Rules:**
 
-- Never use bare red text as a delete/cancel action without a wrapping button element.
-- Destructive actions (delete, cancel order, refund) always require a confirmation
-  dialog before executing. Never execute them on a single click.
+- Never use bare red text as a delete/cancel action without a wrapping button.
+- Destructive actions (delete, cancel order, refund) always require a
+  confirmation dialog. Never single-click destructive.
 - The most important action on a page is always a solid green primary button.
-  Secondary actions are outline. Tertiary actions are ghost or text links.
+  Secondary actions are outline. Tertiary are ghost or text.
 - Never have more than one solid primary button visible at the same time.
 - When there are 3+ secondary actions, group them under a `⋯ More` dropdown.
 
 ---
 
-## 7. Mode Toggle (Segmented Control)
+## Mode Toggle (Segmented Control)
 
-Used for switching between two views of the same page (e.g. Live/History,
-Items/Categories). Always a single bordered container with both options inside.
+Used for switching between two views of the same page (e.g., Live/History).
+Always a single bordered container with both options inside.
 
-```tsx
-
-
-    {primaryLabel}
-
-
-    {secondaryLabel}
-
-
+```svelte
+<div class="inline-flex rounded-lg border border-gray-200 bg-white p-0.5">
+	<a
+		href={resolve(primaryHref)}
+		class={cn(
+			'flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
+			isPrimaryActive ? 'bg-gray-900 text-white' : 'text-gray-500 hover:bg-gray-50'
+		)}
+	>
+		<Icon icon={primaryIcon} class="h-3.5 w-3.5" />
+		{primaryLabel}
+	</a>
+	<a
+		href={resolve(secondaryHref)}
+		class={cn(
+			'flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
+			!isPrimaryActive ? 'bg-gray-900 text-white' : 'text-gray-500 hover:bg-gray-50'
+		)}
+	>
+		<Icon icon={secondaryIcon} class="h-3.5 w-3.5" />
+		{secondaryLabel}
+	</a>
+</div>
 ```
 
 **Rules:**
 
 - Active segment: `bg-gray-900 text-white`
 - Inactive segment: `bg-white text-gray-500 hover:bg-gray-50`
-- The toggle must appear on **both** pages it controls. If page A has the toggle,
-  page B must also have it — using the same shared component.
-- Use `useLocation()` to derive the active state from the URL. Never use local state
-  for the active toggle — the URL is the source of truth.
-
-// In Section 7 — Mode Toggle, add:
-// Each segment MUST include a contextual icon to the left of the label.
-// Icon size: w-3.5 h-3.5. Gap: gap-1.5. Icon inherits color from parent text.
-// Examples:
-// Live → green dot span (w-2 h-2 rounded-full bg-green-400)
-// History → ClockIcon / HistoryIcon
-// Items → UtensilsIcon / ForkKnifeIcon
-// Categories → TagIcon
-
-// In Section 21 — What Not to Do, add:
-
-- ❌ Do not add a mode toggle segment with plain text only — every segment
-  must have an icon that visually communicates what the view contains
+- The toggle must appear on **both** pages it controls. Use a shared component.
+- Derive active state from `$page.url.pathname`. Never use local state.
+- Each segment MUST include a contextual icon to the left of the label.
+  Icon size: `w-3.5 h-3.5`. Gap: `gap-1.5`. Icon color inherits from text.
+- Examples:
+  - Live → green dot span (`w-2 h-2 rounded-full bg-green-400`)
+  - History → `lucide:clock` or `lucide:history`
+  - Items → `lucide:list` or `lucide:utensils-crossed`
+  - Categories → `lucide:tag`
 
 ---
 
-## 8. Filter Pills (Status Tabs)
+## Filter Pills (Status Tabs)
 
-Used for filtering a list by status. Always a horizontal row of pill buttons.
+Used for filtering a list by status. Horizontal row of pill buttons.
 
-```tsx
+```
 // Active pill
-className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium
-           bg-green-600 text-white"
+class="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium
+       bg-green-600 text-white"
 
 // Inactive pill
-className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium
-           bg-gray-100 text-gray-600 border border-gray-200 hover:bg-gray-200
-           transition-colors"
-
-// Count badge inside pill
-// Active:   className="text-xs px-1.5 py-0.5 rounded-full bg-white/20 text-white font-semibold"
-// Inactive: className="text-xs px-1.5 py-0.5 rounded-full bg-white text-gray-500 font-semibold"
+class="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium
+       bg-gray-100 text-gray-600 border border-gray-200 hover:bg-gray-200
+       transition-colors"
 ```
+
+Counts render as plain text inside the pill button — never wrapped in a
+`bg-white rounded-full` badge.
 
 **Rules:**
 
-- Always show a count on every pill, even if 0.
-- Use the URL query string (`?status=received`) as the source of truth for the active
-  filter, not local state.
-- When a status count > 0 and represents something needing attention, add a small
-  `w-1.5 h-1.5 rounded-full bg-amber-400` dot inside the inactive pill.
-- Extract into a shared `<FilterPills>` or `<StatusTabs>` component. Never
-  re-implement pill styling inline on individual pages.
+- Always show a count, even if 0.
+- The URL query string (`?status=received`) is the source of truth.
+- When a status count > 0 needs attention, add a small `w-1.5 h-1.5
+rounded-full bg-amber-400` dot inside the inactive pill.
+- Extract into a shared `<FilterPills>` or `<StatusTabs>` component.
 
 ---
 
-## 9. Summary / Stats Bar
+## Summary / Stats Bar
 
-A single horizontal row of key stats shown at the top of list pages.
-Used on Orders (live and history). Apply consistently to any list page that
-has meaningful aggregate data.
+Single horizontal row of key stats at the top of list pages. Used on Orders.
+Apply consistently to any list page with meaningful aggregate data.
 
-```tsx
-
-  {stats.map((stat, i) => (
-    <div key={stat.label} className={cn("flex flex-col", i > 0 && "ml-6 pl-6 border-l border-gray-200")}>
-      {stat.label}
-      <span className={cn("text-lg font-semibold",
-        stat.urgent   && "text-amber-500",
-        stat.positive && "text-green-600",
-        !stat.urgent && !stat.positive && "text-gray-900"
-      )}>
-        {stat.value}
-
-
-  ))}
-
+```svelte
+<div class="mb-6 flex items-center rounded-xl border border-gray-200 bg-gray-50 px-4 py-3">
+	{#each stats as stat, i}
+		<div class={cn('flex flex-col', i > 0 && 'ml-6 border-l border-gray-200 pl-6')}>
+			<span class="text-xs tracking-wide text-gray-500 uppercase">{stat.label}</span>
+			<span
+				class={cn(
+					'text-lg font-semibold',
+					stat.urgent && 'text-amber-500',
+					stat.positive && 'text-green-600',
+					!stat.urgent && !stat.positive && 'text-gray-900'
+				)}
+			>
+				{stat.value}
+			</span>
+		</div>
+	{/each}
+</div>
 ```
 
 **Rules:**
 
-- Never use a grid of individual bordered cards for this. Always use the inline
-  divider-separated row shown above.
+- Never use a grid of bordered cards. Always inline divider-separated row.
 - Stats update reactively when filters or date ranges change.
 
 ---
 
-## 10. Search + Filter Toolbar Pattern
+## Search + Filter Toolbar Pattern
 
-Any page with a filterable list must follow this exact two-row layout:
+Any page with a filterable list follows this exact two-row layout:
 
 ```
 Row 1: [ Search input — full width                              ]
 Row 2: [ Filter pills (left)          Date range picker (right) ]
 ```
 
-```tsx
-{/* Row 1 */}
-
-
-
-
-
-{/* Row 2 */}
-
-
-  {showDateRange && (
-
-      {/* Both date inputs inside ONE styled container */}
-
-
-
-        →
-
-
-      {hasActiveDate && (
-        Clear
-      )}
-
-  )}
-
-```
-
 **Rules:**
 
-- Filter pills and date range are **always on the same row**, space-between.
-- Date inputs are **always inside a single shared container** — never bare native
+- Filter pills and date range are always on the same row, space-between.
+- Date inputs always inside a single shared container — never bare native
   inputs with floating "From"/"To" text labels.
-- Search is **always above** on its own row, never on the same row as pills.
+- Search is always above on its own row, never on the same row as pills.
 - If a page has no date filter, the second row is just pills left-aligned.
-- Never omit the search bar from a list page. If search isn't wired up yet, render
-  it as a disabled placeholder.
+- Never omit the search bar from a list page. If search isn't wired up yet,
+  render a disabled placeholder.
 
 ---
 
-## 11. Cards
+## Cards
 
-### Content / navigation card (e.g. Settings hub, Menu hub)
+### Content / navigation card (Settings hub, Catalog hub)
 
-```tsx
-
-
-
-
-
-    {title}
-    {description}
-
-
+```svelte
+<a
+	href={resolve(href)}
+	class="group block rounded-xl border border-gray-200 bg-white p-6 transition-all hover:border-gray-300 hover:shadow-sm"
+>
+	<div class="mb-3 flex items-start gap-3">
+		<div class="rounded-lg bg-green-50 p-2">
+			<Icon {icon} class="h-5 w-5 text-green-600" />
+		</div>
+	</div>
+	<h3 class="mb-1 text-base font-semibold text-gray-900">{title}</h3>
+	<p class="text-sm text-gray-500">{description}</p>
+</a>
 ```
 
-### Data / list card (e.g. order cards)
+### Data / list card (order cards)
 
-```tsx
-
-  {/* card body — clickable, navigates to detail */}
-
-    ...
-
-  {/* action strip — NOT inside the Link */}
-
-    ...
-
-
+```svelte
+<div
+	class="overflow-hidden rounded-xl border border-gray-200 bg-white transition-colors hover:border-gray-300"
+>
+	<a href={resolve(`/dashboard/orders/${order.id}`)} class="block p-4">
+		<!-- card body — clickable, navigates to detail -->
+	</a>
+	<div class="flex items-center gap-2 border-t border-gray-100 px-4 py-2">
+		<!-- action strip — NOT inside the link -->
+	</div>
+</div>
 ```
 
-### Stat card (e.g. dashboard overview)
+### Stat card (dashboard overview)
 
-```tsx
-
-  {label}
-  {value}
-
-    {cta} →
-
-
+```svelte
+<div class="rounded-xl border border-gray-200 bg-white p-6">
+	<div class="mb-1 text-xs tracking-wide text-gray-500 uppercase">{label}</div>
+	<div class="mb-2 text-2xl font-bold text-gray-900">{value}</div>
+	<a href={resolve(href)} class="text-xs font-medium text-green-600 hover:text-green-700">
+		{cta} →
+	</a>
+</div>
 ```
 
 ---
 
-## 12. Badges & Status Pills
+## Badges & Status Pills
 
-```tsx
-// Status-to-style map — always use these, never invent new colours
+```ts
 const statusStyles = {
   // Order lifecycle
   received:  "bg-blue-100 text-blue-700",
@@ -447,244 +563,279 @@ const statusStyles = {
   paid:      "bg-green-100 text-green-700",
   refunded:  "bg-amber-100 text-amber-700",
   unpaid:    "bg-gray-100 text-gray-500",
-  // Availability
-  active:    "bg-green-100 text-green-700",
-  inactive:  "bg-gray-100 text-gray-500",
+  // Catalog item availability
+  available: "bg-green-100 text-green-700",
+  sold_out:  "bg-amber-100 text-amber-700",
   hidden:    "bg-gray-100 text-gray-400",
+  draft:     "bg-gray-100 text-gray-500",
   // Sale
   sale:      "bg-red-100 text-red-600",
-}
+};
 
-// Base badge classes
-className={cn("px-2.5 py-0.5 rounded-full text-xs font-medium capitalize",
-              statusStyles[status])}
-```
-
-**Rules:**
-
-- Always use `capitalize` so casing in the data doesn't matter.
-- Never show a badge when all items in a list share the same status — it adds noise
-  without information. Instead use an inline toggle (see Section 13).
-- Payment status must always be shown on history order cards, even if "unpaid".
-
----
-
-## 13. Inline Toggle Switches
-
-Used for boolean states (available/unavailable, active/inactive) directly in list
-rows, so users don't need to navigate into an edit page.
-
-```tsx
-<button
-  onClick={() => handleToggle(id)}
-  className={cn(
-    "relative inline-flex h-5 w-9 items-center rounded-full transition-colors",
-    isOn ? "bg-green-500" : "bg-gray-200"
-  )}
-  aria-label={isOn ? "Disable" : "Enable"}
->
-
-
-```
-
-Use instead of static "Active"/"Available" badges wherever the state is toggleable.
-
----
-
-## 14. Tables
-
-```tsx
-
-
-
-
-
-          Name
-
-        ...
-
-
-
-      {rows.map(row => (
-
-          ...
-          {/* Row actions: hidden until hover */}
-
-
-              Edit
-
-
-
-
-
-
-      ))}
-
-
-
-```
-
-**Rules:**
-
-- Table container always has `rounded-xl` and `overflow-hidden` — never raw `<table>`
-  without a wrapper.
-- Destructive row actions (Delete) are always icon-only with `text-red-400`, hidden
-  until hover, and always behind a confirmation dialog.
-- Never show a prominent red "Delete" text link inline in a table row.
-- Row actions appear on `group-hover` opacity transition — never permanent buttons.
-- Add `group` class to `<tr>` and `opacity-0 group-hover:opacity-100` to action container.
-
----
-
-## 15. Empty States
-
-Every list, table, or filtered view must have an empty state. Never show a blank page.
-
-```tsx
-{items.length === 0 && (
-
-
-    {title}
-    {description}
-    {cta && (
-
-        {cta.label} →
-
-    )}
-
+// Base badge
+class={cn(
+  "px-2.5 py-0.5 rounded-full text-xs font-medium capitalize",
+  statusStyles[status]
 )}
 ```
 
-When an active search/filter produces no results, the empty state copy must
-reflect the active filter: `No results for "scott"` or
-`No cancelled orders in this date range.`
+**Rules:**
+
+- Always use `capitalize`.
+- Never show a badge when all items in a list share the same status — use an
+  inline toggle instead.
+- Payment status is always shown on history order cards, even if "unpaid".
 
 ---
 
-## 16. Forms & Inputs
+## Inline Toggle Switches
 
-```tsx
-// Text input
-className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-lg bg-white
-           placeholder:text-gray-400 focus:outline-none focus:ring-2
-           focus:ring-green-500 focus:border-transparent"
+Used for boolean states (available/unavailable, active/inactive) directly in
+list rows.
 
-// Select
-className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-lg bg-white
-           focus:outline-none focus:ring-2 focus:ring-green-500"
+```svelte
+<button
+	onclick={() => handleToggle(id)}
+	class={cn(
+		'relative inline-flex h-5 w-9 items-center rounded-full transition-colors',
+		isOn ? 'bg-green-500' : 'bg-gray-200'
+	)}
+	aria-label={isOn ? 'Disable' : 'Enable'}
+>
+	<span
+		class={cn(
+			'inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform',
+			isOn ? 'translate-x-4' : 'translate-x-0.5'
+		)}
+	/>
+</button>
+```
 
-// Textarea
-className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-lg bg-white
-           resize-none focus:outline-none focus:ring-2 focus:ring-green-500"
+Use instead of static "Active"/"Available" badges wherever the state is
+toggleable.
 
-// Label
-className="block text-sm font-medium text-gray-700 mb-1.5"
+---
 
-// Helper text
-className="text-xs text-gray-400 mt-1.5"
+## Tables
 
-// Error text
-className="text-xs text-red-500 mt-1.5"
-
-// Error input state (add to input)
-className="border-red-300 focus:ring-red-500"
+```svelte
+<div class="overflow-hidden rounded-xl border border-gray-200 bg-white">
+	<table class="w-full">
+		<thead class="border-b border-gray-200 bg-gray-50">
+			<tr>
+				<th class="px-4 py-3 text-left text-xs font-medium tracking-wide text-gray-500 uppercase"
+					>Name</th
+				>
+				<!-- ... -->
+			</tr>
+		</thead>
+		<tbody class="divide-y divide-gray-100">
+			{#each rows as row}
+				<tr class="group hover:bg-gray-50">
+					<td class="px-4 py-3 text-sm text-gray-900">{row.name}</td>
+					<!-- Row actions: hidden until hover -->
+					<td class="px-4 py-3 text-right">
+						<div
+							class="flex items-center justify-end gap-1 opacity-0 transition-opacity group-hover:opacity-100"
+						>
+							<a href={resolve(`/dashboard/catalog/items/${row.id}`)} class="...">Edit</a>
+						</div>
+					</td>
+				</tr>
+			{/each}
+		</tbody>
+	</table>
+</div>
 ```
 
 **Rules:**
 
-- Never use native browser date inputs with default styling. Always wrap them in a
-  styled container (see Section 10).
-- Every input must have a visible label. Placeholder text alone is not a label.
+- Table container always `rounded-xl` and `overflow-hidden`.
+- Destructive row actions are icon-only with `text-red-400`, hidden until hover,
+  always behind a confirmation dialog.
+- Never show a prominent red "Delete" text link inline.
+- Row actions appear on `group-hover` opacity transition, never permanent.
+
+---
+
+## Empty States
+
+Every list, table, or filtered view must have an empty state. Never blank.
+
+```svelte
+{#if items.length === 0}
+	<div class="rounded-xl border border-gray-200 bg-white p-12 text-center">
+		<h3 class="mb-1 text-base font-semibold text-gray-900">{title}</h3>
+		<p class="mb-4 text-sm text-gray-500">{description}</p>
+		{#if cta}
+			<a href={resolve(cta.href)} class="text-sm font-medium text-green-600 hover:text-green-700">
+				{cta.label} →
+			</a>
+		{/if}
+	</div>
+{/if}
+```
+
+When an active search/filter produces no results, the empty state copy
+reflects the active filter: `No results for "scott"` or
+`No cancelled orders in this date range.`
+
+**For Order Local specifically:** empty states for vendors who just signed up
+should suggest _the next concrete action_, not aspirational copy. "No orders
+yet — share your storefront link to get started" with a button that opens the
+Resources page beats "Welcome! Start your journey here."
+
+---
+
+## Forms & Inputs
+
+```
+// Text input
+class="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-lg bg-white
+       placeholder:text-gray-400 focus:outline-none focus:ring-2
+       focus:ring-green-500 focus:border-transparent"
+
+// Select
+class="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-lg bg-white
+       focus:outline-none focus:ring-2 focus:ring-green-500"
+
+// Textarea
+class="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-lg bg-white
+       resize-none focus:outline-none focus:ring-2 focus:ring-green-500"
+
+// Label
+class="block text-sm font-medium text-gray-700 mb-1.5"
+
+// Helper text
+class="text-xs text-gray-400 mt-1.5"
+
+// Error text
+class="text-xs text-red-500 mt-1.5"
+
+// Error input state (add to input)
+class="border-red-300 focus:ring-red-500"
+```
+
+**Rules:**
+
+- Never use native browser date inputs with default styling. Wrap in a styled
+  container.
+- Every input has a visible label. Placeholder is not a label.
 - Error messages appear below the input in red, never as alerts or toasts for
   inline validation.
 
 ---
 
-## 17. Confirmation Dialogs
+## Confirmation Dialogs
 
 Required before any destructive or irreversible action (delete, cancel order,
 refund, bulk operations).
 
-```tsx
-
-  {title}       // "Delete 'Burgers'?"
-  {description}   // "This category contains 2 items..."
-
-    Cancel
-
-      {confirmLabel}  // "Delete", "Cancel order", "Issue refund"
-
-
-
-```
-
 **Rules:**
 
-- The confirm button label must name the action ("Delete", not "Yes" or "OK").
+- The confirm button label names the action ("Delete", not "Yes" or "OK").
 - The cancel button always dismisses without action.
 - Never auto-execute destructive actions on single click.
 
 ---
 
-## 18. Navigation & Routing
+## Navigation & Routing
 
-- The active nav item in the sidebar uses `bg-green-600 text-white rounded-lg`.
-- Inactive nav items use `text-gray-400 hover:text-white hover:bg-gray-800`.
-- Use `<Link>` from react-router-dom for all internal navigation. Never use
-  `window.location` or `<a href>` for internal routes.
-- Use `useLocation().pathname` to derive active states. Never use local state
-  to track which page/tab is active if the URL already encodes it.
-- Query params (`?status=received`, `?category=burgers`) are always the source
-  of truth for filter state. Initialize filter state from `useSearchParams()`.
+- Active sidebar nav item: `bg-green-600 text-white rounded-lg`
+- Inactive sidebar nav: `text-gray-400 hover:text-white hover:bg-gray-800`
+- All internal navigation uses `<a href={resolve(...)}>` or `goto(resolve(...))`.
+  Never `window.location` for internal routes.
+- Use `$page.url.pathname` for active states. Never local state if the URL
+  encodes it.
+- Query params (`?status=received`, `?category=breads`) are always the source
+  of truth for filter state. Read via `$page.url.searchParams`.
 
 ---
 
-## 19. Loading & Skeleton States
+## Loading & Skeleton States
 
-Every data-fetching component must show a skeleton while loading, not a spinner
+Every data-fetching component shows a skeleton while loading, not a spinner
 or blank space.
 
-```tsx
-// Skeleton line
+```svelte
+<!-- Skeleton line -->
+<div class="h-4 animate-pulse rounded bg-gray-200" />
 
-
-// Skeleton card
-
-
-
-
-
-
-
-
-
+<!-- Skeleton card -->
+<div class="animate-pulse rounded-xl border border-gray-200 bg-white p-4">
+	<div class="mb-3 h-4 w-1/3 rounded bg-gray-200" />
+	<div class="space-y-2">
+		<div class="h-3 w-full rounded bg-gray-200" />
+		<div class="h-3 w-5/6 rounded bg-gray-200" />
+	</div>
+</div>
 ```
 
-Skeleton count should match the expected result count (e.g. show 5 skeleton cards
-if the page typically shows ~5 orders).
+Skeleton count matches expected result count.
 
 ---
 
-## 20. Component File Conventions
+## Component File Conventions
 
-- Shared components live in `src/components/`
-- Page-specific components live colocated with their page file
-- Component names are PascalCase, file names match component name
+- Shared components live in `src/lib/components/`
+- Page-specific components live colocated with their page file (`+page.svelte`)
+  or in a `_components/` subfolder if the page has many
+- Component names are PascalCase, file names match
 - Extract a component when the same markup appears in 2+ places
-- Shared components must have TypeScript interfaces for all props
+- Shared components have TypeScript interfaces for all props
 - Prefer named exports over default exports for shared components
 
 ---
 
-## 21. What Not to Do
+## Database & Server
 
-- ❌ Do not use inline `style={{}}` — use Tailwind classes only
-- ❌ Do not hardcode colours as hex — use Tailwind classes from Section 2
+- The schema lives in `src/lib/server/db/schema/`. The single source of truth
+  for the data model.
+- Drizzle migrations are applied via `bun run db:migrate` (or `db:push` if the
+  project is push-based — check `drizzle.config.ts`).
+- Never write raw SQL in routes. Always go through Drizzle.
+- Server-only code lives under `src/lib/server/`. Never import from
+  `$lib/server/*` in client-side code.
+- Database column naming: `snake_case` in SQL, `camelCase` in TypeScript
+  (Drizzle's default mapping).
+
+---
+
+## What Not to Do
+
+- ❌ Do not use `style={...}` inline — Tailwind only
+- ❌ Do not hardcode colors as hex — use Tailwind classes from the palette
 - ❌ Do not use `!important` in class names
-- ❌ Do not add `cursor-pointer` to `<Link>` or `<a>` — it's redundant
-- ❌ Do not create new colour variants not in Section 2
+- ❌ Do not add `cursor-pointer` to `<a>` — redundant
+- ❌ Do not create new color variants not in the palette
 - ❌ Do not show a bare red text link for destructive actions
-- ❌ Do not leave sibling pages with mismatched implementations after a change
+- ❌ Do not leave sibling pages with mismatched implementations
 - ❌ Do not use local state for active tab/filter/toggle if the URL encodes it
 - ❌ Do not render a blank page/area — always provide an empty state
 - ❌ Do not copy-paste component markup across files — extract and import
+- ❌ Do not wrap pill count numbers in a `bg-white rounded-full` badge — render
+  counts as plain text inside the pill
+- ❌ Do not apply dark borders (`border-gray-900`, `border-black`) to inputs
+- ❌ Do not use bare `<input type="date">` without suppressing the native
+  border — always nest in a shared styled container
+- ❌ Do not forget `outline-none` on inputs — replace with `focus:ring-2 focus:ring-green-500`
+- ❌ Do not add a mode toggle segment with plain text only — every segment
+  must have an icon
+- ❌ Do not write `href="/some/path"` — always `href={resolve('/some/path')}`
+- ❌ Do not use `npm run *` — always `bun run *`
+- ❌ Do not refer to Order Local users as "tenants" or "restaurants" — they
+  are vendors / shops
+- ❌ Do not refer to the catalog as a "menu" in code, schema, or dashboard UI
+- ❌ Do not add new redirect rules from old routes — old routes 404
+- ❌ Do not add restaurant-specific assumptions (tables, dine-in, delivery
+  dispatch) to product features
+- ❌ Do not commit code unless explicitly asked. Pause at phase gates for
+  review when working on multi-phase tasks.
+
+---
+
+## When in doubt
+
+If you're about to write something and you're not sure whether it matches the
+project's conventions: **stop and ask.** A 30-second clarification beats a
+500-line diff that doesn't match the codebase.

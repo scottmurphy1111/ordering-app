@@ -264,7 +264,7 @@
 			{#if itemLimit !== null}
 				<div class="mt-5">
 					<div class="mb-1.5 flex items-center justify-between text-sm">
-						<span class="font-medium text-muted-foreground">Menu items</span>
+						<span class="font-medium text-muted-foreground">Items</span>
 						<span
 							class={atLimit
 								? 'font-semibold text-red-600'

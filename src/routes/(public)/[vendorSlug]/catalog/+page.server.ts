@@ -1,6 +1,6 @@
 import type { PageServerLoad } from './$types';
 import { db } from '$lib/server/db';
-import { eq, and, ne } from 'drizzle-orm';
+import { eq, and, ne, inArray } from 'drizzle-orm';
 import { catalogItems, catalogCategories } from '$lib/server/db/schema';
 
 export const load: PageServerLoad = async ({ locals, params }) => {
@@ -12,7 +12,10 @@ export const load: PageServerLoad = async ({ locals, params }) => {
 			orderBy: (c, { asc }) => [asc(c.sortOrder), asc(c.name)]
 		}),
 		db.query.catalogItems.findMany({
-			where: and(eq(catalogItems.vendorId, vendorId), eq(catalogItems.available, true)),
+			where: and(
+				eq(catalogItems.vendorId, vendorId),
+				inArray(catalogItems.status, ['available', 'sold_out'])
+			),
 			orderBy: (i, { asc }) => [asc(i.sortOrder), asc(i.name)],
 			columns: {
 				id: true,
@@ -24,7 +27,8 @@ export const load: PageServerLoad = async ({ locals, params }) => {
 				tags: true,
 				categoryId: true,
 				isSubscription: true,
-				billingInterval: true
+				billingInterval: true,
+				status: true
 			},
 			with: {
 				modifiers: { columns: { modifierId: true } }

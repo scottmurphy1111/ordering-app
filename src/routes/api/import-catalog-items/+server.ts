@@ -140,10 +140,10 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 					.filter(Boolean)
 			: [];
 		const availableStr = row['available']?.trim().toLowerCase();
-		const available =
-			availableStr === '' || availableStr === undefined
-				? true
-				: availableStr !== 'false' && availableStr !== '0' && availableStr !== 'no';
+		const status: 'available' | 'hidden' =
+			availableStr === 'false' || availableStr === '0' || availableStr === 'no'
+				? 'hidden'
+				: 'available';
 
 		let categoryId: number | null = null;
 		const categoryName = row['category']?.trim();
@@ -173,7 +173,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 						discountedPrice,
 						categoryId,
 						tags,
-						available,
+						status,
 						updatedAt: new Date()
 					})
 					.where(eq(catalogItems.id, existingId));
@@ -190,7 +190,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 						discountedPrice,
 						categoryId,
 						tags,
-						available
+						status
 					})
 					.returning({ id: catalogItems.id });
 				itemByName.set(name.toLowerCase(), newItem.id);

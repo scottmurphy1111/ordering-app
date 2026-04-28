@@ -55,7 +55,7 @@ export const actions: Actions = {
 		const priceStr = formData.get('price')?.toString();
 		const discountedPriceStr = formData.get('discountedPrice')?.toString();
 		const categoryIdStr = formData.get('categoryId')?.toString();
-		const available = formData.get('available') === 'on';
+		const status = (formData.get('status')?.toString() ?? 'available') as 'draft' | 'available' | 'sold_out' | 'hidden';
 		const tagsRaw = formData.get('tags')?.toString().trim();
 		const imageUrl = formData.get('imageUrl')?.toString().trim() || null;
 
@@ -89,7 +89,7 @@ export const actions: Actions = {
 				price,
 				discountedPrice,
 				categoryId,
-				available,
+				status,
 				tags,
 				images,
 				sortOrder,

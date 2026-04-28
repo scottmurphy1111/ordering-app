@@ -1,5 +1,6 @@
 import {
 	pgTable,
+	pgEnum,
 	serial,
 	integer,
 	varchar,
@@ -11,6 +12,8 @@ import {
 	primaryKey
 } from 'drizzle-orm/pg-core';
 import { vendor } from './vendor';
+
+export const itemStatusEnum = pgEnum('item_status', ['draft', 'available', 'sold_out', 'hidden']);
 
 // Catalog categories
 export const catalogCategories = pgTable(
@@ -58,7 +61,7 @@ export const catalogItems = pgTable(
 		isSubscription: boolean('is_subscription').default(false),
 		billingInterval: varchar('billing_interval', { length: 20 }),
 
-		available: boolean('available').default(true),
+		status: itemStatusEnum('status').default('available').notNull(),
 		sortOrder: integer('sort_order').default(0),
 		createdAt: timestamp('created_at').defaultNow(),
 		updatedAt: timestamp('updated_at').defaultNow()

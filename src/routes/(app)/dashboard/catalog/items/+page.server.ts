@@ -35,7 +35,7 @@ export const load: PageServerLoad = async (event) => {
 			price: true,
 			discountedPrice: true,
 			images: true,
-			available: true,
+			status: true,
 			sortOrder: true,
 			createdAt: true
 		},
@@ -81,17 +81,17 @@ export const load: PageServerLoad = async (event) => {
 };
 
 export const actions: Actions = {
-	toggleAvailable: async ({ request, locals }) => {
+	setStatus: async ({ request, locals }) => {
 		const vendorId = locals.vendorId!;
 		const formData = await request.formData();
 		const id = parseInt(formData.get('id')?.toString() ?? '');
-		const available = formData.get('available') === 'true';
-		if (isNaN(id)) return fail(400, { error: 'Invalid ID' });
+		const status = formData.get('status')?.toString() as 'draft' | 'available' | 'sold_out' | 'hidden' | undefined;
+		if (isNaN(id) || !status) return fail(400, { error: 'Invalid request' });
 		await db
 			.update(catalogItems)
-			.set({ available, updatedAt: new Date() })
+			.set({ status, updatedAt: new Date() })
 			.where(and(eq(catalogItems.id, id), eq(catalogItems.vendorId, vendorId)));
-		return { toggled: true };
+		return { updated: true };
 	},
 
 	delete: async ({ request, locals }) => {
@@ -129,7 +129,6 @@ export const actions: Actions = {
 		const priceStr = formData.get('price')?.toString();
 		const discountedPriceStr = formData.get('discountedPrice')?.toString();
 		const categoryIdStr = formData.get('categoryId')?.toString();
-		const available = formData.get('available') === 'on';
 		const tagsRaw = formData.get('tags')?.toString().trim();
 		const imageUrl = formData.get('imageUrl')?.toString().trim() || null;
 		const sortOrder = parseInt(formData.get('sortOrder')?.toString() ?? '0') || 0;
@@ -160,7 +159,6 @@ export const actions: Actions = {
 				price,
 				discountedPrice,
 				categoryId,
-				available,
 				tags,
 				images,
 				sortOrder

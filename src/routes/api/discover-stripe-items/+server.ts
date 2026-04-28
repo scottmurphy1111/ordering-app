@@ -108,7 +108,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 				description: item.description,
 				price: item.price,
 				images: item.imageUrl ? [{ url: item.imageUrl, isPrimary: true }] : [],
-				available: true
+				status: 'available' as const
 			}))
 		);
 	}

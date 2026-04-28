@@ -6,7 +6,6 @@
 	import { resolve } from '$app/paths';
 	import Icon from '@iconify/svelte';
 	import { Button } from '$lib/components/ui/button';
-	import { Badge } from '$lib/components/ui/badge';
 	import { Card, CardContent, CardFooter } from '$lib/components/ui/card';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
@@ -274,15 +273,20 @@
 
 		<input type="hidden" name="sortOrder" value={item.sortOrder ?? 0} />
 
-		<div class="flex items-center gap-2">
-			<input
-				id="available"
-				name="available"
-				type="checkbox"
-				checked={item.available ?? true}
-				class="h-4 w-4 rounded"
-			/>
-			<label class="text-sm text-muted-foreground" for="available">Available for ordering</label>
+		<div>
+			<label class="mb-1 block text-sm font-medium text-muted-foreground" for="status">Status</label>
+			<select
+				id="status"
+				name="status"
+				class="w-full rounded-md border px-3 py-2 text-sm focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
+			>
+				{#each [['available', 'Available'], ['sold_out', 'Sold out'], ['hidden', 'Hidden'], ['draft', 'Draft']] as [val, label] (val)}
+					<option value={val} selected={item.status === val}>{label}</option>
+				{/each}
+			</select>
+			<p class="mt-1 text-xs text-muted-foreground">
+				Available — visible with Add button · Sold out — visible but can't order · Hidden — not shown to customers
+			</p>
 		</div>
 
 		{#if data.hasSubscriptionsAddon}

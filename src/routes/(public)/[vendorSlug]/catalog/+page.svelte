@@ -6,7 +6,6 @@
 	import Icon from '@iconify/svelte';
 	import { getOpenStatus } from '$lib/hours';
 	import type { WeekHours } from '$lib/hours';
-	import { Skeleton } from '$lib/components/ui/skeleton';
 
 	let { data }: { data: PageData } = $props();
 
@@ -130,12 +129,6 @@
 		return () => observer.disconnect();
 	});
 
-	// ── Skeleton loader ──────────────────────────────────────────────────────
-	let mounted = $state(false);
-	onMount(() => {
-		mounted = true;
-	});
-
 	function scrollToSection(id: string) {
 		const el = document.getElementById(id);
 		if (!el) return;
@@ -146,7 +139,7 @@
 </script>
 
 <svelte:head>
-	<title>{vendor.name} — Catalog</title>
+	<title>{vendor.name}</title>
 </svelte:head>
 
 <div class="min-h-screen">
@@ -158,87 +151,73 @@
 				alt={vendor.name}
 				class="absolute inset-0 h-full w-full object-cover"
 			/>
-			<div class="absolute inset-0 bg-linear-to-t from-black/75 via-black/25 to-transparent"></div>
-			<div class="absolute inset-x-0 bottom-0 mx-auto max-w-2xl px-4 pb-5">
-				<div class="mb-2 flex items-center gap-4">
+			<div class="absolute inset-0 bg-linear-to-t from-black/80 via-black/30 to-transparent"></div>
+			<div class="absolute inset-x-0 bottom-0 mx-auto max-w-2xl px-6 pb-6">
+				<div class="flex items-end gap-4">
 					{#if vendor.logoUrl}
 						<img
 							src={vendor.logoUrl}
 							alt={vendor.name}
-							class="h-16 w-auto max-w-48 object-contain drop-shadow"
+							class="mb-1 h-14 w-auto max-w-36 shrink-0 object-contain drop-shadow"
 							style="filter: brightness(0) invert(1);"
-						/>
-					{/if}
-					<div class="flex flex-wrap items-center gap-2">
-						{#if vendor.website}
-							<a
-								href={resolve(vendor.website as `/${string}`)}
-								target="_blank"
-								rel="noopener noreferrer"
-								class="text-2xl font-bold text-white drop-shadow hover:underline">{vendor.name}</a
-							>
-						{:else}
-							<h1 class="text-2xl font-bold text-white drop-shadow">{vendor.name}</h1>
-						{/if}
-					</div>
-				</div>
-				<div class="flex flex-wrap items-center gap-2">
-					{#if openStatus !== null}
-						{#if openStatus}
-							<span class="rounded-full bg-primary px-2.5 py-0.5 text-xs font-semibold text-primary-foreground">Open</span>
-						{:else}
-							<span class="rounded-full bg-red-600 px-2 py-0.5 text-xs font-semibold text-white">Closed</span>
-						{/if}
-					{/if}
-				</div>
-				{#if vendor.type}
-					<p class="mt-0.5 text-sm text-white/70 capitalize">{vendor.type.replace('_', ' ')}</p>
-				{/if}
-			</div>
-		</div>
-	{:else}
-		<header style="background-color: var(--background-color);">
-			<div class="mx-auto max-w-2xl px-4 py-5">
-				<div class="flex items-center gap-4">
-					{#if vendor.logoUrl}
-						<img
-							src={vendor.logoUrl}
-							alt={vendor.name}
-							class="h-16 w-auto max-w-48 shrink-0 object-contain"
 						/>
 					{/if}
 					<div>
 						{#if vendor.website}
-							<a
-								href={resolve(vendor.website as `/${string}`)}
-								target="_blank"
-								rel="noopener noreferrer"
-								class="transition-opacity hover:opacity-80"
-							>
-								<h1 class="text-2xl font-bold" style="color: var(--foreground-color);">
-									{vendor.name}
-								</h1>
+							<a href={vendor.website} target="_blank" rel="noopener noreferrer" class="transition-opacity hover:opacity-80">
+								<h1 class="display text-3xl font-bold text-white drop-shadow">{vendor.name}</h1>
 							</a>
 						{:else}
-							<h1 class="text-2xl font-bold" style="color: var(--foreground-color);">
-								{vendor.name}
-							</h1>
+							<h1 class="display text-3xl font-bold text-white drop-shadow">{vendor.name}</h1>
+						{/if}
+						{#if vendor.tagline}
+							<p class="mt-1 text-sm text-white/75">{vendor.tagline}</p>
 						{/if}
 					</div>
 				</div>
-				<div class="mt-2 flex flex-wrap items-center gap-2">
-					{#if vendor.type}
-						<p class="text-sm capitalize opacity-75" style="color: var(--foreground-color);">
-							{vendor.type.replace('_', ' ')}
-						</p>
-					{/if}
-					{#if openStatus !== null}
+				{#if openStatus !== null}
+					<div class="mt-3 flex flex-wrap items-center gap-2">
 						{#if openStatus}
-							<span class="rounded-full bg-primary px-2.5 py-0.5 text-xs font-semibold text-primary-foreground">Open</span>
+							<span class="rounded-full bg-white/20 px-2.5 py-0.5 text-xs font-semibold text-white">Open</span>
 						{:else}
-							<span class="rounded-full bg-red-600 px-2 py-0.5 text-xs font-semibold text-white">Closed</span>
+							<span class="rounded-full bg-red-600/90 px-2.5 py-0.5 text-xs font-semibold text-white">Closed</span>
 						{/if}
+					</div>
+				{/if}
+			</div>
+		</div>
+	{:else}
+		<header class="border-b" style="background-color: var(--background-color);">
+			<div class="mx-auto max-w-2xl px-6 py-8">
+				<div class="flex items-start gap-5">
+					{#if vendor.logoUrl}
+						<img
+							src={vendor.logoUrl}
+							alt={vendor.name}
+							class="mt-1 h-14 w-auto max-w-36 shrink-0 object-contain"
+						/>
 					{/if}
+					<div class="min-w-0 flex-1">
+						{#if vendor.website}
+							<a href={vendor.website} target="_blank" rel="noopener noreferrer" class="transition-opacity hover:opacity-80">
+								<h1 class="display text-3xl font-bold leading-tight" style="color: var(--foreground-color);">{vendor.name}</h1>
+							</a>
+						{:else}
+							<h1 class="display text-3xl font-bold leading-tight" style="color: var(--foreground-color);">{vendor.name}</h1>
+						{/if}
+						{#if vendor.tagline}
+							<p class="mt-1.5 text-sm" style="color: color-mix(in srgb, var(--foreground-color) 70%, transparent);">{vendor.tagline}</p>
+						{/if}
+						{#if openStatus !== null}
+							<div class="mt-3">
+								{#if openStatus}
+									<span class="rounded-full bg-white/20 px-2.5 py-0.5 text-xs font-semibold" style="color: var(--foreground-color);">Open</span>
+								{:else}
+									<span class="rounded-full bg-red-600/90 px-2.5 py-0.5 text-xs font-semibold text-white">Closed</span>
+								{/if}
+							</div>
+						{/if}
+					</div>
 				</div>
 			</div>
 		</header>
@@ -256,7 +235,7 @@
 					/>
 					<input
 						type="search"
-						placeholder="Search menu…"
+						placeholder="Search…"
 						bind:value={searchQuery}
 						class="w-full rounded-full border  bg-muted/50 py-2 pr-4 pl-9 text-sm transition-colors outline-none focus:border-gray-400 focus:bg-background"
 					/>
@@ -313,7 +292,7 @@
 	>
 		{#if data.items.length === 0}
 			<div class="rounded-xl border border-dashed  p-12 text-center">
-				<p class="text-muted-foreground">Menu coming soon.</p>
+				<p class="text-muted-foreground">Coming soon.</p>
 			</div>
 		{:else if !hasResults}
 			<div class="rounded-xl border border-dashed  p-12 text-center">
@@ -327,25 +306,11 @@
 					style="color: var(--background-color);">Clear search</button
 				>
 			</div>
-		{:else if !mounted}
-			<!-- Skeleton -->
-			<div class="space-y-3">
-				{#each [0, 1, 2, 3, 4] as i (i)}
-					<div class="flex gap-4 rounded-xl border  bg-background p-4 shadow-sm">
-						<Skeleton class="h-20 w-20 shrink-0 rounded-lg" />
-						<div class="flex-1 space-y-2 py-1">
-							<Skeleton class="h-4 w-3/4 rounded" />
-							<Skeleton class="h-3 w-1/2 rounded" />
-							<Skeleton class="h-3 w-1/4 rounded" />
-						</div>
-					</div>
-				{/each}
-			</div>
 		{:else}
 			{#each filteredCategorized as category (category.id)}
 				<section id={String(category.id)}>
 					<h2
-						class="mb-4 border-b-2 pb-2 text-lg font-semibold text-foreground"
+						class="display mb-4 border-b-2 pb-2 text-xl font-semibold text-foreground"
 						style="border-color: var(--background-color);"
 					>
 						{category.name}
@@ -363,13 +328,9 @@
 										alt={item.name}
 										class="h-20 w-20 shrink-0 rounded-lg object-cover"
 									/>
-								{:else}
-									<div class="flex h-20 w-20 shrink-0 items-center justify-center rounded-lg bg-muted">
-										<Icon icon="mdi:silverware-fork-knife" class="h-5 w-5 text-muted-foreground/40" />
-									</div>
 								{/if}
 								<div class="min-w-0 flex-1">
-									<p class="font-medium text-foreground">{item.name}</p>
+									<p class="display font-semibold text-foreground">{item.name}</p>
 									{#if item.description}
 										<p class="mt-0.5 line-clamp-2 text-sm text-muted-foreground">{item.description}</p>
 									{/if}
@@ -398,7 +359,9 @@
 											<p class="font-semibold text-foreground">${(item.price / 100).toFixed(2)}</p>
 										{/if}
 									</div>
-									{#if hasModifiers(item)}
+									{#if item.status === 'sold_out'}
+										<span class="rounded-lg bg-amber-100 px-3 py-1.5 text-xs font-medium text-amber-700">Sold out</span>
+									{:else if hasModifiers(item)}
 										<a
 											href={resolve(`/${data.vendorSlug}/item/${item.id}`)}
 											style="border-color: var(--background-color); color: var(--background-color);"
@@ -428,7 +391,7 @@
 				<section id="other">
 					{#if filteredCategorized.length > 0}
 						<h2
-							class="mb-4 border-b-2 pb-2 text-lg font-semibold text-foreground"
+							class="display mb-4 border-b-2 pb-2 text-xl font-semibold text-foreground"
 							style="border-color: var(--background-color);"
 						>
 							Other
@@ -447,13 +410,9 @@
 										alt={item.name}
 										class="h-20 w-20 shrink-0 rounded-lg object-cover"
 									/>
-								{:else}
-									<div class="flex h-20 w-20 shrink-0 items-center justify-center rounded-lg bg-muted">
-										<Icon icon="mdi:silverware-fork-knife" class="h-5 w-5 text-muted-foreground/40" />
-									</div>
 								{/if}
 								<div class="min-w-0 flex-1">
-									<p class="font-medium text-foreground">{item.name}</p>
+									<p class="display font-semibold text-foreground">{item.name}</p>
 									{#if item.description}
 										<p class="mt-0.5 line-clamp-2 text-sm text-muted-foreground">{item.description}</p>
 									{/if}
@@ -482,7 +441,9 @@
 											<p class="font-semibold text-foreground">${(item.price / 100).toFixed(2)}</p>
 										{/if}
 									</div>
-									{#if hasModifiers(item)}
+									{#if item.status === 'sold_out'}
+										<span class="rounded-lg bg-amber-100 px-3 py-1.5 text-xs font-medium text-amber-700">Sold out</span>
+									{:else if hasModifiers(item)}
 										<a
 											href={resolve(`/${data.vendorSlug}/item/${item.id}`)}
 											style="border-color: var(--background-color); color: var(--background-color);"
@@ -549,7 +510,11 @@
 		}
 	}
 	.item-card {
-		animation: fadeUp 0.3s ease both;
+		animation: fadeUp 0.2s ease both;
+	}
+
+	.display {
+		font-family: 'Fraunces', Georgia, serif;
 	}
 
 	/* Add button pulse animation */

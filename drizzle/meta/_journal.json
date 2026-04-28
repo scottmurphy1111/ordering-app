@@ -8,6 +8,20 @@
       "when": 1777350361426,
       "tag": "0000_striped_martin_li",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1745870400000,
+      "tag": "0001_catalog_status_and_tagline",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1746057600000,
+      "tag": "0002_repair_schema",
+      "breakpoints": true
     }
   ]
 }

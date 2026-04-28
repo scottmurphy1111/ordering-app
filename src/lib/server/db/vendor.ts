@@ -40,6 +40,9 @@ export const vendor = pgTable(
 		email: varchar('email', { length: 255 }),
 		website: varchar('website', { length: 255 }),
 
+		// Public-facing description shown on the storefront
+		tagline: varchar('tagline', { length: 255 }),
+
 		// Branding & rich visuals
 		logoUrl: text('logo_url'),
 		bannerUrl: text('banner_url'),

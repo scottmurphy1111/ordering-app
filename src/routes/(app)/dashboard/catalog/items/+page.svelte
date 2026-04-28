@@ -68,7 +68,7 @@
 			else if (sortCol === 'category')
 				cmp = (a.category?.name ?? '').localeCompare(b.category?.name ?? '');
 			else if (sortCol === 'price') cmp = a.price - b.price;
-			else if (sortCol === 'status') cmp = Number(b.available) - Number(a.available);
+			else if (sortCol === 'status') cmp = (a.status ?? '').localeCompare(b.status ?? '');
 			return sortDir === 'asc' ? cmp : -cmp;
 		})
 	);
@@ -275,7 +275,7 @@
 		const url = URL.createObjectURL(blob);
 		const a = document.createElement('a');
 		a.href = url;
-		a.download = 'menu-items-template.csv';
+		a.download = 'catalog-items-template.csv';
 		a.click();
 		URL.revokeObjectURL(url);
 	}
@@ -363,7 +363,7 @@
 
 <div>
 	<div class="mb-6 flex items-center justify-between gap-4">
-		<h1 class="text-2xl font-bold text-foreground">Menu</h1>
+		<h1 class="text-2xl font-bold text-foreground">Catalog</h1>
 		<div class="flex items-center gap-2">
 			{#if !sortMode}
 				<CatalogViewToggle />
@@ -600,18 +600,6 @@
 						</div>
 					</div>
 
-					<div class="flex items-center gap-2">
-						<input
-							id="new-available"
-							name="available"
-							type="checkbox"
-							checked
-							class="h-4 w-4 rounded"
-						/>
-						<label class="text-sm text-muted-foreground" for="new-available"
-							>Available for ordering</label
-						>
-					</div>
 				</CardContent>
 				<CardFooter class="gap-2">
 					<Button type="submit" disabled={newUploading} variant="default">
@@ -746,9 +734,9 @@
 			<div class="flex h-16 w-16 items-center justify-center rounded-2xl bg-muted">
 				<Icon icon="mdi:silverware-fork-knife" class="h-8 w-8 text-muted-foreground/40" />
 			</div>
-			<h2 class="mt-4 text-base font-semibold text-foreground">No menu items yet</h2>
+			<h2 class="mt-4 text-base font-semibold text-foreground">No items yet</h2>
 			<p class="mt-1 text-sm text-muted-foreground">
-				Add your first item to start building your menu.
+				Add your first item to start building your catalog.
 			</p>
 			<Button
 				onclick={() => {
@@ -851,29 +839,45 @@
 								{/if}
 							</TableCell>
 							<TableCell class="px-4 py-3">
-								<form
-									method="post"
-									action="?/toggleAvailable"
-									use:enhance={() =>
-										({ update }) =>
-											update({ reset: false })}
-								>
-									<input type="hidden" name="id" value={item.id} />
-									<input type="hidden" name="available" value={String(!item.available)} />
-									<button
-										type="submit"
-										title={item.available ? 'Available — click to 86' : "86'd — click to restore"}
-										class="relative inline-flex h-5 w-9 items-center rounded-full transition-colors {item.available
-											? 'bg-primary'
-											: 'bg-gray-200'}"
-									>
-										<span
-											class="inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform {item.available
-												? 'translate-x-4.5'
-												: 'translate-x-0.5'}"
-										></span>
-									</button>
-								</form>
+								<DropdownMenu>
+									<DropdownMenuTrigger>
+										<button
+											type="button"
+											class="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium capitalize transition-colors hover:opacity-80 {item.status === 'available'
+												? 'bg-green-100 text-green-700'
+												: item.status === 'sold_out'
+													? 'bg-amber-100 text-amber-700'
+													: item.status === 'hidden'
+														? 'bg-gray-100 text-gray-400'
+														: 'bg-gray-100 text-gray-500'}"
+										>
+											{item.status.replace('_', ' ')}
+											<Icon icon="mdi:chevron-down" class="h-3 w-3" />
+										</button>
+									</DropdownMenuTrigger>
+									<DropdownMenuContent align="start">
+										{#each [['available', 'Available'], ['sold_out', 'Sold out'], ['hidden', 'Hidden']] as [val, label] (val)}
+											<DropdownMenuItem>
+												<form
+													method="post"
+													action="?/setStatus"
+													use:enhance={() => ({ update }) => update({ reset: false })}
+													class="w-full"
+												>
+													<input type="hidden" name="id" value={item.id} />
+													<input type="hidden" name="status" value={val} />
+													<button
+														type="submit"
+														class="flex w-full items-center gap-2 text-sm {item.status === val ? 'font-semibold' : ''}"
+													>
+														<span class="h-2 w-2 rounded-full {val === 'available' ? 'bg-green-500' : val === 'sold_out' ? 'bg-amber-400' : 'bg-gray-300'}"></span>
+														{label}
+													</button>
+												</form>
+											</DropdownMenuItem>
+										{/each}
+									</DropdownMenuContent>
+								</DropdownMenu>
 							</TableCell>
 							<TableCell class="px-4 py-3">
 								<div
@@ -937,7 +941,7 @@
 	<DialogContent class="max-w-sm">
 		<DialogHeader>
 			<DialogTitle>Pro plan required</DialogTitle>
-			<DialogDescription class="sr-only">Upgrade to import menu items via CSV</DialogDescription>
+			<DialogDescription class="sr-only">Upgrade to import items via CSV</DialogDescription>
 		</DialogHeader>
 		<div class="space-y-3">
 			<div class="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
@@ -945,7 +949,7 @@
 			</div>
 			<p class="text-sm text-muted-foreground">
 				CSV import is available on the <span class="font-semibold text-foreground">Pro plan</span>.
-				Upgrade to bulk-import unlimited menu items from a spreadsheet.
+				Upgrade to bulk-import unlimited items from a spreadsheet.
 			</p>
 		</div>
 		<DialogFooter class="flex gap-2 sm:flex-row">
@@ -969,8 +973,8 @@
 >
 	<DialogContent class="max-w-lg">
 		<DialogHeader>
-			<DialogTitle>Import menu items from CSV</DialogTitle>
-			<DialogDescription class="sr-only">Upload a CSV file to import menu items</DialogDescription>
+			<DialogTitle>Import items from CSV</DialogTitle>
+			<DialogDescription class="sr-only">Upload a CSV file to import items</DialogDescription>
 		</DialogHeader>
 
 		<div class="space-y-4">
@@ -1100,7 +1104,7 @@
 		<DialogHeader>
 			<DialogTitle>Discover Stripe Products</DialogTitle>
 			<DialogDescription>
-				Select products from your Stripe account to import as menu items.
+				Select products from your Stripe account to import as catalog items.
 			</DialogDescription>
 		</DialogHeader>
 

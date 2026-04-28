@@ -169,7 +169,7 @@
 			<Card class="overflow-hidden shadow-sm">
 				<div class="h-1 bg-primary"></div>
 				<CardContent>
-					<p class="text-xs font-medium tracking-wide text-muted-foreground">Menu Items</p>
+					<p class="text-xs font-medium tracking-wide text-muted-foreground">Items</p>
 					<p class="mt-1 text-3xl font-bold text-foreground">{data.stats.items}</p>
 					<a
 						href={resolve('/dashboard/catalog/items')}

@@ -1,7 +1,7 @@
 import type { PageServerLoad } from './$types';
 import { error } from '@sveltejs/kit';
 import { db } from '$lib/server/db';
-import { eq, and } from 'drizzle-orm';
+import { eq, and, inArray } from 'drizzle-orm';
 import { catalogItems } from '$lib/server/db/schema';
 
 export const load: PageServerLoad = async ({ locals, params }) => {
@@ -14,7 +14,7 @@ export const load: PageServerLoad = async ({ locals, params }) => {
 		where: and(
 			eq(catalogItems.id, itemId),
 			eq(catalogItems.vendorId, vendorId),
-			eq(catalogItems.available, true)
+			inArray(catalogItems.status, ['available', 'sold_out'])
 		),
 		with: {
 			modifiers: {

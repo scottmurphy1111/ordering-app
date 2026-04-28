@@ -10,9 +10,16 @@
 	const backgroundImageUrl = $derived(data.vendor.backgroundImageUrl ?? '');
 </script>
 
+<svelte:head>
+	<link
+		rel="stylesheet"
+		href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..900;1,9..144,300..900&family=DM+Sans:ital,opsz,wght@0,9..40,300..700;1,9..40,300..700&display=swap"
+	/>
+</svelte:head>
+
 <div
 	class="relative flex min-h-screen flex-col"
-	style="--background-color: {backgroundColor}; --accent-color: {accentColor}; --foreground-color: {foregroundColor};"
+	style="--background-color: {backgroundColor}; --accent-color: {accentColor}; --foreground-color: {foregroundColor}; font-family: 'DM Sans', system-ui, sans-serif;"
 >
 	<!-- Background: custom image takes priority over tiled logo -->
 	{#if backgroundImageUrl}
