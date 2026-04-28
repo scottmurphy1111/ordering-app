@@ -5,7 +5,7 @@
 	import { Card, CardContent } from'$lib/components/ui/card';
 
 	const token = $derived(page.url.searchParams.get('token'));
-	const callbackURL = $derived(page.url.searchParams.get('callbackURL') ??'/tenants');
+	const callbackURL = $derived(page.url.searchParams.get('callbackURL') ??'/vendors');
 
 	// Build the real better-auth verify URL - navigating here creates the session
 	const verifyHref = $derived(

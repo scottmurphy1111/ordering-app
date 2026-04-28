@@ -54,7 +54,7 @@ export const auth = betterAuth({
 				intermediateUrl.searchParams.set('token', verifyUrl.searchParams.get('token') ?? '');
 				intermediateUrl.searchParams.set(
 					'callbackURL',
-					verifyUrl.searchParams.get('callbackURL') ?? '/tenants'
+					verifyUrl.searchParams.get('callbackURL') ?? '/vendors'
 				);
 
 				const html = emailWrapper({

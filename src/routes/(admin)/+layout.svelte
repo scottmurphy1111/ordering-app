@@ -47,7 +47,7 @@
 
 		<div class="space-y-2 border-t border-white/10 px-4 py-3">
 			<a
-				href={resolve('/tenants')}
+				href={resolve('/vendors')}
 				class="flex items-center gap-1.5 text-xs text-muted-foreground transition-colors hover:text-white"
 			>
 				<Icon icon="mdi:swap-horizontal" class="h-3.5 w-3.5" />
