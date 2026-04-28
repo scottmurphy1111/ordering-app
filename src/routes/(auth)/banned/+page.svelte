@@ -7,7 +7,7 @@
 
 	async function handleSignOut() {
 		await signOut({
-			fetchOptions: { onSuccess: () => (window.location.href = '/login') }
+			fetchOptions: { onSuccess: () => { window.location.href = '/login'; } }
 		});
 	}
 </script>
