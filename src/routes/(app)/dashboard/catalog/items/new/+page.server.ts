@@ -92,6 +92,6 @@ export const actions: Actions = {
 			})
 			.returning({ id: catalogItems.id });
 
-		throw redirect(303, `/dashboard/menu/items/${item.id}`);
+		throw redirect(303, `/dashboard/catalog/items/${item.id}`);
 	}
 };

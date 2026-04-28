@@ -110,7 +110,7 @@ export const actions: Actions = {
 			.delete(catalogItems)
 			.where(and(eq(catalogItems.id, itemId), eq(catalogItems.vendorId, vendorId)));
 
-		throw redirect(303, '/dashboard/menu/items');
+		throw redirect(303, '/dashboard/catalog/items');
 	},
 
 	addModifier: async ({ request, locals, params }) => {

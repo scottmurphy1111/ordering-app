@@ -8,10 +8,10 @@
 
 	const steps = [
 		{
-			selector: '[data-tour="create-tenant"]',
+			selector: '[data-tour="create-vendor"]',
 			title: 'Welcome to Order Local',
 			description:
-				"Let's get your business set up in a few quick steps. First, create a tenant — this is your business profile that powers your ordering page, menu, and dashboard.",
+				"Let's get your business set up in a few quick steps. First, create a shop — this is your business profile that powers your ordering page, catalog, and dashboard.",
 			action: null
 		},
 		{
@@ -30,10 +30,10 @@
 		},
 		{
 			selector: '[data-tour="menu"]',
-			title: 'Step 2 — Build your menu',
+			title: 'Step 2 — Build your catalog',
 			description:
-				'Go to Menu to add categories, items, photos, and prices. This is exactly what your customers will browse when they place an order.',
-			action: { label: 'Go to Menu', href: '/dashboard/menu' }
+				'Go to Catalog to add categories, items, photos, and prices. This is exactly what your customers will browse when they place an order.',
+			action: { label: 'Go to Catalog', href: '/dashboard/catalog' }
 		},
 		{
 			selector: '[data-tour="settings"]',

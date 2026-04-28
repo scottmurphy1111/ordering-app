@@ -8,13 +8,13 @@
 
 	// const sections = [
 	// 	{
-	// 		href: '/dashboard/menu/items',
+	// 		href: '/dashboard/catalog/items',
 	// 		icon: 'mdi:silverware-fork-knife',
 	// 		label: 'Menu Items',
 	// 		description: 'Add, edit, and organize your menu items.'
 	// 	},
 	// 	{
-	// 		href: '/dashboard/menu/categories',
+	// 		href: '/dashboard/catalog/categories',
 	// 		icon: 'mdi:tag-multiple-outline',
 	// 		label: 'Categories',
 	// 		description: 'Group your menu items into categories.'

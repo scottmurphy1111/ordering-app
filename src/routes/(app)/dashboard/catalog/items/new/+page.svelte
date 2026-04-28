@@ -52,7 +52,7 @@
 <div class="max-w-xl">
 	<div class="mb-6 flex items-center gap-3">
 		<a
-			href={resolve('/dashboard/menu/items')}
+			href={resolve('/dashboard/catalog/items')}
 			class="inline-flex items-center gap-1 text-sm text-muted-foreground transition-colors hover:text-muted-foreground"
 			><Icon icon="mdi:arrow-left" class="h-4 w-4" /> Items</a
 		>
@@ -290,7 +290,7 @@
 			<Button type="submit" disabled={uploading} variant="default">
 				Create item
 			</Button>
-			<Button href={resolve('/dashboard/menu/items')} variant="outline">Cancel</Button>
+			<Button href={resolve('/dashboard/catalog/items')} variant="outline">Cancel</Button>
 		</CardFooter>
 	</form>
 	</Card>

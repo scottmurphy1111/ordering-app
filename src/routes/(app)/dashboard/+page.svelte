@@ -172,7 +172,7 @@
 					<p class="text-xs font-medium tracking-wide text-muted-foreground">Menu Items</p>
 					<p class="mt-1 text-3xl font-bold text-foreground">{data.stats.items}</p>
 					<a
-						href={resolve('/dashboard/menu/items')}
+						href={resolve('/dashboard/catalog/items')}
 						class="mt-2 inline-flex items-center gap-0.5 text-xs font-medium text-primary transition-colors hover:text-primary/90"
 					>
 						Manage <Icon icon="mdi:chevron-right" class="h-3 w-3" />
@@ -186,7 +186,7 @@
 					<p class="text-xs font-medium tracking-wide text-muted-foreground">Categories</p>
 					<p class="mt-1 text-3xl font-bold text-foreground">{data.stats.categories}</p>
 					<a
-						href={resolve('/dashboard/menu/categories')}
+						href={resolve('/dashboard/catalog/categories')}
 						class="mt-2 inline-flex items-center gap-0.5 text-xs font-medium text-primary transition-colors hover:text-primary/90"
 					>
 						Manage <Icon icon="mdi:chevron-right" class="h-3 w-3" />
@@ -269,7 +269,7 @@
 					</p>
 				</div>
 				<a
-					href={resolve('/dashboard/menu/items/new')}
+					href={resolve('/dashboard/catalog/items/new')}
 					class="shrink-0 rounded-md bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-blue-700"
 				>
 					Add item
@@ -285,19 +285,19 @@
 		</h2>
 		<div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
 			<a
-				href={resolve('/dashboard/menu/items/new')}
+				href={resolve('/dashboard/catalog/items/new')}
 				class="flex items-start gap-3 rounded-xl bg-primary p-4 text-white transition-shadow hover:shadow-md"
 			>
 				<div class="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white/20">
 					<Icon icon="mdi:plus" class="h-4 w-4" />
 				</div>
 				<div>
-					<p class="text-sm font-semibold">Add menu item</p>
+					<p class="text-sm font-semibold">Add catalog item</p>
 					<p class="mt-0.5 text-xs opacity-80">Add a new item to your menu</p>
 				</div>
 			</a>
 			<a
-				href={resolve('/dashboard/menu/categories')}
+				href={resolve('/dashboard/catalog/categories')}
 				class="flex items-start gap-3 rounded-xl border p-4 transition-all hover:border-gray-300 hover:shadow-sm"
 			>
 				<div class="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10">

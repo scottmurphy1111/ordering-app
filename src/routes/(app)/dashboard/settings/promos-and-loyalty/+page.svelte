@@ -81,7 +81,7 @@
 				<p class="mx-auto mt-1 max-w-sm text-xs text-muted-foreground">
 					Create percent-off or flat-dollar discount codes for promotions, events, or loyal customers.
 				</p>
-				<Button href={resolve('/dashboard/settings/billing')} class="mt-4 gap-1.5">
+				<Button href={resolve('/dashboard/account/billing')} class="mt-4 gap-1.5">
 					<Icon icon="mdi:arrow-right" class="h-4 w-4" />
 					Activate add-on
 				</Button>
@@ -214,7 +214,7 @@
 				<p class="mx-auto mt-1 max-w-sm text-xs text-muted-foreground">
 					Reward repeat customers with stamp cards or a points system.
 				</p>
-				<Button href={resolve('/dashboard/settings/billing')} class="mt-4 gap-1.5">
+				<Button href={resolve('/dashboard/account/billing')} class="mt-4 gap-1.5">
 					<Icon icon="mdi:arrow-right" class="h-4 w-4" />
 					Activate add-on
 				</Button>

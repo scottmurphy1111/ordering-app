@@ -23,7 +23,7 @@
 		<p class="mt-2 text-sm text-muted-foreground">
 			This store has been archived or removed. Switch to another store or contact support.
 		</p>
-		<Button href={resolve('/tenants')} variant="default" class="mt-6 w-full">
+		<Button href={resolve('/vendors')} variant="default" class="mt-6 w-full">
 			<Icon icon="mdi:store-outline" class="h-4 w-4" />
 			Switch store
 		</Button>

@@ -100,7 +100,7 @@
 			icon: 'mdi:clipboard-list-outline',
 			tour: 'orders'
 		},
-		{ href: '/dashboard/menu', label: 'Menu', icon: 'mdi:silverware-fork-knife', tour: 'menu' },
+		{ href: '/dashboard/catalog', label: 'Catalog', icon: 'mdi:package-variant-outline', tour: 'menu' },
 		{ href: '/dashboard/analytics', label: 'Analytics', icon: 'mdi:chart-bar', tour: 'analytics' },
 		{ href: '/dashboard/settings', label: 'Settings', icon: 'mdi:cog-outline', tour: 'settings' }
 	];
@@ -121,7 +121,7 @@
 {#snippet sidebarContent()}
 	<!-- Logo / Tenant Name -->
 	<div class="flex items-center justify-between border-b border-white/10 px-4 py-4">
-		<a href={resolve('/tenants')} class="flex min-w-0 flex-1 items-center gap-3">
+		<a href={resolve('/vendors')} class="flex min-w-0 flex-1 items-center gap-3">
 			{#if data.vendor?.logoUrl}
 				<img
 					src={data.vendor.logoUrl}
@@ -136,7 +136,7 @@
 				{#if data.vendor}
 					<p class="mt-0.5 truncate text-sm font-semibold text-white">{data.vendor.name}</p>
 				{:else}
-					<p class="mt-0.5 text-sm text-muted-foreground">No tenant selected</p>
+					<p class="mt-0.5 text-sm text-muted-foreground">No shop selected</p>
 				{/if}
 			</div>
 		</a>
@@ -159,19 +159,19 @@
 		{/each}
 	</nav>
 
-	<!-- User + Switch Tenant -->
+	<!-- User + Switch Shop -->
 	<div class="space-y-2 border-t border-white/10 px-4 pt-6 pb-3">
 		{#if data.hasMultipleVendors}
 			<a
-				href={resolve('/tenants')}
+				href={resolve('/vendors')}
 				class="flex items-center gap-1.5 text-xs text-muted-foreground transition-colors hover:text-white"
 			>
 				<Icon icon="mdi:swap-horizontal" class="h-3.5 w-3.5" />
-				Switch tenant
+				Switch shop
 			</a>
 		{/if}
 		<a
-			href={resolve('/dashboard/settings/profile')}
+			href={resolve('/dashboard/account/profile')}
 			class="flex items-center gap-1.5 text-xs text-muted-foreground transition-colors hover:text-white"
 		>
 			<Icon icon="mdi:account-circle-outline" class="h-3.5 w-3.5" />
@@ -238,7 +238,7 @@
 			>
 				<Icon icon="mdi:menu" class="h-6 w-6" />
 			</Button>
-			<a href={resolve('/tenants')} class="flex min-w-0 flex-1 items-center gap-2.5">
+			<a href={resolve('/vendors')} class="flex min-w-0 flex-1 items-center gap-2.5">
 				{#if data.vendor?.logoUrl}
 					<img
 						src={data.vendor.logoUrl}

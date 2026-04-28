@@ -38,7 +38,7 @@
 <div class="max-w-2xl space-y-8">
 	<div class="flex items-center gap-3">
 		<a
-			href={resolve('/dashboard/menu/categories')}
+			href={resolve('/dashboard/catalog/categories')}
 			class="inline-flex items-center gap-1 text-sm text-muted-foreground transition-colors hover:text-foreground"
 		>
 			<Icon icon="mdi:chevron-left" class="h-4 w-4" /> Categories

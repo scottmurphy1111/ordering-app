@@ -12,7 +12,7 @@
 	let slugValue = $state('');
 	let search = $state('');
 
-	const filteredTenants = $derived(
+	const filteredVendors = $derived(
 		search.trim()
 			? data.vendors.filter(
 					(t) =>
@@ -40,9 +40,9 @@
 <div class="flex min-h-screen flex-col items-center justify-center bg-muted/50 px-4 py-16">
 	<div class="w-full max-w-lg">
 		<div class="mb-6">
-			<h1 class="text-2xl font-bold text-foreground">Your tenants</h1>
+			<h1 class="text-2xl font-bold text-foreground">Your shops</h1>
 			{#if data.vendors.length > 1}
-				<p class="mt-1 text-sm text-muted-foreground">{data.vendors.length} tenants</p>
+				<p class="mt-1 text-sm text-muted-foreground">{data.vendors.length} shops</p>
 			{/if}
 		</div>
 
@@ -60,7 +60,7 @@
 				/>
 				<input
 					type="search"
-					placeholder="Search tenants..."
+					placeholder="Search shops..."
 					bind:value={search}
 					class="w-full rounded-lg border bg-background py-2 pr-3 pl-9 text-sm focus:border-gray-400 focus:ring-1 focus:ring-ring focus:outline-none"
 				/>
@@ -69,7 +69,7 @@
 
 		{#if data.vendors.length > 0}
 			<div class="mb-6 space-y-2">
-				{#each filteredTenants as t (t.id)}
+				{#each filteredVendors as t (t.id)}
 					<form method="post" action="?/select" use:enhance>
 						<input type="hidden" name="tenantId" value={t.id} />
 						<Card class="shadow-sm transition-all hover:border-gray-400 hover:shadow">
@@ -105,17 +105,17 @@
 
 		{#if data.canCreate && !showCreate}
 			<Button
-				data-tour="create-tenant"
+				data-tour="create-vendor"
 				onclick={() => (showCreate = true)}
 				variant="outline"
 				class="w-full border-primary text-primary hover:bg-primary/5 hover:text-primary"
 			>
-				<Icon icon="mdi:plus" class="h-4 w-4" /> Create new tenant
+				<Icon icon="mdi:plus" class="h-4 w-4" /> Add a shop
 			</Button>
 		{:else if data.canCreate}
 			<Card class="shadow-sm">
 				<CardHeader>
-					<CardTitle>New tenant</CardTitle>
+					<CardTitle>New shop</CardTitle>
 				</CardHeader>
 				<CardContent>
 					<form

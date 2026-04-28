@@ -59,7 +59,7 @@
 				<h2 class="mb-1 text-lg font-semibold text-foreground">Already accepted</h2>
 				<p class="text-sm text-muted-foreground">This invite has already been used.</p>
 				<a
-					href={resolve('/tenants')}
+					href={resolve('/vendors')}
 					class="mt-4 inline-block text-sm text-blue-600 hover:underline">Go to dashboard</a
 				>
 			</div>

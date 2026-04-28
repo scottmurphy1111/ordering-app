@@ -129,7 +129,7 @@
 <div class="max-w-3xl">
 	<div class="mb-6">
 		<a
-			href={resolve('/dashboard/settings')}
+			href={resolve('/dashboard/account')}
 			class="mb-1 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-muted-foreground"
 		>
 			<Icon icon="mdi:chevron-left" class="h-4 w-4" /> Settings
@@ -406,7 +406,7 @@
 								use:enhance={() =>
 									async ({ result, update }) => {
 										if (result.type === 'success') {
-											window.location.href = resolve('/dashboard/settings/billing') + '?downgraded=1';
+											window.location.href = resolve('/dashboard/account/billing') + '?downgraded=1';
 										} else {
 											await update({ invalidateAll: true });
 										}

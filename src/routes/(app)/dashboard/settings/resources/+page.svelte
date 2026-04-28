@@ -8,7 +8,7 @@
 	import { Badge } from'$lib/components/ui/badge';
 	import { Card, CardContent } from'$lib/components/ui/card';
 
-	const tenant = $derived(page.data.tenant);
+	const tenant = $derived(page.data.vendor);
 	const menuUrl = $derived(tenant?.slug ? `${page.url.origin}/${tenant.slug}/menu` :'');
 
 	// ── Menu QR ──────────────────────────────────────────────────────────────
@@ -403,7 +403,7 @@
 						<Icon icon="mdi:lock-outline" class="mx-auto mb-2 h-6 w-6 text-muted-foreground" />
 						<p class="text-sm font-medium text-muted-foreground">Website embed is a Pro feature</p>
 						<p class="mt-1 text-sm text-muted-foreground">Upgrade to Pro to embed your menu on any website.</p>
-						<Button href={resolve('/dashboard/settings/billing')} variant="default" class="mt-4">
+						<Button href={resolve('/dashboard/account/billing')} variant="default" class="mt-4">
 							Upgrade to Pro
 						</Button>
 					</div>

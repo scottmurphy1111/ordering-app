@@ -9,7 +9,7 @@
 	import { enhance } from '$app/forms';
 	import { confirmDialog } from '$lib/confirm.svelte';
 	import Sortable from 'sortablejs';
-	import MenuViewToggle from '$lib/components/MenuViewToggle.svelte';
+	import CatalogViewToggle from '$lib/components/CatalogViewToggle.svelte';
 	import { Button } from '$lib/components/ui/button';
 	import { Badge } from '$lib/components/ui/badge';
 	import {
@@ -366,7 +366,7 @@
 		<h1 class="text-2xl font-bold text-foreground">Menu</h1>
 		<div class="flex items-center gap-2">
 			{#if !sortMode}
-				<MenuViewToggle />
+				<CatalogViewToggle />
 				<DropdownMenu>
 					<DropdownMenuTrigger>
 						<button
@@ -433,7 +433,7 @@
 				<span
 					>✓ <strong>{lastCreated.name}</strong> created —
 					<a
-						href={resolve(`/dashboard/menu/items/${lastCreated.id}`)}
+						href={resolve(`/dashboard/catalog/items/${lastCreated.id}`)}
 						class="underline hover:text-primary/80">edit item</a
 					></span
 				>
@@ -804,7 +804,7 @@
 									/>
 								{:else}
 									<a
-										href={resolve(`/dashboard/menu/items/${item.id}`)}
+										href={resolve(`/dashboard/catalog/items/${item.id}`)}
 										aria-label="Add photo for {item.name}"
 										title="Add photo"
 										class="group flex h-10 w-10 flex-col items-center justify-center rounded-md border-2 border-dashed border-muted-foreground/20 transition-colors hover:border-primary/40 hover:bg-primary/5"
@@ -818,7 +818,7 @@
 							</TableCell>
 							<TableCell class="px-4 py-3">
 								<a
-									href={resolve(`/dashboard/menu/items/${item.id}`)}
+									href={resolve(`/dashboard/catalog/items/${item.id}`)}
 									class="font-medium text-foreground hover:underline"
 								>
 									{item.name}
@@ -880,7 +880,7 @@
 									class="flex items-center gap-3 opacity-0 transition-opacity group-hover:opacity-100"
 								>
 									<a
-										href={resolve(`/dashboard/menu/items/${item.id}`)}
+										href={resolve(`/dashboard/catalog/items/${item.id}`)}
 										class="text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
 										>Edit</a
 									>
@@ -914,14 +914,14 @@
 				<div class="flex gap-2">
 					{#if data.pagination.page > 1}
 						<a
-							href={resolve(`/dashboard/menu/items?page=${data.pagination.page - 1}`)}
+							href={resolve(`/dashboard/catalog/items?page=${data.pagination.page - 1}`)}
 							class="rounded-md border px-3 py-1.5 transition-colors hover:border-gray-400 hover:bg-muted"
 							><Icon icon="mdi:chevron-left" class="h-4 w-4" /> Prev</a
 						>
 					{/if}
 					{#if data.pagination.page < data.pagination.totalPages}
 						<a
-							href={resolve(`/dashboard/menu/items?page=${data.pagination.page + 1}`)}
+							href={resolve(`/dashboard/catalog/items?page=${data.pagination.page + 1}`)}
 							class="inline-flex items-center gap-1 rounded-md border px-3 py-1.5 transition-colors hover:border-gray-400 hover:bg-muted"
 							>Next <Icon icon="mdi:chevron-right" class="h-4 w-4" /></a
 						>
@@ -951,7 +951,7 @@
 		<DialogFooter class="flex gap-2 sm:flex-row">
 			<Button onclick={() => (showImportUpsell = false)} variant="outline">Cancel</Button>
 			<a
-				href={resolve('/dashboard/settings/billing')}
+				href={resolve('/dashboard/account/billing')}
 				class="inline-flex items-center justify-center gap-1.5 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary/90"
 			>
 				<Icon icon="mdi:arrow-right" class="h-4 w-4" /> Upgrade to Pro

@@ -29,12 +29,6 @@
 			description: 'Connect Stripe and other third-party services.'
 		},
 		{
-			href: '/dashboard/settings/billing',
-			icon: 'mdi:credit-card-outline',
-			label: 'Billing',
-			description: 'Manage your subscription and billing details.'
-		},
-		{
 			href: '/dashboard/settings/promos-and-loyalty',
 			icon: 'mdi:ticket-percent-outline',
 			label: 'Promos & Loyalty',
@@ -53,7 +47,7 @@
 	<div class="mb-6">
 		<h1 class="text-2xl font-bold text-foreground">Settings</h1>
 		<p class="mt-0.5 text-sm text-muted-foreground">
-			Manage your business settings and account.
+			Manage your shop settings.
 		</p>
 	</div>
 

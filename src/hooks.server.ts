@@ -60,10 +60,10 @@ const handleVendorContext: Handle = async ({ event, resolve }) => {
 	// Dashboard routes: vendor comes from selected-vendor cookie
 	const isDashboard =
 		url.pathname.startsWith('/dashboard') ||
-		url.pathname.startsWith('/tenants') ||
+		url.pathname.startsWith('/vendors') ||
 		url.pathname.startsWith('/api/');
 	if (isDashboard && !event.locals.vendorId) {
-		const vendorIdCookie = cookies.get('selected-tenant-id');
+		const vendorIdCookie = cookies.get('selected-vendor-id');
 		if (vendorIdCookie) {
 			const vendorId = parseInt(vendorIdCookie);
 			if (!isNaN(vendorId)) {

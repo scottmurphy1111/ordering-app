@@ -10,10 +10,10 @@ export const load: LayoutServerLoad = async ({ locals, url }) => {
 		throw redirect(303, `/login?redirectTo=${encodeURIComponent(url.pathname)}`);
 	}
 
-	// Allow /tenants without a selected vendor (that's where you pick one)
-	const isTenantRoute = url.pathname === '/tenants' || url.pathname.startsWith('/tenants/');
-	if (!isTenantRoute && !locals.vendorId) {
-		throw redirect(303, '/tenants');
+	// Allow /vendors without a selected vendor (that's where you pick one)
+	const isVendorRoute = url.pathname === '/vendors' || url.pathname.startsWith('/vendors/');
+	if (!isVendorRoute && !locals.vendorId) {
+		throw redirect(303, '/vendors');
 	}
 
 	const vendorCount = await db.$count(vendorUsers, eq(vendorUsers.userId, locals.user.id));

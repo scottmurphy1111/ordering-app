@@ -4,7 +4,7 @@
 	import type { PageData, ActionData } from './$types';
 	import Icon from '@iconify/svelte';
 	import { resolve } from '$app/paths';
-	import MenuViewToggle from '$lib/components/MenuViewToggle.svelte';
+	import CatalogViewToggle from '$lib/components/CatalogViewToggle.svelte';
 	import Sortable from 'sortablejs';
 	import { Button } from '$lib/components/ui/button';
 	import {
@@ -105,7 +105,7 @@
 		<h1 class="text-2xl font-bold text-foreground">Menu</h1>
 		<div class="flex items-center gap-2">
 			{#if !sortMode}
-				<MenuViewToggle />
+				<CatalogViewToggle />
 				<DropdownMenu>
 					<DropdownMenuTrigger>
 						<button type="button" class="flex items-center gap-1.5 rounded-md border px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted">
@@ -273,7 +273,7 @@
 							<TableRow class="group">
 								<TableCell class="px-4 py-3">
 									<a
-										href={resolve(`/dashboard/menu/categories/${cat.id}` as `/${string}`)}
+										href={resolve(`/dashboard/catalog/categories/${cat.id}` as `/${string}`)}
 										class="font-medium text-foreground hover:underline">{cat.name}</a
 									>
 									{#if cat.description}
@@ -282,7 +282,7 @@
 								</TableCell>
 								<TableCell class="px-4 py-3">
 									<a
-										href={resolve(`/dashboard/menu/items?categoryId=${cat.id}` as `/${string}`)}
+										href={resolve(`/dashboard/catalog/items?categoryId=${cat.id}` as `/${string}`)}
 										class="text-sm text-muted-foreground transition-colors hover:text-primary hover:underline"
 									>{cat.itemCount} {Number(cat.itemCount) === 1 ? 'item' : 'items'}</a>
 								</TableCell>
@@ -302,7 +302,7 @@
 								<TableCell class="px-4 py-3">
 									<div class="flex items-center gap-2 opacity-0 transition-opacity group-hover:opacity-100">
 										<a
-											href={resolve(`/dashboard/menu/categories/${cat.id}`)}
+											href={resolve(`/dashboard/catalog/categories/${cat.id}`)}
 											class="text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
 											>Edit</a
 										>

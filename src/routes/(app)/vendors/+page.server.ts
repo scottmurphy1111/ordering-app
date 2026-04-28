@@ -90,7 +90,7 @@ export const actions: Actions = {
 
 		if (seedDemo) await seedDemoVendor(newVendor.id);
 
-		cookies.set('selected-tenant-id', String(newVendor.id), {
+		cookies.set('selected-vendor-id', String(newVendor.id), {
 			path: '/',
 			httpOnly: true,
 			sameSite: 'lax',
@@ -117,7 +117,7 @@ export const actions: Actions = {
 			if (!membership) return fail(403, { error: 'You do not have access to that vendor' });
 		}
 
-		cookies.set('selected-tenant-id', vendorId, {
+		cookies.set('selected-vendor-id', vendorId, {
 			path: '/',
 			httpOnly: true,
 			sameSite: 'lax',

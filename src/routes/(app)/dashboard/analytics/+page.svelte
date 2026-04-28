@@ -245,7 +245,7 @@
 						<p class="mt-3 text-xs text-gray-400">Only {topItems.length} {topItems.length === 1 ? 'item' : 'items'} ordered this period</p>
 					{/if}
 					<div class="mt-3 border-t border-gray-100 pt-3">
-						<a href={resolve('/dashboard/menu/items')} class="text-sm text-green-600 hover:underline">
+						<a href={resolve('/dashboard/catalog/items')} class="text-sm text-green-600 hover:underline">
 							View all menu items →
 						</a>
 					</div>
@@ -496,7 +496,7 @@
 									<span>
 										Your menu items aren't assigned to categories yet.
 										<a
-											href={resolve('/dashboard/menu/categories')}
+											href={resolve('/dashboard/catalog/categories')}
 											class="font-medium underline"
 										>
 											Set up categories
@@ -558,7 +558,7 @@
 								</li>
 							{/each}
 						</ul>
-						<Button href={resolve('/dashboard/settings/billing')} class="gap-2">
+						<Button href={resolve('/dashboard/account/billing')} class="gap-2">
 							<Icon icon="mdi:arrow-up-circle-outline" class="h-4 w-4" />
 							Unlock for $19/mo
 						</Button>
