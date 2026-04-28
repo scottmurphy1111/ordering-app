@@ -3,10 +3,12 @@
 // This file is never executed when that env var is absent or false.
 
 import { db } from '$lib/server/db';
-import { eq } from 'drizzle-orm';
+import { eq, count } from 'drizzle-orm';
 import { user as userTable } from '$lib/server/db/auth.schema';
 import { vendor as vendorTable, vendorUsers } from '$lib/server/db/vendor';
+import { catalogItems } from '$lib/server/db/catalog';
 import type { Vendor } from '$lib/server/db/vendor';
+import { seedDemoVendor } from '$lib/server/seed-demo';
 
 const DEV_USER_ID = 'dev-bypass-user';
 const DEV_VENDOR_SLUG = 'sunrise-bread';
@@ -77,6 +79,12 @@ export async function ensureDevSeed(): Promise<Vendor> {
 			role: 'owner'
 		})
 		.onConflictDoNothing();
+
+	const [{ itemCount }] = await db
+		.select({ itemCount: count() })
+		.from(catalogItems)
+		.where(eq(catalogItems.vendorId, devVendor.id));
+	if (itemCount === 0) await seedDemoVendor(devVendor.id);
 
 	cachedDevVendor = devVendor;
 	return devVendor;
