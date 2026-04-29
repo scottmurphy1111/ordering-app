@@ -21,11 +21,27 @@
 		cancelled: 'bg-red-100 text-red-600'
 	};
 
+	const statusLabels: Record<string, string> = {
+		received: 'Received',
+		confirmed: 'Confirmed',
+		preparing: 'In production',
+		ready: 'Ready',
+		fulfilled: 'Fulfilled',
+		cancelled: 'Cancelled'
+	};
+
 	const nextStatus: Record<string, string> = {
 		received: 'confirmed',
 		confirmed: 'preparing',
 		preparing: 'ready',
 		ready: 'fulfilled'
+	};
+
+	const nextStatusLabels: Record<string, string> = {
+		received: 'Confirm',
+		confirmed: 'In production',
+		preparing: 'Ready',
+		ready: 'Fulfilled'
 	};
 
 	function formatCents(cents: number) {
@@ -65,7 +81,7 @@
 			<div class="flex flex-wrap items-center gap-2">
 				<h1 class="font-mono text-2xl font-bold text-foreground">{order.orderNumber}</h1>
 				<Badge class={statusColors[order.status] ?? 'bg-muted'}>
-					{order.status}
+					{statusLabels[order.status] ?? order.status}
 				</Badge>
 				<Badge class="bg-muted text-muted-foreground capitalize">{order.type}</Badge>
 				{#if order.paymentStatus === 'paid'}
@@ -232,7 +248,7 @@
 						<input type="hidden" name="id" value={order.id} />
 						<input type="hidden" name="status" value={nextStatus[order.status]} />
 						<Button type="submit" variant="default">
-							Mark as {nextStatus[order.status]}
+							Mark as {nextStatusLabels[order.status] ?? nextStatus[order.status]}
 						</Button>
 					</form>
 				{/if}

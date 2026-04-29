@@ -86,7 +86,7 @@
 		'': 'All',
 		received: 'Received',
 		confirmed: 'Confirmed',
-		preparing: 'Preparing',
+		preparing: 'In production',
 		ready: 'Ready',
 		fulfilled: 'Fulfilled',
 		cancelled: 'Cancelled'
@@ -107,7 +107,7 @@
 	};
 	const statusActionConfig: Record<string, { label: string; cls: string }> = {
 		received:  { label: 'Mark as confirmed', cls: 'bg-blue-600 text-white hover:bg-blue-700' },
-		confirmed: { label: 'Mark as preparing', cls: 'bg-amber-500 text-white hover:bg-amber-600' },
+		confirmed: { label: 'Mark as in production', cls: 'bg-amber-500 text-white hover:bg-amber-600' },
 		preparing: { label: 'Mark as ready',     cls: 'bg-violet-600 text-white hover:bg-violet-700' },
 		ready:     { label: 'Mark as fulfilled', cls: 'bg-green-600 text-white hover:bg-green-700' }
 	};

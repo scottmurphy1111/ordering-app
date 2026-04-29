@@ -14,12 +14,15 @@ import {
 import { user } from './auth.schema';
 
 export const vendorTypeEnum = pgEnum('vendor_type', [
-	'quick_service',
-	'full_service',
-	'cafe',
-	'food_truck',
-	'bar',
 	'bakery',
+	'farm',
+	'butcher',
+	'florist',
+	'brewery',
+	'coffee_shop',
+	'food_truck',
+	'specialty_maker',
+	'market_vendor',
 	'other'
 ]);
 
@@ -32,10 +35,11 @@ export const vendor = pgTable(
 		name: varchar('name', { length: 255 }).notNull(),
 		slug: varchar('slug', { length: 100 }).unique().notNull(),
 		legalName: varchar('legal_name', { length: 255 }),
-		type: vendorTypeEnum('type').default('quick_service'),
+		type: vendorTypeEnum('type').default('bakery'),
 
 		// Contact & location
 		address: jsonb('address').default({}),
+		timezone: text('timezone').notNull().default('America/New_York'),
 		phone: varchar('phone', { length: 20 }),
 		email: varchar('email', { length: 255 }),
 		website: varchar('website', { length: 255 }),
@@ -56,12 +60,13 @@ export const vendor = pgTable(
 		settings: jsonb('settings').default({
 			currency: 'USD',
 			taxRate: 0.0825,
-			enableTips: true,
+			enableTips: false,
 			defaultTipPercentages: [15, 18, 20],
 			allowPickup: true,
 			allowDelivery: false,
 			minimumOrderAmount: 0,
 			estimatedPrepTimeMinutes: 15,
+			asapPickupEnabled: false,
 			hours: {},
 			specialHours: []
 		}),

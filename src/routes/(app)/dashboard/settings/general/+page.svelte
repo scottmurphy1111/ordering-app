@@ -15,6 +15,7 @@
 		SelectValue
 	} from '$lib/components/ui/select';
 	import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '$lib/components/ui/card';
+	import { BUSINESS_TYPES } from '$lib/utils/business-type-labels';
 
 	let { data, form: _form }: { data: PageData; form: ActionData } = $props();
 	const form = $derived(_form as (ActionData & { deliverySuccess?: boolean }) | null);
@@ -50,15 +51,15 @@
 		{ key: 'sunday', label: 'Sun' }
 	];
 
-	const businessTypes = [
-		{ value: 'quick_service', label: 'Quick Service' },
-		{ value: 'full_service', label: 'Full Service' },
-		{ value: 'cafe', label: 'Café' },
-		{ value: 'food_truck', label: 'Food Truck' },
-		{ value: 'bar', label: 'Bar' },
-		{ value: 'bakery', label: 'Bakery' },
-		{ value: 'other', label: 'Other' }
-	];
+	const businessTypes = BUSINESS_TYPES;
+
+	const savedCheckout = $derived(
+		(
+			data.info as unknown as {
+				settings?: { enableTips?: boolean; asapPickupEnabled?: boolean };
+			} | null
+		)?.settings ?? {}
+	);
 
 	let closedDays = $state<Record<string, boolean>>({});
 
@@ -304,6 +305,61 @@
 			</CardContent>
 			<CardFooter>
 				<Button type="submit" variant="default">Save delivery</Button>
+			</CardFooter>
+		</Card>
+	</form>
+
+	<!-- Checkout settings — tipping + ASAP -->
+	{#if form?.checkoutSuccess}
+		<div
+			class="mt-4 rounded-md border border-primary/20 bg-primary/5 px-4 py-3 text-sm text-primary/90"
+		>
+			Checkout settings saved.
+		</div>
+	{/if}
+	<form
+		method="post"
+		action="?/saveCheckout"
+		use:enhance={() =>
+			({ update }) =>
+				update({ reset: false })}
+		class="mt-6"
+	>
+		<Card class="shadow-sm">
+			<CardHeader>
+				<CardTitle>Checkout</CardTitle>
+			</CardHeader>
+			<CardContent class="space-y-5">
+				<p class="text-xs text-muted-foreground">
+					Control what customers see at checkout.
+				</p>
+				<label class="flex cursor-pointer items-start gap-3">
+					<input
+						type="checkbox"
+						name="enableTips"
+						class="mt-0.5 h-4 w-4 rounded text-primary"
+						checked={savedCheckout.enableTips ?? false}
+					/>
+					<div>
+						<span class="text-sm font-medium text-muted-foreground">Accept tips at checkout</span>
+						<p class="mt-0.5 text-xs text-muted-foreground/70">Show a tip selector to customers in the cart. Most bakeries, farms, and makers leave this off.</p>
+					</div>
+				</label>
+				<label class="flex cursor-pointer items-start gap-3">
+					<input
+						type="checkbox"
+						name="asapPickupEnabled"
+						class="mt-0.5 h-4 w-4 rounded text-primary"
+						checked={savedCheckout.asapPickupEnabled ?? false}
+					/>
+					<div>
+						<span class="text-sm font-medium text-muted-foreground">Allow ASAP pickup</span>
+						<p class="mt-0.5 text-xs text-muted-foreground/70">Show "order now" as an option at checkout. Off for most makers — items aren't ready instantly.</p>
+					</div>
+				</label>
+			</CardContent>
+			<CardFooter>
+				<Button type="submit" variant="default">Save checkout settings</Button>
 			</CardFooter>
 		</Card>
 	</form>

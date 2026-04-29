@@ -5,6 +5,7 @@
 	import { tourState } from'$lib/tour-state.svelte';
 	import { Button } from'$lib/components/ui/button';
 	import { Card, CardContent, CardHeader, CardTitle } from'$lib/components/ui/card';
+	import { BUSINESS_TYPES, businessTypeLabel } from '$lib/utils/business-type-labels';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
@@ -91,7 +92,7 @@
 									<div class="min-w-0">
 										<p class="font-medium text-foreground">{t.name}</p>
 										<p class="mt-0.5 text-xs text-muted-foreground">
-											getorderlocal.com/{t.slug} · {t.type?.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')} · {t.role.charAt(0).toUpperCase() + t.role.slice(1)}
+											getorderlocal.com/{t.slug} · {businessTypeLabel(t.type)} · {t.role.charAt(0).toUpperCase() + t.role.slice(1)}
 										</p>
 									</div>
 								</button>
@@ -166,20 +167,16 @@
 								name="type"
 								class="w-full rounded-md border px-3 py-2 text-sm focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
 							>
-								<option value="quick_service">Quick Service</option>
-								<option value="full_service">Full Service</option>
-								<option value="cafe">Café</option>
-								<option value="food_truck">Food Truck</option>
-								<option value="bar">Bar</option>
-								<option value="bakery">Bakery</option>
-								<option value="other">Other</option>
+								{#each BUSINESS_TYPES as bt (bt.value)}
+									<option value={bt.value}>{bt.label}</option>
+								{/each}
 							</select>
 						</div>
 
 						<label class="flex cursor-pointer items-center gap-2 rounded-lg border bg-muted/40 px-3 py-2.5">
 							<input type="checkbox" name="seedDemo" value="1" checked class="h-4 w-4 rounded accent-primary" />
 							<div>
-								<p class="text-sm font-medium text-foreground">Add example menu items</p>
+								<p class="text-sm font-medium text-foreground">Add example catalog items</p>
 								<p class="text-xs text-muted-foreground">Pre-fill with demo categories and items you can edit or delete.</p>
 							</div>
 						</label>

@@ -7,7 +7,7 @@ import { sveltekit } from '@sveltejs/kit/vite';
 export default defineConfig({
 	plugins: [tailwindcss(), sveltekit(), devtoolsJson()],
 	ssr: {
-		noExternal: ['bits-ui', 'svelte-sonner', 'mode-watcher']
+		noExternal: ['bits-ui', 'svelte-sonner', 'mode-watcher', 'rrule']
 	},
 	test: {
 		expect: { requireAssertions: true },

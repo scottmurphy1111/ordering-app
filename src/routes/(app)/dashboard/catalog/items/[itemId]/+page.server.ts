@@ -1,5 +1,6 @@
 import type { PageServerLoad, Actions } from './$types';
 import { fail, redirect, error } from '@sveltejs/kit';
+import { CatalogItemError, updateCatalogItem } from '$lib/server/catalog/itemActions';
 import { db } from '$lib/server/db';
 import { eq, and } from 'drizzle-orm';
 import {
@@ -49,57 +50,13 @@ export const actions: Actions = {
 		const vendorId = locals.vendorId!;
 		const itemId = parseInt(params.itemId);
 		const formData = await request.formData();
-
-		const name = formData.get('name')?.toString().trim();
-		const description = formData.get('description')?.toString().trim() || null;
-		const priceStr = formData.get('price')?.toString();
-		const discountedPriceStr = formData.get('discountedPrice')?.toString();
-		const categoryIdStr = formData.get('categoryId')?.toString();
-		const status = (formData.get('status')?.toString() ?? 'available') as 'draft' | 'available' | 'sold_out' | 'hidden';
-		const tagsRaw = formData.get('tags')?.toString().trim();
-		const imageUrl = formData.get('imageUrl')?.toString().trim() || null;
-
-		if (!name) return fail(400, { error: 'Name is required' });
-		if (!priceStr || isNaN(parseFloat(priceStr)))
-			return fail(400, { error: 'Valid price is required' });
-
-		const price = Math.round(parseFloat(priceStr) * 100);
-		const discountedPrice = discountedPriceStr
-			? Math.round(parseFloat(discountedPriceStr) * 100)
-			: null;
-		const categoryId = categoryIdStr ? parseInt(categoryIdStr) : null;
-		const tags = tagsRaw
-			? tagsRaw
-					.split(',')
-					.map((t) => t.trim())
-					.filter(Boolean)
-			: [];
-		const images = imageUrl ? [{ url: imageUrl, isPrimary: true }] : [];
-		const sortOrder = parseInt(formData.get('sortOrder')?.toString() ?? '0') || 0;
-		const isSubscription = formData.get('isSubscription') === 'on';
-		const billingInterval = isSubscription
-			? formData.get('billingInterval')?.toString() || 'monthly'
-			: null;
-
-		await db
-			.update(catalogItems)
-			.set({
-				name,
-				description,
-				price,
-				discountedPrice,
-				categoryId,
-				status,
-				tags,
-				images,
-				sortOrder,
-				isSubscription,
-				billingInterval,
-				updatedAt: new Date()
-			})
-			.where(and(eq(catalogItems.id, itemId), eq(catalogItems.vendorId, vendorId)));
-
-		return { success: true };
+		try {
+			await updateCatalogItem(vendorId, itemId, formData);
+			return { success: true };
+		} catch (e) {
+			if (e instanceof CatalogItemError) return fail(e.status, { error: e.message });
+			throw e;
+		}
 	},
 
 	delete: async ({ locals, params }) => {

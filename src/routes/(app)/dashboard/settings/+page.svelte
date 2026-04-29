@@ -11,6 +11,12 @@
 			description: 'Business name, type, address, phone, and website.'
 		},
 		{
+			href: '/dashboard/settings/pickup',
+			icon: 'mdi:calendar-clock',
+			label: 'Pickup schedule',
+			description: 'Manage pickup locations and recurring time windows for customer ordering.'
+		},
+		{
 			href: '/dashboard/settings/branding',
 			icon: 'mdi:palette-outline',
 			label: 'Branding',

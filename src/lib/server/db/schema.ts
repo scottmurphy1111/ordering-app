@@ -3,6 +3,7 @@ export * from './auth.schema';
 export * from './vendor';
 export * from './catalog';
 export * from './orders';
+export * from './pickup';
 export * from './relations';
 export * from './promos';
 export * from './loyalty';

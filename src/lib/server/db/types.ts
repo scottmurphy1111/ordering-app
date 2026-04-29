@@ -7,7 +7,8 @@ export const orderStatusEnum = pgEnum('order_status', [
 	'preparing',
 	'ready',
 	'fulfilled',
-	'cancelled'
+	'cancelled',
+	'scheduled'
 ]);
 
 export const paymentStatusEnum = pgEnum('payment_status', [

@@ -111,14 +111,17 @@ const handleVendorContext: Handle = async ({ event, resolve }) => {
 
 export const handle: Handle = async ({ event, resolve }) => {
 	if (BYPASS_AUTH) {
-		console.warn(`[DEV AUTH BYPASS ACTIVE] ${event.request.method} ${event.url.pathname}`);
-		const devVendor = await ensureDevSeed();
-		event.locals.user = DEV_FAKE_USER;
-		event.locals.session = DEV_FAKE_SESSION;
-		event.locals.vendorId = devVendor.id;
-		event.locals.vendor = devVendor;
-		event.locals.vendorRole = 'owner';
-		return resolve(event);
+		const devSignedOut = event.cookies.get('dev_bypass_signout') === '1';
+		if (!devSignedOut) {
+			console.warn(`[DEV AUTH BYPASS ACTIVE] ${event.request.method} ${event.url.pathname}`);
+			const devVendor = await ensureDevSeed();
+			event.locals.user = DEV_FAKE_USER;
+			event.locals.session = DEV_FAKE_SESSION;
+			event.locals.vendorId = devVendor.id;
+			event.locals.vendor = devVendor;
+			event.locals.vendorRole = 'owner';
+			return resolve(event);
+		}
 	}
 
 	return handleBetterAuth({

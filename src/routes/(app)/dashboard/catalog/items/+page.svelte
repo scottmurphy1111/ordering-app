@@ -18,7 +18,6 @@
 		DropdownMenuTrigger,
 		DropdownMenuItem
 	} from '$lib/components/ui/dropdown-menu';
-	import { Card, CardContent, CardFooter } from '$lib/components/ui/card';
 	import {
 		Table,
 		TableHeader,
@@ -27,9 +26,6 @@
 		TableRow,
 		TableCell
 	} from '$lib/components/ui/table';
-	import { Input } from '$lib/components/ui/input';
-	import { Label } from '$lib/components/ui/label';
-	import { Textarea } from '$lib/components/ui/textarea';
 	import {
 		Select,
 		SelectTrigger,
@@ -45,6 +41,7 @@
 		DialogDescription,
 		DialogFooter
 	} from '$lib/components/ui/dialog';
+	import CatalogItemForm from '$lib/components/CatalogItemForm.svelte';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
@@ -140,45 +137,7 @@
 
 	// ── Inline create form ────────────────────────────────────────
 	let showForm = $state(false);
-	let newImageUrl = $state('');
-	let newImagePreview = $state('');
-	let newUploading = $state(false);
-	let newUploadError = $state('');
 	let lastCreated = $state<{ id: number; name: string } | null>(null);
-	let createFormEl = $state<HTMLFormElement | null>(null);
-
-	$effect(() => {
-		if (form?.success && form.item) {
-			lastCreated = form.item as { id: number; name: string };
-			newImageUrl = '';
-			newImagePreview = '';
-			createFormEl?.reset();
-		}
-	});
-
-	async function onNewImageChange(e: Event) {
-		const input = e.target as HTMLInputElement;
-		const file = input.files?.[0];
-		if (!file) return;
-		newUploading = true;
-		newUploadError = '';
-		const fd = new FormData();
-		fd.append('image', file);
-		try {
-			const res = await fetch('/api/upload-catalog-item-image', { method: 'POST', body: fd });
-			const json = await res.json();
-			if (!res.ok) {
-				newUploadError = json.message ?? 'Upload failed';
-			} else {
-				newImageUrl = json.url;
-				newImagePreview = json.url;
-			}
-		} catch {
-			newUploadError = 'Network error. Please try again.';
-		} finally {
-			newUploading = false;
-		}
-	}
 
 	// ── Search ────────────────────────────────────────────────────
 	let searchForm = $state<HTMLFormElement | null>(null);
@@ -446,181 +405,16 @@
 				>
 			</div>
 		{/if}
-		{#if form?.error}
-			<div
-				class="mb-3 rounded-lg border border-destructive/20 bg-destructive/10 px-4 py-2.5 text-sm text-destructive"
-			>
-				{form.error}
-			</div>
-		{/if}
-		<Card class="mb-6 shadow-sm">
-			<form
-				method="post"
-				action="?/create"
-				bind:this={createFormEl}
-				use:enhance={() =>
-					({ update }) =>
-						update({ reset: false })}
-			>
-				<CardContent class="space-y-4 pt-6 pb-2">
-					<h2 class="font-semibold text-foreground">New item</h2>
-
-					<!-- Image -->
-					<div class="flex items-start gap-4">
-						<div
-							role="button"
-							tabindex="0"
-							aria-label="Upload item image"
-							onclick={() =>
-								(document.getElementById('new-image-upload') as HTMLInputElement)?.click()}
-							onkeydown={(e) =>
-								e.key === 'Enter' &&
-								(document.getElementById('new-image-upload') as HTMLInputElement)?.click()}
-							class="relative flex h-20 w-20 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-lg border-2 border-dashed bg-muted/50 transition-colors hover:border-gray-400 hover:bg-muted {newUploading
-								? 'pointer-events-none opacity-60'
-								: ''}"
-						>
-							{#if newImagePreview}
-								<img src={newImagePreview} alt="Preview" class="h-full w-full object-cover" />
-								<div
-									class="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity hover:opacity-100"
-								>
-									<Icon icon="mdi:pencil" class="h-4 w-4 text-white" />
-								</div>
-							{:else if newUploading}
-								<svg
-									class="h-4 w-4 animate-spin text-muted-foreground"
-									fill="none"
-									viewBox="0 0 24 24"
-									><circle
-										class="opacity-25"
-										cx="12"
-										cy="12"
-										r="10"
-										stroke="currentColor"
-										stroke-width="4"
-									></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"
-									></path></svg
-								>
-							{:else}
-								<Icon icon="mdi:image-plus" class="h-5 w-5 text-muted-foreground" />
-							{/if}
-						</div>
-						<input
-							id="new-image-upload"
-							type="file"
-							accept="image/jpeg,image/png,image/webp"
-							class="sr-only"
-							onchange={onNewImageChange}
-						/>
-						<input type="hidden" name="imageUrl" value={newImageUrl} />
-						<div class="flex-1 space-y-1 pt-1">
-							<p class="text-xs text-muted-foreground">JPG, PNG, WebP · max 5MB</p>
-							{#if newUploadError}<p class="text-xs text-red-600">{newUploadError}</p>{/if}
-							{#if newImagePreview}<Button
-									type="button"
-									onclick={() => {
-										newImageUrl = '';
-										newImagePreview = '';
-									}}
-									variant="ghost"
-									size="sm"
-									class="text-destructive hover:text-destructive/80">Remove</Button
-								>{/if}
-						</div>
-					</div>
-
-					<div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-						<div class="sm:col-span-2">
-							<Label class="mb-1 block" for="new-name">Name *</Label>
-							<Input
-								id="new-name"
-								name="name"
-								type="text"
-								required
-								placeholder="e.g. Classic Cheeseburger"
-							/>
-						</div>
-						<div class="sm:col-span-2">
-							<Label class="mb-1 block" for="new-description">Description</Label>
-							<Textarea
-								id="new-description"
-								name="description"
-								rows={2}
-								placeholder="Short description..."
-							/>
-						</div>
-						<div>
-							<Label class="mb-1 block" for="new-price">Price ($) *</Label>
-							<Input
-								id="new-price"
-								name="price"
-								type="number"
-								min={0}
-								step="0.01"
-								required
-								placeholder="9.99"
-							/>
-						</div>
-						<div>
-							<Label class="mb-1 block" for="new-sale">Sale price ($)</Label>
-							<Input
-								id="new-sale"
-								name="discountedPrice"
-								type="number"
-								min={0}
-								step="0.01"
-								placeholder="Optional"
-							/>
-						</div>
-						{#if data.categories.length > 0}
-							<div>
-								<Label class="mb-1 block" for="new-category">Category</Label>
-								<Select type="single" name="categoryId">
-									<SelectTrigger id="new-category" class="w-full">
-										<SelectValue placeholder="No category" />
-									</SelectTrigger>
-									<SelectContent>
-										<SelectItem value="">No category</SelectItem>
-										{#each data.categories as cat (cat.id)}
-											<SelectItem value={String(cat.id)}>{cat.name}</SelectItem>
-										{/each}
-									</SelectContent>
-								</Select>
-							</div>
-						{/if}
-						<div>
-							<Label class="mb-1 block" for="new-tags">Tags</Label>
-							<Input
-								id="new-tags"
-								name="tags"
-								type="text"
-								placeholder="spicy, popular (comma-separated)"
-							/>
-						</div>
-					</div>
-
-				</CardContent>
-				<CardFooter class="gap-2">
-					<Button type="submit" disabled={newUploading} variant="default">
-						Save &amp; add another
-					</Button>
-					<Button
-						type="submit"
-						name="closeAfter"
-						value="1"
-						disabled={newUploading}
-						variant="outline"
-						onclick={() =>
-							setTimeout(() => {
-								showForm = false;
-							}, 100)}
-					>
-						Save &amp; close
-					</Button>
-				</CardFooter>
-			</form>
-		</Card>
+		<div class="mb-6">
+			<CatalogItemForm
+				mode="new"
+				formAction="?/create"
+				categories={data.categories}
+				hasSubscriptionsAddon={data.hasSubscriptionsAddon}
+				onSuccess={(item) => { lastCreated = item; }}
+				onCancel={() => (showForm = false)}
+			/>
+		</div>
 	{/if}
 
 	<!-- Filters -->

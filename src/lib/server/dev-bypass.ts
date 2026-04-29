@@ -55,15 +55,35 @@ export async function ensureDevSeed(): Promise<Vendor> {
 		})
 		.onConflictDoNothing();
 
+	const DEV_VENDOR_SETTINGS = {
+		currency: 'USD',
+		taxRate: 0.0825,
+		enableTips: false,
+		defaultTipPercentages: [15, 18, 20],
+		allowPickup: true,
+		allowDelivery: false,
+		minimumOrderAmount: 0,
+		estimatedPrepTimeMinutes: 15,
+		asapPickupEnabled: false,
+		hours: {},
+		specialHours: []
+	};
+
 	await db
 		.insert(vendorTable)
 		.values({
 			name: 'Sunrise Bread Co.',
 			slug: DEV_VENDOR_SLUG,
 			isActive: true,
-			subscriptionTier: 'pro'
+			subscriptionTier: 'pro',
+			type: 'bakery',
+			timezone: 'America/New_York',
+			settings: DEV_VENDOR_SETTINGS
 		})
-		.onConflictDoNothing();
+		.onConflictDoUpdate({
+			target: vendorTable.slug,
+			set: { type: 'bakery', timezone: 'America/New_York', settings: DEV_VENDOR_SETTINGS }
+		});
 
 	const devVendor = await db.query.vendor.findFirst({
 		where: eq(vendorTable.slug, DEV_VENDOR_SLUG)

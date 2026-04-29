@@ -20,8 +20,8 @@ export function orderConfirmedEmail({
 	items: Array<{
 		name: string;
 		quantity: number;
-		unitPrice: number;
-		selectedModifiers?: Array<{ name: string }>;
+		basePrice: number;
+		selectedModifiers?: Array<{ name: string; priceAdjustment: number }>;
 	}>;
 	subtotal: number;
 	tax: number;

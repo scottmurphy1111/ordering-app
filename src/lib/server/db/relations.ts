@@ -3,13 +3,17 @@ import { vendor, vendorUsers } from './vendor';
 import { catalogCategories, catalogItems, modifiers, modifierOptions, catalogItemModifiers } from './catalog';
 import { orders, orderItems } from './orders';
 import { user, session, account } from './auth.schema';
+import { pickupLocations, pickupWindowTemplates, pickupWindows } from './pickup';
 
 export const vendorRelations = relations(vendor, ({ many }) => ({
 	users: many(vendorUsers),
 	categories: many(catalogCategories),
 	items: many(catalogItems),
 	orders: many(orders),
-	modifiers: many(modifiers)
+	modifiers: many(modifiers),
+	pickupLocations: many(pickupLocations),
+	pickupWindowTemplates: many(pickupWindowTemplates),
+	pickupWindows: many(pickupWindows)
 }));
 
 export const vendorUsersRelations = relations(vendorUsers, ({ one }) => ({
@@ -54,9 +58,45 @@ export const catalogItemModifiersRelations = relations(catalogItemModifiers, ({ 
 
 export const ordersRelations = relations(orders, ({ one, many }) => ({
 	vendor: one(vendor, { fields: [orders.vendorId], references: [vendor.id] }),
-	items: many(orderItems)
+	items: many(orderItems),
+	pickupWindow: one(pickupWindows, {
+		fields: [orders.pickupWindowId],
+		references: [pickupWindows.id]
+	}),
+	pickupLocation: one(pickupLocations, {
+		fields: [orders.pickupLocationId],
+		references: [pickupLocations.id]
+	})
 }));
 
 export const orderItemsRelations = relations(orderItems, ({ one }) => ({
 	order: one(orders, { fields: [orderItems.orderId], references: [orders.id] })
+}));
+
+export const pickupLocationsRelations = relations(pickupLocations, ({ one, many }) => ({
+	vendor: one(vendor, { fields: [pickupLocations.vendorId], references: [vendor.id] }),
+	windowTemplates: many(pickupWindowTemplates),
+	windows: many(pickupWindows)
+}));
+
+export const pickupWindowTemplatesRelations = relations(pickupWindowTemplates, ({ one, many }) => ({
+	vendor: one(vendor, { fields: [pickupWindowTemplates.vendorId], references: [vendor.id] }),
+	location: one(pickupLocations, {
+		fields: [pickupWindowTemplates.locationId],
+		references: [pickupLocations.id]
+	}),
+	windows: many(pickupWindows)
+}));
+
+export const pickupWindowsRelations = relations(pickupWindows, ({ one, many }) => ({
+	vendor: one(vendor, { fields: [pickupWindows.vendorId], references: [vendor.id] }),
+	template: one(pickupWindowTemplates, {
+		fields: [pickupWindows.templateId],
+		references: [pickupWindowTemplates.id]
+	}),
+	location: one(pickupLocations, {
+		fields: [pickupWindows.locationId],
+		references: [pickupLocations.id]
+	}),
+	orders: many(orders)
 }));

@@ -74,6 +74,7 @@
 		"mode-watcher": "^1.1.0",
 		"qrcode": "^1.5.4",
 		"resend": "^6.12.0",
+		"rrule": "^2.8.1",
 		"sortablejs": "^1.15.7",
 		"stripe": "^22.0.0",
 		"svelte-sonner": "^1.1.0",

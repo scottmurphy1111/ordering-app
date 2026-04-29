@@ -61,13 +61,22 @@
 			defaultTipPercentages?: number[];
 			enableDelivery?: boolean;
 			deliveryFee?: number;
+			asapPickupEnabled?: boolean;
 		} | null
 	);
 	const TAX_RATE = $derived(settings?.taxRate ?? 0.0825);
 	const tipPercentages = $derived(settings?.defaultTipPercentages ?? [15, 18, 20]);
-	const tipsEnabled = $derived(settings?.enableTips !== false);
+	const tipsEnabled = $derived(settings?.enableTips === true);
 	const deliveryEnabled = $derived(settings?.enableDelivery === true);
 	const tenantDeliveryFee = $derived(settings?.deliveryFee ?? 0);
+	const asapPickupEnabled = $derived(settings?.asapPickupEnabled === true);
+
+	$effect(() => {
+		if (!asapPickupEnabled) {
+			pickupTiming = 'scheduled';
+			onScheduledSelect();
+		}
+	});
 
 	let tipPercent = $state<number | 'custom' | 0>(0);
 	let customTipDollars = $state('');
@@ -377,33 +386,36 @@
 				<Card class="shadow-sm">
 					<CardContent class="p-4">
 					<p class="mb-2 text-sm font-semibold text-foreground">Pickup time</p>
-					<div class="flex gap-3">
-						{#each [{ value: 'asap', label: 'ASAP', icon: 'mdi:lightning-bolt' }, { value: 'scheduled', label: 'Schedule', icon: 'mdi:calendar-clock' }] as opt (opt.value)}
-							<label
-								style={pickupTiming === opt.value
-									? 'background-color: var(--background-color); color: var(--foreground-color); border-color: var(--background-color);'
-									: ''}
-								class="flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-lg border py-2.5 text-sm font-medium transition-colors
-								{pickupTiming === opt.value ? '' : ' text-muted-foreground hover:bg-muted/50'}"
-							>
-								<input
-									type="radio"
-									name="pickupTiming"
-									value={opt.value}
-									bind:group={pickupTiming}
-									onchange={() => {
-										if (opt.value === 'scheduled') onScheduledSelect();
-									}}
-									class="sr-only"
-								/>
-								<Icon icon={opt.icon} class="h-4 w-4" />
-								{opt.label}
-							</label>
-						{/each}
-					</div>
+
+					{#if asapPickupEnabled}
+						<div class="mb-3 flex gap-3">
+							{#each [{ value: 'asap', label: 'ASAP', icon: 'mdi:lightning-bolt' }, { value: 'scheduled', label: 'Schedule', icon: 'mdi:calendar-clock' }] as opt (opt.value)}
+								<label
+									style={pickupTiming === opt.value
+										? 'background-color: var(--background-color); color: var(--foreground-color); border-color: var(--background-color);'
+										: ''}
+									class="flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-lg border py-2.5 text-sm font-medium transition-colors
+									{pickupTiming === opt.value ? '' : ' text-muted-foreground hover:bg-muted/50'}"
+								>
+									<input
+										type="radio"
+										name="pickupTiming"
+										value={opt.value}
+										bind:group={pickupTiming}
+										onchange={() => {
+											if (opt.value === 'scheduled') onScheduledSelect();
+										}}
+										class="sr-only"
+									/>
+									<Icon icon={opt.icon} class="h-4 w-4" />
+									{opt.label}
+								</label>
+							{/each}
+						</div>
+					{/if}
 
 					{#if pickupTiming === 'scheduled'}
-						<div class="mt-3 flex gap-2">
+						<div class="flex gap-2">
 							<div class="flex-1">
 								<label class="mb-1 block text-xs font-medium text-muted-foreground" for="pickup-date"
 									>Date</label
@@ -552,7 +564,7 @@
 						id="cart-notes"
 						bind:value={notes}
 						rows="2"
-						placeholder="Allergies, preferences…"
+						placeholder="Pickup notes, dietary needs, birthday message, etc."
 						class="branded-input w-full resize-none rounded-lg border  px-3 py-2 text-sm transition-colors outline-none"
 					></textarea>
 				</div>

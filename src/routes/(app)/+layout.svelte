@@ -191,14 +191,19 @@
 			<p class="truncate text-xs text-muted-foreground">{data.user.email}</p>
 		</div>
 		<Button
-			onclick={() =>
-				signOut({
-					fetchOptions: {
-						onSuccess: () => {
-							window.location.href = '/login';
+			onclick={() => {
+				if (data.isDevBypass) {
+					window.location.href = '/dev-signout';
+				} else {
+					signOut({
+						fetchOptions: {
+							onSuccess: () => {
+								window.location.href = '/login';
+							}
 						}
-					}
-				})}
+					});
+				}
+			}}
 			variant="ghost"
 			size="sm"
 			class="text-xs text-muted-foreground hover:bg-background/10 hover:text-red-400"

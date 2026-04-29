@@ -64,12 +64,15 @@ export function orderItemsTable(
 	items: Array<{
 		name: string;
 		quantity: number;
-		unitPrice: number;
-		selectedModifiers?: Array<{ name: string }>;
+		basePrice: number;
+		selectedModifiers?: Array<{ name: string; priceAdjustment: number }>;
 	}>
 ) {
 	const rows = items
 		.map((item) => {
+			const effectiveUnitPrice =
+				item.basePrice +
+				(item.selectedModifiers?.reduce((s, m) => s + m.priceAdjustment, 0) ?? 0);
 			const modifiers = item.selectedModifiers?.length
 				? `<br/><span style="color:#6b7280;font-size:12px;">${item.selectedModifiers.map((m) => m.name).join(', ')}</span>`
 				: '';
@@ -79,7 +82,7 @@ export function orderItemsTable(
           ${item.name}${modifiers}
         </td>
         <td style="padding:10px 0;border-bottom:1px solid #f3f4f6;font-size:14px;color:#6b7280;text-align:center;">×${item.quantity}</td>
-        <td style="padding:10px 0;border-bottom:1px solid #f3f4f6;font-size:14px;color:#111827;text-align:right;">${formatCents(item.unitPrice * item.quantity)}</td>
+        <td style="padding:10px 0;border-bottom:1px solid #f3f4f6;font-size:14px;color:#111827;text-align:right;">${formatCents(effectiveUnitPrice * item.quantity)}</td>
       </tr>`;
 		})
 		.join('');

@@ -4,6 +4,9 @@
 	import { Input } from '$lib/components/ui/input';
 	import { Label } from '$lib/components/ui/label';
 	import { Card, CardContent } from '$lib/components/ui/card';
+	import type { PageData } from './$types';
+
+	let { data }: { data: PageData } = $props();
 	let loading = $state(false);
 	let magicEmail = $state('');
 	let magicSent = $state(false);
@@ -34,6 +37,23 @@
 
 <Card>
 	<CardContent class="p-8">
+		{#if data.isDevBypass}
+			<div class="mb-6 rounded-lg border border-amber-200 bg-amber-50 p-4">
+				<p class="mb-3 text-xs font-medium text-amber-700 uppercase tracking-wide">Dev bypass active</p>
+				<a
+					href="/dev-signin"
+					class="flex w-full items-center justify-center rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-amber-600"
+				>
+					Continue as Dev User
+				</a>
+			</div>
+			<div class="mb-5 flex items-center gap-3">
+				<div class="h-px flex-1 bg-muted"></div>
+				<span class="text-xs text-muted-foreground">or sign in with a real account</span>
+				<div class="h-px flex-1 bg-muted"></div>
+			</div>
+		{/if}
+
 		<!-- Google button -->
 		<Button onclick={signInWithGoogle} disabled={loading} variant="outline" class="w-full gap-3">
 			<svg class="h-5 w-5" viewBox="0 0 24 24" aria-hidden="true">

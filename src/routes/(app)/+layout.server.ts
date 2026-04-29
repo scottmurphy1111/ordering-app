@@ -3,6 +3,7 @@ import { redirect } from '@sveltejs/kit';
 import { db } from '$lib/server/db';
 import { eq } from 'drizzle-orm';
 import { vendorUsers } from '$lib/server/db/schema';
+import { env } from '$env/dynamic/private';
 
 export const load: LayoutServerLoad = async ({ locals, url }) => {
 	// Require authentication
@@ -22,6 +23,7 @@ export const load: LayoutServerLoad = async ({ locals, url }) => {
 		user: locals.user,
 		vendor: locals.vendor ?? null,
 		vendorId: locals.vendorId ?? null,
-		hasMultipleVendors: vendorCount > 1
+		hasMultipleVendors: vendorCount > 1,
+		isDevBypass: env.DEV_BYPASS_AUTH === 'true'
 	};
 };

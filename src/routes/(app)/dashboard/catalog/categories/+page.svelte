@@ -175,7 +175,7 @@
 						name="name"
 						type="text"
 						required
-						placeholder="e.g. Burgers, Drinks, Desserts"
+						placeholder="e.g. Breads, Pastries, Seasonal"
 					/>
 				</div>
 				<div>

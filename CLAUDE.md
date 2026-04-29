@@ -81,6 +81,13 @@ If you find "menu" anywhere else and it's referring to the catalog feature,
 rename it. If you find "tenant" anywhere referring to our `vendors` entity,
 rename it. Both are technical debt.
 
+**Vendor type values (canonical list):** `bakery`, `farm`, `butcher`, `florist`,
+`brewery`, `coffee_shop`, `food_truck`, `specialty_maker`, `market_vendor`, `other`.
+Display labels are mapped centrally in `src/lib/utils/business-type-labels.ts`.
+**Do not add restaurant-style values** (`full_service`, `quick_service`, `bar`,
+`cafe`) — these are explicitly out of scope for the wedge audience. Adding a new
+vendor type requires updating the schema enum, the display helper, and the seed.
+
 ---
 
 ## Brand Voice & Aesthetic
@@ -117,6 +124,26 @@ visual or copy decisions:
 - Empty states that read like marketing copy ("Welcome to your journey…")
 - Animations longer than 200ms
 - Anything that requires a help article to understand
+
+---
+
+## Customer-facing surfaces
+
+The public storefront (`/[vendorSlug]/catalog`) is consumed by customers, not
+vendors. Different rules apply:
+
+- **No internal taxonomy renders here.** Internal vendor type values (`bakery`,
+  `farm`, etc.) are for queries and admin contexts only. They never render to
+  customers. If a vendor doesn't have a tagline, render nothing — do not fall
+  back to the type.
+- **No vendor-facing language renders here.** Words like "vendor," "shop owner,"
+  "subscription," "billing" don't appear on the storefront. Customers never see
+  Order Local's product structure.
+- **Vendor-facing pages** (everything under `/dashboard`, `/account`, `/login`)
+  **follow the marketing voice**: confident, direct, audience-named (makers,
+  bakers, growers).
+- **Customer-facing pages follow a softer, transactional voice.** The customer
+  just wants to order something. They don't need our positioning.
 
 ---
 
@@ -211,6 +238,7 @@ Current shared components that must stay in sync:
 - `OrdersFilterTabs` — used on both pages
 - `OrdersViewToggle` — (Live | History) used on both pages
 - `OrdersSearchRow` — search input, used on both pages
+- `CatalogItemForm` — catalog item fields (image, name, description, price, category, tags, status, subscription). Used on `/dashboard/catalog/items` (inline new), `/dashboard/catalog/items/new` (standalone new), and `/dashboard/catalog/items/[itemId]` (edit). Do NOT duplicate item field markup across these three routes — always extend the shared component.
 
 If you add a feature to one page that logically belongs on a sibling page, add
 it to both in the same task.
@@ -737,6 +765,11 @@ refund, bulk operations).
 - The cancel button always dismisses without action.
 - Never auto-execute destructive actions on single click.
 
+**Deferred to shadcn audit:** Any confirmation currently implemented with `window.confirm()` is
+a temporary measure. When the shadcn component audit lands, migrate all `confirm()` calls to a
+proper `<Dialog>` primitive with explicit confirm/cancel buttons. Current callsites:
+`/dashboard/settings/pickup` — `deleteTemplate` form (×2).
+
 ---
 
 ## Navigation & Routing
@@ -798,6 +831,141 @@ Skeleton count matches expected result count.
   `$lib/server/*` in client-side code.
 - Database column naming: `snake_case` in SQL, `camelCase` in TypeScript
   (Drizzle's default mapping).
+- **Drizzle `time` columns return `"HH:MM:SS"` strings** (e.g. `"09:00:00"`, not `"09:00"`).
+  When parsing or comparing time-column values, always split on `:` and take the first two
+  parts, OR normalize before comparison. Current consumers: `pickup_window_templates.window_start`
+  / `window_end`. Phase 4 materialization will be the next.
+
+---
+
+## Order lifecycle (current)
+
+Schema enum values: `received`, `confirmed`, `preparing`, `ready`, `fulfilled`,
+`cancelled`.
+
+Display labels: Received, Confirmed, **In production**, Ready, Fulfilled,
+Cancelled.
+
+Note the display rename: `preparing` → "In production" everywhere a vendor sees
+it. The schema value is unchanged.
+
+The lifecycle is currently restaurant-shaped and assumes orders are in active
+production within minutes of being received. This is wrong for makers/bakers/growers
+(a Thanksgiving pie order placed November 15 sits idle until November 25). The
+lifecycle will be properly reshaped as part of the Pickup Windows feature; until
+then, vendors live with the workaround of leaving holiday orders in `confirmed`
+until they begin actual production.
+
+---
+
+## Order snapshot pattern
+
+### Where it lives
+
+`orders.items` — a `jsonb` column on the `orders` table
+(`src/lib/server/db/orders.ts`). Written once at order creation, never
+mutated. Serves as the permanent record of what was in the cart at
+purchase time.
+
+### Canonical shape
+
+The column stores an array of line items. Each item conforms to `CartItem`
+from `src/lib/cart.svelte.ts`:
+
+```typescript
+type OrderLineItem = {
+  itemId: number;              // catalogItems.id at purchase — used as FK hint only
+  name: string;                // display name, denormalised from catalogItems
+  basePrice: number;           // unit base price in cents, BEFORE modifier adjustments
+  quantity: number;
+  selectedModifiers: Array<{
+    group: string;             // modifier group display name
+    name: string;              // selected option display name
+    priceAdjustment: number;   // cents, added to basePrice (can be negative)
+  }>;
+  imageUrl?: string;           // optional storefront image URL
+  isSubscription?: boolean;    // true for recurring items
+  billingInterval?: string;    // 'monthly' | 'yearly', only when isSubscription=true
+};
+```
+
+**Required at all write sites:** `name`, `basePrice`, `quantity`,
+`selectedModifiers` (array — pass `[]` when there are no modifiers, never
+omit).
+
+**Optional:** `itemId`, `imageUrl`, `isSubscription`, `billingInterval`.
+
+### Snapshot → `orderItems` table mapping
+
+A parallel `order_items` row is inserted alongside every snapshot line
+item. The mapping is:
+
+| Snapshot field | `orderItems` column | Notes |
+| --- | --- | --- |
+| `name` | `name` | verbatim |
+| `quantity` | `quantity` | verbatim |
+| `basePrice + Σ(selectedModifiers.priceAdjustment)` | `unitPrice` | effective unit price |
+| `selectedModifiers` | `selectedModifiers` | stored verbatim as JSONB |
+| `itemId` | `catalogItemId` | nullable; `null` if item was deleted |
+
+The `orderItems` table is the queryable, relational copy. The JSONB
+snapshot is the immutable receipt. When displaying order details to vendors
+or customers, read from the snapshot, not `orderItems`.
+
+### Who reads and writes this today
+
+| Code path | Reads | Writes |
+| --- | --- | --- |
+| `routes/api/create-checkout/+server.ts` | — | snapshot + `orderItems` (source: `CartItem[]`) |
+| `routes/api/create-payment-intent/+server.ts` | — | snapshot + `orderItems` (same shape) |
+| `lib/server/seed-demo.ts` | — | snapshot only (minimal shape: `name`, `basePrice`, `quantity`, `selectedModifiers`) |
+| `dashboard/orders/[orderId]/+page.svelte` | `name`, `quantity`, `basePrice`, `selectedModifiers[].name`, `selectedModifiers[].priceAdjustment` | — |
+| `routes/api/webhooks/stripe/[vendorId]/+server.ts` | `order.items` cast to email template shape | — |
+
+### Known drift
+
+The Stripe webhook passes `order.items` directly to `orderConfirmedEmail`
+with a TypeScript `as` cast to a type that expects `unitPrice`, but the
+snapshot stores `basePrice`. The `orderItemsTable` email helper renders
+`item.unitPrice * item.quantity`, so **confirmation email line-item prices
+display as `$NaN`**. This is a pre-existing bug; do not work around it by
+changing the snapshot shape — fix the email helper to read `basePrice` or
+compute the effective price.
+
+### Rules
+
+- Any code path that writes to `orders.items` must include at minimum
+  `name`, `basePrice`, `quantity`, and `selectedModifiers`. No exceptions.
+- Any code path that reads `orders.items` must cast the JSONB explicitly
+  (Drizzle types the column as `unknown`). Use the shape above as the
+  ground truth for the cast.
+- Future additions to line items (e.g. pickup window reference, bundle
+  grouping) require: (1) updating this doc, (2) updating both write paths,
+  (3) a migration or backfill plan for existing snapshot rows if the new
+  field is required by readers.
+- Do not change `selectedModifiers` to omit items with no modifiers — pass
+  `[]`. Readers guard with `?.length` but writers should be consistent.
+
+---
+
+## Vendor settings
+
+Each vendor has per-shop settings that change how the customer-facing storefront
+and cart behave. When building a feature that adds checkout, payment, or
+scheduling UI, **check the vendor's settings first** rather than hardcoding
+defaults.
+
+Settings live in the `vendors.settings` JSONB column. Current keys:
+
+- `enableTips` (default `false`) — controls whether the cart shows a tip
+  selector. Most makers, bakers, and growers don't accept tips. Coffee shops and
+  food trucks may opt in.
+- `asapPickupEnabled` (default `false`) — controls whether the cart shows an
+  "ASAP" pickup option. Default is "Schedule" only (free-form date/time).
+
+Add new settings to the General settings page (`/dashboard/settings/general`)
+with helper text explaining when a vendor would want to enable it. Default off
+for the wedge audience; vendors opt in.
 
 ---
 
@@ -831,6 +999,21 @@ Skeleton count matches expected result count.
   dispatch) to product features
 - ❌ Do not commit code unless explicitly asked. Pause at phase gates for
   review when working on multi-phase tasks.
+- ❌ Do not add tipping UI to any new checkout or payment flow without checking
+  `settings.enableTips` first. Tipping is **off by default** for all vendors.
+- ❌ Do not add ASAP pickup UI to any new flow without checking
+  `settings.asapPickupEnabled` first. ASAP is **off by default**. The fallback
+  is "Schedule" (free-form date/time); pickup windows replace this in a future
+  prompt.
+- ❌ Do not render `vendor.type` to customers on the public storefront or in
+  any customer-facing email. Customer-facing surfaces use `vendor.tagline` if
+  set, or render nothing.
+- ❌ Do not add restaurant-specific business types (`quick_service`,
+  `full_service`, `bar`, `cafe`) to the vendor type enum. The wedge is makers,
+  bakers, growers — not restaurants.
+- ❌ Do not display `preparing` to vendors as "Preparing." The display label is
+  "In production." (The schema enum value remains `preparing`; the lifecycle
+  will be properly reshaped with the Pickup Windows feature.)
 
 ---
 

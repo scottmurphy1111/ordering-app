@@ -18,7 +18,7 @@
 	const STEPS = [
 		{ key: 'received', label: 'Received', icon: 'mdi:receipt-text-outline' },
 		{ key: 'confirmed', label: 'Confirmed', icon: 'mdi:check-circle-outline' },
-		{ key: 'preparing', label: 'Preparing', icon: 'mdi:chef-hat' },
+		{ key: 'preparing', label: 'In production', icon: 'mdi:package-variant-closed' },
 		{ key: 'ready', label: 'Ready!', icon: 'mdi:bell-ring-outline' },
 		{ key: 'fulfilled', label: 'Done', icon: 'mdi:flag-checkered' }
 	];
@@ -199,7 +199,7 @@
 						</div>
 					{:else if order.status === 'preparing'}
 						<p class="mt-4 text-center text-xs text-muted-foreground">
-							Hang tight — your order is being prepared.
+							Hang tight — your order is in production.
 						</p>
 					{:else if order.status === 'received'}
 						<p class="mt-4 text-center text-xs text-muted-foreground">

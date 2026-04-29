@@ -11,6 +11,7 @@ import {
 import { vendor } from './vendor';
 import { catalogItems } from './catalog';
 import { orderStatusEnum, paymentStatusEnum } from './types';
+import { pickupWindows, pickupLocations } from './pickup';
 
 export const orders = pgTable(
 	'orders',
@@ -45,6 +46,17 @@ export const orders = pgTable(
 		notes: text('notes'),
 		scheduledFor: timestamp('scheduled_for'),
 		estimatedReadyTime: timestamp('estimated_ready_time'),
+
+		// Pickup Windows (Phase 1 — columns dormant until Phase 5 checkout integration)
+		pickupWindowId: integer('pickup_window_id').references(() => pickupWindows.id, {
+			onDelete: 'set null'
+		}),
+		pickupLocationId: integer('pickup_location_id').references(() => pickupLocations.id, {
+			onDelete: 'set null'
+		}),
+		// Immutable snapshot of window/location data at order-creation time.
+		// Source of truth for confirmation emails and customer receipts (Phase 5).
+		pickupWindowSnapshot: jsonb('pickup_window_snapshot'),
 
 		stripePaymentIntentId: varchar('stripe_payment_intent_id', { length: 255 }),
 		metadata: jsonb('metadata').default({}),

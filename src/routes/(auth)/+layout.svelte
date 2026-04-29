@@ -8,7 +8,7 @@
 	<a href={resolve('/')} class="mb-2 text-4xl font-bold tracking-tight text-foreground">
 		Order<span class="text-primary">Local</span>
 	</a>
-	<p class="mb-6 text-sm text-muted-foreground">Order locally without the hassle.</p>
+	<p class="mb-6 text-sm text-muted-foreground">Pre-orders and pickup, built for makers, bakers, and growers.</p>
 	<div class="w-full max-w-sm text-center">
 		{@render children()}
 	</div>

@@ -59,13 +59,16 @@ export const actions: Actions = {
 		const slug = formData.get('slug')?.toString().trim().toLowerCase().replace(/\s+/g, '-');
 		const type =
 			(formData.get('type')?.toString() as
-				| 'quick_service'
-				| 'full_service'
-				| 'cafe'
-				| 'food_truck'
-				| 'bar'
 				| 'bakery'
-				| 'other') ?? 'quick_service';
+				| 'farm'
+				| 'butcher'
+				| 'florist'
+				| 'brewery'
+				| 'coffee_shop'
+				| 'food_truck'
+				| 'specialty_maker'
+				| 'market_vendor'
+				| 'other') ?? 'bakery';
 
 		if (!name) return fail(400, { error: 'Name is required' });
 		if (!slug) return fail(400, { error: 'Slug is required' });
@@ -79,7 +82,7 @@ export const actions: Actions = {
 		// Create vendor + assign owner in one transaction
 		const [newVendor] = await db
 			.insert(vendor)
-			.values({ name, slug, type, address: {} })
+			.values({ name, slug, type, address: {}, timezone: 'America/New_York' })
 			.returning({ id: vendor.id });
 
 		await db.insert(vendorUsers).values({
