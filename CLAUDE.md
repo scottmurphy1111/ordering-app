@@ -860,6 +860,24 @@ Skeleton count matches expected result count.
   The script reads `CRON_SECRET` from the environment and prints the JSON response. No
   curl needed. The dev server must be running; the script does not start it.
 
+- **Production cron via Netlify Scheduled Functions.** The function at
+  `netlify/functions/materialize.mts` is a thin HTTP wrapper that calls the SvelteKit endpoint
+  at `/api/cron/materialize` daily at 7am UTC (~2-3am Eastern, low-traffic window). The endpoint
+  runs `materializeAllActiveTemplates()` (extends pickup window horizon) and
+  `transitionScheduledOrders()` (flips scheduled→received within the production horizon).
+  Production `CRON_SECRET` is set in Netlify environment variables, distinct from the dev value
+  in `.env`. Schedule is declared via the `config` export in the function file (Netlify Functions
+  v2 — no `[[scheduled-functions]]` stanza needed in `netlify.toml`).
+
+- **`drizzle/meta/` was rebaselined Apr 2026** to recover from broken snapshot state caused
+  by hand-written migrations 0001–0005 that were never run through `drizzle-kit generate`.
+  The first migration after the rebaseline (`0001_rebaseline_post_introspect.sql`) reconciles
+  two things: an index representation artifact between `drizzle-kit introspect` and the schema
+  source, and a stale `enableTips` default value that predated the restaurant-DNA cleanup.
+  SQL migration files 0000–0005 in `drizzle/` are historical record; see `drizzle/README.md`.
+  New migrations going forward generate from the rebuilt baseline. `bun run db:generate` is
+  safe again — run it normally.
+
 ---
 
 ## Order lifecycle (current)

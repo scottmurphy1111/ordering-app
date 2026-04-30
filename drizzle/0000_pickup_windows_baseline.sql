@@ -1,0 +1,3 @@
+-- Baseline marker. No SQL to apply — this represents the DB state after
+-- all hand-written migrations (0000–0005) were applied directly.
+-- The drizzle/meta/ snapshot was rebuilt via drizzle-kit introspect in Apr 2026.

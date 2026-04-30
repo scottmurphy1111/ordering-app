@@ -5,43 +5,15 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1777350361426,
-      "tag": "0000_striped_martin_li",
+      "when": 1777563211011,
+      "tag": "0000_pickup_windows_baseline",
       "breakpoints": true
     },
     {
       "idx": 1,
       "version": "7",
-      "when": 1745870400000,
-      "tag": "0001_catalog_status_and_tagline",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1746057600000,
-      "tag": "0002_repair_schema",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "7",
-      "when": 1746230400000,
-      "tag": "0003_vendor_type_enum",
-      "breakpoints": true
-    },
-    {
-      "idx": 4,
-      "version": "7",
-      "when": 1746403200000,
-      "tag": "0004_add_scheduled_status",
-      "breakpoints": true
-    },
-    {
-      "idx": 5,
-      "version": "7",
-      "when": 1746489600000,
-      "tag": "0005_pickup_windows",
+      "when": 1777563507594,
+      "tag": "0001_rebaseline_post_introspect",
       "breakpoints": true
     }
   ]
