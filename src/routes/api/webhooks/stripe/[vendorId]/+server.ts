@@ -11,6 +11,7 @@ import { orderCancelledEmail } from '$lib/server/email/templates/orderCancelled'
 import { orderRefundedEmail } from '$lib/server/email/templates/orderRefunded';
 import { sendSms } from '$lib/server/sms';
 import { env } from '$env/dynamic/private';
+import type { PickupWindowSnapshot } from '$lib/server/pickup/checkout';
 
 export const POST: RequestHandler = async ({ request, params }) => {
 	const numericId = parseInt(params.vendorId);
@@ -23,7 +24,8 @@ export const POST: RequestHandler = async ({ request, params }) => {
 			isActive: true,
 			name: true,
 			backgroundColor: true,
-			slug: true
+			slug: true,
+			timezone: true
 		}
 	});
 
@@ -51,7 +53,8 @@ export const POST: RequestHandler = async ({ request, params }) => {
 		id: vendorRecord.id,
 		name: vendorRecord.name,
 		primaryColor: vendorRecord.backgroundColor ?? undefined,
-		slug: vendorRecord.slug
+		slug: vendorRecord.slug,
+		timezone: vendorRecord.timezone ?? 'America/New_York'
 	};
 
 	try {
@@ -64,7 +67,7 @@ export const POST: RequestHandler = async ({ request, params }) => {
 	return json({ received: true });
 };
 
-type VendorCtx = { id: number; name: string; primaryColor?: string; slug: string };
+type VendorCtx = { id: number; name: string; primaryColor?: string; slug: string; timezone: string };
 
 function generateOrderNumber(): string {
 	const ts = Date.now().toString(36).toUpperCase();
@@ -100,7 +103,10 @@ async function handleEvent(event: Stripe.Event, ctx: VendorCtx) {
 						tip: order.tip ?? 0,
 						total: order.total,
 						orderType: order.type,
-						notes: order.notes
+						notes: order.notes,
+						pickupWindowSnapshot: order.pickupWindowSnapshot as PickupWindowSnapshot | null,
+						scheduledFor: order.scheduledFor,
+						vendorTimezone: ctx.timezone
 					})
 				}).catch(console.error);
 			}
@@ -229,7 +235,10 @@ async function handleEvent(event: Stripe.Event, ctx: VendorCtx) {
 						tip: order.tip ?? 0,
 						total: order.total,
 						orderType: order.type,
-						notes: order.notes
+						notes: order.notes,
+						pickupWindowSnapshot: order.pickupWindowSnapshot as PickupWindowSnapshot | null,
+						scheduledFor: order.scheduledFor,
+						vendorTimezone: ctx.timezone
 					})
 				}).catch(console.error);
 			}

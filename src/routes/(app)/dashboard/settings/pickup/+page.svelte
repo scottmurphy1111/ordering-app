@@ -1075,9 +1075,116 @@
 					{:else}
 						<div class="mb-2 overflow-hidden rounded-xl border bg-background">
 							{#each locTemplates as tmpl, i (tmpl.id)}
-								<div
-									class="flex items-center justify-between px-4 py-3 {i > 0 ? 'border-t' : ''}"
-								>
+								<div class="{i > 0 ? 'border-t' : ''}">
+									<div class="flex items-center justify-between px-4 py-3">
+										<span class="text-sm text-foreground">
+											{formatTime(tmpl.windowStart)}–{formatTime(tmpl.windowEnd)}
+											· {formatRecurrence(tmpl.recurrence)}
+											· Cutoff {tmpl.cutoffHours}h
+											· {tmpl.maxOrders ? `Max ${tmpl.maxOrders}` : 'No cap'}
+										</span>
+										<div class="flex shrink-0 items-center gap-3 pl-4">
+											<Button
+												type="button"
+												onclick={() => {
+													editingTemplateId = tmpl.id;
+													showAddTemplateForm = false;
+													editTemplateError = null;
+													previewDays = getRruleDays(tmpl.recurrence);
+													previewStartTime = tmpl.windowStart;
+													previewEndTime = tmpl.windowEnd;
+													previewCutoffHours = tmpl.cutoffHours;
+												}}
+												variant="ghost"
+												size="sm"
+												class="h-auto p-0 text-xs text-muted-foreground hover:text-foreground"
+											>
+												Edit
+											</Button>
+											<form method="post" action="?/toggleTemplateActive" use:enhance>
+												<input type="hidden" name="id" value={tmpl.id} />
+												<Button
+													type="submit"
+													variant="ghost"
+													size="sm"
+													class="h-auto p-0 text-xs text-muted-foreground hover:text-destructive"
+												>
+													Deactivate
+												</Button>
+											</form>
+											<form
+												method="post"
+												action="?/deleteTemplate"
+												use:enhance
+												onsubmit={(e) => {
+													if (
+														!confirm(
+															`Delete "${tmpl.name}"? This will stop generating future occurrences for this template.`
+														)
+													) {
+														e.preventDefault();
+													}
+												}}
+											>
+												<input type="hidden" name="id" value={tmpl.id} />
+												<Button
+													type="submit"
+													variant="ghost"
+													size="sm"
+													class="h-auto p-0 text-xs text-muted-foreground hover:text-destructive"
+												>
+													Delete
+												</Button>
+											</form>
+										</div>
+									</div>
+									<div class="border-t border-dashed px-4 pb-3 pt-2">
+										{#if (data.upcomingByTemplate[tmpl.id] ?? []).length === 0}
+											<p class="text-xs italic text-muted-foreground">No upcoming occurrences.</p>
+										{:else}
+											<div class="space-y-1">
+												{#each data.upcomingByTemplate[tmpl.id] as occ (occ.id)}
+													<div class="grid grid-cols-3 gap-2 text-xs">
+														<span class="font-medium text-foreground">{formatPreviewDate(occ.startsAt, data.timezone)}</span>
+														<span class="text-muted-foreground">{formatPreviewTime(occ.startsAt, data.timezone)}–{formatPreviewTime(occ.endsAt, data.timezone)}</span>
+														<span class="text-muted-foreground">Cutoff {formatPreviewDate(occ.cutoffAt, data.timezone)}, {formatPreviewTime(occ.cutoffAt, data.timezone)}</span>
+													</div>
+												{/each}
+											</div>
+										{/if}
+									</div>
+								</div>
+							{/each}
+						</div>
+					{/if}
+					{#if !showAddTemplateForm && editingTemplateId === null}
+						<button
+							type="button"
+							onclick={() => {
+								previewDays = [];
+								previewStartTime = '';
+								previewEndTime = '';
+								previewCutoffHours = 48;
+								addTemplateForLocationId = loc.id;
+								showAddTemplateForm = true;
+							}}
+							class="text-xs text-muted-foreground hover:text-foreground"
+						>
+							+ Add window for this location
+						</button>
+					{/if}
+				</div>
+			{/each}
+
+			<!-- Unassigned group -->
+			{@const unassigned = (templatesByLocation.get(null) ?? []) as typeof data.templates}
+			{#if unassigned.length > 0}
+				<div class="mb-6">
+					<h3 class="mb-2 text-sm font-medium italic text-muted-foreground">Unassigned</h3>
+					<div class="overflow-hidden rounded-xl border bg-background">
+						{#each unassigned as tmpl, i (tmpl.id)}
+							<div class="{i > 0 ? 'border-t' : ''}">
+								<div class="flex items-center justify-between px-4 py-3">
 									<span class="text-sm text-foreground">
 										{formatTime(tmpl.windowStart)}–{formatTime(tmpl.windowEnd)}
 										· {formatRecurrence(tmpl.recurrence)}
@@ -1139,97 +1246,20 @@
 										</form>
 									</div>
 								</div>
-							{/each}
-						</div>
-					{/if}
-					{#if !showAddTemplateForm && editingTemplateId === null}
-						<button
-							type="button"
-							onclick={() => {
-								previewDays = [];
-								previewStartTime = '';
-								previewEndTime = '';
-								previewCutoffHours = 48;
-								addTemplateForLocationId = loc.id;
-								showAddTemplateForm = true;
-							}}
-							class="text-xs text-muted-foreground hover:text-foreground"
-						>
-							+ Add window for this location
-						</button>
-					{/if}
-				</div>
-			{/each}
-
-			<!-- Unassigned group -->
-			{@const unassigned = (templatesByLocation.get(null) ?? []) as typeof data.templates}
-			{#if unassigned.length > 0}
-				<div class="mb-6">
-					<h3 class="mb-2 text-sm font-medium italic text-muted-foreground">Unassigned</h3>
-					<div class="overflow-hidden rounded-xl border bg-background">
-						{#each unassigned as tmpl, i (tmpl.id)}
-							<div
-								class="flex items-center justify-between px-4 py-3 {i > 0 ? 'border-t' : ''}"
-							>
-								<span class="text-sm text-foreground">
-									{formatTime(tmpl.windowStart)}–{formatTime(tmpl.windowEnd)}
-									· {formatRecurrence(tmpl.recurrence)}
-									· Cutoff {tmpl.cutoffHours}h
-									· {tmpl.maxOrders ? `Max ${tmpl.maxOrders}` : 'No cap'}
-								</span>
-								<div class="flex shrink-0 items-center gap-3 pl-4">
-									<Button
-										type="button"
-										onclick={() => {
-											editingTemplateId = tmpl.id;
-											showAddTemplateForm = false;
-											editTemplateError = null;
-											previewDays = getRruleDays(tmpl.recurrence);
-											previewStartTime = tmpl.windowStart;
-											previewEndTime = tmpl.windowEnd;
-											previewCutoffHours = tmpl.cutoffHours;
-										}}
-										variant="ghost"
-										size="sm"
-										class="h-auto p-0 text-xs text-muted-foreground hover:text-foreground"
-									>
-										Edit
-									</Button>
-									<form method="post" action="?/toggleTemplateActive" use:enhance>
-										<input type="hidden" name="id" value={tmpl.id} />
-										<Button
-											type="submit"
-											variant="ghost"
-											size="sm"
-											class="h-auto p-0 text-xs text-muted-foreground hover:text-destructive"
-										>
-											Deactivate
-										</Button>
-									</form>
-									<form
-										method="post"
-										action="?/deleteTemplate"
-										use:enhance
-										onsubmit={(e) => {
-											if (
-												!confirm(
-													`Delete "${tmpl.name}"? This will stop generating future occurrences for this template.`
-												)
-											) {
-												e.preventDefault();
-											}
-										}}
-									>
-										<input type="hidden" name="id" value={tmpl.id} />
-										<Button
-											type="submit"
-											variant="ghost"
-											size="sm"
-											class="h-auto p-0 text-xs text-muted-foreground hover:text-destructive"
-										>
-											Delete
-										</Button>
-									</form>
+								<div class="border-t border-dashed px-4 pb-3 pt-2">
+									{#if (data.upcomingByTemplate[tmpl.id] ?? []).length === 0}
+										<p class="text-xs italic text-muted-foreground">No upcoming occurrences.</p>
+									{:else}
+										<div class="space-y-1">
+											{#each data.upcomingByTemplate[tmpl.id] as occ (occ.id)}
+												<div class="grid grid-cols-3 gap-2 text-xs">
+													<span class="font-medium text-foreground">{formatPreviewDate(occ.startsAt, data.timezone)}</span>
+													<span class="text-muted-foreground">{formatPreviewTime(occ.startsAt, data.timezone)}–{formatPreviewTime(occ.endsAt, data.timezone)}</span>
+													<span class="text-muted-foreground">Cutoff {formatPreviewDate(occ.cutoffAt, data.timezone)}, {formatPreviewTime(occ.cutoffAt, data.timezone)}</span>
+												</div>
+											{/each}
+										</div>
+									{/if}
 								</div>
 							</div>
 						{/each}

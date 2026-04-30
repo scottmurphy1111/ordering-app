@@ -8,6 +8,11 @@ import { orders, orderItems } from '$lib/server/db/orders';
 import { promoCodes } from '$lib/server/db/promos';
 import { calcDiscount } from '$lib/server/promo';
 import type { CartItem } from '$lib/cart.svelte';
+import {
+	validateWindowForCheckout,
+	buildSnapshotFromWindow,
+	type PickupWindowSnapshot
+} from '$lib/server/pickup/checkout';
 
 function generateOrderNumber(): string {
 	const ts = Date.now().toString(36).toUpperCase();
@@ -28,6 +33,7 @@ export const POST: RequestHandler = async ({ request }) => {
 		orderType: string;
 		deliveryAddress?: string | null;
 		scheduledFor?: string | null;
+		pickupWindowId?: number | null;
 		subtotal: number;
 		tax: number;
 		tip?: number;
@@ -45,6 +51,7 @@ export const POST: RequestHandler = async ({ request }) => {
 		orderType,
 		deliveryAddress,
 		scheduledFor,
+		pickupWindowId,
 		subtotal,
 		tax,
 		tip,
@@ -102,6 +109,21 @@ export const POST: RequestHandler = async ({ request }) => {
 		subtotal + tax + (tip ?? 0) + verifiedDeliveryFee - verifiedDiscount
 	);
 
+	// Pickup window validation — runs before Stripe so we never charge for an invalid slot
+	let resolvedScheduledFor: Date | null = scheduledFor ? new Date(scheduledFor) : null;
+	let resolvedPickupWindowId: number | null = null;
+	let resolvedPickupLocationId: number | null = null;
+	let resolvedPickupWindowSnapshot: PickupWindowSnapshot | null = null;
+
+	if (pickupWindowId) {
+		const result = await validateWindowForCheckout(pickupWindowId, vendorRecord.id);
+		if (!result.valid) throw error(400, result.reason);
+		resolvedPickupWindowId = result.window.id;
+		resolvedPickupLocationId = result.window.locationId;
+		resolvedPickupWindowSnapshot = buildSnapshotFromWindow(result.window);
+		resolvedScheduledFor = result.window.startsAt;
+	}
+
 	const orderNumber = generateOrderNumber();
 
 	const [newOrder] = await db
@@ -125,7 +147,10 @@ export const POST: RequestHandler = async ({ request }) => {
 			items: items,
 			deliveryAddress: deliveryAddress || null,
 			notes: notes || null,
-			scheduledFor: scheduledFor ? new Date(scheduledFor) : null
+			scheduledFor: resolvedScheduledFor,
+			pickupWindowId: resolvedPickupWindowId,
+			pickupLocationId: resolvedPickupLocationId,
+			pickupWindowSnapshot: resolvedPickupWindowSnapshot
 		})
 		.returning({ id: orders.id });
 

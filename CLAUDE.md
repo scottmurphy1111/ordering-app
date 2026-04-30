@@ -838,6 +838,30 @@ Skeleton count matches expected result count.
 
 ---
 
+## Build & dev gotchas
+
+- **CommonJS dependencies require `ssr.noExternal` in `vite.config.ts`.** Symptoms: "service
+  was stopped" errors during dev SSR, or named-export import failures that don't surface in
+  client builds (Vite handles CJS interop differently in production than in the SSR module
+  runner). Fix: add the offending package name to the `ssr.noExternal` array in
+  `vite.config.ts`. Currently affects: `rrule`. Add to this list as new CJS deps are introduced.
+
+- **Neon HTTP driver does not support transactions.** Use sequential operations and rely on
+  idempotency (unique constraints + `onConflictDoNothing`, or version checks) for atomicity.
+  Switching to the WebSocket driver to gain transactions is not worth the persistent-connection
+  cost in serverless deployments.
+
+- **Testing the cron endpoint locally.** The endpoint at `GET /api/cron/materialize` is
+  protected by a `CRON_SECRET` Bearer token. To fire it against the local dev server:
+  1. Set `CRON_SECRET` to any non-empty value in your `.env` file.
+  2. Start the dev server: `bun run dev`
+  3. Run: `bun run cron:materialize`
+
+  The script reads `CRON_SECRET` from the environment and prints the JSON response. No
+  curl needed. The dev server must be running; the script does not start it.
+
+---
+
 ## Order lifecycle (current)
 
 Schema enum values: `received`, `confirmed`, `preparing`, `ready`, `fulfilled`,
@@ -945,6 +969,32 @@ compute the effective price.
   field is required by readers.
 - Do not change `selectedModifiers` to omit items with no modifiers — pass
   `[]`. Readers guard with `?.length` but writers should be consistent.
+
+### Pickup window snapshot (`orders.pickupWindowSnapshot`)
+
+A separate JSONB column written at the same INSERT that writes `orders.items`.
+Canonical type (from `src/lib/server/pickup/checkout.ts`):
+
+```typescript
+type PickupWindowSnapshot = {
+  windowId: number;      // pickupWindows.id at purchase time
+  name: string;          // window display name, denormalised
+  startsAt: string;      // ISO 8601 UTC
+  endsAt: string;        // ISO 8601 UTC
+  notes: string | null;  // window-level notes
+  location: {
+    name: string;
+    address: unknown | null;  // structured address JSONB
+    notes: string | null;
+  } | null;
+};
+```
+
+`null` when the order used free-form scheduling or was a subscription. When
+reading in the confirmation email or order detail page, cast with
+`order.pickupWindowSnapshot as PickupWindowSnapshot | null` and guard for
+`null`. **Never re-derive pickup display from the FK** (`pickupWindowId`) — the
+snapshot is the receipt, the FK is just a join hint.
 
 ---
 

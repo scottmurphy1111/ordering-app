@@ -108,6 +108,26 @@ Last updated: April 2026.
 
 ---
 
+### Production cron wiring — Pickup Windows materialization
+
+**Status:** Pending. Created from Pickup Windows Phase 4 design.
+
+**Why:** Phase 4 builds the materialization endpoint at `/api/cron/materialize` (auth-protected, callable via HTTP). Phase 4 deliberately does NOT wire up the Netlify Scheduled Function that calls it nightly — that's deploy infrastructure, not feature code, and it doesn't matter operationally until the rolling 12-week horizon starts to age (roughly 4+ weeks after the first template is saved). On-save materialization handles immediate cases.
+
+**Scope:**
+
+- Create `netlify/functions/materialize.mts` — a thin (~10 line) Netlify Scheduled Function that calls `https://getorderlocal.com/api/cron/materialize` with the `Authorization: Bearer $CRON_SECRET` header
+- Add the `@netlify/functions` package as a dependency
+- Add a `[[scheduled-functions]]` stanza to `netlify.toml` pointing at the function file with a daily schedule (suggest: `cron = "0 7 * * *"` — 7am UTC, ~2–3am Eastern, low traffic window)
+- Set the `CRON_SECRET` env var in Netlify deploy environment
+- Document the deploy-side configuration in CLAUDE.md and/or README
+
+**Estimated effort:** 1–2 hours including verification that the function actually fires on schedule (Netlify's UI shows function run logs).
+
+**Trigger:** Before any vendor's first pickup window template ages past the 12-week horizon. In practice: anytime in the 4–6 weeks after Phase 4 ships. Easy to forget — worth landing soon after Phase 4, not at the last minute.
+
+---
+
 ## Tier 2 — Launch polish
 
 ### Forms & UI shadcn-svelte audit

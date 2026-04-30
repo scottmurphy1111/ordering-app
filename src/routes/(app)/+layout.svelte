@@ -100,7 +100,7 @@
 			icon: 'mdi:clipboard-list-outline',
 			tour: 'orders'
 		},
-		{ href: '/dashboard/catalog', label: 'Catalog', icon: 'mdi:package-variant-outline', tour: 'menu' },
+		{ href: '/dashboard/catalog', label: 'Catalog', icon: 'mdi:corn', tour: 'menu' },
 		{ href: '/dashboard/analytics', label: 'Analytics', icon: 'mdi:chart-bar', tour: 'analytics' },
 		{ href: '/dashboard/settings', label: 'Settings', icon: 'mdi:cog-outline', tour: 'settings' }
 	];
@@ -275,7 +275,11 @@
 				<nav class="flex gap-4 text-xs text-muted-foreground">
 					<a href={resolve('/privacy')} class="transition-colors hover:text-foreground">Privacy</a>
 					<a href={resolve('/terms')} class="transition-colors hover:text-foreground">Terms</a>
-					<a href="mailto:hello@getorderlocal.com" rel="external" class="transition-colors hover:text-foreground">Contact</a>
+					<a
+						href="mailto:hello@getorderlocal.com"
+						rel="external"
+						class="transition-colors hover:text-foreground">Contact</a
+					>
 				</nav>
 			</div>
 		</footer>

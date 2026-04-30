@@ -128,12 +128,6 @@
 
 <div class="max-w-3xl">
 	<div class="mb-6">
-		<a
-			href={resolve('/dashboard/account')}
-			class="mb-1 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-muted-foreground"
-		>
-			<Icon icon="mdi:chevron-left" class="h-4 w-4" /> Settings
-		</a>
 		<h1 class="text-2xl font-bold text-foreground">Billing</h1>
 		<p class="mt-0.5 text-sm text-muted-foreground">Manage your subscription plan and add-ons.</p>
 	</div>
@@ -323,120 +317,129 @@
 						>
 					{/if}
 					<Card class="h-full shadow-sm {isCurrent ? 'ring-2 ring-primary/70 ring-offset-0' : ''}">
-					<CardContent class="flex flex-1 flex-col">
-						<div class="mb-4">
-							<div class="flex items-center justify-between gap-2">
-								<p class="font-semibold text-foreground">{tier.name}</p>
-								{#if tier.key === 'pro' && !isPaidPlan}
-									<div class="flex items-center rounded-lg border bg-muted/50 p-0.5">
-										<button
-											type="button"
-											onclick={() => (selectedInterval = 'monthly')}
-											class="rounded-md px-2.5 py-1 text-xs transition-colors {selectedInterval === 'monthly'
-												? 'bg-background font-medium text-foreground shadow-sm'
-												: 'text-muted-foreground hover:text-foreground'}"
+						<CardContent class="flex flex-1 flex-col">
+							<div class="mb-4">
+								<div class="flex items-center justify-between gap-2">
+									<p class="font-semibold text-foreground">{tier.name}</p>
+									{#if tier.key === 'pro' && !isPaidPlan}
+										<div class="flex items-center rounded-lg border bg-muted/50 p-0.5">
+											<button
+												type="button"
+												onclick={() => (selectedInterval = 'monthly')}
+												class="rounded-md px-2.5 py-1 text-xs transition-colors {selectedInterval ===
+												'monthly'
+													? 'bg-background font-medium text-foreground shadow-sm'
+													: 'text-muted-foreground hover:text-foreground'}"
+											>
+												Monthly
+											</button>
+											<button
+												type="button"
+												onclick={() => (selectedInterval = 'annual')}
+												class="flex items-center gap-1 rounded-md px-2.5 py-1 text-xs transition-colors {selectedInterval ===
+												'annual'
+													? 'bg-background font-medium text-foreground shadow-sm'
+													: 'text-muted-foreground hover:text-foreground'}"
+											>
+												Annual
+												<span
+													class="rounded-full bg-primary/10 px-1.5 py-0.5 text-[9px] font-semibold text-primary"
+												>
+													-$168
+												</span>
+											</button>
+										</div>
+									{/if}
+								</div>
+								{#if tier.key === 'pro'}
+									<p class="mt-1 text-2xl font-bold text-foreground">
+										${proDisplayPrice}<span class="text-sm font-normal text-muted-foreground"
+											>/mo</span
 										>
-											Monthly
-										</button>
-										<button
-											type="button"
-											onclick={() => (selectedInterval = 'annual')}
-											class="flex items-center gap-1 rounded-md px-2.5 py-1 text-xs transition-colors {selectedInterval === 'annual'
-												? 'bg-background font-medium text-foreground shadow-sm'
-												: 'text-muted-foreground hover:text-foreground'}"
-										>
-											Annual
-											<span class="rounded-full bg-primary/10 px-1.5 py-0.5 text-[9px] font-semibold text-primary">
-												-$168
-											</span>
-										</button>
-									</div>
+									</p>
+									{#if selectedInterval === 'annual'}
+										<p class="mt-0.5 text-xs font-medium text-primary">
+											Billed ${proTier.annualTotal}/yr · 2 months free
+										</p>
+									{/if}
+								{:else}
+									<p class="mt-0.5 text-2xl font-bold text-foreground">Free</p>
 								{/if}
 							</div>
-							{#if tier.key === 'pro'}
-								<p class="mt-1 text-2xl font-bold text-foreground">
-									${proDisplayPrice}<span class="text-sm font-normal text-muted-foreground">/mo</span>
-								</p>
-								{#if selectedInterval === 'annual'}
-									<p class="mt-0.5 text-xs font-medium text-primary">
-										Billed ${proTier.annualTotal}/yr · 2 months free
-									</p>
-								{/if}
-							{:else}
-								<p class="mt-0.5 text-2xl font-bold text-foreground">Free</p>
-							{/if}
-						</div>
-						<ul class="mb-5 flex-1 space-y-2">
-							{#each tier.features as feature (feature)}
-								<li class="flex items-start gap-2 text-sm text-muted-foreground">
-									<Icon
-										icon="mdi:check-circle-outline"
-										class="mt-0.5 h-4 w-4 shrink-0 text-primary/80"
-									/>
-									{feature}
-								</li>
-							{/each}
-						</ul>
-						{#if isCurrent}
-							<Button
-								disabled
-								variant="outline"
-								class="w-full cursor-default text-muted-foreground"
-							>
-								Current plan
-							</Button>
-						{:else if isUpgrade}
-							<form method="post" action="?/upgrade" use:enhance>
-								<input type="hidden" name="planKey" value={tier.key} />
-								<input type="hidden" name="interval" value={selectedInterval} />
-								<Button type="submit" variant="default" class="w-full">
-									Upgrade to {tier.name}
-									{#if selectedInterval === 'annual'}
-										— Annual{/if}
-								</Button>
-							</form>
-						{:else}
-							{@const downgradeMsg =
-								activeAddons.length > 0
-									? `Downgrade to Starter? Your subscription will be cancelled immediately and all active add-ons will be removed.`
-									: `Downgrade to Starter? Your subscription will be cancelled immediately and you'll lose access to Pro features.`}
-							<form
-								method="post"
-								action="?/downgrade"
-								use:enhance={() =>
-									async ({ result, update }) => {
-										if (result.type === 'success') {
-											window.location.href = resolve('/dashboard/account/billing') + '?downgraded=1';
-										} else {
-											await update({ invalidateAll: true });
-										}
-									}}
-							>
-								<input type="hidden" name="planKey" value={tier.key} />
+							<ul class="mb-5 flex-1 space-y-2">
+								{#each tier.features as feature (feature)}
+									<li class="flex items-start gap-2 text-sm text-muted-foreground">
+										<Icon
+											icon="mdi:check-circle-outline"
+											class="mt-0.5 h-4 w-4 shrink-0 text-primary/80"
+										/>
+										{feature}
+									</li>
+								{/each}
+							</ul>
+							{#if isCurrent}
 								<Button
-									type="submit"
-									onclick={async (e) => {
-										e.preventDefault();
-										const form = (e.currentTarget as HTMLButtonElement).closest('form') as HTMLFormElement;
-										if (
-											await confirmDialog(downgradeMsg, {
-												title: `Downgrade to ${tier.name}`,
-												confirmLabel: 'Downgrade',
-												cancelLabel: 'Keep current plan',
-												danger: true
-											})
-										)
-											form.requestSubmit();
-									}}
+									disabled
 									variant="outline"
-									class="w-full text-muted-foreground hover:border-destructive/20 hover:bg-destructive/10 hover:text-red-600"
+									class="w-full cursor-default text-muted-foreground"
 								>
-									Downgrade to {tier.name}
+									Current plan
 								</Button>
-							</form>
-						{/if}
-					</CardContent>
-				</Card>
+							{:else if isUpgrade}
+								<form method="post" action="?/upgrade" use:enhance>
+									<input type="hidden" name="planKey" value={tier.key} />
+									<input type="hidden" name="interval" value={selectedInterval} />
+									<Button type="submit" variant="default" class="w-full">
+										Upgrade to {tier.name}
+										{#if selectedInterval === 'annual'}
+											— Annual{/if}
+									</Button>
+								</form>
+							{:else}
+								{@const downgradeMsg =
+									activeAddons.length > 0
+										? `Downgrade to Starter? Your subscription will be cancelled immediately and all active add-ons will be removed.`
+										: `Downgrade to Starter? Your subscription will be cancelled immediately and you'll lose access to Pro features.`}
+								<form
+									method="post"
+									action="?/downgrade"
+									use:enhance={() =>
+										async ({ result, update }) => {
+											if (result.type === 'success') {
+												window.location.href =
+													resolve('/dashboard/account/billing') + '?downgraded=1';
+											} else {
+												await update({ invalidateAll: true });
+											}
+										}}
+								>
+									<input type="hidden" name="planKey" value={tier.key} />
+									<Button
+										type="submit"
+										onclick={async (e) => {
+											e.preventDefault();
+											const form = (e.currentTarget as HTMLButtonElement).closest(
+												'form'
+											) as HTMLFormElement;
+											if (
+												await confirmDialog(downgradeMsg, {
+													title: `Downgrade to ${tier.name}`,
+													confirmLabel: 'Downgrade',
+													cancelLabel: 'Keep current plan',
+													danger: true
+												})
+											)
+												form.requestSubmit();
+										}}
+										variant="outline"
+										class="w-full text-muted-foreground hover:border-destructive/20 hover:bg-destructive/10 hover:text-red-600"
+									>
+										Downgrade to {tier.name}
+									</Button>
+								</form>
+							{/if}
+						</CardContent>
+					</Card>
 				</div>
 			{/each}
 		</div>
@@ -484,10 +487,7 @@
 								<div
 									class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-green-100"
 								>
-									<Icon
-										icon={addon.icon}
-										class="h-5 w-5 text-primary/90"
-									/>
+									<Icon icon={addon.icon} class="h-5 w-5 text-primary/90" />
 								</div>
 								<div>
 									<p class="text-sm font-semibold text-foreground">{addon.name}</p>

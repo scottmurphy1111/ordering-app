@@ -1,8 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import type { PageData, ActionData } from './$types';
-	import Icon from '@iconify/svelte';
-	import { resolve } from '$app/paths';
 	import { Button } from '$lib/components/ui/button';
 	import { Input } from '$lib/components/ui/input';
 	import { Label } from '$lib/components/ui/label';
@@ -13,12 +11,6 @@
 
 <div class="max-w-xl">
 	<div class="mb-6">
-		<a
-			href={resolve('/dashboard/account')}
-			class="mb-1 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-muted-foreground"
-		>
-			<Icon icon="mdi:chevron-left" class="h-4 w-4" /> Settings
-		</a>
 		<h1 class="text-2xl font-bold text-foreground">Profile</h1>
 		<p class="mt-0.5 text-sm text-muted-foreground">Update your personal information.</p>
 	</div>
@@ -45,7 +37,13 @@
 					</div>
 				{/if}
 
-				<form id="profile-form" method="post" action="?/updateProfile" use:enhance class="space-y-4">
+				<form
+					id="profile-form"
+					method="post"
+					action="?/updateProfile"
+					use:enhance
+					class="space-y-4"
+				>
 					<div>
 						<Label class="mb-1 block" for="name">Name</Label>
 						<Input id="name" name="name" type="text" required value={data.user.name} />

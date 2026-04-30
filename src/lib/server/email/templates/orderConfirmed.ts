@@ -1,5 +1,80 @@
 import { emailWrapper, orderItemsTable, formatCents } from '../base';
 
+type PickupWindowSnapshot = {
+	windowId: number;
+	name: string;
+	startsAt: string;
+	endsAt: string;
+	notes: string | null;
+	location: { name: string; address: unknown | null; notes: string | null } | null;
+};
+
+function formatAddr(addr: unknown): string {
+	if (!addr || typeof addr !== 'object') return '';
+	const a = addr as { street?: string; city?: string; state?: string };
+	return [a.street, a.city, a.state].filter(Boolean).join(', ');
+}
+
+function fmtDate(iso: string, tz: string): string {
+	return new Intl.DateTimeFormat('en-US', {
+		timeZone: tz,
+		weekday: 'long',
+		month: 'long',
+		day: 'numeric'
+	}).format(new Date(iso));
+}
+
+function fmtTime(iso: string, tz: string): string {
+	return new Intl.DateTimeFormat('en-US', {
+		timeZone: tz,
+		hour: 'numeric',
+		minute: '2-digit',
+		hour12: true
+	}).format(new Date(iso));
+}
+
+function renderPickupSection(
+	snapshot: PickupWindowSnapshot | null | undefined,
+	scheduledFor: Date | string | null | undefined,
+	tz: string
+): string {
+	if (snapshot) {
+		const dateLine = fmtDate(snapshot.startsAt, tz);
+		const timeLine = `${fmtTime(snapshot.startsAt, tz)} – ${fmtTime(snapshot.endsAt, tz)}`;
+		const addr = snapshot.location?.address ? formatAddr(snapshot.location.address) : '';
+		return `
+    <div style="margin-top:24px;padding:16px;background:#f0fdf4;border-radius:8px;border-left:4px solid #22c55e;">
+      <p style="margin:0 0 6px;font-size:12px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:0.05em;">Pickup details</p>
+      <p style="margin:0 0 2px;font-size:15px;font-weight:600;color:#111827;">${dateLine}</p>
+      <p style="margin:0 0 4px;font-size:14px;color:#374151;">${timeLine}</p>
+      ${snapshot.location?.name ? `<p style="margin:0 0 2px;font-size:14px;color:#374151;">${snapshot.location.name}</p>` : ''}
+      ${addr ? `<p style="margin:0 0 2px;font-size:13px;color:#6b7280;">${addr}</p>` : ''}
+      ${snapshot.location?.notes ? `<p style="margin:0 0 2px;font-size:13px;color:#6b7280;font-style:italic;">${snapshot.location.notes}</p>` : ''}
+      ${snapshot.notes ? `<p style="margin:0;font-size:13px;color:#6b7280;">${snapshot.notes}</p>` : ''}
+    </div>`;
+	}
+
+	if (scheduledFor) {
+		const d = typeof scheduledFor === 'string' ? new Date(scheduledFor) : scheduledFor;
+		const formatted = new Intl.DateTimeFormat('en-US', {
+			timeZone: tz,
+			weekday: 'short',
+			month: 'short',
+			day: 'numeric',
+			hour: 'numeric',
+			minute: '2-digit',
+			hour12: true
+		}).format(d);
+		return `
+    <div style="margin-top:24px;padding:16px;background:#f9fafb;border-radius:8px;border-left:4px solid #e5e7eb;">
+      <p style="margin:0 0 4px;font-size:12px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:0.05em;">Pickup time</p>
+      <p style="margin:0;font-size:14px;color:#111827;">${formatted}</p>
+    </div>`;
+	}
+
+	return '';
+}
+
 export function orderConfirmedEmail({
 	tenantName,
 	primaryColor,
@@ -11,7 +86,10 @@ export function orderConfirmedEmail({
 	tip,
 	total,
 	orderType,
-	notes
+	notes,
+	pickupWindowSnapshot,
+	scheduledFor,
+	vendorTimezone = 'America/New_York'
 }: {
 	tenantName: string;
 	primaryColor?: string;
@@ -29,6 +107,9 @@ export function orderConfirmedEmail({
 	total: number;
 	orderType: string;
 	notes?: string | null;
+	pickupWindowSnapshot?: PickupWindowSnapshot | null;
+	scheduledFor?: Date | string | null;
+	vendorTimezone?: string;
 }) {
 	const content = `
     <h1 style="margin:0 0 4px;font-size:24px;font-weight:700;color:#111827;">Order confirmed!</h1>
@@ -71,6 +152,8 @@ export function orderConfirmedEmail({
         <strong>Order type:</strong> ${orderType}
       </p>
     </div>
+
+    ${renderPickupSection(pickupWindowSnapshot, scheduledFor, vendorTimezone)}
   `;
 
 	return emailWrapper({

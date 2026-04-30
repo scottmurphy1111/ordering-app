@@ -1,14 +1,17 @@
 import type { PageServerLoad, Actions } from './$types';
 import { fail } from '@sveltejs/kit';
 import { db } from '$lib/server/db';
-import { eq, and, asc, sql } from 'drizzle-orm';
-import { pickupLocations, pickupWindowTemplates } from '$lib/server/db/pickup';
+import { eq, and, asc, gt, sql } from 'drizzle-orm';
+import { pickupLocations, pickupWindowTemplates, pickupWindows } from '$lib/server/db/pickup';
+import { materializeTemplate } from '$lib/server/pickup/materialize';
 
 export const load: PageServerLoad = async ({ locals }) => {
 	const vendorId = locals.vendorId!;
 	const timezone = locals.vendor!.timezone;
 
-	const [locations, templates] = await Promise.all([
+	const now = new Date();
+
+	const [locations, templates, upcomingWindows] = await Promise.all([
 		db.query.pickupLocations.findMany({
 			where: eq(pickupLocations.vendorId, vendorId),
 			orderBy: [asc(pickupLocations.sortOrder), asc(pickupLocations.name)]
@@ -19,10 +22,36 @@ export const load: PageServerLoad = async ({ locals }) => {
 				eq(pickupWindowTemplates.isActive, true)
 			),
 			orderBy: [asc(pickupWindowTemplates.name)]
-		})
+		}),
+		db
+			.select({
+				id: pickupWindows.id,
+				templateId: pickupWindows.templateId,
+				startsAt: pickupWindows.startsAt,
+				endsAt: pickupWindows.endsAt,
+				cutoffAt: pickupWindows.cutoffAt
+			})
+			.from(pickupWindows)
+			.where(
+				and(
+					eq(pickupWindows.vendorId, vendorId),
+					gt(pickupWindows.startsAt, now),
+					eq(pickupWindows.isCancelled, false)
+				)
+			)
+			.orderBy(asc(pickupWindows.startsAt))
 	]);
 
-	return { locations, templates, timezone };
+	const upcomingByTemplate: Record<number, typeof upcomingWindows> = {};
+	for (const w of upcomingWindows) {
+		if (w.templateId === null) continue;
+		if (!upcomingByTemplate[w.templateId]) upcomingByTemplate[w.templateId] = [];
+		if (upcomingByTemplate[w.templateId].length < 6) {
+			upcomingByTemplate[w.templateId].push(w);
+		}
+	}
+
+	return { locations, templates, timezone, upcomingByTemplate };
 };
 
 // ─── Location helpers (Phase 2) ──────────────────────────────────────────────
@@ -188,17 +217,22 @@ export const actions: Actions = {
 			if (!loc) return fail(403, { templateError: 'Location not found.' });
 		}
 
-		await db.insert(pickupWindowTemplates).values({
-			vendorId,
-			locationId,
-			name: name!,
-			recurrence: buildRrule(days),
-			windowStart: windowStart!,
-			windowEnd: windowEnd!,
-			cutoffHours,
-			maxOrders,
-			isActive
-		});
+		const [{ id: newTemplateId }] = await db
+			.insert(pickupWindowTemplates)
+			.values({
+				vendorId,
+				locationId,
+				name: name!,
+				recurrence: buildRrule(days),
+				windowStart: windowStart!,
+				windowEnd: windowEnd!,
+				cutoffHours,
+				maxOrders,
+				isActive
+			})
+			.returning({ id: pickupWindowTemplates.id });
+
+		await materializeTemplate(newTemplateId);
 
 		return { createTemplateSuccess: true };
 	},
@@ -251,6 +285,8 @@ export const actions: Actions = {
 			})
 			.where(and(eq(pickupWindowTemplates.id, id), eq(pickupWindowTemplates.vendorId, vendorId)));
 
+		await materializeTemplate(id);
+
 		return { updateTemplateSuccess: true };
 	},
 
@@ -270,6 +306,8 @@ export const actions: Actions = {
 			.update(pickupWindowTemplates)
 			.set({ isActive: !existing.isActive })
 			.where(and(eq(pickupWindowTemplates.id, id), eq(pickupWindowTemplates.vendorId, vendorId)));
+
+		await materializeTemplate(id);
 
 		return { toggleTemplateSuccess: true };
 	},

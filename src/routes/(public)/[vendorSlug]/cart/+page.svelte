@@ -78,6 +78,30 @@
 		}
 	});
 
+	// Pickup window selection (when vendor has materialized windows)
+	let selectedWindowId = $state<number | null>(null);
+	const selectedWindow = $derived(
+		data.availableWindows.find((w) => w.id === selectedWindowId) ?? null
+	);
+
+	function fmtWindowDate(d: Date): string {
+		return new Intl.DateTimeFormat('en-US', {
+			timeZone: data.vendor.timezone,
+			weekday: 'short',
+			month: 'short',
+			day: 'numeric'
+		}).format(d);
+	}
+
+	function fmtWindowTime(d: Date): string {
+		return new Intl.DateTimeFormat('en-US', {
+			timeZone: data.vendor.timezone,
+			hour: 'numeric',
+			minute: '2-digit',
+			hour12: true
+		}).format(d);
+	}
+
 	let tipPercent = $state<number | 'custom' | 0>(0);
 	let customTipDollars = $state('');
 
@@ -168,8 +192,19 @@
 			checkoutError = 'Please enter a delivery address.';
 			return;
 		}
+		if (
+			!isSubscriptionCart &&
+			orderType === 'pickup' &&
+			data.availableWindows.length > 0 &&
+			!selectedWindowId
+		) {
+			checkoutError = 'Please select a pickup window.';
+			return;
+		}
 		checkoutError = null;
 		loading = true;
+
+		const hasWindows = data.availableWindows.length > 0;
 
 		try {
 			const commonPayload = {
@@ -185,9 +220,11 @@
 								.join(', ')
 						: null,
 				scheduledFor:
-					pickupTiming === 'scheduled' && pickupDate && pickupTimeValue && !isSubscriptionCart
+					!isSubscriptionCart && orderType === 'pickup' && !hasWindows && pickupTiming === 'scheduled' && pickupDate && pickupTimeValue
 						? new Date(`${pickupDate}T${pickupTimeValue}`).toISOString()
 						: null,
+				pickupWindowId:
+					!isSubscriptionCart && orderType === 'pickup' ? (selectedWindowId ?? null) : null,
 				subtotal,
 				tax,
 				tip: tipCents,
@@ -387,65 +424,116 @@
 					<CardContent class="p-4">
 					<p class="mb-2 text-sm font-semibold text-foreground">Pickup time</p>
 
-					{#if asapPickupEnabled}
-						<div class="mb-3 flex gap-3">
-							{#each [{ value: 'asap', label: 'ASAP', icon: 'mdi:lightning-bolt' }, { value: 'scheduled', label: 'Schedule', icon: 'mdi:calendar-clock' }] as opt (opt.value)}
+					{#if data.availableWindows.length > 0}
+						<!-- Slot selector -->
+						<div class="space-y-2">
+							{#each data.availableWindows as win (win.id)}
+								{@const isFull = win.remainingCapacity !== null && win.remainingCapacity <= 0}
+								{@const isLow = win.remainingCapacity !== null && win.remainingCapacity > 0 && win.remainingCapacity <= 5}
+								{@const isSelected = selectedWindowId === win.id}
 								<label
-									style={pickupTiming === opt.value
-										? 'background-color: var(--background-color); color: var(--foreground-color); border-color: var(--background-color);'
-										: ''}
-									class="flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-lg border py-2.5 text-sm font-medium transition-colors
-									{pickupTiming === opt.value ? '' : ' text-muted-foreground hover:bg-muted/50'}"
+									class="flex cursor-pointer items-start gap-3 rounded-lg border p-3 transition-colors {isFull ? 'cursor-not-allowed opacity-50' : ''}"
+									style={isSelected ? 'background-color: color-mix(in srgb, var(--background-color) 8%, transparent); border-color: var(--background-color);' : ''}
 								>
 									<input
 										type="radio"
-										name="pickupTiming"
-										value={opt.value}
-										bind:group={pickupTiming}
-										onchange={() => {
-											if (opt.value === 'scheduled') onScheduledSelect();
-										}}
+										name="pickupWindow"
+										value={win.id}
+										disabled={isFull}
+										checked={isSelected}
+										onchange={() => { selectedWindowId = win.id; }}
 										class="sr-only"
 									/>
-									<Icon icon={opt.icon} class="h-4 w-4" />
-									{opt.label}
+									<div class="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full border-2 transition-colors"
+										style={isSelected ? 'border-color: var(--background-color); background-color: var(--background-color);' : 'border-color: #d1d5db;'}
+									>
+										{#if isSelected}
+											<div class="h-1.5 w-1.5 rounded-full bg-white"></div>
+										{/if}
+									</div>
+									<div class="min-w-0 flex-1">
+										<p class="text-sm font-medium text-foreground">
+											{fmtWindowDate(win.startsAt)} · {fmtWindowTime(win.startsAt)}–{fmtWindowTime(win.endsAt)}
+										</p>
+										{#if win.location?.name}
+											<p class="mt-0.5 text-xs text-muted-foreground">{win.location.name}</p>
+										{/if}
+										{#if win.notes}
+											<p class="mt-0.5 text-xs text-muted-foreground">{win.notes}</p>
+										{/if}
+									</div>
+									{#if isFull}
+										<span class="shrink-0 rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-500">Full</span>
+									{:else if isLow}
+										<span class="shrink-0 rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-600">
+											{win.remainingCapacity} left
+										</span>
+									{/if}
 								</label>
 							{/each}
 						</div>
-					{/if}
+					{:else}
+						<!-- Free-form picker (fallback when no windows are configured) -->
+						{#if asapPickupEnabled}
+							<div class="mb-3 flex gap-3">
+								{#each [{ value: 'asap', label: 'ASAP', icon: 'mdi:lightning-bolt' }, { value: 'scheduled', label: 'Schedule', icon: 'mdi:calendar-clock' }] as opt (opt.value)}
+									<label
+										style={pickupTiming === opt.value
+											? 'background-color: var(--background-color); color: var(--foreground-color); border-color: var(--background-color);'
+											: ''}
+										class="flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-lg border py-2.5 text-sm font-medium transition-colors
+										{pickupTiming === opt.value ? '' : ' text-muted-foreground hover:bg-muted/50'}"
+									>
+										<input
+											type="radio"
+											name="pickupTiming"
+											value={opt.value}
+											bind:group={pickupTiming}
+											onchange={() => {
+												if (opt.value === 'scheduled') onScheduledSelect();
+											}}
+											class="sr-only"
+										/>
+										<Icon icon={opt.icon} class="h-4 w-4" />
+										{opt.label}
+									</label>
+								{/each}
+							</div>
+						{/if}
 
-					{#if pickupTiming === 'scheduled'}
-						<div class="flex gap-2">
-							<div class="flex-1">
-								<label class="mb-1 block text-xs font-medium text-muted-foreground" for="pickup-date"
-									>Date</label
-								>
-								<input
-									id="pickup-date"
-									type="date"
-									bind:value={pickupDate}
-									min={today}
-									class="branded-input w-full rounded-lg border  px-3 py-2 text-sm transition-colors outline-none"
-								/>
+						{#if pickupTiming === 'scheduled'}
+							<div class="flex gap-2">
+								<div class="flex-1">
+									<label class="mb-1 block text-xs font-medium text-muted-foreground" for="pickup-date"
+										>Date</label
+									>
+									<input
+										id="pickup-date"
+										type="date"
+										bind:value={pickupDate}
+										min={today}
+										class="branded-input w-full rounded-lg border  px-3 py-2 text-sm transition-colors outline-none"
+									/>
+								</div>
+								<div class="flex-1">
+									<label class="mb-1 block text-xs font-medium text-muted-foreground" for="pickup-time"
+										>Time</label
+									>
+									<input
+										id="pickup-time"
+										type="time"
+										bind:value={pickupTimeValue}
+										step="900"
+										class="branded-input w-full rounded-lg border  px-3 py-2 text-sm transition-colors outline-none"
+									/>
+								</div>
 							</div>
-							<div class="flex-1">
-								<label class="mb-1 block text-xs font-medium text-muted-foreground" for="pickup-time"
-									>Time</label
-								>
-								<input
-									id="pickup-time"
-									type="time"
-									bind:value={pickupTimeValue}
-									step="900"
-									class="branded-input w-full rounded-lg border  px-3 py-2 text-sm transition-colors outline-none"
-								/>
-							</div>
-						</div>
-						{#if scheduledLabel}
-							<p class="mt-2 flex items-center gap-1.5 text-xs text-muted-foreground">
-								<Icon icon="mdi:clock-check-outline" class="h-3.5 w-3.5 shrink-0" />
-								Scheduled for {scheduledLabel}
-							</p>
+							{#if scheduledLabel}
+								<p class="mt-2 flex items-center gap-1.5 text-xs text-muted-foreground">
+									<Icon icon="mdi:clock-check-outline" class="h-3.5 w-3.5 shrink-0" />
+									Scheduled for {scheduledLabel}
+								</p>
+							{/if}
 						{/if}
 					{/if}
 					</CardContent>
@@ -709,7 +797,13 @@
 						<span class="flex items-center gap-1.5"
 							><Icon icon="mdi:clock-outline" class="h-3.5 w-3.5" /> Pickup</span
 						>
-						<span class="font-medium">{scheduledLabel ?? 'ASAP'}</span>
+						<span class="font-medium">
+							{#if selectedWindow}
+								{fmtWindowDate(selectedWindow.startsAt)} · {fmtWindowTime(selectedWindow.startsAt)}
+							{:else}
+								{scheduledLabel ?? 'ASAP'}
+							{/if}
+						</span>
 					</div>
 				{/if}
 				<div class="flex justify-between text-muted-foreground">
