@@ -10,8 +10,8 @@ const HORIZON_WEEKS = 12;
 export type MaterializeResult = {
 	templateId: number;
 	generated: number; // new pickup_windows rows inserted
-	preserved: number; // future rows kept because they have attached orders
-	deleted: number; // orderless future rows removed before regenerating
+	preserved: number; // future rows kept (have orders OR are customized)
+	deleted: number; // orderless, un-customized future rows removed before regenerating
 };
 
 /**
@@ -47,9 +47,14 @@ export async function materializeTemplate(templateId: number): Promise<Materiali
 	const now = new Date();
 	const horizon = new Date(now.getTime() + HORIZON_WEEKS * 7 * 24 * 3_600_000);
 
-	// Future rows for this template
+	// Future rows for this template — include customization fields for Phase 8 preservation check.
 	const futureRows = await db
-		.select({ id: pickupWindows.id })
+		.select({
+			id: pickupWindows.id,
+			isCancelled: pickupWindows.isCancelled,
+			maxOrders: pickupWindows.maxOrders,
+			notes: pickupWindows.notes
+		})
 		.from(pickupWindows)
 		.where(and(eq(pickupWindows.templateId, templateId), gt(pickupWindows.startsAt, now)));
 
@@ -65,7 +70,16 @@ export async function materializeTemplate(templateId: number): Promise<Materiali
 		}
 	}
 
-	const toDelete = futureRows.filter((r) => !withOrderIds.has(r.id)).map((r) => r.id);
+	// A row is customized when the vendor individually edited it: cancelled, notes set,
+	// or capacity differs from the template default. Customized rows are never auto-deleted —
+	// the vendor's explicit override must survive template edits.
+	const isCustomized = (r: (typeof futureRows)[number]) =>
+		r.isCancelled === true || r.notes !== null || r.maxOrders !== template.maxOrders;
+
+	const toDelete = futureRows
+		.filter((r) => !withOrderIds.has(r.id))
+		.filter((r) => !isCustomized(r))
+		.map((r) => r.id);
 	const preserved = futureRows.length - toDelete.length;
 
 	// Expand occurrences through the horizon.
@@ -84,10 +98,10 @@ export async function materializeTemplate(templateId: number): Promise<Materiali
 	let generated = 0;
 
 	// Not wrapped in db.transaction() — the Neon HTTP driver doesn't support transactions.
-	// Atomicity is acceptable here: the orderless-rows check runs before delete (no rows
-	// with attached orders are at risk), and the unique constraint + onConflictDoNothing
-	// makes the insert idempotent. A crash between delete and insert self-heals on the
-	// next materialize call.
+	// Atomicity is acceptable here: the orderless-AND-uncustomized check runs before delete
+	// (no rows with orders or vendor customizations are at risk), and the unique constraint
+	// + onConflictDoNothing makes the insert idempotent. A crash between delete and insert
+	// self-heals on the next materialize call.
 	if (toDelete.length > 0) {
 		await db.delete(pickupWindows).where(inArray(pickupWindows.id, toDelete));
 	}

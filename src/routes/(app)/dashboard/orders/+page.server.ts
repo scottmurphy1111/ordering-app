@@ -1,9 +1,10 @@
 import type { PageServerLoad, Actions } from './$types';
 import { fail } from '@sveltejs/kit';
 import { db } from '$lib/server/db';
-import { eq, and, desc, or, not, inArray, gte, isNotNull, sql } from 'drizzle-orm';
-import { orders } from '$lib/server/db/schema';
+import { eq, and, asc, desc, or, not, ne, inArray, gte, isNotNull, sql, sum } from 'drizzle-orm';
+import { orders, orderItems } from '$lib/server/db/schema';
 import { vendor } from '$lib/server/db/vendor';
+import { pickupWindows, pickupLocations } from '$lib/server/db/pickup';
 import Stripe from 'stripe';
 import { sendEmail } from '$lib/server/email';
 import { orderReadyEmail } from '$lib/server/email/templates/orderReady';
@@ -12,58 +13,34 @@ import { orderRefundedEmail } from '$lib/server/email/templates/orderRefunded';
 
 const HISTORY_CUTOFF_MS = 24 * 60 * 60 * 1000;
 
+export type WindowGroupKey = {
+	windowId: number;
+	name: string;
+	startsAt: Date;
+	endsAt: Date;
+	locationName: string | null;
+};
+
 export const load: PageServerLoad = async ({ locals, url, depends }) => {
 	depends('app:orders');
 	const vendorId = locals.vendorId!;
+	const view = url.searchParams.get('view') === 'production' ? 'production' : 'orders';
+	const showCancelled = url.searchParams.get('cancelled') === 'show';
 	const statusFilter = url.searchParams.get('status') ?? '';
 
 	const cutoff = new Date(Date.now() - HISTORY_CUTOFF_MS);
 	const todayStart = new Date();
 	todayStart.setHours(0, 0, 0, 0);
 
-	const whereConditions = [
-		eq(orders.vendorId, vendorId),
-		or(not(inArray(orders.status, ['fulfilled', 'cancelled'])), gte(orders.updatedAt, cutoff))!
-	];
-	if (statusFilter) {
-		whereConditions.push(eq(orders.status, statusFilter as typeof orders.status._.data));
-	}
-
+	// Base conditions: vendor scope + recency window for terminal statuses
 	const baseConditions = [
 		eq(orders.vendorId, vendorId),
 		or(not(inArray(orders.status, ['fulfilled', 'cancelled'])), gte(orders.updatedAt, cutoff))!
 	];
 
-	const [allOrders, countRows, scheduledRow, todayRevenueRow] = await Promise.all([
-		db.query.orders.findMany({
-			where: and(...whereConditions),
-			orderBy: [desc(orders.createdAt)],
-			limit: 50,
-			columns: {
-				id: true,
-				orderNumber: true,
-				customerName: true,
-				customerPhone: true,
-				total: true,
-				status: true,
-				paymentStatus: true,
-				type: true,
-				createdAt: true,
-				notes: true,
-				scheduledFor: true,
-				deliveryAddress: true,
-				stripePaymentIntentId: true
-			},
-			with: {
-				items: {
-					columns: { name: true, quantity: true }
-				}
-			}
-		}),
-		db.query.orders.findMany({
-			where: and(...baseConditions),
-			columns: { status: true }
-		}),
+	// Summary stats fetched for both views
+	const [countRows, scheduledRow, todayRevenueRow] = await Promise.all([
+		db.query.orders.findMany({ where: and(...baseConditions), columns: { status: true } }),
 		db
 			.select({ count: sql<number>`count(*)` })
 			.from(orders)
@@ -87,13 +64,169 @@ export const load: PageServerLoad = async ({ locals, url, depends }) => {
 		acc[o.status] = (acc[o.status] ?? 0) + 1;
 		return acc;
 	}, {});
+	const scheduledCount = Number(scheduledRow[0]?.count ?? 0);
+	const todayRevenue = Number(todayRevenueRow[0]?.total ?? 0);
+
+	// ── Production view ────────────────────────────────────────────────────────
+	if (view === 'production') {
+		// Aggregate orderItems by (window, item name), excluding cancelled orders.
+		// INNER JOIN on pickupWindows naturally excludes free-form orders (null FK).
+		const productionRows = await db
+			.select({
+				pickupWindowId: orders.pickupWindowId,
+				startsAt: pickupWindows.startsAt,
+				endsAt: pickupWindows.endsAt,
+				windowName: pickupWindows.name,
+				locationName: pickupLocations.name,
+				itemName: orderItems.name,
+				totalQuantity: sum(orderItems.quantity),
+				orderCount: sql<number>`count(distinct ${orders.id})`
+			})
+			.from(orderItems)
+			.innerJoin(orders, eq(orderItems.orderId, orders.id))
+			.innerJoin(pickupWindows, eq(orders.pickupWindowId, pickupWindows.id))
+			.leftJoin(pickupLocations, eq(pickupWindows.locationId, pickupLocations.id))
+			.where(
+				and(
+					eq(orders.vendorId, vendorId),
+					ne(orders.status, 'cancelled' as typeof orders.status._.data)
+				)
+			)
+			.groupBy(
+				orders.pickupWindowId,
+				pickupWindows.startsAt,
+				pickupWindows.endsAt,
+				pickupWindows.name,
+				pickupLocations.name,
+				orderItems.name
+			)
+			.orderBy(asc(pickupWindows.startsAt), desc(sum(orderItems.quantity)), asc(orderItems.name));
+
+		// Group rows by pickup window
+		const productionMap = new Map<
+			number,
+			{
+				window: WindowGroupKey;
+				orderCount: number;
+				items: Array<{ name: string; totalQuantity: number }>;
+			}
+		>();
+
+		for (const row of productionRows) {
+			const wid = row.pickupWindowId!;
+			if (!productionMap.has(wid)) {
+				productionMap.set(wid, {
+					window: {
+						windowId: wid,
+						name: row.windowName,
+						startsAt: row.startsAt,
+						endsAt: row.endsAt,
+						locationName: row.locationName ?? null
+					},
+					orderCount: Number(row.orderCount),
+					items: []
+				});
+			}
+			productionMap.get(wid)!.items.push({
+				name: row.itemName,
+				totalQuantity: parseInt(row.totalQuantity ?? '0')
+			});
+		}
+
+		return {
+			view: 'production' as const,
+			showCancelled: false,
+			statusFilter,
+			statusCounts,
+			scheduledCount,
+			todayRevenue,
+			productionGroups: Array.from(productionMap.values())
+		};
+	}
+
+	// ── Orders view ───────────────────────────────────────────────────────────
+	const whereConditions = [...baseConditions];
+	if (!showCancelled) {
+		whereConditions.push(ne(orders.status, 'cancelled' as typeof orders.status._.data));
+	}
+	if (statusFilter) {
+		whereConditions.push(eq(orders.status, statusFilter as typeof orders.status._.data));
+	}
+
+	const allOrders = await db.query.orders.findMany({
+		where: and(...whereConditions),
+		orderBy: [asc(orders.createdAt)],
+		limit: 50,
+		columns: {
+			id: true,
+			orderNumber: true,
+			customerName: true,
+			customerPhone: true,
+			total: true,
+			status: true,
+			paymentStatus: true,
+			type: true,
+			createdAt: true,
+			notes: true,
+			scheduledFor: true,
+			deliveryAddress: true,
+			stripePaymentIntentId: true,
+			pickupWindowId: true
+		},
+		with: {
+			items: { columns: { name: true, quantity: true } },
+			pickupWindow: {
+				columns: { id: true, startsAt: true, endsAt: true, name: true },
+				with: { location: { columns: { name: true } } }
+			}
+		}
+	});
+
+	// Group orders by pickupWindowId server-side
+	const windowMap = new Map<
+		number,
+		{ window: WindowGroupKey; orders: typeof allOrders; totalRevenue: number }
+	>();
+	const freeFormOrders: typeof allOrders = [];
+
+	for (const order of allOrders) {
+		if (order.pickupWindowId != null && order.pickupWindow != null) {
+			const wid = order.pickupWindowId;
+			if (!windowMap.has(wid)) {
+				windowMap.set(wid, {
+					window: {
+						windowId: order.pickupWindow.id,
+						name: order.pickupWindow.name,
+						startsAt: order.pickupWindow.startsAt,
+						endsAt: order.pickupWindow.endsAt,
+						locationName: order.pickupWindow.location?.name ?? null
+					},
+					orders: [],
+					totalRevenue: 0
+				});
+			}
+			const group = windowMap.get(wid)!;
+			group.orders.push(order);
+			if (order.status !== 'cancelled') group.totalRevenue += order.total;
+		} else {
+			freeFormOrders.push(order);
+		}
+	}
+
+	// Window groups sorted soonest-first
+	const windowGroups = Array.from(windowMap.values()).sort(
+		(a, b) => a.window.startsAt.getTime() - b.window.startsAt.getTime()
+	);
 
 	return {
-		orders: allOrders,
+		view: 'orders' as const,
+		showCancelled,
 		statusFilter,
 		statusCounts,
-		scheduledCount: Number(scheduledRow[0]?.count ?? 0),
-		todayRevenue: Number(todayRevenueRow[0]?.total ?? 0)
+		scheduledCount,
+		todayRevenue,
+		windowGroups,
+		freeFormOrders
 	};
 };
 

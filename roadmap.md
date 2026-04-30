@@ -2,13 +2,21 @@
 
 **Purpose:** A single home for tracked-but-deferred work. Items live here when they've been scoped enough to act on later but aren't right for the current moment. Re-prioritize before each new build cycle.
 
-**Convention:** Items are tagged by tier. Tier 1 should land before public vendor outreach starts. Tier 2 is launch polish. Tier 3 is post-launch. Tier 4 is "maybe never."
+**Convention:** Items are tagged by tier. Tier 1 is things every new vendor encounters in their first week — get these right before outreach, no rush. Tier 2 is launch polish. Tier 3 is post-launch. Tier 4 is punted or deliberately not pursued.
 
 Last updated: April 2026.
 
 ---
 
-## Tier 1 — Pre-launch must-haves
+## Tier 1 — Vendor first-week experience
+
+Items vendors will encounter in their first week of use. The bar is "first impression reflects the product's quality" — these get polished thoughtfully before vendor outreach begins. No external timing pressure; doing these well matters more than doing them fast.
+
+**Convention notes:**
+
+- Items here gate vendor outreach, not internal milestones
+- Polish here is intentional; polish elsewhere is deferred until evidence justifies it
+- When something feels mostly-done but not quite, it stays here until it's actually done
 
 ### Pickup Windows feature (THE WEDGE)
 
@@ -54,6 +62,25 @@ Last updated: April 2026.
 
 ---
 
+### Support email + autoresponder
+
+**Status:** Pending.
+
+**Why it matters:** Vendors need somewhere to write when something goes wrong. A dedicated address with a polite autoresponder is sufficient for the first 50 vendors and infinitely better than nothing.
+
+**Scope:**
+
+- Set up support@getorderlocal.com forwarding to founder inbox
+- Configure autoresponder: "We've got it, expect a reply within 24 hours, urgent matters: [text alternative]"
+- Surface the address everywhere: dashboard footer, confirmation emails, ToS, error pages, Resources page
+- Document internal SLA: 24h response, 48h resolution for non-critical, real-time for payment issues
+
+**Estimated effort:** Half a day. Most of that is configuring the autoresponder and updating templates.
+
+**Trigger:** Before any vendor outreach. Vendors who can't reach support are vendors who churn loudly.
+
+---
+
 ### Vendor onboarding walkthrough
 
 **Status:** Pending.
@@ -65,6 +92,65 @@ Last updated: April 2026.
 **Estimated effort:** Modest — checklist component + per-page empty states. 3–5 days.
 
 **Trigger:** After Pickup Windows lands and the dashboard's information architecture is stable.
+
+---
+
+### Tutorial videos and how-to page
+
+**Status:** Pending.
+
+**Why it matters:** The pitch promises "set up in 10 minutes." Vendors who hit a wall in their first week and don't see a tutorial churn silently. This is also the first time the product has to teach itself to someone who didn't get the in-person walkthrough.
+
+**Scope:**
+
+- Loom (or similar) recordings of 5 core workflows: signup, add catalog item, set pickup hours, share storefront link, manage first order
+- Simple page in the dashboard or marketing site listing the videos with short descriptive copy
+- Embedded inline-help links from relevant dashboard pages — subtle, not intrusive
+
+**Estimated effort:** Half a day recording + half a day page setup + half a day inline-help links. 1–2 days total.
+
+**Trigger:** Before any vendor outreach. The tutorials are the difference between "10-minute setup that works" and "vendor stares at empty dashboard and emails support."
+
+---
+
+### Homepage rewrite (v1)
+
+**Status:** Pending.
+
+**Why it matters:** Prospect vendors evaluate the homepage before signing up. The current homepage has stale restaurant-DNA copy and doesn't sell the wedge differentiator (Pickup Windows, makers/bakers/growers focus) or the recently-shipped capabilities.
+
+**Scope:**
+
+- Reframe top-of-page copy around the wedge audience (makers, bakers, growers, market vendors) — not generic "online ordering"
+- Sell Pickup Windows as the centerpiece (production-view aggregation, per-occurrence overrides)
+- Sell the no-commission-stripe-direct payment angle (vs Square/ChowNow)
+- Sell setup speed (10 minutes, no contracts)
+- Update the audience strip with the canonical list: Bakeries · Farm stands · Butchers · Florists · CSA boxes · Food trucks · Coffee shops · Specialty makers · Market vendors
+- Sweep stale "menu"/"preparing"/"quick service" copy across all marketing pages — this work absorbs the scope of the Tier 2 Marketing site copy sweep item
+- Note: this is v1. A v2 polish pass with real vendor screenshots and testimonials should land 1–2 months after the first paying vendors.
+
+**Estimated effort:** 2–3 days for v1 including the marketing-site copy sweep.
+
+**Trigger:** Before vendor outreach. The homepage is the prospect's first impression after the in-person pitch.
+
+---
+
+### Mobile UX — tables, actions, and inner navigation
+
+**Status:** Pending.
+
+**Why it matters:** Vendors manage orders from phones at markets and during deliveries. If the dashboard is unusable on mobile, the product is effectively desktop-only — which contradicts the core use case. Every mobile vendor hits this day one.
+
+**Scope:**
+
+- Audit every dashboard table for mobile behavior (orders, catalog items, pickup windows, locations)
+- Pick a responsive pattern per table — likely card-stack at narrow widths for heavy tables, hide-non-essential-columns for lighter ones
+- Make hover-revealed actions always-visible on mobile (responsive pattern, not hover-only)
+- Make `/account` inner sidebar a mobile pattern (tabs or drawer); apply same to `/settings` if it has the same problem
+
+**Estimated effort:** 2–3 days for table responsive treatment; half a day for the sidebar nav. Done as one batch — same family of concerns, same testing surface.
+
+**Trigger:** Before any vendor outreach. Mobile is half the audience by hours of dashboard use, more than half by frequency of access.
 
 ---
 
@@ -128,6 +214,28 @@ Last updated: April 2026.
 
 ---
 
+### Cart validation against current catalog
+
+**Status:** Pending. Surfaced during Pickup Windows Phase 5 verification.
+
+**Why:** The cart references catalog items by ID. When a vendor archives or deletes an item, customers with open carts (in-flight tabs, mobile sessions) still have stale references. Hitting checkout with a stale cart produces a 500 error from a foreign-key violation on the `order_items` INSERT. The customer sees a generic payment failure with no path to recovery.
+
+This is a real production failure mode for a real-world workflow: a vendor pulls an item at 8am because they sold out at the morning market; a customer who built their cart at 7:45am hits checkout at 8:15 and gets cryptic failure.
+
+**Scope:**
+
+- At checkout (in both `/api/create-payment-intent` and `/api/create-checkout`), validate every cart item's `catalogItemId` against the current `catalog_items` table BEFORE creating the order
+- For each missing or status-changed item (deleted, archived, hidden, sold-out), return a structured 400 response naming the affected items
+- Cart UI handles the response by removing the unavailable items, surfacing a banner ("These items are no longer available: X, Y"), and letting the customer review their updated cart before retrying
+- Consider also re-validating prices: if the vendor changed an item's price after the customer added it, the cart's price might be stale. Whether to enforce or just surface this is a UX call.
+- Pair with optional cart-page background validation: when the cart loads, validate items in the background and warn proactively, so the customer doesn't get the surprise at the payment step
+
+**Estimated effort:** Half a day for server-side validation + structured error response. Another half-day for cart UI handling. So 1 day total, single focused session.
+
+**Trigger:** Before public vendor outreach. The current behavior — a 500 with no recovery path — produces customer-side friction that a vendor would notice and complain about within their first few orders. Land before any real customer carts exist.
+
+---
+
 ## Tier 2 — Launch polish
 
 ### Forms & UI shadcn-svelte audit
@@ -171,7 +279,9 @@ Last updated: April 2026.
 
 **Scope:** Sweep `/`, `/for-bakeries`, `/for-farmers-markets`, and any other marketing pages for stale "menu," "preparing," "quick service," and other restaurant-DNA holdovers. The marketing homepage `status: 'Preparing'` reference is a known leftover. There may be more.
 
-**Estimated effort:** 1–2 hours for a thorough audit + edits.
+**Note:** The Homepage rewrite (v1) in Tier 1 includes the full marketing-site copy sweep as part of its scope. If that item lands first, this item is done.
+
+**Estimated effort:** 1–2 hours for a thorough audit + edits (if run standalone).
 
 **Trigger:** Before the first vendor outreach campaign sends prospects to these URLs.
 
@@ -291,7 +401,24 @@ Last updated: April 2026.
 
 **Estimated effort:** Medium — schema for customers table (or denormalize on orders), dashboard view, CSV export. Email sending itself can be deferred to a later add-on.
 
-**Trigger:** After Pickup Windows. This is the second wedge feature.
+**Trigger:** After first vendors are live and have real customers. The feature requires customers to exist before it delivers value — first-week vendors have an empty customer list, so surfacing the panel before orders arrive is noise, not signal. Evaluated for Tier 1 promotion; kept here because the value activates after the first orders arrive, not before.
+
+---
+
+### Polling efficiency for `/api/orders-latest`
+
+**Status:** Pending.
+
+**Why it matters:** Current implementation polls every 15 seconds. At 100 vendors with dashboards open 8 hours/day, that's ~192,000 requests/day — non-trivial Netlify Functions cost before there's revenue to justify it.
+
+**Scope:**
+
+- Phase 1: smarter polling — exponential backoff when no new orders, longer intervals when tab is unfocused. 1–2 hours.
+- Phase 2 (if needed): SSE (Server-Sent Events) for push-based updates. Native browser support, fits SvelteKit cleanly. Half a day if Phase 1 isn't sufficient.
+
+**Estimated effort:** 2 hours for smarter polling; add half a day if SSE is needed.
+
+**Trigger:** When polling cost becomes uncomfortable, or before scaling beyond ~25 vendors, whichever comes first.
 
 ---
 
@@ -363,6 +490,42 @@ Last updated: April 2026.
 
 ---
 
+### QuickBooks export integration
+
+**Status:** Pending.
+
+**Why it matters:** Bakeries and food vendors care about taxes. QuickBooks export is the highest-value accounting integration in their tooling stack.
+
+**Scope:**
+
+- Server endpoint producing QuickBooks-compatible CSV or QBXML (whichever format QuickBooks accepts cleanly)
+- Dashboard page where vendors download monthly/quarterly reports
+- Documentation on how to import into their QuickBooks instance
+
+**Estimated effort:** 3–5 days depending on format requirements.
+
+**Trigger:** 3+ vendors specifically request it. Don't build speculatively.
+
+---
+
+### Stripe Terminal integration
+
+**Status:** Pending.
+
+**Why it matters:** Retail vendors with physical counters (bakeries, farm stands with a shop) could let customers order ahead online, pick up at the counter, and add an in-person purchase to the same Stripe account.
+
+**Scope:**
+
+- Stripe Terminal SDK integration
+- Dashboard page for terminal management (pair, unpair, transaction log)
+- Receipt unification with online orders
+
+**Estimated effort:** 5–7 days. Real integration work.
+
+**Trigger:** 5+ retail vendors specifically request it.
+
+---
+
 ## Tier 4 — Punted
 
 ### Native mobile apps
@@ -395,6 +558,56 @@ Last updated: April 2026.
 
 ---
 
+### Deliberately not pursued
+
+The following were evaluated and consciously set aside — not deferred for later, but decided against. The reasoning is recorded here so the decision doesn't get re-litigated from scratch.
+
+---
+
+#### Venmo / CashApp / PayPal payment integrations
+
+Stripe already handles cards, ACH, Apple Pay, and Google Pay — 95% of payment volume. Adding Venmo/CashApp recreates the payment chaos this product sells vendors away from. Each has its own integration cost, fee structure, and dispute process. PayPal Checkout could be a one-day add via Stripe Connect if a specific vendor requests it; Venmo and CashApp business APIs are not worth the lift.
+
+---
+
+#### Subdomain per vendor (sunrise-bread.getorderlocal.com)
+
+Path-based URLs (`getorderlocal.com/sunrise-bread`) are simpler to build, share, and route. Subdomains require wildcard DNS, wildcard SSL, routing changes, and migration of every existing vendor link — for a marginally more branded URL that vendors who actually care about branding can already get via the custom-domain add-on.
+
+---
+
+#### Cloudflare migration (DNS or hosting)
+
+No measured need. Current stack (Namecheap DNS, Netlify hosting) works fine for current scale. Cloudflare's value is DDoS protection, edge caching, and Workers — none currently needed. Migrate when there's a specific, measured trigger; not preemptively.
+
+---
+
+#### Ticket-based support system (Help Scout, Front, Intercom, Zendesk)
+
+At fewer than 50 vendors, email forwarding to the founder inbox is sufficient. Ticket systems add structure and friction that costs more than it saves at this scale. Migrate when volume requires it.
+
+---
+
+#### Loyalty/rewards as a marketed feature
+
+Schema scaffolding stays in the codebase for fast reactivation if vendors ask. But loyalty/rewards should NOT appear as a value prop on marketing pages. The Homepage rewrite (v1) in Tier 1 should make no mention of loyalty or rewards.
+
+---
+
+#### Redis / Memcache caching
+
+SvelteKit load-function caching and Postgres-on-Neon are sufficient for current scale. Adding Redis preemptively introduces a new service to monitor and a new failure mode without measured benefit. When there's a specific measured bottleneck — name what's slow, name what gets cached, name the expected speedup — revisit.
+
+**Trigger if revisited:** 50+ vendors with measurable page-load complaints. Until then, prefer query efficiency (indexes, N+1 elimination), which costs nothing operationally.
+
+---
+
+#### Mailchimp / HubSpot CRM integrations
+
+The customer-email-capture roadmap item covers most of the "build a customer list" need natively. CRM integrations add complexity for marginal additional value. Vendors who need full CRM workflows are not the wedge audience; redirect them to use CSV exports.
+
+---
+
 ## Working notes
 
 ### Standing conventions reminder
@@ -409,7 +622,11 @@ Items added to this roadmap should specify, at minimum:
 
 ### Re-prioritization cadence
 
-Review this list before any new build cycle. Specifically: when a build cycle is about to start, ask "did anything on this list become more urgent than what I was about to build?" Then proceed. The roadmap is a checkpoint, not a queue.
+Review this list before any new build cycle. Specifically: when a build cycle is about to start, ask "did anything on this list become more urgent than what I was about to build?" The primary Tier 1 question is: "does this affect what a new vendor encounters in their first week?" If yes, it belongs in Tier 1. Then proceed. The roadmap is a checkpoint, not a queue.
+
+### Evidence-gated items
+
+Items in Tier 3 and Tier 4 should not be built without explicit vendor evidence: a specific request, a measured friction point, or a named cohort that needs the feature to convert. "Seems useful" is not sufficient. Name the vendors, name the ask, name the expected behavior change. Items already in Tier 3 with a trigger condition stay there until the trigger fires.
 
 ### Item lifecycle
 

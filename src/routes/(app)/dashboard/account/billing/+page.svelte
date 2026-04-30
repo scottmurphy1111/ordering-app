@@ -272,7 +272,7 @@
 					<div class="h-2 w-full rounded-full bg-muted">
 						<div
 							class="h-2 rounded-full transition-all {atLimit
-								? 'bg-destructive/100'
+								? 'bg-destructive'
 								: nearLimit
 									? 'bg-amber-400'
 									: 'bg-primary'}"

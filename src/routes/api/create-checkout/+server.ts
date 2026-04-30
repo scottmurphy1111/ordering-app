@@ -14,6 +14,7 @@ import {
 	buildSnapshotFromWindow,
 	type PickupWindowSnapshot
 } from '$lib/server/pickup/checkout';
+import { HORIZON_DAYS } from '$lib/server/pickup/lifecycle';
 
 function getStripe(secretKey: string) {
 	return new Stripe(secretKey);
@@ -127,6 +128,8 @@ export const POST: RequestHandler = async ({ request }) => {
 	let resolvedPickupLocationId: number | null = null;
 	let resolvedPickupWindowSnapshot: PickupWindowSnapshot | null = null;
 
+	let initialStatus: typeof orders.status._.data = 'received';
+
 	if (pickupWindowId) {
 		const result = await validateWindowForCheckout(pickupWindowId, vendorRecord.id);
 		if (!result.valid) throw error(400, result.reason);
@@ -134,6 +137,8 @@ export const POST: RequestHandler = async ({ request }) => {
 		resolvedPickupLocationId = result.window.locationId;
 		resolvedPickupWindowSnapshot = buildSnapshotFromWindow(result.window);
 		resolvedScheduledFor = result.window.startsAt;
+		const horizonCutoff = new Date(Date.now() + HORIZON_DAYS * 24 * 60 * 60 * 1000);
+		if (result.window.startsAt > horizonCutoff) initialStatus = 'scheduled';
 	}
 
 	const orderNumber = generateOrderNumber();
@@ -147,7 +152,7 @@ export const POST: RequestHandler = async ({ request }) => {
 			customerEmail: customer.email || null,
 			customerPhone: customer.phone || null,
 			type: orderType,
-			status: 'received',
+			status: initialStatus,
 			paymentStatus: 'pending',
 			subtotal,
 			tax,

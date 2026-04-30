@@ -1019,6 +1019,60 @@ for the wedge audience; vendors opt in.
 
 ---
 
+## Verification protocol
+
+Static and behavioral verification are not interchangeable. Claude Code performs static checks; the human performs behavioral checks. A phase is not closed until BOTH have run.
+
+### What Claude Code verifies (the static report)
+
+Claude Code's verification report includes ONLY:
+
+- `bun run check` result (exact output)
+- `bun run build` result (exact output)
+- File diff summary (created, modified, deleted)
+- Code-level inspection: implementation matches prompt specifications
+- Logical traces: code paths follow expected sequences
+
+Claude Code's static report ends with:
+
+**"Static checks complete. Behavioral verification required before this phase closes. Pending checks listed below."**
+
+Followed by a list of every behavioral check from the prompt, with the SQL queries, browser steps, or other instructions the human needs to run.
+
+### What Claude Code does NOT verify
+
+Claude Code does not write "PASS" against any item that requires:
+
+- Running the app in a browser
+- Querying the database for actual row state
+- Placing test orders, clicking buttons, or observing UI behavior
+- Confirming a runtime value matches an expected value
+- Checking a network response, email render, or any I/O behavior
+
+If the prompt asks for these, Claude Code lists them as "Pending behavioral verification" with concrete instructions for the human, not as "PASS."
+
+### Phase prompts use explicit tags
+
+Every verification step in a phase prompt is tagged:
+
+- `[STATIC]` — Claude Code can verify from code or build output alone
+- `[BEHAVIORAL]` — requires runtime exercise; the human runs it
+
+Examples:
+
+- `[STATIC] bun run check passes with zero errors`
+- `[STATIC] The createTemplate action calls materializeTemplate after the insert`
+- `[BEHAVIORAL] Place a test order against a future window; confirm the order's pickup_window_snapshot.notes matches the window's notes at order time`
+- `[BEHAVIORAL] Edit a template after orders exist; query the DB and confirm orderless future occurrences regenerate while orderful ones remain`
+
+In the final report, `[STATIC]` items show real evidence; `[BEHAVIORAL]` items show "Pending — human runs this" with the exact steps and queries.
+
+### Why this exists
+
+Static verification has caught zero load-bearing bugs in this codebase. Every real bug found through verification was found by behavioral testing — actual database queries, real browser clicks, observed runtime values. Treating "PASS by inspection" as equivalent to "PASS by observation" has hidden bugs that would have shipped to production. The protocol prevents that.
+
+---
+
 ## What Not to Do
 
 - ❌ Do not use `style={...}` inline — Tailwind only

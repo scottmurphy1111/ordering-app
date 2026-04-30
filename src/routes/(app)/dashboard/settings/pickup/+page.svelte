@@ -271,6 +271,33 @@
 			await update({ reset: false });
 		};
 	}
+
+	// ── Phase 8: per-occurrence override state ───────────────────────────────
+	const expandedOccurrences = new SvelteMap<number, boolean>();
+	let occurrenceError = $state<string | null>(null);
+	let occurrenceSavingId = $state<number | null>(null);
+
+	function handleOccurrenceEnhance(occId: number) {
+		occurrenceSavingId = occId;
+		occurrenceError = null;
+		return async ({
+			result,
+			update
+		}: {
+			result: { type: string; data?: Record<string, unknown> };
+			update: (opts?: { reset?: boolean }) => Promise<void>;
+		}) => {
+			if (result.type === 'failure') {
+				occurrenceError = (result.data?.occurrenceError as string) ?? 'Something went wrong.';
+				occurrenceSavingId = null;
+				return;
+			}
+			expandedOccurrences.set(occId, false);
+			occurrenceError = null;
+			occurrenceSavingId = null;
+			await update({ reset: false });
+		};
+	}
 </script>
 
 <div class="max-w-2xl">
@@ -1142,13 +1169,9 @@
 										{#if (data.upcomingByTemplate[tmpl.id] ?? []).length === 0}
 											<p class="text-xs italic text-muted-foreground">No upcoming occurrences.</p>
 										{:else}
-											<div class="space-y-1">
+											<div class="space-y-2">
 												{#each data.upcomingByTemplate[tmpl.id] as occ (occ.id)}
-													<div class="grid grid-cols-3 gap-2 text-xs">
-														<span class="font-medium text-foreground">{formatPreviewDate(occ.startsAt, data.timezone)}</span>
-														<span class="text-muted-foreground">{formatPreviewTime(occ.startsAt, data.timezone)}–{formatPreviewTime(occ.endsAt, data.timezone)}</span>
-														<span class="text-muted-foreground">Cutoff {formatPreviewDate(occ.cutoffAt, data.timezone)}, {formatPreviewTime(occ.cutoffAt, data.timezone)}</span>
-													</div>
+													{@render occurrenceRow(occ, tmpl)}
 												{/each}
 											</div>
 										{/if}
@@ -1250,13 +1273,9 @@
 									{#if (data.upcomingByTemplate[tmpl.id] ?? []).length === 0}
 										<p class="text-xs italic text-muted-foreground">No upcoming occurrences.</p>
 									{:else}
-										<div class="space-y-1">
+										<div class="space-y-2">
 											{#each data.upcomingByTemplate[tmpl.id] as occ (occ.id)}
-												<div class="grid grid-cols-3 gap-2 text-xs">
-													<span class="font-medium text-foreground">{formatPreviewDate(occ.startsAt, data.timezone)}</span>
-													<span class="text-muted-foreground">{formatPreviewTime(occ.startsAt, data.timezone)}–{formatPreviewTime(occ.endsAt, data.timezone)}</span>
-													<span class="text-muted-foreground">Cutoff {formatPreviewDate(occ.cutoffAt, data.timezone)}, {formatPreviewTime(occ.cutoffAt, data.timezone)}</span>
-												</div>
+												{@render occurrenceRow(occ, tmpl)}
 											{/each}
 										</div>
 									{/if}
@@ -1271,6 +1290,92 @@
 
 	<!-- Phase 8: per-occurrence overrides UI -->
 </div>
+
+{#snippet occurrenceRow(occ: { id: number; templateId: number | null; startsAt: Date; endsAt: Date; cutoffAt: Date; isCancelled: boolean; maxOrders: number | null; notes: string | null }, tmpl: { id: number; maxOrders: number | null })}
+	{@const isExpanded = expandedOccurrences.get(occ.id) ?? false}
+	{@const isOccCancelled = occ.isCancelled}
+	{@const isModified = !isOccCancelled && (occ.notes !== null || occ.maxOrders !== null)}
+	<div class="overflow-hidden rounded-md border {isOccCancelled ? 'border-red-100' : isExpanded ? 'border-primary/30' : 'border-gray-200'}">
+		<button
+			type="button"
+			class="flex w-full items-center gap-2 px-2 py-1.5 text-left text-xs transition-colors hover:bg-gray-50 {isOccCancelled ? 'bg-red-50/40 opacity-70' : ''}"
+			onclick={() => expandedOccurrences.set(occ.id, !isExpanded)}
+		>
+			<div class="flex min-w-0 flex-1 flex-wrap items-baseline gap-x-3 gap-y-0.5">
+				<span class="font-medium text-foreground">{formatPreviewDate(occ.startsAt, data.timezone)}</span>
+				<span class="text-muted-foreground">{formatPreviewTime(occ.startsAt, data.timezone)}–{formatPreviewTime(occ.endsAt, data.timezone)}</span>
+				<span class="text-muted-foreground">Cutoff {formatPreviewDate(occ.cutoffAt, data.timezone)}, {formatPreviewTime(occ.cutoffAt, data.timezone)}</span>
+			</div>
+			<div class="flex shrink-0 items-center gap-1.5">
+				{#if isOccCancelled}
+					<span class="rounded-full bg-red-100 px-1.5 py-0.5 text-[10px] font-medium text-red-600">Cancelled</span>
+				{:else if isModified}
+					<span class="rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-medium text-amber-700">Modified</span>
+				{/if}
+				<Icon icon="mdi:chevron-down" class="h-3.5 w-3.5 text-muted-foreground transition-transform {isExpanded ? 'rotate-180' : ''}" />
+			</div>
+		</button>
+		{#if isExpanded}
+			<div class="border-t border-gray-100 px-3 pb-3 pt-2">
+				{#if occurrenceError && occurrenceSavingId === occ.id}
+					<p class="mb-2 text-xs text-destructive">{occurrenceError}</p>
+				{/if}
+				<form method="post" action="?/updateOccurrence" use:enhance={() => handleOccurrenceEnhance(occ.id)} autocomplete="off">
+					<input type="hidden" name="occurrenceId" value={occ.id} />
+					{#if isOccCancelled}
+						<p class="mb-3 text-xs text-muted-foreground">This date is cancelled and hidden from the customer slot selector.</p>
+						<input type="hidden" name="isCancelled" value="false" />
+						<input type="hidden" name="maxOrders" value="" />
+						<input type="hidden" name="notes" value="" />
+						<button type="submit" class="rounded-md border border-gray-200 bg-white px-2.5 py-1 text-xs font-medium text-gray-700 transition-colors hover:bg-gray-50">Restore this date</button>
+					{:else}
+						<div class="space-y-3">
+							<label class="flex cursor-pointer items-center gap-2">
+								<input type="checkbox" name="isCancelled" value="true" class="h-3.5 w-3.5 rounded" />
+								<span class="text-xs text-foreground">Cancel this date</span>
+							</label>
+							<div>
+								<label class="mb-1 block text-xs font-medium text-muted-foreground" for="occ-cap-{occ.id}">Capacity override</label>
+								<input
+									id="occ-cap-{occ.id}"
+									type="number"
+									name="maxOrders"
+									min="1"
+									value={occ.maxOrders ?? ''}
+									placeholder={tmpl.maxOrders ? String(tmpl.maxOrders) : 'No limit'}
+									class="w-24 rounded-md border border-gray-200 px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-green-500"
+								/>
+								<p class="mt-0.5 text-[10px] text-muted-foreground">Template default: {tmpl.maxOrders ? `${tmpl.maxOrders} orders` : 'No cap'}</p>
+							</div>
+							<div>
+								<label class="mb-1 block text-xs font-medium text-muted-foreground" for="occ-notes-{occ.id}">Note for customers</label>
+								<textarea
+									id="occ-notes-{occ.id}"
+									name="notes"
+									maxlength="500"
+									rows="2"
+									placeholder="E.g. Pickup at side door this week"
+									class="w-full resize-none rounded-md border border-gray-200 px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-green-500"
+								>{occ.notes ?? ''}</textarea>
+								<p class="mt-0.5 text-[10px] text-muted-foreground">Shown to customers in the slot selector for this date only. Max 500 characters.</p>
+							</div>
+							<div class="flex items-center gap-2">
+								<button type="submit" class="rounded-md bg-green-600 px-2.5 py-1 text-xs font-medium text-white transition-colors hover:bg-green-700">
+									{occurrenceSavingId === occ.id ? 'Saving…' : 'Save changes'}
+								</button>
+								<button
+									type="button"
+									onclick={() => { expandedOccurrences.set(occ.id, false); occurrenceError = null; }}
+									class="rounded-md border border-gray-200 px-2.5 py-1 text-xs font-medium text-gray-600 transition-colors hover:bg-gray-50"
+								>Cancel</button>
+							</div>
+						</div>
+					{/if}
+				</form>
+			</div>
+		{/if}
+	</div>
+{/snippet}
 
 {#snippet occurrencePreviewBlock()}
 	<div class="rounded-lg border border-dashed bg-muted/30 p-4">

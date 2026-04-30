@@ -29,14 +29,17 @@ export const load: PageServerLoad = async ({ locals }) => {
 				templateId: pickupWindows.templateId,
 				startsAt: pickupWindows.startsAt,
 				endsAt: pickupWindows.endsAt,
-				cutoffAt: pickupWindows.cutoffAt
+				cutoffAt: pickupWindows.cutoffAt,
+				isCancelled: pickupWindows.isCancelled,
+				maxOrders: pickupWindows.maxOrders,
+				notes: pickupWindows.notes
 			})
 			.from(pickupWindows)
 			.where(
 				and(
 					eq(pickupWindows.vendorId, vendorId),
-					gt(pickupWindows.startsAt, now),
-					eq(pickupWindows.isCancelled, false)
+					gt(pickupWindows.startsAt, now)
+					// Phase 8: include cancelled occurrences so vendors can see and restore them
 				)
 			)
 			.orderBy(asc(pickupWindows.startsAt))
@@ -310,6 +313,57 @@ export const actions: Actions = {
 		await materializeTemplate(id);
 
 		return { toggleTemplateSuccess: true };
+	},
+
+	// ── Per-occurrence overrides (Phase 8) ──────────────────────────────────
+
+	updateOccurrence: async ({ request, locals }) => {
+		const vendorId = locals.vendorId!;
+		const formData = await request.formData();
+
+		const id = parseInt(formData.get('occurrenceId')?.toString() ?? '');
+		if (isNaN(id)) return fail(400, { occurrenceError: 'Invalid occurrence.' });
+
+		// IDOR guard
+		const win = await db.query.pickupWindows.findFirst({
+			where: and(eq(pickupWindows.id, id), eq(pickupWindows.vendorId, vendorId))
+		});
+		if (!win) return fail(403, { occurrenceError: 'Occurrence not found.' });
+
+		// Fetch template default for maxOrders normalization
+		const tmpl = win.templateId
+			? await db.query.pickupWindowTemplates.findFirst({
+					where: eq(pickupWindowTemplates.id, win.templateId),
+					columns: { maxOrders: true }
+				})
+			: null;
+		const templateDefaultMaxOrders = tmpl?.maxOrders ?? null;
+
+		// isCancelled: checkbox sends 'true' when checked; absent when unchecked → false
+		const isCancelled = formData.get('isCancelled') === 'true';
+
+		// maxOrders: blank → null; value matching template default → null (not a meaningful override)
+		const maxOrdersRaw = formData.get('maxOrders')?.toString().trim() ?? '';
+		let maxOrders: number | null = null;
+		if (maxOrdersRaw !== '') {
+			const parsed = parseInt(maxOrdersRaw);
+			if (isNaN(parsed) || parsed < 1)
+				return fail(400, { occurrenceError: 'Capacity must be at least 1.' });
+			maxOrders = parsed !== templateDefaultMaxOrders ? parsed : null;
+		}
+
+		// notes: blank/whitespace-only → null
+		const notesRaw = formData.get('notes')?.toString().trim() ?? '';
+		if (notesRaw.length > 500)
+			return fail(400, { occurrenceError: 'Notes must be 500 characters or fewer.' });
+		const notes = notesRaw || null;
+
+		await db
+			.update(pickupWindows)
+			.set({ isCancelled, maxOrders, notes })
+			.where(and(eq(pickupWindows.id, id), eq(pickupWindows.vendorId, vendorId)));
+
+		return { updateOccurrenceSuccess: true };
 	},
 
 	// Soft delete: sets is_active = false. The template is hidden from the UI immediately.
