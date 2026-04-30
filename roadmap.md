@@ -18,26 +18,6 @@ Items vendors will encounter in their first week of use. The bar is "first impre
 - Polish here is intentional; polish elsewhere is deferred until evidence justifies it
 - When something feels mostly-done but not quite, it stays here until it's actually done
 
-### Pickup Windows feature (THE WEDGE)
-
-**Status:** Not started. Single biggest piece of work between now and launch.
-
-**Why it matters:** This is the actual differentiator from ChowNow, Square, and every restaurant-first competitor. Pre-order with a defined pickup window (Saturday market 9am–noon, Thursday at the shop, Thanksgiving 9am–2pm only) is what makes Order Local fit makers/bakers/growers/farmers market vendors. Without it, the wedge is a slogan, not a product.
-
-**Scope:**
-
-- New schema tables: `pickup_locations` (name, address, notes), `pickup_windows` (location FK, start/end datetime, recurrence rule, cutoff datetime, customer-visible notes, per-window inventory caps)
-- Vendor dashboard: replace the current free-form Schedule UI with a structured Pickup Windows manager. Create/edit/delete windows. Recurring weekly schedules (e.g., "every Saturday 9am–noon at Cobblestone Market until Nov 30"). One-off special-event windows (Thanksgiving, holidays). Per-window inventory caps and cutoff times.
-- Customer-facing storefront: at checkout, customer picks a pickup window from the available set. Sold-out windows hide or disable. Cutoff-passed windows hide.
-- Order list: orders group by pickup window so a vendor can see "everything to bring to Saturday's market" in one view.
-- Order lifecycle reshape happens here — adds a "Scheduled" state for orders placed for a future window. (Previously deferred separately; consolidating into Pickup Windows because doing it independently would generate ~30% rework when this feature lands.)
-
-**Estimated effort:** Multi-week. Phase-gated: schema + migration → vendor manager UI → customer checkout integration → order list grouping → lifecycle reshape.
-
-**Trigger:** Next major prompt after CatalogItemForm extraction lands.
-
----
-
 ### 30-min vendor setup gauntlet test
 
 **Status:** Pending — Scott to run himself.
@@ -91,7 +71,7 @@ Items vendors will encounter in their first week of use. The bar is "first impre
 
 **Estimated effort:** Modest — checklist component + per-page empty states. 3–5 days.
 
-**Trigger:** After Pickup Windows lands and the dashboard's information architecture is stable.
+**Trigger:** After Pickup Windows lands and the dashboard's information architecture is stable. **Trigger fired: Pickup Windows shipped Apr 2026 — ready to prioritize.**
 
 ---
 
@@ -156,9 +136,9 @@ Items vendors will encounter in their first week of use. The bar is "first impre
 
 ### Vendor timezone field in onboarding
 
-**Status:** Pending. Created from Pickup Windows Phase 0 design.
+**Status:** Pending. `vendors.timezone` column is live (shipped in Pickup Windows Phase 1, defaulting to `America/New_York`). The missing piece is the self-serve onboarding field so vendors outside Eastern time can set their own zone at signup.
 
-**Why:** Pickup Windows Phase 1 adds `vendors.timezone` as a required column with a migration default of `America/New_York` for existing vendors. This default is fine while only NC-based vendors exist, but any vendor signing up from outside Eastern time will silently get the wrong timezone applied to their pickup windows — meaning RRULE materialization expands "Saturday 9am" in the wrong zone, the cutoff comparison runs against wrong wall-clock time, and the customer-facing slot selector displays times the vendor didn't intend.
+**Why:** The `vendors.timezone` column defaults to `America/New_York` for all existing and new vendors. Any vendor signing up from outside Eastern time will silently get the wrong timezone applied to their pickup windows — meaning RRULE materialization expands "Saturday 9am" in the wrong zone, the cutoff comparison runs against wrong wall-clock time, and the customer-facing slot selector displays times the vendor didn't intend.
 
 **Scope:**
 
@@ -175,9 +155,9 @@ Items vendors will encounter in their first week of use. The bar is "first impre
 
 ### Drizzle snapshot rebuild
 
-**Status:** Pending. Surfaced during Pickup Windows Phase 1.
+**Status:** Pending. Overdue — see trigger note below.
 
-**Why:** `bun run db:generate` is currently broken — it requires interactive TTY because the Drizzle snapshot in `drizzle/meta/` is stale. The baseline snapshot only reflects migration 0000; migrations 0001–0003 (and now 0004, 0005) were all written manually. Each manual migration compounds the drift. By Phase 4 of Pickup Windows (occurrence generation, which will need another migration if any new fields land), this drift will be deep enough that any attempt to run `db:generate` will produce nonsense — diffing against a stale baseline rather than current reality.
+**Why:** `bun run db:generate` is currently broken — it requires interactive TTY because the Drizzle snapshot in `drizzle/meta/` is stale. The baseline snapshot only reflects migration 0000; all subsequent migrations (through Phase 8) were written manually. Each manual migration compounds the drift.
 
 **Scope:**
 
@@ -190,7 +170,7 @@ Items vendors will encounter in their first week of use. The bar is "first impre
 
 **Estimated effort:** 2–4 hours. Risk is low (introspect is read-only, nothing to break) but the reconciliation step is where time goes if drift is found.
 
-**Trigger:** Before Pickup Windows Phase 4 (the next phase that's likely to add migrations). Letting it slip past Phase 4 means Phase 4's migration is also hand-written, deepening the problem.
+**Trigger:** Before Pickup Windows Phase 4. **Trigger fired: Pickup Windows shipped through Phase 8 (Apr 2026) — all migrations were hand-written, drift is now deep. This item is overdue; prioritize before any future schema changes.**
 
 ---
 
@@ -210,7 +190,7 @@ Items vendors will encounter in their first week of use. The bar is "first impre
 
 **Estimated effort:** 1–2 hours including verification that the function actually fires on schedule (Netlify's UI shows function run logs).
 
-**Trigger:** Before any vendor's first pickup window template ages past the 12-week horizon. In practice: anytime in the 4–6 weeks after Phase 4 ships. Easy to forget — worth landing soon after Phase 4, not at the last minute.
+**Trigger:** Before any vendor's first pickup window template ages past the 12-week horizon. **Trigger fired: Pickup Windows shipped Apr 2026 and vendors are creating templates now. The 12-week clock is running. Wire this before the first templates age out.**
 
 ---
 
@@ -330,7 +310,7 @@ This is a real production failure mode for a real-world workflow: a vendor pulls
 
 **Estimated effort:** Audit is 1 hour; implementation depends on what's surfaced. Likely half a day total if a few fields need adding.
 
-**Trigger:** After Pickup Windows lands, since the feature will reshape Settings IA anyway. Don't audit General twice.
+**Trigger:** After Pickup Windows lands, since the feature will reshape Settings IA anyway. Don't audit General twice. **Trigger fired: Pickup Windows shipped Apr 2026 — ready to prioritize.**
 
 ---
 
@@ -369,25 +349,6 @@ This is a real production failure mode for a real-world workflow: a vendor pulls
 **Estimated effort:** 30 min audit. Fixes depend.
 
 **Trigger:** Before vendor outreach. This is a "does the product deliver on its promise" check.
-
----
-
-### Order snapshot pattern documentation in CLAUDE.md
-
-**Status:** Pending. Risk-flagged.
-
-**Why:** Bug 1 ($NaN order detail) was caused by order JSONB snapshot shape drift. The fix landed but the pattern isn't codified. Future Pickup Windows work will likely need to write to and read from the same snapshot, and without docs the same drift can recur.
-
-**Scope:** Add a CLAUDE.md section documenting:
-
-- Order JSONB snapshot canonical shape (`basePrice` + `selectedModifiers: []`)
-- That `orderItems.unitPrice` reads from `li.basePrice` in the snapshot
-- Rule: any code that writes to or reads from the order snapshot must conform to this shape
-- Migration strategy if the shape needs to change in the future
-
-**Estimated effort:** 1 hour. Pure documentation.
-
-**Trigger:** Before starting Pickup Windows feature work — ideally during the planning phase of that prompt so the snapshot shape is locked in before new write paths are added.
 
 ---
 
@@ -476,7 +437,7 @@ This is a real production failure mode for a real-world workflow: a vendor pulls
 
 **Scope:** Public page per vendor showing their upcoming pickup windows in calendar form. "Here's where to find us this month." Marketing surface for the vendor.
 
-**Trigger:** After Pickup Windows is in production AND a vendor specifically asks for this view (don't build on speculation).
+**Trigger:** After Pickup Windows is in production AND a vendor specifically asks for this view (don't build on speculation). **Pickup Windows trigger fired Apr 2026 — waiting on vendor request.**
 
 ---
 
@@ -486,7 +447,7 @@ This is a real production failure mode for a real-world workflow: a vendor pulls
 
 **Scope:** Vendors can export their pickup-window schedule to their personal calendar. Customers can subscribe to a vendor's window calendar.
 
-**Trigger:** Same as above.
+**Trigger:** After Pickup Windows is in production AND a vendor specifically asks for this. **Pickup Windows trigger fired Apr 2026 — waiting on vendor request.**
 
 ---
 
