@@ -9,6 +9,7 @@
 	import { Badge } from '$lib/components/ui/badge';
 	import { Card, CardContent } from '$lib/components/ui/card';
 	import { Skeleton } from '$lib/components/ui/skeleton';
+	import SetupChecklist from '$lib/components/SetupChecklist.svelte';
 	import {
 		Table,
 		TableHeader,
@@ -152,6 +153,10 @@
 		{/if}
 	</div>
 
+	{#if !data.setupChecklist.allComplete}
+		<SetupChecklist checklist={data.setupChecklist} />
+	{/if}
+
 	<!-- Stats grid -->
 	<div class="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
 		{#if !mounted}
@@ -239,44 +244,6 @@
 			</Card>
 		{/if}
 	</div>
-
-	<!-- Onboarding banners -->
-	{#if mounted}
-		{#if !data.stripeConnected}
-			<div class="mb-4 flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3.5">
-				<Icon icon="mdi:credit-card-outline" class="mt-0.5 h-5 w-5 shrink-0 text-amber-600" />
-				<div class="min-w-0 flex-1">
-					<p class="text-sm font-semibold text-amber-900">Connect Stripe to accept payments</p>
-					<p class="mt-0.5 text-xs text-amber-700">
-						Customers can't check out until your Stripe account is connected.
-					</p>
-				</div>
-				<a
-					href={resolve('/dashboard/settings/integrations')}
-					class="shrink-0 rounded-md bg-amber-600 px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-amber-700"
-				>
-					Connect Stripe
-				</a>
-			</div>
-		{/if}
-		{#if data.stats.items === 0}
-			<div class="mb-4 flex items-start gap-3 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3.5">
-				<Icon icon="mdi:silverware-fork-knife" class="mt-0.5 h-5 w-5 shrink-0 text-blue-600" />
-				<div class="min-w-0 flex-1">
-					<p class="text-sm font-semibold text-blue-900">Your menu is empty</p>
-					<p class="mt-0.5 text-xs text-blue-700">
-						Add your first item so customers can start placing orders.
-					</p>
-				</div>
-				<a
-					href={resolve('/dashboard/catalog/items/new')}
-					class="shrink-0 rounded-md bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-blue-700"
-				>
-					Add item
-				</a>
-			</div>
-		{/if}
-	{/if}
 
 	<!-- Quick actions -->
 	<section class="mb-8">

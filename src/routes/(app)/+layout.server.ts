@@ -23,6 +23,7 @@ export const load: LayoutServerLoad = async ({ locals, url }) => {
 		user: locals.user,
 		vendor: locals.vendor ?? null,
 		vendorId: locals.vendorId ?? null,
+		vendorRole: locals.vendorRole ?? null,
 		hasMultipleVendors: vendorCount > 1,
 		isDevBypass: env.DEV_BYPASS_AUTH === 'true'
 	};

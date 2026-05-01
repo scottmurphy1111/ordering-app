@@ -2,12 +2,13 @@ import type { PageServerLoad } from './$types';
 import { db } from '$lib/server/db';
 import { eq, sql } from 'drizzle-orm';
 import { catalogItems, catalogCategories, orders, orderItems } from '$lib/server/db/schema';
+import { getSetupChecklist } from '$lib/server/setup/checklist';
 
 export const load: PageServerLoad = async ({ locals, depends }) => {
 	depends('app:overview');
 	const vendorId = locals.vendorId!;
 
-	const [itemCount, categoryCount, orderStats, topItemsRows, orderTypeSplitRows] =
+	const [itemCount, categoryCount, orderStats, topItemsRows, orderTypeSplitRows, setupChecklist] =
 		await Promise.all([
 			db
 				.select({ count: sql<number>`count(*)` })
@@ -47,7 +48,9 @@ export const load: PageServerLoad = async ({ locals, depends }) => {
 				})
 				.from(orders)
 				.where(eq(orders.vendorId, vendorId))
-				.groupBy(orders.type)
+				.groupBy(orders.type),
+
+			getSetupChecklist(vendorId)
 		]);
 
 	const recentOrders = await db.query.orders.findMany({
@@ -66,7 +69,7 @@ export const load: PageServerLoad = async ({ locals, depends }) => {
 	});
 
 	return {
-		stripeConnected: !!locals.vendor?.stripeSecretKey,
+		setupChecklist,
 		stats: {
 			items: Number(itemCount[0]?.count ?? 0),
 			categories: Number(categoryCount[0]?.count ?? 0),

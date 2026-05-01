@@ -61,20 +61,6 @@ Items vendors will encounter in their first week of use. The bar is "first impre
 
 ---
 
-### Vendor onboarding walkthrough
-
-**Status:** Pending.
-
-**Scope:** First-time vendor checklist on the dashboard Overview page. Items: "Add logo / Add first item / Set pickup hours / Share link." Audience-appropriate empty states across the dashboard so a new vendor never sees a blank screen with no next action.
-
-**Why:** The merchants who hit "first real order" stay; the ones who don't, churn. Onboarding completion is the leading indicator of retention.
-
-**Estimated effort:** Modest — checklist component + per-page empty states. 3–5 days.
-
-**Trigger:** After Pickup Windows lands and the dashboard's information architecture is stable. **Trigger fired: Pickup Windows shipped Apr 2026 — ready to prioritize.**
-
----
-
 ### Tutorial videos and how-to page
 
 **Status:** Pending.
@@ -134,88 +120,6 @@ Items vendors will encounter in their first week of use. The bar is "first impre
 
 ---
 
-### Vendor timezone field in onboarding
-
-**Status:** Pending. `vendors.timezone` column is live (shipped in Pickup Windows Phase 1, defaulting to `America/New_York`). The missing piece is the self-serve onboarding field so vendors outside Eastern time can set their own zone at signup.
-
-**Why:** The `vendors.timezone` column defaults to `America/New_York` for all existing and new vendors. Any vendor signing up from outside Eastern time will silently get the wrong timezone applied to their pickup windows — meaning RRULE materialization expands "Saturday 9am" in the wrong zone, the cutoff comparison runs against wrong wall-clock time, and the customer-facing slot selector displays times the vendor didn't intend.
-
-**Scope:**
-
-- Add a timezone field (IANA selector or auto-detect from browser) to the vendor signup or first-run onboarding flow
-- Default to detected timezone, let vendor confirm or change
-- Surface vendor timezone read-only on Settings/General so vendors can see what's set and contact support if it's wrong
-- No need for vendor-initiated TZ changes after first set — that's a support flow, not a self-serve feature
-
-**Estimated effort:** Half a day. Small scope but blocks any non-Eastern-TZ vendor from signing up successfully.
-
-**Trigger:** Before the first vendor outreach campaign that could reach a vendor outside Eastern time. If outreach stays Triad-area NC for the first wave, this can wait. The moment outreach goes broader, this is required.
-
----
-
-### Drizzle snapshot rebuild
-
-**Status:** Pending. Overdue — see trigger note below.
-
-**Why:** `bun run db:generate` is currently broken — it requires interactive TTY because the Drizzle snapshot in `drizzle/meta/` is stale. The baseline snapshot only reflects migration 0000; all subsequent migrations (through Phase 8) were written manually. Each manual migration compounds the drift.
-
-**Scope:**
-
-- Run `drizzle-kit introspect` against the dev Neon database to rebuild a snapshot from current truth
-- Verify the introspected snapshot matches the schema source files exactly (any disagreement is a real bug — schema and DB have drifted)
-- Reconcile any drift found (expected: zero or near-zero, since manual migrations have been disciplined)
-- Replace the stale snapshot with the introspected one
-- Confirm `bun run db:generate` runs cleanly without interactive TTY against a fresh schema change (test by adding a no-op column, generating, then reverting)
-- Document in CLAUDE.md: "schema changes go through `db:generate` — no manual SQL migrations" as a project convention going forward
-
-**Estimated effort:** 2–4 hours. Risk is low (introspect is read-only, nothing to break) but the reconciliation step is where time goes if drift is found.
-
-**Trigger:** Before Pickup Windows Phase 4. **Trigger fired: Pickup Windows shipped through Phase 8 (Apr 2026) — all migrations were hand-written, drift is now deep. This item is overdue; prioritize before any future schema changes.**
-
----
-
-### Production cron wiring — Pickup Windows materialization
-
-**Status:** Pending. Created from Pickup Windows Phase 4 design.
-
-**Why:** Phase 4 builds the materialization endpoint at `/api/cron/materialize` (auth-protected, callable via HTTP). Phase 4 deliberately does NOT wire up the Netlify Scheduled Function that calls it nightly — that's deploy infrastructure, not feature code, and it doesn't matter operationally until the rolling 12-week horizon starts to age (roughly 4+ weeks after the first template is saved). On-save materialization handles immediate cases.
-
-**Scope:**
-
-- Create `netlify/functions/materialize.mts` — a thin (~10 line) Netlify Scheduled Function that calls `https://getorderlocal.com/api/cron/materialize` with the `Authorization: Bearer $CRON_SECRET` header
-- Add the `@netlify/functions` package as a dependency
-- Add a `[[scheduled-functions]]` stanza to `netlify.toml` pointing at the function file with a daily schedule (suggest: `cron = "0 7 * * *"` — 7am UTC, ~2–3am Eastern, low traffic window)
-- Set the `CRON_SECRET` env var in Netlify deploy environment
-- Document the deploy-side configuration in CLAUDE.md and/or README
-
-**Estimated effort:** 1–2 hours including verification that the function actually fires on schedule (Netlify's UI shows function run logs).
-
-**Trigger:** Before any vendor's first pickup window template ages past the 12-week horizon. **Trigger fired: Pickup Windows shipped Apr 2026 and vendors are creating templates now. The 12-week clock is running. Wire this before the first templates age out.**
-
----
-
-### Cart validation against current catalog
-
-**Status:** Pending. Surfaced during Pickup Windows Phase 5 verification.
-
-**Why:** The cart references catalog items by ID. When a vendor archives or deletes an item, customers with open carts (in-flight tabs, mobile sessions) still have stale references. Hitting checkout with a stale cart produces a 500 error from a foreign-key violation on the `order_items` INSERT. The customer sees a generic payment failure with no path to recovery.
-
-This is a real production failure mode for a real-world workflow: a vendor pulls an item at 8am because they sold out at the morning market; a customer who built their cart at 7:45am hits checkout at 8:15 and gets cryptic failure.
-
-**Scope:**
-
-- At checkout (in both `/api/create-payment-intent` and `/api/create-checkout`), validate every cart item's `catalogItemId` against the current `catalog_items` table BEFORE creating the order
-- For each missing or status-changed item (deleted, archived, hidden, sold-out), return a structured 400 response naming the affected items
-- Cart UI handles the response by removing the unavailable items, surfacing a banner ("These items are no longer available: X, Y"), and letting the customer review their updated cart before retrying
-- Consider also re-validating prices: if the vendor changed an item's price after the customer added it, the cart's price might be stale. Whether to enforce or just surface this is a UX call.
-- Pair with optional cart-page background validation: when the cart loads, validate items in the background and warn proactively, so the customer doesn't get the surprise at the payment step
-
-**Estimated effort:** Half a day for server-side validation + structured error response. Another half-day for cart UI handling. So 1 day total, single focused session.
-
-**Trigger:** Before public vendor outreach. The current behavior — a 500 with no recovery path — produces customer-side friction that a vendor would notice and complain about within their first few orders. Land before any real customer carts exist.
-
----
-
 ## Tier 2 — Launch polish
 
 ### Forms & UI shadcn-svelte audit
@@ -253,6 +157,32 @@ This is a real production failure mode for a real-world workflow: a vendor pulls
 
 ---
 
+### `locals.vendor` staleness in dev-bypass mode
+
+**Status:** Pending. Surfaced during setup checklist implementation.
+
+**Why it matters:** `locals.vendor` is cached in memory in dev-bypass mode (intentional optimization in `ensureDevSeed()`). Any function reading from `locals.vendor` for derivation logic gets stale data when the underlying DB row changes. Production is unaffected because `handleVendorContext` queries fresh per request, but dev verification of any feature touching these surfaces produces unreliable results.
+
+**Affected surfaces (audit completed):**
+
+- `/checkout/+page.server.ts:15` — reads `locals.vendor` for Stripe keys and vendor settings. Highest risk: stale Stripe keys would produce incorrect payment behavior in dev testing.
+- `dashboard/analytics/+page.server.ts:9` — reads `locals.vendor?.addons` for feature gating. Low risk: addon changes are rare.
+- `settings/pickup/+page.server.ts:10` — reads `locals.vendor!.timezone` for display. Low risk: timezone changes are rare.
+
+**Pattern fix:** functions that derive logic from `locals.vendor` should query fresh from DB (using vendorId) instead of trusting the passed object. The setup checklist (`src/lib/server/setup/checklist.ts`) is the canonical pattern.
+
+**Scope:**
+
+- Update checkout to query Stripe keys / vendor settings fresh (or at minimum query Stripe keys fresh, leaving non-financial fields alone)
+- Decide whether analytics and pickup-timezone surfaces are worth fixing (low impact suggests no)
+- CLAUDE.md note codifying "derivation logic queries fresh, don't trust locals.vendor" already exists from the checklist work
+
+**Estimated effort:** 1-2 hours for checkout (single-surface fix, narrow blast radius). Analytics and timezone surfaces are 30 min each if desired.
+
+**Trigger:** Before any dev workflow involves real Stripe testing (the 30-min vendor setup gauntlet, the Stripe Connect end-to-end test). If those tests touch checkout in dev mode, the staleness bug would produce confusing failures.
+
+---
+
 ### Marketing site copy sweep
 
 **Status:** Pending. Tier 2 cleanup landed inside the dashboard but didn't touch marketing pages by design.
@@ -284,11 +214,9 @@ This is a real production failure mode for a real-world workflow: a vendor pulls
 - Top Items panel: when no orders exist, render an empty state with copy like "No orders yet — share your storefront link to get started" plus a one-click action (copy link / view storefront)
 - Order Type panel: similar treatment with audience-appropriate copy
 - Reconsider whether Overview needs both panels at all when there's no data — collapsing to a single "get started" panel may read better than two empty boxes
-- This work pairs naturally with the broader onboarding flow (Tier 1) but stands alone as a polish item
-
 **Estimated effort:** 2–4 hours including copy decisions.
 
-**Trigger:** Before vendor onboarding flow lands, OR as standalone polish whenever the Overview page is being touched for another reason.
+**Trigger:** Standalone polish — whenever the Overview page is being touched for another reason.
 
 ---
 
@@ -392,12 +320,6 @@ This is a real production failure mode for a real-world workflow: a vendor pulls
 **Scope:** Better image handling — resize/crop UI, multiple photos per item, drag-and-drop reorder, image optimization for the storefront.
 
 **Trigger:** When vendors complain or when the storefront's photo grid needs to look more professional than what raw uploads produce.
-
----
-
-### Onboarding flow + audience-appropriate empty states
-
-(See Tier 1 — same item. If it doesn't land in Tier 1, it slides here.)
 
 ---
 

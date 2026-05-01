@@ -824,6 +824,12 @@ proper `<Dialog>` primitive with explicit confirm/cancel buttons. Current callsi
 - Query params (`?status=received`, `?category=breads`) are always the source
   of truth for filter state. Read via `$page.url.searchParams`.
 
+### Mobile header
+
+The mobile header (`md:hidden` in `+layout.svelte`) is `sticky top-0 z-30` so the hamburger remains accessible during scroll. Desktop is `md:static md:z-auto` — the persistent sidebar provides navigation and a sticky decorative header would steal vertical space. The Sheet/drawer overlay sits at `z-50`, above the sticky header.
+
+The hamburger uses a plain `<button>` rather than shadcn `<Button variant="ghost">` because ghost's `hover:bg-accent` conflicts unpredictably with explicit dark-surface hover overrides. Hover convention matches sidebar nav links: `hover:bg-gray-800`. Tier 2 shadcn audit should add a "dark surface" Button variant to resolve this properly.
+
 ---
 
 ## Loading & Skeleton States
@@ -1137,6 +1143,25 @@ In the final report, `[STATIC]` items show real evidence; `[BEHAVIORAL]` items s
 ### Why this exists
 
 Static verification has caught zero load-bearing bugs in this codebase. Every real bug found through verification was found by behavioral testing — actual database queries, real browser clicks, observed runtime values. Treating "PASS by inspection" as equivalent to "PASS by observation" has hidden bugs that would have shipped to production. The protocol prevents that.
+
+---
+
+## /vendors redirect
+
+`/vendors` auto-redirects to `/dashboard` for users with exactly 1 active vendor membership (`isActive = true`). Internal users (`isInternal = true`) always see the picker. Use `/vendors?manage=true` to deliberately access the picker regardless (e.g., from a future "Manage shops" entry point). Multi-vendor users always see the picker. There is no modal tour — the setup checklist on `/dashboard` handles all onboarding guidance.
+
+---
+
+## Dashboard setup checklist
+
+The dashboard's setup checklist (`src/lib/components/SetupChecklist.svelte`) derives completion from existing state — no completion flags are stored. Derivation sources:
+
+- **Stripe**: `vendors.stripeSecretKey IS NOT NULL`
+- **Pickup windows**: at least 1 active `pickup_window_templates` row for the vendor
+- **Catalog**: at least 1 `catalog_items` row with `status = 'available'` for the vendor
+- **Branding**: `vendors.logoUrl IS NOT NULL`
+
+The checklist auto-hides when all 4 steps complete and re-appears if a step regresses (e.g. Stripe key removed). The utility lives in `src/lib/server/setup/checklist.ts` and runs its three DB queries (vendor row + pickup count + catalog count) in parallel via `Promise.all`. It is called from the dashboard `+page.server.ts` inside the existing `Promise.all` to avoid sequential round trips. Derivation queries source from DB directly, not from `locals.vendor` — `locals.vendor` can be stale in dev-bypass mode.
 
 ---
 

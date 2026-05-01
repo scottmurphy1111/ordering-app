@@ -11,7 +11,7 @@ function canCreateVendor(isInternal: boolean, userVendors: Array<{ role: string 
 	return userVendors.some((v) => v.role === 'owner');
 }
 
-export const load: PageServerLoad = async ({ locals }) => {
+export const load: PageServerLoad = async ({ locals, url }) => {
 	const userId = locals.user!.id;
 
 	const userVendors = await db
@@ -32,7 +32,13 @@ export const load: PageServerLoad = async ({ locals }) => {
 
 	userVendors.sort((a, b) => a.name.localeCompare(b.name));
 
+	const manageOverride = url.searchParams.get('manage') === 'true';
 	const isInternal = locals.user!.isInternal;
+
+	if (!manageOverride && !isInternal && userVendors.length === 1 && userVendors[0].isActive === true) {
+		throw redirect(303, '/dashboard');
+	}
+
 	const canCreate = canCreateVendor(isInternal, userVendors);
 	return { vendors: userVendors, isInternal, canCreate };
 };

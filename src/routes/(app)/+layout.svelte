@@ -2,12 +2,17 @@
 	import type { LayoutData } from './$types';
 	import { page } from '$app/state';
 	import { resolve } from '$app/paths';
-	import { afterNavigate } from '$app/navigation';
+	import { afterNavigate, goto } from '$app/navigation';
 	import { signOut } from '$lib/auth-client';
+	import {
+		DropdownMenu,
+		DropdownMenuContent,
+		DropdownMenuTrigger,
+		DropdownMenuItem,
+		DropdownMenuSeparator
+	} from '$lib/components/ui/dropdown-menu';
 	import Icon from '@iconify/svelte';
-	import AppTour from '$lib/components/AppTour.svelte';
 	import ConfirmModal from '$lib/components/ConfirmModal.svelte';
-	import { tourState } from '$lib/tour-state.svelte';
 	import { Button } from '$lib/components/ui/button';
 
 	import { onMount } from 'svelte';
@@ -16,11 +21,6 @@
 	let { data, children }: { data: LayoutData; children: import('svelte').Snippet } = $props();
 
 	let sidebarOpen = $state(false);
-
-	// Let the tour open the sidebar on mobile when it needs to highlight a nav item
-	$effect(() => {
-		if (tourState.openSidebar) sidebarOpen = true;
-	});
 
 	// ── New order alert ──────────────────────────────────────────────────────
 	let lastKnownOrderId = $state(0);
@@ -159,57 +159,76 @@
 		{/each}
 	</nav>
 
-	<!-- User + Switch Shop -->
-	<div class="space-y-2 border-t border-white/10 px-4 pt-6 pb-3">
+	<!-- Account section -->
+	<div class="space-y-1 border-t border-white/10 px-2 pt-3 pb-3">
 		{#if data.hasMultipleVendors}
 			<a
 				href={resolve('/vendors')}
-				class="flex items-center gap-1.5 text-xs text-muted-foreground transition-colors hover:text-white"
+				class="flex items-center gap-2.5 rounded-md px-3 py-2 text-sm font-normal text-muted-foreground transition-colors hover:bg-gray-800 hover:text-white"
 			>
-				<Icon icon="mdi:swap-horizontal" class="h-3.5 w-3.5" />
+				<Icon icon="mdi:swap-horizontal" class="h-4 w-4 shrink-0" />
 				Switch shop
 			</a>
 		{/if}
-		<a
-			href={resolve('/dashboard/account/profile')}
-			class="flex items-center gap-1.5 text-xs text-muted-foreground transition-colors hover:text-white"
-		>
-			<Icon icon="mdi:account-circle-outline" class="h-3.5 w-3.5" />
-			Account
-		</a>
 		{#if data.user.isInternal}
 			<a
 				href={resolve('/admin/vendors')}
-				class="flex items-center gap-1.5 text-xs text-muted-foreground transition-colors hover:text-white"
+				class="flex items-center gap-2.5 rounded-md px-3 py-2 text-sm font-normal text-muted-foreground transition-colors hover:bg-gray-800 hover:text-white"
 			>
-				<Icon icon="mdi:shield-crown-outline" class="h-3.5 w-3.5" />
+				<Icon icon="mdi:shield-crown-outline" class="h-4 w-4 shrink-0" />
 				Admin panel
 			</a>
 		{/if}
-		<div class="truncate">
-			<p class="text-xs text-muted-foreground/60">Signed in as</p>
-			<p class="truncate text-xs text-muted-foreground">{data.user.email}</p>
-		</div>
-		<Button
-			onclick={() => {
-				if (data.isDevBypass) {
-					window.location.href = '/dev-signout';
-				} else {
-					signOut({
-						fetchOptions: {
-							onSuccess: () => {
-								window.location.href = '/login';
-							}
+
+		<!-- Identity card -->
+		<DropdownMenu>
+			<DropdownMenuTrigger
+				class="w-full rounded-lg border border-white/8 bg-white/6 px-3 py-2.5 text-left transition-colors hover:bg-white/9 focus:outline-none"
+			>
+				<div class="flex items-center gap-2.5">
+					<div
+						class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary text-sm font-medium text-white"
+					>
+						{data.user.email.split('@')[0]?.[0]?.toUpperCase() ?? '?'}
+					</div>
+					<div class="min-w-0 flex-1">
+						<p class="truncate text-xs font-medium text-white">{data.user.email}</p>
+						{#if data.vendorRole}
+							<p class="text-[11px] capitalize text-white/45">{data.vendorRole}</p>
+						{/if}
+					</div>
+					<Icon icon="lucide:more-horizontal" class="h-4 w-4 shrink-0 text-white/40" />
+				</div>
+			</DropdownMenuTrigger>
+			<DropdownMenuContent align="end" side="top">
+				<DropdownMenuItem
+					onclick={() => goto(resolve('/dashboard/account/profile'))}
+				>
+					<Icon icon="mdi:account-circle-outline" class="h-4 w-4" />
+					Account settings
+				</DropdownMenuItem>
+				<DropdownMenuSeparator />
+				<DropdownMenuItem
+					variant="destructive"
+					onclick={() => {
+						if (data.isDevBypass) {
+							window.location.href = '/dev-signout';
+						} else {
+							signOut({
+								fetchOptions: {
+									onSuccess: () => {
+										window.location.href = '/login';
+									}
+								}
+							});
 						}
-					});
-				}
-			}}
-			variant="ghost"
-			size="sm"
-			class="text-xs text-muted-foreground hover:bg-background/10 hover:text-red-400"
-		>
-			Sign out
-		</Button>
+					}}
+				>
+					<Icon icon="mdi:logout" class="h-4 w-4" />
+					Sign out
+				</DropdownMenuItem>
+			</DropdownMenuContent>
+		</DropdownMenu>
 	</div>
 {/snippet}
 
@@ -233,16 +252,18 @@
 	<!-- Main content -->
 	<main class="flex flex-1 flex-col overflow-y-auto">
 		<!-- Mobile top bar -->
-		<header class="flex items-center gap-3 border-b bg-gray-900 px-4 py-3 md:hidden">
-			<Button
+		<header class="sticky top-0 z-30 md:static md:z-auto flex items-center gap-3 border-b bg-gray-900 px-4 py-3 md:hidden">
+			<!-- Plain <button> instead of shadcn <Button variant="ghost">: ghost's
+			     hover:bg-accent conflicts unpredictably with class-level hover overrides
+			     on dark surfaces. Tier 2 shadcn audit should standardize a "dark surface"
+			     Button variant; until then, plain element with explicit hover classes. -->
+			<button
 				onclick={() => (sidebarOpen = true)}
-				variant="ghost"
-				size="icon-sm"
-				class="shrink-0 text-white/70 hover:text-white"
+				class="shrink-0 rounded-md p-2 text-white/70 transition-colors hover:bg-gray-800 hover:text-white active:bg-gray-700"
 				aria-label="Open menu"
 			>
 				<Icon icon="mdi:menu" class="h-6 w-6" />
-			</Button>
+			</button>
 			<a href={resolve('/vendors')} class="flex min-w-0 flex-1 items-center gap-2.5">
 				{#if data.vendor?.logoUrl}
 					<img
@@ -324,5 +345,4 @@
 	</div>
 {/if}
 
-<AppTour />
 <ConfirmModal />

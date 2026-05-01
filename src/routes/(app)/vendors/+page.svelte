@@ -3,7 +3,6 @@
 	import { enhance } from'$app/forms';
 	import type { PageData, ActionData } from'./$types';
 	import Icon from'@iconify/svelte';
-	import { tourState } from'$lib/tour-state.svelte';
 	import { Button } from'$lib/components/ui/button';
 	import { Card, CardContent, CardHeader, CardTitle } from'$lib/components/ui/card';
 	import {
@@ -49,11 +48,6 @@
 				)
 			: data.vendors
 	);
-
-	function startTour() {
-		showCreate = false;
-		tourState.active = true;
-	}
 
 	function toSlug(name: string) {
 		return name
@@ -133,7 +127,6 @@
 
 		{#if data.canCreate && !showCreate}
 			<Button
-				data-tour="create-vendor"
 				onclick={() => (showCreate = true)}
 				variant="outline"
 				class="w-full border-primary text-primary hover:bg-primary/5 hover:text-primary"
@@ -250,11 +243,5 @@
 			</Card>
 		{/if}
 
-		<div class="mt-6 flex justify-center">
-			<Button onclick={startTour} variant="ghost" size="sm" class="gap-1.5 text-muted-foreground hover:text-muted-foreground">
-				<Icon icon="mdi:rocket-launch-outline" class="h-4 w-4" />
-				Getting Started
-			</Button>
-		</div>
 	</div>
 </div>
