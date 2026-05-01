@@ -1,13 +1,40 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
 	import { enhance } from'$app/forms';
 	import type { PageData, ActionData } from'./$types';
 	import Icon from'@iconify/svelte';
 	import { tourState } from'$lib/tour-state.svelte';
 	import { Button } from'$lib/components/ui/button';
 	import { Card, CardContent, CardHeader, CardTitle } from'$lib/components/ui/card';
+	import {
+		Select,
+		SelectTrigger,
+		SelectContent,
+		SelectItem,
+		SelectValue,
+		SelectGroup,
+		SelectGroupHeading,
+		SelectSeparator
+	} from '$lib/components/ui/select';
 	import { BUSINESS_TYPES, businessTypeLabel } from '$lib/utils/business-type-labels';
+	import { US_TIMEZONES, getAllTimezones, getTimezoneLabel } from '$lib/utils/timezones';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
+
+	const US_TZ_SET = new Set(US_TIMEZONES.map((t) => t.value));
+	const otherTimezones = getAllTimezones().filter((tz) => !US_TZ_SET.has(tz));
+
+	let typeValue = $state('bakery');
+	let timezoneValue = $state('America/New_York');
+
+	onMount(() => {
+		try {
+			const detected = Intl.DateTimeFormat().resolvedOptions().timeZone;
+			if (detected) timezoneValue = detected;
+		} catch {
+			// keep default
+		}
+	});
 
 	let showCreate = $state(false);
 	let slugValue = $state('');
@@ -162,15 +189,44 @@
 							<label class="mb-1 block text-sm font-medium text-muted-foreground" for="type"
 								>Business type</label
 							>
-							<select
-								id="type"
-								name="type"
-								class="w-full rounded-md border px-3 py-2 text-sm focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
+							<Select type="single" name="type" bind:value={typeValue}>
+								<SelectTrigger id="type" class="w-full">
+									<SelectValue>
+										{BUSINESS_TYPES.find((bt) => bt.value === typeValue)?.label ?? 'Select type'}
+									</SelectValue>
+								</SelectTrigger>
+								<SelectContent>
+									{#each BUSINESS_TYPES as bt (bt.value)}
+										<SelectItem value={bt.value}>{bt.label}</SelectItem>
+									{/each}
+								</SelectContent>
+							</Select>
+						</div>
+
+						<div>
+							<label class="mb-1 block text-sm font-medium text-muted-foreground" for="timezone"
+								>Timezone</label
 							>
-								{#each BUSINESS_TYPES as bt (bt.value)}
-									<option value={bt.value}>{bt.label}</option>
-								{/each}
-							</select>
+							<Select type="single" name="timezone" bind:value={timezoneValue}>
+								<SelectTrigger id="timezone" class="w-full">
+									<SelectValue>{getTimezoneLabel(timezoneValue)}</SelectValue>
+								</SelectTrigger>
+								<SelectContent class="max-h-100">
+									<SelectGroup>
+										<SelectGroupHeading>United States</SelectGroupHeading>
+										{#each US_TIMEZONES as tz (tz.value)}
+											<SelectItem value={tz.value}>{tz.label}</SelectItem>
+										{/each}
+									</SelectGroup>
+									<SelectSeparator />
+									<SelectGroup>
+										<SelectGroupHeading>All timezones</SelectGroupHeading>
+										{#each otherTimezones as tz (tz)}
+											<SelectItem value={tz}>{tz}</SelectItem>
+										{/each}
+									</SelectGroup>
+								</SelectContent>
+							</Select>
 						</div>
 
 						<label class="flex cursor-pointer items-center gap-2 rounded-lg border bg-muted/40 px-3 py-2.5">

@@ -12,10 +12,14 @@
 		SelectTrigger,
 		SelectContent,
 		SelectItem,
-		SelectValue
+		SelectValue,
+		SelectGroup,
+		SelectGroupHeading,
+		SelectSeparator
 	} from '$lib/components/ui/select';
 	import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '$lib/components/ui/card';
 	import { BUSINESS_TYPES } from '$lib/utils/business-type-labels';
+	import { US_TIMEZONES, getAllTimezones, getTimezoneLabel } from '$lib/utils/timezones';
 
 	let { data, form: _form }: { data: PageData; form: ActionData } = $props();
 	const form = $derived(_form as (ActionData & { deliverySuccess?: boolean }) | null);
@@ -52,6 +56,14 @@
 	];
 
 	const businessTypes = BUSINESS_TYPES;
+
+	const US_TZ_SET = new Set(US_TIMEZONES.map((t) => t.value));
+	const otherTimezones = getAllTimezones().filter((tz) => !US_TZ_SET.has(tz));
+
+	let timezoneValue = $state('America/New_York');
+	$effect(() => {
+		timezoneValue = data.info?.timezone ?? 'America/New_York';
+	});
 
 	const savedCheckout = $derived(
 		(
@@ -240,6 +252,29 @@
 						value={address?.country ?? ''}
 						placeholder="US"
 					/>
+				</div>
+				<div class="sm:w-2/3">
+					<Label class="mb-1 block" for="timezone">Timezone</Label>
+					<Select type="single" name="timezone" bind:value={timezoneValue}>
+						<SelectTrigger id="timezone" class="w-full">
+							<SelectValue>{getTimezoneLabel(timezoneValue)}</SelectValue>
+						</SelectTrigger>
+						<SelectContent class="max-h-100">
+							<SelectGroup>
+								<SelectGroupHeading>United States</SelectGroupHeading>
+								{#each US_TIMEZONES as tz (tz.value)}
+									<SelectItem value={tz.value}>{tz.label}</SelectItem>
+								{/each}
+							</SelectGroup>
+							<SelectSeparator />
+							<SelectGroup>
+								<SelectGroupHeading>All timezones</SelectGroupHeading>
+								{#each otherTimezones as tz (tz)}
+									<SelectItem value={tz}>{tz}</SelectItem>
+								{/each}
+							</SelectGroup>
+						</SelectContent>
+					</Select>
 				</div>
 			</CardContent>
 			<CardFooter>

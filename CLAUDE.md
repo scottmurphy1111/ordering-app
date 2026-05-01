@@ -754,6 +754,47 @@ class="border-red-300 focus:ring-red-500"
 
 ---
 
+## Label vs Value Rendering
+
+DB values are canonical (lowercase enum, snake_case, IANA strings). Labels are human-readable. Never render a raw value where a label belongs.
+
+**Pattern for Select triggers:**
+
+```svelte
+let typeValue = $state('bakery');
+
+<Select type="single" name="type" bind:value={typeValue}>
+  <SelectTrigger>
+    <SelectValue>
+      {BUSINESS_TYPES.find((bt) => bt.value === typeValue)?.label ?? 'Select type'}
+    </SelectValue>
+  </SelectTrigger>
+  ...
+</Select>
+```
+
+`bind:value` submits `'bakery'` to the server; the user sees `'Bakery'`. Don't rely on bits-ui's implicit label lookup for pre-set values — it fails when `SelectContent` hasn't mounted yet.
+
+**Rules:**
+
+- Select triggers — always resolve label from the canonical list via `.find()`, never render the raw value string
+- Badges and status pills — `capitalize` covers single-word statuses; for multi-word enums (`sold_out`, `food_truck`, `in_production`) use an explicit labels map
+- Table cells and summary text showing enum columns — resolve label before rendering
+- The `preparing` status renders as "In production" everywhere a vendor sees it (see Order lifecycle section)
+
+**Where raw values ARE correct:**
+
+- `value` attribute on form inputs and hidden inputs
+- `name`/`action` attributes
+- Server-side logic, DB queries, URL slugs
+
+**Centralized label sources:**
+
+- `BUSINESS_TYPES` in `src/lib/utils/business-type-labels.ts` — vendor type
+- When adding a new enum to the schema, add its labels map at the same time. Don't scatter label resolution across components.
+
+---
+
 ## Confirmation Dialogs
 
 Required before any destructive or irreversible action (delete, cancel order,
@@ -835,6 +876,14 @@ Skeleton count matches expected result count.
   When parsing or comparing time-column values, always split on `:` and take the first two
   parts, OR normalize before comparison. Current consumers: `pickup_window_templates.window_start`
   / `window_end`. Phase 4 materialization will be the next.
+- **Vendor timezone** is stored in `vendors.timezone` as an IANA string (e.g. `"America/Chicago"`).
+  Default is `"America/New_York"`. Validate with `new Intl.DateTimeFormat('en-US', { timeZone })` —
+  it throws on invalid values. The timezone UI helper lives in `src/lib/utils/timezones.ts`:
+  `US_TIMEZONES` (7 US entries with friendly labels) and `getAllTimezones()` (full IANA list via
+  `Intl.supportedValuesOf('timeZone')` with fallback). Always use these — never hardcode timezone
+  lists inline. In client components that need the browser's local timezone, auto-detect in
+  `onMount` with `Intl.DateTimeFormat().resolvedOptions().timeZone`; SSR initializes to the
+  default, `onMount` corrects to the user's browser timezone.
 
 ---
 

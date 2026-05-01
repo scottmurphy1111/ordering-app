@@ -15,6 +15,7 @@ import {
 	type PickupWindowSnapshot
 } from '$lib/server/pickup/checkout';
 import { HORIZON_DAYS } from '$lib/server/pickup/lifecycle';
+import { validateCartItems } from '$lib/server/cart/validate';
 
 function getStripe(secretKey: string) {
 	return new Stripe(secretKey);
@@ -62,8 +63,6 @@ export const POST: RequestHandler = async ({ request }) => {
 		deliveryAddress,
 		scheduledFor,
 		pickupWindowId,
-		subtotal,
-		tax,
 		tip,
 		promoCode,
 		isSubscription,
@@ -80,10 +79,31 @@ export const POST: RequestHandler = async ({ request }) => {
 
 	const stripe = getStripe(vendorRecord.stripeSecretKey);
 
+	// Cart item validation — runs before Stripe so we never charge for unavailable items.
+	// Subscriptions never send pickupWindowId and this block is naturally skipped for them.
+	const cartResult = await validateCartItems(items, vendorRecord.id);
+	if (!cartResult.valid) {
+		return json(
+			{ type: 'cart_validation_failed', unavailable: cartResult.unavailable },
+			{ status: 400 }
+		);
+	}
+	const validatedItems = cartResult.validatedItems;
+
+	// Recompute totals from validated (current-price) items — server is authoritative.
+	// Tax is 0 for subscription carts.
 	const vendorSettings = vendorRecord.settings as {
+		taxRate?: number;
 		deliveryFee?: number;
 		enableDelivery?: boolean;
 	} | null;
+	const taxRate = vendorSettings?.taxRate ?? 0.0825;
+	const serverSubtotal = validatedItems.reduce(
+		(s, item) => s + itemUnitPrice(item) * item.quantity,
+		0
+	);
+	const serverTax = isSubscription ? 0 : Math.round(serverSubtotal * taxRate);
+
 	const verifiedDeliveryFee =
 		orderType === 'delivery' && vendorSettings?.enableDelivery
 			? (vendorSettings.deliveryFee ?? 0)
@@ -108,17 +128,17 @@ export const POST: RequestHandler = async ({ request }) => {
 			promoRecord.isActive &&
 			(!promoRecord.expiresAt || now <= promoRecord.expiresAt) &&
 			(promoRecord.maxUses === null || promoRecord.usedCount < promoRecord.maxUses) &&
-			subtotal >= promoRecord.minOrderAmount;
+			serverSubtotal >= promoRecord.minOrderAmount;
 
 		if (valid && promoRecord) {
-			verifiedDiscount = calcDiscount(promoRecord.type, promoRecord.amount, subtotal);
+			verifiedDiscount = calcDiscount(promoRecord.type, promoRecord.amount, serverSubtotal);
 			verifiedPromoCode = promoRecord.code;
 		}
 	}
 
 	const verifiedTotal = Math.max(
 		0,
-		subtotal + tax + (tip ?? 0) + verifiedDeliveryFee - verifiedDiscount
+		serverSubtotal + serverTax + (tip ?? 0) + verifiedDeliveryFee - verifiedDiscount
 	);
 
 	// Pickup window validation — runs before Stripe so we never charge for an invalid slot.
@@ -154,14 +174,14 @@ export const POST: RequestHandler = async ({ request }) => {
 			type: orderType,
 			status: initialStatus,
 			paymentStatus: 'pending',
-			subtotal,
-			tax,
+			subtotal: serverSubtotal,
+			tax: serverTax,
 			deliveryFee: verifiedDeliveryFee,
 			tip: tip ?? 0,
 			discount: verifiedDiscount,
 			promoCode: verifiedPromoCode,
 			total: verifiedTotal,
-			items: items,
+			items: validatedItems,
 			deliveryAddress: deliveryAddress || null,
 			notes: notes || null,
 			scheduledFor: resolvedScheduledFor,
@@ -172,7 +192,7 @@ export const POST: RequestHandler = async ({ request }) => {
 		.returning({ id: orders.id });
 
 	await db.insert(orderItems).values(
-		items.map((item) => ({
+		validatedItems.map((item) => ({
 			orderId: newOrder.id,
 			catalogItemId: item.itemId ?? null,
 			name: item.name,
@@ -187,7 +207,7 @@ export const POST: RequestHandler = async ({ request }) => {
 
 	if (isSubscription) {
 		const stripeInterval = billingInterval === 'yearly' ? 'year' : 'month';
-		const subLineItems = items.map((item) => ({
+		const subLineItems = validatedItems.map((item) => ({
 			quantity: item.quantity,
 			price_data: {
 				currency: 'usd',
@@ -218,7 +238,7 @@ export const POST: RequestHandler = async ({ request }) => {
 			})
 			.where(eq(orders.id, newOrder.id));
 	} else {
-		const lineItems = items.map((item) => ({
+		const lineItems = validatedItems.map((item) => ({
 			quantity: item.quantity,
 			price_data: {
 				currency: 'usd',
@@ -231,10 +251,10 @@ export const POST: RequestHandler = async ({ request }) => {
 			}
 		}));
 
-		if (tax > 0) {
+		if (serverTax > 0) {
 			lineItems.push({
 				quantity: 1,
-				price_data: { currency: 'usd', unit_amount: tax, product_data: { name: 'Tax' } }
+				price_data: { currency: 'usd', unit_amount: serverTax, product_data: { name: 'Tax' } }
 			});
 		}
 		if (tip && tip > 0) {

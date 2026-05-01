@@ -16,6 +16,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 			email: true,
 			website: true,
 			address: true,
+			timezone: true,
 			settings: true
 		}
 	});
@@ -45,8 +46,15 @@ export const actions: Actions = {
 		const state = formData.get('state')?.toString().trim() || null;
 		const zip = formData.get('zip')?.toString().trim() || null;
 		const country = formData.get('country')?.toString().trim() || null;
+		const timezone = formData.get('timezone')?.toString().trim() || 'America/New_York';
 
 		if (!name) return fail(400, { error: 'Business name is required.' });
+
+		try {
+			new Intl.DateTimeFormat('en-US', { timeZone: timezone });
+		} catch {
+			return fail(400, { error: 'Invalid timezone.' });
+		}
 
 		const address = { street, city, state, zip, country };
 
@@ -60,6 +68,7 @@ export const actions: Actions = {
 				email,
 				website,
 				address,
+				timezone,
 				updatedAt: new Date()
 			})
 			.where(eq(vendor.id, vendorId));

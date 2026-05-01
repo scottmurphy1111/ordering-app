@@ -100,6 +100,15 @@ export const cart = {
 		persist();
 	},
 
+	updateItemPrice(itemId: number, newPrice: number) {
+		for (const item of _items) {
+			if (item.itemId === itemId) {
+				item.basePrice = newPrice;
+			}
+		}
+		persist();
+	},
+
 	clear() {
 		_items = [];
 		persist();

@@ -70,10 +70,18 @@ export const actions: Actions = {
 				| 'market_vendor'
 				| 'other') ?? 'bakery';
 
+		const timezone = formData.get('timezone')?.toString().trim() || 'America/New_York';
+
 		if (!name) return fail(400, { error: 'Name is required' });
 		if (!slug) return fail(400, { error: 'Slug is required' });
 		if (!/^[a-z0-9-]+$/.test(slug))
 			return fail(400, { error: 'Slug may only contain lowercase letters, numbers, and hyphens' });
+
+		try {
+			new Intl.DateTimeFormat('en-US', { timeZone: timezone });
+		} catch {
+			return fail(400, { error: 'Invalid timezone.' });
+		}
 
 		// Check slug uniqueness
 		const existing = await db.query.vendor.findFirst({ where: eq(vendor.slug, slug) });
@@ -82,7 +90,7 @@ export const actions: Actions = {
 		// Create vendor + assign owner in one transaction
 		const [newVendor] = await db
 			.insert(vendor)
-			.values({ name, slug, type, address: {}, timezone: 'America/New_York' })
+			.values({ name, slug, type, address: {}, timezone })
 			.returning({ id: vendor.id });
 
 		await db.insert(vendorUsers).values({

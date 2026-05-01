@@ -11,7 +11,44 @@
 
 	onMount(() => {
 		cart.init(data.vendorSlug);
+		validateCart();
 	});
+
+	async function validateCart() {
+		if (!cart.items.length) return;
+		try {
+			const res = await fetch('/api/validate-cart', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ vendorSlug: data.vendorSlug, items: cart.items })
+			});
+			if (!res.ok) return;
+			const result = await res.json();
+
+			if (result.unavailable?.length) {
+				const unavailableIds = new Set(
+					result.unavailable.map((u: { itemId: number }) => u.itemId)
+				);
+				for (let i = cart.items.length - 1; i >= 0; i--) {
+					if (unavailableIds.has(cart.items[i].itemId)) {
+						cart.remove(i);
+					}
+				}
+				unavailableItems = result.unavailable;
+			}
+
+			priceChanges = result.priceChanges ?? [];
+		} catch {
+			// Background validation fails silently
+		}
+	}
+
+	function applyPriceUpdates() {
+		for (const change of priceChanges) {
+			cart.updateItemPrice(change.itemId, change.currentPrice);
+		}
+		priceChanges = [];
+	}
 
 	let customerName = $state('');
 	let email = $state('');
@@ -28,6 +65,10 @@
 	let pickupTimeValue = $state('');
 	let loading = $state(false);
 	let checkoutError = $state<string | null>(null);
+	let unavailableItems = $state<{ itemId: number; name: string }[]>([]);
+	let priceChanges = $state<
+		{ itemId: number; name: string; cartPrice: number; currentPrice: number }[]
+	>([]);
 
 	// Minimum date (today) and a sensible default time (next 15-min slot + 30 min)
 	const today = new SvelteDate().toISOString().split('T')[0];
@@ -241,14 +282,25 @@
 					headers: { 'Content-Type': 'application/json' },
 					body: JSON.stringify({ ...commonPayload, isSubscription: true, billingInterval: subscriptionInterval })
 				});
-				const json = await res.json();
+				const result = await res.json();
 				if (!res.ok) {
-					checkoutError = json.message ?? 'Something went wrong.';
+					if (result.type === 'cart_validation_failed' && result.unavailable?.length) {
+						const unavailableIds = new Set(
+							result.unavailable.map((u: { itemId: number }) => u.itemId)
+						);
+						for (let i = cart.items.length - 1; i >= 0; i--) {
+							if (unavailableIds.has(cart.items[i].itemId)) cart.remove(i);
+						}
+						unavailableItems = result.unavailable;
+						checkoutError = null;
+					} else {
+						checkoutError = result.message ?? 'Something went wrong.';
+					}
 					loading = false;
 					return;
 				}
 				cart.clear();
-				window.location.href = json.url;
+				window.location.href = result.url;
 			} else {
 				// One-time orders use custom Payment Element checkout
 				const res = await fetch('/api/create-payment-intent', {
@@ -256,14 +308,25 @@
 					headers: { 'Content-Type': 'application/json' },
 					body: JSON.stringify(commonPayload)
 				});
-				const json = await res.json();
+				const result = await res.json();
 				if (!res.ok) {
-					checkoutError = json.message ?? 'Something went wrong.';
+					if (result.type === 'cart_validation_failed' && result.unavailable?.length) {
+						const unavailableIds = new Set(
+							result.unavailable.map((u: { itemId: number }) => u.itemId)
+						);
+						for (let i = cart.items.length - 1; i >= 0; i--) {
+							if (unavailableIds.has(cart.items[i].itemId)) cart.remove(i);
+						}
+						unavailableItems = result.unavailable;
+						checkoutError = null;
+					} else {
+						checkoutError = result.message ?? 'Something went wrong.';
+					}
 					loading = false;
 					return;
 				}
 				cart.clear();
-				window.location.href = `/${data.vendorSlug}/checkout?orderId=${json.orderId}`;
+				window.location.href = `/${data.vendorSlug}/checkout?orderId=${result.orderId}`;
 			}
 		} catch {
 			checkoutError = 'Network error. Please try again.';
@@ -295,6 +358,80 @@
 	</header>
 
 	<main class="mx-auto my-8 max-w-lg space-y-5 rounded-2xl bg-background/80 px-4 py-6 backdrop-blur-sm">
+		{#if unavailableItems.length > 0}
+			<div
+				class="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700"
+			>
+				<div class="flex items-start justify-between gap-2">
+					<div>
+						<p class="font-medium">
+							{unavailableItems.length === 1 ? 'An item was removed' : 'Some items were removed'}
+						</p>
+						<p class="mt-0.5 text-xs">
+							{unavailableItems.map((i) => i.name).join(', ')}
+							{unavailableItems.length === 1 ? 'is' : 'are'} no longer available and
+							{unavailableItems.length === 1 ? 'has' : 'have'} been removed from your cart.
+						</p>
+					</div>
+					<button
+						type="button"
+						onclick={() => {
+							unavailableItems = [];
+						}}
+						class="shrink-0 text-amber-500 hover:text-amber-700"
+						aria-label="Dismiss"
+					>
+						<Icon icon="mdi:close" class="h-4 w-4" />
+					</button>
+				</div>
+			</div>
+		{/if}
+
+		{#if priceChanges.length > 0}
+			<div
+				class="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700"
+			>
+				<div class="flex items-start justify-between gap-2">
+					<div>
+						<p class="font-medium">
+							{priceChanges.length === 1 ? 'A price has changed' : 'Some prices have changed'}
+						</p>
+						<ul class="mt-0.5 space-y-0.5 text-xs">
+							{#each priceChanges as change (change.itemId)}
+								<li>
+									{change.name}: ${(change.cartPrice / 100).toFixed(2)} → ${(change.currentPrice / 100).toFixed(2)}
+								</li>
+							{/each}
+						</ul>
+					</div>
+				</div>
+				<div class="mt-2 flex gap-2">
+					<button
+						type="button"
+						onclick={applyPriceUpdates}
+						class="rounded-md border border-amber-300 bg-amber-100 px-2.5 py-1 text-xs font-medium text-amber-800 transition-colors hover:bg-amber-200"
+					>
+						Update cart
+					</button>
+					<button
+						type="button"
+						onclick={() => {
+							priceChanges = [];
+						}}
+						class="rounded-md border border-amber-200 bg-transparent px-2.5 py-1 text-xs font-medium text-amber-700 transition-colors hover:bg-amber-100"
+					>
+						Dismiss
+					</button>
+				</div>
+			</div>
+		{/if}
+
+		{#if checkoutError}
+			<div class="rounded-lg border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+				{checkoutError}
+			</div>
+		{/if}
+
 		{#if cart.items.length === 0}
 			<div class="rounded-xl border border-dashed  p-12 text-center">
 				<p class="mb-3 text-muted-foreground">Your cart is empty.</p>
@@ -861,12 +998,6 @@
 				Please double-check your order before paying — changes can't be made once payment is
 				submitted.
 			</p>
-
-			{#if checkoutError}
-				<div class="rounded-lg border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-					{checkoutError}
-				</div>
-			{/if}
 
 			<button
 				onclick={checkout}

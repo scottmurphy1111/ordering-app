@@ -14,6 +14,7 @@ import {
 	type PickupWindowSnapshot
 } from '$lib/server/pickup/checkout';
 import { HORIZON_DAYS } from '$lib/server/pickup/lifecycle';
+import { validateCartItems } from '$lib/server/cart/validate';
 
 function generateOrderNumber(): string {
 	const ts = Date.now().toString(36).toUpperCase();
@@ -53,8 +54,6 @@ export const POST: RequestHandler = async ({ request }) => {
 		deliveryAddress,
 		scheduledFor,
 		pickupWindowId,
-		subtotal,
-		tax,
 		tip,
 		promoCode
 	} = body;
@@ -69,10 +68,29 @@ export const POST: RequestHandler = async ({ request }) => {
 
 	const stripe = new Stripe(vendorRecord.stripeSecretKey);
 
+	// Cart item validation — runs before Stripe so we never charge for unavailable items
+	const cartResult = await validateCartItems(items, vendorRecord.id);
+	if (!cartResult.valid) {
+		return json(
+			{ type: 'cart_validation_failed', unavailable: cartResult.unavailable },
+			{ status: 400 }
+		);
+	}
+	const validatedItems = cartResult.validatedItems;
+
+	// Recompute totals from validated (current-price) items — server is authoritative
 	const vendorSettings = vendorRecord.settings as {
+		taxRate?: number;
 		deliveryFee?: number;
 		enableDelivery?: boolean;
 	} | null;
+	const taxRate = vendorSettings?.taxRate ?? 0.0825;
+	const serverSubtotal = validatedItems.reduce(
+		(s, item) => s + itemUnitPrice(item) * item.quantity,
+		0
+	);
+	const serverTax = Math.round(serverSubtotal * taxRate);
+
 	const verifiedDeliveryFee =
 		orderType === 'delivery' && vendorSettings?.enableDelivery
 			? (vendorSettings.deliveryFee ?? 0)
@@ -97,17 +115,17 @@ export const POST: RequestHandler = async ({ request }) => {
 			promoRecord.isActive &&
 			(!promoRecord.expiresAt || now <= promoRecord.expiresAt) &&
 			(promoRecord.maxUses === null || promoRecord.usedCount < promoRecord.maxUses) &&
-			subtotal >= promoRecord.minOrderAmount;
+			serverSubtotal >= promoRecord.minOrderAmount;
 
 		if (valid && promoRecord) {
-			verifiedDiscount = calcDiscount(promoRecord.type, promoRecord.amount, subtotal);
+			verifiedDiscount = calcDiscount(promoRecord.type, promoRecord.amount, serverSubtotal);
 			verifiedPromoCode = promoRecord.code;
 		}
 	}
 
 	const verifiedTotal = Math.max(
 		0,
-		subtotal + tax + (tip ?? 0) + verifiedDeliveryFee - verifiedDiscount
+		serverSubtotal + serverTax + (tip ?? 0) + verifiedDeliveryFee - verifiedDiscount
 	);
 
 	// Pickup window validation — runs before Stripe so we never charge for an invalid slot
@@ -142,14 +160,14 @@ export const POST: RequestHandler = async ({ request }) => {
 			type: orderType,
 			status: initialStatus,
 			paymentStatus: 'pending',
-			subtotal,
-			tax,
+			subtotal: serverSubtotal,
+			tax: serverTax,
 			deliveryFee: verifiedDeliveryFee,
 			tip: tip ?? 0,
 			discount: verifiedDiscount,
 			promoCode: verifiedPromoCode,
 			total: verifiedTotal,
-			items: items,
+			items: validatedItems,
 			deliveryAddress: deliveryAddress || null,
 			notes: notes || null,
 			scheduledFor: resolvedScheduledFor,
@@ -160,7 +178,7 @@ export const POST: RequestHandler = async ({ request }) => {
 		.returning({ id: orders.id });
 
 	await db.insert(orderItems).values(
-		items.map((item) => ({
+		validatedItems.map((item) => ({
 			orderId: newOrder.id,
 			catalogItemId: item.itemId ?? null,
 			name: item.name,
