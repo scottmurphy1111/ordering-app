@@ -186,11 +186,100 @@ share. Specifically:
 
 Do **not** use local component state for any of the above. The URL is canonical.
 
+**Server load functions** read URL params using standard `url.searchParams` — server-side, no reactivity needed. The load function exposes initial values via `data`.
+
+**In components, use `SvelteURLSearchParams` for mutable filter/sort/pagination state.** The reactive params instance integrates with `$derived` and `$effect`. Initialize from `data` after load, mutate when the user changes filters, then `goto()` to sync the URL.
+
+```svelte
+<script>
+  import { SvelteURLSearchParams } from 'svelte/reactivity';
+  import { goto } from '$app/navigation';
+  import { resolve } from '$app/paths';
+
+  let { data } = $props();
+
+  // Reactive mirror of the URL params
+  const params = new SvelteURLSearchParams();
+  $effect(() => {
+    // Sync from data whenever the load function re-runs
+    params.delete('search');
+    params.delete('categoryId');
+    if (data.search) params.set('search', data.search);
+    if (data.categoryId) params.set('categoryId', String(data.categoryId));
+  });
+
+  function updateSearch(value) {
+    if (value) params.set('search', value);
+    else params.delete('search');
+    goto(resolve('/dashboard/catalog/items?' + params.toString()), {
+      replaceState: true,
+      noScroll: true,
+      keepFocus: true,
+    });
+  }
+</script>
+```
+
+**Reads happen against the params instance.** `params.get('search')`, `params.has('categoryId')` in `$derived` re-run reactively when params mutate.
+
+**The `$effect` syncing from `data` is required.** Without it, programmatic navigation (browser back/forward, link clicks that change params, invalidation) updates `data` but leaves the params instance stale.
+
 ### Svelte 5 runes
 
 This project uses Svelte 5. Use runes (`$state`, `$derived`, `$props`,
 `$effect`) for reactive state. Do not use Svelte 4 `let` reactive declarations
 or `$:` blocks in new code.
+
+### Svelte reactivity primitives
+
+When mutating a `Set`, `Map`, `Date`, `URL`, or `URLSearchParams` instance in component code, use the reactive version from `svelte/reactivity`. The ESLint rule `svelte/prefer-svelte-reactivity` enforces this.
+
+**Why.** Built-in instances don't integrate with Svelte's reactivity system. Mutations on a built-in (`set.add(x)`, `params.set(k, v)`) won't trigger re-evaluation in `$derived` or `$effect` that reads them. The reactive versions do.
+
+**Reactive replacements:**
+
+| Built-in | Use instead |
+| --- | --- |
+| `new Set()` | `new SvelteSet()` |
+| `new Map()` | `new SvelteMap()` |
+| `new Date()` | `new SvelteDate()` |
+| `new URL()` | `new SvelteURL()` |
+| `new URLSearchParams()` | `new SvelteURLSearchParams()` |
+
+All imported from `svelte/reactivity`:
+
+```svelte
+<script>
+  import { SvelteSet, SvelteURLSearchParams } from 'svelte/reactivity';
+</script>
+```
+
+**Anti-pattern (what the linter catches):**
+
+```svelte
+// ❌ Wrong — mutations don't trigger reactivity
+let selected = $state(new Set());
+selected.add(id); // $derived reading selected.has(...) won't re-run
+
+let params = new URLSearchParams();
+params.set('search', value); // $derived reading params.get(...) won't re-run
+
+// ✅ Right
+let selected = new SvelteSet();
+selected.add(id);
+
+let params = new SvelteURLSearchParams();
+params.set('search', value);
+```
+
+**When built-ins are still fine.** The rule applies to mutable instances in component code where mutations need to trigger reactivity. Read-only usage and code outside Svelte components (server load functions, utility modules, anywhere not under `$derived`/`$effect` reactivity) can use the built-ins. The server `+page.server.ts` reading `url.searchParams` is fine — that's not component reactivity.
+
+**Other primitives in `svelte/reactivity`** (situational, not default):
+
+- `MediaQuery` — for JS-driven viewport logic. SSR caution: `current` is `false` server-side, which may cause hydration mismatches.
+- `createSubscriber` — for bridging event-based browser APIs (WebSocket, IntersectionObserver) into reactivity.
+
+> **Technical debt:** Existing component code using built-in `Set`/`Map`/`URLSearchParams` (including the catalog items page that shipped with `$state` + `$effect` syncing) is technical debt and will be retrofitted in a follow-up audit/sweep.
 
 ### MCP tools available
 
@@ -274,6 +363,7 @@ Use only these values. Do not introduce new colors.
 | Primary border   | `border-green-500` | #22c55e |
 | Focus ring       | `ring-green-500`   | #22c55e |
 | Urgent / warning | `text-amber-500`   | #f59e0b |
+| Urgent text (dark) | `text-amber-700` | #b45309 |
 | Urgent bg        | `bg-amber-50`      | #fffbeb |
 | Urgent border    | `border-amber-400` | #fbbf24 |
 | Destructive      | `text-red-500`     | #ef4444 |
@@ -353,49 +443,65 @@ Every dashboard page follows this exact header structure:
 
 ## Buttons
 
-### Primary
+**Size determines dimensions. For text buttons, that's height. For icon-only buttons, that's a square dimension. Variant determines color/style. They compose.**
 
-```
-class="flex items-center gap-1.5 px-4 py-2 bg-green-600 hover:bg-green-700
-       text-white text-sm font-medium rounded-lg transition-colors"
+### Sizes
+
+| Size | Height | `size` prop | Used for |
+|---|---|---|---|
+| Default | `h-10` (40px / 40×40 for icon) | `default` (text) · `icon-lg` (icon) | Standard — toolbars, page CTAs, form submits, modal footers; icon buttons sitting next to h-10 inputs or text buttons |
+| Small | `h-8` (32px / 32×32 for icon) | `sm` (text) · `icon` (icon) | Compact — table row actions, card action strips; icon buttons in dense rows |
+| Tight inline | — (28×28 for icon) | `icon-sm` | Input field decorations, dialog/sheet close buttons, banner dismiss affordances |
+
+Icon buttons match their context. A delete icon in a table row uses `size="icon"` (32×32) so it aligns with `sm` text buttons in the same row. A toolbar icon button uses `size="icon-lg"` (40×40) so it aligns with `default` text buttons and inputs. The size system handles alignment automatically — pick the size based on what's adjacent.
+
+**Height is a property of the size variant, not negotiable per callsite.** A `default` button is `h-10` everywhere. A `sm` button is `h-8` everywhere. When a `<Button>` sits next to a form input or select, they align automatically — `default` and `h-10` inputs are the same height. No special handling needed.
+
+### Variants
+
+| Variant | Style | When |
+|---|---|---|
+| `default` | Solid green (`bg-primary`) | Most-emphasized affordance — page-level CTA, primary form submit |
+| `outline` | White bg, gray border | Secondary/alternative action, Cancel, form alternatives |
+| `ghost` | No bg, hover only | Low-emphasis — icon buttons, inline text-link-style actions |
+| `destructive` | Filled red | Destructive actions that need maximum visual emphasis |
+| `link` | Text with underline | Link-style inline actions |
+
+Variants and sizes compose freely:
+
+```svelte
+<!-- Standard primary CTA -->
+<Button>+ New item</Button>
+
+<!-- Compact secondary in a table row -->
+<Button size="sm" variant="outline">Edit</Button>
+
+<!-- Destructive form footer -->
+<Button variant="destructive">Delete account</Button>
+
+<!-- Icon button in a toolbar (matches h-10 text buttons and inputs) -->
+<Button size="icon-lg" variant="ghost"><Icon icon="mdi:bell-outline" /></Button>
+
+<!-- Icon button in a row action (matches h-8 sm text buttons) -->
+<Button size="icon" variant="ghost" class="text-red-400 hover:text-red-600"><Icon icon="mdi:trash-can-outline" /></Button>
 ```
 
-### Secondary / outline
+### Raw `<button>` exceptions
 
-```
-class="flex items-center gap-1.5 px-4 py-2 border border-gray-200
-       bg-white hover:bg-gray-50 text-gray-700 text-sm font-medium
-       rounded-lg transition-colors"
-```
+Two patterns that stay as raw `<button>` due to color conflicts with existing shadcn variants:
 
-### Ghost (icon-only or low-emphasis)
+- **State-transition buttons** ("Mark as confirmed", "Mark as in production", etc.): `rounded-md h-10 px-4 text-sm font-semibold bg-blue-600 text-white hover:bg-blue-700 transition-colors` (detail page) or `rounded-md h-8 px-2.5 text-xs font-semibold bg-blue-600 text-white hover:bg-blue-700 transition-colors` (list row). Brand green is reserved for primary page CTAs; blue signals the state-transition category.
+- **Outlined-destructive** (Cancel order, Refund on list and detail): `rounded-md h-10 px-4 text-sm font-semibold border border-red-200 text-red-500 hover:bg-red-50 transition-colors` (standard) or `rounded-md h-8 px-2.5 text-xs font-medium border border-red-200 text-red-500 hover:bg-red-50 transition-colors` (compact). The destructive variant uses filled red, which competes visually with adjacent primary blue actions.
 
-```
-class="p-2 hover:bg-gray-100 text-gray-500 hover:text-gray-700
-       rounded-lg transition-colors"
-```
+Both are flagged for the Tier 2 shadcn audit to add dedicated variants. For all other cases, use `<Button>` over raw `<button>`.
 
-### Small inline action (table row actions)
+The mobile hamburger is also a documented raw exception (dark-surface hover — see Mobile header section).
 
-```
-class="px-2.5 py-1 text-xs font-medium border border-gray-200
-       hover:bg-gray-50 rounded-md transition-colors"
-```
-
-### Destructive (always behind a confirmation dialog)
-
-```
-class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white
-       text-sm font-medium rounded-lg transition-colors"
-```
-
-**Rules:**
+### Rules
 
 - Never use bare red text as a delete/cancel action without a wrapping button.
-- Destructive actions (delete, cancel order, refund) always require a
-  confirmation dialog. Never single-click destructive.
-- The most important action on a page is always a solid green primary button.
-  Secondary actions are outline. Tertiary are ghost or text.
+- Destructive actions (delete, cancel order, refund) always require a confirmation dialog. Never single-click destructive.
+- The most important action on a page is always a solid green primary button. Secondary actions are outline. Tertiary are ghost or text.
 - Never have more than one solid primary button visible at the same time.
 - When there are 3+ secondary actions, group them under a `⋯ More` dropdown.
 
@@ -659,13 +765,11 @@ toggleable.
 		</thead>
 		<tbody class="divide-y divide-gray-100">
 			{#each rows as row}
-				<tr class="group hover:bg-gray-50">
+				<tr class="hover:bg-gray-50">
 					<td class="px-4 py-3 text-sm text-gray-900">{row.name}</td>
-					<!-- Row actions: hidden until hover -->
+					<!-- Row actions: always visible -->
 					<td class="px-4 py-3 text-right">
-						<div
-							class="flex items-center justify-end gap-1 opacity-0 transition-opacity group-hover:opacity-100"
-						>
+						<div class="flex items-center justify-end gap-1">
 							<a href={resolve(`/dashboard/catalog/items/${row.id}`)} class="...">Edit</a>
 						</div>
 					</td>
@@ -679,10 +783,14 @@ toggleable.
 **Rules:**
 
 - Table container always `rounded-xl` and `overflow-hidden`.
-- Destructive row actions are icon-only with `text-red-400`, hidden until hover,
-  always behind a confirmation dialog.
+- Destructive row actions are icon-only with `text-red-400`, always behind a confirmation dialog.
 - Never show a prominent red "Delete" text link inline.
-- Row actions appear on `group-hover` opacity transition, never permanent.
+- Row actions are always visible. Do not use `opacity-0 group-hover:opacity-100` to hide them until
+  hover. Row hover changes background only (`hover:bg-gray-50`). Do not add `group` to `<tr>` for
+  action visibility.
+- Mobile card actions (action strip below content) follow the same convention: always visible.
+- **Known pending migration:** orders pages (Live + History) currently use the old hover-revealed
+  pattern and will be migrated in a follow-up prompt. Do not treat them as reference for new work.
 
 ---
 
@@ -718,17 +826,17 @@ Resources page beats "Welcome! Start your journey here."
 ## Forms & Inputs
 
 ```
-// Text input
-class="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-lg bg-white
+// Text input — explicit height
+class="h-10 w-full px-3 text-sm border border-gray-200 rounded-lg bg-white
        placeholder:text-gray-400 focus:outline-none focus:ring-2
        focus:ring-green-500 focus:border-transparent"
 
-// Select
-class="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-lg bg-white
+// Select (raw)
+class="h-10 w-full px-3 text-sm border border-gray-200 rounded-lg bg-white
        focus:outline-none focus:ring-2 focus:ring-green-500"
 
 // Textarea
-class="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-lg bg-white
+class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg bg-white
        resize-none focus:outline-none focus:ring-2 focus:ring-green-500"
 
 // Label
@@ -743,6 +851,17 @@ class="text-xs text-red-500 mt-1.5"
 // Error input state (add to input)
 class="border-red-300 focus:ring-red-500"
 ```
+
+All single-line form inputs (text, email, number, search, password, date) and selects use `h-10`
+(40px). The shadcn `<Input>` and `<SelectTrigger>` primitives default to `h-10` — do not override
+to a different height per-callsite. Textareas are multi-line and are not subject to this rule;
+use `min-h-*` instead.
+
+**Raw vs shadcn migration:** The shadcn `<Input>` and `<SelectTrigger>` primitives have been
+updated to `h-10` as the default. New code should prefer the shadcn primitives. Raw `<input>`/
+`<select>` elements that exist today (settings, forms, etc.) follow the `h-10` rule via
+per-callsite classes — these will eventually be migrated to shadcn primitives in a separate audit
+(see roadmap, "Forms & UI shadcn-svelte audit" in Tier 2).
 
 **Rules:**
 
@@ -828,13 +947,13 @@ proper `<Dialog>` primitive with explicit confirm/cancel buttons. Current callsi
 
 Order state-transition buttons ("Mark as confirmed", "Mark as in production", "Mark as ready", "Mark as fulfilled") all use `bg-blue-600 hover:bg-blue-700 text-white` for consistency across both the orders list and order detail page. Brand green is reserved for primary page-level CTAs (setup checklist's "Set up →", create-new affordances). Per-stage color differentiation (blue/amber/violet/green per stage) was considered and deferred — labels carry the information; color carries the action category (state transition vs primary CTA vs destructive).
 
-Currently implemented as plain `<button>` elements with explicit classes on both surfaces — shadcn's `variant="default"` applies brand green, which conflicts with this convention. Tier 2 shadcn audit should add a Button variant for state-transition actions.
+Currently implemented as plain `<button>` elements with explicit classes. Height follows the size system: `h-10` on the order detail page (standard), `h-8` on the orders list (compact row action). Shadcn's `variant="default"` applies brand green, which conflicts with this convention. Tier 2 shadcn audit should add a Button variant for state-transition actions.
 
 ### Destructive actions on order detail (Cancel order)
 
-The "Cancel order" button on the order detail page (`/dashboard/orders/[orderId]`) uses a plain `<button>` with outlined red classes rather than `<Button variant="destructive">`. The destructive variant applies filled `bg-red-600`, which competes visually with the blue state-transition primary action sitting beside it on the same row. Outlined red (`border-red-200 text-red-500 hover:bg-red-50`) is the quieter destructive treatment used consistently on the orders list card; the detail page matches.
+The "Cancel order" and "Refund" buttons on the order detail page and list both use a plain `<button>` with outlined red classes rather than `<Button variant="destructive">`. The destructive variant applies filled `bg-red-600`, which competes visually with the blue state-transition primary action sitting beside them. Outlined red (`border-red-200 text-red-500 hover:bg-red-50`) is the quieter destructive treatment. Height: `h-10` on the detail page, `h-8` on the list card.
 
-The mobile hamburger uses a plain `<button>` instead of `<Button variant="ghost">` due to dark-surface hover conflict. The Cancel order button uses a plain `<button>` instead of `<Button variant="destructive">` for the same reason — the filled variant conflicts with adjacent primary actions. Both are flagged for the Tier 2 shadcn audit: consider adding "dark-surface" and "outlined-destructive" Button variants to resolve both cases properly.
+The mobile hamburger uses a plain `<button>` instead of `<Button variant="ghost">` due to dark-surface hover conflict. Cancel order and Refund use a plain `<button>` instead of `<Button variant="destructive">` for the same reason — the filled variant conflicts with adjacent primary actions. All are flagged for the Tier 2 shadcn audit: consider adding "dark-surface" and "outlined-destructive" Button variants to resolve these cases properly.
 
 ### Mobile header
 
@@ -1254,6 +1373,26 @@ The checklist auto-hides when all 4 steps complete and re-appears if a step regr
 - ❌ Do not display `preparing` to vendors as "Preparing." The display label is
   "In production." (The schema enum value remains `preparing`; the lifecycle
   will be properly reshaped with the Pickup Windows feature.)
+- ❌ Do not use mutable instances of built-in `Set`, `Map`, `Date`, `URL`, or
+  `URLSearchParams` in component code. Use the reactive versions from
+  `svelte/reactivity`. The ESLint rule `svelte/prefer-svelte-reactivity` enforces this.
+- ❌ Do not wrap a built-in `Set`/`Map`/etc. in `$state` expecting its methods
+  to become reactive — `$state` tracks references, not internal mutations. Use
+  the reactive class (`SvelteSet`, `SvelteMap`, etc.) instead.
+- ❌ Do not apply ad-hoc `h-*` to individual form element callsites. The project
+  standard is `h-10` for all text inputs, selects, and single-line inputs. Changes
+  to that standard go in the shadcn primitives (`input.svelte`, `select-trigger.svelte`),
+  not per-callsite.
+- ❌ Do not apply `class="h-*"` to a `<Button>` to override its size variant. Pick
+  the correct size variant (`default` for `h-10`, `sm` for `h-8`). If no variant
+  fits the use case, surface the question — do not invent a per-callsite height.
+- ❌ Do not use raw `<button>` with custom height class strings when the shadcn
+  `<Button>` primitive can be used. The primitive enforces consistency. Raw `<button>`
+  is acceptable only for documented exceptions (state-transition blue, outlined-destructive
+  red, and the dark-surface mobile hamburger — all flagged for Tier 2 shadcn audit).
+- ❌ Do not use `opacity-0 group-hover:opacity-100` for row actions in tables or
+  cards. Row actions are always visible. Use `hover:bg-gray-50` on the row for
+  hover feedback only.
 
 ---
 
