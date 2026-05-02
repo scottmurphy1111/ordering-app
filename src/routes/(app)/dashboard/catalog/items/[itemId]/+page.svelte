@@ -257,7 +257,7 @@
 													(e.currentTarget as HTMLButtonElement).form?.requestSubmit();
 											}}
 											variant="ghost"
-											size="icon-sm"
+											size="icon"
 											class="text-red-400 hover:text-red-600"
 										>
 											<Icon icon="mdi:close" class="h-3.5 w-3.5" />

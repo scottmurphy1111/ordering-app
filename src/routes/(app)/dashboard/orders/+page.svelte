@@ -189,7 +189,7 @@
 		<div class="flex items-center gap-2">
 			<button
 				onclick={toggleSound}
-				class="rounded-lg border p-2 transition-colors hover:bg-muted"
+				class="flex h-10 w-10 items-center justify-center rounded-lg border transition-colors hover:bg-muted"
 				title={soundEnabled ? 'Mute new order alerts' : 'Enable new order alerts'}
 			>
 				<Icon
@@ -307,7 +307,7 @@
 				type="search"
 				bind:value={searchQuery}
 				placeholder="Search by order #, customer name, or phone…"
-				class="w-full rounded-lg border border-gray-200 bg-background py-2.5 pr-4 pl-9 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:border-transparent focus:ring-2 focus:ring-primary/50"
+				class="w-full rounded-lg border border-gray-200 bg-background h-10 pr-4 pl-9 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:border-transparent focus:ring-2 focus:ring-primary/50"
 			/>
 		</div>
 
@@ -548,7 +548,7 @@
 							<input type="hidden" name="status" value={nextStatus[order.status]} />
 							<button
 								type="submit"
-								class="rounded-md px-2.5 py-1 text-xs font-semibold transition-colors {action.cls}"
+								class="rounded-md h-8 px-2.5 text-xs font-semibold transition-colors {action.cls}"
 							>
 								{action.label}
 							</button>
@@ -564,7 +564,7 @@
 									const btn = e.currentTarget as HTMLButtonElement;
 									if (await confirmDialog('Cancel this order?')) btn.form?.requestSubmit();
 								}}
-								class="rounded-md border border-red-200 px-2.5 py-1 text-xs font-medium text-red-500 transition-colors hover:bg-red-50 hover:text-red-600"
+								class="rounded-md h-8 border border-red-200 px-2.5 text-xs font-medium text-red-500 transition-colors hover:bg-red-50 hover:text-red-600"
 							>
 								Cancel
 							</button>
@@ -580,7 +580,7 @@
 									const btn = e.currentTarget as HTMLButtonElement;
 									if (await confirmDialog('Issue a full refund for this order?')) btn.form?.requestSubmit();
 								}}
-								class="rounded-md border border-orange-200 px-2.5 py-1 text-xs font-medium text-orange-600 transition-colors hover:bg-orange-50"
+								class="rounded-md h-8 border border-red-200 px-2.5 text-xs font-medium text-red-500 transition-colors hover:bg-red-50"
 							>
 								Refund
 							</button>

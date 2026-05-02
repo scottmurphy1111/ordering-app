@@ -208,7 +208,7 @@
 				</div>
 				{#if data.subscriptionStatus === 'past_due'}
 					<form method="post" action="?/openPortal" use:enhance>
-						<Button type="submit" size="sm" class="gap-1.5 bg-amber-600 hover:bg-amber-700">
+						<Button type="submit" class="gap-1.5 bg-amber-50 text-amber-700 border border-amber-400 hover:bg-amber-100">
 							<Icon icon="mdi:alert-outline" class="h-3.5 w-3.5" /> Update payment method
 						</Button>
 					</form>

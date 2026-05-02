@@ -4,8 +4,8 @@
 	import { SvelteMap, SvelteSet } from 'svelte/reactivity';
 	import { resolve } from '$app/paths';
 	import Icon from '@iconify/svelte';
-	import { afterNavigate } from '$app/navigation';
-	import { tick } from 'svelte';
+	import { goto } from '$app/navigation';
+	import { untrack } from 'svelte';
 	import { enhance } from '$app/forms';
 	import { confirmDialog } from '$lib/confirm.svelte';
 	import Sortable from 'sortablejs';
@@ -44,6 +44,7 @@
 	import CatalogItemForm from '$lib/components/CatalogItemForm.svelte';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
+	type CatalogItem = (typeof data)['items'][number];
 
 	// ── Table sorting ─────────────────────────────────────────────
 	type SortCol = 'name' | 'category' | 'price' | 'status';
@@ -77,7 +78,7 @@
 	let sortContainerEl = $state<HTMLElement | null>(null);
 
 	// Group items by category for the sort view
-	const groupedForSort = $derived(() => {
+	const groupedForSort = $derived.by(() => {
 		const catMap = new SvelteMap<
 			number | null,
 			{ id: number | null; name: string; items: typeof data.items }
@@ -139,34 +140,38 @@
 	let showForm = $state(false);
 	let lastCreated = $state<{ id: number; name: string } | null>(null);
 
-	// ── Search ────────────────────────────────────────────────────
-	let searchForm = $state<HTMLFormElement | null>(null);
+	// ── Search + category filter ──────────────────────────────────
 	let searchInput = $state<HTMLInputElement | null>(null);
 	let searchTimer: ReturnType<typeof setTimeout> | null = null;
-	let refocusAfterNav = false;
+	let searchValue = $state(untrack(() => data.search ?? ''));
+	let selectedCategoryId = $state(untrack(() => data.selectedCategoryId ? String(data.selectedCategoryId) : ''));
 
-	afterNavigate(() => {
-		if (refocusAfterNav) {
-			refocusAfterNav = false;
-			tick().then(() => {
-				if (!searchInput) return;
-				searchInput.focus();
-				const len = searchInput.value.length;
-				searchInput.setSelectionRange(len, len);
-			});
-		}
-	});
+	$effect(() => { searchValue = data.search ?? ''; });
+	$effect(() => { selectedCategoryId = data.selectedCategoryId ? String(data.selectedCategoryId) : ''; });
+
+	function buildCatalogUrl(search: string, categoryId: string): `/${string}` {
+		const params = new URLSearchParams();
+		if (search) params.set('search', search);
+		if (categoryId) params.set('categoryId', categoryId);
+		const qs = params.toString();
+		return (qs ? `/dashboard/catalog/items?${qs}` : '/dashboard/catalog/items') as `/${string}`;
+	}
 
 	function onSearchInput() {
 		if (searchTimer) clearTimeout(searchTimer);
 		searchTimer = setTimeout(() => {
-			refocusAfterNav = true;
-			searchForm?.requestSubmit();
+			goto(resolve(buildCatalogUrl(searchValue, selectedCategoryId)), {
+				keepFocus: true,
+				noScroll: true,
+				replaceState: true
+			});
 		}, 300);
 	}
 
-	function onCategoryChange() {
-		searchForm?.requestSubmit();
+	function clearSearch() {
+		searchValue = '';
+		goto(resolve(buildCatalogUrl('', selectedCategoryId)), { replaceState: true });
+		searchInput?.focus();
 	}
 
 	// ── CSV import ────────────────────────────────────────────────
@@ -330,7 +335,7 @@
 					<DropdownMenuTrigger>
 						<button
 							type="button"
-							class="flex items-center gap-1.5 rounded-md border px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted"
+							class="flex h-10 items-center gap-1.5 rounded-md border px-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted"
 						>
 							<Icon icon="mdi:dots-horizontal" class="h-4 w-4" /> More
 						</button>
@@ -418,7 +423,7 @@
 	{/if}
 
 	<!-- Filters -->
-	<form bind:this={searchForm} method="get" class="mb-5 flex min-w-0 gap-2">
+	<form method="get" class="mb-5 flex min-w-0 gap-2">
 		<div class="relative min-w-0 flex-1">
 			<Icon
 				icon="mdi:magnify"
@@ -428,21 +433,36 @@
 				bind:this={searchInput}
 				type="text"
 				name="search"
-				value={data.search ?? ''}
+				bind:value={searchValue}
 				placeholder="Search items..."
 				oninput={onSearchInput}
-				class="w-full rounded-lg border border-gray-200 bg-background py-2.5 pr-4 pl-9 text-sm text-foreground outline-none placeholder:text-muted-foreground focus:border-transparent focus:ring-2 focus:ring-primary/50"
+				class="h-10 w-full rounded-lg border border-gray-200 bg-background {searchValue ? 'pr-8' : 'pr-4'} pl-9 text-sm text-foreground outline-none placeholder:text-muted-foreground focus:border-transparent focus:ring-2 focus:ring-primary/50"
 			/>
+			{#if searchValue}
+				<button
+					type="button"
+					onclick={clearSearch}
+					aria-label="Clear search"
+					class="absolute top-1/2 right-2.5 -translate-y-1/2 text-gray-400 transition-colors hover:text-gray-600"
+				>
+					<Icon icon="mdi:close" class="h-3.5 w-3.5" />
+				</button>
+			{/if}
 		</div>
 		{#if data.categories.length > 0}
 			<Select
 				type="single"
 				name="categoryId"
-				value={data.selectedCategoryId ? String(data.selectedCategoryId) : ''}
-				onValueChange={onCategoryChange}
+				value={selectedCategoryId}
+				onValueChange={(val) => {
+					selectedCategoryId = val;
+					goto(resolve(buildCatalogUrl(searchValue, val)), { replaceState: true });
+				}}
 			>
-				<SelectTrigger class="h-auto w-36 shrink-0 border-gray-200 py-2.5">
-					<SelectValue placeholder="All categories" />
+				<SelectTrigger class="w-36 shrink-0 border-gray-200">
+					<SelectValue>
+						{data.categories.find((c) => String(c.id) === selectedCategoryId)?.name ?? (selectedCategoryId === 'uncategorised' ? '— Uncategorised' : 'All categories')}
+					</SelectValue>
 				</SelectTrigger>
 				<SelectContent>
 					<SelectItem value="">All categories</SelectItem>
@@ -475,7 +495,7 @@
 			<p class="text-sm text-muted-foreground">
 				Drag items within each category to reorder, then click <strong>Save order</strong>.
 			</p>
-			{#each groupedForSort() as group (group.id)}
+			{#each groupedForSort as group (group.id)}
 				<div class="overflow-hidden rounded-xl border bg-background shadow-sm">
 					<div class="border-b bg-muted/50 px-4 py-2.5">
 						<span class="text-xs font-semibold tracking-wide text-muted-foreground uppercase"
@@ -524,29 +544,149 @@
 			{/each}
 		</div>
 	{:else if data.items.length === 0}
-		<div class="flex flex-col items-center py-16 text-center">
-			<div class="flex h-16 w-16 items-center justify-center rounded-2xl bg-muted">
-				<Icon icon="mdi:silverware-fork-knife" class="h-8 w-8 text-muted-foreground/40" />
+		{#if data.search || data.selectedCategoryId}
+			<div class="rounded-xl border border-gray-200 bg-white p-12 text-center">
+				<h3 class="mb-1 text-base font-semibold text-gray-900">No results match your filters</h3>
+				<p class="mb-4 text-sm text-gray-500">Try adjusting your search or category filter.</p>
+				<button
+					type="button"
+					onclick={() => {
+						searchValue = '';
+						selectedCategoryId = '';
+						goto(resolve('/dashboard/catalog/items'), { replaceState: true });
+					}}
+					class="text-sm font-medium text-green-600 hover:text-green-700"
+				>
+					Clear filters →
+				</button>
 			</div>
-			<h2 class="mt-4 text-base font-semibold text-foreground">No items yet</h2>
-			<p class="mt-1 text-sm text-muted-foreground">
-				Add your first item to start building your catalog.
-			</p>
-			<Button
-				onclick={() => {
-					showForm = true;
-				}}
-				class="mt-6 gap-1.5"
-			>
-				<Icon icon="mdi:plus" class="h-4 w-4" /> Add your first item
-			</Button>
-		</div>
+		{:else}
+			<div class="flex flex-col items-center py-16 text-center">
+				<div class="flex h-16 w-16 items-center justify-center rounded-2xl bg-muted">
+					<Icon icon="mdi:silverware-fork-knife" class="h-8 w-8 text-muted-foreground/40" />
+				</div>
+				<h2 class="mt-4 text-base font-semibold text-foreground">No items yet</h2>
+				<p class="mt-1 text-sm text-muted-foreground">
+					Add your first item to start building your catalog.
+				</p>
+				<Button
+					onclick={() => { showForm = true; }}
+					class="mt-6 gap-1.5"
+				>
+					<Icon icon="mdi:plus" class="h-4 w-4" /> Add your first item
+				</Button>
+			</div>
+		{/if}
 	{:else}
-		<div class="overflow-hidden rounded-xl border shadow-sm">
+		{#snippet statusDropdown(item: CatalogItem)}
+			<DropdownMenu>
+				<DropdownMenuTrigger>
+					<button
+						type="button"
+						class="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium capitalize transition-colors hover:opacity-80 {item.status === 'available'
+							? 'bg-green-100 text-green-700'
+							: item.status === 'sold_out'
+								? 'bg-amber-100 text-amber-700'
+								: item.status === 'hidden'
+									? 'bg-gray-100 text-gray-400'
+									: 'bg-gray-100 text-gray-500'}"
+					>
+						{item.status.replace('_', ' ')}
+						<Icon icon="mdi:chevron-down" class="h-3 w-3" />
+					</button>
+				</DropdownMenuTrigger>
+				<DropdownMenuContent align="start">
+					{#each [['available', 'Available'], ['sold_out', 'Sold out'], ['hidden', 'Hidden']] as [val, label] (val)}
+						<DropdownMenuItem>
+							<form
+								method="post"
+								action="?/setStatus"
+								use:enhance={() => ({ update }) => update({ reset: false })}
+								class="w-full"
+							>
+								<input type="hidden" name="id" value={item.id} />
+								<input type="hidden" name="status" value={val} />
+								<button
+									type="submit"
+									class="flex w-full items-center gap-2 text-sm {item.status === val ? 'font-semibold' : ''}"
+								>
+									<span class="h-2 w-2 rounded-full {val === 'available' ? 'bg-green-500' : val === 'sold_out' ? 'bg-amber-400' : 'bg-gray-300'}"></span>
+									{label}
+								</button>
+							</form>
+						</DropdownMenuItem>
+					{/each}
+				</DropdownMenuContent>
+			</DropdownMenu>
+		{/snippet}
+
+		<!-- Mobile card list — hidden at md+ -->
+		<div class="block space-y-2 md:hidden">
+			{#each sortedItems as item (item.id)}
+				{@const primaryImage =
+					(item.images as { url: string; isPrimary?: boolean }[] | null)?.find(
+						(img) => img.isPrimary
+					) ?? (item.images as { url: string }[] | null)?.[0]}
+				<div class="overflow-hidden rounded-xl border border-gray-200 bg-white">
+					<a href={resolve(`/dashboard/catalog/items/${item.id}`)} class="block">
+						<div class="flex flex-row gap-3 px-4 pt-3 pb-2">
+							{#if primaryImage}
+								<img
+									src={primaryImage.url}
+									alt={item.name}
+									class="h-10 w-10 shrink-0 rounded-md object-cover"
+								/>
+							{:else}
+								<div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-gray-100">
+									<Icon icon="mdi:image-outline" class="h-4 w-4 text-gray-300" />
+								</div>
+							{/if}
+							<div class="min-w-0 flex-1">
+								<p class="truncate text-sm font-medium text-gray-900">{item.name}</p>
+								<p class="truncate text-xs text-gray-500">
+									{item.category?.name ?? 'Uncategorized'} · ${item.discountedPrice
+										? (item.discountedPrice / 100).toFixed(2)
+										: (item.price / 100).toFixed(2)}
+								</p>
+							</div>
+						</div>
+					</a>
+					<div class="flex items-center justify-between gap-2 border-t border-gray-100 px-4 py-2">
+						{@render statusDropdown(item)}
+						<div class="flex items-center gap-1">
+							<a
+								href={resolve(`/dashboard/catalog/items/${item.id}`)}
+								class="rounded-md border border-gray-200 px-2.5 py-1 text-xs font-medium text-gray-700 transition-colors hover:bg-gray-50"
+							>
+								Edit
+							</a>
+							<form method="post" action="?/delete" use:enhance>
+								<input type="hidden" name="id" value={item.id} />
+								<button
+									type="submit"
+									onclick={async (e) => {
+										e.preventDefault();
+										if (await confirmDialog('Delete this item?'))
+											(e.currentTarget as HTMLButtonElement).form?.requestSubmit();
+									}}
+									aria-label="Delete {item.name}"
+									class="flex h-8 w-8 items-center justify-center rounded-md text-red-400 transition-colors hover:bg-red-50 hover:text-red-600"
+								>
+									<Icon icon="mdi:trash-can-outline" class="h-4 w-4" />
+								</button>
+							</form>
+						</div>
+					</div>
+				</div>
+			{/each}
+		</div>
+
+		<!-- Desktop table — hidden below md -->
+		<div class="hidden overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm md:block">
 			<Table>
-				<TableHeader class="">
+				<TableHeader>
 					<TableRow class="hover:bg-transparent">
-						<TableHead class="w-12 px-4 py-2.5"></TableHead>
+						<TableHead class="w-14 px-4 py-2.5"></TableHead>
 						{#each [['name', 'Name'], ['category', 'Category'], ['price', 'Price'], ['status', 'Status']] as const as [col, label] (col)}
 							<TableHead class="px-4 py-2.5">
 								<button
@@ -576,8 +716,8 @@
 							(item.images as { url: string; isPrimary?: boolean }[] | null)?.find(
 								(img) => img.isPrimary
 							) ?? (item.images as { url: string }[] | null)?.[0]}
-						<TableRow class="group">
-							<TableCell class="px-4 py-3">
+						<TableRow class="hover:bg-gray-50">
+							<TableCell class="w-14 px-4 py-3">
 								{#if primaryImage}
 									<img
 										src={primaryImage.url}
@@ -585,103 +725,52 @@
 										class="h-10 w-10 rounded-md object-cover"
 									/>
 								{:else}
+									<div class="flex h-10 w-10 items-center justify-center rounded-md bg-gray-100">
+										<Icon icon="mdi:image-outline" class="h-4 w-4 text-gray-300" />
+									</div>
+								{/if}
+							</TableCell>
+							<TableCell class="max-w-0 whitespace-normal px-4 py-3">
+								<div class="min-w-0">
 									<a
 										href={resolve(`/dashboard/catalog/items/${item.id}`)}
-										aria-label="Add photo for {item.name}"
-										title="Add photo"
-										class="group flex h-10 w-10 flex-col items-center justify-center rounded-md border-2 border-dashed border-muted-foreground/20 transition-colors hover:border-primary/40 hover:bg-primary/5"
+										class="block truncate text-sm font-medium text-gray-900 hover:text-gray-700"
 									>
-										<Icon
-											icon="mdi:camera-outline"
-											class="h-4 w-4 text-muted-foreground/30 transition-colors group-hover:text-primary/60"
-										/>
+										{item.name}
 									</a>
-								{/if}
+									{#if item.description}
+										<p class="block truncate text-xs text-gray-500">{item.description}</p>
+									{/if}
+								</div>
 							</TableCell>
-							<TableCell class="px-4 py-3">
-								<a
-									href={resolve(`/dashboard/catalog/items/${item.id}`)}
-									class="font-medium text-foreground hover:underline"
-								>
-									{item.name}
-								</a>
-								{#if item.description}
-									<p class="mt-0.5 line-clamp-1 text-xs text-muted-foreground">
-										{item.description}
-									</p>
-								{/if}
+							<TableCell class="w-36 px-4 py-3 text-sm text-gray-500">
+								{item.category?.name ?? '—'}
 							</TableCell>
-							<TableCell class="px-4 py-3 text-muted-foreground"
-								>{item.category?.name ?? '—'}</TableCell
-							>
-							<TableCell class="px-4 py-3">
+							<TableCell class="w-20 px-4 py-3">
 								{#if item.discountedPrice}
-									<div class="flex items-center gap-1.5">
-										<span class="text-sm text-muted-foreground line-through"
+									<div class="flex flex-col gap-0.5">
+										<span class="text-xs text-gray-400 line-through"
 											>${(item.price / 100).toFixed(2)}</span
 										>
-										<span class="font-semibold text-emerald-600"
+										<span class="text-sm font-semibold text-green-600"
 											>${(item.discountedPrice / 100).toFixed(2)}</span
-										>
-										<span
-											class="rounded bg-red-100 px-1 py-0.5 text-[10px] font-semibold text-red-600"
-											>SALE</span
 										>
 									</div>
 								{:else}
-									${(item.price / 100).toFixed(2)}
+									<span class="text-sm text-gray-900">${(item.price / 100).toFixed(2)}</span>
 								{/if}
 							</TableCell>
-							<TableCell class="px-4 py-3">
-								<DropdownMenu>
-									<DropdownMenuTrigger>
-										<button
-											type="button"
-											class="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium capitalize transition-colors hover:opacity-80 {item.status === 'available'
-												? 'bg-green-100 text-green-700'
-												: item.status === 'sold_out'
-													? 'bg-amber-100 text-amber-700'
-													: item.status === 'hidden'
-														? 'bg-gray-100 text-gray-400'
-														: 'bg-gray-100 text-gray-500'}"
-										>
-											{item.status.replace('_', ' ')}
-											<Icon icon="mdi:chevron-down" class="h-3 w-3" />
-										</button>
-									</DropdownMenuTrigger>
-									<DropdownMenuContent align="start">
-										{#each [['available', 'Available'], ['sold_out', 'Sold out'], ['hidden', 'Hidden']] as [val, label] (val)}
-											<DropdownMenuItem>
-												<form
-													method="post"
-													action="?/setStatus"
-													use:enhance={() => ({ update }) => update({ reset: false })}
-													class="w-full"
-												>
-													<input type="hidden" name="id" value={item.id} />
-													<input type="hidden" name="status" value={val} />
-													<button
-														type="submit"
-														class="flex w-full items-center gap-2 text-sm {item.status === val ? 'font-semibold' : ''}"
-													>
-														<span class="h-2 w-2 rounded-full {val === 'available' ? 'bg-green-500' : val === 'sold_out' ? 'bg-amber-400' : 'bg-gray-300'}"></span>
-														{label}
-													</button>
-												</form>
-											</DropdownMenuItem>
-										{/each}
-									</DropdownMenuContent>
-								</DropdownMenu>
+							<TableCell class="w-28 px-4 py-3">
+								{@render statusDropdown(item)}
 							</TableCell>
-							<TableCell class="px-4 py-3">
-								<div
-									class="flex items-center gap-3 opacity-0 transition-opacity group-hover:opacity-100"
-								>
+							<TableCell class="w-20 px-4 py-3 text-right">
+								<div class="flex items-center justify-end gap-1">
 									<a
 										href={resolve(`/dashboard/catalog/items/${item.id}`)}
-										class="text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
-										>Edit</a
+										class="rounded-md border border-gray-200 px-2.5 py-1 text-xs font-medium text-gray-700 transition-colors hover:bg-gray-50"
 									>
+										Edit
+									</a>
 									<form method="post" action="?/delete" use:enhance>
 										<input type="hidden" name="id" value={item.id} />
 										<button
@@ -692,7 +781,7 @@
 													(e.currentTarget as HTMLButtonElement).form?.requestSubmit();
 											}}
 											aria-label="Delete item"
-											class="rounded-md p-1 text-red-500 transition-colors hover:bg-red-50 hover:text-red-600"
+											class="flex h-8 w-8 items-center justify-center rounded-md text-red-400 transition-colors hover:bg-red-50 hover:text-red-600"
 										>
 											<Icon icon="mdi:trash-can-outline" class="h-3.5 w-3.5" />
 										</button>
@@ -894,7 +983,7 @@
 		if (!open) closeDiscover();
 	}}
 >
-	<DialogContent class="flex max-w-2xl flex-col" style="max-height: 90vh;">
+	<DialogContent class="flex max-h-[90vh] max-w-2xl flex-col">
 		<DialogHeader>
 			<DialogTitle>Discover Stripe Products</DialogTitle>
 			<DialogDescription>

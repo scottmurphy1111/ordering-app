@@ -118,7 +118,7 @@
 				name="q"
 				value={data.search}
 				placeholder="Search by order #, customer name, email, or phone…"
-				class="w-full rounded-lg border border-gray-200 bg-background py-2.5 pr-4 pl-9 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:border-transparent focus:ring-2 focus:ring-primary/50"
+				class="w-full rounded-lg border border-gray-200 bg-background h-10 pr-4 pl-9 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:border-transparent focus:ring-2 focus:ring-primary/50"
 				oninput={(e) => debounceSubmit(e.currentTarget.form!)}
 			/>
 		</div>
@@ -183,7 +183,7 @@
 				<button
 					type="button"
 					onclick={exportCSV}
-					class="flex items-center gap-1 rounded-md border px-2.5 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+					class="flex h-8 items-center gap-1 rounded-md border px-2.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
 				>
 					<Icon icon="mdi:download" class="h-3.5 w-3.5" />
 					Export CSV
@@ -296,7 +296,7 @@
 											if (await confirmDialog('Issue a full refund for this order?'))
 												btn.form?.requestSubmit();
 										}}
-										class="rounded-md border border-gray-200 px-2.5 py-1 text-xs font-medium text-gray-600 hover:bg-gray-50 transition-colors"
+										class="rounded-md h-8 border border-red-200 px-2.5 text-xs font-medium text-red-500 transition-colors hover:bg-red-50"
 									>
 										Refund
 									</button>

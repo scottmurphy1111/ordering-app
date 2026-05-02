@@ -135,7 +135,7 @@
 			<div class="flex items-center gap-2">
 				<button
 					onclick={copyCatalogLink}
-					class="inline-flex items-center gap-1.5 rounded-md border px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:border-gray-400 hover:bg-muted"
+					class="inline-flex h-10 items-center gap-1.5 rounded-md border px-3 text-sm font-medium text-muted-foreground transition-colors hover:border-gray-400 hover:bg-muted"
 				>
 					<Icon icon={copied ? 'mdi:check' : 'mdi:content-copy'} class="h-3.5 w-3.5" />
 					{copied ? 'Copied!' : 'Copy link'}

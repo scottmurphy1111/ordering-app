@@ -383,7 +383,7 @@
 								required
 								maxlength="100"
 								value={editingLocation.name}
-								class="w-full rounded-md border px-3 py-2 text-sm focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
+								class="w-full rounded-md border h-10 px-3 text-sm focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
 							/>
 						</div>
 						<div>
@@ -397,7 +397,7 @@
 									placeholder="Street"
 									maxlength="100"
 									value={getAddr(editingLocation.address).street ?? ''}
-									class="w-full rounded-md border px-3 py-2 text-sm focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
+									class="w-full rounded-md border h-10 px-3 text-sm focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
 								/>
 								<div class="grid grid-cols-3 gap-2">
 									<input
@@ -406,7 +406,7 @@
 										placeholder="City"
 										maxlength="100"
 										value={getAddr(editingLocation.address).city ?? ''}
-										class="w-full rounded-md border px-3 py-2 text-sm focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
+										class="w-full rounded-md border h-10 px-3 text-sm focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
 									/>
 									<input
 										name="state"
@@ -414,7 +414,7 @@
 										placeholder="State"
 										maxlength="50"
 										value={getAddr(editingLocation.address).state ?? ''}
-										class="w-full rounded-md border px-3 py-2 text-sm focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
+										class="w-full rounded-md border h-10 px-3 text-sm focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
 									/>
 									<input
 										name="zip"
@@ -422,7 +422,7 @@
 										placeholder="ZIP"
 										maxlength="20"
 										value={getAddr(editingLocation.address).zip ?? ''}
-										class="w-full rounded-md border px-3 py-2 text-sm focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
+										class="w-full rounded-md border h-10 px-3 text-sm focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
 									/>
 								</div>
 							</div>
@@ -491,7 +491,7 @@
 								required
 								maxlength="100"
 								placeholder="e.g. Saturday Farmers Market"
-								class="w-full rounded-md border px-3 py-2 text-sm focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
+								class="w-full rounded-md border h-10 px-3 text-sm focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
 							/>
 						</div>
 						<div>
@@ -504,7 +504,7 @@
 									type="text"
 									placeholder="Street"
 									maxlength="100"
-									class="w-full rounded-md border px-3 py-2 text-sm focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
+									class="w-full rounded-md border h-10 px-3 text-sm focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
 								/>
 								<div class="grid grid-cols-3 gap-2">
 									<input
@@ -512,21 +512,21 @@
 										type="text"
 										placeholder="City"
 										maxlength="100"
-										class="w-full rounded-md border px-3 py-2 text-sm focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
+										class="w-full rounded-md border h-10 px-3 text-sm focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
 									/>
 									<input
 										name="state"
 										type="text"
 										placeholder="State"
 										maxlength="50"
-										class="w-full rounded-md border px-3 py-2 text-sm focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
+										class="w-full rounded-md border h-10 px-3 text-sm focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
 									/>
 									<input
 										name="zip"
 										type="text"
 										placeholder="ZIP"
 										maxlength="20"
-										class="w-full rounded-md border px-3 py-2 text-sm focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
+										class="w-full rounded-md border h-10 px-3 text-sm focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
 									/>
 								</div>
 							</div>
@@ -725,7 +725,7 @@
 								required
 								maxlength="100"
 								value={editingTemplate.name}
-								class="w-full rounded-md border px-3 py-2 text-sm focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
+								class="w-full rounded-md border h-10 px-3 text-sm focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
 							/>
 						</div>
 						<!-- Location -->
@@ -739,7 +739,7 @@
 							<select
 								id="etmpl-location"
 								name="locationId"
-								class="w-full rounded-md border bg-background px-3 py-2 text-sm focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
+								class="w-full rounded-md border bg-background h-10 px-3 text-sm focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
 							>
 								<option value="">(no location)</option>
 								{#each data.locations.filter((l) => l.isActive) as loc (loc.id)}
@@ -793,7 +793,7 @@
 									required
 									value={previewStartTime}
 									oninput={(e) => (previewStartTime = e.currentTarget.value)}
-									class="w-full rounded-md border px-3 py-2 text-sm focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
+									class="w-full rounded-md border h-10 px-3 text-sm focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
 								/>
 								<p class="mt-1 text-xs text-muted-foreground">Pickup opens.</p>
 							</div>
@@ -811,7 +811,7 @@
 									required
 									value={previewEndTime}
 									oninput={(e) => (previewEndTime = e.currentTarget.value)}
-									class="w-full rounded-md border px-3 py-2 text-sm focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
+									class="w-full rounded-md border h-10 px-3 text-sm focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
 								/>
 								<p class="mt-1 text-xs text-muted-foreground">Pickup closes.</p>
 							</div>
@@ -834,7 +834,7 @@
 									value={previewCutoffHours}
 									oninput={(e) =>
 										(previewCutoffHours = parseInt(e.currentTarget.value) || 48)}
-									class="w-full rounded-md border px-3 py-2 text-sm focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
+									class="w-full rounded-md border h-10 px-3 text-sm focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
 								/>
 								<p class="mt-1 text-xs text-muted-foreground">Hours before pickup customers must order.</p>
 							</div>
@@ -852,7 +852,7 @@
 									min="1"
 									value={editingTemplate.maxOrders ?? ''}
 									placeholder="Unlimited"
-									class="w-full rounded-md border px-3 py-2 text-sm focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
+									class="w-full rounded-md border h-10 px-3 text-sm focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
 								/>
 							</div>
 						</div>
@@ -906,7 +906,7 @@
 								required
 								maxlength="100"
 								placeholder="e.g. Saturday morning market"
-								class="w-full rounded-md border px-3 py-2 text-sm focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
+								class="w-full rounded-md border h-10 px-3 text-sm focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
 							/>
 						</div>
 						<!-- Location -->
@@ -920,7 +920,7 @@
 							<select
 								id="tmpl-location"
 								name="locationId"
-								class="w-full rounded-md border bg-background px-3 py-2 text-sm focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
+								class="w-full rounded-md border bg-background h-10 px-3 text-sm focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
 							>
 								<option value="">(no location)</option>
 								{#each data.locations.filter((l) => l.isActive) as loc (loc.id)}
@@ -974,7 +974,7 @@
 									required
 									value={previewStartTime}
 									oninput={(e) => (previewStartTime = e.currentTarget.value)}
-									class="w-full rounded-md border px-3 py-2 text-sm focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
+									class="w-full rounded-md border h-10 px-3 text-sm focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
 								/>
 								<p class="mt-1 text-xs text-muted-foreground">Pickup opens.</p>
 							</div>
@@ -992,7 +992,7 @@
 									required
 									value={previewEndTime}
 									oninput={(e) => (previewEndTime = e.currentTarget.value)}
-									class="w-full rounded-md border px-3 py-2 text-sm focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
+									class="w-full rounded-md border h-10 px-3 text-sm focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
 								/>
 								<p class="mt-1 text-xs text-muted-foreground">Pickup closes.</p>
 							</div>
@@ -1015,7 +1015,7 @@
 									value={previewCutoffHours}
 									oninput={(e) =>
 										(previewCutoffHours = parseInt(e.currentTarget.value) || 48)}
-									class="w-full rounded-md border px-3 py-2 text-sm focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
+									class="w-full rounded-md border h-10 px-3 text-sm focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
 								/>
 								<p class="mt-1 text-xs text-muted-foreground">Hours before pickup customers must order.</p>
 							</div>
@@ -1032,7 +1032,7 @@
 									type="number"
 									min="1"
 									placeholder="Unlimited"
-									class="w-full rounded-md border px-3 py-2 text-sm focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
+									class="w-full rounded-md border h-10 px-3 text-sm focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
 								/>
 							</div>
 						</div>

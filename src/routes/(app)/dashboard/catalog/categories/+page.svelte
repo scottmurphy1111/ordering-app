@@ -108,7 +108,7 @@
 				<CatalogViewToggle />
 				<DropdownMenu>
 					<DropdownMenuTrigger>
-						<button type="button" class="flex items-center gap-1.5 rounded-md border px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted">
+						<button type="button" class="flex h-10 items-center gap-1.5 rounded-md border px-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted">
 							<Icon icon="mdi:dots-horizontal" class="h-4 w-4" /> More
 						</button>
 					</DropdownMenuTrigger>
@@ -320,7 +320,7 @@
 														(e.currentTarget as HTMLButtonElement).form?.requestSubmit();
 												}}
 												aria-label="Delete category"
-												class="rounded-md p-1 text-red-400 transition-colors hover:bg-red-50 hover:text-red-600"
+												class="flex h-8 w-8 items-center justify-center rounded-md text-red-400 transition-colors hover:bg-red-50 hover:text-red-600"
 											>
 												<Icon icon="mdi:trash-can-outline" class="h-3.5 w-3.5" />
 											</button>

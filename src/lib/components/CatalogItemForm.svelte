@@ -202,7 +202,7 @@
 								onclick={clearImage}
 								variant="ghost"
 								size="sm"
-								class="h-auto p-0 text-xs text-destructive hover:text-destructive/80"
+								class="text-xs text-destructive hover:text-destructive/80"
 							>
 								Remove image
 							</Button>
@@ -224,7 +224,7 @@
 					required
 					value={item?.name ?? ''}
 					placeholder="e.g. Sourdough Loaf"
-					class="w-full rounded-md border px-3 py-2 text-sm focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
+					class="w-full rounded-md border h-10 px-3 text-sm focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
 				/>
 			</div>
 
@@ -258,7 +258,7 @@
 						required
 						value={item ? (item.price / 100).toFixed(2) : ''}
 						placeholder="9.99"
-						class="w-full rounded-md border px-3 py-2 text-sm focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
+						class="w-full rounded-md border h-10 px-3 text-sm focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
 					/>
 				</div>
 				<div>
@@ -274,7 +274,7 @@
 						step="0.01"
 						value={item?.discountedPrice ? (item.discountedPrice / 100).toFixed(2) : ''}
 						placeholder="Optional"
-						class="w-full rounded-md border px-3 py-2 text-sm focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
+						class="w-full rounded-md border h-10 px-3 text-sm focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
 					/>
 				</div>
 			</div>
@@ -288,7 +288,7 @@
 					<select
 						id="categoryId"
 						name="categoryId"
-						class="w-full rounded-md border px-3 py-2 text-sm focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
+						class="w-full rounded-md border h-10 px-3 text-sm focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
 					>
 						<option value="">No category</option>
 						{#each categories as cat (cat.id)}
@@ -309,7 +309,7 @@
 					type="text"
 					value={Array.isArray(item?.tags) ? (item.tags as string[]).join(',') : (typeof item?.tags === 'string' ? item.tags : '')}
 					placeholder="seasonal, gluten-free, popular"
-					class="w-full rounded-md border px-3 py-2 text-sm focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
+					class="w-full rounded-md border h-10 px-3 text-sm focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
 				/>
 			</div>
 
@@ -323,7 +323,7 @@
 				<select
 					id="status"
 					name="status"
-					class="w-full rounded-md border px-3 py-2 text-sm focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
+					class="w-full rounded-md border h-10 px-3 text-sm focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
 				>
 					{#each [['available', 'Available'], ['sold_out', 'Sold out'], ['hidden', 'Hidden'], ['draft', 'Draft']] as [val, label] (val)}
 						<option
