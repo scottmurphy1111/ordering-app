@@ -197,6 +197,44 @@ Items vendors will encounter in their first week of use. The bar is "first impre
 
 ---
 
+### Orders pages — always-visible row actions migration
+
+**Status:** Pending. Sibling parity work from Phase 1.5b (always-visible row actions in CLAUDE.md "Tables" section) and Phase 1.5c (button size system). Catalog items migrated; orders still uses the old hover-revealed pattern (`opacity-0 group-hover:opacity-100` on action affordances, `class="group ..."` on `<TableRow>`).
+
+**Why it matters:** CLAUDE.md "Tables" section currently cites orders as a known pending migration. Until orders is migrated, the documented convention (always-visible row actions) and the deployed reality diverge. New developers will look at orders for reference and copy the old pattern. The longer this stays divergent, the more codebase drift accumulates.
+
+**Scope:**
+
+- `/dashboard/orders` (Live) — order cards have row-level action affordances; migrate from hover-revealed to always-visible
+- `/dashboard/orders/history` — same treatment
+- Any shared `Orders*` components that render row actions
+- Verify mobile card variants (if any reflow exists) follow the same always-visible convention
+- Update CLAUDE.md "Tables" section to remove the "known pending migration" note for orders once complete
+
+**Estimated effort:** 2–4 hours. Pattern is mechanical — strip `opacity-0 group-hover:opacity-100`, remove `group` from row class, verify hover background still applies (`hover:bg-gray-50`).
+
+**Trigger:** Standalone polish work — whenever there's a focused window for sibling parity cleanup. Not blocking any user-facing work.
+
+---
+
+### Persistent CLAUDE.md violations sweep
+
+**Status:** Pending. Three violations have been flagged across Phase 1, 1.5b, and 1.5c without being fixed — they keep rolling forward in each prompt's "incidental violations" list.
+
+**Why it matters:** Three rolling violations across three phases means they need a home other than "flagged again next phase." Individually small; collectively a sign that incidental cleanup needs explicit scheduling.
+
+**Scope:**
+
+- `src/routes/(app)/dashboard/catalog/items/+page.svelte` — `text-blue-700` in the CSV import results dialog (line number may have shifted post-1.5c; locate via grep). Off-palette. Replace with a palette-consistent treatment (likely `text-blue-600` or another documented blue token; if no documented blue exists for this use, surface as a question).
+- `src/lib/components/CatalogViewToggle.svelte` — uses `goto()` instead of `<a href={resolve(...)}>` per CLAUDE.md href rule. Refactor to anchor-based navigation matching `OrdersViewToggle`'s pattern.
+- `src/routes/(app)/dashboard/catalog/categories/+page.svelte` — uses `text-primary/90` instead of a documented palette token. Replace with `text-green-700` (most likely palette match) or a more appropriate token based on visual review.
+
+**Estimated effort:** 30 minutes total. Three small, mechanical fixes. Single prompt sweep.
+
+**Trigger:** Standalone — fits into any short cleanup window. Run before any new prompt cycle that would otherwise add a fourth rolling violation.
+
+---
+
 ### Cart desktop alignment
 
 **Status:** Resolved — verified non-bug. Playwright tests confirmed the anchor aligns perfectly with `<main>` at all viewport widths. Original report was likely a transient render state, browser zoom, or screenshot artifact. No code action.
