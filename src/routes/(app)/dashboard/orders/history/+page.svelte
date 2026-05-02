@@ -100,7 +100,7 @@
 	{/if}
 
 	<!-- Summary bar -->
-	<OrdersSummaryBar stats={[
+	<OrdersSummaryBar compact stats={[
 		{ label: 'Total orders', value: Number(data.summary.total) },
 		{ label: 'Fulfilled', value: Number(data.summary.fulfilled) },
 		{ label: 'Cancelled', value: Number(data.summary.cancelled), urgent: Number(data.summary.cancelled) > 0 },
@@ -136,7 +136,7 @@
 			onchange={(val) => goto(resolve(buildStatusPath(val)))}
 		/>
 
-		<div class="flex items-center gap-2">
+		<div class="flex flex-col gap-2 md:flex-row md:items-center">
 			<!-- Date range single container -->
 			<form method="GET">
 				<input type="hidden" name="status" value={data.statusFilter} />
@@ -178,15 +178,17 @@
 			</form>
 
 			<!-- Results count + export -->
-			<span class="text-xs text-muted-foreground">{data.orders.length} result{data.orders.length === 1 ? '' : 's'}</span>
-			<button
-				type="button"
-				onclick={exportCSV}
-				class="flex items-center gap-1 rounded-md border px-2.5 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-			>
-				<Icon icon="mdi:download" class="h-3.5 w-3.5" />
-				Export CSV
-			</button>
+			<div class="flex items-center gap-2">
+				<span class="text-xs text-muted-foreground">{data.orders.length} result{data.orders.length === 1 ? '' : 's'}</span>
+				<button
+					type="button"
+					onclick={exportCSV}
+					class="flex items-center gap-1 rounded-md border px-2.5 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+				>
+					<Icon icon="mdi:download" class="h-3.5 w-3.5" />
+					Export CSV
+				</button>
+			</div>
 		</div>
 	</div>
 
@@ -220,7 +222,7 @@
 					onclick={() => goto(resolve(`/dashboard/orders/${order.id}`))}
 					onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); goto(resolve(`/dashboard/orders/${order.id}`)); } }}
 				>
-					<div class="flex items-start gap-3 p-4">
+					<div class="flex flex-col gap-3 px-4 py-3 md:flex-row md:items-start md:gap-3">
 						<!-- Main info -->
 						<div class="min-w-0 flex-1">
 							<div class="flex flex-wrap items-center gap-2 mb-1">
@@ -268,10 +270,10 @@
 						<!-- Right side: price + date + refund -->
 						<div
 							role="none"
-							class="flex shrink-0 flex-col items-end gap-2"
+							class="flex flex-col gap-2 md:shrink-0 md:items-end md:gap-2"
 							onclick={(e) => e.stopPropagation()}
 						>
-							<div class="text-right">
+							<div class="md:text-right">
 								<p class="font-semibold">${(order.total / 100).toFixed(2)}</p>
 								<p class="text-xs text-muted-foreground">
 									{new Date(order.createdAt).toLocaleString([], {

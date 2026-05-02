@@ -115,7 +115,7 @@
 
 <div>
 	<!-- Header -->
-	<div class="mb-6 flex items-start justify-between gap-4">
+	<div class="mb-6 flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
 		<div>
 			<h1 class="text-2xl font-bold text-foreground">
 				{greeting}{firstName ? `, ${firstName}` : ''} 👋
@@ -132,7 +132,7 @@
 			{/if}
 		</div>
 		{#if data.vendor?.slug}
-			<div class="flex shrink-0 items-center gap-2">
+			<div class="flex items-center gap-2">
 				<button
 					onclick={copyCatalogLink}
 					class="inline-flex items-center gap-1.5 rounded-md border px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:border-gray-400 hover:bg-muted"
@@ -161,8 +161,7 @@
 	<div class="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
 		{#if !mounted}
 			{#each [0, 1, 2, 3] as i (i)}
-				<Card class="overflow-hidden shadow-sm">
-					<div class="h-1 bg-muted"></div>
+				<Card class="shadow-sm">
 					<CardContent>
 						<Skeleton class="h-3 w-20 rounded" />
 						<Skeleton class="mt-2 h-8 w-14 rounded" />
@@ -171,8 +170,7 @@
 				</Card>
 			{/each}
 		{:else}
-			<Card class="overflow-hidden shadow-sm">
-				<div class="h-1 bg-primary"></div>
+			<Card class="shadow-sm">
 				<CardContent>
 					<p class="text-xs font-medium tracking-wide text-muted-foreground">Items</p>
 					<p class="mt-1 text-3xl font-bold text-foreground">{data.stats.items}</p>
@@ -185,8 +183,7 @@
 				</CardContent>
 			</Card>
 
-			<Card class="overflow-hidden shadow-sm">
-				<div class="h-1 bg-blue-500"></div>
+			<Card class="shadow-sm">
 				<CardContent>
 					<p class="text-xs font-medium tracking-wide text-muted-foreground">Categories</p>
 					<p class="mt-1 text-3xl font-bold text-foreground">{data.stats.categories}</p>
@@ -199,8 +196,7 @@
 				</CardContent>
 			</Card>
 
-			<Card class="overflow-hidden shadow-sm">
-				<div class="h-1 bg-amber-500"></div>
+			<Card class="shadow-sm">
 				<CardContent>
 					<p class="text-xs font-medium tracking-wide text-muted-foreground">Total Orders</p>
 					<p class="mt-1 text-3xl font-bold text-foreground">{data.stats.orders}</p>
@@ -225,8 +221,7 @@
 				</CardContent>
 			</Card>
 
-			<Card class="overflow-hidden shadow-sm">
-				<div class="h-1 bg-emerald-500"></div>
+			<Card class="shadow-sm">
 				<CardContent>
 					<p class="text-xs font-medium tracking-wide text-muted-foreground">Revenue</p>
 					<p class="mt-1 text-3xl font-bold text-foreground">
@@ -253,14 +248,14 @@
 		<div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
 			<a
 				href={resolve('/dashboard/catalog/items/new')}
-				class="flex items-start gap-3 rounded-xl bg-primary p-4 text-white transition-shadow hover:shadow-md"
+				class="flex items-start gap-3 rounded-xl border p-4 transition-all hover:border-gray-300 hover:shadow-sm"
 			>
-				<div class="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white/20">
-					<Icon icon="mdi:plus" class="h-4 w-4" />
+				<div class="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+					<Icon icon="mdi:plus" class="h-4 w-4 text-primary" />
 				</div>
 				<div>
-					<p class="text-sm font-semibold">Add catalog item</p>
-					<p class="mt-0.5 text-xs opacity-80">Add a new item to your menu</p>
+					<p class="text-sm font-semibold text-foreground">Add catalog item</p>
+					<p class="mt-0.5 text-xs text-muted-foreground">Add a new item to your menu</p>
 				</div>
 			</a>
 			<a

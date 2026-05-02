@@ -824,11 +824,55 @@ proper `<Dialog>` primitive with explicit confirm/cancel buttons. Current callsi
 - Query params (`?status=received`, `?category=breads`) are always the source
   of truth for filter state. Read via `$page.url.searchParams`.
 
+### Order state-transition buttons
+
+Order state-transition buttons ("Mark as confirmed", "Mark as in production", "Mark as ready", "Mark as fulfilled") all use `bg-blue-600 hover:bg-blue-700 text-white` for consistency across both the orders list and order detail page. Brand green is reserved for primary page-level CTAs (setup checklist's "Set up →", create-new affordances). Per-stage color differentiation (blue/amber/violet/green per stage) was considered and deferred — labels carry the information; color carries the action category (state transition vs primary CTA vs destructive).
+
+Currently implemented as plain `<button>` elements with explicit classes on both surfaces — shadcn's `variant="default"` applies brand green, which conflicts with this convention. Tier 2 shadcn audit should add a Button variant for state-transition actions.
+
+### Destructive actions on order detail (Cancel order)
+
+The "Cancel order" button on the order detail page (`/dashboard/orders/[orderId]`) uses a plain `<button>` with outlined red classes rather than `<Button variant="destructive">`. The destructive variant applies filled `bg-red-600`, which competes visually with the blue state-transition primary action sitting beside it on the same row. Outlined red (`border-red-200 text-red-500 hover:bg-red-50`) is the quieter destructive treatment used consistently on the orders list card; the detail page matches.
+
+The mobile hamburger uses a plain `<button>` instead of `<Button variant="ghost">` due to dark-surface hover conflict. The Cancel order button uses a plain `<button>` instead of `<Button variant="destructive">` for the same reason — the filled variant conflicts with adjacent primary actions. Both are flagged for the Tier 2 shadcn audit: consider adding "dark-surface" and "outlined-destructive" Button variants to resolve both cases properly.
+
 ### Mobile header
 
 The mobile header (`md:hidden` in `+layout.svelte`) is `sticky top-0 z-30` so the hamburger remains accessible during scroll. Desktop is `md:static md:z-auto` — the persistent sidebar provides navigation and a sticky decorative header would steal vertical space. The Sheet/drawer overlay sits at `z-50`, above the sticky header.
 
 The hamburger uses a plain `<button>` rather than shadcn `<Button variant="ghost">` because ghost's `hover:bg-accent` conflicts unpredictably with explicit dark-surface hover overrides. Hover convention matches sidebar nav links: `hover:bg-gray-800`. Tier 2 shadcn audit should add a "dark surface" Button variant to resolve this properly.
+
+---
+
+## Mobile-First Convention
+
+Write base classes for the narrowest meaningful layout. Add `md:` modifiers for desktop enhancements. The `md:` breakpoint (768px) is the single toggle point for the dashboard — it matches the sidebar/no-sidebar layout switch in `+layout.svelte`.
+
+### Card two-column pattern
+
+Desktop-style "left content / right actions" cards reflow to a vertical stack at mobile. The correct pattern:
+
+```svelte
+<!-- outer: column on mobile, row on desktop -->
+<div class="flex flex-col gap-3 px-4 py-3 md:flex-row md:items-start md:gap-4">
+    <!-- left / top section: full width on mobile -->
+    <div class="min-w-0 flex-1">...</div>
+
+    <!-- right / bottom section: full width on mobile, right column on desktop -->
+    <div class="flex flex-col gap-2 md:shrink-0 md:items-end md:gap-1">
+        ...price or summary...
+        <div class="flex flex-wrap gap-1.5 md:mt-2 md:justify-end">
+            ...action buttons...
+        </div>
+    </div>
+</div>
+```
+
+**Rules:**
+
+- Never use `shrink-0` on a right column without pairing it with `md:shrink-0` (not bare `shrink-0`). A bare `shrink-0` right column forces the left column to compress on mobile.
+- When a desktop layout has a "right column" pattern (price + actions, or similar), the mobile pattern should NOT try to reproduce that structure horizontally. Stack vertically and let each element take its natural width. Don't use `justify-between` or `flex-row-reverse` to recreate desktop's spatial relationships on mobile — produces brittle layouts that fight the platform.
+- For rows with overflowing content (date range + export, filter toolbar extras), use `flex-col gap-2 md:flex-row md:items-center` to stack on mobile and inline on desktop. Keep logically related elements (result count + export button) in the same inner container so they stay together as a unit when wrapping.
 
 ---
 

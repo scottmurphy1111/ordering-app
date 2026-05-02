@@ -116,9 +116,9 @@
 	};
 	const statusActionConfig: Record<string, { label: string; cls: string }> = {
 		received:  { label: 'Mark as confirmed',     cls: 'bg-blue-600 text-white hover:bg-blue-700' },
-		confirmed: { label: 'Mark as in production', cls: 'bg-amber-500 text-white hover:bg-amber-600' },
-		preparing: { label: 'Mark as ready',         cls: 'bg-violet-600 text-white hover:bg-violet-700' },
-		ready:     { label: 'Mark as fulfilled',     cls: 'bg-green-600 text-white hover:bg-green-700' }
+		confirmed: { label: 'Mark as in production', cls: 'bg-blue-600 text-white hover:bg-blue-700' },
+		preparing: { label: 'Mark as ready',         cls: 'bg-blue-600 text-white hover:bg-blue-700' },
+		ready:     { label: 'Mark as fulfilled',     cls: 'bg-blue-600 text-white hover:bg-blue-700' }
 	};
 
 	const totalActiveCount = $derived(Object.values(data.statusCounts).reduce((a, b) => a + b, 0));
@@ -139,13 +139,6 @@
 
 	function tabCount(s: string): number {
 		return s === '' ? totalActiveCount : (data.statusCounts[s] ?? 0);
-	}
-
-	function itemSummary(items: { name: string; quantity: number }[]): string {
-		if (!items.length) return '';
-		const labels = items.slice(0, 2).map((i) => (i.quantity > 1 ? `${i.name} ×${i.quantity}` : i.name));
-		const extra = items.length - 2;
-		return extra > 0 ? `${labels.join(', ')}, +${extra} more` : labels.join(', ');
 	}
 
 	const urgentStatuses = new Set(['received', 'ready']);
@@ -248,7 +241,7 @@
 
 	<!-- Summary bar -->
 	{#if mounted}
-		<OrdersSummaryBar stats={[
+		<OrdersSummaryBar compact stats={[
 			{ label: 'Needs action', value: needsAction, urgent: needsAction > 0 },
 			{ label: 'In progress', value: inProgress },
 			{ label: 'Scheduled', value: data.scheduledCount },
@@ -478,26 +471,24 @@
 	stripePaymentIntentId: string | null;
 	items: { name: string; quantity: number }[];
 })}
-	{@const isScheduled = !!order.scheduledFor}
 	{@const isCancelled = order.status === 'cancelled'}
 	{@const action = statusActionConfig[order.status]}
 	<div
 		role="button"
 		tabindex="0"
 		class="cursor-pointer rounded-xl border bg-background shadow-sm transition-shadow hover:shadow-md
-			{isScheduled && !isCancelled ? 'border-l-[3px] border-l-amber-400 bg-amber-50/30' : ''}
 			{isCancelled ? 'opacity-50' : ''}"
 		onclick={() => goto(resolve(`/dashboard/orders/${order.id}`))}
 		onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') goto(resolve(`/dashboard/orders/${order.id}`)); }}
 	>
-		<div class="flex items-start gap-4 p-4">
+		<div class="flex flex-col gap-3 px-4 py-3 md:flex-row md:items-start md:gap-4">
 			<!-- Left: order info -->
 			<div class="min-w-0 flex-1">
 				<!-- Badges row -->
 				<div class="mb-1.5 flex flex-wrap items-center gap-1.5">
 					<button
 						onclick={(e) => copyOrderNumber(e, order.id, order.orderNumber)}
-						class="cursor-copy font-mono text-xs font-semibold text-foreground transition-colors hover:text-muted-foreground hover:underline"
+						class="cursor-copy font-mono text-xs font-medium text-foreground transition-colors hover:text-muted-foreground hover:underline"
 						title="Click to copy"
 					>
 						{copiedId === order.id ? 'Copied!' : order.orderNumber}
@@ -505,7 +496,6 @@
 					<Badge class={statusColors[order.status] ?? 'bg-muted text-muted-foreground'}>
 						{statusLabels[order.status] ?? order.status}
 					</Badge>
-					<Badge class="bg-muted text-muted-foreground capitalize">{order.type}</Badge>
 					{#if order.paymentStatus === 'paid'}
 						<Badge class="bg-emerald-100 text-emerald-700">paid</Badge>
 					{:else if order.paymentStatus === 'refunded'}
@@ -516,13 +506,7 @@
 				</div>
 				<!-- Customer -->
 				{#if order.customerName}
-					<p class="text-sm text-foreground">
-						{order.customerName}{order.customerPhone ? ` · ${order.customerPhone}` : ''}
-					</p>
-				{/if}
-				<!-- Items -->
-				{#if order.items.length > 0}
-					<p class="text-xs text-muted-foreground">{itemSummary(order.items)}</p>
+					<p class="text-sm text-foreground">{order.customerName}</p>
 				{/if}
 				<!-- Scheduled (free-form) -->
 				{#if order.scheduledFor}
@@ -544,30 +528,20 @@
 						{order.deliveryAddress}
 					</p>
 				{/if}
-				<!-- Notes -->
-				{#if order.notes}
-					<p class="mt-0.5 text-xs text-muted-foreground italic">"{order.notes}"</p>
-				{/if}
 			</div>
 
 			<!-- Right: price, time, actions -->
 			<div
 				role="none"
-				class="flex shrink-0 flex-col items-end gap-1"
+				class="flex flex-col gap-2 md:shrink-0 md:items-end md:gap-1"
 				onclick={(e) => e.stopPropagation()}
 			>
 				<span class="text-base font-semibold text-foreground">
 					${(order.total / 100).toFixed(2)}
 				</span>
-				<span class="text-xs text-muted-foreground">
-					{new Date(order.createdAt).toLocaleString([], {
-						month: 'short', day: 'numeric',
-						hour: '2-digit', minute: '2-digit'
-					})}
-				</span>
 
 				<!-- Action buttons -->
-				<div class="mt-2 flex flex-col items-end gap-1.5">
+				<div class="flex flex-row flex-wrap items-center gap-1.5 md:mt-2 md:justify-end">
 					{#if action}
 						<form method="post" action="?/updateStatus" use:enhance autocomplete="off">
 							<input type="hidden" name="id" value={order.id} />
@@ -580,40 +554,38 @@
 							</button>
 						</form>
 					{/if}
-					<div class="flex items-center gap-1.5">
-						{#if !['fulfilled', 'cancelled'].includes(order.status)}
-							<form method="post" action="?/cancel" use:enhance autocomplete="off">
-								<input type="hidden" name="id" value={order.id} />
-								<button
-									type="submit"
-									onclick={async (e) => {
-										e.preventDefault();
-										const btn = e.currentTarget as HTMLButtonElement;
-										if (await confirmDialog('Cancel this order?')) btn.form?.requestSubmit();
-									}}
-									class="rounded-md border border-red-200 px-2.5 py-1 text-xs font-medium text-red-500 transition-colors hover:bg-red-50 hover:text-red-600"
-								>
-									Cancel
-								</button>
-							</form>
-						{/if}
-						{#if order.status === 'cancelled' && order.paymentStatus === 'paid'}
-							<form method="post" action="?/refund" use:enhance autocomplete="off">
-								<input type="hidden" name="id" value={order.id} />
-								<button
-									type="submit"
-									onclick={async (e) => {
-										e.preventDefault();
-										const btn = e.currentTarget as HTMLButtonElement;
-										if (await confirmDialog('Issue a full refund for this order?')) btn.form?.requestSubmit();
-									}}
-									class="rounded-md border border-orange-200 px-2.5 py-1 text-xs font-medium text-orange-600 transition-colors hover:bg-orange-50"
-								>
-									Refund
-								</button>
-							</form>
-						{/if}
-					</div>
+					{#if !['fulfilled', 'cancelled'].includes(order.status)}
+						<form method="post" action="?/cancel" use:enhance autocomplete="off">
+							<input type="hidden" name="id" value={order.id} />
+							<button
+								type="submit"
+								onclick={async (e) => {
+									e.preventDefault();
+									const btn = e.currentTarget as HTMLButtonElement;
+									if (await confirmDialog('Cancel this order?')) btn.form?.requestSubmit();
+								}}
+								class="rounded-md border border-red-200 px-2.5 py-1 text-xs font-medium text-red-500 transition-colors hover:bg-red-50 hover:text-red-600"
+							>
+								Cancel
+							</button>
+						</form>
+					{/if}
+					{#if order.status === 'cancelled' && order.paymentStatus === 'paid'}
+						<form method="post" action="?/refund" use:enhance autocomplete="off">
+							<input type="hidden" name="id" value={order.id} />
+							<button
+								type="submit"
+								onclick={async (e) => {
+									e.preventDefault();
+									const btn = e.currentTarget as HTMLButtonElement;
+									if (await confirmDialog('Issue a full refund for this order?')) btn.form?.requestSubmit();
+								}}
+								class="rounded-md border border-orange-200 px-2.5 py-1 text-xs font-medium text-orange-600 transition-colors hover:bg-orange-50"
+							>
+								Refund
+							</button>
+						</form>
+					{/if}
 				</div>
 			</div>
 		</div>
