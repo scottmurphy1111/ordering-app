@@ -41,6 +41,13 @@
 		DialogDescription,
 		DialogFooter
 	} from '$lib/components/ui/dialog';
+	import {
+		Sheet,
+		SheetContent,
+		SheetHeader,
+		SheetTitle,
+		SheetDescription
+	} from '$lib/components/ui/sheet';
 	import CatalogItemForm from '$lib/components/CatalogItemForm.svelte';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
@@ -136,18 +143,81 @@
 		}
 	}
 
-	// ── Inline create form ────────────────────────────────────────
-	let showForm = $state(false);
-	let lastCreated = $state<{ id: number; name: string } | null>(null);
+	// ── Item drawer ────────────────────────────────────────────────
+	let drawerOpen = $state(false);
+	let drawerMode = $state<'new' | 'edit'>('new');
+	let drawerItem = $state<CatalogItem | null>(null);
+	let drawerLastCreated = $state<{ id: number; name: string } | null>(null);
+
+	function clearDrawerParam() {
+		const params = new URLSearchParams();
+		if (searchValue) params.set('search', searchValue);
+		if (selectedCategoryId) params.set('categoryId', selectedCategoryId);
+		const qs = params.toString();
+		goto(
+			resolve(
+				(qs ? `/dashboard/catalog/items?${qs}` : '/dashboard/catalog/items') as `/${string}`
+			),
+			{ replaceState: true, noScroll: true, keepFocus: true }
+		);
+	}
+
+	function closeDrawer() {
+		drawerOpen = false;
+		clearDrawerParam();
+	}
+
+	function openNewDrawer() {
+		const params = new URLSearchParams();
+		if (searchValue) params.set('search', searchValue);
+		if (selectedCategoryId) params.set('categoryId', selectedCategoryId);
+		params.set('drawer', 'new');
+		goto(resolve(`/dashboard/catalog/items?${params.toString()}` as `/${string}`), {
+			noScroll: true
+		});
+	}
+
+	function openEditDrawer(item: CatalogItem) {
+		const params = new URLSearchParams();
+		if (searchValue) params.set('search', searchValue);
+		if (selectedCategoryId) params.set('categoryId', selectedCategoryId);
+		params.set('drawer', String(item.id));
+		goto(resolve(`/dashboard/catalog/items?${params.toString()}` as `/${string}`), {
+			noScroll: true
+		});
+	}
+
+	// React to server-driven drawer state
+	$effect(() => {
+		if (!data.drawer) return;
+		if (data.drawer.mode === 'new') {
+			const isAlreadyOpenNew = untrack(() => drawerOpen && drawerMode === 'new');
+			drawerMode = 'new';
+			drawerItem = null;
+			if (!isAlreadyOpenNew) drawerLastCreated = null;
+			drawerOpen = true;
+		} else if (data.drawer.mode === 'edit' && data.drawer.item) {
+			drawerMode = 'edit';
+			drawerItem = data.drawer.item as CatalogItem;
+			drawerLastCreated = null;
+			drawerOpen = true;
+		}
+	});
 
 	// ── Search + category filter ──────────────────────────────────
 	let searchInput = $state<HTMLInputElement | null>(null);
 	let searchTimer: ReturnType<typeof setTimeout> | null = null;
 	let searchValue = $state(untrack(() => data.search ?? ''));
-	let selectedCategoryId = $state(untrack(() => data.selectedCategoryId ? String(data.selectedCategoryId) : ''));
+	let selectedCategoryId = $state(
+		untrack(() => (data.selectedCategoryId ? String(data.selectedCategoryId) : ''))
+	);
 
-	$effect(() => { searchValue = data.search ?? ''; });
-	$effect(() => { selectedCategoryId = data.selectedCategoryId ? String(data.selectedCategoryId) : ''; });
+	$effect(() => {
+		searchValue = data.search ?? '';
+	});
+	$effect(() => {
+		selectedCategoryId = data.selectedCategoryId ? String(data.selectedCategoryId) : '';
+	});
 
 	function buildCatalogUrl(search: string, categoryId: string): `/${string}` {
 		const params = new URLSearchParams();
@@ -351,24 +421,17 @@
 						</DropdownMenuItem>
 						<DropdownMenuItem
 							onclick={() => {
-								sortMode = true;
-								showForm = false;
-							}}
+							sortMode = true;
+							closeDrawer();
+						}}
 						>
 							<Icon icon="mdi:drag-vertical" class="h-4 w-4" /> Reorder items
 						</DropdownMenuItem>
 					</DropdownMenuContent>
 				</DropdownMenu>
-				<Button
-					onclick={() => {
-						showForm = !showForm;
-						lastCreated = null;
-					}}
-					variant="default"
-					class="gap-1.5"
-				>
-					<Icon icon={showForm ? 'mdi:close' : 'mdi:plus'} class="h-4 w-4" />
-					{showForm ? 'Cancel' : 'New item'}
+				<Button onclick={() => openNewDrawer()} variant="default" class="gap-1.5">
+					<Icon icon="mdi:plus" class="h-4 w-4" />
+					New item
 				</Button>
 			{:else}
 				<Button
@@ -388,40 +451,6 @@
 		</div>
 	</div>
 
-	<!-- ── Inline create form ────────────────────────────────────── -->
-	{#if showForm}
-		{#if lastCreated}
-			<div
-				class="mb-3 flex items-center justify-between rounded-lg border border-primary/20 bg-primary/5 px-4 py-2.5 text-sm text-primary/90"
-			>
-				<span
-					>✓ <strong>{lastCreated.name}</strong> created —
-					<a
-						href={resolve(`/dashboard/catalog/items/${lastCreated.id}`)}
-						class="underline hover:text-primary/80">edit item</a
-					></span
-				>
-				<Button
-					onclick={() => (lastCreated = null)}
-					variant="ghost"
-					size="icon-sm"
-					class="ml-4 text-primary/80 hover:text-primary"
-					><Icon icon="mdi:close" class="h-4 w-4" /></Button
-				>
-			</div>
-		{/if}
-		<div class="mb-6">
-			<CatalogItemForm
-				mode="new"
-				formAction="?/create"
-				categories={data.categories}
-				hasSubscriptionsAddon={data.hasSubscriptionsAddon}
-				onSuccess={(item) => { lastCreated = item; }}
-				onCancel={() => (showForm = false)}
-			/>
-		</div>
-	{/if}
-
 	<!-- Filters -->
 	<form method="get" class="mb-5 flex min-w-0 gap-2">
 		<div class="relative min-w-0 flex-1">
@@ -436,7 +465,9 @@
 				bind:value={searchValue}
 				placeholder="Search items..."
 				oninput={onSearchInput}
-				class="h-10 w-full rounded-lg border border-gray-200 bg-background {searchValue ? 'pr-8' : 'pr-4'} pl-9 text-sm text-foreground outline-none placeholder:text-muted-foreground focus:border-transparent focus:ring-2 focus:ring-primary/50"
+				class="h-10 w-full rounded-lg border border-gray-200 bg-background {searchValue
+					? 'pr-8'
+					: 'pr-4'} pl-9 text-sm text-foreground outline-none placeholder:text-muted-foreground focus:border-transparent focus:ring-2 focus:ring-primary/50"
 			/>
 			{#if searchValue}
 				<button
@@ -459,9 +490,10 @@
 					goto(resolve(buildCatalogUrl(searchValue, val)), { replaceState: true });
 				}}
 			>
-				<SelectTrigger class="w-36 shrink-0 border-gray-200">
+				<SelectTrigger class="w-44 shrink-0 border-gray-200">
 					<SelectValue>
-						{data.categories.find((c) => String(c.id) === selectedCategoryId)?.name ?? (selectedCategoryId === 'uncategorised' ? '— Uncategorised' : 'All categories')}
+						{data.categories.find((c) => String(c.id) === selectedCategoryId)?.name ??
+							(selectedCategoryId === 'uncategorized' ? '— Uncategorized' : 'All categories')}
 					</SelectValue>
 				</SelectTrigger>
 				<SelectContent>
@@ -469,7 +501,7 @@
 					{#each data.categories as cat (cat.id)}
 						<SelectItem value={String(cat.id)}>{cat.name}</SelectItem>
 					{/each}
-					<SelectItem value="uncategorised">— Uncategorised</SelectItem>
+					<SelectItem value="uncategorized">— Uncategorized</SelectItem>
 				</SelectContent>
 			</Select>
 		{/if}
@@ -569,10 +601,7 @@
 				<p class="mt-1 text-sm text-muted-foreground">
 					Add your first item to start building your catalog.
 				</p>
-				<Button
-					onclick={() => { showForm = true; }}
-					class="mt-6 gap-1.5"
-				>
+				<Button onclick={() => openNewDrawer()} class="mt-6 gap-1.5">
 					<Icon icon="mdi:plus" class="h-4 w-4" /> Add your first item
 				</Button>
 			</div>
@@ -583,7 +612,8 @@
 				<DropdownMenuTrigger>
 					<button
 						type="button"
-						class="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium capitalize transition-colors hover:opacity-80 {item.status === 'available'
+						class="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium capitalize transition-colors hover:opacity-80 {item.status ===
+						'available'
 							? 'bg-green-100 text-green-700'
 							: item.status === 'sold_out'
 								? 'bg-amber-100 text-amber-700'
@@ -601,16 +631,26 @@
 							<form
 								method="post"
 								action="?/setStatus"
-								use:enhance={() => ({ update }) => update({ reset: false })}
+								use:enhance={() =>
+									({ update }) =>
+										update({ reset: false })}
 								class="w-full"
 							>
 								<input type="hidden" name="id" value={item.id} />
 								<input type="hidden" name="status" value={val} />
 								<button
 									type="submit"
-									class="flex w-full items-center gap-2 text-sm {item.status === val ? 'font-semibold' : ''}"
+									class="flex w-full items-center gap-2 text-sm {item.status === val
+										? 'font-semibold'
+										: ''}"
 								>
-									<span class="h-2 w-2 rounded-full {val === 'available' ? 'bg-green-500' : val === 'sold_out' ? 'bg-amber-400' : 'bg-gray-300'}"></span>
+									<span
+										class="h-2 w-2 rounded-full {val === 'available'
+											? 'bg-green-500'
+											: val === 'sold_out'
+												? 'bg-amber-400'
+												: 'bg-gray-300'}"
+									></span>
 									{label}
 								</button>
 							</form>
@@ -637,7 +677,9 @@
 									class="h-10 w-10 shrink-0 rounded-md object-cover"
 								/>
 							{:else}
-								<div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-gray-100">
+								<div
+									class="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-gray-100"
+								>
 									<Icon icon="mdi:image-outline" class="h-4 w-4 text-gray-300" />
 								</div>
 							{/if}
@@ -654,12 +696,13 @@
 					<div class="flex items-center justify-between gap-2 border-t border-gray-100 px-4 py-2">
 						{@render statusDropdown(item)}
 						<div class="flex items-center gap-1">
-							<a
-								href={resolve(`/dashboard/catalog/items/${item.id}`)}
+							<button
+								type="button"
+								onclick={() => openEditDrawer(item)}
 								class="rounded-md border border-gray-200 px-2.5 py-1 text-xs font-medium text-gray-700 transition-colors hover:bg-gray-50"
 							>
 								Edit
-							</a>
+							</button>
 							<form method="post" action="?/delete" use:enhance>
 								<input type="hidden" name="id" value={item.id} />
 								<button
@@ -682,7 +725,9 @@
 		</div>
 
 		<!-- Desktop table — hidden below md -->
-		<div class="hidden overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm md:block">
+		<div
+			class="hidden overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm md:block"
+		>
 			<Table>
 				<TableHeader>
 					<TableRow class="hover:bg-transparent">
@@ -730,7 +775,7 @@
 									</div>
 								{/if}
 							</TableCell>
-							<TableCell class="max-w-0 whitespace-normal px-4 py-3">
+							<TableCell class="max-w-0 px-4 py-3 whitespace-normal">
 								<div class="min-w-0">
 									<a
 										href={resolve(`/dashboard/catalog/items/${item.id}`)}
@@ -765,12 +810,13 @@
 							</TableCell>
 							<TableCell class="w-20 px-4 py-3 text-right">
 								<div class="flex items-center justify-end gap-1">
-									<a
-										href={resolve(`/dashboard/catalog/items/${item.id}`)}
+									<button
+										type="button"
+										onclick={() => openEditDrawer(item)}
 										class="rounded-md border border-gray-200 px-2.5 py-1 text-xs font-medium text-gray-700 transition-colors hover:bg-gray-50"
 									>
 										Edit
-									</a>
+									</button>
 									<form method="post" action="?/delete" use:enhance>
 										<input type="hidden" name="id" value={item.id} />
 										<button
@@ -1128,3 +1174,64 @@
 		{/if}
 	</DialogContent>
 </Dialog>
+<!-- ── Item drawer ─────────────────────────────────────────────── -->
+<Sheet bind:open={drawerOpen} onOpenChange={(open) => { if (!open) clearDrawerParam(); }}>
+	<SheetContent
+		side="right"
+		class="data-[side=right]:w-full data-[side=right]:sm:max-w-none data-[side=right]:md:max-w-[720px] flex flex-col gap-0 p-0"
+	>
+		<SheetHeader class="shrink-0 border-b px-6 py-4">
+			<SheetTitle>{drawerMode === 'new' ? 'New item' : 'Edit item'}</SheetTitle>
+			<SheetDescription class="sr-only">
+				{drawerMode === 'new' ? 'Create a new catalog item' : 'Edit catalog item details'}
+			</SheetDescription>
+		</SheetHeader>
+		<div class="flex-1 overflow-y-auto px-6 py-5">
+			{#if drawerMode === 'new'}
+				{#if drawerLastCreated}
+					<div
+						class="mb-4 flex items-center justify-between rounded-lg border border-primary/20 bg-primary/5 px-4 py-2.5 text-sm text-primary/90"
+					>
+						<span>
+							✓ <strong>{drawerLastCreated.name}</strong> created —
+							<a
+								href={resolve(`/dashboard/catalog/items/${drawerLastCreated.id}`)}
+								class="underline hover:text-primary/80"
+							>edit item</a>
+						</span>
+						<Button
+							onclick={() => (drawerLastCreated = null)}
+							variant="ghost"
+							size="icon-sm"
+							class="ml-4 text-primary/80 hover:text-primary"
+						>
+							<Icon icon="mdi:close" class="h-4 w-4" />
+						</Button>
+					</div>
+				{/if}
+				<CatalogItemForm
+					mode="new"
+					formAction="?/create"
+					categories={data.categories}
+					hasSubscriptionsAddon={data.hasSubscriptionsAddon}
+					twoColumn={true}
+					variant="flat"
+					onSuccess={(item) => { drawerLastCreated = item; }}
+					onCancel={() => closeDrawer()}
+				/>
+			{:else if drawerMode === 'edit' && drawerItem}
+				<CatalogItemForm
+					mode="edit"
+					formAction="?/update"
+					item={drawerItem}
+					itemId={drawerItem.id}
+					categories={data.categories}
+					hasSubscriptionsAddon={data.hasSubscriptionsAddon}
+					twoColumn={true}
+					variant="flat"
+					onCancel={() => closeDrawer()}
+				/>
+			{/if}
+		</div>
+	</SheetContent>
+</Sheet>
