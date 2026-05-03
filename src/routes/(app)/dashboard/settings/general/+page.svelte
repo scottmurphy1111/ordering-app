@@ -16,6 +16,7 @@
 		SelectSeparator
 	} from '$lib/components/ui/select';
 	import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '$lib/components/ui/card';
+	import { Checkbox } from '$lib/components/ui/checkbox';
 	import { BUSINESS_TYPES } from '$lib/utils/business-type-labels';
 	import { US_TIMEZONES, getAllTimezones, getTimezoneLabel } from '$lib/utils/timezones';
 
@@ -300,12 +301,7 @@
 					Enable delivery as an order type at checkout and set a flat delivery fee.
 				</p>
 				<label class="flex cursor-pointer items-center gap-3">
-					<input
-						type="checkbox"
-						name="enableDelivery"
-						class="h-4 w-4 rounded text-primary"
-						checked={savedDelivery.enableDelivery ?? false}
-					/>
+					<Checkbox name="enableDelivery" checked={savedDelivery.enableDelivery ?? false} />
 					<span class="text-sm font-medium text-muted-foreground">Enable delivery orders</span>
 				</label>
 				<div class="sm:w-48">
@@ -359,12 +355,7 @@
 			<CardContent class="space-y-5">
 				<p class="text-xs text-muted-foreground">Control what customers see at checkout.</p>
 				<label class="flex cursor-pointer items-start gap-3">
-					<input
-						type="checkbox"
-						name="enableTips"
-						class="mt-0.5 h-4 w-4 rounded text-primary"
-						checked={savedCheckout.enableTips ?? false}
-					/>
+					<Checkbox name="enableTips" checked={savedCheckout.enableTips ?? false} class="mt-0.5" />
 					<div>
 						<span class="text-sm font-medium text-muted-foreground">Accept tips at checkout</span>
 						<p class="mt-0.5 text-xs text-muted-foreground/70">
@@ -374,11 +365,10 @@
 					</div>
 				</label>
 				<label class="flex cursor-pointer items-start gap-3">
-					<input
-						type="checkbox"
+					<Checkbox
 						name="asapPickupEnabled"
-						class="mt-0.5 h-4 w-4 rounded text-primary"
 						checked={savedCheckout.asapPickupEnabled ?? false}
+						class="mt-0.5"
 					/>
 					<div>
 						<span class="text-sm font-medium text-muted-foreground">Allow ASAP pickup</span>
@@ -429,13 +419,11 @@
 									>{day.label}</span
 								>
 								<label class="flex items-center gap-1.5 text-sm text-muted-foreground">
-									<input
-										type="checkbox"
+									<Checkbox
 										name="{day.key}_closed"
-										class="h-4 w-4 rounded"
 										checked={closedDays[day.key] ?? false}
-										onchange={(e) => {
-											closedDays[day.key] = e.currentTarget.checked;
+										onCheckedChange={(v) => {
+											closedDays[day.key] = v === true;
 										}}
 									/>
 									Closed

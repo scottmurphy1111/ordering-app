@@ -5,6 +5,7 @@
 	import Icon from '@iconify/svelte';
 	import { Button } from '$lib/components/ui/button';
 	import { Card, CardContent, CardHeader, CardTitle } from '$lib/components/ui/card';
+	import { Input } from '$lib/components/ui/input';
 	import {
 		Select,
 		SelectTrigger,
@@ -15,6 +16,7 @@
 		SelectGroupHeading,
 		SelectSeparator
 	} from '$lib/components/ui/select';
+	import { Checkbox } from '$lib/components/ui/checkbox';
 	import { BUSINESS_TYPES, businessTypeLabel } from '$lib/utils/business-type-labels';
 	import { US_TIMEZONES, getAllTimezones, getTimezoneLabel } from '$lib/utils/timezones';
 
@@ -151,7 +153,7 @@
 							<label class="mb-1 block text-sm font-medium text-muted-foreground" for="name"
 								>Business name</label
 							>
-							<input
+							<Input
 								id="name"
 								name="name"
 								type="text"
@@ -160,7 +162,6 @@
 								oninput={(e) => {
 									slugValue = toSlug((e.target as HTMLInputElement).value);
 								}}
-								class="w-full rounded-md border px-3 py-2 text-sm focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
 							/>
 						</div>
 
@@ -170,14 +171,14 @@
 							>
 							<div class="flex items-center gap-1.5">
 								<span class="text-sm text-muted-foreground">getorderlocal.com/</span>
-								<input
+								<Input
 									id="slug"
 									name="slug"
 									type="text"
 									required
 									bind:value={slugValue}
 									placeholder="acme-burger"
-									class="flex-1 rounded-md border px-3 py-2 text-sm focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
+									class="flex-1"
 								/>
 							</div>
 						</div>
@@ -229,13 +230,7 @@
 						<label
 							class="flex cursor-pointer items-center gap-2 rounded-lg border bg-muted/40 px-3 py-2.5"
 						>
-							<input
-								type="checkbox"
-								name="seedDemo"
-								value="1"
-								checked
-								class="h-4 w-4 rounded accent-primary"
-							/>
+							<Checkbox name="seedDemo" value="1" checked={true} />
 							<div>
 								<p class="text-sm font-medium text-foreground">Add example catalog items</p>
 								<p class="text-xs text-muted-foreground">

@@ -6,6 +6,7 @@
 	import { resolve } from '$app/paths';
 	import Icon from '@iconify/svelte';
 	import { Badge } from '$lib/components/ui/badge';
+	import { Input } from '$lib/components/ui/input';
 	import OrdersViewToggle from '$lib/components/OrdersViewToggle.svelte';
 	import OrdersSummaryBar from '$lib/components/OrdersSummaryBar.svelte';
 	import OrdersFilterTabs from '$lib/components/OrdersFilterTabs.svelte';
@@ -131,13 +132,13 @@
 				icon="mdi:magnify"
 				class="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground"
 			/>
-			<input
+			<Input
 				type="search"
 				name="q"
 				value={data.search}
 				placeholder="Search by order #, customer name, email, or phone…"
-				class="h-10 w-full rounded-lg border border-gray-200 bg-background pr-4 pl-9 text-sm text-foreground outline-none placeholder:text-muted-foreground focus:border-transparent focus:ring-2 focus:ring-primary/50"
-				oninput={(e) => debounceSubmit(e.currentTarget.form!)}
+				class="pr-4 pl-9"
+				oninput={(e) => debounceSubmit((e.target as HTMLInputElement).closest('form')!)}
 			/>
 		</div>
 	</form>

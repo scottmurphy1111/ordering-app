@@ -4,6 +4,16 @@
 	import Icon from '@iconify/svelte';
 	import { Button } from '$lib/components/ui/button';
 	import { Card, CardContent, CardFooter } from '$lib/components/ui/card';
+	import { Input } from '$lib/components/ui/input';
+	import { Textarea } from '$lib/components/ui/textarea';
+	import {
+		Select,
+		SelectTrigger,
+		SelectContent,
+		SelectItem,
+		SelectValue
+	} from '$lib/components/ui/select';
+	import { Switch } from '$lib/components/ui/switch';
 
 	type ImageEntry = { url: string; isPrimary?: boolean };
 
@@ -206,14 +216,13 @@
 {#snippet fieldName()}
 	<div>
 		<label class="mb-1 block text-sm font-medium text-muted-foreground" for="name">Name *</label>
-		<input
+		<Input
 			id="name"
 			name="name"
 			type="text"
 			required
 			value={item?.name ?? ''}
 			placeholder="e.g. Sourdough Loaf"
-			class="h-10 w-full rounded-md border px-3 text-sm focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
 		/>
 	</div>
 {/snippet}
@@ -223,14 +232,13 @@
 		<label class="mb-1 block text-sm font-medium text-muted-foreground" for="description"
 			>Description</label
 		>
-		<textarea
+		<Textarea
 			id="description"
 			name="description"
-			rows="2"
 			placeholder="Short description of the item..."
-			class="w-full rounded-md border px-3 py-2 text-sm focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
-			>{item?.description ?? ''}</textarea
-		>
+			class="min-h-18"
+			value={item?.description ?? ''}
+		/>
 	</div>
 {/snippet}
 
@@ -240,31 +248,29 @@
 			<label class="mb-1 block text-sm font-medium text-muted-foreground" for="price"
 				>Price ($) *</label
 			>
-			<input
+			<Input
 				id="price"
 				name="price"
 				type="number"
-				min="0"
-				step="0.01"
+				min={0}
+				step={0.01}
 				required
 				value={item ? (item.price / 100).toFixed(2) : ''}
 				placeholder="9.99"
-				class="h-10 w-full rounded-md border px-3 text-sm focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
 			/>
 		</div>
 		<div>
 			<label class="mb-1 block text-sm font-medium text-muted-foreground" for="discountedPrice"
 				>Sale price ($)</label
 			>
-			<input
+			<Input
 				id="discountedPrice"
 				name="discountedPrice"
 				type="number"
-				min="0"
-				step="0.01"
+				min={0}
+				step={0.01}
 				value={item?.discountedPrice ? (item.discountedPrice / 100).toFixed(2) : ''}
 				placeholder="Optional"
-				class="h-10 w-full rounded-md border px-3 text-sm focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
 			/>
 		</div>
 	</div>
@@ -275,23 +281,26 @@
 		<label class="mb-1 block text-sm font-medium text-muted-foreground" for="categoryId"
 			>Category</label
 		>
-		<select
-			id="categoryId"
-			name="categoryId"
-			class="h-10 w-full rounded-md border px-3 text-sm focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
-		>
-			<option value="">No category</option>
-			{#each categories as cat (cat.id)}
-				<option value={String(cat.id)} selected={item?.category?.id === cat.id}>{cat.name}</option>
-			{/each}
-		</select>
+		<Select type="single" name="categoryId" value={String(item?.category?.id ?? '')}>
+			<SelectTrigger id="categoryId" class="w-full">
+				<SelectValue>
+					{categories.find((c) => c.id === item?.category?.id)?.name ?? 'No category'}
+				</SelectValue>
+			</SelectTrigger>
+			<SelectContent>
+				<SelectItem value="">No category</SelectItem>
+				{#each categories as cat (cat.id)}
+					<SelectItem value={String(cat.id)}>{cat.name}</SelectItem>
+				{/each}
+			</SelectContent>
+		</Select>
 	</div>
 {/snippet}
 
 {#snippet fieldTags()}
 	<div>
 		<label class="mb-1 block text-sm font-medium text-muted-foreground" for="tags">Tags</label>
-		<input
+		<Input
 			id="tags"
 			name="tags"
 			type="text"
@@ -301,25 +310,32 @@
 					? item.tags
 					: ''}
 			placeholder="seasonal, gluten-free, popular"
-			class="h-10 w-full rounded-md border px-3 text-sm focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
 		/>
 	</div>
 {/snippet}
 
 {#snippet fieldStatus()}
+	{@const STATUS_OPTIONS = [
+		['available', 'Available'],
+		['sold_out', 'Sold out'],
+		['hidden', 'Hidden'],
+		['draft', 'Draft']
+	] as const}
+	{@const statusValue = mode === 'edit' ? (item?.status ?? 'available') : 'available'}
 	<div>
 		<label class="mb-1 block text-sm font-medium text-muted-foreground" for="status">Status</label>
-		<select
-			id="status"
-			name="status"
-			class="h-10 w-full rounded-md border px-3 text-sm focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
-		>
-			{#each [['available', 'Available'], ['sold_out', 'Sold out'], ['hidden', 'Hidden'], ['draft', 'Draft']] as [val, label] (val)}
-				<option value={val} selected={mode === 'edit' ? item?.status === val : val === 'available'}
-					>{label}</option
-				>
-			{/each}
-		</select>
+		<Select type="single" name="status" value={statusValue}>
+			<SelectTrigger id="status" class="w-full">
+				<SelectValue>
+					{STATUS_OPTIONS.find(([v]) => v === statusValue)?.[1] ?? 'Available'}
+				</SelectValue>
+			</SelectTrigger>
+			<SelectContent>
+				{#each STATUS_OPTIONS as [val, label] (val)}
+					<SelectItem value={val}>{label}</SelectItem>
+				{/each}
+			</SelectContent>
+		</Select>
 		<p class="mt-1 text-xs text-muted-foreground">
 			Available — visible with Add button · Sold out — visible but can't order · Hidden — not shown
 			to customers
@@ -336,24 +352,7 @@
 					Customers subscribe and are billed on a set interval.
 				</p>
 			</div>
-			<button
-				type="button"
-				onclick={() => (isSubscription = !isSubscription)}
-				aria-label={isSubscription ? 'Disable subscription' : 'Enable subscription'}
-				class="flex items-center"
-			>
-				<div
-					class="relative h-6 w-11 rounded-full transition-colors duration-200 {isSubscription
-						? 'bg-primary'
-						: 'bg-muted'}"
-				>
-					<span
-						class="absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-background shadow transition-transform duration-200 {isSubscription
-							? 'translate-x-5'
-							: 'translate-x-0'}"
-					></span>
-				</div>
-			</button>
+			<Switch bind:checked={isSubscription} />
 		</div>
 		<input type="hidden" name="isSubscription" value={isSubscription ? 'on' : ''} />
 		{#if isSubscription}

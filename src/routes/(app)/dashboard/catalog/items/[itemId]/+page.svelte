@@ -5,6 +5,8 @@
 	import { resolve } from '$app/paths';
 	import Icon from '@iconify/svelte';
 	import { Button } from '$lib/components/ui/button';
+	import { Input } from '$lib/components/ui/input';
+	import { Checkbox } from '$lib/components/ui/checkbox';
 	import CatalogItemForm from '$lib/components/CatalogItemForm.svelte';
 
 	let { data }: { data: PageData } = $props();
@@ -71,13 +73,12 @@
 					<label class="mb-1 block text-xs font-medium text-muted-foreground" for="modifierName"
 						>Group name *</label
 					>
-					<input
+					<Input
 						id="modifierName"
 						name="modifierName"
 						type="text"
 						required
 						placeholder="e.g. Size, Add-ons"
-						class="w-full rounded-md border px-3 py-2 text-sm focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
 					/>
 				</div>
 				<div class="grid grid-cols-2 gap-3">
@@ -85,18 +86,11 @@
 						<label class="mb-1 block text-xs font-medium text-muted-foreground" for="maxSelections"
 							>Max selections</label
 						>
-						<input
-							id="maxSelections"
-							name="maxSelections"
-							type="number"
-							min="1"
-							value="1"
-							class="w-full rounded-md border px-3 py-2 text-sm focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
-						/>
+						<Input id="maxSelections" name="maxSelections" type="number" min={1} value="1" />
 					</div>
 					<div class="flex items-end pb-2">
 						<label class="flex cursor-pointer items-center gap-2 text-sm text-muted-foreground">
-							<input type="checkbox" name="isRequired" class="h-4 w-4 rounded" />
+							<Checkbox name="isRequired" />
 							Required
 						</label>
 					</div>
@@ -139,13 +133,12 @@
 									class="mb-1 block text-xs font-medium text-muted-foreground"
 									for="edit-modifier-name-{mod.id}">Group name</label
 								>
-								<input
+								<Input
 									id="edit-modifier-name-{mod.id}"
 									name="modifierName"
 									type="text"
 									required
 									value={mod.name}
-									class="w-full rounded-md border px-3 py-1.5 text-sm focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
 								/>
 							</div>
 							<div class="w-20">
@@ -153,24 +146,18 @@
 									class="mb-1 block text-xs font-medium text-muted-foreground"
 									for="edit-max-selections-{mod.id}">Max</label
 								>
-								<input
+								<Input
 									id="edit-max-selections-{mod.id}"
 									name="maxSelections"
 									type="number"
-									min="1"
+									min={1}
 									value={mod.maxSelections}
-									class="w-full rounded-md border px-3 py-1.5 text-sm focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
 								/>
 							</div>
 							<label
 								class="flex cursor-pointer items-center gap-1.5 pb-1.5 text-sm text-muted-foreground"
 							>
-								<input
-									type="checkbox"
-									name="isRequired"
-									checked={mod.isRequired ?? false}
-									class="h-4 w-4 rounded"
-								/>
+								<Checkbox name="isRequired" checked={mod.isRequired ?? false} />
 								Required
 							</label>
 							<Button type="submit" variant="default" size="sm">Save</Button>
@@ -285,13 +272,12 @@
 										class="mb-1 block text-xs font-medium text-muted-foreground"
 										for="option-name-{mod.id}">Option name *</label
 									>
-									<input
+									<Input
 										id="option-name-{mod.id}"
 										name="optionName"
 										type="text"
 										required
 										placeholder="e.g. Large"
-										class="w-full rounded-md border px-2 py-1.5 text-sm focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
 									/>
 								</div>
 								<div class="w-24">
@@ -299,20 +285,19 @@
 										class="mb-1 block text-xs font-medium text-muted-foreground"
 										for="price-adj-{mod.id}">Price adj. ($)</label
 									>
-									<input
+									<Input
 										id="price-adj-{mod.id}"
 										name="priceAdjustment"
 										type="number"
-										step="0.01"
+										step={0.01}
 										value="0"
 										placeholder="0.00"
-										class="w-full rounded-md border px-2 py-1.5 text-sm focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
 									/>
 								</div>
 								<label
 									class="flex cursor-pointer items-center gap-1 pb-1.5 text-xs text-muted-foreground"
 								>
-									<input type="checkbox" name="isDefault" class="h-3.5 w-3.5 rounded" />
+									<Checkbox name="isDefault" />
 									Default
 								</label>
 								<div class="flex gap-1 pb-0.5">

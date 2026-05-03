@@ -7,6 +7,16 @@
 	import { Button } from '$lib/components/ui/button';
 	import { Badge } from '$lib/components/ui/badge';
 	import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '$lib/components/ui/card';
+	import { Input } from '$lib/components/ui/input';
+	import { Textarea } from '$lib/components/ui/textarea';
+	import {
+		Select,
+		SelectTrigger,
+		SelectContent,
+		SelectItem,
+		SelectValue
+	} from '$lib/components/ui/select';
+	import { Checkbox } from '$lib/components/ui/checkbox';
 	import {
 		Table,
 		TableBody,
@@ -375,14 +385,13 @@
 							<label class="mb-1 block text-sm font-medium text-muted-foreground" for="edit-name">
 								Name *
 							</label>
-							<input
+							<Input
 								id="edit-name"
 								name="name"
 								type="text"
 								required
-								maxlength="100"
+								maxlength={100}
 								value={editingLocation.name}
-								class="h-10 w-full rounded-md border px-3 text-sm focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
 							/>
 						</div>
 						<div>
@@ -390,38 +399,34 @@
 								Address <span class="font-normal text-muted-foreground">(optional)</span>
 							</p>
 							<div class="space-y-2">
-								<input
+								<Input
 									name="street"
 									type="text"
 									placeholder="Street"
-									maxlength="100"
+									maxlength={100}
 									value={getAddr(editingLocation.address).street ?? ''}
-									class="h-10 w-full rounded-md border px-3 text-sm focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
 								/>
 								<div class="grid grid-cols-3 gap-2">
-									<input
+									<Input
 										name="city"
 										type="text"
 										placeholder="City"
-										maxlength="100"
+										maxlength={100}
 										value={getAddr(editingLocation.address).city ?? ''}
-										class="h-10 w-full rounded-md border px-3 text-sm focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
 									/>
-									<input
+									<Input
 										name="state"
 										type="text"
 										placeholder="State"
-										maxlength="50"
+										maxlength={50}
 										value={getAddr(editingLocation.address).state ?? ''}
-										class="h-10 w-full rounded-md border px-3 text-sm focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
 									/>
-									<input
+									<Input
 										name="zip"
 										type="text"
 										placeholder="ZIP"
-										maxlength="20"
+										maxlength={20}
 										value={getAddr(editingLocation.address).zip ?? ''}
-										class="h-10 w-full rounded-md border px-3 text-sm focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
 									/>
 								</div>
 							</div>
@@ -430,15 +435,14 @@
 							<label class="mb-1 block text-sm font-medium text-muted-foreground" for="edit-notes">
 								Notes
 							</label>
-							<textarea
+							<Textarea
 								id="edit-notes"
 								name="notes"
-								maxlength="500"
-								rows="2"
+								maxlength={500}
 								placeholder="e.g. Green tent, Row C, near the main entrance"
-								class="w-full rounded-md border px-3 py-2 text-sm focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
-								>{editingLocation.notes ?? ''}</textarea
-							>
+								class="min-h-18"
+								value={editingLocation.notes ?? ''}
+							/>
 							<p class="mt-1 text-xs text-muted-foreground">Shown to customers at checkout.</p>
 						</div>
 					</CardContent>
@@ -478,14 +482,13 @@
 							<label class="mb-1 block text-sm font-medium text-muted-foreground" for="add-name">
 								Name *
 							</label>
-							<input
+							<Input
 								id="add-name"
 								name="name"
 								type="text"
 								required
-								maxlength="100"
+								maxlength={100}
 								placeholder="e.g. Saturday Farmers Market"
-								class="h-10 w-full rounded-md border px-3 text-sm focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
 							/>
 						</div>
 						<div>
@@ -493,35 +496,11 @@
 								Address <span class="font-normal text-muted-foreground">(optional)</span>
 							</p>
 							<div class="space-y-2">
-								<input
-									name="street"
-									type="text"
-									placeholder="Street"
-									maxlength="100"
-									class="h-10 w-full rounded-md border px-3 text-sm focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
-								/>
+								<Input name="street" type="text" placeholder="Street" maxlength={100} />
 								<div class="grid grid-cols-3 gap-2">
-									<input
-										name="city"
-										type="text"
-										placeholder="City"
-										maxlength="100"
-										class="h-10 w-full rounded-md border px-3 text-sm focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
-									/>
-									<input
-										name="state"
-										type="text"
-										placeholder="State"
-										maxlength="50"
-										class="h-10 w-full rounded-md border px-3 text-sm focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
-									/>
-									<input
-										name="zip"
-										type="text"
-										placeholder="ZIP"
-										maxlength="20"
-										class="h-10 w-full rounded-md border px-3 text-sm focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
-									/>
+									<Input name="city" type="text" placeholder="City" maxlength={100} />
+									<Input name="state" type="text" placeholder="State" maxlength={50} />
+									<Input name="zip" type="text" placeholder="ZIP" maxlength={20} />
 								</div>
 							</div>
 						</div>
@@ -529,18 +508,17 @@
 							<label class="mb-1 block text-sm font-medium text-muted-foreground" for="add-notes">
 								Notes
 							</label>
-							<textarea
+							<Textarea
 								id="add-notes"
 								name="notes"
-								maxlength="500"
-								rows="2"
+								maxlength={500}
 								placeholder="e.g. Green tent, Row C, near the main entrance"
-								class="w-full rounded-md border px-3 py-2 text-sm focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
-							></textarea>
+								class="min-h-18"
+							/>
 							<p class="mt-1 text-xs text-muted-foreground">Shown to customers at checkout.</p>
 						</div>
 						<label class="flex cursor-pointer items-center gap-2 text-sm text-muted-foreground">
-							<input type="checkbox" name="isActive" checked class="h-4 w-4 rounded" />
+							<Checkbox name="isActive" checked={true} />
 							Active
 						</label>
 					</CardContent>
@@ -709,14 +687,13 @@
 							<label class="mb-1 block text-sm font-medium text-muted-foreground" for="etmpl-name">
 								Name *
 							</label>
-							<input
+							<Input
 								id="etmpl-name"
 								name="name"
 								type="text"
 								required
-								maxlength="100"
+								maxlength={100}
 								value={editingTemplate.name}
-								class="h-10 w-full rounded-md border px-3 text-sm focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
 							/>
 						</div>
 						<!-- Location -->
@@ -727,18 +704,24 @@
 							>
 								Location
 							</label>
-							<select
-								id="etmpl-location"
+							<Select
+								type="single"
 								name="locationId"
-								class="h-10 w-full rounded-md border bg-background px-3 text-sm focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
+								value={String(editingTemplate.locationId ?? '')}
 							>
-								<option value="">(no location)</option>
-								{#each data.locations.filter((l) => l.isActive) as loc (loc.id)}
-									<option value={loc.id} selected={loc.id === editingTemplate.locationId}>
-										{loc.name}
-									</option>
-								{/each}
-							</select>
+								<SelectTrigger id="etmpl-location" class="w-full">
+									<SelectValue>
+										{data.locations.find((l) => l.id === editingTemplate.locationId)?.name ??
+											'(no location)'}
+									</SelectValue>
+								</SelectTrigger>
+								<SelectContent>
+									<SelectItem value="">(no location)</SelectItem>
+									{#each data.locations.filter((l) => l.isActive) as loc (loc.id)}
+										<SelectItem value={String(loc.id)}>{loc.name}</SelectItem>
+									{/each}
+								</SelectContent>
+							</Select>
 						</div>
 						<!-- Days -->
 						<div>
@@ -752,13 +735,12 @@
 											? 'border-ring bg-primary/5 text-foreground'
 											: 'border-input bg-background text-muted-foreground hover:bg-muted/50'}"
 									>
-										<input
-											type="checkbox"
+										<Checkbox
 											name="days"
 											value={day}
 											checked={previewDays.includes(day)}
-											onchange={(e) => {
-												if (e.currentTarget.checked) previewDays = [...previewDays, day];
+											onCheckedChange={(v) => {
+												if (v) previewDays = [...previewDays, day];
 												else previewDays = previewDays.filter((d) => d !== day);
 											}}
 											class="sr-only"
@@ -777,14 +759,13 @@
 								>
 									Start time *
 								</label>
-								<input
+								<Input
 									id="etmpl-start"
 									name="windowStart"
 									type="time"
 									required
 									value={previewStartTime}
-									oninput={(e) => (previewStartTime = e.currentTarget.value)}
-									class="h-10 w-full rounded-md border px-3 text-sm focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
+									oninput={(e) => (previewStartTime = (e.target as HTMLInputElement).value)}
 								/>
 								<p class="mt-1 text-xs text-muted-foreground">Pickup opens.</p>
 							</div>
@@ -792,14 +773,13 @@
 								<label class="mb-1 block text-sm font-medium text-muted-foreground" for="etmpl-end">
 									End time *
 								</label>
-								<input
+								<Input
 									id="etmpl-end"
 									name="windowEnd"
 									type="time"
 									required
 									value={previewEndTime}
-									oninput={(e) => (previewEndTime = e.currentTarget.value)}
-									class="h-10 w-full rounded-md border px-3 text-sm focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
+									oninput={(e) => (previewEndTime = (e.target as HTMLInputElement).value)}
 								/>
 								<p class="mt-1 text-xs text-muted-foreground">Pickup closes.</p>
 							</div>
@@ -813,15 +793,15 @@
 								>
 									Order cutoff (hours) *
 								</label>
-								<input
+								<Input
 									id="etmpl-cutoff"
 									name="cutoffHours"
 									type="number"
 									required
-									min="1"
+									min={1}
 									value={previewCutoffHours}
-									oninput={(e) => (previewCutoffHours = parseInt(e.currentTarget.value) || 48)}
-									class="h-10 w-full rounded-md border px-3 text-sm focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
+									oninput={(e) =>
+										(previewCutoffHours = parseInt((e.target as HTMLInputElement).value) || 48)}
 								/>
 								<p class="mt-1 text-xs text-muted-foreground">
 									Hours before pickup customers must order.
@@ -831,14 +811,13 @@
 								<label class="mb-1 block text-sm font-medium text-muted-foreground" for="etmpl-max">
 									Max orders per window
 								</label>
-								<input
+								<Input
 									id="etmpl-max"
 									name="maxOrders"
 									type="number"
-									min="1"
+									min={1}
 									value={editingTemplate.maxOrders ?? ''}
 									placeholder="Unlimited"
-									class="h-10 w-full rounded-md border px-3 text-sm focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
 								/>
 							</div>
 						</div>
@@ -885,14 +864,13 @@
 							<label class="mb-1 block text-sm font-medium text-muted-foreground" for="tmpl-name">
 								Name *
 							</label>
-							<input
+							<Input
 								id="tmpl-name"
 								name="name"
 								type="text"
 								required
-								maxlength="100"
+								maxlength={100}
 								placeholder="e.g. Saturday morning market"
-								class="h-10 w-full rounded-md border px-3 text-sm focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
 							/>
 						</div>
 						<!-- Location -->
@@ -903,18 +881,24 @@
 							>
 								Location
 							</label>
-							<select
-								id="tmpl-location"
+							<Select
+								type="single"
 								name="locationId"
-								class="h-10 w-full rounded-md border bg-background px-3 text-sm focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
+								value={String(addTemplateForLocationId ?? '')}
 							>
-								<option value="">(no location)</option>
-								{#each data.locations.filter((l) => l.isActive) as loc (loc.id)}
-									<option value={loc.id} selected={loc.id === addTemplateForLocationId}>
-										{loc.name}
-									</option>
-								{/each}
-							</select>
+								<SelectTrigger id="tmpl-location" class="w-full">
+									<SelectValue>
+										{data.locations.find((l) => l.id === addTemplateForLocationId)?.name ??
+											'(no location)'}
+									</SelectValue>
+								</SelectTrigger>
+								<SelectContent>
+									<SelectItem value="">(no location)</SelectItem>
+									{#each data.locations.filter((l) => l.isActive) as loc (loc.id)}
+										<SelectItem value={String(loc.id)}>{loc.name}</SelectItem>
+									{/each}
+								</SelectContent>
+							</Select>
 						</div>
 						<!-- Days -->
 						<div>
@@ -928,13 +912,12 @@
 											? 'border-ring bg-primary/5 text-foreground'
 											: 'border-input bg-background text-muted-foreground hover:bg-muted/50'}"
 									>
-										<input
-											type="checkbox"
+										<Checkbox
 											name="days"
 											value={day}
 											checked={previewDays.includes(day)}
-											onchange={(e) => {
-												if (e.currentTarget.checked) previewDays = [...previewDays, day];
+											onCheckedChange={(v) => {
+												if (v) previewDays = [...previewDays, day];
 												else previewDays = previewDays.filter((d) => d !== day);
 											}}
 											class="sr-only"
@@ -953,14 +936,13 @@
 								>
 									Start time *
 								</label>
-								<input
+								<Input
 									id="tmpl-start"
 									name="windowStart"
 									type="time"
 									required
 									value={previewStartTime}
-									oninput={(e) => (previewStartTime = e.currentTarget.value)}
-									class="h-10 w-full rounded-md border px-3 text-sm focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
+									oninput={(e) => (previewStartTime = (e.target as HTMLInputElement).value)}
 								/>
 								<p class="mt-1 text-xs text-muted-foreground">Pickup opens.</p>
 							</div>
@@ -968,14 +950,13 @@
 								<label class="mb-1 block text-sm font-medium text-muted-foreground" for="tmpl-end">
 									End time *
 								</label>
-								<input
+								<Input
 									id="tmpl-end"
 									name="windowEnd"
 									type="time"
 									required
 									value={previewEndTime}
-									oninput={(e) => (previewEndTime = e.currentTarget.value)}
-									class="h-10 w-full rounded-md border px-3 text-sm focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
+									oninput={(e) => (previewEndTime = (e.target as HTMLInputElement).value)}
 								/>
 								<p class="mt-1 text-xs text-muted-foreground">Pickup closes.</p>
 							</div>
@@ -989,15 +970,15 @@
 								>
 									Order cutoff (hours) *
 								</label>
-								<input
+								<Input
 									id="tmpl-cutoff"
 									name="cutoffHours"
 									type="number"
 									required
-									min="1"
+									min={1}
 									value={previewCutoffHours}
-									oninput={(e) => (previewCutoffHours = parseInt(e.currentTarget.value) || 48)}
-									class="h-10 w-full rounded-md border px-3 text-sm focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
+									oninput={(e) =>
+										(previewCutoffHours = parseInt((e.target as HTMLInputElement).value) || 48)}
 								/>
 								<p class="mt-1 text-xs text-muted-foreground">
 									Hours before pickup customers must order.
@@ -1007,19 +988,18 @@
 								<label class="mb-1 block text-sm font-medium text-muted-foreground" for="tmpl-max">
 									Max orders per window
 								</label>
-								<input
+								<Input
 									id="tmpl-max"
 									name="maxOrders"
 									type="number"
-									min="1"
+									min={1}
 									placeholder="Unlimited"
-									class="h-10 w-full rounded-md border px-3 text-sm focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
 								/>
 							</div>
 						</div>
 						<!-- Active -->
 						<label class="flex cursor-pointer items-center gap-2 text-sm text-muted-foreground">
-							<input type="checkbox" name="isActive" checked class="h-4 w-4 rounded" />
+							<Checkbox name="isActive" checked={true} />
 							Active
 						</label>
 						<!-- Live preview -->
@@ -1367,12 +1347,7 @@
 					{:else}
 						<div class="space-y-3">
 							<label class="flex cursor-pointer items-center gap-2">
-								<input
-									type="checkbox"
-									name="isCancelled"
-									value="true"
-									class="h-3.5 w-3.5 rounded"
-								/>
+								<Checkbox name="isCancelled" value="true" />
 								<span class="text-xs text-foreground">Cancel this date</span>
 							</label>
 							<div>

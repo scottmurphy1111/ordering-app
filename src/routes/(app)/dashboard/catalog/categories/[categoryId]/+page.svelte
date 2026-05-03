@@ -7,6 +7,8 @@
 	import { Button } from '$lib/components/ui/button';
 	import { Badge } from '$lib/components/ui/badge';
 	import { Input } from '$lib/components/ui/input';
+	import { Checkbox } from '$lib/components/ui/checkbox';
+	import { Switch } from '$lib/components/ui/switch';
 	import { Label } from '$lib/components/ui/label';
 	import { Card, CardContent, CardFooter } from '$lib/components/ui/card';
 
@@ -95,22 +97,13 @@
 						<p class="text-xs text-muted-foreground">Controls visibility on your public catalog</p>
 					</div>
 					<input type="hidden" name="isActive" value={isActive ? 'on' : ''} />
-					<button
-						type="button"
-						onclick={() => (isActiveOverride = !isActive)}
-						class="flex cursor-pointer items-center gap-3"
-					>
-						<div
-							class="relative h-6 w-11 rounded-full transition-colors duration-200 {isActive
-								? 'bg-primary'
-								: 'bg-muted'}"
-						>
-							<span
-								class="absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-background shadow transition-transform duration-200 {isActive
-									? 'translate-x-5'
-									: 'translate-x-0'}"
-							></span>
-						</div>
+					<label class="flex cursor-pointer items-center gap-3">
+						<Switch
+							checked={isActive}
+							onCheckedChange={(v) => {
+								isActiveOverride = v === true;
+							}}
+						/>
 						<span
 							class="w-14 text-sm font-medium {isActive
 								? 'text-green-600'
@@ -118,7 +111,7 @@
 						>
 							{isActive ? 'Active' : 'Inactive'}
 						</span>
-					</button>
+					</label>
 				</div>
 			</CardContent>
 			<CardFooter>
@@ -155,13 +148,11 @@
 								class="flex cursor-pointer items-center gap-3 rounded-lg border px-3 py-2.5 transition-colors
 									{selections.has(item.id) ? ' bg-muted/50' : ' hover:bg-muted/50'}"
 							>
-								<input
-									type="checkbox"
+								<Checkbox
 									name="itemId"
-									value={item.id}
+									value={String(item.id)}
 									checked={selections.has(item.id)}
-									onchange={() => toggleItem(item.id)}
-									class="h-4 w-4 rounded accent-green-600"
+									onCheckedChange={() => toggleItem(item.id)}
 								/>
 								<span class="flex-1 text-sm text-foreground">{item.name}</span>
 								<span class="text-xs text-muted-foreground">${(item.price / 100).toFixed(2)}</span>

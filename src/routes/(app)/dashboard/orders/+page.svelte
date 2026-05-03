@@ -8,6 +8,7 @@
 	import { formatDistanceToNow } from 'date-fns';
 	import Icon from '@iconify/svelte';
 	import { Badge } from '$lib/components/ui/badge';
+	import { Input } from '$lib/components/ui/input';
 	import { Skeleton } from '$lib/components/ui/skeleton';
 	import OrdersViewToggle from '$lib/components/OrdersViewToggle.svelte';
 	import OrdersSummaryBar from '$lib/components/OrdersSummaryBar.svelte';
@@ -339,11 +340,11 @@
 				icon="mdi:magnify"
 				class="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground"
 			/>
-			<input
+			<Input
 				type="search"
 				bind:value={searchQuery}
 				placeholder="Search by order #, customer name, or phone…"
-				class="h-10 w-full rounded-lg border border-gray-200 bg-background pr-4 pl-9 text-sm text-foreground outline-none placeholder:text-muted-foreground focus:border-transparent focus:ring-2 focus:ring-primary/50"
+				class="pr-4 pl-9"
 			/>
 		</div>
 

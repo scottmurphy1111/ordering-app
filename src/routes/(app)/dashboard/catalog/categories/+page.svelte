@@ -16,6 +16,7 @@
 	} from '$lib/components/ui/dropdown-menu';
 	import { Badge } from '$lib/components/ui/badge';
 	import { Input } from '$lib/components/ui/input';
+	import { Switch } from '$lib/components/ui/switch';
 	import { Label } from '$lib/components/ui/label';
 	import { Card, CardContent } from '$lib/components/ui/card';
 	import {
@@ -300,6 +301,7 @@
 		<!-- ── Mobile card list ────────────────────────────────────── -->
 		<div class="block space-y-2 md:hidden">
 			{#each sortedCategories as cat (cat.id)}
+				{@const toggleRef = { el: null as HTMLFormElement | null }}
 				<div class="rounded-xl border bg-background shadow-sm">
 					<div class="px-4 pt-3 pb-2">
 						<p class="text-sm font-medium text-foreground">{cat.name}</p>
@@ -313,22 +315,14 @@
 						>
 					</div>
 					<div class="flex items-center justify-between border-t border-gray-100 px-4 py-2">
-						<form method="post" action="?/toggleActive" use:enhance>
+						<form method="post" action="?/toggleActive" use:enhance bind:this={toggleRef.el}>
 							<input type="hidden" name="id" value={cat.id} />
 							<input type="hidden" name="isActive" value={String(cat.isActive)} />
-							<button
-								type="submit"
+							<Switch
+								checked={cat.isActive ?? false}
+								onCheckedChange={() => toggleRef.el?.requestSubmit()}
 								title={cat.isActive ? 'Active — click to hide' : 'Hidden — click to show'}
-								class="relative inline-flex h-5 w-9 items-center rounded-full transition-colors {cat.isActive
-									? 'bg-primary'
-									: 'bg-gray-200'}"
-							>
-								<span
-									class="inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform {cat.isActive
-										? 'translate-x-4.5'
-										: 'translate-x-0.5'}"
-								></span>
-							</button>
+							/>
 						</form>
 						<div class="flex items-center gap-1">
 							<Button size="sm" variant="outline" onclick={() => openEditDrawer(cat)}>Edit</Button>
@@ -391,6 +385,7 @@
 				</TableHeader>
 				<TableBody>
 					{#each sortedCategories as cat (cat.id)}
+						{@const toggleRef = { el: null as HTMLFormElement | null }}
 						<TableRow class="hover:bg-gray-50">
 							<TableCell class="px-4 py-3">
 								<p class="font-medium text-foreground">{cat.name}</p>
@@ -406,22 +401,14 @@
 								>
 							</TableCell>
 							<TableCell class="px-4 py-3">
-								<form method="post" action="?/toggleActive" use:enhance>
+								<form method="post" action="?/toggleActive" use:enhance bind:this={toggleRef.el}>
 									<input type="hidden" name="id" value={cat.id} />
 									<input type="hidden" name="isActive" value={String(cat.isActive)} />
-									<button
-										type="submit"
+									<Switch
+										checked={cat.isActive ?? false}
+										onCheckedChange={() => toggleRef.el?.requestSubmit()}
 										title={cat.isActive ? 'Active — click to hide' : 'Hidden — click to show'}
-										class="relative inline-flex h-5 w-9 items-center rounded-full transition-colors {cat.isActive
-											? 'bg-primary'
-											: 'bg-gray-200'}"
-									>
-										<span
-											class="inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform {cat.isActive
-												? 'translate-x-4.5'
-												: 'translate-x-0.5'}"
-										></span>
-									</button>
+									/>
 								</form>
 							</TableCell>
 							<TableCell class="px-4 py-3">
@@ -535,24 +522,7 @@
 							<p class="text-xs text-muted-foreground">Visible to customers on your storefront</p>
 						</div>
 						<input type="hidden" name="isActive" value={drawerIsActive ? 'on' : ''} />
-						<button
-							type="button"
-							onclick={() => (drawerIsActive = !drawerIsActive)}
-							aria-label={drawerIsActive ? 'Disable category' : 'Enable category'}
-							class="flex items-center"
-						>
-							<div
-								class="relative h-6 w-11 rounded-full transition-colors duration-200 {drawerIsActive
-									? 'bg-primary'
-									: 'bg-muted'}"
-							>
-								<span
-									class="absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-background shadow transition-transform duration-200 {drawerIsActive
-										? 'translate-x-5'
-										: 'translate-x-0'}"
-								></span>
-							</div>
-						</button>
+						<Switch bind:checked={drawerIsActive} />
 					</div>
 				</div>
 

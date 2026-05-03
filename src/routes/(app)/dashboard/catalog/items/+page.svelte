@@ -12,6 +12,8 @@
 	import CatalogViewToggle from '$lib/components/CatalogViewToggle.svelte';
 	import { Button } from '$lib/components/ui/button';
 	import { Badge } from '$lib/components/ui/badge';
+	import { Input } from '$lib/components/ui/input';
+	import { Checkbox } from '$lib/components/ui/checkbox';
 	import {
 		DropdownMenu,
 		DropdownMenuContent,
@@ -454,16 +456,14 @@
 				icon="mdi:magnify"
 				class="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground"
 			/>
-			<input
-				bind:this={searchInput}
+			<Input
+				bind:ref={searchInput}
 				type="text"
 				name="search"
 				value={params.get('search') ?? ''}
 				placeholder="Search items..."
-				oninput={(e) => onSearchInput(e.currentTarget.value)}
-				class="h-10 w-full rounded-lg border border-gray-200 bg-background {params.get('search')
-					? 'pr-8'
-					: 'pr-4'} pl-9 text-sm text-foreground outline-none placeholder:text-muted-foreground focus:border-transparent focus:ring-2 focus:ring-primary/50"
+				oninput={(e) => onSearchInput((e.target as HTMLInputElement).value)}
+				class="pl-9 {params.get('search') ? 'pr-8' : 'pr-4'}"
 			/>
 			{#if params.get('search')}
 				<button
@@ -1112,13 +1112,11 @@
 						<li
 							class="flex items-center gap-3 px-4 py-3 {item.alreadyImported ? 'opacity-60' : ''}"
 						>
-							<input
-								type="checkbox"
+							<Checkbox
 								id="discover-{item.stripeProductId}"
 								checked={selected.has(item.stripeProductId)}
 								disabled={item.alreadyImported}
-								onchange={() => toggleSelected(item.stripeProductId)}
-								class="h-4 w-4 rounded accent-gray-900"
+								onCheckedChange={() => toggleSelected(item.stripeProductId)}
 							/>
 							{#if item.imageUrl}
 								<img
