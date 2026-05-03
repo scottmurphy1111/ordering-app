@@ -247,37 +247,25 @@
 					<form method="post" action="?/updateStatus" use:enhance autocomplete="off">
 						<input type="hidden" name="id" value={order.id} />
 						<input type="hidden" name="status" value={nextStatus[order.status]} />
-						<!-- Plain <button> instead of <Button variant="default">: default variant applies
-						     brand green, but state-transition actions use blue per CLAUDE.md convention.
-						     Tier 2 shadcn audit should add a Button variant for this case. -->
-						<button
-							type="submit"
-							class="h-10 rounded-md bg-blue-600 px-4 text-sm font-semibold text-white transition-colors hover:bg-blue-700"
-						>
+						<Button type="submit">
 							Mark as {nextStatusLabels[order.status] ?? nextStatus[order.status]}
-						</button>
+						</Button>
 					</form>
 				{/if}
 				{#if !['fulfilled', 'cancelled'].includes(order.status)}
 					<form method="post" action="?/cancel" use:enhance autocomplete="off">
 						<input type="hidden" name="id" value={order.id} />
-						<!-- Plain <button> instead of shadcn <Button variant="destructive">: the
-						     destructive variant uses filled red (bg-red-600) which competes visually
-						     with the blue state-transition primary action. List uses outlined red as
-						     a quieter destructive treatment; detail page should match.
-						     Tier 2 shadcn audit should consider an outlined-destructive Button
-						     variant; until then, plain element with explicit classes. -->
-						<button
+						<Button
 							type="submit"
+							variant="destructive"
 							onclick={async (e) => {
 								e.preventDefault();
 								const btn = e.currentTarget as HTMLButtonElement;
 								if (await confirmDialog('Cancel this order?')) btn.form?.requestSubmit();
 							}}
-							class="h-10 rounded-md border border-red-200 px-4 text-sm font-semibold text-red-500 transition-colors hover:bg-red-50 hover:text-red-600"
 						>
 							Cancel order
-						</button>
+						</Button>
 					</form>
 				{/if}
 				{#if order.status === 'cancelled' && order.paymentStatus === 'paid'}

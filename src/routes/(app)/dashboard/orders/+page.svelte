@@ -8,6 +8,7 @@
 	import { formatDistanceToNow } from 'date-fns';
 	import Icon from '@iconify/svelte';
 	import { Badge } from '$lib/components/ui/badge';
+	import { Button } from '$lib/components/ui/button';
 	import { Input } from '$lib/components/ui/input';
 	import { Skeleton } from '$lib/components/ui/skeleton';
 	import OrdersViewToggle from '$lib/components/OrdersViewToggle.svelte';
@@ -213,17 +214,17 @@
 	<div class="mb-5 flex items-center justify-between gap-3">
 		<h1 class="text-2xl font-bold text-foreground">Orders</h1>
 		<div class="flex items-center gap-2">
-			<button
-				type="button"
+			<Button
+				variant="outline"
+				size="icon-lg"
 				onclick={toggleSound}
-				class="flex h-10 w-10 items-center justify-center rounded-lg border transition-colors hover:bg-muted"
 				title={soundEnabled ? 'Mute new order alerts' : 'Enable new order alerts'}
 			>
 				<Icon
 					icon={soundEnabled ? 'mdi:bell-outline' : 'mdi:bell-off-outline'}
 					class="h-4 w-4 {soundEnabled ? 'text-primary' : 'text-muted-foreground'}"
 				/>
-			</button>
+			</Button>
 			<OrdersViewToggle />
 		</div>
 	</div>
@@ -425,10 +426,8 @@
 					</div>
 					<h2 class="mt-4 text-base font-semibold text-foreground">No results</h2>
 					<p class="mt-1 text-sm text-muted-foreground">No orders match "{searchQuery}".</p>
-					<button
-						type="button"
-						onclick={() => (searchQuery = '')}
-						class="mt-3 text-xs text-primary hover:underline">Clear search</button
+					<Button variant="link" onclick={() => (searchQuery = '')} class="mt-3 h-auto p-0 text-xs"
+						>Clear search</Button
 					>
 				</div>
 			{:else}
@@ -597,45 +596,42 @@
 						<form method="post" action="?/updateStatus" use:enhance autocomplete="off">
 							<input type="hidden" name="id" value={order.id} />
 							<input type="hidden" name="status" value={nextStatus[order.status]} />
-							<button
-								type="submit"
-								class="h-8 rounded-md px-2.5 text-xs font-semibold transition-colors {action.cls}"
-							>
+							<Button type="submit">
 								{action.label}
-							</button>
+							</Button>
 						</form>
 					{/if}
 					{#if !['fulfilled', 'cancelled'].includes(order.status)}
 						<form method="post" action="?/cancel" use:enhance autocomplete="off">
 							<input type="hidden" name="id" value={order.id} />
-							<button
+							<Button
 								type="submit"
+								variant="destructive"
 								onclick={async (e) => {
 									e.preventDefault();
 									const btn = e.currentTarget as HTMLButtonElement;
 									if (await confirmDialog('Cancel this order?')) btn.form?.requestSubmit();
 								}}
-								class="h-8 rounded-md border border-red-200 px-2.5 text-xs font-medium text-red-500 transition-colors hover:bg-red-50 hover:text-red-600"
 							>
 								Cancel
-							</button>
+							</Button>
 						</form>
 					{/if}
 					{#if order.status === 'cancelled' && order.paymentStatus === 'paid'}
 						<form method="post" action="?/refund" use:enhance autocomplete="off">
 							<input type="hidden" name="id" value={order.id} />
-							<button
+							<Button
 								type="submit"
+								variant="destructive"
 								onclick={async (e) => {
 									e.preventDefault();
 									const btn = e.currentTarget as HTMLButtonElement;
 									if (await confirmDialog('Issue a full refund for this order?'))
 										btn.form?.requestSubmit();
 								}}
-								class="h-8 rounded-md border border-red-200 px-2.5 text-xs font-medium text-red-500 transition-colors hover:bg-red-50"
 							>
 								Refund
-							</button>
+							</Button>
 						</form>
 					{/if}
 				</div>

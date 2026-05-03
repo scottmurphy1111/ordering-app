@@ -6,6 +6,7 @@
 	import { resolve } from '$app/paths';
 	import Icon from '@iconify/svelte';
 	import { Badge } from '$lib/components/ui/badge';
+	import { Button } from '$lib/components/ui/button';
 	import { Input } from '$lib/components/ui/input';
 	import * as Popover from '$lib/components/ui/popover';
 	import { Calendar } from '$lib/components/ui/calendar';
@@ -274,14 +275,10 @@
 				<span class="text-xs text-muted-foreground"
 					>{data.orders.length} result{data.orders.length === 1 ? '' : 's'}</span
 				>
-				<button
-					type="button"
-					onclick={exportCSV}
-					class="flex h-8 items-center gap-1 rounded-md border px-2.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-				>
+				<Button variant="outline" onclick={exportCSV} class="gap-1">
 					<Icon icon="mdi:download" class="h-3.5 w-3.5" />
 					Export CSV
-				</button>
+				</Button>
 			</div>
 		</div>
 	</div>
@@ -301,13 +298,9 @@
 				{/if}
 			</p>
 			{#if hasFilters}
-				<button
-					type="button"
-					onclick={clearFilters}
-					class="mt-3 text-xs text-primary hover:underline"
-				>
+				<Button variant="link" onclick={clearFilters} class="mt-3 h-auto p-0 text-xs">
 					Clear filters
-				</button>
+				</Button>
 			{/if}
 		</div>
 	{:else}
@@ -393,18 +386,18 @@
 							{#if order.status === 'cancelled' && order.paymentStatus === 'paid'}
 								<form method="post" action="?/refund" use:enhance>
 									<input type="hidden" name="id" value={order.id} />
-									<button
+									<Button
 										type="submit"
+										variant="destructive"
 										onclick={async (e) => {
 											e.preventDefault();
 											const btn = e.currentTarget as HTMLButtonElement;
 											if (await confirmDialog('Issue a full refund for this order?'))
 												btn.form?.requestSubmit();
 										}}
-										class="h-8 rounded-md border border-red-200 px-2.5 text-xs font-medium text-red-500 transition-colors hover:bg-red-50"
 									>
 										Refund
-									</button>
+									</Button>
 								</form>
 							{/if}
 						</div>

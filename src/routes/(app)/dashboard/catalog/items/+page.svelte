@@ -397,12 +397,11 @@
 					<CatalogViewToggle />
 					<DropdownMenu>
 						<DropdownMenuTrigger>
-							<button
-								type="button"
-								class="flex h-10 items-center gap-1.5 rounded-md border px-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted"
-							>
-								<Icon icon="mdi:dots-horizontal" class="h-4 w-4" /> More
-							</button>
+							{#snippet child({ props })}
+								<Button {...props} variant="outline" class="gap-1.5">
+									<Icon icon="mdi:dots-horizontal" class="h-4 w-4" /> More
+								</Button>
+							{/snippet}
 						</DropdownMenuTrigger>
 						<DropdownMenuContent align="end">
 							<DropdownMenuItem onclick={openDiscover}>
@@ -584,15 +583,15 @@
 			<div class="rounded-xl border border-gray-200 bg-white p-12 text-center">
 				<h3 class="mb-1 text-base font-semibold text-gray-900">No results match your filters</h3>
 				<p class="mb-4 text-sm text-gray-500">Try adjusting your search or category filter.</p>
-				<button
-					type="button"
+				<Button
+					variant="link"
 					onclick={() => {
 						goto(resolve('/dashboard/catalog/items'), { replaceState: true });
 					}}
-					class="text-sm font-medium text-green-600 hover:text-green-700"
+					class="h-auto p-0"
 				>
 					Clear filters →
-				</button>
+				</Button>
 			</div>
 		{:else}
 			<div class="flex flex-col items-center py-16 text-center">
@@ -612,20 +611,23 @@
 		{#snippet statusDropdown(item: CatalogItem)}
 			<DropdownMenu>
 				<DropdownMenuTrigger>
-					<button
-						type="button"
-						class="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium capitalize transition-colors hover:opacity-80 {item.status ===
-						'available'
-							? 'bg-green-100 text-green-700'
-							: item.status === 'sold_out'
-								? 'bg-amber-100 text-amber-700'
-								: item.status === 'hidden'
-									? 'bg-gray-100 text-gray-400'
-									: 'bg-gray-100 text-gray-500'}"
-					>
-						{item.status.replace('_', ' ')}
-						<Icon icon="mdi:chevron-down" class="h-3 w-3" />
-					</button>
+					{#snippet child({ props })}
+						<button
+							{...props}
+							type="button"
+							class="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium capitalize transition-colors hover:opacity-80 {item.status ===
+							'available'
+								? 'bg-green-100 text-green-700'
+								: item.status === 'sold_out'
+									? 'bg-amber-100 text-amber-700'
+									: item.status === 'hidden'
+										? 'bg-gray-100 text-gray-400'
+										: 'bg-gray-100 text-gray-500'}"
+						>
+							{item.status.replace('_', ' ')}
+							<Icon icon="mdi:chevron-down" class="h-3 w-3" />
+						</button>
+					{/snippet}
 				</DropdownMenuTrigger>
 				<DropdownMenuContent align="start">
 					{#each [['available', 'Available'], ['sold_out', 'Sold out'], ['hidden', 'Hidden']] as [val, label] (val)}
@@ -698,27 +700,23 @@
 					<div class="flex items-center justify-between gap-2 border-t border-gray-100 px-4 py-2">
 						{@render statusDropdown(item)}
 						<div class="flex items-center gap-1">
-							<button
-								type="button"
-								onclick={() => openEditDrawer(item)}
-								class="rounded-md border border-gray-200 px-2.5 py-1 text-xs font-medium text-gray-700 transition-colors hover:bg-gray-50"
-							>
-								Edit
-							</button>
+							<Button variant="outline" onclick={() => openEditDrawer(item)}>Edit</Button>
 							<form method="post" action="?/delete" use:enhance>
 								<input type="hidden" name="id" value={item.id} />
-								<button
+								<Button
 									type="submit"
+									variant="ghost"
+									size="icon-lg"
 									onclick={async (e) => {
 										e.preventDefault();
 										if (await confirmDialog('Delete this item?'))
 											(e.currentTarget as HTMLButtonElement).form?.requestSubmit();
 									}}
 									aria-label="Delete {item.name}"
-									class="flex h-8 w-8 items-center justify-center rounded-md text-red-400 transition-colors hover:bg-red-50 hover:text-red-600"
+									class="text-red-400 hover:bg-red-50 hover:text-red-600"
 								>
 									<Icon icon="mdi:trash-can-outline" class="h-4 w-4" />
-								</button>
+								</Button>
 							</form>
 						</div>
 					</div>
@@ -813,27 +811,23 @@
 							</TableCell>
 							<TableCell class="w-20 px-4 py-3 text-right">
 								<div class="flex items-center justify-end gap-1">
-									<button
-										type="button"
-										onclick={() => openEditDrawer(item)}
-										class="rounded-md border border-gray-200 px-2.5 py-1 text-xs font-medium text-gray-700 transition-colors hover:bg-gray-50"
-									>
-										Edit
-									</button>
+									<Button variant="outline" onclick={() => openEditDrawer(item)}>Edit</Button>
 									<form method="post" action="?/delete" use:enhance>
 										<input type="hidden" name="id" value={item.id} />
-										<button
+										<Button
 											type="submit"
+											variant="ghost"
+											size="icon-lg"
 											onclick={async (e) => {
 												e.preventDefault();
 												if (await confirmDialog('Delete this item?'))
 													(e.currentTarget as HTMLButtonElement).form?.requestSubmit();
 											}}
 											aria-label="Delete item"
-											class="flex h-8 w-8 items-center justify-center rounded-md text-red-400 transition-colors hover:bg-red-50 hover:text-red-600"
+											class="text-red-400 hover:bg-red-50 hover:text-red-600"
 										>
 											<Icon icon="mdi:trash-can-outline" class="h-3.5 w-3.5" />
-										</button>
+										</Button>
 									</form>
 								</div>
 							</TableCell>

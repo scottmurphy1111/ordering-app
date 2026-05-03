@@ -1141,8 +1141,8 @@
 						</div>
 					{/if}
 					{#if !showAddTemplateForm && editingTemplateId === null}
-						<button
-							type="button"
+						<Button
+							variant="ghost"
 							onclick={() => {
 								previewDays = [];
 								previewStartTime = '';
@@ -1151,10 +1151,10 @@
 								addTemplateForLocationId = loc.id;
 								showAddTemplateForm = true;
 							}}
-							class="text-xs text-muted-foreground hover:text-foreground"
+							class="h-auto p-0 text-xs text-muted-foreground hover:bg-transparent hover:text-foreground"
 						>
 							+ Add window for this location
-						</button>
+						</Button>
 					{/if}
 				</div>
 			{/each}
@@ -1334,11 +1334,7 @@
 						<input type="hidden" name="isCancelled" value="false" />
 						<input type="hidden" name="maxOrders" value="" />
 						<input type="hidden" name="notes" value="" />
-						<button
-							type="submit"
-							class="rounded-md border border-gray-200 bg-white px-2.5 py-1 text-xs font-medium text-gray-700 transition-colors hover:bg-gray-50"
-							>Restore this date</button
-						>
+						<Button type="submit" variant="outline">Restore this date</Button>
 					{:else}
 						<div class="space-y-3">
 							<label class="flex cursor-pointer items-center gap-2">
@@ -1382,20 +1378,16 @@
 								</p>
 							</div>
 							<div class="flex items-center gap-2">
-								<button
-									type="submit"
-									class="rounded-md bg-green-600 px-2.5 py-1 text-xs font-medium text-white transition-colors hover:bg-green-700"
-								>
+								<Button type="submit">
 									{occurrenceSavingId === occ.id ? 'Saving…' : 'Save changes'}
-								</button>
-								<button
+								</Button>
+								<Button
 									type="button"
+									variant="outline"
 									onclick={() => {
 										expandedOccurrences.set(occ.id, false);
 										occurrenceError = null;
-									}}
-									class="rounded-md border border-gray-200 px-2.5 py-1 text-xs font-medium text-gray-600 transition-colors hover:bg-gray-50"
-									>Cancel</button
+									}}>Cancel</Button
 								>
 							</div>
 						</div>

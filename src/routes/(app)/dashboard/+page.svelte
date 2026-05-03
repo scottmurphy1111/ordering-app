@@ -7,6 +7,7 @@
 	import Icon from '@iconify/svelte';
 	import { formatDistanceToNow } from 'date-fns';
 	import { Badge } from '$lib/components/ui/badge';
+	import { Button } from '$lib/components/ui/button';
 	import { Card, CardContent } from '$lib/components/ui/card';
 	import { Skeleton } from '$lib/components/ui/skeleton';
 	import SetupChecklist from '$lib/components/SetupChecklist.svelte';
@@ -131,14 +132,10 @@
 		</div>
 		{#if data.vendor?.slug}
 			<div class="flex items-center gap-2">
-				<button
-					type="button"
-					onclick={copyCatalogLink}
-					class="inline-flex h-10 items-center gap-1.5 rounded-md border px-3 text-sm font-medium text-muted-foreground transition-colors hover:border-gray-400 hover:bg-muted"
-				>
+				<Button variant="outline" onclick={copyCatalogLink} class="gap-1.5">
 					<Icon icon={copied ? 'mdi:check' : 'mdi:content-copy'} class="h-3.5 w-3.5" />
 					{copied ? 'Copied!' : 'Copy link'}
-				</button>
+				</Button>
 				<a
 					data-tour="view-catalog"
 					href={resolve(`/${data.vendor.slug}/catalog`)}

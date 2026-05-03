@@ -200,12 +200,11 @@
 					<CatalogViewToggle />
 					<DropdownMenu>
 						<DropdownMenuTrigger>
-							<button
-								type="button"
-								class="flex h-10 items-center gap-1.5 rounded-md border px-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted"
-							>
-								<Icon icon="mdi:dots-horizontal" class="h-4 w-4" /> More
-							</button>
+							{#snippet child({ props })}
+								<Button {...props} variant="outline" class="gap-1.5">
+									<Icon icon="mdi:dots-horizontal" class="h-4 w-4" /> More
+								</Button>
+							{/snippet}
 						</DropdownMenuTrigger>
 						<DropdownMenuContent align="end">
 							<DropdownMenuItem
@@ -325,12 +324,12 @@
 							/>
 						</form>
 						<div class="flex items-center gap-1">
-							<Button size="sm" variant="outline" onclick={() => openEditDrawer(cat)}>Edit</Button>
+							<Button variant="outline" onclick={() => openEditDrawer(cat)}>Edit</Button>
 							<form method="post" action="?/delete" use:enhance>
 								<input type="hidden" name="id" value={cat.id} />
 								<Button
 									type="submit"
-									size="icon"
+									size="icon-lg"
 									variant="ghost"
 									class="text-red-400 hover:text-red-600"
 									onclick={async (e) => {
@@ -413,14 +412,12 @@
 							</TableCell>
 							<TableCell class="px-4 py-3">
 								<div class="flex items-center gap-2">
-									<Button size="sm" variant="outline" onclick={() => openEditDrawer(cat)}
-										>Edit</Button
-									>
+									<Button variant="outline" onclick={() => openEditDrawer(cat)}>Edit</Button>
 									<form method="post" action="?/delete" use:enhance>
 										<input type="hidden" name="id" value={cat.id} />
 										<Button
 											type="submit"
-											size="icon"
+											size="icon-lg"
 											variant="ghost"
 											class="text-red-400 hover:text-red-600"
 											onclick={async (e) => {
