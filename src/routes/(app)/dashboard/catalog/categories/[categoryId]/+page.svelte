@@ -55,7 +55,7 @@
 		</div>
 	{/if}
 	{#if form?.success}
-		<div class="rounded-md border border-primary/20 bg-primary/5 px-4 py-3 text-sm text-primary/90">
+		<div class="rounded-md border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
 			Saved.
 		</div>
 	{/if}
@@ -92,7 +92,7 @@
 				<div class="flex items-center justify-between rounded-lg border px-4 py-3">
 					<div>
 						<p class="text-sm font-medium text-muted-foreground">Status</p>
-						<p class="text-xs text-muted-foreground">Controls visibility on your public menu</p>
+						<p class="text-xs text-muted-foreground">Controls visibility on your public catalog</p>
 					</div>
 					<input type="hidden" name="isActive" value={isActive ? 'on' : ''} />
 					<button
@@ -113,7 +113,7 @@
 						</div>
 						<span
 							class="w-14 text-sm font-medium {isActive
-								? 'text-primary/90'
+								? 'text-green-600'
 								: 'text-muted-foreground'}"
 						>
 							{isActive ? 'Active' : 'Inactive'}
@@ -135,7 +135,7 @@
 				<p class="mt-0.5 text-sm text-muted-foreground">Check items that belong to this category.</p>
 			</div>
 			{#if data.items.length === 0}
-				<p class="text-sm text-muted-foreground">No menu items yet.</p>
+				<p class="text-sm text-muted-foreground">No catalog items yet.</p>
 			{:else}
 				<form
 					id="assign-form"
@@ -159,7 +159,7 @@
 									value={item.id}
 									checked={selections.has(item.id)}
 									onchange={() => toggleItem(item.id)}
-									class="h-4 w-4 rounded"
+									class="h-4 w-4 rounded accent-green-600"
 								/>
 								<span class="flex-1 text-sm text-foreground">{item.name}</span>
 								<span class="text-xs text-muted-foreground">${(item.price / 100).toFixed(2)}</span>

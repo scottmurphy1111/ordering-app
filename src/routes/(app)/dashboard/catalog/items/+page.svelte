@@ -396,44 +396,48 @@
 </script>
 
 <div>
-	<div class="mb-6 flex items-center justify-between gap-4">
+	<div class="mb-6 flex flex-col gap-3 md:flex-row md:items-center md:justify-between md:gap-4">
 		<h1 class="text-2xl font-bold text-foreground">Catalog</h1>
-		<div class="flex items-center gap-2">
-			{#if !sortMode}
-				<CatalogViewToggle />
-				<DropdownMenu>
-					<DropdownMenuTrigger>
-						<button
-							type="button"
-							class="flex h-10 items-center gap-1.5 rounded-md border px-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted"
-						>
-							<Icon icon="mdi:dots-horizontal" class="h-4 w-4" /> More
-						</button>
-					</DropdownMenuTrigger>
-					<DropdownMenuContent align="end">
-						<DropdownMenuItem onclick={openDiscover}>
-							<Icon icon="mdi:lightning-bolt" class="h-4 w-4 text-primary" /> Discover from Stripe
-						</DropdownMenuItem>
-						<DropdownMenuItem
-							onclick={() => (data.canImportCsv ? (showImport = true) : (showImportUpsell = true))}
-						>
-							<Icon icon="mdi:upload" class="h-4 w-4" /> Import CSV
-						</DropdownMenuItem>
-						<DropdownMenuItem
-							onclick={() => {
-							sortMode = true;
-							closeDrawer();
-						}}
-						>
-							<Icon icon="mdi:drag-vertical" class="h-4 w-4" /> Reorder items
-						</DropdownMenuItem>
-					</DropdownMenuContent>
-				</DropdownMenu>
-				<Button onclick={() => openNewDrawer()} variant="default" class="gap-1.5">
+		{#if !sortMode}
+			<div class="flex flex-col gap-3 md:flex-row md:items-center md:gap-2">
+				<div class="flex items-center justify-between gap-2 md:justify-start">
+					<CatalogViewToggle />
+					<DropdownMenu>
+						<DropdownMenuTrigger>
+							<button
+								type="button"
+								class="flex h-10 items-center gap-1.5 rounded-md border px-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted"
+							>
+								<Icon icon="mdi:dots-horizontal" class="h-4 w-4" /> More
+							</button>
+						</DropdownMenuTrigger>
+						<DropdownMenuContent align="end">
+							<DropdownMenuItem onclick={openDiscover}>
+								<Icon icon="mdi:lightning-bolt" class="h-4 w-4 text-primary" /> Discover from Stripe
+							</DropdownMenuItem>
+							<DropdownMenuItem
+								onclick={() => (data.canImportCsv ? (showImport = true) : (showImportUpsell = true))}
+							>
+								<Icon icon="mdi:upload" class="h-4 w-4" /> Import CSV
+							</DropdownMenuItem>
+							<DropdownMenuItem
+								onclick={() => {
+								sortMode = true;
+								closeDrawer();
+							}}
+							>
+								<Icon icon="mdi:drag-vertical" class="h-4 w-4" /> Reorder items
+							</DropdownMenuItem>
+						</DropdownMenuContent>
+					</DropdownMenu>
+				</div>
+				<Button onclick={() => openNewDrawer()} variant="default" class="w-full gap-1.5 md:w-auto">
 					<Icon icon="mdi:plus" class="h-4 w-4" />
 					New item
 				</Button>
-			{:else}
+			</div>
+		{:else}
+			<div class="flex gap-2">
 				<Button
 					onclick={() => {
 						sortMode = false;
@@ -447,8 +451,8 @@
 					<Icon icon="mdi:check" class="h-4 w-4" />
 					{sortSaving ? 'Saving…' : 'Save order'}
 				</Button>
-			{/if}
-		</div>
+			</div>
+		{/if}
 	</div>
 
 	<!-- Filters -->
