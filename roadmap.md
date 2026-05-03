@@ -197,44 +197,6 @@ Items vendors will encounter in their first week of use. The bar is "first impre
 
 ---
 
-### Orders pages — always-visible row actions migration
-
-**Status:** Pending. Sibling parity work from Phase 1.5b (always-visible row actions in CLAUDE.md "Tables" section) and Phase 1.5c (button size system). Catalog items migrated; orders still uses the old hover-revealed pattern (`opacity-0 group-hover:opacity-100` on action affordances, `class="group ..."` on `<TableRow>`).
-
-**Why it matters:** CLAUDE.md "Tables" section currently cites orders as a known pending migration. Until orders is migrated, the documented convention (always-visible row actions) and the deployed reality diverge. New developers will look at orders for reference and copy the old pattern. The longer this stays divergent, the more codebase drift accumulates.
-
-**Scope:**
-
-- `/dashboard/orders` (Live) — order cards have row-level action affordances; migrate from hover-revealed to always-visible
-- `/dashboard/orders/history` — same treatment
-- Any shared `Orders*` components that render row actions
-- Verify mobile card variants (if any reflow exists) follow the same always-visible convention
-- Update CLAUDE.md "Tables" section to remove the "known pending migration" note for orders once complete
-
-**Estimated effort:** 2–4 hours. Pattern is mechanical — strip `opacity-0 group-hover:opacity-100`, remove `group` from row class, verify hover background still applies (`hover:bg-gray-50`).
-
-**Trigger:** Standalone polish work — whenever there's a focused window for sibling parity cleanup. Not blocking any user-facing work.
-
----
-
-### Persistent CLAUDE.md violations sweep
-
-**Status:** Done — closed in the sweep phase that ran alongside catalog cleanup.
-
-**What was originally scoped:** Three known callsites — `text-blue-700` in catalog items CSV import results, `goto()` in CatalogViewToggle, `text-primary/90` in categories list page.
-
-**What actually shipped:**
-
-- `text-blue-700` in items CSV import dialog → migrated to `text-foreground` (semantic neutral, since "Updated" count shouldn't read as success or failure)
-- `text-primary/90` violations: items CatalogItemForm success banner, three locations on dashboard stat card CTAs (`hover:text-primary/90`), plus the categories-page locations from a prior phase
-- Dashboard "Manage categories" subtitle: "Organise" → "Organize" (US spelling), "menu sections" → "catalog sections" (CLAUDE.md catalog-not-menu rule)
-- Dashboard "Add catalog item" subtitle: "your menu" → "your catalog"
-- CatalogItemForm success banner border/bg also migrated from `border-primary/20 bg-primary/5` opacity-modifiers to documented palette tokens (`border-green-200 bg-green-50`)
-
-**What was NOT a violation (correction to original scope):** `goto()` in CatalogViewToggle is allowed per CLAUDE.md href rule — both `<a href={resolve(...)}>` and `goto(resolve(...))` are explicitly permitted. `OrdersViewToggle` uses the same pattern. The original entry's framing was a misread.
-
----
-
 ### Cart desktop alignment
 
 **Status:** Resolved — verified non-bug. Playwright tests confirmed the anchor aligns perfectly with `<main>` at all viewport widths. Original report was likely a transient render state, browser zoom, or screenshot artifact. No code action.

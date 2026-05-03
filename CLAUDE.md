@@ -824,8 +824,6 @@ toggleable.
   hover. Row hover changes background only (`hover:bg-gray-50`). Do not add `group` to `<tr>` for
   action visibility.
 - Mobile card actions (action strip below content) follow the same convention: always visible.
-- **Known pending migration:** orders pages (Live + History) currently use the old hover-revealed
-  pattern and will be migrated in a follow-up prompt. Do not treat them as reference for new work.
 
 ---
 

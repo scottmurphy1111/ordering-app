@@ -251,7 +251,7 @@
 				<div
 					role="button"
 					tabindex="0"
-					class="group cursor-pointer overflow-hidden rounded-xl border bg-background shadow-sm transition-colors hover:bg-muted/40"
+					class="cursor-pointer overflow-hidden rounded-xl border bg-background shadow-sm transition-colors hover:bg-muted/40"
 					onclick={() => goto(resolve(`/dashboard/orders/${order.id}`))}
 					onkeydown={(e) => {
 						if (e.key === 'Enter' || e.key === ' ') {

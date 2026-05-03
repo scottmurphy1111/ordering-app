@@ -12,6 +12,7 @@
 	import OrdersViewToggle from '$lib/components/OrdersViewToggle.svelte';
 	import OrdersSummaryBar from '$lib/components/OrdersSummaryBar.svelte';
 	import OrdersFilterTabs from '$lib/components/OrdersFilterTabs.svelte';
+	import { SvelteURLSearchParams } from 'svelte/reactivity';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 	let mounted = $state(false);
@@ -190,7 +191,7 @@
 
 	// ── View toggle URLs ─────────────────────────────────────────────────────────
 	const viewOrdersUrl = $derived.by(() => {
-		const params = new URLSearchParams();
+		const params = new SvelteURLSearchParams();
 		if (data.statusFilter) params.set('status', data.statusFilter);
 		if (data.view === 'orders' && data.showCancelled) params.set('cancelled', 'show');
 		const qs = params.toString();
@@ -198,7 +199,7 @@
 	});
 
 	const cancelledToggleUrl = $derived.by(() => {
-		const params = new URLSearchParams();
+		const params = new SvelteURLSearchParams();
 		if (data.statusFilter) params.set('status', data.statusFilter);
 		if (data.view === 'orders' && !data.showCancelled) params.set('cancelled', 'show');
 		const qs = params.toString();
@@ -357,7 +358,7 @@
 				}))}
 				active={data.statusFilter}
 				onchange={(val) => {
-					const params = new URLSearchParams();
+					const params = new SvelteURLSearchParams();
 					if (val) params.set('status', val);
 					if (val === 'cancelled' || data.showCancelled) params.set('cancelled', 'show');
 					const qs = params.toString();
