@@ -84,12 +84,6 @@
 
 <div class="max-w-2xl">
 	<div class="mb-6">
-		<a
-			href={resolve('/dashboard/settings')}
-			class="mb-1 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-muted-foreground"
-		>
-			<Icon icon="mdi:chevron-left" class="h-4 w-4" /> Settings
-		</a>
 		<h1 class="text-2xl font-bold text-foreground">General</h1>
 		<p class="mt-0.5 text-sm text-muted-foreground">
 			Your business details and contact information.

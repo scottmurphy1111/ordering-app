@@ -101,7 +101,7 @@ Items vendors will encounter in their first week of use. The bar is "first impre
 
 ---
 
-### Mobile UX — tables, actions, and inner navigation
+### Mobile UX — tables and actions
 
 **Status:** Pending.
 
@@ -112,9 +112,8 @@ Items vendors will encounter in their first week of use. The bar is "first impre
 - Audit every dashboard table for mobile behavior (orders, catalog items, pickup windows, locations)
 - Pick a responsive pattern per table — likely card-stack at narrow widths for heavy tables, hide-non-essential-columns for lighter ones
 - Make hover-revealed actions always-visible on mobile (responsive pattern, not hover-only)
-- Make `/account` inner sidebar a mobile pattern (tabs or drawer); apply same to `/settings` if it has the same problem
 
-**Estimated effort:** 2–3 days for table responsive treatment; half a day for the sidebar nav. Done as one batch — same family of concerns, same testing surface.
+**Estimated effort:** 2–3 days for table responsive treatment. Done as one batch — same family of concerns, same testing surface.
 
 **Trigger:** Before any vendor outreach. Mobile is half the audience by hours of dashboard use, more than half by frequency of access.
 

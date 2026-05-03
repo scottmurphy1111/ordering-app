@@ -1026,6 +1026,39 @@ Desktop-style "left content / right actions" cards reflow to a vertical stack at
 
 ---
 
+## Inner navigation (Account, Settings)
+
+Pages with multiple sub-pages that share a parent (Account, Settings) use
+the `InnerNavLayout` component for inner navigation. The component lives at
+`src/lib/components/InnerNavLayout.svelte` and provides:
+
+- **Desktop (`md:` and up):** a left sidebar nav, `w-44` (176px) wide,
+  showing each destination as an icon + label row. The sidebar's title (e.g.,
+  "ACCOUNT", "SETTINGS") sits above the nav items in the same uppercase
+  treatment as section headings (`text-xs font-medium tracking-wider
+  text-gray-500 uppercase`). Active state: `bg-gray-100 font-medium
+  text-gray-900`. Inactive: `text-gray-500 hover:bg-gray-50
+  hover:text-gray-900`.
+- **Mobile (below `md:`):** a full-width shadcn `<Select>` at the top of
+  the content area, below the page header. Trigger shows the active
+  destination's icon + label. Selecting a different option navigates to that
+  destination via `goto(resolve(...))`.
+
+Active state is derived from `page.url.pathname.startsWith(href)`, never
+from local state. The pattern's mobile-first shape: base classes describe
+the mobile select-above-content layout, `md:` adds the sidebar column.
+
+When adding a new top-level destination with sub-pages, use this component.
+Do not build a parallel inner-nav implementation. Do not introduce a card
+grid hub as an alternative — the inner sidebar/select pattern is canonical.
+
+If the bare parent route (e.g., `/dashboard/settings`) needs to redirect to
+a default sub-page, use `+page.server.ts` with a `redirect(302, ...)`. The
+sub-pages themselves do not include back links to the parent — the inner
+sidebar/select handles navigation.
+
+---
+
 ## Loading & Skeleton States
 
 Every data-fetching component shows a skeleton while loading, not a spinner
@@ -1410,6 +1443,13 @@ The checklist auto-hides when all 4 steps complete and re-appears if a step regr
 - ❌ Do not wrap a built-in `Set`/`Map`/etc. in `$state` expecting its methods
   to become reactive — `$state` tracks references, not internal mutations. Use
   the reactive class (`SvelteSet`, `SvelteMap`, etc.) instead.
+- ❌ Do not use `<!-- eslint-disable-next-line ... -->` immediately above a
+  multi-line element where Prettier may reflow the line break. The "next line"
+  the directive targets can shift after Prettier runs, breaking the
+  suppression. Use block-form `<!-- eslint-disable RULE_NAME -->` /
+  `<!-- eslint-enable RULE_NAME -->` wrapping the entire element instead.
+  This applies to any file Prettier touches — practically, every Svelte and
+  TypeScript file in this project.
 - ❌ Do not apply ad-hoc `h-*` to individual form element callsites. The project
   standard is `h-10` for all text inputs, selects, and single-line inputs. Changes
   to that standard go in the shadcn primitives (`input.svelte`, `select-trigger.svelte`),
