@@ -252,7 +252,7 @@
 						     Tier 2 shadcn audit should add a Button variant for this case. -->
 						<button
 							type="submit"
-							class="rounded-md h-10 px-4 text-sm font-semibold bg-blue-600 text-white hover:bg-blue-700 transition-colors"
+							class="h-10 rounded-md bg-blue-600 px-4 text-sm font-semibold text-white transition-colors hover:bg-blue-700"
 						>
 							Mark as {nextStatusLabels[order.status] ?? nextStatus[order.status]}
 						</button>
@@ -274,7 +274,7 @@
 								const btn = e.currentTarget as HTMLButtonElement;
 								if (await confirmDialog('Cancel this order?')) btn.form?.requestSubmit();
 							}}
-							class="rounded-md h-10 border border-red-200 px-4 text-sm font-semibold text-red-500 transition-colors hover:bg-red-50 hover:text-red-600"
+							class="h-10 rounded-md border border-red-200 px-4 text-sm font-semibold text-red-500 transition-colors hover:bg-red-50 hover:text-red-600"
 						>
 							Cancel order
 						</button>

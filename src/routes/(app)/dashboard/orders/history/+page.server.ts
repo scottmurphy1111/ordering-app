@@ -80,7 +80,13 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 			.where(and(...whereConditions))
 	]);
 
-	const summary = summaryRow[0] ?? { total: 0, fulfilled: 0, cancelled: 0, revenue: 0, refunded: 0 };
+	const summary = summaryRow[0] ?? {
+		total: 0,
+		fulfilled: 0,
+		cancelled: 0,
+		revenue: 0,
+		refunded: 0
+	};
 
 	return { orders: historyOrders, search, from, to, statusFilter, summary };
 };

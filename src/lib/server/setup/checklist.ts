@@ -29,7 +29,9 @@ export async function getSetupChecklist(vendorId: number): Promise<SetupChecklis
 		db
 			.select({ count: sql<number>`count(*)` })
 			.from(pickupWindowTemplates)
-			.where(and(eq(pickupWindowTemplates.vendorId, vendorId), eq(pickupWindowTemplates.isActive, true))),
+			.where(
+				and(eq(pickupWindowTemplates.vendorId, vendorId), eq(pickupWindowTemplates.isActive, true))
+			),
 		db
 			.select({ count: sql<number>`count(*)` })
 			.from(catalogItems)

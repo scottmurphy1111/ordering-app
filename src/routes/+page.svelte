@@ -13,7 +13,11 @@
 	const loginHref = resolve('/login');
 
 	const audiences = [
-		{ icon: 'mdi:bread-slice-outline', label: 'Bakeries', path: '/for-bakeries' as string | undefined },
+		{
+			icon: 'mdi:bread-slice-outline',
+			label: 'Bakeries',
+			path: '/for-bakeries' as string | undefined
+		},
 		{ icon: 'mdi:barley', label: 'Farm stands', path: undefined },
 		{ icon: 'mdi:food-steak', label: 'Butchers', path: undefined },
 		{ icon: 'mdi:flower-outline', label: 'Florists', path: undefined },
@@ -21,7 +25,11 @@
 		{ icon: 'mdi:truck-outline', label: 'Food trucks', path: undefined },
 		{ icon: 'mdi:coffee-outline', label: 'Coffee shops', path: undefined },
 		{ icon: 'mdi:silverware-fork-knife', label: 'Specialty makers', path: undefined },
-		{ icon: 'mdi:tent', label: 'Market vendors', path: '/for-farmers-markets' as string | undefined }
+		{
+			icon: 'mdi:tent',
+			label: 'Market vendors',
+			path: '/for-farmers-markets' as string | undefined
+		}
 	];
 
 	const features = [
@@ -43,7 +51,7 @@
 		{
 			icon: 'mdi:credit-card-outline',
 			title: 'Stripe-powered checkout',
-			desc: "Customers pay when they order. Funds land in your bank account, not ours. Standard processing fees only — no commission, no per-order cut."
+			desc: 'Customers pay when they order. Funds land in your bank account, not ours. Standard processing fees only — no commission, no per-order cut.'
 		},
 		{
 			icon: 'mdi:format-list-checks',
@@ -296,10 +304,26 @@
 			Order<span class="text-primary">Local</span>
 		</a>
 		<nav class="hidden items-center gap-6 text-sm font-medium text-muted-foreground md:flex">
-			<a href="#features" class="transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none">Features</a>
-			<a href="#how-it-works" class="transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none">How it works</a>
-			<a href="#pricing" class="transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none">Pricing</a>
-			<a href="#faq" class="transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none">FAQ</a>
+			<a
+				href="#features"
+				class="transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none"
+				>Features</a
+			>
+			<a
+				href="#how-it-works"
+				class="transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none"
+				>How it works</a
+			>
+			<a
+				href="#pricing"
+				class="transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none"
+				>Pricing</a
+			>
+			<a
+				href="#faq"
+				class="transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none"
+				>FAQ</a
+			>
 		</nav>
 		<div class="flex items-center gap-3">
 			<a
@@ -316,6 +340,7 @@
 				Start for free
 			</a>
 			<button
+				type="button"
 				aria-label="Open navigation menu"
 				aria-expanded={mobileMenuOpen}
 				aria-controls="mobile-menu"
@@ -336,13 +361,16 @@
 		aria-label="Navigation menu"
 		tabindex="-1"
 		class="fixed inset-0 z-50 flex flex-col bg-white md:hidden"
-		onkeydown={(e) => { if (e.key === 'Escape') mobileMenuOpen = false; }}
+		onkeydown={(e) => {
+			if (e.key === 'Escape') mobileMenuOpen = false;
+		}}
 	>
 		<div class="flex items-center justify-between border-b px-6 py-4">
 			<a href={resolve('/')} class="text-xl font-bold tracking-tight text-foreground">
 				Order<span class="text-primary">Local</span>
 			</a>
 			<button
+				type="button"
 				aria-label="Close navigation menu"
 				onclick={() => (mobileMenuOpen = false)}
 				class="rounded-md p-2 text-zinc-700 hover:bg-muted focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none"
@@ -351,32 +379,70 @@
 			</button>
 		</div>
 		<nav class="flex flex-col gap-1 px-4 py-6 text-base font-medium">
-			<a href="#features" onclick={() => (mobileMenuOpen = false)} class="rounded-lg px-4 py-3 text-zinc-700 hover:bg-muted hover:text-zinc-900 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none">Features</a>
-			<a href="#how-it-works" onclick={() => (mobileMenuOpen = false)} class="rounded-lg px-4 py-3 text-zinc-700 hover:bg-muted hover:text-zinc-900 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none">How it works</a>
-			<a href="#pricing" onclick={() => (mobileMenuOpen = false)} class="rounded-lg px-4 py-3 text-zinc-700 hover:bg-muted hover:text-zinc-900 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none">Pricing</a>
-			<a href="#faq" onclick={() => (mobileMenuOpen = false)} class="rounded-lg px-4 py-3 text-zinc-700 hover:bg-muted hover:text-zinc-900 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none">FAQ</a>
+			<a
+				href="#features"
+				onclick={() => (mobileMenuOpen = false)}
+				class="rounded-lg px-4 py-3 text-zinc-700 hover:bg-muted hover:text-zinc-900 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none"
+				>Features</a
+			>
+			<a
+				href="#how-it-works"
+				onclick={() => (mobileMenuOpen = false)}
+				class="rounded-lg px-4 py-3 text-zinc-700 hover:bg-muted hover:text-zinc-900 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none"
+				>How it works</a
+			>
+			<a
+				href="#pricing"
+				onclick={() => (mobileMenuOpen = false)}
+				class="rounded-lg px-4 py-3 text-zinc-700 hover:bg-muted hover:text-zinc-900 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none"
+				>Pricing</a
+			>
+			<a
+				href="#faq"
+				onclick={() => (mobileMenuOpen = false)}
+				class="rounded-lg px-4 py-3 text-zinc-700 hover:bg-muted hover:text-zinc-900 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none"
+				>FAQ</a
+			>
 		</nav>
 		<div class="mt-auto flex flex-col gap-3 border-t px-4 py-6">
-			<a href={loginHref} class="rounded-lg px-4 py-3 text-center text-sm font-medium text-zinc-700 hover:bg-muted focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none">Sign in</a>
-			<a href={loginHref} class="rounded-lg bg-primary px-4 py-3 text-center text-sm font-semibold text-white hover:bg-primary/90 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none">Start for free</a>
+			<a
+				href={loginHref}
+				class="rounded-lg px-4 py-3 text-center text-sm font-medium text-zinc-700 hover:bg-muted focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none"
+				>Sign in</a
+			>
+			<a
+				href={loginHref}
+				class="rounded-lg bg-primary px-4 py-3 text-center text-sm font-semibold text-white hover:bg-primary/90 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none"
+				>Start for free</a
+			>
 		</div>
 	</div>
 {/if}
 
 <!-- Hero -->
-<section class="relative overflow-hidden bg-gradient-to-b from-primary/5 to-background px-6 pt-24 pb-16">
-	<div class="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(ellipse_80%_50%_at_50%_-10%,rgba(22,163,74,0.08),transparent)]"></div>
+<section
+	class="relative overflow-hidden bg-gradient-to-b from-primary/5 to-background px-6 pt-24 pb-16"
+>
+	<div
+		class="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(ellipse_80%_50%_at_50%_-10%,rgba(22,163,74,0.08),transparent)]"
+	></div>
 	<div class="mx-auto grid max-w-6xl items-center gap-12 lg:grid-cols-2">
 		<!-- Text -->
 		<div class="flex flex-col items-center text-center">
-			<span class="mb-4 inline-block rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold tracking-widest text-primary/90 uppercase">
+			<span
+				class="mb-4 inline-block rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold tracking-widest text-primary/90 uppercase"
+			>
 				Built for makers, bakers, and growers
 			</span>
-			<h1 class="w-full max-w-[20ch] text-5xl leading-tight font-bold tracking-tight text-foreground sm:text-6xl">
+			<h1
+				class="w-full max-w-[20ch] text-5xl leading-tight font-bold tracking-tight text-foreground sm:text-6xl"
+			>
 				Pre-orders and pickup, done right.
 			</h1>
 			<p class="mt-6 w-full max-w-lg text-lg leading-relaxed text-muted-foreground">
-				Order Local gives you a branded ordering page so customers can reserve, pay, and pick up — at your booth, your shop, or by appointment. Powered by Stripe, set up in minutes, no app required.
+				Order Local gives you a branded ordering page so customers can reserve, pay, and pick up —
+				at your booth, your shop, or by appointment. Powered by Stripe, set up in minutes, no app
+				required.
 			</p>
 			<div class="mt-10 flex flex-col items-center gap-3 sm:flex-row">
 				<a
@@ -400,14 +466,18 @@
 
 		<!-- Dashboard mock -->
 		<div class="relative mx-auto w-full max-w-lg pr-2 pb-10">
-			<div class="pointer-events-none absolute -inset-4 -z-10 rounded-3xl bg-primary/5 blur-2xl"></div>
+			<div
+				class="pointer-events-none absolute -inset-4 -z-10 rounded-3xl bg-primary/5 blur-2xl"
+			></div>
 			<div class="overflow-hidden rounded-2xl border bg-background shadow-2xl">
 				<!-- Browser chrome -->
 				<div class="flex items-center gap-1.5 border-b bg-muted/60 px-3 py-2.5">
 					<div class="h-2.5 w-2.5 rounded-full bg-red-400/70"></div>
 					<div class="h-2.5 w-2.5 rounded-full bg-yellow-400/70"></div>
 					<div class="h-2.5 w-2.5 rounded-full bg-green-400/70"></div>
-					<div class="ml-2 flex-1 rounded-md bg-background px-2 py-0.5 text-[10px] text-muted-foreground/70">
+					<div
+						class="ml-2 flex-1 rounded-md bg-background px-2 py-0.5 text-[10px] text-muted-foreground/70"
+					>
 						getorderlocal.com/dashboard
 					</div>
 				</div>
@@ -415,9 +485,13 @@
 				<div class="flex">
 					<!-- Sidebar -->
 					<div class="flex w-28 shrink-0 flex-col bg-gray-900 px-2 py-3">
-						<p class="mb-3 px-2 text-[10px] font-bold text-white">Order<span class="text-primary">Local</span></p>
+						<p class="mb-3 px-2 text-[10px] font-bold text-white">
+							Order<span class="text-primary">Local</span>
+						</p>
 						<div class="space-y-0.5">
-							<div class="rounded-md bg-primary px-2 py-1.5 text-[10px] font-medium text-white">Overview</div>
+							<div class="rounded-md bg-primary px-2 py-1.5 text-[10px] font-medium text-white">
+								Overview
+							</div>
 							<div class="px-2 py-1.5 text-[10px] text-gray-400">Orders</div>
 							<div class="px-2 py-1.5 text-[10px] text-gray-400">Menu</div>
 							<div class="px-2 py-1.5 text-[10px] text-gray-400">Analytics</div>
@@ -428,7 +502,10 @@
 					<div class="flex-1 bg-muted/30 p-4">
 						<div class="mb-3 flex items-center justify-between">
 							<p class="text-xs font-semibold text-foreground">Overview</p>
-							<span class="rounded-md border border-primary px-2 py-0.5 text-[10px] font-semibold text-primary">Open live catalog ↗</span>
+							<span
+								class="rounded-md border border-primary px-2 py-0.5 text-[10px] font-semibold text-primary"
+								>Open live catalog ↗</span
+							>
 						</div>
 						<div class="mb-3 grid grid-cols-3 gap-2">
 							{#each [{ label: 'Revenue (30d)', value: '$4,280', change: '+12.4%' }, { label: 'Orders', value: '63', change: '+8.2%' }, { label: 'Avg Order', value: '$67.90', change: '+3.1%' }] as kpi (kpi.label)}
@@ -448,7 +525,10 @@
 											<span class="text-[9px] font-medium text-foreground">{order.num}</span>
 											<span class="text-[9px] text-muted-foreground"> · {order.items}</span>
 										</div>
-										<span class="shrink-0 rounded-full px-1.5 py-0.5 text-[8px] font-semibold {order.color}">{order.status}</span>
+										<span
+											class="shrink-0 rounded-full px-1.5 py-0.5 text-[8px] font-semibold {order.color}"
+											>{order.status}</span
+										>
 									</div>
 								{/each}
 							</div>
@@ -458,10 +538,16 @@
 			</div>
 
 			<!-- Floating customer menu mock -->
-			<div class="absolute right-0 -bottom-2 z-10 w-44 overflow-hidden rounded-2xl border bg-background shadow-2xl ring-1 ring-black/5">
+			<div
+				class="absolute right-0 -bottom-2 z-10 w-44 overflow-hidden rounded-2xl border bg-background shadow-2xl ring-1 ring-black/5"
+			>
 				<div class="bg-gray-900 px-3 py-2.5">
 					<div class="flex items-center gap-2">
-						<div class="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-primary text-[9px] font-bold text-white">OL</div>
+						<div
+							class="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-primary text-[9px] font-bold text-white"
+						>
+							OL
+						</div>
 						<div>
 							<p class="text-[10px] font-bold text-white">Sunrise Bakery</p>
 							<p class="text-[8px] text-gray-400">Pre-order · pickup Sat</p>
@@ -469,9 +555,15 @@
 					</div>
 				</div>
 				<div class="flex gap-1 border-b bg-muted/30 px-2 py-1.5">
-					<span class="rounded-full bg-primary px-2 py-0.5 text-[7px] font-semibold text-white">Breads</span>
-					<span class="rounded-full bg-muted px-2 py-0.5 text-[7px] text-muted-foreground">Pastries</span>
-					<span class="rounded-full bg-muted px-2 py-0.5 text-[7px] text-muted-foreground">Extras</span>
+					<span class="rounded-full bg-primary px-2 py-0.5 text-[7px] font-semibold text-white"
+						>Breads</span
+					>
+					<span class="rounded-full bg-muted px-2 py-0.5 text-[7px] text-muted-foreground"
+						>Pastries</span
+					>
+					<span class="rounded-full bg-muted px-2 py-0.5 text-[7px] text-muted-foreground"
+						>Extras</span
+					>
 				</div>
 				<div class="divide-y px-2">
 					{#each [{ name: 'Sourdough Loaf', desc: 'Saturday pickup only', price: '$12.00', color: 'bg-amber-100' }, { name: 'Rye Loaf', desc: 'Pre-sliced available', price: '$11.00', color: 'bg-orange-100' }, { name: 'Croissant ×6', desc: 'Order by Thu 8pm', price: '$18.00', color: 'bg-yellow-100' }] as item (item.name)}
@@ -484,14 +576,20 @@
 									<p class="mt-0.5 text-[8px] font-medium text-foreground">{item.price}</p>
 								</div>
 							</div>
-							<button class="shrink-0 rounded-full bg-primary p-1" aria-label="Add {item.name}">
+							<button
+								type="button"
+								class="shrink-0 rounded-full bg-primary p-1"
+								aria-label="Add {item.name}"
+							>
 								<Icon icon="mdi:plus" class="h-2.5 w-2.5 text-white" />
 							</button>
 						</div>
 					{/each}
 				</div>
 				<div class="bg-primary px-3 py-2">
-					<p class="text-center text-[8px] font-semibold text-white">View cart · 2 items · $23.00</p>
+					<p class="text-center text-[8px] font-semibold text-white">
+						View cart · 2 items · $23.00
+					</p>
 				</div>
 			</div>
 		</div>
@@ -506,12 +604,17 @@
 	<div class="flex flex-wrap justify-center gap-2 px-6">
 		{#each audiences as a (a.label)}
 			{#if a.path}
-				<a href={resolve(a.path as '/for-bakeries' | '/for-farmers-markets')} class="inline-flex items-center gap-1.5 rounded-full border border-border bg-background px-3 py-1.5 text-sm font-medium text-foreground transition-colors hover:border-primary/40 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2">
+				<a
+					href={resolve(a.path as '/for-bakeries' | '/for-farmers-markets')}
+					class="inline-flex items-center gap-1.5 rounded-full border border-border bg-background px-3 py-1.5 text-sm font-medium text-foreground transition-colors hover:border-primary/40 hover:text-primary focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none"
+				>
 					<Icon icon={a.icon} class="h-3.5 w-3.5 text-primary" aria-hidden="true" />
 					{a.label}
 				</a>
 			{:else}
-				<span class="inline-flex items-center gap-1.5 rounded-full border border-border bg-background px-3 py-1.5 text-sm font-medium text-foreground">
+				<span
+					class="inline-flex items-center gap-1.5 rounded-full border border-border bg-background px-3 py-1.5 text-sm font-medium text-foreground"
+				>
 					<Icon icon={a.icon} class="h-3.5 w-3.5 text-primary" aria-hidden="true" />
 					{a.label}
 				</span>
@@ -524,7 +627,9 @@
 <section id="features" class="scroll-mt-20 bg-background px-6 py-24">
 	<div class="mx-auto max-w-6xl">
 		<div class="mb-14 text-center">
-			<span class="mb-3 inline-block rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold tracking-widest text-primary/90 uppercase">
+			<span
+				class="mb-3 inline-block rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold tracking-widest text-primary/90 uppercase"
+			>
 				What's included
 			</span>
 			<h2 class="mt-3 text-3xl font-bold text-foreground sm:text-4xl">
@@ -533,7 +638,9 @@
 		</div>
 		<div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
 			{#each features as f (f.title)}
-				<div class="flex h-full flex-col rounded-2xl border bg-muted/50 p-6 transition hover:border-emerald-200 hover:shadow-sm">
+				<div
+					class="flex h-full flex-col rounded-2xl border bg-muted/50 p-6 transition hover:border-emerald-200 hover:shadow-sm"
+				>
 					<div class="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
 						<Icon icon={f.icon} class="h-5 w-5 text-primary" aria-hidden="true" />
 					</div>
@@ -549,7 +656,9 @@
 <section id="how-it-works" class="scroll-mt-20 bg-muted/50 px-6 py-24">
 	<div class="mx-auto max-w-4xl">
 		<div class="mb-14 text-center">
-			<span class="mb-3 inline-block rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold tracking-widest text-primary/90 uppercase">
+			<span
+				class="mb-3 inline-block rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold tracking-widest text-primary/90 uppercase"
+			>
 				Get started
 			</span>
 			<h2 class="mt-3 text-3xl font-bold text-foreground sm:text-4xl">
@@ -557,10 +666,14 @@
 			</h2>
 		</div>
 		<div class="relative grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
-			<div class="absolute inset-x-0 top-6 -z-10 hidden h-px border-t border-dashed border-zinc-300 lg:block"></div>
+			<div
+				class="absolute inset-x-0 top-6 -z-10 hidden h-px border-t border-dashed border-zinc-300 lg:block"
+			></div>
 			{#each steps as step (step.num)}
 				<div class="flex flex-col items-center text-center">
-					<div class="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary text-lg font-bold text-white shadow-md">
+					<div
+						class="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary text-lg font-bold text-white shadow-md"
+					>
 						{step.num}
 					</div>
 					<h3 class="font-semibold text-foreground">{step.title}</h3>
@@ -575,13 +688,17 @@
 <section id="pricing" class="scroll-mt-20 bg-background px-6 py-24">
 	<div class="mx-auto max-w-6xl">
 		<div class="mb-10 text-center">
-			<span class="mb-3 inline-block rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold tracking-widest text-primary/90 uppercase">
+			<span
+				class="mb-3 inline-block rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold tracking-widest text-primary/90 uppercase"
+			>
 				Pricing
 			</span>
 			<h2 class="mt-3 text-3xl font-bold text-foreground sm:text-4xl">
 				Simple. Honest. Built for small businesses.
 			</h2>
-			<p class="mt-3 text-lg text-muted-foreground">No commissions. No per-order fees. Cancel anytime.</p>
+			<p class="mt-3 text-lg text-muted-foreground">
+				No commissions. No per-order fees. Cancel anytime.
+			</p>
 		</div>
 
 		<!-- Billing toggle -->
@@ -589,18 +706,32 @@
 			<div class="inline-flex items-center rounded-lg border bg-muted/50 p-0.5">
 				<button
 					type="button"
-					onclick={() => { pricingInterval = 'monthly'; track('pricing_toggle', { billing: 'monthly' }); }}
-					class="rounded-md px-4 py-2 text-sm transition-colors {pricingInterval === 'monthly' ? 'bg-background font-medium text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}"
+					onclick={() => {
+						pricingInterval = 'monthly';
+						track('pricing_toggle', { billing: 'monthly' });
+					}}
+					class="rounded-md px-4 py-2 text-sm transition-colors {pricingInterval === 'monthly'
+						? 'bg-background font-medium text-foreground shadow-sm'
+						: 'text-muted-foreground hover:text-foreground'}"
 				>
 					Monthly
 				</button>
 				<button
 					type="button"
-					onclick={() => { pricingInterval = 'annual'; track('pricing_toggle', { billing: 'annual' }); }}
-					class="flex items-center gap-2 rounded-md px-4 py-2 text-sm transition-colors {pricingInterval === 'annual' ? 'bg-background font-medium text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}"
+					onclick={() => {
+						pricingInterval = 'annual';
+						track('pricing_toggle', { billing: 'annual' });
+					}}
+					class="flex items-center gap-2 rounded-md px-4 py-2 text-sm transition-colors {pricingInterval ===
+					'annual'
+						? 'bg-background font-medium text-foreground shadow-sm'
+						: 'text-muted-foreground hover:text-foreground'}"
 				>
 					Annual
-					<span class="rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-semibold text-primary">Save ~2 months</span>
+					<span
+						class="rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-semibold text-primary"
+						>Save ~2 months</span
+					>
 				</button>
 			</div>
 		</div>
@@ -610,11 +741,15 @@
 			{#each plans as plan (plan.name)}
 				<div class="relative flex flex-col {plan.highlight ? 'lg:scale-105' : ''}">
 					{#if plan.highlight}
-						<div class="absolute -top-3 left-0 right-0 flex justify-center">
+						<div class="absolute -top-3 right-0 left-0 flex justify-center">
 							<Badge class="bg-primary text-primary-foreground shadow-sm">Most popular</Badge>
 						</div>
 					{/if}
-					<div class="flex flex-1 flex-col overflow-hidden rounded-2xl border {plan.highlight ? 'border-primary shadow-2xl ring-2 ring-primary/20' : 'bg-background'} ">
+					<div
+						class="flex flex-1 flex-col overflow-hidden rounded-2xl border {plan.highlight
+							? 'border-primary shadow-2xl ring-2 ring-primary/20'
+							: 'bg-background'} "
+					>
 						{#if plan.highlight}
 							<div class="h-1 bg-primary"></div>
 						{/if}
@@ -633,7 +768,10 @@
 									<span class="text-4xl font-bold text-foreground">${plan.annualYearlyPrice}</span>
 									<span class="mb-1 text-sm text-muted-foreground">/ year</span>
 									{#if plan.annualSavings}
-										<span class="mb-1 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">{plan.annualSavings}</span>
+										<span
+											class="mb-1 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary"
+											>{plan.annualSavings}</span
+										>
 									{/if}
 								{/if}
 							</div>
@@ -641,7 +779,10 @@
 							<ul class="mt-6 flex-1 space-y-2.5">
 								{#each plan.features as feat (feat)}
 									<li class="flex items-start gap-2 text-sm text-muted-foreground">
-										<Icon icon="mdi:check-circle-outline" class="mt-0.5 h-4 w-4 shrink-0 text-primary/80" />
+										<Icon
+											icon="mdi:check-circle-outline"
+											class="mt-0.5 h-4 w-4 shrink-0 text-primary/80"
+										/>
 										{feat}
 									</li>
 								{/each}
@@ -649,8 +790,11 @@
 
 							<a
 								href={loginHref}
-								onclick={() => track('cta_click', { location: `pricing_${plan.name.toLowerCase()}` })}
-								class="mt-8 block rounded-xl px-5 py-3 text-center text-sm font-semibold transition-colors {plan.highlight ? 'bg-primary text-white hover:bg-primary/90' : 'bg-gray-900 text-white hover:bg-gray-700'}"
+								onclick={() =>
+									track('cta_click', { location: `pricing_${plan.name.toLowerCase()}` })}
+								class="mt-8 block rounded-xl px-5 py-3 text-center text-sm font-semibold transition-colors {plan.highlight
+									? 'bg-primary text-white hover:bg-primary/90'
+									: 'bg-gray-900 text-white hover:bg-gray-700'}"
 							>
 								{plan.cta}
 							</a>
@@ -661,9 +805,12 @@
 		</div>
 
 		<div class="mt-8 text-center">
-			<p class="text-sm text-muted-foreground">Add-ons billed separately. Activate or cancel anytime.</p>
+			<p class="text-sm text-muted-foreground">
+				Add-ons billed separately. Activate or cancel anytime.
+			</p>
 			<p class="mt-1 text-xs text-muted-foreground">
-				Add-ons: SMS Notifications · Custom Domain · Advanced Analytics · Loyalty Program · Subscriptions
+				Add-ons: SMS Notifications · Custom Domain · Advanced Analytics · Loyalty Program ·
+				Subscriptions
 			</p>
 		</div>
 	</div>
@@ -673,10 +820,14 @@
 <section class="bg-emerald-50/40 px-6 py-24">
 	<div class="mx-auto max-w-6xl">
 		<div class="mb-14 text-center">
-			<span class="mb-3 inline-block rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold tracking-widest text-primary/90 uppercase">
+			<span
+				class="mb-3 inline-block rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold tracking-widest text-primary/90 uppercase"
+			>
 				Optional add-ons
 			</span>
-			<h2 class="mt-3 text-3xl font-bold text-foreground sm:text-4xl">Add only what you actually need.</h2>
+			<h2 class="mt-3 text-3xl font-bold text-foreground sm:text-4xl">
+				Add only what you actually need.
+			</h2>
 			<p class="mt-3 text-lg text-muted-foreground">
 				Available on Market and Pro plans. Activate or cancel from your dashboard.
 			</p>
@@ -689,7 +840,10 @@
 							<Icon icon={addon.icon} class="h-5 w-5 text-primary" aria-hidden="true" />
 						</div>
 						<div class="flex flex-col items-end gap-0.5">
-							<span class="rounded-full border bg-background px-2.5 py-0.5 text-xs font-semibold text-muted-foreground">{addon.price}</span>
+							<span
+								class="rounded-full border bg-background px-2.5 py-0.5 text-xs font-semibold text-muted-foreground"
+								>{addon.price}</span
+							>
 							<span class="text-xs text-muted-foreground">or {addon.annualPrice}</span>
 							<span class="text-xs text-primary/70">{addon.annualSavings}</span>
 						</div>
@@ -703,18 +857,25 @@
 		</div>
 
 		<!-- Cost estimator -->
-		<div class="mx-auto mt-12 max-w-lg rounded-2xl border border-emerald-100 bg-background p-6 shadow-sm">
+		<div
+			class="mx-auto mt-12 max-w-lg rounded-2xl border border-emerald-100 bg-background p-6 shadow-sm"
+		>
 			<h3 class="mb-4 text-base font-semibold text-foreground">Estimate your cost</h3>
 
 			<!-- Base plan selector -->
 			<div class="mb-5">
-				<p class="mb-2 text-xs font-medium text-muted-foreground uppercase tracking-wide">Base plan</p>
+				<p class="mb-2 text-xs font-medium tracking-wide text-muted-foreground uppercase">
+					Base plan
+				</p>
 				<div class="flex gap-2">
 					{#each ['Starter', 'Market', 'Pro'] as p (p)}
 						<button
 							type="button"
 							onclick={() => (estimatorPlan = p as 'Starter' | 'Market' | 'Pro')}
-							class="flex-1 rounded-lg border px-3 py-2 text-xs font-medium transition-colors {estimatorPlan === p ? 'border-primary bg-primary/10 text-primary' : 'border-border text-muted-foreground hover:border-primary/40 hover:text-foreground'}"
+							class="flex-1 rounded-lg border px-3 py-2 text-xs font-medium transition-colors {estimatorPlan ===
+							p
+								? 'border-primary bg-primary/10 text-primary'
+								: 'border-border text-muted-foreground hover:border-primary/40 hover:text-foreground'}"
 						>
 							{p}
 						</button>
@@ -747,14 +908,19 @@
 				<div class="flex items-baseline justify-between">
 					<span class="text-sm text-muted-foreground">Estimated total</span>
 					<span class="text-lg font-bold text-foreground">
-						{estimatorPlan === 'Starter' && estimatorTotal === 0 ? 'Free' : `$${estimatorBase + estimatorTotal}`}
+						{estimatorPlan === 'Starter' && estimatorTotal === 0
+							? 'Free'
+							: `$${estimatorBase + estimatorTotal}`}
 						{#if estimatorPlan !== 'Starter' || estimatorTotal > 0}
 							<span class="text-sm font-normal text-muted-foreground"> / month</span>
 						{/if}
 					</span>
 				</div>
 				<p class="mt-1 text-xs text-muted-foreground">
-					Includes {estimatorPlan === 'Starter' ? 'Free' : `$${estimatorBase}`} {estimatorPlan} base ({pricingInterval === 'annual' ? 'billed annually' : 'billed monthly'}) + selected add-ons.
+					Includes {estimatorPlan === 'Starter' ? 'Free' : `$${estimatorBase}`}
+					{estimatorPlan} base ({pricingInterval === 'annual'
+						? 'billed annually'
+						: 'billed monthly'}) + selected add-ons.
 				</p>
 			</div>
 		</div>
@@ -836,33 +1002,58 @@
 			<div>
 				<p class="mb-3 text-xs font-semibold tracking-wide text-foreground uppercase">Solutions</p>
 				<nav class="flex flex-col gap-2 text-sm text-muted-foreground">
-					<a href={resolve('/for-bakeries')} class="transition-colors hover:text-foreground">For Bakeries</a>
-					<a href={resolve('/for-farmers-markets')} class="transition-colors hover:text-foreground">For Farmers Markets</a>
+					<a href={resolve('/for-bakeries')} class="transition-colors hover:text-foreground"
+						>For Bakeries</a
+					>
+					<a href={resolve('/for-farmers-markets')} class="transition-colors hover:text-foreground"
+						>For Farmers Markets</a
+					>
 				</nav>
 			</div>
 			<div>
 				<p class="mb-3 text-xs font-semibold tracking-wide text-foreground uppercase">Company</p>
 				<nav class="flex flex-col gap-2 text-sm text-muted-foreground">
-					<a href="mailto:hello@getorderlocal.com" rel="external" class="transition-colors hover:text-foreground">Contact</a>
+					<a
+						href="mailto:hello@getorderlocal.com"
+						rel="external"
+						class="transition-colors hover:text-foreground">Contact</a
+					>
 				</nav>
 			</div>
 			<div>
 				<p class="mb-3 text-xs font-semibold tracking-wide text-foreground uppercase">Legal</p>
 				<nav class="flex flex-col gap-2 text-sm text-muted-foreground">
-					<a href={resolve('/privacy')} class="transition-colors hover:text-foreground">Privacy Policy</a>
-					<a href={resolve('/terms')} class="transition-colors hover:text-foreground">Terms of Service</a>
+					<a href={resolve('/privacy')} class="transition-colors hover:text-foreground"
+						>Privacy Policy</a
+					>
+					<a href={resolve('/terms')} class="transition-colors hover:text-foreground"
+						>Terms of Service</a
+					>
 				</nav>
 			</div>
 		</div>
 		<div class="mt-10 flex flex-col items-center justify-between gap-4 border-t pt-6 sm:flex-row">
 			<p class="text-xs text-muted-foreground">
-				© {new Date().getFullYear()} Order<span class="text-primary">Local</span>. All rights reserved.
+				© {new Date().getFullYear()} Order<span class="text-primary">Local</span>. All rights
+				reserved.
 			</p>
 			<div class="flex items-center gap-4">
-				<a href="https://x.com/getorderlocal" target="_blank" rel="noopener noreferrer" aria-label="Order Local on X" class="text-muted-foreground transition-colors hover:text-foreground">
+				<a
+					href="https://x.com/getorderlocal"
+					target="_blank"
+					rel="noopener noreferrer"
+					aria-label="Order Local on X"
+					class="text-muted-foreground transition-colors hover:text-foreground"
+				>
 					<Icon icon="mdi:twitter" class="h-4 w-4" aria-hidden="true" />
 				</a>
-				<a href="https://linkedin.com/company/getorderlocal" target="_blank" rel="noopener noreferrer" aria-label="Order Local on LinkedIn" class="text-muted-foreground transition-colors hover:text-foreground">
+				<a
+					href="https://linkedin.com/company/getorderlocal"
+					target="_blank"
+					rel="noopener noreferrer"
+					aria-label="Order Local on LinkedIn"
+					class="text-muted-foreground transition-colors hover:text-foreground"
+				>
 					<Icon icon="mdi:linkedin" class="h-4 w-4" aria-hidden="true" />
 				</a>
 			</div>

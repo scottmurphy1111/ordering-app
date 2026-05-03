@@ -52,9 +52,7 @@
 <div>
 	<div class="mb-6">
 		<h1 class="text-2xl font-bold text-foreground">Settings</h1>
-		<p class="mt-0.5 text-sm text-muted-foreground">
-			Manage your shop settings.
-		</p>
+		<p class="mt-0.5 text-sm text-muted-foreground">Manage your shop settings.</p>
 	</div>
 
 	<div class="grid gap-4 sm:grid-cols-2">

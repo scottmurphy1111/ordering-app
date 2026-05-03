@@ -64,7 +64,12 @@ export async function materializeTemplate(templateId: number): Promise<Materiali
 		const attached = await db
 			.select({ windowId: orders.pickupWindowId })
 			.from(orders)
-			.where(inArray(orders.pickupWindowId, futureRows.map((r) => r.id)));
+			.where(
+				inArray(
+					orders.pickupWindowId,
+					futureRows.map((r) => r.id)
+				)
+			);
 		for (const r of attached) {
 			if (r.windowId !== null) withOrderIds.add(r.windowId);
 		}

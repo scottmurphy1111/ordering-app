@@ -81,25 +81,44 @@ export const actions: Actions = {
 
 		const record = await db.query.vendor.findFirst({
 			where: eq(vendor.id, vendorId),
-			columns: { stripeCustomerId: true, name: true, email: true, subscriptionTier: true, stripeSubscriptionId: true }
+			columns: {
+				stripeCustomerId: true,
+				name: true,
+				email: true,
+				subscriptionTier: true,
+				stripeSubscriptionId: true
+			}
 		});
 
 		if (record?.subscriptionTier === planKey) return fail(400, { error: 'Already on this plan.' });
 		const stripe = getOrderLocalStripe();
 
 		if (record?.stripeSubscriptionId) {
-			const subscription = await stripe.subscriptions.retrieve(record.stripeSubscriptionId, { expand: ['items'] });
-			const planItem = subscription.items.data.find((i) => { const meta = i.price.metadata?.type; return meta === 'plan' || !meta; }) ?? subscription.items.data[0];
+			const subscription = await stripe.subscriptions.retrieve(record.stripeSubscriptionId, {
+				expand: ['items']
+			});
+			const planItem =
+				subscription.items.data.find((i) => {
+					const meta = i.price.metadata?.type;
+					return meta === 'plan' || !meta;
+				}) ?? subscription.items.data[0];
 			if (planItem) {
 				await stripe.subscriptionItems.update(planItem.id, { price: priceId });
-				await db.update(vendor).set({ subscriptionTier: planKey, updatedAt: new Date() }).where(eq(vendor.id, vendorId));
+				await db
+					.update(vendor)
+					.set({ subscriptionTier: planKey, updatedAt: new Date() })
+					.where(eq(vendor.id, vendorId));
 				return { success: true, upgraded: true };
 			}
 		}
 
 		let customerId = record?.stripeCustomerId;
 		if (!customerId) {
-			const customer = await stripe.customers.create({ name: record?.name ?? undefined, email: record?.email ?? undefined, metadata: { vendorId: String(vendorId) } });
+			const customer = await stripe.customers.create({
+				name: record?.name ?? undefined,
+				email: record?.email ?? undefined,
+				metadata: { vendorId: String(vendorId) }
+			});
 			customerId = customer.id;
 			await db.update(vendor).set({ stripeCustomerId: customerId }).where(eq(vendor.id, vendorId));
 		}
@@ -122,12 +141,25 @@ export const actions: Actions = {
 		const planKey = formData.get('planKey')?.toString();
 		if (planKey !== 'starter') return fail(400, { error: 'Invalid plan' });
 
-		const record = await db.query.vendor.findFirst({ where: eq(vendor.id, vendorId), columns: { stripeSubscriptionId: true, subscriptionTier: true } });
+		const record = await db.query.vendor.findFirst({
+			where: eq(vendor.id, vendorId),
+			columns: { stripeSubscriptionId: true, subscriptionTier: true }
+		});
 		if (record?.subscriptionTier === 'starter') return fail(400, { error: 'Already on Starter.' });
 
 		const stripe = getOrderLocalStripe();
-		if (record?.stripeSubscriptionId) await stripe.subscriptions.cancel(record.stripeSubscriptionId);
-		await db.update(vendor).set({ subscriptionTier: 'starter', subscriptionStatus: 'cancelled', stripeSubscriptionId: null, addons: [], updatedAt: new Date() }).where(eq(vendor.id, vendorId));
+		if (record?.stripeSubscriptionId)
+			await stripe.subscriptions.cancel(record.stripeSubscriptionId);
+		await db
+			.update(vendor)
+			.set({
+				subscriptionTier: 'starter',
+				subscriptionStatus: 'cancelled',
+				stripeSubscriptionId: null,
+				addons: [],
+				updatedAt: new Date()
+			})
+			.where(eq(vendor.id, vendorId));
 		return { success: true, downgraded: true };
 	},
 
@@ -138,27 +170,46 @@ export const actions: Actions = {
 		const intervalRaw = formData.get('interval')?.toString();
 		const interval: BillingInterval = intervalRaw === 'annual' ? 'annual' : 'monthly';
 
-		const record = await db.query.vendor.findFirst({ where: eq(vendor.id, vendorId), columns: { stripeSubscriptionId: true, subscriptionTier: true } });
-		if (record?.subscriptionTier !== 'pro' || !record.stripeSubscriptionId) return fail(400, { error: 'No active Pro subscription.' });
+		const record = await db.query.vendor.findFirst({
+			where: eq(vendor.id, vendorId),
+			columns: { stripeSubscriptionId: true, subscriptionTier: true }
+		});
+		if (record?.subscriptionTier !== 'pro' || !record.stripeSubscriptionId)
+			return fail(400, { error: 'No active Pro subscription.' });
 
 		const priceId = getPlanPriceId('pro', interval);
 		if (!priceId) return fail(500, { error: 'Price not configured. Contact support.' });
 
 		const stripe = getOrderLocalStripe();
-		const subscription = await stripe.subscriptions.retrieve(record.stripeSubscriptionId, { expand: ['items'] });
-		const planItem = subscription.items.data.find((i) => { const meta = i.price.metadata?.type; return meta === 'plan' || !meta; }) ?? subscription.items.data[0];
+		const subscription = await stripe.subscriptions.retrieve(record.stripeSubscriptionId, {
+			expand: ['items']
+		});
+		const planItem =
+			subscription.items.data.find((i) => {
+				const meta = i.price.metadata?.type;
+				return meta === 'plan' || !meta;
+			}) ?? subscription.items.data[0];
 		if (!planItem) return fail(500, { error: 'Could not find subscription item.' });
-		await stripe.subscriptionItems.update(planItem.id, { price: priceId, proration_behavior: 'create_prorations' });
+		await stripe.subscriptionItems.update(planItem.id, {
+			price: priceId,
+			proration_behavior: 'create_prorations'
+		});
 		return { success: true };
 	},
 
 	openPortal: async ({ locals, url }) => {
 		requireStaff(locals);
 		const vendorId = locals.vendorId!;
-		const record = await db.query.vendor.findFirst({ where: eq(vendor.id, vendorId), columns: { stripeCustomerId: true } });
+		const record = await db.query.vendor.findFirst({
+			where: eq(vendor.id, vendorId),
+			columns: { stripeCustomerId: true }
+		});
 		if (!record?.stripeCustomerId) return fail(400, { error: 'No billing account found.' });
 		const stripe = getOrderLocalStripe();
-		const session = await stripe.billingPortal.sessions.create({ customer: record.stripeCustomerId, return_url: `${url.origin}/dashboard/account/billing` });
+		const session = await stripe.billingPortal.sessions.create({
+			customer: record.stripeCustomerId,
+			return_url: `${url.origin}/dashboard/account/billing`
+		});
 		redirect(303, session.url);
 	},
 
@@ -172,9 +223,16 @@ export const actions: Actions = {
 
 		if (!key || !VALID_ADDON_KEYS.has(key)) return fail(400, { error: 'Invalid add-on.' });
 
-		const record = await db.query.vendor.findFirst({ where: eq(vendor.id, vendorId), columns: { subscriptionTier: true, stripeSubscriptionId: true, addons: true } });
-		if (!record?.subscriptionTier || !PAID_TIERS.has(record.subscriptionTier)) return fail(400, { error: 'Upgrade your plan before activating add-ons.' });
-		if (!record.stripeSubscriptionId) return fail(400, { error: 'No active Stripe subscription found. Complete your plan upgrade first.' });
+		const record = await db.query.vendor.findFirst({
+			where: eq(vendor.id, vendorId),
+			columns: { subscriptionTier: true, stripeSubscriptionId: true, addons: true }
+		});
+		if (!record?.subscriptionTier || !PAID_TIERS.has(record.subscriptionTier))
+			return fail(400, { error: 'Upgrade your plan before activating add-ons.' });
+		if (!record.stripeSubscriptionId)
+			return fail(400, {
+				error: 'No active Stripe subscription found. Complete your plan upgrade first.'
+			});
 
 		const current = (record.addons ?? []) as AddonItem[];
 		if (current.some((a) => a.key === key)) return { success: true };
@@ -183,8 +241,14 @@ export const actions: Actions = {
 		if (!priceId) return fail(500, { error: 'Add-on price not configured. Contact support.' });
 
 		const stripe = getOrderLocalStripe();
-		const item = await stripe.subscriptionItems.create({ subscription: record.stripeSubscriptionId, price: priceId });
-		await db.update(vendor).set({ addons: [...current, { key, stripeItemId: item.id }], updatedAt: new Date() }).where(eq(vendor.id, vendorId));
+		const item = await stripe.subscriptionItems.create({
+			subscription: record.stripeSubscriptionId,
+			price: priceId
+		});
+		await db
+			.update(vendor)
+			.set({ addons: [...current, { key, stripeItemId: item.id }], updatedAt: new Date() })
+			.where(eq(vendor.id, vendorId));
 		return { success: true };
 	},
 
@@ -195,18 +259,26 @@ export const actions: Actions = {
 		const key = formData.get('key')?.toString();
 		if (!key || !VALID_ADDON_KEYS.has(key)) return fail(400, { error: 'Invalid add-on.' });
 
-		const record = await db.query.vendor.findFirst({ where: eq(vendor.id, vendorId), columns: { addons: true } });
+		const record = await db.query.vendor.findFirst({
+			where: eq(vendor.id, vendorId),
+			columns: { addons: true }
+		});
 		const current = (record?.addons ?? []) as AddonItem[];
 		const addonEntry = current.find((a) => a.key === key);
 		if (!addonEntry) return { success: true };
 
 		const stripe = getOrderLocalStripe();
 		try {
-			await stripe.subscriptionItems.del(addonEntry.stripeItemId, { proration_behavior: 'create_prorations' });
+			await stripe.subscriptionItems.del(addonEntry.stripeItemId, {
+				proration_behavior: 'create_prorations'
+			});
 		} catch (e: unknown) {
 			if (!(e instanceof Error && e.message.includes('No such subscription_item'))) throw e;
 		}
-		await db.update(vendor).set({ addons: current.filter((a) => a.key !== key), updatedAt: new Date() }).where(eq(vendor.id, vendorId));
+		await db
+			.update(vendor)
+			.set({ addons: current.filter((a) => a.key !== key), updatedAt: new Date() })
+			.where(eq(vendor.id, vendorId));
 		return { success: true };
 	}
 };

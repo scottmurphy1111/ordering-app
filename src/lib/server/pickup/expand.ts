@@ -86,7 +86,12 @@ export function expandTemplate(input: ExpandTemplateInput): ExpandedOccurrence[]
 	const fromDate = input.fromDate ?? new Date();
 
 	const bydayMatch = input.recurrence.match(/BYDAY=([A-Z,]+)/);
-	const byday = bydayMatch ? bydayMatch[1].split(',').map((d) => BYDAY_MAP[d]).filter(Boolean) : [];
+	const byday = bydayMatch
+		? bydayMatch[1]
+				.split(',')
+				.map((d) => BYDAY_MAP[d])
+				.filter(Boolean)
+		: [];
 
 	if (byday.length === 0) return [];
 

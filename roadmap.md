@@ -252,7 +252,7 @@ Items vendors will encounter in their first week of use. The bar is "first impre
 - Top Items panel: when no orders exist, render an empty state with copy like "No orders yet — share your storefront link to get started" plus a one-click action (copy link / view storefront)
 - Order Type panel: similar treatment with audience-appropriate copy
 - Reconsider whether Overview needs both panels at all when there's no data — collapsing to a single "get started" panel may read better than two empty boxes
-**Estimated effort:** 2–4 hours including copy decisions.
+  **Estimated effort:** 2–4 hours including copy decisions.
 
 **Trigger:** Standalone polish — whenever the Overview page is being touched for another reason.
 

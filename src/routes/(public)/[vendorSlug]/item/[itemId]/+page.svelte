@@ -108,7 +108,9 @@
 					<p class="text-xl font-bold" style="color: var(--background-color);">
 						${(data.item.discountedPrice / 100).toFixed(2)}
 					</p>
-					<p class="text-sm text-muted-foreground line-through">${(data.item.price / 100).toFixed(2)}</p>
+					<p class="text-sm text-muted-foreground line-through">
+						${(data.item.price / 100).toFixed(2)}
+					</p>
 				{:else}
 					<p class="text-xl font-bold text-foreground">${(data.item.price / 100).toFixed(2)}</p>
 				{/if}
@@ -130,7 +132,7 @@
 		{#each modifierGroups as group (group.id)}
 			{@const chosen = selections[group.id] ?? []}
 			{@const isMulti = group.maxSelections > 1}
-			<div class="rounded-xl border  bg-background p-4 shadow-sm">
+			<div class="rounded-xl border bg-background p-4 shadow-sm">
 				<div class="mb-3 flex items-center justify-between">
 					<div>
 						<h2 class="font-semibold text-foreground">{group.name}</h2>
@@ -144,7 +146,9 @@
 					</div>
 					<div class="flex items-center gap-2">
 						{#if isMulti}
-							<span class="text-xs text-muted-foreground">{chosen.length}/{group.maxSelections}</span>
+							<span class="text-xs text-muted-foreground"
+								>{chosen.length}/{group.maxSelections}</span
+							>
 						{/if}
 						{#if group.required}
 							<span class="rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-600"
@@ -213,6 +217,7 @@
 		<!-- Add to cart -->
 		<div class="sticky bottom-4">
 			<button
+				type="button"
 				onclick={addToCart}
 				disabled={!canAdd}
 				style="background-color: var(--background-color); color: var(--foreground-color);"

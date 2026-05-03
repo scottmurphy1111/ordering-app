@@ -1,10 +1,10 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { enhance } from'$app/forms';
-	import type { PageData, ActionData } from'./$types';
-	import Icon from'@iconify/svelte';
-	import { Button } from'$lib/components/ui/button';
-	import { Card, CardContent, CardHeader, CardTitle } from'$lib/components/ui/card';
+	import { enhance } from '$app/forms';
+	import type { PageData, ActionData } from './$types';
+	import Icon from '@iconify/svelte';
+	import { Button } from '$lib/components/ui/button';
+	import { Card, CardContent, CardHeader, CardTitle } from '$lib/components/ui/card';
 	import {
 		Select,
 		SelectTrigger,
@@ -52,9 +52,9 @@
 	function toSlug(name: string) {
 		return name
 			.toLowerCase()
-			.replace(/[^a-z0-9\s-]/g,'')
-			.replace(/\s+/g,'-')
-			.replace(/-+/g,'-')
+			.replace(/[^a-z0-9\s-]/g, '')
+			.replace(/\s+/g, '-')
+			.replace(/-+/g, '-')
 			.slice(0, 50);
 	}
 </script>
@@ -69,7 +69,9 @@
 		</div>
 
 		{#if form?.error}
-			<div class="mb-4 rounded-md border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+			<div
+				class="mb-4 rounded-md border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive"
+			>
 				{form.error}
 			</div>
 		{/if}
@@ -113,11 +115,16 @@
 									<div class="min-w-0">
 										<p class="font-medium text-foreground">{t.name}</p>
 										<p class="mt-0.5 text-xs text-muted-foreground">
-											getorderlocal.com/{t.slug} · {businessTypeLabel(t.type)} · {t.role.charAt(0).toUpperCase() + t.role.slice(1)}
+											getorderlocal.com/{t.slug} · {businessTypeLabel(t.type)} · {t.role
+												.charAt(0)
+												.toUpperCase() + t.role.slice(1)}
 										</p>
 									</div>
 								</button>
-								<Icon icon="mdi:chevron-right" class="ml-2 h-5 w-5 shrink-0 text-muted-foreground" />
+								<Icon
+									icon="mdi:chevron-right"
+									class="ml-2 h-5 w-5 shrink-0 text-muted-foreground"
+								/>
 							</CardContent>
 						</Card>
 					</form>
@@ -139,12 +146,7 @@
 					<CardTitle>New shop</CardTitle>
 				</CardHeader>
 				<CardContent>
-					<form
-						method="post"
-						action="?/create"
-						use:enhance
-						class="space-y-4"
-					>
+					<form method="post" action="?/create" use:enhance class="space-y-4">
 						<div>
 							<label class="mb-1 block text-sm font-medium text-muted-foreground" for="name"
 								>Business name</label
@@ -163,7 +165,9 @@
 						</div>
 
 						<div>
-							<label class="mb-1 block text-sm font-medium text-muted-foreground" for="slug">URL slug</label>
+							<label class="mb-1 block text-sm font-medium text-muted-foreground" for="slug"
+								>URL slug</label
+							>
 							<div class="flex items-center gap-1.5">
 								<span class="text-sm text-muted-foreground">getorderlocal.com/</span>
 								<input
@@ -222,11 +226,21 @@
 							</Select>
 						</div>
 
-						<label class="flex cursor-pointer items-center gap-2 rounded-lg border bg-muted/40 px-3 py-2.5">
-							<input type="checkbox" name="seedDemo" value="1" checked class="h-4 w-4 rounded accent-primary" />
+						<label
+							class="flex cursor-pointer items-center gap-2 rounded-lg border bg-muted/40 px-3 py-2.5"
+						>
+							<input
+								type="checkbox"
+								name="seedDemo"
+								value="1"
+								checked
+								class="h-4 w-4 rounded accent-primary"
+							/>
 							<div>
 								<p class="text-sm font-medium text-foreground">Add example catalog items</p>
-								<p class="text-xs text-muted-foreground">Pre-fill with demo categories and items you can edit or delete.</p>
+								<p class="text-xs text-muted-foreground">
+									Pre-fill with demo categories and items you can edit or delete.
+								</p>
 							</div>
 						</label>
 
@@ -242,6 +256,5 @@
 				</CardContent>
 			</Card>
 		{/if}
-
 	</div>
 </div>

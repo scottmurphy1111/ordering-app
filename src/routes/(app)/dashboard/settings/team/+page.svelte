@@ -264,7 +264,7 @@
 							<TableRow class="hover:bg-transparent">
 								<TableHead class="px-4 py-2.5">User</TableHead>
 								<TableHead class="px-4 py-2.5">Role</TableHead>
-								<TableHead class="px-4 py-2.5 hidden sm:table-cell">Added</TableHead>
+								<TableHead class="hidden px-4 py-2.5 sm:table-cell">Added</TableHead>
 								<TableHead class="px-4 py-2.5"></TableHead>
 							</TableRow>
 						</TableHeader>
@@ -307,7 +307,7 @@
 											</Badge>
 										{/if}
 									</TableCell>
-									<TableCell class="px-4 py-3 hidden text-xs text-muted-foreground sm:table-cell">
+									<TableCell class="hidden px-4 py-3 text-xs text-muted-foreground sm:table-cell">
 										{new Date(member.assignedAt).toLocaleDateString([], {
 											month: 'short',
 											day: 'numeric',
@@ -381,14 +381,14 @@
 									<TableRow class="hover:bg-transparent">
 										<TableHead class="px-4 py-2.5">Email</TableHead>
 										<TableHead class="px-4 py-2.5">Role</TableHead>
-										<TableHead class="px-4 py-2.5 hidden sm:table-cell">Expires</TableHead>
+										<TableHead class="hidden px-4 py-2.5 sm:table-cell">Expires</TableHead>
 										<TableHead class="px-4 py-2.5"></TableHead>
 									</TableRow>
 								</TableHeader>
 								<TableBody>
 									{#each data.pendingInvitations as invite (invite.id)}
 										<TableRow>
-											<TableCell class="px-4 py-3 max-w-40 min-w-0 truncate text-muted-foreground"
+											<TableCell class="max-w-40 min-w-0 truncate px-4 py-3 text-muted-foreground"
 												>{invite.email}</TableCell
 											>
 											<TableCell class="px-4 py-3">
@@ -397,7 +397,7 @@
 												</Badge>
 											</TableCell>
 											<TableCell
-												class="px-4 py-3 hidden text-xs text-muted-foreground sm:table-cell"
+												class="hidden px-4 py-3 text-xs text-muted-foreground sm:table-cell"
 											>
 												{new Date(invite.expiresAt).toLocaleDateString([], {
 													month: 'short',
@@ -469,7 +469,7 @@
 								<TableHeader>
 									<TableRow class="hover:bg-transparent">
 										<TableHead class="px-4 py-2.5">User</TableHead>
-										<TableHead class="px-4 py-2.5 hidden sm:table-cell">Account created</TableHead>
+										<TableHead class="hidden px-4 py-2.5 sm:table-cell">Account created</TableHead>
 										<TableHead class="px-4 py-2.5"></TableHead>
 									</TableRow>
 								</TableHeader>
@@ -481,7 +481,7 @@
 												<p class="text-xs text-muted-foreground">{u.email}</p>
 											</TableCell>
 											<TableCell
-												class="px-4 py-3 hidden text-xs text-muted-foreground sm:table-cell"
+												class="hidden px-4 py-3 text-xs text-muted-foreground sm:table-cell"
 											>
 												{new Date(u.createdAt).toLocaleDateString([], {
 													month: 'short',

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { signIn, authClient } from '$lib/auth-client';
+	import { resolve } from '$app/paths';
 	import { Button } from '$lib/components/ui/button';
 	import { Input } from '$lib/components/ui/input';
 	import { Label } from '$lib/components/ui/label';
@@ -39,9 +40,11 @@
 	<CardContent class="p-8">
 		{#if data.isDevBypass}
 			<div class="mb-6 rounded-lg border border-amber-200 bg-amber-50 p-4">
-				<p class="mb-3 text-xs font-medium text-amber-700 uppercase tracking-wide">Dev bypass active</p>
+				<p class="mb-3 text-xs font-medium tracking-wide text-amber-700 uppercase">
+					Dev bypass active
+				</p>
 				<a
-					href="/dev-signin"
+					href={resolve('/dev-signin')}
 					class="flex w-full items-center justify-center rounded-lg bg-amber-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-amber-600"
 				>
 					Continue as Dev User

@@ -17,9 +17,7 @@ export type TransitionResult = {
  * startsAt falls within the HORIZON_DAYS window. Idempotent: re-running
  * produces no change once all eligible orders are already 'received'.
  */
-export async function transitionScheduledOrders(
-	now = new Date()
-): Promise<TransitionResult> {
+export async function transitionScheduledOrders(now = new Date()): Promise<TransitionResult> {
 	const horizonCutoff = new Date(now.getTime() + HORIZON_DAYS * 24 * 60 * 60 * 1000);
 
 	// Drizzle UPDATE doesn't support JOIN on Neon HTTP — SELECT IDs first, then UPDATE.

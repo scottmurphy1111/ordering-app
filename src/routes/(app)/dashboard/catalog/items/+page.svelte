@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { PageData, ActionData } from './$types';
+	import type { PageData } from './$types';
 	import type { DiscoveredItem } from '$lib/../routes/api/discover-stripe-items/+server';
 	import { SvelteMap, SvelteSet, SvelteURLSearchParams } from 'svelte/reactivity';
 	import { resolve } from '$app/paths';
@@ -50,7 +50,7 @@
 	} from '$lib/components/ui/sheet';
 	import CatalogItemForm from '$lib/components/CatalogItemForm.svelte';
 
-	let { data, form }: { data: PageData; form: ActionData } = $props();
+	let { data }: { data: PageData } = $props();
 	type CatalogItem = (typeof data)['items'][number];
 
 	// ── Table sorting ─────────────────────────────────────────────
@@ -152,9 +152,7 @@
 	function clearDrawerParam() {
 		const qs = params.toString();
 		goto(
-			resolve(
-				(qs ? `/dashboard/catalog/items?${qs}` : '/dashboard/catalog/items') as `/${string}`
-			),
+			resolve((qs ? `/dashboard/catalog/items?${qs}` : '/dashboard/catalog/items') as `/${string}`),
 			{ replaceState: true, noScroll: true, keepFocus: true }
 		);
 	}
@@ -231,9 +229,7 @@
 		next.delete('search');
 		const qs = next.toString();
 		goto(
-			resolve(
-				(qs ? `/dashboard/catalog/items?${qs}` : '/dashboard/catalog/items') as `/${string}`
-			),
+			resolve((qs ? `/dashboard/catalog/items?${qs}` : '/dashboard/catalog/items') as `/${string}`),
 			{ replaceState: true }
 		);
 		searchInput?.focus();
@@ -411,15 +407,16 @@
 								<Icon icon="mdi:lightning-bolt" class="h-4 w-4 text-primary" /> Discover from Stripe
 							</DropdownMenuItem>
 							<DropdownMenuItem
-								onclick={() => (data.canImportCsv ? (showImport = true) : (showImportUpsell = true))}
+								onclick={() =>
+									data.canImportCsv ? (showImport = true) : (showImportUpsell = true)}
 							>
 								<Icon icon="mdi:upload" class="h-4 w-4" /> Import CSV
 							</DropdownMenuItem>
 							<DropdownMenuItem
 								onclick={() => {
-								sortMode = true;
-								closeDrawer();
-							}}
+									sortMode = true;
+									closeDrawer();
+								}}
 							>
 								<Icon icon="mdi:drag-vertical" class="h-4 w-4" /> Reorder items
 							</DropdownMenuItem>
@@ -491,9 +488,7 @@
 					const qs = next.toString();
 					goto(
 						resolve(
-							(qs
-								? `/dashboard/catalog/items?${qs}`
-								: '/dashboard/catalog/items') as `/${string}`
+							(qs ? `/dashboard/catalog/items?${qs}` : '/dashboard/catalog/items') as `/${string}`
 						),
 						{ replaceState: true }
 					);
@@ -501,11 +496,8 @@
 			>
 				<SelectTrigger class="w-44 shrink-0 border-gray-200">
 					<SelectValue>
-						{data.categories.find((c) => String(c.id) === (params.get('categoryId') ?? ''))
-							?.name ??
-							(params.get('categoryId') === 'uncategorized'
-								? '— Uncategorized'
-								: 'All categories')}
+						{data.categories.find((c) => String(c.id) === (params.get('categoryId') ?? ''))?.name ??
+							(params.get('categoryId') === 'uncategorized' ? '— Uncategorized' : 'All categories')}
 					</SelectValue>
 				</SelectTrigger>
 				<SelectContent>
@@ -745,6 +737,7 @@
 						{#each [['name', 'Name'], ['category', 'Category'], ['price', 'Price'], ['status', 'Status']] as const as [col, label] (col)}
 							<TableHead class="px-4 py-2.5">
 								<button
+									type="button"
 									onclick={() => sortBy(col)}
 									class="inline-flex items-center gap-1 font-medium text-muted-foreground transition-colors hover:text-foreground"
 								>
@@ -1185,10 +1178,15 @@
 	</DialogContent>
 </Dialog>
 <!-- ── Item drawer ─────────────────────────────────────────────── -->
-<Sheet bind:open={drawerOpen} onOpenChange={(open) => { if (!open) clearDrawerParam(); }}>
+<Sheet
+	bind:open={drawerOpen}
+	onOpenChange={(open) => {
+		if (!open) clearDrawerParam();
+	}}
+>
 	<SheetContent
 		side="right"
-		class="data-[side=right]:w-full data-[side=right]:sm:max-w-none data-[side=right]:md:max-w-[720px] flex flex-col gap-0 p-0"
+		class="flex flex-col gap-0 p-0 data-[side=right]:w-full data-[side=right]:sm:max-w-none data-[side=right]:md:max-w-[720px]"
 	>
 		<SheetHeader class="shrink-0 border-b px-6 py-4">
 			<SheetTitle>{drawerMode === 'new' ? 'New item' : 'Edit item'}</SheetTitle>
@@ -1206,8 +1204,8 @@
 							✓ <strong>{drawerLastCreated.name}</strong> created —
 							<a
 								href={resolve(`/dashboard/catalog/items/${drawerLastCreated.id}`)}
-								class="underline hover:text-primary/80"
-							>edit item</a>
+								class="underline hover:text-primary/80">edit item</a
+							>
 						</span>
 						<Button
 							onclick={() => (drawerLastCreated = null)}
@@ -1226,7 +1224,9 @@
 					hasSubscriptionsAddon={data.hasSubscriptionsAddon}
 					twoColumn={true}
 					variant="flat"
-					onSuccess={(item) => { drawerLastCreated = item; }}
+					onSuccess={(item) => {
+						drawerLastCreated = item;
+					}}
 					onCancel={() => closeDrawer()}
 				/>
 			{:else if drawerMode === 'edit' && drawerItem}

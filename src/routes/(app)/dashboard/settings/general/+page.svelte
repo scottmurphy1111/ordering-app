@@ -365,9 +365,7 @@
 				<CardTitle>Checkout</CardTitle>
 			</CardHeader>
 			<CardContent class="space-y-5">
-				<p class="text-xs text-muted-foreground">
-					Control what customers see at checkout.
-				</p>
+				<p class="text-xs text-muted-foreground">Control what customers see at checkout.</p>
 				<label class="flex cursor-pointer items-start gap-3">
 					<input
 						type="checkbox"
@@ -377,7 +375,10 @@
 					/>
 					<div>
 						<span class="text-sm font-medium text-muted-foreground">Accept tips at checkout</span>
-						<p class="mt-0.5 text-xs text-muted-foreground/70">Show a tip selector to customers in the cart. Most bakeries, farms, and makers leave this off.</p>
+						<p class="mt-0.5 text-xs text-muted-foreground/70">
+							Show a tip selector to customers in the cart. Most bakeries, farms, and makers leave
+							this off.
+						</p>
 					</div>
 				</label>
 				<label class="flex cursor-pointer items-start gap-3">
@@ -389,7 +390,10 @@
 					/>
 					<div>
 						<span class="text-sm font-medium text-muted-foreground">Allow ASAP pickup</span>
-						<p class="mt-0.5 text-xs text-muted-foreground/70">Show "order now" as an option at checkout. Off for most makers — items aren't ready instantly.</p>
+						<p class="mt-0.5 text-xs text-muted-foreground/70">
+							Show "order now" as an option at checkout. Off for most makers — items aren't ready
+							instantly.
+						</p>
 					</div>
 				</label>
 			</CardContent>
@@ -421,27 +425,37 @@
 			</CardHeader>
 			<CardContent>
 				<p class="px-4 pb-3 text-xs text-muted-foreground">
-					Customers will see open/closed status on your catalog page. Leave all days unset to hide the
-					status.
+					Customers will see open/closed status on your catalog page. Leave all days unset to hide
+					the status.
 				</p>
 				<div class="divide-y divide-border px-4">
 					{#each DAYS as day (day.key)}
 						{@const h = savedHours[day.key]}
 						<div class="flex flex-col gap-2 py-4 sm:flex-row sm:items-center sm:gap-3">
 							<div class="flex items-center justify-between sm:contents">
-								<span class="w-12 shrink-0 text-sm font-medium text-muted-foreground">{day.label}</span>
+								<span class="w-12 shrink-0 text-sm font-medium text-muted-foreground"
+									>{day.label}</span
+								>
 								<label class="flex items-center gap-1.5 text-sm text-muted-foreground">
 									<input
 										type="checkbox"
 										name="{day.key}_closed"
 										class="h-4 w-4 rounded"
 										checked={closedDays[day.key] ?? false}
-										onchange={(e) => { closedDays[day.key] = e.currentTarget.checked; }}
+										onchange={(e) => {
+											closedDays[day.key] = e.currentTarget.checked;
+										}}
 									/>
 									Closed
 								</label>
 							</div>
-							<div class="flex min-w-0 flex-1 items-center gap-2 transition-opacity {closedDays[day.key] ? 'pointer-events-none opacity-40' : ''}">
+							<div
+								class="flex min-w-0 flex-1 items-center gap-2 transition-opacity {closedDays[
+									day.key
+								]
+									? 'pointer-events-none opacity-40'
+									: ''}"
+							>
 								<Input
 									type="time"
 									name="{day.key}_open"

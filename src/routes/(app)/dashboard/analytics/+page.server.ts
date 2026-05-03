@@ -90,8 +90,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 	const avgChange = avgPrev > 0 ? ((avgOrderValue - avgPrev) / avgPrev) * 100 : null;
 
 	const fulfilledCount = recentOrders.filter((o) => o.status === 'fulfilled').length;
-	const fulfilledRate =
-		ordersCount > 0 ? Math.round((fulfilledCount / ordersCount) * 100) : null;
+	const fulfilledRate = ordersCount > 0 ? Math.round((fulfilledCount / ordersCount) * 100) : null;
 
 	// ── Daily chart data ─────────────────────────────────────────────
 	const dailyMap = new Map<string, { revenue: number; count: number }>();

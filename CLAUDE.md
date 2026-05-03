@@ -192,33 +192,33 @@ Do **not** use local component state for any of the above. The URL is canonical.
 
 ```svelte
 <script>
-  import { SvelteURLSearchParams } from 'svelte/reactivity';
-  import { goto } from '$app/navigation';
-  import { resolve } from '$app/paths';
+	import { SvelteURLSearchParams } from 'svelte/reactivity';
+	import { goto } from '$app/navigation';
+	import { resolve } from '$app/paths';
 
-  let { data } = $props();
+	let { data } = $props();
 
-  // Derived params instance — recomputes from data on every navigation.
-  // Reads in $derived and templates reflect the current URL state automatically.
-  const params = $derived.by(() => {
-    const p = new SvelteURLSearchParams();
-    if (data.search) p.set('search', data.search);
-    if (data.categoryId) p.set('categoryId', String(data.categoryId));
-    return p;
-  });
+	// Derived params instance — recomputes from data on every navigation.
+	// Reads in $derived and templates reflect the current URL state automatically.
+	const params = $derived.by(() => {
+		const p = new SvelteURLSearchParams();
+		if (data.search) p.set('search', data.search);
+		if (data.categoryId) p.set('categoryId', String(data.categoryId));
+		return p;
+	});
 
-  // Writes build a fresh instance from current params, mutate it, then navigate.
-  // Don't mutate the derived `params` directly — it recomputes from data anyway.
-  function updateSearch(value) {
-    const next = new SvelteURLSearchParams(params);
-    if (value) next.set('search', value);
-    else next.delete('search');
-    goto(resolve('/dashboard/catalog/items?' + next.toString()), {
-      replaceState: true,
-      noScroll: true,
-      keepFocus: true,
-    });
-  }
+	// Writes build a fresh instance from current params, mutate it, then navigate.
+	// Don't mutate the derived `params` directly — it recomputes from data anyway.
+	function updateSearch(value) {
+		const next = new SvelteURLSearchParams(params);
+		if (value) next.set('search', value);
+		else next.delete('search');
+		goto(resolve('/dashboard/catalog/items?' + next.toString()), {
+			replaceState: true,
+			noScroll: true,
+			keepFocus: true
+		});
+	}
 </script>
 ```
 
@@ -240,37 +240,29 @@ When mutating a `Set`, `Map`, `Date`, `URL`, or `URLSearchParams` instance in co
 
 **Reactive replacements:**
 
-| Built-in | Use instead |
-| --- | --- |
-| `new Set()` | `new SvelteSet()` |
-| `new Map()` | `new SvelteMap()` |
-| `new Date()` | `new SvelteDate()` |
-| `new URL()` | `new SvelteURL()` |
+| Built-in                | Use instead                   |
+| ----------------------- | ----------------------------- |
+| `new Set()`             | `new SvelteSet()`             |
+| `new Map()`             | `new SvelteMap()`             |
+| `new Date()`            | `new SvelteDate()`            |
+| `new URL()`             | `new SvelteURL()`             |
 | `new URLSearchParams()` | `new SvelteURLSearchParams()` |
 
 All imported from `svelte/reactivity`:
 
 ```svelte
 <script>
-  import { SvelteSet, SvelteURLSearchParams } from 'svelte/reactivity';
+	import { SvelteSet, SvelteURLSearchParams } from 'svelte/reactivity';
 </script>
 ```
 
 **Anti-pattern (what the linter catches):**
 
 ```svelte
-// ❌ Wrong — mutations don't trigger reactivity
-let selected = $state(new Set());
-selected.add(id); // $derived reading selected.has(...) won't re-run
-
-let params = new URLSearchParams();
-params.set('search', value); // $derived reading params.get(...) won't re-run
-
-// ✅ Right
-let selected = new SvelteSet();
-selected.add(id);
-
-let params = new SvelteURLSearchParams();
+// ❌ Wrong — mutations don't trigger reactivity let selected = $state(new Set()); selected.add(id);
+// $derived reading selected.has(...) won't re-run let params = new URLSearchParams();
+params.set('search', value); // $derived reading params.get(...) won't re-run // ✅ Right let
+selected = new SvelteSet(); selected.add(id); let params = new SvelteURLSearchParams();
 params.set('search', value);
 ```
 
@@ -286,12 +278,14 @@ params.set('search', value);
 `$effect` runs after Svelte updates the DOM in response to reactive state changes. It exists for synchronizing component state with **external systems** — things outside Svelte's reactivity graph.
 
 **Reach for `$effect` when:**
+
 - DOM interop that can't be expressed declaratively (focus management, third-party DOM libraries, manual measurement)
 - External subscriptions (WebSocket connections, IntersectionObserver, ResizeObserver, browser APIs that emit events)
 - Lifecycle effects (setting up and tearing down browser-only resources)
 - Logging, analytics, or other side effects that respond to state changes but don't produce derived values
 
 **Do not use `$effect` for:**
+
 - Computing derived state. Use `$derived` or `$derived.by`.
 - Synchronizing one piece of reactive state with another. Use `$derived` for one-way derivations, or restructure so both pieces share a single source of truth.
 - Updating state in response to other state. From Svelte's docs:
@@ -394,26 +388,26 @@ inputs must always be wrapped in a single bordered pill/container.
 
 Use only these values. Do not introduce new colors.
 
-| Role             | Tailwind class     | Hex     |
-| ---------------- | ------------------ | ------- |
-| Primary action   | `bg-green-600`     | #16a34a |
-| Primary hover    | `bg-green-700`     | #15803d |
-| Primary light bg | `bg-green-50`      | #f0fdf4 |
-| Primary border   | `border-green-500` | #22c55e |
-| Focus ring       | `ring-green-500`   | #22c55e |
-| Urgent / warning | `text-amber-500`   | #f59e0b |
-| Urgent text (dark) | `text-amber-700` | #b45309 |
-| Urgent bg        | `bg-amber-50`      | #fffbeb |
-| Urgent border    | `border-amber-400` | #fbbf24 |
-| Destructive      | `text-red-500`     | #ef4444 |
-| Destructive bg   | `bg-red-50`        | #fef2f2 |
-| Positive / money | `text-green-600`   | #16a34a |
-| Body text        | `text-gray-900`    | #111827 |
-| Secondary text   | `text-gray-500`    | #6b7280 |
-| Muted text       | `text-gray-400`    | #9ca3af |
-| Border           | `border-gray-200`  | #e5e7eb |
-| Subtle bg        | `bg-gray-50`       | #f9fafb |
-| White            | `bg-white`         | #ffffff |
+| Role               | Tailwind class     | Hex     |
+| ------------------ | ------------------ | ------- |
+| Primary action     | `bg-green-600`     | #16a34a |
+| Primary hover      | `bg-green-700`     | #15803d |
+| Primary light bg   | `bg-green-50`      | #f0fdf4 |
+| Primary border     | `border-green-500` | #22c55e |
+| Focus ring         | `ring-green-500`   | #22c55e |
+| Urgent / warning   | `text-amber-500`   | #f59e0b |
+| Urgent text (dark) | `text-amber-700`   | #b45309 |
+| Urgent bg          | `bg-amber-50`      | #fffbeb |
+| Urgent border      | `border-amber-400` | #fbbf24 |
+| Destructive        | `text-red-500`     | #ef4444 |
+| Destructive bg     | `bg-red-50`        | #fef2f2 |
+| Positive / money   | `text-green-600`   | #16a34a |
+| Body text          | `text-gray-900`    | #111827 |
+| Secondary text     | `text-gray-500`    | #6b7280 |
+| Muted text         | `text-gray-400`    | #9ca3af |
+| Border             | `border-gray-200`  | #e5e7eb |
+| Subtle bg          | `bg-gray-50`       | #f9fafb |
+| White              | `bg-white`         | #ffffff |
 
 **Storefront-specific colors:** the public storefront (`/[vendorSlug]/catalog`)
 uses CSS variables driven by the vendor's branding settings (background,
@@ -486,11 +480,11 @@ Every dashboard page follows this exact header structure:
 
 ### Sizes
 
-| Size | Height | `size` prop | Used for |
-|---|---|---|---|
-| Default | `h-10` (40px / 40×40 for icon) | `default` (text) · `icon-lg` (icon) | Standard — toolbars, page CTAs, form submits, modal footers; icon buttons sitting next to h-10 inputs or text buttons |
-| Small | `h-8` (32px / 32×32 for icon) | `sm` (text) · `icon` (icon) | Compact — table row actions, card action strips; icon buttons in dense rows |
-| Tight inline | — (28×28 for icon) | `icon-sm` | Input field decorations, dialog/sheet close buttons, banner dismiss affordances |
+| Size         | Height                         | `size` prop                         | Used for                                                                                                              |
+| ------------ | ------------------------------ | ----------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| Default      | `h-10` (40px / 40×40 for icon) | `default` (text) · `icon-lg` (icon) | Standard — toolbars, page CTAs, form submits, modal footers; icon buttons sitting next to h-10 inputs or text buttons |
+| Small        | `h-8` (32px / 32×32 for icon)  | `sm` (text) · `icon` (icon)         | Compact — table row actions, card action strips; icon buttons in dense rows                                           |
+| Tight inline | — (28×28 for icon)             | `icon-sm`                           | Input field decorations, dialog/sheet close buttons, banner dismiss affordances                                       |
 
 Icon buttons match their context. A delete icon in a table row uses `size="icon"` (32×32) so it aligns with `sm` text buttons in the same row. A toolbar icon button uses `size="icon-lg"` (40×40) so it aligns with `default` text buttons and inputs. The size system handles alignment automatically — pick the size based on what's adjacent.
 
@@ -498,13 +492,13 @@ Icon buttons match their context. A delete icon in a table row uses `size="icon"
 
 ### Variants
 
-| Variant | Style | When |
-|---|---|---|
-| `default` | Solid green (`bg-primary`) | Most-emphasized affordance — page-level CTA, primary form submit |
-| `outline` | White bg, gray border | Secondary/alternative action, Cancel, form alternatives |
-| `ghost` | No bg, hover only | Low-emphasis — icon buttons, inline text-link-style actions |
-| `destructive` | Filled red | Destructive actions that need maximum visual emphasis |
-| `link` | Text with underline | Link-style inline actions |
+| Variant       | Style                      | When                                                             |
+| ------------- | -------------------------- | ---------------------------------------------------------------- |
+| `default`     | Solid green (`bg-primary`) | Most-emphasized affordance — page-level CTA, primary form submit |
+| `outline`     | White bg, gray border      | Secondary/alternative action, Cancel, form alternatives          |
+| `ghost`       | No bg, hover only          | Low-emphasis — icon buttons, inline text-link-style actions      |
+| `destructive` | Filled red                 | Destructive actions that need maximum visual emphasis            |
+| `link`        | Text with underline        | Link-style inline actions                                        |
 
 Variants and sizes compose freely:
 
@@ -522,7 +516,9 @@ Variants and sizes compose freely:
 <Button size="icon-lg" variant="ghost"><Icon icon="mdi:bell-outline" /></Button>
 
 <!-- Icon button in a row action (matches h-8 sm text buttons) -->
-<Button size="icon" variant="ghost" class="text-red-400 hover:text-red-600"><Icon icon="mdi:trash-can-outline" /></Button>
+<Button size="icon" variant="ghost" class="text-red-400 hover:text-red-600"
+	><Icon icon="mdi:trash-can-outline" /></Button
+>
 ```
 
 ### Raw `<button>` exceptions
@@ -922,12 +918,12 @@ DB values are canonical (lowercase enum, snake_case, IANA strings). Labels are h
 let typeValue = $state('bakery');
 
 <Select type="single" name="type" bind:value={typeValue}>
-  <SelectTrigger>
-    <SelectValue>
-      {BUSINESS_TYPES.find((bt) => bt.value === typeValue)?.label ?? 'Select type'}
-    </SelectValue>
-  </SelectTrigger>
-  ...
+	<SelectTrigger>
+		<SelectValue>
+			{BUSINESS_TYPES.find((bt) => bt.value === typeValue)?.label ?? 'Select type'}
+		</SelectValue>
+	</SelectTrigger>
+	...
 </Select>
 ```
 
@@ -1013,16 +1009,14 @@ Desktop-style "left content / right actions" cards reflow to a vertical stack at
 ```svelte
 <!-- outer: column on mobile, row on desktop -->
 <div class="flex flex-col gap-3 px-4 py-3 md:flex-row md:items-start md:gap-4">
-    <!-- left / top section: full width on mobile -->
-    <div class="min-w-0 flex-1">...</div>
+	<!-- left / top section: full width on mobile -->
+	<div class="min-w-0 flex-1">...</div>
 
-    <!-- right / bottom section: full width on mobile, right column on desktop -->
-    <div class="flex flex-col gap-2 md:shrink-0 md:items-end md:gap-1">
-        ...price or summary...
-        <div class="flex flex-wrap gap-1.5 md:mt-2 md:justify-end">
-            ...action buttons...
-        </div>
-    </div>
+	<!-- right / bottom section: full width on mobile, right column on desktop -->
+	<div class="flex flex-col gap-2 md:shrink-0 md:items-end md:gap-1">
+		...price or summary...
+		<div class="flex flex-wrap gap-1.5 md:mt-2 md:justify-end">...action buttons...</div>
+	</div>
 </div>
 ```
 
@@ -1173,18 +1167,18 @@ from `src/lib/cart.svelte.ts`:
 
 ```typescript
 type OrderLineItem = {
-  itemId: number;              // catalogItems.id at purchase — used as FK hint only
-  name: string;                // display name, denormalised from catalogItems
-  basePrice: number;           // unit base price in cents, BEFORE modifier adjustments
-  quantity: number;
-  selectedModifiers: Array<{
-    group: string;             // modifier group display name
-    name: string;              // selected option display name
-    priceAdjustment: number;   // cents, added to basePrice (can be negative)
-  }>;
-  imageUrl?: string;           // optional storefront image URL
-  isSubscription?: boolean;    // true for recurring items
-  billingInterval?: string;    // 'monthly' | 'yearly', only when isSubscription=true
+	itemId: number; // catalogItems.id at purchase — used as FK hint only
+	name: string; // display name, denormalised from catalogItems
+	basePrice: number; // unit base price in cents, BEFORE modifier adjustments
+	quantity: number;
+	selectedModifiers: Array<{
+		group: string; // modifier group display name
+		name: string; // selected option display name
+		priceAdjustment: number; // cents, added to basePrice (can be negative)
+	}>;
+	imageUrl?: string; // optional storefront image URL
+	isSubscription?: boolean; // true for recurring items
+	billingInterval?: string; // 'monthly' | 'yearly', only when isSubscription=true
 };
 ```
 
@@ -1199,13 +1193,13 @@ omit).
 A parallel `order_items` row is inserted alongside every snapshot line
 item. The mapping is:
 
-| Snapshot field | `orderItems` column | Notes |
-| --- | --- | --- |
-| `name` | `name` | verbatim |
-| `quantity` | `quantity` | verbatim |
-| `basePrice + Σ(selectedModifiers.priceAdjustment)` | `unitPrice` | effective unit price |
-| `selectedModifiers` | `selectedModifiers` | stored verbatim as JSONB |
-| `itemId` | `catalogItemId` | nullable; `null` if item was deleted |
+| Snapshot field                                     | `orderItems` column | Notes                                |
+| -------------------------------------------------- | ------------------- | ------------------------------------ |
+| `name`                                             | `name`              | verbatim                             |
+| `quantity`                                         | `quantity`          | verbatim                             |
+| `basePrice + Σ(selectedModifiers.priceAdjustment)` | `unitPrice`         | effective unit price                 |
+| `selectedModifiers`                                | `selectedModifiers` | stored verbatim as JSONB             |
+| `itemId`                                           | `catalogItemId`     | nullable; `null` if item was deleted |
 
 The `orderItems` table is the queryable, relational copy. The JSONB
 snapshot is the immutable receipt. When displaying order details to vendors
@@ -1213,13 +1207,13 @@ or customers, read from the snapshot, not `orderItems`.
 
 ### Who reads and writes this today
 
-| Code path | Reads | Writes |
-| --- | --- | --- |
-| `routes/api/create-checkout/+server.ts` | — | snapshot + `orderItems` (source: `CartItem[]`) |
-| `routes/api/create-payment-intent/+server.ts` | — | snapshot + `orderItems` (same shape) |
-| `lib/server/seed-demo.ts` | — | snapshot only (minimal shape: `name`, `basePrice`, `quantity`, `selectedModifiers`) |
-| `dashboard/orders/[orderId]/+page.svelte` | `name`, `quantity`, `basePrice`, `selectedModifiers[].name`, `selectedModifiers[].priceAdjustment` | — |
-| `routes/api/webhooks/stripe/[vendorId]/+server.ts` | `order.items` cast to email template shape | — |
+| Code path                                          | Reads                                                                                              | Writes                                                                              |
+| -------------------------------------------------- | -------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| `routes/api/create-checkout/+server.ts`            | —                                                                                                  | snapshot + `orderItems` (source: `CartItem[]`)                                      |
+| `routes/api/create-payment-intent/+server.ts`      | —                                                                                                  | snapshot + `orderItems` (same shape)                                                |
+| `lib/server/seed-demo.ts`                          | —                                                                                                  | snapshot only (minimal shape: `name`, `basePrice`, `quantity`, `selectedModifiers`) |
+| `dashboard/orders/[orderId]/+page.svelte`          | `name`, `quantity`, `basePrice`, `selectedModifiers[].name`, `selectedModifiers[].priceAdjustment` | —                                                                                   |
+| `routes/api/webhooks/stripe/[vendorId]/+server.ts` | `order.items` cast to email template shape                                                         | —                                                                                   |
 
 ### Known drift
 
@@ -1252,16 +1246,16 @@ Canonical type (from `src/lib/server/pickup/checkout.ts`):
 
 ```typescript
 type PickupWindowSnapshot = {
-  windowId: number;      // pickupWindows.id at purchase time
-  name: string;          // window display name, denormalised
-  startsAt: string;      // ISO 8601 UTC
-  endsAt: string;        // ISO 8601 UTC
-  notes: string | null;  // window-level notes
-  location: {
-    name: string;
-    address: unknown | null;  // structured address JSONB
-    notes: string | null;
-  } | null;
+	windowId: number; // pickupWindows.id at purchase time
+	name: string; // window display name, denormalised
+	startsAt: string; // ISO 8601 UTC
+	endsAt: string; // ISO 8601 UTC
+	notes: string | null; // window-level notes
+	location: {
+		name: string;
+		address: unknown | null; // structured address JSONB
+		notes: string | null;
+	} | null;
 };
 ```
 

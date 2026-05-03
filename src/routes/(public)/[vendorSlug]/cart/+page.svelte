@@ -26,9 +26,7 @@
 			const result = await res.json();
 
 			if (result.unavailable?.length) {
-				const unavailableIds = new Set(
-					result.unavailable.map((u: { itemId: number }) => u.itemId)
-				);
+				const unavailableIds = new Set(result.unavailable.map((u: { itemId: number }) => u.itemId));
 				for (let i = cart.items.length - 1; i >= 0; i--) {
 					if (unavailableIds.has(cart.items[i].itemId)) {
 						cart.remove(i);
@@ -261,7 +259,12 @@
 								.join(', ')
 						: null,
 				scheduledFor:
-					!isSubscriptionCart && orderType === 'pickup' && !hasWindows && pickupTiming === 'scheduled' && pickupDate && pickupTimeValue
+					!isSubscriptionCart &&
+					orderType === 'pickup' &&
+					!hasWindows &&
+					pickupTiming === 'scheduled' &&
+					pickupDate &&
+					pickupTimeValue
 						? new Date(`${pickupDate}T${pickupTimeValue}`).toISOString()
 						: null,
 				pickupWindowId:
@@ -280,7 +283,11 @@
 				const res = await fetch('/api/create-checkout', {
 					method: 'POST',
 					headers: { 'Content-Type': 'application/json' },
-					body: JSON.stringify({ ...commonPayload, isSubscription: true, billingInterval: subscriptionInterval })
+					body: JSON.stringify({
+						...commonPayload,
+						isSubscription: true,
+						billingInterval: subscriptionInterval
+					})
 				});
 				const result = await res.json();
 				if (!res.ok) {
@@ -352,16 +359,16 @@
 			</a>
 			<div class="flex flex-col items-center gap-1">
 				<h1 class="text-lg font-semibold" style="color: var(--foreground-color);">Your Cart</h1>
-				</div>
+			</div>
 			<span class="w-20"></span>
 		</div>
 	</header>
 
-	<main class="mx-auto my-8 max-w-lg space-y-5 rounded-2xl bg-background/80 px-4 py-6 backdrop-blur-sm">
+	<main
+		class="mx-auto my-8 max-w-lg space-y-5 rounded-2xl bg-background/80 px-4 py-6 backdrop-blur-sm"
+	>
 		{#if unavailableItems.length > 0}
-			<div
-				class="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700"
-			>
+			<div class="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700">
 				<div class="flex items-start justify-between gap-2">
 					<div>
 						<p class="font-medium">
@@ -388,9 +395,7 @@
 		{/if}
 
 		{#if priceChanges.length > 0}
-			<div
-				class="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700"
-			>
+			<div class="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700">
 				<div class="flex items-start justify-between gap-2">
 					<div>
 						<p class="font-medium">
@@ -399,7 +404,9 @@
 						<ul class="mt-0.5 space-y-0.5 text-xs">
 							{#each priceChanges as change (change.itemId)}
 								<li>
-									{change.name}: ${(change.cartPrice / 100).toFixed(2)} → ${(change.currentPrice / 100).toFixed(2)}
+									{change.name}: ${(change.cartPrice / 100).toFixed(2)} → ${(
+										change.currentPrice / 100
+									).toFixed(2)}
 								</li>
 							{/each}
 						</ul>
@@ -427,13 +434,15 @@
 		{/if}
 
 		{#if checkoutError}
-			<div class="rounded-lg border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+			<div
+				class="rounded-lg border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive"
+			>
 				{checkoutError}
 			</div>
 		{/if}
 
 		{#if cart.items.length === 0}
-			<div class="rounded-xl border border-dashed  p-12 text-center">
+			<div class="rounded-xl border border-dashed p-12 text-center">
 				<p class="mb-3 text-muted-foreground">Your cart is empty.</p>
 				<a
 					href={resolve(`/${data.vendorSlug}/catalog`)}
@@ -470,58 +479,61 @@
 			<!-- Cart items -->
 			<Card class="shadow-sm">
 				<CardContent class="p-0">
-				{#each cart.items as item, i (i)}
-					<div class="flex items-start gap-3 px-4 py-3 {i > 0 ? 'border-t ' : ''}">
-						{#if item.imageUrl}
-							<img
-								src={item.imageUrl}
-								alt={item.name}
-								class="h-14 w-14 shrink-0 rounded-lg object-cover"
-							/>
-						{/if}
-						<div class="min-w-0 flex-1">
-							<div class="flex flex-wrap items-center gap-1.5">
-								<p class="text-sm font-medium text-foreground">{item.name}</p>
-								{#if item.isSubscription}
-									<span
-										class="inline-flex items-center gap-0.5 rounded-full bg-purple-100 px-2 py-0.5 text-xs font-medium text-purple-700"
-									>
-										<Icon icon="mdi:refresh" class="h-3 w-3" />
-										{item.billingInterval === 'yearly' ? 'Yearly' : 'Monthly'}
-									</span>
-								{/if}
-							</div>
-							{#if item.selectedModifiers.length > 0}
-								<p class="mt-0.5 text-xs text-muted-foreground">
-									{item.selectedModifiers.map((m) => m.name).join(', ')}
-								</p>
+					{#each cart.items as item, i (i)}
+						<div class="flex items-start gap-3 px-4 py-3 {i > 0 ? 'border-t ' : ''}">
+							{#if item.imageUrl}
+								<img
+									src={item.imageUrl}
+									alt={item.name}
+									class="h-14 w-14 shrink-0 rounded-lg object-cover"
+								/>
 							{/if}
-							<p class="mt-0.5 text-xs text-muted-foreground">
-								${(itemUnitPrice(item) / 100).toFixed(2)}{item.isSubscription
-									? `/${item.billingInterval === 'yearly' ? 'yr' : 'mo'}`
-									: ' each'}
-							</p>
+							<div class="min-w-0 flex-1">
+								<div class="flex flex-wrap items-center gap-1.5">
+									<p class="text-sm font-medium text-foreground">{item.name}</p>
+									{#if item.isSubscription}
+										<span
+											class="inline-flex items-center gap-0.5 rounded-full bg-purple-100 px-2 py-0.5 text-xs font-medium text-purple-700"
+										>
+											<Icon icon="mdi:refresh" class="h-3 w-3" />
+											{item.billingInterval === 'yearly' ? 'Yearly' : 'Monthly'}
+										</span>
+									{/if}
+								</div>
+								{#if item.selectedModifiers.length > 0}
+									<p class="mt-0.5 text-xs text-muted-foreground">
+										{item.selectedModifiers.map((m) => m.name).join(', ')}
+									</p>
+								{/if}
+								<p class="mt-0.5 text-xs text-muted-foreground">
+									${(itemUnitPrice(item) / 100).toFixed(2)}{item.isSubscription
+										? `/${item.billingInterval === 'yearly' ? 'yr' : 'mo'}`
+										: ' each'}
+								</p>
+							</div>
+							<div class="flex shrink-0 items-center gap-2">
+								<button
+									type="button"
+									onclick={() => cart.decrement(i)}
+									class="qty-btn flex h-6 w-6 items-center justify-center rounded-full border text-sm text-muted-foreground transition-colors"
+									>−</button
+								>
+								<span class="w-4 text-center text-sm font-medium">{item.quantity}</span>
+								<button
+									type="button"
+									onclick={() => cart.increment(i)}
+									class="qty-btn flex h-6 w-6 items-center justify-center rounded-full border text-sm text-muted-foreground transition-colors"
+									>+</button
+								>
+								<button
+									type="button"
+									onclick={() => cart.remove(i)}
+									class="ml-1 text-red-400 transition-colors hover:text-red-600"
+									><Icon icon="mdi:close" class="h-4 w-4" /></button
+								>
+							</div>
 						</div>
-						<div class="flex shrink-0 items-center gap-2">
-							<button
-								onclick={() => cart.decrement(i)}
-								class="qty-btn flex h-6 w-6 items-center justify-center rounded-full border  text-sm text-muted-foreground transition-colors"
-								>−</button
-							>
-							<span class="w-4 text-center text-sm font-medium">{item.quantity}</span>
-							<button
-								onclick={() => cart.increment(i)}
-								class="qty-btn flex h-6 w-6 items-center justify-center rounded-full border  text-sm text-muted-foreground transition-colors"
-								>+</button
-							>
-							<button
-								onclick={() => cart.remove(i)}
-								class="ml-1 text-red-400 transition-colors hover:text-red-600"
-								><Icon icon="mdi:close" class="h-4 w-4" /></button
-							>
-						</div>
-					</div>
-				{/each}
+					{/each}
 				</CardContent>
 			</Card>
 
@@ -529,28 +541,28 @@
 			{#if deliveryEnabled && !isSubscriptionCart}
 				<Card class="shadow-sm">
 					<CardContent class="p-4">
-					<p class="mb-2 text-sm font-semibold text-foreground">Order type</p>
-					<div class="flex gap-3">
-						{#each [{ value: 'pickup', label: 'Pickup', icon: 'mdi:bag-personal-outline' }, { value: 'delivery', label: 'Delivery', icon: 'mdi:moped-outline' }] as type (type.value)}
-							<label
-								style={orderType === type.value
-									? 'background-color: var(--background-color); color: var(--foreground-color); border-color: var(--background-color);'
-									: ''}
-								class="flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-lg border py-2.5 text-sm font-medium transition-colors
+						<p class="mb-2 text-sm font-semibold text-foreground">Order type</p>
+						<div class="flex gap-3">
+							{#each [{ value: 'pickup', label: 'Pickup', icon: 'mdi:bag-personal-outline' }, { value: 'delivery', label: 'Delivery', icon: 'mdi:moped-outline' }] as type (type.value)}
+								<label
+									style={orderType === type.value
+										? 'background-color: var(--background-color); color: var(--foreground-color); border-color: var(--background-color);'
+										: ''}
+									class="flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-lg border py-2.5 text-sm font-medium transition-colors
 								{orderType === type.value ? '' : ' text-muted-foreground hover:bg-muted/50'}"
-							>
-								<input
-									type="radio"
-									name="orderType"
-									value={type.value}
-									bind:group={orderType}
-									class="sr-only"
-								/>
-								<Icon icon={type.icon} class="h-4 w-4" />
-								{type.label}
-							</label>
-						{/each}
-					</div>
+								>
+									<input
+										type="radio"
+										name="orderType"
+										value={type.value}
+										bind:group={orderType}
+										class="sr-only"
+									/>
+									<Icon icon={type.icon} class="h-4 w-4" />
+									{type.label}
+								</label>
+							{/each}
+						</div>
 					</CardContent>
 				</Card>
 			{/if}
@@ -559,120 +571,141 @@
 			{#if orderType === 'pickup' && !isSubscriptionCart}
 				<Card class="shadow-sm">
 					<CardContent class="p-4">
-					<p class="mb-2 text-sm font-semibold text-foreground">Pickup time</p>
+						<p class="mb-2 text-sm font-semibold text-foreground">Pickup time</p>
 
-					{#if data.availableWindows.length > 0}
-						<!-- Slot selector -->
-						<div class="space-y-2">
-							{#each data.availableWindows as win (win.id)}
-								{@const isFull = win.remainingCapacity !== null && win.remainingCapacity <= 0}
-								{@const isLow = win.remainingCapacity !== null && win.remainingCapacity > 0 && win.remainingCapacity <= 5}
-								{@const isSelected = selectedWindowId === win.id}
-								<label
-									class="flex cursor-pointer items-start gap-3 rounded-lg border p-3 transition-colors {isFull ? 'cursor-not-allowed opacity-50' : ''}"
-									style={isSelected ? 'background-color: color-mix(in srgb, var(--background-color) 8%, transparent); border-color: var(--background-color);' : ''}
-								>
-									<input
-										type="radio"
-										name="pickupWindow"
-										value={win.id}
-										disabled={isFull}
-										checked={isSelected}
-										onchange={() => { selectedWindowId = win.id; }}
-										class="sr-only"
-									/>
-									<div class="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full border-2 transition-colors"
-										style={isSelected ? 'border-color: var(--background-color); background-color: var(--background-color);' : 'border-color: #d1d5db;'}
-									>
-										{#if isSelected}
-											<div class="h-1.5 w-1.5 rounded-full bg-white"></div>
-										{/if}
-									</div>
-									<div class="min-w-0 flex-1">
-										<p class="text-sm font-medium text-foreground">
-											{fmtWindowDate(win.startsAt)} · {fmtWindowTime(win.startsAt)}–{fmtWindowTime(win.endsAt)}
-										</p>
-										{#if win.location?.name}
-											<p class="mt-0.5 text-xs text-muted-foreground">{win.location.name}</p>
-										{/if}
-										{#if win.notes}
-											<p class="mt-0.5 text-xs text-muted-foreground">{win.notes}</p>
-										{/if}
-									</div>
-									{#if isFull}
-										<span class="shrink-0 rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-500">Full</span>
-									{:else if isLow}
-										<span class="shrink-0 rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-600">
-											{win.remainingCapacity} left
-										</span>
-									{/if}
-								</label>
-							{/each}
-						</div>
-					{:else}
-						<!-- Free-form picker (fallback when no windows are configured) -->
-						{#if asapPickupEnabled}
-							<div class="mb-3 flex gap-3">
-								{#each [{ value: 'asap', label: 'ASAP', icon: 'mdi:lightning-bolt' }, { value: 'scheduled', label: 'Schedule', icon: 'mdi:calendar-clock' }] as opt (opt.value)}
+						{#if data.availableWindows.length > 0}
+							<!-- Slot selector -->
+							<div class="space-y-2">
+								{#each data.availableWindows as win (win.id)}
+									{@const isFull = win.remainingCapacity !== null && win.remainingCapacity <= 0}
+									{@const isLow =
+										win.remainingCapacity !== null &&
+										win.remainingCapacity > 0 &&
+										win.remainingCapacity <= 5}
+									{@const isSelected = selectedWindowId === win.id}
 									<label
-										style={pickupTiming === opt.value
-											? 'background-color: var(--background-color); color: var(--foreground-color); border-color: var(--background-color);'
+										class="flex cursor-pointer items-start gap-3 rounded-lg border p-3 transition-colors {isFull
+											? 'cursor-not-allowed opacity-50'
+											: ''}"
+										style={isSelected
+											? 'background-color: color-mix(in srgb, var(--background-color) 8%, transparent); border-color: var(--background-color);'
 											: ''}
-										class="flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-lg border py-2.5 text-sm font-medium transition-colors
-										{pickupTiming === opt.value ? '' : ' text-muted-foreground hover:bg-muted/50'}"
 									>
 										<input
 											type="radio"
-											name="pickupTiming"
-											value={opt.value}
-											bind:group={pickupTiming}
+											name="pickupWindow"
+											value={win.id}
+											disabled={isFull}
+											checked={isSelected}
 											onchange={() => {
-												if (opt.value === 'scheduled') onScheduledSelect();
+												selectedWindowId = win.id;
 											}}
 											class="sr-only"
 										/>
-										<Icon icon={opt.icon} class="h-4 w-4" />
-										{opt.label}
+										<div
+											class="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full border-2 transition-colors"
+											style={isSelected
+												? 'border-color: var(--background-color); background-color: var(--background-color);'
+												: 'border-color: #d1d5db;'}
+										>
+											{#if isSelected}
+												<div class="h-1.5 w-1.5 rounded-full bg-white"></div>
+											{/if}
+										</div>
+										<div class="min-w-0 flex-1">
+											<p class="text-sm font-medium text-foreground">
+												{fmtWindowDate(win.startsAt)} · {fmtWindowTime(
+													win.startsAt
+												)}–{fmtWindowTime(win.endsAt)}
+											</p>
+											{#if win.location?.name}
+												<p class="mt-0.5 text-xs text-muted-foreground">{win.location.name}</p>
+											{/if}
+											{#if win.notes}
+												<p class="mt-0.5 text-xs text-muted-foreground">{win.notes}</p>
+											{/if}
+										</div>
+										{#if isFull}
+											<span
+												class="shrink-0 rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-500"
+												>Full</span
+											>
+										{:else if isLow}
+											<span
+												class="shrink-0 rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-600"
+											>
+												{win.remainingCapacity} left
+											</span>
+										{/if}
 									</label>
 								{/each}
 							</div>
-						{/if}
+						{:else}
+							<!-- Free-form picker (fallback when no windows are configured) -->
+							{#if asapPickupEnabled}
+								<div class="mb-3 flex gap-3">
+									{#each [{ value: 'asap', label: 'ASAP', icon: 'mdi:lightning-bolt' }, { value: 'scheduled', label: 'Schedule', icon: 'mdi:calendar-clock' }] as opt (opt.value)}
+										<label
+											style={pickupTiming === opt.value
+												? 'background-color: var(--background-color); color: var(--foreground-color); border-color: var(--background-color);'
+												: ''}
+											class="flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-lg border py-2.5 text-sm font-medium transition-colors
+										{pickupTiming === opt.value ? '' : ' text-muted-foreground hover:bg-muted/50'}"
+										>
+											<input
+												type="radio"
+												name="pickupTiming"
+												value={opt.value}
+												bind:group={pickupTiming}
+												onchange={() => {
+													if (opt.value === 'scheduled') onScheduledSelect();
+												}}
+												class="sr-only"
+											/>
+											<Icon icon={opt.icon} class="h-4 w-4" />
+											{opt.label}
+										</label>
+									{/each}
+								</div>
+							{/if}
 
-						{#if pickupTiming === 'scheduled'}
-							<div class="flex gap-2">
-								<div class="flex-1">
-									<label class="mb-1 block text-xs font-medium text-muted-foreground" for="pickup-date"
-										>Date</label
-									>
-									<input
-										id="pickup-date"
-										type="date"
-										bind:value={pickupDate}
-										min={today}
-										class="branded-input w-full rounded-lg border  px-3 py-2 text-sm transition-colors outline-none"
-									/>
+							{#if pickupTiming === 'scheduled'}
+								<div class="flex gap-2">
+									<div class="flex-1">
+										<label
+											class="mb-1 block text-xs font-medium text-muted-foreground"
+											for="pickup-date">Date</label
+										>
+										<input
+											id="pickup-date"
+											type="date"
+											bind:value={pickupDate}
+											min={today}
+											class="branded-input w-full rounded-lg border px-3 py-2 text-sm transition-colors outline-none"
+										/>
+									</div>
+									<div class="flex-1">
+										<label
+											class="mb-1 block text-xs font-medium text-muted-foreground"
+											for="pickup-time">Time</label
+										>
+										<input
+											id="pickup-time"
+											type="time"
+											bind:value={pickupTimeValue}
+											step="900"
+											class="branded-input w-full rounded-lg border px-3 py-2 text-sm transition-colors outline-none"
+										/>
+									</div>
 								</div>
-								<div class="flex-1">
-									<label class="mb-1 block text-xs font-medium text-muted-foreground" for="pickup-time"
-										>Time</label
-									>
-									<input
-										id="pickup-time"
-										type="time"
-										bind:value={pickupTimeValue}
-										step="900"
-										class="branded-input w-full rounded-lg border  px-3 py-2 text-sm transition-colors outline-none"
-									/>
-								</div>
-							</div>
-							{#if scheduledLabel}
-								<p class="mt-2 flex items-center gap-1.5 text-xs text-muted-foreground">
-									<Icon icon="mdi:clock-check-outline" class="h-3.5 w-3.5 shrink-0" />
-									Scheduled for {scheduledLabel}
-								</p>
+								{#if scheduledLabel}
+									<p class="mt-2 flex items-center gap-1.5 text-xs text-muted-foreground">
+										<Icon icon="mdi:clock-check-outline" class="h-3.5 w-3.5 shrink-0" />
+										Scheduled for {scheduledLabel}
+									</p>
+								{/if}
 							{/if}
 						{/if}
-					{/if}
 					</CardContent>
 				</Card>
 			{/if}
@@ -681,67 +714,71 @@
 			{#if orderType === 'delivery'}
 				<Card class="shadow-sm">
 					<CardContent class="space-y-3 p-4">
-					<p class="text-sm font-semibold text-foreground">Delivery address</p>
-					<div>
-						<label class="mb-1 block text-xs font-medium text-muted-foreground" for="delivery-street"
-							>Street address *</label
-						>
-						<input
-							id="delivery-street"
-							type="text"
-							bind:value={deliveryStreet}
-							placeholder="123 Main St"
-							class="branded-input w-full rounded-lg border  px-3 py-2 text-sm transition-colors outline-none"
-						/>
-					</div>
-					<div>
-						<label class="mb-1 block text-xs font-medium text-muted-foreground" for="delivery-apt"
-							>Apt / Suite</label
-						>
-						<input
-							id="delivery-apt"
-							type="text"
-							bind:value={deliveryApt}
-							placeholder="Apt 2B (optional)"
-							class="branded-input w-full rounded-lg border  px-3 py-2 text-sm transition-colors outline-none"
-						/>
-					</div>
-					<div class="grid grid-cols-3 gap-2">
-						<div class="col-span-1">
-							<label class="mb-1 block text-xs font-medium text-muted-foreground" for="delivery-city"
-								>City</label
+						<p class="text-sm font-semibold text-foreground">Delivery address</p>
+						<div>
+							<label
+								class="mb-1 block text-xs font-medium text-muted-foreground"
+								for="delivery-street">Street address *</label
 							>
 							<input
-								id="delivery-city"
+								id="delivery-street"
 								type="text"
-								bind:value={deliveryCity}
-								class="branded-input w-full rounded-lg border  px-3 py-2 text-sm transition-colors outline-none"
+								bind:value={deliveryStreet}
+								placeholder="123 Main St"
+								class="branded-input w-full rounded-lg border px-3 py-2 text-sm transition-colors outline-none"
 							/>
 						</div>
 						<div>
-							<label class="mb-1 block text-xs font-medium text-muted-foreground" for="delivery-state"
-								>State</label
+							<label class="mb-1 block text-xs font-medium text-muted-foreground" for="delivery-apt"
+								>Apt / Suite</label
 							>
 							<input
-								id="delivery-state"
+								id="delivery-apt"
 								type="text"
-								bind:value={deliveryState}
-								placeholder="TX"
-								class="branded-input w-full rounded-lg border  px-3 py-2 text-sm transition-colors outline-none"
+								bind:value={deliveryApt}
+								placeholder="Apt 2B (optional)"
+								class="branded-input w-full rounded-lg border px-3 py-2 text-sm transition-colors outline-none"
 							/>
 						</div>
-						<div>
-							<label class="mb-1 block text-xs font-medium text-muted-foreground" for="delivery-zip"
-								>ZIP</label
-							>
-							<input
-								id="delivery-zip"
-								type="text"
-								bind:value={deliveryZip}
-								class="branded-input w-full rounded-lg border  px-3 py-2 text-sm transition-colors outline-none"
-							/>
+						<div class="grid grid-cols-3 gap-2">
+							<div class="col-span-1">
+								<label
+									class="mb-1 block text-xs font-medium text-muted-foreground"
+									for="delivery-city">City</label
+								>
+								<input
+									id="delivery-city"
+									type="text"
+									bind:value={deliveryCity}
+									class="branded-input w-full rounded-lg border px-3 py-2 text-sm transition-colors outline-none"
+								/>
+							</div>
+							<div>
+								<label
+									class="mb-1 block text-xs font-medium text-muted-foreground"
+									for="delivery-state">State</label
+								>
+								<input
+									id="delivery-state"
+									type="text"
+									bind:value={deliveryState}
+									placeholder="TX"
+									class="branded-input w-full rounded-lg border px-3 py-2 text-sm transition-colors outline-none"
+								/>
+							</div>
+							<div>
+								<label
+									class="mb-1 block text-xs font-medium text-muted-foreground"
+									for="delivery-zip">ZIP</label
+								>
+								<input
+									id="delivery-zip"
+									type="text"
+									bind:value={deliveryZip}
+									class="branded-input w-full rounded-lg border px-3 py-2 text-sm transition-colors outline-none"
+								/>
+							</div>
 						</div>
-					</div>
 					</CardContent>
 				</Card>
 			{/if}
@@ -749,50 +786,56 @@
 			<!-- Customer info -->
 			<Card class="shadow-sm">
 				<CardContent class="space-y-3 p-4">
-				<p class="text-sm font-semibold text-foreground">Your details</p>
-				<div>
-					<label class="mb-1 block text-xs font-medium text-muted-foreground" for="cart-name">Name *</label>
-					<input
-						id="cart-name"
-						type="text"
-						required
-						bind:value={customerName}
-						placeholder="Your name"
-						class="branded-input w-full rounded-lg border  px-3 py-2 text-sm transition-colors outline-none"
-					/>
-				</div>
-				<div>
-					<label class="mb-1 block text-xs font-medium text-muted-foreground" for="cart-email">Email</label>
-					<input
-						id="cart-email"
-						type="email"
-						bind:value={email}
-						placeholder="for receipt (optional)"
-						class="branded-input w-full rounded-lg border  px-3 py-2 text-sm transition-colors outline-none"
-					/>
-				</div>
-				<div>
-					<label class="mb-1 block text-xs font-medium text-muted-foreground" for="cart-phone">Phone</label>
-					<input
-						id="cart-phone"
-						type="tel"
-						bind:value={phone}
-						placeholder="for order updates (optional)"
-						class="branded-input w-full rounded-lg border  px-3 py-2 text-sm transition-colors outline-none"
-					/>
-				</div>
-				<div>
-					<label class="mb-1 block text-xs font-medium text-muted-foreground" for="cart-notes"
-						>Special instructions</label
-					>
-					<textarea
-						id="cart-notes"
-						bind:value={notes}
-						rows="2"
-						placeholder="Pickup notes, dietary needs, birthday message, etc."
-						class="branded-input w-full resize-none rounded-lg border  px-3 py-2 text-sm transition-colors outline-none"
-					></textarea>
-				</div>
+					<p class="text-sm font-semibold text-foreground">Your details</p>
+					<div>
+						<label class="mb-1 block text-xs font-medium text-muted-foreground" for="cart-name"
+							>Name *</label
+						>
+						<input
+							id="cart-name"
+							type="text"
+							required
+							bind:value={customerName}
+							placeholder="Your name"
+							class="branded-input w-full rounded-lg border px-3 py-2 text-sm transition-colors outline-none"
+						/>
+					</div>
+					<div>
+						<label class="mb-1 block text-xs font-medium text-muted-foreground" for="cart-email"
+							>Email</label
+						>
+						<input
+							id="cart-email"
+							type="email"
+							bind:value={email}
+							placeholder="for receipt (optional)"
+							class="branded-input w-full rounded-lg border px-3 py-2 text-sm transition-colors outline-none"
+						/>
+					</div>
+					<div>
+						<label class="mb-1 block text-xs font-medium text-muted-foreground" for="cart-phone"
+							>Phone</label
+						>
+						<input
+							id="cart-phone"
+							type="tel"
+							bind:value={phone}
+							placeholder="for order updates (optional)"
+							class="branded-input w-full rounded-lg border px-3 py-2 text-sm transition-colors outline-none"
+						/>
+					</div>
+					<div>
+						<label class="mb-1 block text-xs font-medium text-muted-foreground" for="cart-notes"
+							>Special instructions</label
+						>
+						<textarea
+							id="cart-notes"
+							bind:value={notes}
+							rows="2"
+							placeholder="Pickup notes, dietary needs, birthday message, etc."
+							class="branded-input w-full resize-none rounded-lg border px-3 py-2 text-sm transition-colors outline-none"
+						></textarea>
+					</div>
 				</CardContent>
 			</Card>
 
@@ -800,52 +843,52 @@
 			{#if !isSubscriptionCart}
 				<Card class="shadow-sm">
 					<CardContent class="p-4">
-					<p class="mb-2 text-sm font-semibold text-foreground">Promo code</p>
-					{#if promoApplied}
-						<div
-							class="flex items-center justify-between rounded-lg border border-primary/20 bg-primary/5 px-3 py-2"
-						>
-							<div>
-								<p class="font-mono text-sm font-semibold text-primary">{promoApplied.code}</p>
-								<p class="text-xs text-primary">
-									{promoApplied.description} — save ${(promoApplied.discount / 100).toFixed(2)}
-								</p>
+						<p class="mb-2 text-sm font-semibold text-foreground">Promo code</p>
+						{#if promoApplied}
+							<div
+								class="flex items-center justify-between rounded-lg border border-primary/20 bg-primary/5 px-3 py-2"
+							>
+								<div>
+									<p class="font-mono text-sm font-semibold text-primary">{promoApplied.code}</p>
+									<p class="text-xs text-primary">
+										{promoApplied.description} — save ${(promoApplied.discount / 100).toFixed(2)}
+									</p>
+								</div>
+								<button
+									type="button"
+									onclick={removePromo}
+									class="ml-3 text-primary/70 hover:text-primary"
+								>
+									<Icon icon="mdi:close" class="h-4 w-4" />
+								</button>
 							</div>
-							<button
-								type="button"
-								onclick={removePromo}
-								class="ml-3 text-primary/70 hover:text-primary"
-							>
-								<Icon icon="mdi:close" class="h-4 w-4" />
-							</button>
-						</div>
-					{:else}
-						<div class="flex gap-2">
-							<input
-								type="text"
-								bind:value={promoInput}
-								placeholder="Enter code"
-								onkeydown={(e) => {
-									if (e.key === 'Enter') {
-										e.preventDefault();
-										applyPromo();
-									}
-								}}
-								class="branded-input flex-1 rounded-lg border  px-3 py-2 text-sm uppercase transition-colors outline-none"
-							/>
-							<button
-								type="button"
-								onclick={applyPromo}
-								disabled={promoLoading || !promoInput.trim()}
-								class="rounded-lg border  px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted/50 disabled:opacity-50"
-							>
-								{promoLoading ? '…' : 'Apply'}
-							</button>
-						</div>
-						{#if promoError}
-							<p class="mt-1.5 text-xs text-red-600">{promoError}</p>
+						{:else}
+							<div class="flex gap-2">
+								<input
+									type="text"
+									bind:value={promoInput}
+									placeholder="Enter code"
+									onkeydown={(e) => {
+										if (e.key === 'Enter') {
+											e.preventDefault();
+											applyPromo();
+										}
+									}}
+									class="branded-input flex-1 rounded-lg border px-3 py-2 text-sm uppercase transition-colors outline-none"
+								/>
+								<button
+									type="button"
+									onclick={applyPromo}
+									disabled={promoLoading || !promoInput.trim()}
+									class="rounded-lg border px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted/50 disabled:opacity-50"
+								>
+									{promoLoading ? '…' : 'Apply'}
+								</button>
+							</div>
+							{#if promoError}
+								<p class="mt-1.5 text-xs text-red-600">{promoError}</p>
+							{/if}
 						{/if}
-					{/if}
 					</CardContent>
 				</Card>
 			{/if}
@@ -854,65 +897,65 @@
 			{#if tipsEnabled && !isSubscriptionCart}
 				<Card class="shadow-sm">
 					<CardContent class="p-4">
-					<p class="mb-2 text-sm font-semibold text-foreground">Add a tip</p>
-					<div class="flex flex-wrap gap-2">
-						<button
-							type="button"
-							onclick={() => {
-								tipPercent = 0;
-								customTipDollars = '';
-							}}
-							style={tipPercent === 0
-								? 'background-color: var(--background-color); color: var(--foreground-color); border-color: var(--background-color);'
-								: ''}
-							class="rounded-lg border px-3 py-1.5 text-sm font-medium transition-colors {tipPercent ===
-							0
-								? ''
-								: ' text-muted-foreground hover:bg-muted/50'}">No tip</button
-						>
-						{#each tipPercentages as pct (pct)}
+						<p class="mb-2 text-sm font-semibold text-foreground">Add a tip</p>
+						<div class="flex flex-wrap gap-2">
 							<button
 								type="button"
 								onclick={() => {
-									tipPercent = pct;
+									tipPercent = 0;
 									customTipDollars = '';
 								}}
-								style={tipPercent === pct
+								style={tipPercent === 0
 									? 'background-color: var(--background-color); color: var(--foreground-color); border-color: var(--background-color);'
 									: ''}
 								class="rounded-lg border px-3 py-1.5 text-sm font-medium transition-colors {tipPercent ===
-								pct
+								0
 									? ''
-									: ' text-muted-foreground hover:bg-muted/50'}">{pct}%</button
+									: ' text-muted-foreground hover:bg-muted/50'}">No tip</button
 							>
-						{/each}
-						<button
-							type="button"
-							onclick={() => {
-								tipPercent = 'custom';
-							}}
-							style={tipPercent === 'custom'
-								? 'background-color: var(--background-color); color: var(--foreground-color); border-color: var(--background-color);'
-								: ''}
-							class="rounded-lg border px-3 py-1.5 text-sm font-medium transition-colors {tipPercent ===
-							'custom'
-								? ''
-								: ' text-muted-foreground hover:bg-muted/50'}">Custom</button
-						>
-					</div>
-					{#if tipPercent === 'custom'}
-						<div class="mt-2 flex items-center gap-1.5">
-							<span class="text-sm text-muted-foreground">$</span>
-							<input
-								type="number"
-								min="0"
-								step="0.01"
-								placeholder="0.00"
-								bind:value={customTipDollars}
-								class="branded-input w-28 rounded-lg border  px-3 py-1.5 text-sm transition-colors outline-none"
-							/>
+							{#each tipPercentages as pct (pct)}
+								<button
+									type="button"
+									onclick={() => {
+										tipPercent = pct;
+										customTipDollars = '';
+									}}
+									style={tipPercent === pct
+										? 'background-color: var(--background-color); color: var(--foreground-color); border-color: var(--background-color);'
+										: ''}
+									class="rounded-lg border px-3 py-1.5 text-sm font-medium transition-colors {tipPercent ===
+									pct
+										? ''
+										: ' text-muted-foreground hover:bg-muted/50'}">{pct}%</button
+								>
+							{/each}
+							<button
+								type="button"
+								onclick={() => {
+									tipPercent = 'custom';
+								}}
+								style={tipPercent === 'custom'
+									? 'background-color: var(--background-color); color: var(--foreground-color); border-color: var(--background-color);'
+									: ''}
+								class="rounded-lg border px-3 py-1.5 text-sm font-medium transition-colors {tipPercent ===
+								'custom'
+									? ''
+									: ' text-muted-foreground hover:bg-muted/50'}">Custom</button
+							>
 						</div>
-					{/if}
+						{#if tipPercent === 'custom'}
+							<div class="mt-2 flex items-center gap-1.5">
+								<span class="text-sm text-muted-foreground">$</span>
+								<input
+									type="number"
+									min="0"
+									step="0.01"
+									placeholder="0.00"
+									bind:value={customTipDollars}
+									class="branded-input w-28 rounded-lg border px-3 py-1.5 text-sm transition-colors outline-none"
+								/>
+							</div>
+						{/if}
 					</CardContent>
 				</Card>
 			{/if}
@@ -920,77 +963,79 @@
 			<!-- Order summary -->
 			<Card class="shadow-sm">
 				<CardContent class="space-y-1.5 p-4 text-sm">
-				{#if isSubscriptionCart}
-					<div class="mb-1 flex items-center gap-2 border-b  pb-2 text-purple-700">
-						<Icon icon="mdi:refresh-circle" class="h-4 w-4 shrink-0" />
-						<p class="text-xs font-medium">
-							Recurring subscription — billed {subscriptionInterval}
-						</p>
-					</div>
-				{:else if orderType === 'pickup'}
-					<div
-						class="mb-0.5 flex items-center justify-between border-b  pb-1.5 text-muted-foreground"
-					>
-						<span class="flex items-center gap-1.5"
-							><Icon icon="mdi:clock-outline" class="h-3.5 w-3.5" /> Pickup</span
+					{#if isSubscriptionCart}
+						<div class="mb-1 flex items-center gap-2 border-b pb-2 text-purple-700">
+							<Icon icon="mdi:refresh-circle" class="h-4 w-4 shrink-0" />
+							<p class="text-xs font-medium">
+								Recurring subscription — billed {subscriptionInterval}
+							</p>
+						</div>
+					{:else if orderType === 'pickup'}
+						<div
+							class="mb-0.5 flex items-center justify-between border-b pb-1.5 text-muted-foreground"
 						>
-						<span class="font-medium">
-							{#if selectedWindow}
-								{fmtWindowDate(selectedWindow.startsAt)} · {fmtWindowTime(selectedWindow.startsAt)}
-							{:else}
-								{scheduledLabel ?? 'ASAP'}
-							{/if}
-						</span>
-					</div>
-				{/if}
-				<div class="flex justify-between text-muted-foreground">
-					<span
-						>{isSubscriptionCart
-							? `Per ${subscriptionInterval === 'yearly' ? 'year' : 'month'}`
-							: 'Subtotal'}</span
-					>
-					<span>${(subtotal / 100).toFixed(2)}</span>
-				</div>
-				{#if !isSubscriptionCart}
-					<div class="flex justify-between text-muted-foreground">
-						<span>Tax ({(TAX_RATE * 100).toFixed(2)}%)</span>
-						<span>${(tax / 100).toFixed(2)}</span>
-					</div>
-					{#if deliveryFeeCents > 0}
-						<div class="flex justify-between text-muted-foreground">
-							<span>Delivery fee</span>
-							<span>${(deliveryFeeCents / 100).toFixed(2)}</span>
-						</div>
-					{/if}
-					{#if tipCents > 0}
-						<div class="flex justify-between text-muted-foreground">
-							<span
-								>Tip{tipPercent !== 'custom' && tipPercent !== 0 ? ` (${tipPercent}%)` : ''}</span
+							<span class="flex items-center gap-1.5"
+								><Icon icon="mdi:clock-outline" class="h-3.5 w-3.5" /> Pickup</span
 							>
-							<span>${(tipCents / 100).toFixed(2)}</span>
-						</div>
-					{/if}
-					{#if discountCents > 0}
-						<div class="flex justify-between font-medium text-primary">
-							<span class="flex items-center gap-1">
-								<Icon icon="mdi:ticket-percent-outline" class="h-3.5 w-3.5" />
-								Promo ({promoApplied?.code})
+							<span class="font-medium">
+								{#if selectedWindow}
+									{fmtWindowDate(selectedWindow.startsAt)} · {fmtWindowTime(
+										selectedWindow.startsAt
+									)}
+								{:else}
+									{scheduledLabel ?? 'ASAP'}
+								{/if}
 							</span>
-							<span>−${(discountCents / 100).toFixed(2)}</span>
 						</div>
 					{/if}
-				{/if}
-				<div
-					class="mt-1.5 flex justify-between border-t  pt-1.5 font-semibold"
-					style="color: var(--background-color);"
-				>
-					<span
-						>{isSubscriptionCart
-							? `Total / ${subscriptionInterval === 'yearly' ? 'yr' : 'mo'}`
-							: 'Total'}</span
+					<div class="flex justify-between text-muted-foreground">
+						<span
+							>{isSubscriptionCart
+								? `Per ${subscriptionInterval === 'yearly' ? 'year' : 'month'}`
+								: 'Subtotal'}</span
+						>
+						<span>${(subtotal / 100).toFixed(2)}</span>
+					</div>
+					{#if !isSubscriptionCart}
+						<div class="flex justify-between text-muted-foreground">
+							<span>Tax ({(TAX_RATE * 100).toFixed(2)}%)</span>
+							<span>${(tax / 100).toFixed(2)}</span>
+						</div>
+						{#if deliveryFeeCents > 0}
+							<div class="flex justify-between text-muted-foreground">
+								<span>Delivery fee</span>
+								<span>${(deliveryFeeCents / 100).toFixed(2)}</span>
+							</div>
+						{/if}
+						{#if tipCents > 0}
+							<div class="flex justify-between text-muted-foreground">
+								<span
+									>Tip{tipPercent !== 'custom' && tipPercent !== 0 ? ` (${tipPercent}%)` : ''}</span
+								>
+								<span>${(tipCents / 100).toFixed(2)}</span>
+							</div>
+						{/if}
+						{#if discountCents > 0}
+							<div class="flex justify-between font-medium text-primary">
+								<span class="flex items-center gap-1">
+									<Icon icon="mdi:ticket-percent-outline" class="h-3.5 w-3.5" />
+									Promo ({promoApplied?.code})
+								</span>
+								<span>−${(discountCents / 100).toFixed(2)}</span>
+							</div>
+						{/if}
+					{/if}
+					<div
+						class="mt-1.5 flex justify-between border-t pt-1.5 font-semibold"
+						style="color: var(--background-color);"
 					>
-					<span>${(total / 100).toFixed(2)}</span>
-				</div>
+						<span
+							>{isSubscriptionCart
+								? `Total / ${subscriptionInterval === 'yearly' ? 'yr' : 'mo'}`
+								: 'Total'}</span
+						>
+						<span>${(total / 100).toFixed(2)}</span>
+					</div>
 				</CardContent>
 			</Card>
 
@@ -1000,6 +1045,7 @@
 			</p>
 
 			<button
+				type="button"
 				onclick={checkout}
 				disabled={loading || cart.items.length === 0}
 				style="background-color: var(--background-color); color: var(--foreground-color);"

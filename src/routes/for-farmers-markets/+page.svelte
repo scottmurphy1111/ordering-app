@@ -23,12 +23,12 @@
 		{
 			icon: 'mdi:package-check',
 			title: 'Sell out cleanly',
-			desc: 'Set a hard cap on how many of each item you\'re bringing. When you hit your limit, it shows sold out. No over-selling, no disappointing people at the booth who drove across town.'
+			desc: "Set a hard cap on how many of each item you're bringing. When you hit your limit, it shows sold out. No over-selling, no disappointing people at the booth who drove across town."
 		},
 		{
 			icon: 'mdi:account-heart-outline',
 			title: 'Capture the customer',
-			desc: 'Every order includes a name and email. Follow up with your newsletter, announce next week\'s menu, and build a list of people who already bought from you once.'
+			desc: "Every order includes a name and email. Follow up with your newsletter, announce next week's menu, and build a list of people who already bought from you once."
 		}
 	];
 
@@ -36,7 +36,7 @@
 		{
 			num: '1',
 			title: 'Build your weekly catalog',
-			desc: 'Add what you\'re bringing this week — products, photos, prices, and how many of each. Set your pickup window for market day.'
+			desc: "Add what you're bringing this week — products, photos, prices, and how many of each. Set your pickup window for market day."
 		},
 		{
 			num: '2',
@@ -69,7 +69,7 @@
 		{
 			icon: 'mdi:pause-circle-outline',
 			title: 'Pause for the off-season',
-			desc: 'Most farmers market vendors don\'t run 52 weeks. Pause your subscription when the season ends and resume it in the spring. No penalty, no lost data.'
+			desc: "Most farmers market vendors don't run 52 weeks. Pause your subscription when the season ends and resume it in the spring. No penalty, no lost data."
 		}
 	];
 
@@ -87,7 +87,7 @@
 			a: 'Yes. Market plan supports one pickup location. Pro plan supports multiple — useful if you sell at two or three different markets on different days.'
 		},
 		{
-			q: 'What if a customer doesn\'t show up to collect their order?',
+			q: "What if a customer doesn't show up to collect their order?",
 			a: 'Their payment was already collected at checkout through Stripe. You can mark the order as fulfilled or cancelled from your dashboard. We recommend your own policy for no-shows — most vendors keep the payment.'
 		},
 		{
@@ -134,36 +134,53 @@
 	<div class="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
 		<a
 			href={resolve('/')}
-			class="text-xl font-bold tracking-tight text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+			class="text-xl font-bold tracking-tight text-foreground focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none"
 		>
 			Order<span class="text-primary">Local</span>
 		</a>
 		<nav class="hidden items-center gap-6 text-sm font-medium text-muted-foreground md:flex">
-			<a href="#how-it-works" class="transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2">How it works</a>
-			<a href="#features" class="transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2">Features</a>
-			<a href="#pricing" class="transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2">Pricing</a>
-			<a href="#faq" class="transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2">FAQ</a>
+			<a
+				href="#how-it-works"
+				class="transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none"
+				>How it works</a
+			>
+			<a
+				href="#features"
+				class="transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none"
+				>Features</a
+			>
+			<a
+				href="#pricing"
+				class="transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none"
+				>Pricing</a
+			>
+			<a
+				href="#faq"
+				class="transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none"
+				>FAQ</a
+			>
 		</nav>
 		<div class="flex items-center gap-3">
 			<a
 				href={loginHref}
-				class="hidden text-sm font-medium text-zinc-700 underline-offset-2 transition-colors hover:text-zinc-900 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 sm:inline"
+				class="hidden text-sm font-medium text-zinc-700 underline-offset-2 transition-colors hover:text-zinc-900 hover:underline focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none sm:inline"
 			>
 				Sign in
 			</a>
 			<a
 				href={loginHref}
 				onclick={() => track('cta_click', { location: 'header', page: 'for-farmers-markets' })}
-				class="hidden rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 sm:inline-block"
+				class="hidden rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-primary/90 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none sm:inline-block"
 			>
 				Start for free
 			</a>
 			<button
+				type="button"
 				aria-label="Open navigation menu"
 				aria-expanded={mobileMenuOpen}
 				aria-controls="mobile-menu"
 				onclick={() => (mobileMenuOpen = true)}
-				class="rounded-md p-2 text-zinc-700 transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 md:hidden"
+				class="rounded-md p-2 text-zinc-700 transition-colors hover:bg-muted focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none md:hidden"
 			>
 				<Icon icon="mdi:menu" class="h-5 w-5" />
 			</button>
@@ -179,45 +196,84 @@
 		aria-label="Navigation menu"
 		tabindex="-1"
 		class="fixed inset-0 z-50 flex flex-col bg-white md:hidden"
-		onkeydown={(e) => { if (e.key === 'Escape') mobileMenuOpen = false; }}
+		onkeydown={(e) => {
+			if (e.key === 'Escape') mobileMenuOpen = false;
+		}}
 	>
 		<div class="flex items-center justify-between border-b px-6 py-4">
 			<a href={resolve('/')} class="text-xl font-bold tracking-tight text-foreground">
 				Order<span class="text-primary">Local</span>
 			</a>
 			<button
+				type="button"
 				aria-label="Close navigation menu"
 				onclick={() => (mobileMenuOpen = false)}
-				class="rounded-md p-2 text-zinc-700 hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+				class="rounded-md p-2 text-zinc-700 hover:bg-muted focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none"
 			>
 				<Icon icon="mdi:close" class="h-5 w-5" />
 			</button>
 		</div>
 		<nav class="flex flex-col gap-1 px-4 py-6 text-base font-medium">
-			<a href="#how-it-works" onclick={() => (mobileMenuOpen = false)} class="rounded-lg px-4 py-3 text-zinc-700 hover:bg-muted hover:text-zinc-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2">How it works</a>
-			<a href="#features" onclick={() => (mobileMenuOpen = false)} class="rounded-lg px-4 py-3 text-zinc-700 hover:bg-muted hover:text-zinc-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2">Features</a>
-			<a href="#pricing" onclick={() => (mobileMenuOpen = false)} class="rounded-lg px-4 py-3 text-zinc-700 hover:bg-muted hover:text-zinc-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2">Pricing</a>
-			<a href="#faq" onclick={() => (mobileMenuOpen = false)} class="rounded-lg px-4 py-3 text-zinc-700 hover:bg-muted hover:text-zinc-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2">FAQ</a>
+			<a
+				href="#how-it-works"
+				onclick={() => (mobileMenuOpen = false)}
+				class="rounded-lg px-4 py-3 text-zinc-700 hover:bg-muted hover:text-zinc-900 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none"
+				>How it works</a
+			>
+			<a
+				href="#features"
+				onclick={() => (mobileMenuOpen = false)}
+				class="rounded-lg px-4 py-3 text-zinc-700 hover:bg-muted hover:text-zinc-900 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none"
+				>Features</a
+			>
+			<a
+				href="#pricing"
+				onclick={() => (mobileMenuOpen = false)}
+				class="rounded-lg px-4 py-3 text-zinc-700 hover:bg-muted hover:text-zinc-900 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none"
+				>Pricing</a
+			>
+			<a
+				href="#faq"
+				onclick={() => (mobileMenuOpen = false)}
+				class="rounded-lg px-4 py-3 text-zinc-700 hover:bg-muted hover:text-zinc-900 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none"
+				>FAQ</a
+			>
 		</nav>
 		<div class="mt-auto flex flex-col gap-3 border-t px-4 py-6">
-			<a href={loginHref} class="rounded-lg px-4 py-3 text-center text-sm font-medium text-zinc-700 hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2">Sign in</a>
-			<a href={loginHref} class="rounded-lg bg-primary px-4 py-3 text-center text-sm font-semibold text-white hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2">Start for free</a>
+			<a
+				href={loginHref}
+				class="rounded-lg px-4 py-3 text-center text-sm font-medium text-zinc-700 hover:bg-muted focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none"
+				>Sign in</a
+			>
+			<a
+				href={loginHref}
+				class="rounded-lg bg-primary px-4 py-3 text-center text-sm font-semibold text-white hover:bg-primary/90 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none"
+				>Start for free</a
+			>
 		</div>
 	</div>
 {/if}
 
 <!-- Hero -->
-<section class="relative overflow-hidden bg-gradient-to-b from-primary/5 to-background px-6 pt-24 pb-16">
-	<div class="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(ellipse_80%_50%_at_50%_-10%,rgba(22,163,74,0.08),transparent)]"></div>
+<section
+	class="relative overflow-hidden bg-gradient-to-b from-primary/5 to-background px-6 pt-24 pb-16"
+>
+	<div
+		class="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(ellipse_80%_50%_at_50%_-10%,rgba(22,163,74,0.08),transparent)]"
+	></div>
 	<div class="mx-auto max-w-3xl text-center">
-		<span class="mb-4 inline-block rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold tracking-widest text-primary/90 uppercase">
+		<span
+			class="mb-4 inline-block rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold tracking-widest text-primary/90 uppercase"
+		>
 			Built for farmers market vendors
 		</span>
 		<h1 class="text-5xl leading-tight font-bold tracking-tight text-foreground sm:text-6xl">
 			Pre-orders for your booth, finally simple.
 		</h1>
 		<p class="mt-6 text-lg leading-relaxed text-muted-foreground">
-			Order Local gives farmers market vendors a pre-order page customers can shop before market day. Set inventory limits, accept Stripe payments, and walk in Saturday morning knowing exactly what you've sold.
+			Order Local gives farmers market vendors a pre-order page customers can shop before market
+			day. Set inventory limits, accept Stripe payments, and walk in Saturday morning knowing
+			exactly what you've sold.
 		</p>
 		<div class="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row">
 			<a
@@ -261,7 +317,9 @@
 <section id="how-it-works" class="scroll-mt-20 bg-background px-6 py-24">
 	<div class="mx-auto max-w-4xl">
 		<div class="mb-14 text-center">
-			<span class="mb-3 inline-block rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold tracking-widest text-primary/90 uppercase">
+			<span
+				class="mb-3 inline-block rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold tracking-widest text-primary/90 uppercase"
+			>
 				How it works
 			</span>
 			<h2 class="mt-3 text-3xl font-bold text-foreground sm:text-4xl">
@@ -269,10 +327,14 @@
 			</h2>
 		</div>
 		<div class="relative grid gap-10 sm:grid-cols-3">
-			<div class="absolute inset-x-0 top-6 -z-10 hidden h-px border-t border-dashed border-zinc-300 sm:block"></div>
+			<div
+				class="absolute inset-x-0 top-6 -z-10 hidden h-px border-t border-dashed border-zinc-300 sm:block"
+			></div>
 			{#each steps as step (step.num)}
 				<div class="flex flex-col items-center text-center">
-					<div class="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary text-lg font-bold text-white shadow-md">
+					<div
+						class="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary text-lg font-bold text-white shadow-md"
+					>
 						{step.num}
 					</div>
 					<h3 class="font-semibold text-foreground">{step.title}</h3>
@@ -287,7 +349,9 @@
 <section id="features" class="scroll-mt-20 bg-muted/50 px-6 py-24">
 	<div class="mx-auto max-w-5xl">
 		<div class="mb-14 text-center">
-			<span class="mb-3 inline-block rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold tracking-widest text-primary/90 uppercase">
+			<span
+				class="mb-3 inline-block rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold tracking-widest text-primary/90 uppercase"
+			>
 				What's included
 			</span>
 			<h2 class="mt-3 text-3xl font-bold text-foreground sm:text-4xl">
@@ -296,8 +360,12 @@
 		</div>
 		<div class="grid gap-6 sm:grid-cols-2">
 			{#each features as f (f.title)}
-				<div class="flex gap-4 rounded-2xl border bg-background p-6 transition hover:border-emerald-200 hover:shadow-sm">
-					<div class="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10">
+				<div
+					class="flex gap-4 rounded-2xl border bg-background p-6 transition hover:border-emerald-200 hover:shadow-sm"
+				>
+					<div
+						class="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10"
+					>
 						<Icon icon={f.icon} class="h-5 w-5 text-primary" aria-hidden="true" />
 					</div>
 					<div>
@@ -313,7 +381,9 @@
 <!-- Market manager callout -->
 <section class="bg-primary/5 px-6 py-16">
 	<div class="mx-auto max-w-2xl text-center">
-		<div class="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-4 py-1.5 text-xs font-semibold text-primary">
+		<div
+			class="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-4 py-1.5 text-xs font-semibold text-primary"
+		>
 			<Icon icon="mdi:handshake-outline" class="h-3.5 w-3.5" aria-hidden="true" />
 			Market manager partnerships
 		</div>
@@ -321,12 +391,15 @@
 			Are you a market manager in North Carolina?
 		</h2>
 		<p class="mt-3 text-base leading-relaxed text-gray-700">
-			We're building relationships with NC farmers markets to help vendors get set up quickly. If you manage a market and want to offer pre-ordering to your vendors, reach out — we'll make it simple.
+			We're building relationships with NC farmers markets to help vendors get set up quickly. If
+			you manage a market and want to offer pre-ordering to your vendors, reach out — we'll make it
+			simple.
 		</p>
 		<a
 			href="mailto:hello@getorderlocal.com"
 			rel="external"
-			onclick={() => track('cta_click', { location: 'market_manager_callout', page: 'for-farmers-markets' })}
+			onclick={() =>
+				track('cta_click', { location: 'market_manager_callout', page: 'for-farmers-markets' })}
 			class="mt-7 inline-block rounded-xl border border-primary/40 bg-background px-8 py-3.5 text-base font-semibold text-primary shadow-sm transition-colors hover:bg-primary/5"
 		>
 			Get in touch
@@ -337,7 +410,9 @@
 <!-- Founding vendor callout -->
 <section class="bg-amber-50 px-6 py-16">
 	<div class="mx-auto max-w-2xl text-center">
-		<div class="inline-flex items-center gap-2 rounded-full border border-amber-300 bg-amber-100 px-4 py-1.5 text-xs font-semibold text-amber-800">
+		<div
+			class="inline-flex items-center gap-2 rounded-full border border-amber-300 bg-amber-100 px-4 py-1.5 text-xs font-semibold text-amber-800"
+		>
 			<Icon icon="mdi:fire" class="h-3.5 w-3.5" aria-hidden="true" />
 			Founding vendor offer — first 25 only
 		</div>
@@ -345,14 +420,17 @@
 			Lock in Market at $19/mo — for life.
 		</h2>
 		<p class="mt-3 text-base leading-relaxed text-gray-700">
-			We're signing up our first 25 market vendor partners at a founding rate. You get the full Market plan — pickup windows, inventory limits, cutoff times, and Stripe checkout — locked at $19/mo for as long as you stay active.
+			We're signing up our first 25 market vendor partners at a founding rate. You get the full
+			Market plan — pickup windows, inventory limits, cutoff times, and Stripe checkout — locked at
+			$19/mo for as long as you stay active.
 		</p>
 		<p class="mt-2 text-sm text-amber-700">
 			Market normally lists at $29/mo. This rate never increases.
 		</p>
 		<a
 			href={loginHref}
-			onclick={() => track('cta_click', { location: 'founding_callout', page: 'for-farmers-markets' })}
+			onclick={() =>
+				track('cta_click', { location: 'founding_callout', page: 'for-farmers-markets' })}
 			class="mt-7 inline-block rounded-xl bg-amber-600 px-8 py-3.5 text-base font-semibold text-white shadow-md transition-colors hover:bg-amber-700"
 		>
 			Claim your founding spot
@@ -365,7 +443,9 @@
 <section id="pricing" class="scroll-mt-20 bg-background px-6 py-24">
 	<div class="mx-auto max-w-4xl">
 		<div class="mb-10 text-center">
-			<span class="mb-3 inline-block rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold tracking-widest text-primary/90 uppercase">
+			<span
+				class="mb-3 inline-block rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold tracking-widest text-primary/90 uppercase"
+			>
 				Pricing
 			</span>
 			<h2 class="mt-3 text-3xl font-bold text-foreground sm:text-4xl">
@@ -379,21 +459,27 @@
 			<div class="flex flex-col overflow-hidden rounded-2xl border bg-background">
 				<div class="flex flex-1 flex-col p-7">
 					<p class="text-lg font-bold text-foreground">Starter</p>
-					<p class="mt-1 text-sm text-muted-foreground">Try it out — take your first pre-orders for free.</p>
+					<p class="mt-1 text-sm text-muted-foreground">
+						Try it out — take your first pre-orders for free.
+					</p>
 					<div class="mt-5 flex items-end gap-x-2">
 						<span class="text-4xl font-bold text-foreground">Free</span>
 					</div>
 					<ul class="mt-6 flex-1 space-y-2.5">
 						{#each ['Up to 10 catalog items', 'Online ordering & payments', 'Order management dashboard', 'Customer email receipts', 'Catalog QR code', 'Standard Stripe fees only (2.9% + 30¢)'] as feat (feat)}
 							<li class="flex items-start gap-2 text-sm text-muted-foreground">
-								<Icon icon="mdi:check-circle-outline" class="mt-0.5 h-4 w-4 shrink-0 text-primary/80" />
+								<Icon
+									icon="mdi:check-circle-outline"
+									class="mt-0.5 h-4 w-4 shrink-0 text-primary/80"
+								/>
 								{feat}
 							</li>
 						{/each}
 					</ul>
 					<a
 						href={loginHref}
-						onclick={() => track('cta_click', { location: 'pricing_starter', page: 'for-farmers-markets' })}
+						onclick={() =>
+							track('cta_click', { location: 'pricing_starter', page: 'for-farmers-markets' })}
 						class="mt-8 block rounded-xl bg-gray-900 px-5 py-3 text-center text-sm font-semibold text-white transition-colors hover:bg-gray-700"
 					>
 						Start for free
@@ -402,14 +488,20 @@
 			</div>
 
 			<!-- Market -->
-			<div class="relative flex flex-col overflow-hidden rounded-2xl border border-primary shadow-2xl ring-2 ring-primary/20">
-				<div class="absolute -top-3 left-0 right-0 flex justify-center">
-					<span class="rounded-full bg-primary px-3 py-1 text-xs font-semibold text-white shadow-sm">Best for market vendors</span>
+			<div
+				class="relative flex flex-col overflow-hidden rounded-2xl border border-primary shadow-2xl ring-2 ring-primary/20"
+			>
+				<div class="absolute -top-3 right-0 left-0 flex justify-center">
+					<span class="rounded-full bg-primary px-3 py-1 text-xs font-semibold text-white shadow-sm"
+						>Best for market vendors</span
+					>
 				</div>
 				<div class="h-1 bg-primary"></div>
 				<div class="flex flex-1 flex-col p-7">
 					<p class="text-lg font-bold text-foreground">Market</p>
-					<p class="mt-1 text-sm text-muted-foreground">For vendors who sell regularly and want the full toolkit.</p>
+					<p class="mt-1 text-sm text-muted-foreground">
+						For vendors who sell regularly and want the full toolkit.
+					</p>
 					<div class="mt-5 flex items-end gap-x-2">
 						<span class="text-4xl font-bold text-foreground">$29</span>
 						<span class="mb-1 text-sm text-muted-foreground">/ month</span>
@@ -417,14 +509,18 @@
 					<ul class="mt-6 flex-1 space-y-2.5">
 						{#each ['Everything in Starter', 'Up to 30 catalog items', 'Pickup windows & cutoff times', 'Inventory limits per item', 'Single pickup location', 'Eligible for select add-ons', 'Standard Stripe fees only'] as feat (feat)}
 							<li class="flex items-start gap-2 text-sm text-muted-foreground">
-								<Icon icon="mdi:check-circle-outline" class="mt-0.5 h-4 w-4 shrink-0 text-primary/80" />
+								<Icon
+									icon="mdi:check-circle-outline"
+									class="mt-0.5 h-4 w-4 shrink-0 text-primary/80"
+								/>
 								{feat}
 							</li>
 						{/each}
 					</ul>
 					<a
 						href={loginHref}
-						onclick={() => track('cta_click', { location: 'pricing_market', page: 'for-farmers-markets' })}
+						onclick={() =>
+							track('cta_click', { location: 'pricing_market', page: 'for-farmers-markets' })}
 						class="mt-8 block rounded-xl bg-primary px-5 py-3 text-center text-sm font-semibold text-white transition-colors hover:bg-primary/90"
 					>
 						Start free trial
@@ -434,7 +530,10 @@
 		</div>
 
 		<p class="mt-6 text-center text-sm text-muted-foreground">
-			Need multiple locations or unlimited items? See our <a href={resolve('/') + '#pricing'} class="text-primary underline underline-offset-2 hover:text-primary/80">Pro plan</a>.
+			Need multiple locations or unlimited items? See our <a
+				href={resolve('/#pricing')}
+				class="text-primary underline underline-offset-2 hover:text-primary/80">Pro plan</a
+			>.
 		</p>
 	</div>
 </section>
@@ -450,7 +549,8 @@
 			bind:value={openFaq}
 			class="space-y-3"
 			onValueChange={(v: string | undefined) => {
-				if (v !== undefined) track('faq_open', { question: faqs[+v]?.q, page: 'for-farmers-markets' });
+				if (v !== undefined)
+					track('faq_open', { question: faqs[+v]?.q, page: 'for-farmers-markets' });
 			}}
 		>
 			{#each faqs as faq, i (faq.q)}
@@ -459,7 +559,7 @@
 					class="overflow-hidden rounded-xl border bg-background not-last:border-b"
 				>
 					<AccordionTrigger
-						class="px-5 py-4 text-sm font-semibold text-foreground hover:bg-muted/50 hover:no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+						class="px-5 py-4 text-sm font-semibold text-foreground hover:bg-muted/50 hover:no-underline focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none"
 					>
 						{faq.q}
 					</AccordionTrigger>
@@ -505,40 +605,65 @@
 				<p class="mb-3 text-xs font-semibold tracking-wide text-foreground uppercase">Product</p>
 				<nav class="flex flex-col gap-2 text-sm text-muted-foreground">
 					<a href={resolve('/')} class="transition-colors hover:text-foreground">Home</a>
-					<a href={resolve('/') + '#pricing'} class="transition-colors hover:text-foreground">Pricing</a>
+					<a href={resolve('/#pricing')} class="transition-colors hover:text-foreground">Pricing</a>
 					<a href={loginHref} class="transition-colors hover:text-foreground">Sign in</a>
 				</nav>
 			</div>
 			<div>
 				<p class="mb-3 text-xs font-semibold tracking-wide text-foreground uppercase">Solutions</p>
 				<nav class="flex flex-col gap-2 text-sm text-muted-foreground">
-					<a href={resolve('/for-bakeries')} class="transition-colors hover:text-foreground">For Bakeries</a>
-					<a href={resolve('/for-farmers-markets')} class="transition-colors hover:text-foreground">For Farmers Markets</a>
+					<a href={resolve('/for-bakeries')} class="transition-colors hover:text-foreground"
+						>For Bakeries</a
+					>
+					<a href={resolve('/for-farmers-markets')} class="transition-colors hover:text-foreground"
+						>For Farmers Markets</a
+					>
 				</nav>
 			</div>
 			<div>
 				<p class="mb-3 text-xs font-semibold tracking-wide text-foreground uppercase">Company</p>
 				<nav class="flex flex-col gap-2 text-sm text-muted-foreground">
-					<a href="mailto:hello@getorderlocal.com" rel="external" class="transition-colors hover:text-foreground">Contact</a>
+					<a
+						href="mailto:hello@getorderlocal.com"
+						rel="external"
+						class="transition-colors hover:text-foreground">Contact</a
+					>
 				</nav>
 			</div>
 			<div>
 				<p class="mb-3 text-xs font-semibold tracking-wide text-foreground uppercase">Legal</p>
 				<nav class="flex flex-col gap-2 text-sm text-muted-foreground">
-					<a href={resolve('/privacy')} class="transition-colors hover:text-foreground">Privacy Policy</a>
-					<a href={resolve('/terms')} class="transition-colors hover:text-foreground">Terms of Service</a>
+					<a href={resolve('/privacy')} class="transition-colors hover:text-foreground"
+						>Privacy Policy</a
+					>
+					<a href={resolve('/terms')} class="transition-colors hover:text-foreground"
+						>Terms of Service</a
+					>
 				</nav>
 			</div>
 		</div>
 		<div class="mt-10 flex flex-col items-center justify-between gap-4 border-t pt-6 sm:flex-row">
 			<p class="text-xs text-muted-foreground">
-				© {new Date().getFullYear()} Order<span class="text-primary">Local</span>. All rights reserved.
+				© {new Date().getFullYear()} Order<span class="text-primary">Local</span>. All rights
+				reserved.
 			</p>
 			<div class="flex items-center gap-4">
-				<a href="https://x.com/getorderlocal" target="_blank" rel="noopener noreferrer" aria-label="Order Local on X" class="text-muted-foreground transition-colors hover:text-foreground">
+				<a
+					href="https://x.com/getorderlocal"
+					target="_blank"
+					rel="noopener noreferrer"
+					aria-label="Order Local on X"
+					class="text-muted-foreground transition-colors hover:text-foreground"
+				>
 					<Icon icon="mdi:twitter" class="h-4 w-4" aria-hidden="true" />
 				</a>
-				<a href="https://linkedin.com/company/getorderlocal" target="_blank" rel="noopener noreferrer" aria-label="Order Local on LinkedIn" class="text-muted-foreground transition-colors hover:text-foreground">
+				<a
+					href="https://linkedin.com/company/getorderlocal"
+					target="_blank"
+					rel="noopener noreferrer"
+					aria-label="Order Local on LinkedIn"
+					class="text-muted-foreground transition-colors hover:text-foreground"
+				>
 					<Icon icon="mdi:linkedin" class="h-4 w-4" aria-hidden="true" />
 				</a>
 			</div>

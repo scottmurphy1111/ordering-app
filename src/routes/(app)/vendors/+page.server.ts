@@ -35,7 +35,12 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 	const manageOverride = url.searchParams.get('manage') === 'true';
 	const isInternal = locals.user!.isInternal;
 
-	if (!manageOverride && !isInternal && userVendors.length === 1 && userVendors[0].isActive === true) {
+	if (
+		!manageOverride &&
+		!isInternal &&
+		userVendors.length === 1 &&
+		userVendors[0].isActive === true
+	) {
 		throw redirect(303, '/dashboard');
 	}
 

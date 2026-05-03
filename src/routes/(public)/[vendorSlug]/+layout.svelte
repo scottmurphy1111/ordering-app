@@ -41,7 +41,7 @@
 	</div>
 
 	<!-- Footer -->
-	<footer class="relative z-10 border-t  bg-background/80 backdrop-blur-sm">
+	<footer class="relative z-10 border-t bg-background/80 backdrop-blur-sm">
 		<div
 			class="mx-auto flex max-w-2xl flex-col items-center gap-1.5 px-4 py-5 sm:flex-row sm:justify-center"
 		>
@@ -59,7 +59,9 @@
 					Order<span class="text-primary">Local</span>
 				</p>
 			{/if}
-			<p class="text-xs text-muted-foreground">&copy; {new Date().getFullYear()} All rights reserved.</p>
+			<p class="text-xs text-muted-foreground">
+				&copy; {new Date().getFullYear()} All rights reserved.
+			</p>
 		</div>
 	</footer>
 </div>

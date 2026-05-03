@@ -30,7 +30,12 @@
 		editingId !== null ? (data.locations.find((l) => l.id === editingId) ?? null) : null
 	);
 
-	type Addr = { street?: string | null; city?: string | null; state?: string | null; zip?: string | null };
+	type Addr = {
+		street?: string | null;
+		city?: string | null;
+		state?: string | null;
+		zip?: string | null;
+	};
 
 	function getAddr(raw: unknown): Addr {
 		return (raw as Addr) ?? {};
@@ -100,7 +105,6 @@
 			: null
 	);
 
-
 	const DAY_ORDER = ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'] as const;
 	const DAY_LABELS: Record<string, string> = {
 		MO: 'Mon',
@@ -161,9 +165,14 @@
 		tz: string
 	): OccurrencePreview[] {
 		if (days.length === 0 || !start || !end) return [];
-		const BYDAY: Record<string, (typeof RRule.MO)> = {
-			MO: RRule.MO, TU: RRule.TU, WE: RRule.WE, TH: RRule.TH,
-			FR: RRule.FR, SA: RRule.SA, SU: RRule.SU
+		const BYDAY: Record<string, typeof RRule.MO> = {
+			MO: RRule.MO,
+			TU: RRule.TU,
+			WE: RRule.WE,
+			TH: RRule.TH,
+			FR: RRule.FR,
+			SA: RRule.SA,
+			SU: RRule.SU
 		};
 		const now = new Date();
 		const dtstart = new Date(
@@ -370,10 +379,7 @@
 					</CardHeader>
 					<CardContent class="space-y-4">
 						<div>
-							<label
-								class="mb-1 block text-sm font-medium text-muted-foreground"
-								for="edit-name"
-							>
+							<label class="mb-1 block text-sm font-medium text-muted-foreground" for="edit-name">
 								Name *
 							</label>
 							<input
@@ -383,7 +389,7 @@
 								required
 								maxlength="100"
 								value={editingLocation.name}
-								class="w-full rounded-md border h-10 px-3 text-sm focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
+								class="h-10 w-full rounded-md border px-3 text-sm focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
 							/>
 						</div>
 						<div>
@@ -397,7 +403,7 @@
 									placeholder="Street"
 									maxlength="100"
 									value={getAddr(editingLocation.address).street ?? ''}
-									class="w-full rounded-md border h-10 px-3 text-sm focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
+									class="h-10 w-full rounded-md border px-3 text-sm focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
 								/>
 								<div class="grid grid-cols-3 gap-2">
 									<input
@@ -406,7 +412,7 @@
 										placeholder="City"
 										maxlength="100"
 										value={getAddr(editingLocation.address).city ?? ''}
-										class="w-full rounded-md border h-10 px-3 text-sm focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
+										class="h-10 w-full rounded-md border px-3 text-sm focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
 									/>
 									<input
 										name="state"
@@ -414,7 +420,7 @@
 										placeholder="State"
 										maxlength="50"
 										value={getAddr(editingLocation.address).state ?? ''}
-										class="w-full rounded-md border h-10 px-3 text-sm focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
+										class="h-10 w-full rounded-md border px-3 text-sm focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
 									/>
 									<input
 										name="zip"
@@ -422,16 +428,13 @@
 										placeholder="ZIP"
 										maxlength="20"
 										value={getAddr(editingLocation.address).zip ?? ''}
-										class="w-full rounded-md border h-10 px-3 text-sm focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
+										class="h-10 w-full rounded-md border px-3 text-sm focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
 									/>
 								</div>
 							</div>
 						</div>
 						<div>
-							<label
-								class="mb-1 block text-sm font-medium text-muted-foreground"
-								for="edit-notes"
-							>
+							<label class="mb-1 block text-sm font-medium text-muted-foreground" for="edit-notes">
 								Notes
 							</label>
 							<textarea
@@ -441,7 +444,8 @@
 								rows="2"
 								placeholder="e.g. Green tent, Row C, near the main entrance"
 								class="w-full rounded-md border px-3 py-2 text-sm focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
-							>{editingLocation.notes ?? ''}</textarea>
+								>{editingLocation.notes ?? ''}</textarea
+							>
 							<p class="mt-1 text-xs text-muted-foreground">Shown to customers at checkout.</p>
 						</div>
 					</CardContent>
@@ -478,10 +482,7 @@
 					</CardHeader>
 					<CardContent class="space-y-4">
 						<div>
-							<label
-								class="mb-1 block text-sm font-medium text-muted-foreground"
-								for="add-name"
-							>
+							<label class="mb-1 block text-sm font-medium text-muted-foreground" for="add-name">
 								Name *
 							</label>
 							<input
@@ -491,7 +492,7 @@
 								required
 								maxlength="100"
 								placeholder="e.g. Saturday Farmers Market"
-								class="w-full rounded-md border h-10 px-3 text-sm focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
+								class="h-10 w-full rounded-md border px-3 text-sm focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
 							/>
 						</div>
 						<div>
@@ -504,7 +505,7 @@
 									type="text"
 									placeholder="Street"
 									maxlength="100"
-									class="w-full rounded-md border h-10 px-3 text-sm focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
+									class="h-10 w-full rounded-md border px-3 text-sm focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
 								/>
 								<div class="grid grid-cols-3 gap-2">
 									<input
@@ -512,30 +513,27 @@
 										type="text"
 										placeholder="City"
 										maxlength="100"
-										class="w-full rounded-md border h-10 px-3 text-sm focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
+										class="h-10 w-full rounded-md border px-3 text-sm focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
 									/>
 									<input
 										name="state"
 										type="text"
 										placeholder="State"
 										maxlength="50"
-										class="w-full rounded-md border h-10 px-3 text-sm focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
+										class="h-10 w-full rounded-md border px-3 text-sm focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
 									/>
 									<input
 										name="zip"
 										type="text"
 										placeholder="ZIP"
 										maxlength="20"
-										class="w-full rounded-md border h-10 px-3 text-sm focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
+										class="h-10 w-full rounded-md border px-3 text-sm focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
 									/>
 								</div>
 							</div>
 						</div>
 						<div>
-							<label
-								class="mb-1 block text-sm font-medium text-muted-foreground"
-								for="add-notes"
-							>
+							<label class="mb-1 block text-sm font-medium text-muted-foreground" for="add-notes">
 								Notes
 							</label>
 							<textarea
@@ -725,7 +723,7 @@
 								required
 								maxlength="100"
 								value={editingTemplate.name}
-								class="w-full rounded-md border h-10 px-3 text-sm focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
+								class="h-10 w-full rounded-md border px-3 text-sm focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
 							/>
 						</div>
 						<!-- Location -->
@@ -739,7 +737,7 @@
 							<select
 								id="etmpl-location"
 								name="locationId"
-								class="w-full rounded-md border bg-background h-10 px-3 text-sm focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
+								class="h-10 w-full rounded-md border bg-background px-3 text-sm focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
 							>
 								<option value="">(no location)</option>
 								{#each data.locations.filter((l) => l.isActive) as loc (loc.id)}
@@ -793,15 +791,12 @@
 									required
 									value={previewStartTime}
 									oninput={(e) => (previewStartTime = e.currentTarget.value)}
-									class="w-full rounded-md border h-10 px-3 text-sm focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
+									class="h-10 w-full rounded-md border px-3 text-sm focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
 								/>
 								<p class="mt-1 text-xs text-muted-foreground">Pickup opens.</p>
 							</div>
 							<div>
-								<label
-									class="mb-1 block text-sm font-medium text-muted-foreground"
-									for="etmpl-end"
-								>
+								<label class="mb-1 block text-sm font-medium text-muted-foreground" for="etmpl-end">
 									End time *
 								</label>
 								<input
@@ -811,7 +806,7 @@
 									required
 									value={previewEndTime}
 									oninput={(e) => (previewEndTime = e.currentTarget.value)}
-									class="w-full rounded-md border h-10 px-3 text-sm focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
+									class="h-10 w-full rounded-md border px-3 text-sm focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
 								/>
 								<p class="mt-1 text-xs text-muted-foreground">Pickup closes.</p>
 							</div>
@@ -832,17 +827,15 @@
 									required
 									min="1"
 									value={previewCutoffHours}
-									oninput={(e) =>
-										(previewCutoffHours = parseInt(e.currentTarget.value) || 48)}
-									class="w-full rounded-md border h-10 px-3 text-sm focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
+									oninput={(e) => (previewCutoffHours = parseInt(e.currentTarget.value) || 48)}
+									class="h-10 w-full rounded-md border px-3 text-sm focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
 								/>
-								<p class="mt-1 text-xs text-muted-foreground">Hours before pickup customers must order.</p>
+								<p class="mt-1 text-xs text-muted-foreground">
+									Hours before pickup customers must order.
+								</p>
 							</div>
 							<div>
-								<label
-									class="mb-1 block text-sm font-medium text-muted-foreground"
-									for="etmpl-max"
-								>
+								<label class="mb-1 block text-sm font-medium text-muted-foreground" for="etmpl-max">
 									Max orders per window
 								</label>
 								<input
@@ -852,7 +845,7 @@
 									min="1"
 									value={editingTemplate.maxOrders ?? ''}
 									placeholder="Unlimited"
-									class="w-full rounded-md border h-10 px-3 text-sm focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
+									class="h-10 w-full rounded-md border px-3 text-sm focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
 								/>
 							</div>
 						</div>
@@ -906,7 +899,7 @@
 								required
 								maxlength="100"
 								placeholder="e.g. Saturday morning market"
-								class="w-full rounded-md border h-10 px-3 text-sm focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
+								class="h-10 w-full rounded-md border px-3 text-sm focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
 							/>
 						</div>
 						<!-- Location -->
@@ -920,7 +913,7 @@
 							<select
 								id="tmpl-location"
 								name="locationId"
-								class="w-full rounded-md border bg-background h-10 px-3 text-sm focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
+								class="h-10 w-full rounded-md border bg-background px-3 text-sm focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
 							>
 								<option value="">(no location)</option>
 								{#each data.locations.filter((l) => l.isActive) as loc (loc.id)}
@@ -974,15 +967,12 @@
 									required
 									value={previewStartTime}
 									oninput={(e) => (previewStartTime = e.currentTarget.value)}
-									class="w-full rounded-md border h-10 px-3 text-sm focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
+									class="h-10 w-full rounded-md border px-3 text-sm focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
 								/>
 								<p class="mt-1 text-xs text-muted-foreground">Pickup opens.</p>
 							</div>
 							<div>
-								<label
-									class="mb-1 block text-sm font-medium text-muted-foreground"
-									for="tmpl-end"
-								>
+								<label class="mb-1 block text-sm font-medium text-muted-foreground" for="tmpl-end">
 									End time *
 								</label>
 								<input
@@ -992,7 +982,7 @@
 									required
 									value={previewEndTime}
 									oninput={(e) => (previewEndTime = e.currentTarget.value)}
-									class="w-full rounded-md border h-10 px-3 text-sm focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
+									class="h-10 w-full rounded-md border px-3 text-sm focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
 								/>
 								<p class="mt-1 text-xs text-muted-foreground">Pickup closes.</p>
 							</div>
@@ -1013,17 +1003,15 @@
 									required
 									min="1"
 									value={previewCutoffHours}
-									oninput={(e) =>
-										(previewCutoffHours = parseInt(e.currentTarget.value) || 48)}
-									class="w-full rounded-md border h-10 px-3 text-sm focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
+									oninput={(e) => (previewCutoffHours = parseInt(e.currentTarget.value) || 48)}
+									class="h-10 w-full rounded-md border px-3 text-sm focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
 								/>
-								<p class="mt-1 text-xs text-muted-foreground">Hours before pickup customers must order.</p>
+								<p class="mt-1 text-xs text-muted-foreground">
+									Hours before pickup customers must order.
+								</p>
 							</div>
 							<div>
-								<label
-									class="mb-1 block text-sm font-medium text-muted-foreground"
-									for="tmpl-max"
-								>
+								<label class="mb-1 block text-sm font-medium text-muted-foreground" for="tmpl-max">
 									Max orders per window
 								</label>
 								<input
@@ -1032,7 +1020,7 @@
 									type="number"
 									min="1"
 									placeholder="Unlimited"
-									class="w-full rounded-md border h-10 px-3 text-sm focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
+									class="h-10 w-full rounded-md border px-3 text-sm focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
 								/>
 							</div>
 						</div>
@@ -1102,13 +1090,14 @@
 					{:else}
 						<div class="mb-2 overflow-hidden rounded-xl border bg-background">
 							{#each locTemplates as tmpl, i (tmpl.id)}
-								<div class="{i > 0 ? 'border-t' : ''}">
+								<div class={i > 0 ? 'border-t' : ''}>
 									<div class="flex items-center justify-between px-4 py-3">
 										<span class="text-sm text-foreground">
 											{formatTime(tmpl.windowStart)}–{formatTime(tmpl.windowEnd)}
 											· {formatRecurrence(tmpl.recurrence)}
-											· Cutoff {tmpl.cutoffHours}h
-											· {tmpl.maxOrders ? `Max ${tmpl.maxOrders}` : 'No cap'}
+											· Cutoff {tmpl.cutoffHours}h · {tmpl.maxOrders
+												? `Max ${tmpl.maxOrders}`
+												: 'No cap'}
 										</span>
 										<div class="flex shrink-0 items-center gap-3 pl-4">
 											<Button
@@ -1165,9 +1154,9 @@
 											</form>
 										</div>
 									</div>
-									<div class="border-t border-dashed px-4 pb-3 pt-2">
+									<div class="border-t border-dashed px-4 pt-2 pb-3">
 										{#if (data.upcomingByTemplate[tmpl.id] ?? []).length === 0}
-											<p class="text-xs italic text-muted-foreground">No upcoming occurrences.</p>
+											<p class="text-xs text-muted-foreground italic">No upcoming occurrences.</p>
 										{:else}
 											<div class="space-y-2">
 												{#each data.upcomingByTemplate[tmpl.id] as occ (occ.id)}
@@ -1203,16 +1192,17 @@
 			{@const unassigned = (templatesByLocation.get(null) ?? []) as typeof data.templates}
 			{#if unassigned.length > 0}
 				<div class="mb-6">
-					<h3 class="mb-2 text-sm font-medium italic text-muted-foreground">Unassigned</h3>
+					<h3 class="mb-2 text-sm font-medium text-muted-foreground italic">Unassigned</h3>
 					<div class="overflow-hidden rounded-xl border bg-background">
 						{#each unassigned as tmpl, i (tmpl.id)}
-							<div class="{i > 0 ? 'border-t' : ''}">
+							<div class={i > 0 ? 'border-t' : ''}>
 								<div class="flex items-center justify-between px-4 py-3">
 									<span class="text-sm text-foreground">
 										{formatTime(tmpl.windowStart)}–{formatTime(tmpl.windowEnd)}
 										· {formatRecurrence(tmpl.recurrence)}
-										· Cutoff {tmpl.cutoffHours}h
-										· {tmpl.maxOrders ? `Max ${tmpl.maxOrders}` : 'No cap'}
+										· Cutoff {tmpl.cutoffHours}h · {tmpl.maxOrders
+											? `Max ${tmpl.maxOrders}`
+											: 'No cap'}
 									</span>
 									<div class="flex shrink-0 items-center gap-3 pl-4">
 										<Button
@@ -1269,9 +1259,9 @@
 										</form>
 									</div>
 								</div>
-								<div class="border-t border-dashed px-4 pb-3 pt-2">
+								<div class="border-t border-dashed px-4 pt-2 pb-3">
 									{#if (data.upcomingByTemplate[tmpl.id] ?? []).length === 0}
-										<p class="text-xs italic text-muted-foreground">No upcoming occurrences.</p>
+										<p class="text-xs text-muted-foreground italic">No upcoming occurrences.</p>
 									{:else}
 										<div class="space-y-2">
 											{#each data.upcomingByTemplate[tmpl.id] as occ (occ.id)}
@@ -1291,51 +1281,112 @@
 	<!-- Phase 8: per-occurrence overrides UI -->
 </div>
 
-{#snippet occurrenceRow(occ: { id: number; templateId: number | null; startsAt: Date; endsAt: Date; cutoffAt: Date; isCancelled: boolean; maxOrders: number | null; notes: string | null }, tmpl: { id: number; maxOrders: number | null })}
+{#snippet occurrenceRow(
+	occ: {
+		id: number;
+		templateId: number | null;
+		startsAt: Date;
+		endsAt: Date;
+		cutoffAt: Date;
+		isCancelled: boolean;
+		maxOrders: number | null;
+		notes: string | null;
+	},
+	tmpl: { id: number; maxOrders: number | null }
+)}
 	{@const isExpanded = expandedOccurrences.get(occ.id) ?? false}
 	{@const isOccCancelled = occ.isCancelled}
 	{@const isModified = !isOccCancelled && (occ.notes !== null || occ.maxOrders !== null)}
-	<div class="overflow-hidden rounded-md border {isOccCancelled ? 'border-red-100' : isExpanded ? 'border-primary/30' : 'border-gray-200'}">
+	<div
+		class="overflow-hidden rounded-md border {isOccCancelled
+			? 'border-red-100'
+			: isExpanded
+				? 'border-primary/30'
+				: 'border-gray-200'}"
+	>
 		<button
 			type="button"
-			class="flex w-full items-center gap-2 px-2 py-1.5 text-left text-xs transition-colors hover:bg-gray-50 {isOccCancelled ? 'bg-red-50/40 opacity-70' : ''}"
+			class="flex w-full items-center gap-2 px-2 py-1.5 text-left text-xs transition-colors hover:bg-gray-50 {isOccCancelled
+				? 'bg-red-50/40 opacity-70'
+				: ''}"
 			onclick={() => expandedOccurrences.set(occ.id, !isExpanded)}
 		>
 			<div class="flex min-w-0 flex-1 flex-wrap items-baseline gap-x-3 gap-y-0.5">
-				<span class="font-medium text-foreground">{formatPreviewDate(occ.startsAt, data.timezone)}</span>
-				<span class="text-muted-foreground">{formatPreviewTime(occ.startsAt, data.timezone)}–{formatPreviewTime(occ.endsAt, data.timezone)}</span>
-				<span class="text-muted-foreground">Cutoff {formatPreviewDate(occ.cutoffAt, data.timezone)}, {formatPreviewTime(occ.cutoffAt, data.timezone)}</span>
+				<span class="font-medium text-foreground"
+					>{formatPreviewDate(occ.startsAt, data.timezone)}</span
+				>
+				<span class="text-muted-foreground"
+					>{formatPreviewTime(occ.startsAt, data.timezone)}–{formatPreviewTime(
+						occ.endsAt,
+						data.timezone
+					)}</span
+				>
+				<span class="text-muted-foreground"
+					>Cutoff {formatPreviewDate(occ.cutoffAt, data.timezone)}, {formatPreviewTime(
+						occ.cutoffAt,
+						data.timezone
+					)}</span
+				>
 			</div>
 			<div class="flex shrink-0 items-center gap-1.5">
 				{#if isOccCancelled}
-					<span class="rounded-full bg-red-100 px-1.5 py-0.5 text-[10px] font-medium text-red-600">Cancelled</span>
+					<span class="rounded-full bg-red-100 px-1.5 py-0.5 text-[10px] font-medium text-red-600"
+						>Cancelled</span
+					>
 				{:else if isModified}
-					<span class="rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-medium text-amber-700">Modified</span>
+					<span
+						class="rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-medium text-amber-700"
+						>Modified</span
+					>
 				{/if}
-				<Icon icon="mdi:chevron-down" class="h-3.5 w-3.5 text-muted-foreground transition-transform {isExpanded ? 'rotate-180' : ''}" />
+				<Icon
+					icon="mdi:chevron-down"
+					class="h-3.5 w-3.5 text-muted-foreground transition-transform {isExpanded
+						? 'rotate-180'
+						: ''}"
+				/>
 			</div>
 		</button>
 		{#if isExpanded}
-			<div class="border-t border-gray-100 px-3 pb-3 pt-2">
+			<div class="border-t border-gray-100 px-3 pt-2 pb-3">
 				{#if occurrenceError && occurrenceSavingId === occ.id}
 					<p class="mb-2 text-xs text-destructive">{occurrenceError}</p>
 				{/if}
-				<form method="post" action="?/updateOccurrence" use:enhance={() => handleOccurrenceEnhance(occ.id)} autocomplete="off">
+				<form
+					method="post"
+					action="?/updateOccurrence"
+					use:enhance={() => handleOccurrenceEnhance(occ.id)}
+					autocomplete="off"
+				>
 					<input type="hidden" name="occurrenceId" value={occ.id} />
 					{#if isOccCancelled}
-						<p class="mb-3 text-xs text-muted-foreground">This date is cancelled and hidden from the customer slot selector.</p>
+						<p class="mb-3 text-xs text-muted-foreground">
+							This date is cancelled and hidden from the customer slot selector.
+						</p>
 						<input type="hidden" name="isCancelled" value="false" />
 						<input type="hidden" name="maxOrders" value="" />
 						<input type="hidden" name="notes" value="" />
-						<button type="submit" class="rounded-md border border-gray-200 bg-white px-2.5 py-1 text-xs font-medium text-gray-700 transition-colors hover:bg-gray-50">Restore this date</button>
+						<button
+							type="submit"
+							class="rounded-md border border-gray-200 bg-white px-2.5 py-1 text-xs font-medium text-gray-700 transition-colors hover:bg-gray-50"
+							>Restore this date</button
+						>
 					{:else}
 						<div class="space-y-3">
 							<label class="flex cursor-pointer items-center gap-2">
-								<input type="checkbox" name="isCancelled" value="true" class="h-3.5 w-3.5 rounded" />
+								<input
+									type="checkbox"
+									name="isCancelled"
+									value="true"
+									class="h-3.5 w-3.5 rounded"
+								/>
 								<span class="text-xs text-foreground">Cancel this date</span>
 							</label>
 							<div>
-								<label class="mb-1 block text-xs font-medium text-muted-foreground" for="occ-cap-{occ.id}">Capacity override</label>
+								<label
+									class="mb-1 block text-xs font-medium text-muted-foreground"
+									for="occ-cap-{occ.id}">Capacity override</label
+								>
 								<input
 									id="occ-cap-{occ.id}"
 									type="number"
@@ -1343,31 +1394,46 @@
 									min="1"
 									value={occ.maxOrders ?? ''}
 									placeholder={tmpl.maxOrders ? String(tmpl.maxOrders) : 'No limit'}
-									class="w-24 rounded-md border border-gray-200 px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-green-500"
+									class="w-24 rounded-md border border-gray-200 px-2 py-1 text-xs focus:ring-1 focus:ring-green-500 focus:outline-none"
 								/>
-								<p class="mt-0.5 text-[10px] text-muted-foreground">Template default: {tmpl.maxOrders ? `${tmpl.maxOrders} orders` : 'No cap'}</p>
+								<p class="mt-0.5 text-[10px] text-muted-foreground">
+									Template default: {tmpl.maxOrders ? `${tmpl.maxOrders} orders` : 'No cap'}
+								</p>
 							</div>
 							<div>
-								<label class="mb-1 block text-xs font-medium text-muted-foreground" for="occ-notes-{occ.id}">Note for customers</label>
+								<label
+									class="mb-1 block text-xs font-medium text-muted-foreground"
+									for="occ-notes-{occ.id}">Note for customers</label
+								>
 								<textarea
 									id="occ-notes-{occ.id}"
 									name="notes"
 									maxlength="500"
 									rows="2"
 									placeholder="E.g. Pickup at side door this week"
-									class="w-full resize-none rounded-md border border-gray-200 px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-green-500"
-								>{occ.notes ?? ''}</textarea>
-								<p class="mt-0.5 text-[10px] text-muted-foreground">Shown to customers in the slot selector for this date only. Max 500 characters.</p>
+									class="w-full resize-none rounded-md border border-gray-200 px-2 py-1 text-xs focus:ring-1 focus:ring-green-500 focus:outline-none"
+									>{occ.notes ?? ''}</textarea
+								>
+								<p class="mt-0.5 text-[10px] text-muted-foreground">
+									Shown to customers in the slot selector for this date only. Max 500 characters.
+								</p>
 							</div>
 							<div class="flex items-center gap-2">
-								<button type="submit" class="rounded-md bg-green-600 px-2.5 py-1 text-xs font-medium text-white transition-colors hover:bg-green-700">
+								<button
+									type="submit"
+									class="rounded-md bg-green-600 px-2.5 py-1 text-xs font-medium text-white transition-colors hover:bg-green-700"
+								>
 									{occurrenceSavingId === occ.id ? 'Saving…' : 'Save changes'}
 								</button>
 								<button
 									type="button"
-									onclick={() => { expandedOccurrences.set(occ.id, false); occurrenceError = null; }}
+									onclick={() => {
+										expandedOccurrences.set(occ.id, false);
+										occurrenceError = null;
+									}}
 									class="rounded-md border border-gray-200 px-2.5 py-1 text-xs font-medium text-gray-600 transition-colors hover:bg-gray-50"
-								>Cancel</button>
+									>Cancel</button
+								>
 							</div>
 						</div>
 					{/if}
@@ -1383,16 +1449,22 @@
 			Upcoming windows — next 6
 		</p>
 		{#if previewDays.length === 0}
-			<p class="text-xs text-muted-foreground">Select at least one day to see upcoming occurrences.</p>
+			<p class="text-xs text-muted-foreground">
+				Select at least one day to see upcoming occurrences.
+			</p>
 		{:else if !previewStartTime || !previewEndTime || previewEndTime <= previewStartTime}
-			<p class="text-xs text-muted-foreground">Set valid start and end times to see upcoming occurrences.</p>
+			<p class="text-xs text-muted-foreground">
+				Set valid start and end times to see upcoming occurrences.
+			</p>
 		{:else if occurrencePreview.length === 0}
 			<p class="text-xs text-muted-foreground">No upcoming occurrences found.</p>
 		{:else}
 			<div class="space-y-1.5">
 				{#each occurrencePreview as occ (occ.startsAt.toISOString())}
 					<div class="grid grid-cols-3 gap-2 text-xs">
-						<span class="font-medium text-foreground">{formatPreviewDate(occ.startsAt, data.timezone)}</span>
+						<span class="font-medium text-foreground"
+							>{formatPreviewDate(occ.startsAt, data.timezone)}</span
+						>
 						<span class="text-muted-foreground"
 							>{formatPreviewTime(occ.startsAt, data.timezone)}–{formatPreviewTime(
 								occ.endsAt,

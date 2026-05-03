@@ -34,7 +34,7 @@
 		</div>
 
 		{#if data.invalid}
-			<div class="rounded-2xl border  bg-background p-8 text-center shadow-sm">
+			<div class="rounded-2xl border bg-background p-8 text-center shadow-sm">
 				<p class="mb-2 text-2xl">🔗</p>
 				<h2 class="mb-1 text-lg font-semibold text-foreground">Invalid invite</h2>
 				<p class="text-sm text-muted-foreground">This invite link is not valid.</p>
@@ -43,7 +43,7 @@
 				>
 			</div>
 		{:else if data.expired}
-			<div class="rounded-2xl border  bg-background p-8 text-center shadow-sm">
+			<div class="rounded-2xl border bg-background p-8 text-center shadow-sm">
 				<p class="mb-2 text-2xl">⏰</p>
 				<h2 class="mb-1 text-lg font-semibold text-foreground">Invite expired</h2>
 				<p class="text-sm text-muted-foreground">
@@ -54,7 +54,7 @@
 				>
 			</div>
 		{:else if data.alreadyAccepted}
-			<div class="rounded-2xl border  bg-background p-8 text-center shadow-sm">
+			<div class="rounded-2xl border bg-background p-8 text-center shadow-sm">
 				<p class="mb-2 text-2xl">✅</p>
 				<h2 class="mb-1 text-lg font-semibold text-foreground">Already accepted</h2>
 				<p class="text-sm text-muted-foreground">This invite has already been used.</p>
@@ -64,7 +64,7 @@
 				>
 			</div>
 		{:else if data.wrongEmail}
-			<div class="rounded-2xl border  bg-background p-8 text-center shadow-sm">
+			<div class="rounded-2xl border bg-background p-8 text-center shadow-sm">
 				<p class="mb-2 text-2xl">👤</p>
 				<h2 class="mb-1 text-lg font-semibold text-foreground">Wrong account</h2>
 				<p class="mb-1 text-sm text-muted-foreground">
@@ -79,7 +79,7 @@
 				>
 			</div>
 		{:else if data.invite}
-			<div class="rounded-2xl border  bg-background p-8 shadow-sm">
+			<div class="rounded-2xl border bg-background p-8 shadow-sm">
 				<!-- Invite summary -->
 				<div class="mb-6 text-center">
 					<h2 class="text-lg font-semibold text-foreground">You've been invited</h2>
@@ -138,14 +138,16 @@
 					<!-- Sign in form -->
 					<form method="post" action="?/signInAndAccept" use:enhance class="space-y-3">
 						<div>
-							<label class="mb-1 block text-xs font-medium text-muted-foreground" for="email">Email</label>
+							<label class="mb-1 block text-xs font-medium text-muted-foreground" for="email"
+								>Email</label
+							>
 							<input
 								id="email"
 								name="email"
 								type="email"
 								required
 								value={data.invite.email}
-								class="w-full rounded-lg border  px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
+								class="w-full rounded-lg border px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
 							/>
 						</div>
 						<div>
@@ -158,7 +160,7 @@
 								type="password"
 								required
 								placeholder="••••••••"
-								class="w-full rounded-lg border  px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
+								class="w-full rounded-lg border px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
 							/>
 						</div>
 						<Button type="submit" variant="default" class="w-full">
@@ -179,14 +181,16 @@
 					<!-- Sign up form -->
 					<form method="post" action="?/signUpAndAccept" use:enhance class="space-y-3">
 						<div>
-							<label class="mb-1 block text-xs font-medium text-muted-foreground" for="name">Name</label>
+							<label class="mb-1 block text-xs font-medium text-muted-foreground" for="name"
+								>Name</label
+							>
 							<input
 								id="name"
 								name="name"
 								type="text"
 								required
 								placeholder="Your name"
-								class="w-full rounded-lg border  px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
+								class="w-full rounded-lg border px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
 							/>
 						</div>
 						<div>
@@ -199,12 +203,13 @@
 								type="email"
 								required
 								value={data.invite.email}
-								class="w-full rounded-lg border  px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
+								class="w-full rounded-lg border px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
 							/>
 						</div>
 						<div>
-							<label class="mb-1 block text-xs font-medium text-muted-foreground" for="signup-password"
-								>Password</label
+							<label
+								class="mb-1 block text-xs font-medium text-muted-foreground"
+								for="signup-password">Password</label
 							>
 							<input
 								id="signup-password"
@@ -212,7 +217,7 @@
 								type="password"
 								required
 								placeholder="••••••••"
-								class="w-full rounded-lg border  px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
+								class="w-full rounded-lg border px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
 							/>
 						</div>
 						<Button type="submit" variant="default" class="w-full">

@@ -38,7 +38,6 @@
 		--sidebar-border: oklch(0.922 0 0);
 		--sidebar-ring: oklch(0.708 0 0);
 	}
-
 }
 
 @theme inline {
@@ -76,12 +75,20 @@
 }
 
 @keyframes accordion-down {
-	from { height: 0; }
-	to { height: var(--bits-accordion-content-height); }
+	from {
+		height: 0;
+	}
+	to {
+		height: var(--bits-accordion-content-height);
+	}
 }
 @keyframes accordion-up {
-	from { height: var(--bits-accordion-content-height); }
-	to { height: 0; }
+	from {
+		height: var(--bits-accordion-content-height);
+	}
+	to {
+		height: 0;
+	}
 }
 
 @theme inline {

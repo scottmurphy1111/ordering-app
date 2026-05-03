@@ -28,7 +28,10 @@ export const load: PageServerLoad = async ({ locals }) => {
 		: [];
 
 	const [memberCountRow] = hasLoyalty
-		? await db.select({ value: count() }).from(loyaltyAccounts).where(eq(loyaltyAccounts.vendorId, vendorId))
+		? await db
+				.select({ value: count() })
+				.from(loyaltyAccounts)
+				.where(eq(loyaltyAccounts.vendorId, vendorId))
 		: [{ value: 0 }];
 
 	const members = hasLoyalty
@@ -68,7 +71,8 @@ export const actions: Actions = {
 
 		const amount = parseFloat(amountStr ?? '');
 		if (isNaN(amount) || amount <= 0) return fail(400, { error: 'Invalid amount.' });
-		if (type === 'percent' && amount > 100) return fail(400, { error: 'Percent cannot exceed 100.' });
+		if (type === 'percent' && amount > 100)
+			return fail(400, { error: 'Percent cannot exceed 100.' });
 
 		const amountStored = type === 'percent' ? Math.round(amount) : Math.round(amount * 100);
 		const minOrderAmount = Math.round(parseFloat(minOrderStr ?? '0') * 100) || 0;
@@ -80,7 +84,16 @@ export const actions: Actions = {
 		});
 		if (existing) return fail(400, { error: `Code "${code}" already exists.` });
 
-		await db.insert(promoCodes).values({ vendorId, code, description, type, amount: amountStored, minOrderAmount, maxUses, expiresAt });
+		await db.insert(promoCodes).values({
+			vendorId,
+			code,
+			description,
+			type,
+			amount: amountStored,
+			minOrderAmount,
+			maxUses,
+			expiresAt
+		});
 		return { success: true };
 	},
 
@@ -90,7 +103,10 @@ export const actions: Actions = {
 		const id = parseInt(fd.get('id')?.toString() ?? '');
 		const isActive = fd.get('isActive') === 'true';
 		if (isNaN(id)) return fail(400, { error: 'Invalid ID.' });
-		await db.update(promoCodes).set({ isActive }).where(and(eq(promoCodes.id, id), eq(promoCodes.vendorId, vendorId)));
+		await db
+			.update(promoCodes)
+			.set({ isActive })
+			.where(and(eq(promoCodes.id, id), eq(promoCodes.vendorId, vendorId)));
 		return { success: true };
 	},
 
@@ -99,7 +115,9 @@ export const actions: Actions = {
 		const fd = await request.formData();
 		const id = parseInt(fd.get('id')?.toString() ?? '');
 		if (isNaN(id)) return fail(400, { error: 'Invalid ID.' });
-		await db.delete(promoCodes).where(and(eq(promoCodes.id, id), eq(promoCodes.vendorId, vendorId)));
+		await db
+			.delete(promoCodes)
+			.where(and(eq(promoCodes.id, id), eq(promoCodes.vendorId, vendorId)));
 		return { success: true };
 	},
 
@@ -124,11 +142,16 @@ export const actions: Actions = {
 		const redeemAt = parseInt(fd.get('redeemAt')?.toString() ?? '100');
 		const redeemValueDollars = parseFloat(fd.get('redeemValue')?.toString() ?? '5');
 
-		if (isNaN(stampsPerOrder) || stampsPerOrder < 1) return fail(400, { error: 'Stamps per order must be at least 1.' });
-		if (isNaN(rewardAt) || rewardAt < 2) return fail(400, { error: 'Reward after must be at least 2.' });
-		if (isNaN(pointsPerDollar) || pointsPerDollar < 1) return fail(400, { error: 'Points per dollar must be at least 1.' });
-		if (isNaN(redeemAt) || redeemAt < 1) return fail(400, { error: 'Redeem at must be at least 1.' });
-		if (isNaN(redeemValueDollars) || redeemValueDollars <= 0) return fail(400, { error: 'Redeem value must be greater than 0.' });
+		if (isNaN(stampsPerOrder) || stampsPerOrder < 1)
+			return fail(400, { error: 'Stamps per order must be at least 1.' });
+		if (isNaN(rewardAt) || rewardAt < 2)
+			return fail(400, { error: 'Reward after must be at least 2.' });
+		if (isNaN(pointsPerDollar) || pointsPerDollar < 1)
+			return fail(400, { error: 'Points per dollar must be at least 1.' });
+		if (isNaN(redeemAt) || redeemAt < 1)
+			return fail(400, { error: 'Redeem at must be at least 1.' });
+		if (isNaN(redeemValueDollars) || redeemValueDollars <= 0)
+			return fail(400, { error: 'Redeem value must be greater than 0.' });
 
 		const loyaltyConfig: LoyaltyConfig = {
 			enabled: true,
@@ -138,7 +161,10 @@ export const actions: Actions = {
 		};
 
 		const currentSettings = (vendorRecord?.settings as Record<string, unknown>) ?? {};
-		await db.update(vendor).set({ settings: { ...currentSettings, loyalty: loyaltyConfig }, updatedAt: new Date() }).where(eq(vendor.id, vendorId));
+		await db
+			.update(vendor)
+			.set({ settings: { ...currentSettings, loyalty: loyaltyConfig }, updatedAt: new Date() })
+			.where(eq(vendor.id, vendorId));
 		return { success: true };
 	},
 
@@ -150,10 +176,13 @@ export const actions: Actions = {
 		});
 		const currentSettings = (vendorRecord?.settings as Record<string, unknown>) ?? {};
 		const currentLoyalty = (currentSettings.loyalty as LoyaltyConfig) ?? DEFAULT_LOYALTY_CONFIG;
-		await db.update(vendor).set({
-			settings: { ...currentSettings, loyalty: { ...currentLoyalty, enabled: false } },
-			updatedAt: new Date()
-		}).where(eq(vendor.id, vendorId));
+		await db
+			.update(vendor)
+			.set({
+				settings: { ...currentSettings, loyalty: { ...currentLoyalty, enabled: false } },
+				updatedAt: new Date()
+			})
+			.where(eq(vendor.id, vendorId));
 		return { success: true };
 	}
 };

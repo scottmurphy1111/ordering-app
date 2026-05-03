@@ -29,12 +29,6 @@
 		);
 	}
 
-	function fmtPct(val: number | null) {
-		if (val === null) return null;
-		const sign = val >= 0 ? '+' : '';
-		return `${sign}${val.toFixed(1)}%`;
-	}
-
 	const maxDailyRevenue = $derived(Math.max(...dailyData.map((d) => d.revenue), 1));
 	const totalStatusCount = $derived(statusBreakdown.reduce((s, r) => s + r.count, 0));
 	const dataPointsWithRevenue = $derived(dailyData.filter((d) => d.revenue > 0).length);
@@ -88,7 +82,8 @@
 	);
 
 	const isUncategorized = $derived(
-		(revenueByCategory ?? []).length > 0 && (revenueByCategory ?? [])[0].category === 'Uncategorized'
+		(revenueByCategory ?? []).length > 0 &&
+			(revenueByCategory ?? [])[0].category === 'Uncategorized'
 	);
 
 	// ── Peak hours heatmap ───────────────────────────────────────────
@@ -135,9 +130,7 @@
 					<a
 						href={resolve(d === 30 ? '/dashboard/analytics' : `/dashboard/analytics?range=${d}`)}
 						class="flex items-center gap-1.5 px-4 py-2 text-sm font-medium transition-colors
-							{rangeDays === d
-							? 'bg-gray-900 text-white'
-							: 'bg-white text-gray-500 hover:bg-gray-50'}"
+							{rangeDays === d ? 'bg-gray-900 text-white' : 'bg-white text-gray-500 hover:bg-gray-50'}"
 					>
 						<Icon icon="mdi:calendar-outline" class="h-3.5 w-3.5" />
 						{label}
@@ -145,6 +138,7 @@
 				{/each}
 			</div>
 			<button
+				type="button"
 				class="flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-600 transition-colors hover:bg-gray-50"
 			>
 				<Icon icon="mdi:download-outline" class="h-3.5 w-3.5" />
@@ -224,7 +218,9 @@
 							<div>
 								<div class="mb-1 flex items-center justify-between gap-2">
 									<div class="flex min-w-0 items-center gap-2">
-										<span class="w-4 shrink-0 text-xs font-bold text-muted-foreground">#{i + 1}</span>
+										<span class="w-4 shrink-0 text-xs font-bold text-muted-foreground"
+											>#{i + 1}</span
+										>
 										<span class="truncate text-sm font-medium text-foreground">{item.name}</span>
 									</div>
 									<div class="flex shrink-0 items-center gap-3 text-xs text-muted-foreground">
@@ -242,10 +238,16 @@
 						{/each}
 					</div>
 					{#if topItems.length < 5}
-						<p class="mt-3 text-xs text-gray-400">Only {topItems.length} {topItems.length === 1 ? 'item' : 'items'} ordered this period</p>
+						<p class="mt-3 text-xs text-gray-400">
+							Only {topItems.length}
+							{topItems.length === 1 ? 'item' : 'items'} ordered this period
+						</p>
 					{/if}
 					<div class="mt-3 border-t border-gray-100 pt-3">
-						<a href={resolve('/dashboard/catalog/items')} class="text-sm text-green-600 hover:underline">
+						<a
+							href={resolve('/dashboard/catalog/items')}
+							class="text-sm text-green-600 hover:underline"
+						>
 							View all catalog items →
 						</a>
 					</div>
@@ -381,19 +383,33 @@
 													{#if cell.count > 0}
 														{#if di < 3}
 															<!-- top rows: tooltip below to avoid clipping -->
-															<div class="pointer-events-none absolute top-full left-1/2 z-10 mt-1.5 hidden -translate-x-1/2 flex-col items-center group-hover:flex">
+															<div
+																class="pointer-events-none absolute top-full left-1/2 z-10 mt-1.5 hidden -translate-x-1/2 flex-col items-center group-hover:flex"
+															>
 																<div class="-mb-1 h-1.5 w-1.5 rotate-45 bg-gray-900"></div>
-																<div class="rounded-md bg-gray-900 px-2 py-1 text-xs whitespace-nowrap text-white shadow-lg">
+																<div
+																	class="rounded-md bg-gray-900 px-2 py-1 text-xs whitespace-nowrap text-white shadow-lg"
+																>
 																	<p>{DOW_LABELS[di]} {fmtHour(h)}</p>
-																	<p class="text-muted-foreground">{cell.count} {cell.count === 1 ? 'order' : 'orders'}</p>
+																	<p class="text-muted-foreground">
+																		{cell.count}
+																		{cell.count === 1 ? 'order' : 'orders'}
+																	</p>
 																</div>
 															</div>
 														{:else}
 															<!-- bottom rows: tooltip above -->
-															<div class="pointer-events-none absolute bottom-full left-1/2 z-10 mb-1.5 hidden -translate-x-1/2 flex-col items-center group-hover:flex">
-																<div class="rounded-md bg-gray-900 px-2 py-1 text-xs whitespace-nowrap text-white shadow-lg">
+															<div
+																class="pointer-events-none absolute bottom-full left-1/2 z-10 mb-1.5 hidden -translate-x-1/2 flex-col items-center group-hover:flex"
+															>
+																<div
+																	class="rounded-md bg-gray-900 px-2 py-1 text-xs whitespace-nowrap text-white shadow-lg"
+																>
 																	<p>{DOW_LABELS[di]} {fmtHour(h)}</p>
-																	<p class="text-muted-foreground">{cell.count} {cell.count === 1 ? 'order' : 'orders'}</p>
+																	<p class="text-muted-foreground">
+																		{cell.count}
+																		{cell.count === 1 ? 'order' : 'orders'}
+																	</p>
 																</div>
 																<div class="-mt-1 h-1.5 w-1.5 rotate-45 bg-gray-900"></div>
 															</div>
@@ -405,7 +421,9 @@
 									</div>
 								{/each}
 								<!-- Legend -->
-								<div class="mt-3 flex items-center justify-end gap-2 text-[10px] text-muted-foreground">
+								<div
+									class="mt-3 flex items-center justify-end gap-2 text-[10px] text-muted-foreground"
+								>
 									<span>Fewer</span>
 									<div class="flex gap-0.5">
 										{#each [0.08, 0.25, 0.45, 0.65, 1] as op (op)}
@@ -436,7 +454,7 @@
 						{:else}
 							<div class="space-y-4">
 								<div>
-									<div class="flex items-end gap-2 mb-1">
+									<div class="mb-1 flex items-end gap-2">
 										<p class="text-3xl font-bold text-gray-900">{customerRetention.returnRate}%</p>
 										<p class="mb-1 text-sm text-gray-500">return rate</p>
 									</div>
@@ -509,7 +527,9 @@
 								{#each revenueByCategory as cat (cat.category)}
 									<div>
 										<div class="mb-1 flex items-center justify-between gap-2">
-											<span class="truncate text-sm font-medium text-foreground">{cat.category}</span>
+											<span class="truncate text-sm font-medium text-foreground"
+												>{cat.category}</span
+											>
 											<div class="flex shrink-0 items-center gap-3 text-xs text-muted-foreground">
 												<span>{cat.totalQty} sold</span>
 												<span class="font-medium text-foreground">{fmt(cat.totalRevenue)}</span>
@@ -547,11 +567,7 @@
 							which items actually drive revenue.
 						</p>
 						<ul class="mb-6 space-y-2 text-left">
-							{#each [
-								{ icon: 'mdi:clock-outline', label: 'Peak hours heatmap — find your busiest day/time combinations' },
-								{ icon: 'mdi:account-group-outline', label: 'Customer retention — new vs. returning, return rate over time' },
-								{ icon: 'mdi:trophy-outline', label: 'Top items by revenue vs. volume — they rank differently' }
-							] as feat (feat.label)}
+							{#each [{ icon: 'mdi:clock-outline', label: 'Peak hours heatmap — find your busiest day/time combinations' }, { icon: 'mdi:account-group-outline', label: 'Customer retention — new vs. returning, return rate over time' }, { icon: 'mdi:trophy-outline', label: 'Top items by revenue vs. volume — they rank differently' }] as feat (feat.label)}
 								<li class="flex items-start gap-2.5 text-sm text-muted-foreground">
 									<Icon icon={feat.icon} class="mt-0.5 h-4 w-4 shrink-0 text-primary/70" />
 									{feat.label}

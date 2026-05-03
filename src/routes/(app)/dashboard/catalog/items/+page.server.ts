@@ -6,7 +6,11 @@ import { fail, redirect } from '@sveltejs/kit';
 import { catalogCategories, catalogItems } from '$lib/server/db/schema';
 import { hasAddon, type AddonItem } from '$lib/billing';
 import { vendor } from '$lib/server/db/vendor';
-import { CatalogItemError, createCatalogItem, updateCatalogItem } from '$lib/server/catalog/itemActions';
+import {
+	CatalogItemError,
+	createCatalogItem,
+	updateCatalogItem
+} from '$lib/server/catalog/itemActions';
 
 export const load: PageServerLoad = async (event) => {
 	const vendorId = requireVendor(event);
@@ -50,7 +54,10 @@ export const load: PageServerLoad = async (event) => {
 	});
 
 	const [totalCountResult, unfilteredCountResult] = await Promise.all([
-		db.select({ count: sql<number>`count(*)` }).from(catalogItems).where(whereClause),
+		db
+			.select({ count: sql<number>`count(*)` })
+			.from(catalogItems)
+			.where(whereClause),
 		db
 			.select({ count: sql<number>`count(*)` })
 			.from(catalogItems)
@@ -141,7 +148,12 @@ export const actions: Actions = {
 		const vendorId = locals.vendorId!;
 		const formData = await request.formData();
 		const id = parseInt(formData.get('id')?.toString() ?? '');
-		const status = formData.get('status')?.toString() as 'draft' | 'available' | 'sold_out' | 'hidden' | undefined;
+		const status = formData.get('status')?.toString() as
+			| 'draft'
+			| 'available'
+			| 'sold_out'
+			| 'hidden'
+			| undefined;
 		if (isNaN(id) || !status) return fail(400, { error: 'Invalid request' });
 		await db
 			.update(catalogItems)
@@ -155,7 +167,9 @@ export const actions: Actions = {
 		const formData = await request.formData();
 		const id = parseInt(formData.get('id')?.toString() ?? '');
 		if (isNaN(id)) return fail(400, { error: 'Invalid ID' });
-		await db.delete(catalogItems).where(and(eq(catalogItems.id, id), eq(catalogItems.vendorId, vendorId)));
+		await db
+			.delete(catalogItems)
+			.where(and(eq(catalogItems.id, id), eq(catalogItems.vendorId, vendorId)));
 		return { deleted: true };
 	},
 

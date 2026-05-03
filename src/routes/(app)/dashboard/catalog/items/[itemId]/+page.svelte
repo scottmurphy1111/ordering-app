@@ -1,13 +1,13 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import { confirmDialog } from '$lib/confirm.svelte';
-	import type { PageData, ActionData } from './$types';
+	import type { PageData } from './$types';
 	import { resolve } from '$app/paths';
 	import Icon from '@iconify/svelte';
 	import { Button } from '$lib/components/ui/button';
 	import CatalogItemForm from '$lib/components/CatalogItemForm.svelte';
 
-	let { data, form }: { data: PageData; form: ActionData } = $props();
+	let { data }: { data: PageData } = $props();
 
 	const itemModifiers = $derived(
 		data.item.modifiers

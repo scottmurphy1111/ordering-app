@@ -1,15 +1,14 @@
 <script lang="ts">
-	import { resolve } from'$app/paths';
-	import { page } from'$app/state';
-	import Icon from'@iconify/svelte';
-	import QRCode from'qrcode';
-	import { hasAddon } from'$lib/billing';
-	import { Button } from'$lib/components/ui/button';
-	import { Badge } from'$lib/components/ui/badge';
-	import { Card, CardContent } from'$lib/components/ui/card';
+	import { resolve } from '$app/paths';
+	import { page } from '$app/state';
+	import Icon from '@iconify/svelte';
+	import QRCode from 'qrcode';
+	import { Button } from '$lib/components/ui/button';
+	import { Badge } from '$lib/components/ui/badge';
+	import { Card, CardContent } from '$lib/components/ui/card';
 
 	const vendor = $derived(page.data.vendor);
-	const catalogUrl = $derived(vendor?.slug ? `${page.url.origin}/${vendor.slug}/catalog` :'');
+	const catalogUrl = $derived(vendor?.slug ? `${page.url.origin}/${vendor.slug}/catalog` : '');
 
 	// ── Menu QR ──────────────────────────────────────────────────────────────
 	const qrDataUrl = $derived(
@@ -17,7 +16,7 @@
 			? QRCode.toDataURL(catalogUrl, {
 					width: 256,
 					margin: 2,
-					color: { dark:'#111827', light:'#ffffff' }
+					color: { dark: '#111827', light: '#ffffff' }
 				})
 			: Promise.resolve('')
 	);
@@ -150,7 +149,8 @@
 		const qrUrl = await qrDataUrl;
 		if (!qrUrl || !vendor) return;
 
-		const w = 1200, h = 628;
+		const w = 1200,
+			h = 628;
 		const canvas = document.createElement('canvas');
 		canvas.width = w;
 		canvas.height = h;
@@ -182,7 +182,9 @@
 					ctx.drawImage(logoImg, 60, leftContentY, logoW, maxH);
 					leftContentY += maxH + 32;
 				}
-			} catch { /* continue */ }
+			} catch {
+				/* continue */
+			}
 		}
 
 		// Restaurant name
@@ -240,8 +242,8 @@
 	// ── Embed snippet ─────────────────────────────────────────────────────────
 	const embedSnippet = $derived(
 		catalogUrl
-			? `<iframe\n  src="${catalogUrl}"\n  width="100%"\n  height="800"\n  frameborder="0"\n  style="border: none; border-radius: 12px;"\n  title="${vendor?.name ??'Catalog'}"\n></iframe>`
-			:''
+			? `<iframe\n  src="${catalogUrl}"\n  width="100%"\n  height="800"\n  frameborder="0"\n  style="border: none; border-radius: 12px;"\n  title="${vendor?.name ?? 'Catalog'}"\n></iframe>`
+			: ''
 	);
 
 	let embedCopied = $state(false);
@@ -273,58 +275,70 @@
 		{#if vendor?.slug}
 			<Card class="shadow-sm">
 				<CardContent>
-				<div class="mb-5 flex items-center gap-3">
-					<div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10">
-						<Icon icon="mdi:qrcode" class="h-5 w-5 text-primary" />
-					</div>
-					<div>
-						<h2 class="font-semibold text-foreground">Catalog QR Code</h2>
-						<p class="text-sm text-muted-foreground">
-							Print or share so customers can scan directly to your catalog.
-						</p>
-					</div>
-				</div>
-
-				<div class="flex flex-col items-start gap-6 sm:flex-row sm:items-center">
-					<div class="shrink-0 rounded-lg border bg-background p-2 shadow-sm">
-						{#await qrDataUrl}
-							<div class="flex h-40 w-40 items-center justify-center">
-								<Icon icon="mdi:loading" class="h-8 w-8 animate-spin text-muted-foreground/40" />
-							</div>
-						{:then dataUrl}
-							<img src={dataUrl} alt="QR code for {vendor.slug} catalog" class="h-40 w-40" />
-						{/await}
-					</div>
-
-					<div class="flex w-full min-w-0 flex-col gap-3 sm:w-auto">
+					<div class="mb-5 flex items-center gap-3">
+						<div
+							class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10"
+						>
+							<Icon icon="mdi:qrcode" class="h-5 w-5 text-primary" />
+						</div>
 						<div>
-							<p class="mb-1 text-xs font-medium tracking-wide text-muted-foreground uppercase">Catalog URL</p>
-							<div class="flex items-center gap-2">
-								<span
-									class="max-w-xs truncate rounded-md border bg-muted/50 px-3 py-1.5 font-mono text-sm text-muted-foreground"
+							<h2 class="font-semibold text-foreground">Catalog QR Code</h2>
+							<p class="text-sm text-muted-foreground">
+								Print or share so customers can scan directly to your catalog.
+							</p>
+						</div>
+					</div>
+
+					<div class="flex flex-col items-start gap-6 sm:flex-row sm:items-center">
+						<div class="shrink-0 rounded-lg border bg-background p-2 shadow-sm">
+							{#await qrDataUrl}
+								<div class="flex h-40 w-40 items-center justify-center">
+									<Icon icon="mdi:loading" class="h-8 w-8 animate-spin text-muted-foreground/40" />
+								</div>
+							{:then dataUrl}
+								<img src={dataUrl} alt="QR code for {vendor.slug} catalog" class="h-40 w-40" />
+							{/await}
+						</div>
+
+						<div class="flex w-full min-w-0 flex-col gap-3 sm:w-auto">
+							<div>
+								<p class="mb-1 text-xs font-medium tracking-wide text-muted-foreground uppercase">
+									Catalog URL
+								</p>
+								<div class="flex items-center gap-2">
+									<span
+										class="max-w-xs truncate rounded-md border bg-muted/50 px-3 py-1.5 font-mono text-sm text-muted-foreground"
+									>
+										{catalogUrl}
+									</span>
+									<Button
+										onclick={copyCatalogUrl}
+										variant="outline"
+										size="sm"
+										class="shrink-0 gap-1.5"
+									>
+										<Icon
+											icon={catalogUrlCopied ? 'mdi:check' : 'mdi:content-copy'}
+											class="h-4 w-4"
+										/>
+										{catalogUrlCopied ? 'Copied' : 'Copy'}
+									</Button>
+								</div>
+							</div>
+							<div class="flex gap-2">
+								<Button onclick={downloadCatalogQr} variant="default" class="gap-2">
+									<Icon icon="mdi:download" class="h-4 w-4" /> Download PNG
+								</Button>
+								<Button
+									href={resolve(`/${vendor.slug}/catalog` as `/${string}`)}
+									variant="outline"
+									class="gap-2"
 								>
-									{catalogUrl}
-								</span>
-								<Button onclick={copyCatalogUrl} variant="outline" size="sm" class="shrink-0 gap-1.5">
-									<Icon icon={catalogUrlCopied ?'mdi:check' :'mdi:content-copy'} class="h-4 w-4" />
-									{catalogUrlCopied ?'Copied' :'Copy'}
+									<Icon icon="mdi:open-in-new" class="h-4 w-4" /> Preview catalog
 								</Button>
 							</div>
 						</div>
-						<div class="flex gap-2">
-							<Button onclick={downloadCatalogQr} variant="default" class="gap-2">
-								<Icon icon="mdi:download" class="h-4 w-4" /> Download PNG
-							</Button>
-							<Button
-								href={resolve(`/${vendor.slug}/catalog` as `/${string}`)}
-								variant="outline"
-								class="gap-2"
-							>
-								<Icon icon="mdi:open-in-new" class="h-4 w-4" /> Preview catalog
-							</Button>
-						</div>
 					</div>
-				</div>
 				</CardContent>
 			</Card>
 		{/if}
@@ -359,8 +373,11 @@
 								{catalogUrl}
 							</span>
 							<Button onclick={copyCatalogUrl} variant="outline" size="sm" class="shrink-0 gap-1.5">
-								<Icon icon={catalogUrlCopied ?'mdi:check' :'mdi:content-copy'} class="h-3.5 w-3.5" />
-								{catalogUrlCopied ?'Copied' :'Copy URL'}
+								<Icon
+									icon={catalogUrlCopied ? 'mdi:check' : 'mdi:content-copy'}
+									class="h-3.5 w-3.5"
+								/>
+								{catalogUrlCopied ? 'Copied' : 'Copy URL'}
 							</Button>
 						</div>
 					</div>
@@ -368,46 +385,56 @@
 			</div>
 		{/if}
 
-
 		<!-- ── Embed snippet ──────────────────────────────────────────────────── -->
 		{#if vendor?.slug}
-			{@const isPro = vendor.subscriptionTier ==='pro'}
+			{@const isPro = vendor.subscriptionTier === 'pro'}
 			<Card class="shadow-sm">
 				<CardContent>
-				<div class="mb-5 flex items-center gap-3">
-					<div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10">
-						<Icon icon="mdi:code-tags" class="h-5 w-5 text-primary" />
+					<div class="mb-5 flex items-center gap-3">
+						<div
+							class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10"
+						>
+							<Icon icon="mdi:code-tags" class="h-5 w-5 text-primary" />
+						</div>
+						<div>
+							<h2 class="font-semibold text-foreground">Embed on Your Website</h2>
+							<p class="text-sm text-muted-foreground">
+								Paste this snippet into any webpage to embed your catalog.
+							</p>
+						</div>
 					</div>
-					<div>
-						<h2 class="font-semibold text-foreground">Embed on Your Website</h2>
-						<p class="text-sm text-muted-foreground">
-							Paste this snippet into any webpage to embed your catalog.
-						</p>
-					</div>
-				</div>
 
-				{#if isPro}
-					<div class="relative rounded-lg border bg-muted/50">
-						<pre
-							class="overflow-x-auto px-4 py-3 font-mono text-xs text-muted-foreground">{embedSnippet}</pre>
-						<Button onclick={copyEmbed} variant="outline" size="sm" class="absolute top-2 right-2 gap-1.5">
-							<Icon icon={embedCopied ?'mdi:check' :'mdi:content-copy'} class="h-3.5 w-3.5" />
-							{embedCopied ?'Copied' :'Copy'}
-						</Button>
-					</div>
-					<p class="mt-2 text-xs text-muted-foreground">
-						Tip: adjust the <code>height</code> value to fit your page layout.
-					</p>
-				{:else}
-					<div class="rounded-lg border border-dashed bg-muted/50 px-5 py-8 text-center">
-						<Icon icon="mdi:lock-outline" class="mx-auto mb-2 h-6 w-6 text-muted-foreground" />
-						<p class="text-sm font-medium text-muted-foreground">Website embed is a Pro feature</p>
-						<p class="mt-1 text-sm text-muted-foreground">Upgrade to Pro to embed your catalog on any website.</p>
-						<Button href={resolve('/dashboard/account/billing')} variant="default" class="mt-4">
-							Upgrade to Pro
-						</Button>
-					</div>
-				{/if}
+					{#if isPro}
+						<div class="relative rounded-lg border bg-muted/50">
+							<pre
+								class="overflow-x-auto px-4 py-3 font-mono text-xs text-muted-foreground">{embedSnippet}</pre>
+							<Button
+								onclick={copyEmbed}
+								variant="outline"
+								size="sm"
+								class="absolute top-2 right-2 gap-1.5"
+							>
+								<Icon icon={embedCopied ? 'mdi:check' : 'mdi:content-copy'} class="h-3.5 w-3.5" />
+								{embedCopied ? 'Copied' : 'Copy'}
+							</Button>
+						</div>
+						<p class="mt-2 text-xs text-muted-foreground">
+							Tip: adjust the <code>height</code> value to fit your page layout.
+						</p>
+					{:else}
+						<div class="rounded-lg border border-dashed bg-muted/50 px-5 py-8 text-center">
+							<Icon icon="mdi:lock-outline" class="mx-auto mb-2 h-6 w-6 text-muted-foreground" />
+							<p class="text-sm font-medium text-muted-foreground">
+								Website embed is a Pro feature
+							</p>
+							<p class="mt-1 text-sm text-muted-foreground">
+								Upgrade to Pro to embed your catalog on any website.
+							</p>
+							<Button href={resolve('/dashboard/account/billing')} variant="default" class="mt-4">
+								Upgrade to Pro
+							</Button>
+						</div>
+					{/if}
 				</CardContent>
 			</Card>
 		{/if}
@@ -423,7 +450,9 @@
 						<h2 class="font-semibold text-muted-foreground">Printable Catalog</h2>
 						<Badge class="bg-muted text-muted-foreground">Coming soon</Badge>
 					</div>
-					<p class="text-sm text-muted-foreground">Generate a print-ready PDF of your full catalog.</p>
+					<p class="text-sm text-muted-foreground">
+						Generate a print-ready PDF of your full catalog.
+					</p>
 				</div>
 			</div>
 		</div>
@@ -433,7 +462,9 @@
 			<Card class="shadow-sm">
 				<CardContent>
 					<div class="mb-5 flex items-center gap-3">
-						<div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10">
+						<div
+							class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10"
+						>
 							<Icon icon="mdi:share-variant-outline" class="h-5 w-5 text-primary" />
 						</div>
 						<div>
@@ -462,13 +493,25 @@
 								class="relative mx-auto h-48 w-48 overflow-hidden rounded-xl shadow-md"
 								style="background-color: {bgColor};"
 							>
-								<div class="absolute inset-x-0 top-0 h-4" style="background-color: {acColor};"></div>
-								<div class="absolute inset-x-0 bottom-0 h-3" style="background-color: {acColor};"></div>
-								<div class="flex h-full flex-col items-center justify-center gap-1.5 px-3 pb-3 pt-5">
+								<div
+									class="absolute inset-x-0 top-0 h-4"
+									style="background-color: {acColor};"
+								></div>
+								<div
+									class="absolute inset-x-0 bottom-0 h-3"
+									style="background-color: {acColor};"
+								></div>
+								<div
+									class="flex h-full flex-col items-center justify-center gap-1.5 px-3 pt-5 pb-3"
+								>
 									{#if vendor.logoUrl}
-										<img src={vendor.logoUrl} alt={vendor.name} class="max-h-8 max-w-24 object-contain" />
+										<img
+											src={vendor.logoUrl}
+											alt={vendor.name}
+											class="max-h-8 max-w-24 object-contain"
+										/>
 									{/if}
-									<p class="text-center text-sm font-bold leading-tight" style="color: {fgColor};">
+									<p class="text-center text-sm leading-tight font-bold" style="color: {fgColor};">
 										{vendor.name}
 									</p>
 									<p class="text-center text-[10px] font-medium" style="color: {acColor};">
@@ -479,7 +522,10 @@
 											{#if dataUrl}<img src={dataUrl} alt="QR" class="h-16 w-16" />{/if}
 										{/await}
 									</div>
-									<p class="truncate font-mono text-[7px] opacity-60" style="color: {fgColor}; max-width: 160px;">
+									<p
+										class="truncate font-mono text-[7px] opacity-60"
+										style="color: {fgColor}; max-width: 160px;"
+									>
 										{catalogUrl}
 									</p>
 								</div>
@@ -502,18 +548,39 @@
 								class="relative mx-auto overflow-hidden rounded-xl shadow-md"
 								style="background-color: {bgColor}; aspect-ratio: 1200/628;"
 							>
-								<div class="absolute inset-x-0 top-0 h-1.5" style="background-color: {acColor};"></div>
+								<div
+									class="absolute inset-x-0 top-0 h-1.5"
+									style="background-color: {acColor};"
+								></div>
 								<!-- Left content -->
-								<div class="absolute inset-y-0 left-0 flex flex-col justify-center px-4" style="width: 58%;">
+								<div
+									class="absolute inset-y-0 left-0 flex flex-col justify-center px-4"
+									style="width: 58%;"
+								>
 									{#if vendor.logoUrl}
-										<img src={vendor.logoUrl} alt={vendor.name} class="mb-1.5 max-h-6 max-w-20 object-contain" />
+										<img
+											src={vendor.logoUrl}
+											alt={vendor.name}
+											class="mb-1.5 max-h-6 max-w-20 object-contain"
+										/>
 									{/if}
-									<p class="text-sm font-bold leading-tight" style="color: {fgColor};">{vendor.name}</p>
-									<p class="mt-1 text-[10px] font-medium" style="color: {acColor};">Order online now →</p>
-									<p class="mt-auto truncate font-mono text-[7px] opacity-50" style="color: {fgColor};">{catalogUrl}</p>
+									<p class="text-sm leading-tight font-bold" style="color: {fgColor};">
+										{vendor.name}
+									</p>
+									<p class="mt-1 text-[10px] font-medium" style="color: {acColor};">
+										Order online now →
+									</p>
+									<p
+										class="mt-auto truncate font-mono text-[7px] opacity-50"
+										style="color: {fgColor};"
+									>
+										{catalogUrl}
+									</p>
 								</div>
 								<!-- Right QR panel -->
-								<div class="absolute inset-y-2 right-2 flex w-28 flex-col items-center justify-center gap-1 rounded-lg bg-white shadow-sm">
+								<div
+									class="absolute inset-y-2 right-2 flex w-28 flex-col items-center justify-center gap-1 rounded-lg bg-white shadow-sm"
+								>
 									{#await qrDataUrl then dataUrl}
 										{#if dataUrl}<img src={dataUrl} alt="QR" class="h-20 w-20" />{/if}
 									{/await}
@@ -526,11 +593,23 @@
 					<!-- Caption + share -->
 					<div class="space-y-3">
 						<div>
-							<p class="mb-1 text-xs font-medium tracking-wide text-muted-foreground uppercase">Caption</p>
-							<div class="relative rounded-lg border bg-muted/50 px-4 py-3 pr-20 text-sm text-muted-foreground">
+							<p class="mb-1 text-xs font-medium tracking-wide text-muted-foreground uppercase">
+								Caption
+							</p>
+							<div
+								class="relative rounded-lg border bg-muted/50 px-4 py-3 pr-20 text-sm text-muted-foreground"
+							>
 								{shareCaption}
-								<Button onclick={copyCaption} variant="outline" size="sm" class="absolute top-2 right-2 gap-1.5">
-									<Icon icon={captionCopied ? 'mdi:check' : 'mdi:content-copy'} class="h-3.5 w-3.5" />
+								<Button
+									onclick={copyCaption}
+									variant="outline"
+									size="sm"
+									class="absolute top-2 right-2 gap-1.5"
+								>
+									<Icon
+										icon={captionCopied ? 'mdi:check' : 'mdi:content-copy'}
+										class="h-3.5 w-3.5"
+									/>
 									{captionCopied ? 'Copied' : 'Copy'}
 								</Button>
 							</div>
@@ -557,7 +636,10 @@
 						</div>
 						<p class="text-xs text-muted-foreground">
 							Card colors reflect your
-							<a href={resolve('/dashboard/settings/branding')} class="underline hover:text-foreground">branding settings</a>.
+							<a
+								href={resolve('/dashboard/settings/branding')}
+								class="underline hover:text-foreground">branding settings</a
+							>.
 						</p>
 					</div>
 				</CardContent>

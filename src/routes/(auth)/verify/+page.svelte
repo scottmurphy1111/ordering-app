@@ -1,11 +1,11 @@
 <script lang="ts">
-	import { page } from'$app/state';
-	import { resolve } from'$app/paths';
-	import Icon from'@iconify/svelte';
-	import { Card, CardContent } from'$lib/components/ui/card';
+	import { page } from '$app/state';
+	import { resolve } from '$app/paths';
+	import Icon from '@iconify/svelte';
+	import { Card, CardContent } from '$lib/components/ui/card';
 
 	const token = $derived(page.url.searchParams.get('token'));
-	const callbackURL = $derived(page.url.searchParams.get('callbackURL') ??'/vendors');
+	const callbackURL = $derived(page.url.searchParams.get('callbackURL') ?? '/vendors');
 
 	// Build the real better-auth verify URL - navigating here creates the session
 	const verifyHref = $derived(
@@ -27,7 +27,9 @@
 		{:else}
 			<Icon icon="mdi:email-check-outline" class="mx-auto mb-3 h-8 w-8 text-primary/80" />
 			<p class="text-sm font-medium text-muted-foreground">Ready to sign in</p>
-			<p class="mt-1 mb-5 text-sm text-muted-foreground">Click the button below to complete your sign-in.</p>
+			<p class="mt-1 mb-5 text-sm text-muted-foreground">
+				Click the button below to complete your sign-in.
+			</p>
 			<a
 				href={resolve(verifyHref as `/${string}`)}
 				class="block w-full rounded-lg bg-gray-900 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-gray-700"

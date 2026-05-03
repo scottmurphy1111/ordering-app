@@ -67,7 +67,13 @@ export const POST: RequestHandler = async ({ request, params }) => {
 	return json({ received: true });
 };
 
-type VendorCtx = { id: number; name: string; primaryColor?: string; slug: string; timezone: string };
+type VendorCtx = {
+	id: number;
+	name: string;
+	primaryColor?: string;
+	slug: string;
+	timezone: string;
+};
 
 function generateOrderNumber(): string {
 	const ts = Date.now().toString(36).toUpperCase();

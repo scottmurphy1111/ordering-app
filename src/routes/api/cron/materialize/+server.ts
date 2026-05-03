@@ -20,7 +20,13 @@ export const GET: RequestHandler = async ({ request }) => {
 	const mat =
 		materializeResult.status === 'fulfilled'
 			? materializeResult.value
-			: { templatesProcessed: 0, totalGenerated: 0, totalPreserved: 0, totalDeleted: 0, errors: [] };
+			: {
+					templatesProcessed: 0,
+					totalGenerated: 0,
+					totalPreserved: 0,
+					totalDeleted: 0,
+					errors: []
+				};
 
 	const trans =
 		transitionResult.status === 'fulfilled'

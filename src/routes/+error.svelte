@@ -23,7 +23,7 @@
 		500: {
 			icon: 'mdi:alert-circle-outline',
 			title: 'Something went wrong',
-			description: "We hit an unexpected error. Please try again or contact support if it persists."
+			description: 'We hit an unexpected error. Please try again or contact support if it persists.'
 		}
 	};
 

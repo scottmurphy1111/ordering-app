@@ -27,7 +27,10 @@
 			if (!interval) interval = setInterval(() => invalidate('app:orders'), 15_000);
 		}
 		function stop() {
-			if (interval) { clearInterval(interval); interval = null; }
+			if (interval) {
+				clearInterval(interval);
+				interval = null;
+			}
 		}
 		start();
 		document.addEventListener('visibilitychange', () => (document.hidden ? stop() : start()));
@@ -77,18 +80,31 @@
 				osc.start(ctx.currentTime + i * 0.06);
 				osc.stop(ctx.currentTime + i * 0.06 + 0.45);
 			});
-		} catch { /* browser may block without user gesture */ }
+		} catch {
+			/* browser may block without user gesture */
+		}
 	}
 
 	function copyOrderNumber(e: Event, id: number, num: string) {
 		e.stopPropagation();
 		navigator.clipboard.writeText(num).then(() => {
 			copiedId = id;
-			setTimeout(() => { copiedId = null; }, 1500);
+			setTimeout(() => {
+				copiedId = null;
+			}, 1500);
 		});
 	}
 
-	const statuses = ['', 'scheduled', 'received', 'confirmed', 'preparing', 'ready', 'fulfilled', 'cancelled'];
+	const statuses = [
+		'',
+		'scheduled',
+		'received',
+		'confirmed',
+		'preparing',
+		'ready',
+		'fulfilled',
+		'cancelled'
+	];
 	const statusLabels: Record<string, string> = {
 		'': 'All',
 		scheduled: 'Scheduled',
@@ -115,19 +131,27 @@
 		ready: 'fulfilled'
 	};
 	const statusActionConfig: Record<string, { label: string; cls: string }> = {
-		received:  { label: 'Mark as confirmed',     cls: 'bg-blue-600 text-white hover:bg-blue-700' },
+		received: { label: 'Mark as confirmed', cls: 'bg-blue-600 text-white hover:bg-blue-700' },
 		confirmed: { label: 'Mark as in production', cls: 'bg-blue-600 text-white hover:bg-blue-700' },
-		preparing: { label: 'Mark as ready',         cls: 'bg-blue-600 text-white hover:bg-blue-700' },
-		ready:     { label: 'Mark as fulfilled',     cls: 'bg-blue-600 text-white hover:bg-blue-700' }
+		preparing: { label: 'Mark as ready', cls: 'bg-blue-600 text-white hover:bg-blue-700' },
+		ready: { label: 'Mark as fulfilled', cls: 'bg-blue-600 text-white hover:bg-blue-700' }
 	};
 
 	const totalActiveCount = $derived(Object.values(data.statusCounts).reduce((a, b) => a + b, 0));
-	const needsAction = $derived((data.statusCounts['received'] ?? 0) + (data.statusCounts['ready'] ?? 0));
-	const inProgress = $derived((data.statusCounts['confirmed'] ?? 0) + (data.statusCounts['preparing'] ?? 0));
+	const needsAction = $derived(
+		(data.statusCounts['received'] ?? 0) + (data.statusCounts['ready'] ?? 0)
+	);
+	const inProgress = $derived(
+		(data.statusCounts['confirmed'] ?? 0) + (data.statusCounts['preparing'] ?? 0)
+	);
 
 	let searchQuery = $state('');
 
-	function matchesSearch(o: { orderNumber: string; customerName: string | null; customerPhone: string | null }) {
+	function matchesSearch(o: {
+		orderNumber: string;
+		customerName: string | null;
+		customerPhone: string | null;
+	}) {
 		if (!searchQuery.trim()) return true;
 		const q = searchQuery.toLowerCase();
 		return (
@@ -188,6 +212,7 @@
 		<h1 class="text-2xl font-bold text-foreground">Orders</h1>
 		<div class="flex items-center gap-2">
 			<button
+				type="button"
 				onclick={toggleSound}
 				class="flex h-10 w-10 items-center justify-center rounded-lg border transition-colors hover:bg-muted"
 				title={soundEnabled ? 'Mute new order alerts' : 'Enable new order alerts'}
@@ -202,7 +227,9 @@
 	</div>
 
 	{#if form?.error}
-		<div class="mb-4 rounded-md border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+		<div
+			class="mb-4 rounded-md border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive"
+		>
 			{form.error}
 		</div>
 	{/if}
@@ -241,12 +268,15 @@
 
 	<!-- Summary bar -->
 	{#if mounted}
-		<OrdersSummaryBar compact stats={[
-			{ label: 'Needs action', value: needsAction, urgent: needsAction > 0 },
-			{ label: 'In progress', value: inProgress },
-			{ label: 'Scheduled', value: data.scheduledCount },
-			{ label: "Today's revenue", value: `$${(data.todayRevenue / 100).toFixed(2)}` }
-		]} />
+		<OrdersSummaryBar
+			compact
+			stats={[
+				{ label: 'Needs action', value: needsAction, urgent: needsAction > 0 },
+				{ label: 'In progress', value: inProgress },
+				{ label: 'Scheduled', value: data.scheduledCount },
+				{ label: "Today's revenue", value: `$${(data.todayRevenue / 100).toFixed(2)}` }
+			]}
+		/>
 	{/if}
 
 	{#if data.view === 'production'}
@@ -268,13 +298,16 @@
 						<!-- Window group header -->
 						<div class="border-b border-gray-100 bg-gray-50 px-4 py-3">
 							<p class="text-sm font-semibold text-gray-900">
-								{fmtWindowDate(group.window.startsAt)} · {fmtWindowTime(group.window.startsAt)}–{fmtWindowTime(group.window.endsAt)}
+								{fmtWindowDate(group.window.startsAt)} · {fmtWindowTime(
+									group.window.startsAt
+								)}–{fmtWindowTime(group.window.endsAt)}
 								{#if group.window.locationName}
 									· <span class="font-normal text-gray-500">{group.window.locationName}</span>
 								{/if}
 							</p>
 							<p class="mt-0.5 text-xs text-gray-500">
-								{group.orderCount} {group.orderCount === 1 ? 'order' : 'orders'}
+								{group.orderCount}
+								{group.orderCount === 1 ? 'order' : 'orders'}
 							</p>
 						</div>
 						<!-- Item aggregation table -->
@@ -296,18 +329,20 @@
 				{/each}
 			</div>
 		{/if}
-
 	{:else}
 		<!-- ── Orders view ───────────────────────────────────────────────────── -->
 
 		<!-- Row 1: Search -->
 		<div class="relative mb-3">
-			<Icon icon="mdi:magnify" class="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+			<Icon
+				icon="mdi:magnify"
+				class="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+			/>
 			<input
 				type="search"
 				bind:value={searchQuery}
 				placeholder="Search by order #, customer name, or phone…"
-				class="w-full rounded-lg border border-gray-200 bg-background h-10 pr-4 pl-9 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:border-transparent focus:ring-2 focus:ring-primary/50"
+				class="h-10 w-full rounded-lg border border-gray-200 bg-background pr-4 pl-9 text-sm text-foreground outline-none placeholder:text-muted-foreground focus:border-transparent focus:ring-2 focus:ring-primary/50"
 			/>
 		</div>
 
@@ -361,7 +396,9 @@
 					<Icon icon="mdi:clipboard-list-outline" class="h-8 w-8 text-muted-foreground/40" />
 				</div>
 				<h2 class="mt-4 text-base font-semibold text-foreground">
-					No {data.statusFilter ? (statusLabels[data.statusFilter] ?? data.statusFilter).toLowerCase() + ' ' : ''}orders
+					No {data.statusFilter
+						? (statusLabels[data.statusFilter] ?? data.statusFilter).toLowerCase() + ' '
+						: ''}orders
 				</h2>
 				<p class="mt-1 text-sm text-muted-foreground">
 					{data.statusFilter
@@ -389,8 +426,8 @@
 					<button
 						type="button"
 						onclick={() => (searchQuery = '')}
-						class="mt-3 text-xs text-primary hover:underline"
-					>Clear search</button>
+						class="mt-3 text-xs text-primary hover:underline">Clear search</button
+					>
 				</div>
 			{:else}
 				<div class="space-y-6">
@@ -405,13 +442,18 @@
 								<div class="mb-2 flex items-baseline justify-between gap-2">
 									<div>
 										<h2 class="text-sm font-semibold text-gray-900">
-											{fmtWindowDate(group.window.startsAt)} · {fmtWindowTime(group.window.startsAt)}–{fmtWindowTime(group.window.endsAt)}
+											{fmtWindowDate(group.window.startsAt)} · {fmtWindowTime(
+												group.window.startsAt
+											)}–{fmtWindowTime(group.window.endsAt)}
 											{#if group.window.locationName}
 												<span class="font-normal text-gray-500">· {group.window.locationName}</span>
 											{/if}
 										</h2>
 										<p class="mt-0.5 text-xs text-gray-500">
-											{group.orders.length} {group.orders.length === 1 ? 'order' : 'orders'} · ${(group.totalRevenue / 100).toFixed(2)}
+											{group.orders.length}
+											{group.orders.length === 1 ? 'order' : 'orders'} · ${(
+												group.totalRevenue / 100
+											).toFixed(2)}
 										</p>
 									</div>
 								</div>
@@ -437,7 +479,8 @@
 									<div class="mb-2">
 										<h2 class="text-sm font-semibold text-gray-900">Free-form pickups</h2>
 										<p class="mt-0.5 text-xs text-gray-500">
-											{data.freeFormOrders.length} {data.freeFormOrders.length === 1 ? 'order' : 'orders'}
+											{data.freeFormOrders.length}
+											{data.freeFormOrders.length === 1 ? 'order' : 'orders'}
 										</p>
 									</div>
 								{/if}
@@ -479,7 +522,9 @@
 		class="cursor-pointer rounded-xl border bg-background shadow-sm transition-shadow hover:shadow-md
 			{isCancelled ? 'opacity-50' : ''}"
 		onclick={() => goto(resolve(`/dashboard/orders/${order.id}`))}
-		onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') goto(resolve(`/dashboard/orders/${order.id}`)); }}
+		onkeydown={(e) => {
+			if (e.key === 'Enter' || e.key === ' ') goto(resolve(`/dashboard/orders/${order.id}`));
+		}}
 	>
 		<div class="flex flex-col gap-3 px-4 py-3 md:flex-row md:items-start md:gap-4">
 			<!-- Left: order info -->
@@ -487,6 +532,7 @@
 				<!-- Badges row -->
 				<div class="mb-1.5 flex flex-wrap items-center gap-1.5">
 					<button
+						type="button"
 						onclick={(e) => copyOrderNumber(e, order.id, order.orderNumber)}
 						class="cursor-copy font-mono text-xs font-medium text-foreground transition-colors hover:text-muted-foreground hover:underline"
 						title="Click to copy"
@@ -513,8 +559,11 @@
 					<p class="mt-1 flex items-center gap-1 text-xs font-medium text-amber-600">
 						<Icon icon="mdi:clock-outline" class="h-3.5 w-3.5 shrink-0" />
 						{new Date(order.scheduledFor).toLocaleString([], {
-							weekday: 'short', month: 'short', day: 'numeric',
-							hour: 'numeric', minute: '2-digit'
+							weekday: 'short',
+							month: 'short',
+							day: 'numeric',
+							hour: 'numeric',
+							minute: '2-digit'
 						})}
 						<span class="text-amber-400">
 							· {formatDistanceToNow(new Date(order.scheduledFor), { addSuffix: true })}
@@ -548,7 +597,7 @@
 							<input type="hidden" name="status" value={nextStatus[order.status]} />
 							<button
 								type="submit"
-								class="rounded-md h-8 px-2.5 text-xs font-semibold transition-colors {action.cls}"
+								class="h-8 rounded-md px-2.5 text-xs font-semibold transition-colors {action.cls}"
 							>
 								{action.label}
 							</button>
@@ -564,7 +613,7 @@
 									const btn = e.currentTarget as HTMLButtonElement;
 									if (await confirmDialog('Cancel this order?')) btn.form?.requestSubmit();
 								}}
-								class="rounded-md h-8 border border-red-200 px-2.5 text-xs font-medium text-red-500 transition-colors hover:bg-red-50 hover:text-red-600"
+								class="h-8 rounded-md border border-red-200 px-2.5 text-xs font-medium text-red-500 transition-colors hover:bg-red-50 hover:text-red-600"
 							>
 								Cancel
 							</button>
@@ -578,9 +627,10 @@
 								onclick={async (e) => {
 									e.preventDefault();
 									const btn = e.currentTarget as HTMLButtonElement;
-									if (await confirmDialog('Issue a full refund for this order?')) btn.form?.requestSubmit();
+									if (await confirmDialog('Issue a full refund for this order?'))
+										btn.form?.requestSubmit();
 								}}
-								class="rounded-md h-8 border border-red-200 px-2.5 text-xs font-medium text-red-500 transition-colors hover:bg-red-50"
+								class="h-8 rounded-md border border-red-200 px-2.5 text-xs font-medium text-red-500 transition-colors hover:bg-red-50"
 							>
 								Refund
 							</button>

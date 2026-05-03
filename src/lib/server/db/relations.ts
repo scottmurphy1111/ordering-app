@@ -1,6 +1,12 @@
 import { relations } from 'drizzle-orm';
 import { vendor, vendorUsers } from './vendor';
-import { catalogCategories, catalogItems, modifiers, modifierOptions, catalogItemModifiers } from './catalog';
+import {
+	catalogCategories,
+	catalogItems,
+	modifiers,
+	modifierOptions,
+	catalogItemModifiers
+} from './catalog';
 import { orders, orderItems } from './orders';
 import { user, session, account } from './auth.schema';
 import { pickupLocations, pickupWindowTemplates, pickupWindows } from './pickup';
@@ -52,8 +58,14 @@ export const modifierOptionsRelations = relations(modifierOptions, ({ one }) => 
 }));
 
 export const catalogItemModifiersRelations = relations(catalogItemModifiers, ({ one }) => ({
-	catalogItem: one(catalogItems, { fields: [catalogItemModifiers.catalogItemId], references: [catalogItems.id] }),
-	modifier: one(modifiers, { fields: [catalogItemModifiers.modifierId], references: [modifiers.id] })
+	catalogItem: one(catalogItems, {
+		fields: [catalogItemModifiers.catalogItemId],
+		references: [catalogItems.id]
+	}),
+	modifier: one(modifiers, {
+		fields: [catalogItemModifiers.modifierId],
+		references: [modifiers.id]
+	})
 }));
 
 export const ordersRelations = relations(orders, ({ one, many }) => ({

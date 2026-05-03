@@ -62,19 +62,28 @@ export const actions: Actions = {
 
 	removeLogo: async ({ locals }) => {
 		const vendorId = locals.vendorId!;
-		await db.update(vendor).set({ logoUrl: null, updatedAt: new Date() }).where(eq(vendor.id, vendorId));
+		await db
+			.update(vendor)
+			.set({ logoUrl: null, updatedAt: new Date() })
+			.where(eq(vendor.id, vendorId));
 		return { success: true, message: 'Logo removed' };
 	},
 
 	removeBanner: async ({ locals }) => {
 		const vendorId = locals.vendorId!;
-		await db.update(vendor).set({ bannerUrl: null, updatedAt: new Date() }).where(eq(vendor.id, vendorId));
+		await db
+			.update(vendor)
+			.set({ bannerUrl: null, updatedAt: new Date() })
+			.where(eq(vendor.id, vendorId));
 		return { success: true, message: 'Banner removed' };
 	},
 
 	removeBackground: async ({ locals }) => {
 		const vendorId = locals.vendorId!;
-		await db.update(vendor).set({ backgroundImageUrl: null, updatedAt: new Date() }).where(eq(vendor.id, vendorId));
+		await db
+			.update(vendor)
+			.set({ backgroundImageUrl: null, updatedAt: new Date() })
+			.where(eq(vendor.id, vendorId));
 		return { success: true, message: 'Background image removed' };
 	}
 };

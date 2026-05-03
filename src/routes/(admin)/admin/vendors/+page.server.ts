@@ -33,7 +33,10 @@ export const actions: Actions = {
 		if (!locals.user?.isInternal) return fail(403, { error: 'Unauthorized' });
 		const id = Number((await request.formData()).get('id'));
 		if (!id) return fail(400, { error: 'Missing id' });
-		await db.update(vendor).set({ isActive: false, updatedAt: new Date() }).where(eq(vendor.id, id));
+		await db
+			.update(vendor)
+			.set({ isActive: false, updatedAt: new Date() })
+			.where(eq(vendor.id, id));
 	},
 
 	restore: async ({ request, locals }) => {

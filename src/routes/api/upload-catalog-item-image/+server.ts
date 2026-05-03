@@ -18,7 +18,10 @@ export async function POST(event: RequestEvent) {
 	if (file.size > 5 * 1024 * 1024) throw error(400, 'File too large (max 5MB)');
 
 	try {
-		const url = await uploadToR2(file, `${locals.vendor!.slug}/catalog-items/item-${locals.vendorId}`);
+		const url = await uploadToR2(
+			file,
+			`${locals.vendor!.slug}/catalog-items/item-${locals.vendorId}`
+		);
 		return json({ url });
 	} catch (err) {
 		console.error('Catalog item image upload error:', err);

@@ -35,7 +35,8 @@ export const actions: Actions = {
 		const id = formData.get('id')?.toString();
 		const value = formData.get('value') === 'true';
 		if (!id) return fail(400, { error: 'Missing id' });
-		if (id === locals.user.id) return fail(400, { error: 'Cannot change your own internal status' });
+		if (id === locals.user.id)
+			return fail(400, { error: 'Cannot change your own internal status' });
 		await db.update(userTable).set({ isInternal: value }).where(eq(userTable.id, id));
 	},
 

@@ -15,7 +15,14 @@
 		SelectValue
 	} from '$lib/components/ui/select';
 	import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '$lib/components/ui/card';
-	import { Table, TableHeader, TableHead, TableBody, TableRow, TableCell } from '$lib/components/ui/table';
+	import {
+		Table,
+		TableHeader,
+		TableHead,
+		TableBody,
+		TableRow,
+		TableCell
+	} from '$lib/components/ui/table';
 	import { confirmDialog } from '$lib/confirm.svelte';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
@@ -32,7 +39,9 @@
 	let programType = $state<'stamps' | 'points'>(untrack(() => data.loyalty.type ?? 'stamps'));
 	let stampsPerOrder = $state(untrack(() => data.loyalty.stamps.stampsPerOrder ?? 1));
 	let rewardAt = $state(untrack(() => data.loyalty.stamps.rewardAt ?? 10));
-	let rewardDescription = $state(untrack(() => data.loyalty.stamps.rewardDescription ?? 'Free item up to $15'));
+	let rewardDescription = $state(
+		untrack(() => data.loyalty.stamps.rewardDescription ?? 'Free item up to $15')
+	);
 	let pointsPerDollar = $state(untrack(() => data.loyalty.points.pointsPerDollar ?? 1));
 	let redeemAt = $state(untrack(() => data.loyalty.points.redeemAt ?? 100));
 	let redeemValue = $state(untrack(() => (data.loyalty.points.redeemValue ?? 500) / 100));
@@ -55,7 +64,9 @@
 	</div>
 
 	{#if form?.error}
-		<div class="mb-4 rounded-md border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+		<div
+			class="mb-4 rounded-md border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive"
+		>
 			{form.error}
 		</div>
 	{/if}
@@ -64,7 +75,14 @@
 	<div class="mb-4 flex items-center justify-between gap-4">
 		<h2 class="text-lg font-semibold text-foreground">Promo Codes</h2>
 		{#if data.hasPromos}
-			<Button onclick={() => { showForm = !showForm; }} variant="default" size="sm" class="gap-1.5">
+			<Button
+				onclick={() => {
+					showForm = !showForm;
+				}}
+				variant="default"
+				size="sm"
+				class="gap-1.5"
+			>
 				<Icon icon={showForm ? 'mdi:close' : 'mdi:plus'} class="h-4 w-4" />
 				{showForm ? 'Cancel' : 'New code'}
 			</Button>
@@ -74,12 +92,15 @@
 	{#if !data.hasPromos}
 		<Card class="mb-10 shadow-sm">
 			<CardContent class="py-10 text-center">
-				<div class="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
+				<div
+					class="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10"
+				>
 					<Icon icon="mdi:ticket-percent-outline" class="h-6 w-6 text-primary" />
 				</div>
 				<p class="text-sm font-medium text-foreground">Promo Codes — $9/mo add-on</p>
 				<p class="mx-auto mt-1 max-w-sm text-xs text-muted-foreground">
-					Create percent-off or flat-dollar discount codes for promotions, events, or loyal customers.
+					Create percent-off or flat-dollar discount codes for promotions, events, or loyal
+					customers.
 				</p>
 				<Button href={resolve('/dashboard/account/billing')} class="mt-4 gap-1.5">
 					<Icon icon="mdi:arrow-right" class="h-4 w-4" />
@@ -105,12 +126,26 @@
 						<div class="grid gap-4 sm:grid-cols-2">
 							<div>
 								<Label class="mb-1 block text-xs" for="code">Code *</Label>
-								<Input id="code" name="code" type="text" required placeholder="e.g. SUMMER20" class="uppercase" />
-								<p class="mt-1 text-xs text-muted-foreground">2–20 characters, letters, numbers, - or _</p>
+								<Input
+									id="code"
+									name="code"
+									type="text"
+									required
+									placeholder="e.g. SUMMER20"
+									class="uppercase"
+								/>
+								<p class="mt-1 text-xs text-muted-foreground">
+									2–20 characters, letters, numbers, - or _
+								</p>
 							</div>
 							<div>
 								<Label class="mb-1 block text-xs" for="description">Description</Label>
-								<Input id="description" name="description" type="text" placeholder="Summer sale, VIP, etc." />
+								<Input
+									id="description"
+									name="description"
+									type="text"
+									placeholder="Summer sale, VIP, etc."
+								/>
 							</div>
 							<div>
 								<Label class="mb-1 block text-xs" for="discountType">Discount type *</Label>
@@ -125,16 +160,41 @@
 								</Select>
 							</div>
 							<div>
-								<Label class="mb-1 block text-xs" for="amount">Amount * {typeVal === 'percent' ? '(%)' : '($)'}</Label>
-								<Input id="amount" name="amount" type="number" required min={1} step={typeVal === 'percent' ? '1' : '0.01'} max={typeVal === 'percent' ? 100 : undefined} placeholder={typeVal === 'percent' ? '20' : '5.00'} />
+								<Label class="mb-1 block text-xs" for="amount"
+									>Amount * {typeVal === 'percent' ? '(%)' : '($)'}</Label
+								>
+								<Input
+									id="amount"
+									name="amount"
+									type="number"
+									required
+									min={1}
+									step={typeVal === 'percent' ? '1' : '0.01'}
+									max={typeVal === 'percent' ? 100 : undefined}
+									placeholder={typeVal === 'percent' ? '20' : '5.00'}
+								/>
 							</div>
 							<div>
 								<Label class="mb-1 block text-xs" for="minOrderAmount">Min order amount ($)</Label>
-								<Input id="minOrderAmount" name="minOrderAmount" type="number" min={0} step="0.01" placeholder="0.00 (no minimum)" />
+								<Input
+									id="minOrderAmount"
+									name="minOrderAmount"
+									type="number"
+									min={0}
+									step="0.01"
+									placeholder="0.00 (no minimum)"
+								/>
 							</div>
 							<div>
 								<Label class="mb-1 block text-xs" for="maxUses">Max uses</Label>
-								<Input id="maxUses" name="maxUses" type="number" min={1} step="1" placeholder="Unlimited" />
+								<Input
+									id="maxUses"
+									name="maxUses"
+									type="number"
+									min={1}
+									step="1"
+									placeholder="Unlimited"
+								/>
 							</div>
 							<div class="sm:col-span-2">
 								<Label class="mb-1 block text-xs" for="expiresAt">Expiry date</Label>
@@ -149,7 +209,9 @@
 
 		{#if data.codes.length === 0}
 			<div class="mb-10 rounded-xl border border-dashed p-10 text-center">
-				<p class="text-sm text-muted-foreground">No promo codes yet. Create your first one above.</p>
+				<p class="text-sm text-muted-foreground">
+					No promo codes yet. Create your first one above.
+				</p>
 			</div>
 		{:else}
 			<Card class="mb-10 shadow-sm">
@@ -167,21 +229,48 @@
 						</TableHeader>
 						<TableBody>
 							{#each data.codes as promo (promo.id)}
-								{@const expired = promo.expiresAt && Date.now() > new Date(promo.expiresAt).getTime()}
+								{@const expired =
+									promo.expiresAt && Date.now() > new Date(promo.expiresAt).getTime()}
 								<TableRow>
 									<TableCell class="px-4 py-3">
 										<p class="font-mono font-semibold text-foreground">{promo.code}</p>
-										{#if promo.description}<p class="mt-0.5 text-xs text-muted-foreground">{promo.description}</p>{/if}
-										{#if promo.minOrderAmount > 0}<p class="text-xs text-muted-foreground">Min ${(promo.minOrderAmount / 100).toFixed(2)}</p>{/if}
+										{#if promo.description}<p class="mt-0.5 text-xs text-muted-foreground">
+												{promo.description}
+											</p>{/if}
+										{#if promo.minOrderAmount > 0}<p class="text-xs text-muted-foreground">
+												Min ${(promo.minOrderAmount / 100).toFixed(2)}
+											</p>{/if}
 									</TableCell>
-									<TableCell class="px-4 py-3 font-semibold text-foreground">{formatAmount(promo.type, promo.amount)}</TableCell>
-									<TableCell class="hidden px-4 py-3 text-muted-foreground sm:table-cell">{promo.usedCount}{promo.maxUses !== null ? ` / ${promo.maxUses}` : ''}</TableCell>
-									<TableCell class="hidden px-4 py-3 text-muted-foreground md:table-cell">{promo.expiresAt ? new Date(promo.expiresAt).toLocaleDateString() : '—'}</TableCell>
+									<TableCell class="px-4 py-3 font-semibold text-foreground"
+										>{formatAmount(promo.type, promo.amount)}</TableCell
+									>
+									<TableCell class="hidden px-4 py-3 text-muted-foreground sm:table-cell"
+										>{promo.usedCount}{promo.maxUses !== null
+											? ` / ${promo.maxUses}`
+											: ''}</TableCell
+									>
+									<TableCell class="hidden px-4 py-3 text-muted-foreground md:table-cell"
+										>{promo.expiresAt
+											? new Date(promo.expiresAt).toLocaleDateString()
+											: '—'}</TableCell
+									>
 									<TableCell class="px-4 py-3">
-										<form method="POST" action="?/toggle" use:enhance={() => ({ update }) => update({ reset: false })}>
+										<form
+											method="POST"
+											action="?/toggle"
+											use:enhance={() =>
+												({ update }) =>
+													update({ reset: false })}
+										>
 											<input type="hidden" name="id" value={promo.id} />
 											<input type="hidden" name="isActive" value={String(!promo.isActive)} />
-											<button type="submit" class="rounded-full px-2.5 py-0.5 text-xs font-medium transition-colors {promo.isActive && !expired ? 'bg-primary/10 text-primary hover:bg-destructive/10 hover:text-red-600' : 'bg-muted text-muted-foreground hover:bg-primary/5 hover:text-primary'}">
+											<button
+												type="submit"
+												class="rounded-full px-2.5 py-0.5 text-xs font-medium transition-colors {promo.isActive &&
+												!expired
+													? 'bg-primary/10 text-primary hover:bg-destructive/10 hover:text-red-600'
+													: 'bg-muted text-muted-foreground hover:bg-primary/5 hover:text-primary'}"
+											>
 												{expired ? 'Expired' : promo.isActive ? 'Active' : 'Inactive'}
 											</button>
 										</form>
@@ -189,7 +278,17 @@
 									<TableCell class="px-4 py-3">
 										<form method="POST" action="?/delete" use:enhance>
 											<input type="hidden" name="id" value={promo.id} />
-											<Button type="submit" onclick={async (e) => { e.preventDefault(); if (await confirmDialog('Delete this code?')) (e.currentTarget as HTMLButtonElement).form?.requestSubmit(); }} variant="ghost" size="sm" class="text-destructive hover:text-destructive/80">Delete</Button>
+											<Button
+												type="submit"
+												onclick={async (e) => {
+													e.preventDefault();
+													if (await confirmDialog('Delete this code?'))
+														(e.currentTarget as HTMLButtonElement).form?.requestSubmit();
+												}}
+												variant="ghost"
+												size="sm"
+												class="text-destructive hover:text-destructive/80">Delete</Button
+											>
 										</form>
 									</TableCell>
 								</TableRow>
@@ -207,7 +306,9 @@
 	{#if !data.hasLoyalty}
 		<Card class="shadow-sm">
 			<CardContent class="py-10 text-center">
-				<div class="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
+				<div
+					class="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10"
+				>
 					<Icon icon="mdi:star-circle-outline" class="h-6 w-6 text-primary" />
 				</div>
 				<p class="text-sm font-medium text-foreground">Loyalty Program — $29/mo add-on</p>
@@ -229,27 +330,55 @@
 					<button
 						type="button"
 						onclick={() => (programType = 'stamps')}
-						class="flex flex-col items-start gap-2 rounded-xl border p-4 text-left transition-colors {programType === 'stamps' ? 'border-primary bg-primary/5' : 'border-border bg-background hover:border-muted-foreground/40'}"
+						class="flex flex-col items-start gap-2 rounded-xl border p-4 text-left transition-colors {programType ===
+						'stamps'
+							? 'border-primary bg-primary/5'
+							: 'border-border bg-background hover:border-muted-foreground/40'}"
 					>
-						<div class="flex h-9 w-9 items-center justify-center rounded-full {programType === 'stamps' ? 'bg-primary/10' : 'bg-muted'}">
-							<Icon icon="mdi:card-account-details-star-outline" class="h-5 w-5 {programType === 'stamps' ? 'text-primary' : 'text-muted-foreground'}" />
+						<div
+							class="flex h-9 w-9 items-center justify-center rounded-full {programType === 'stamps'
+								? 'bg-primary/10'
+								: 'bg-muted'}"
+						>
+							<Icon
+								icon="mdi:card-account-details-star-outline"
+								class="h-5 w-5 {programType === 'stamps'
+									? 'text-primary'
+									: 'text-muted-foreground'}"
+							/>
 						</div>
 						<div>
 							<p class="text-sm font-semibold text-foreground">Stamp Card</p>
-							<p class="mt-0.5 text-xs text-muted-foreground">Earn a stamp per order. Collect enough to unlock a reward.</p>
+							<p class="mt-0.5 text-xs text-muted-foreground">
+								Earn a stamp per order. Collect enough to unlock a reward.
+							</p>
 						</div>
 					</button>
 					<button
 						type="button"
 						onclick={() => (programType = 'points')}
-						class="flex flex-col items-start gap-2 rounded-xl border p-4 text-left transition-colors {programType === 'points' ? 'border-primary bg-primary/5' : 'border-border bg-background hover:border-muted-foreground/40'}"
+						class="flex flex-col items-start gap-2 rounded-xl border p-4 text-left transition-colors {programType ===
+						'points'
+							? 'border-primary bg-primary/5'
+							: 'border-border bg-background hover:border-muted-foreground/40'}"
 					>
-						<div class="flex h-9 w-9 items-center justify-center rounded-full {programType === 'points' ? 'bg-primary/10' : 'bg-muted'}">
-							<Icon icon="mdi:gift-outline" class="h-5 w-5 {programType === 'points' ? 'text-primary' : 'text-muted-foreground'}" />
+						<div
+							class="flex h-9 w-9 items-center justify-center rounded-full {programType === 'points'
+								? 'bg-primary/10'
+								: 'bg-muted'}"
+						>
+							<Icon
+								icon="mdi:gift-outline"
+								class="h-5 w-5 {programType === 'points'
+									? 'text-primary'
+									: 'text-muted-foreground'}"
+							/>
 						</div>
 						<div>
 							<p class="text-sm font-semibold text-foreground">Points & Rewards</p>
-							<p class="mt-0.5 text-xs text-muted-foreground">Earn points per dollar spent. Redeem points for a discount.</p>
+							<p class="mt-0.5 text-xs text-muted-foreground">
+								Earn points per dollar spent. Redeem points for a discount.
+							</p>
 						</div>
 					</button>
 				</div>
@@ -261,7 +390,9 @@
 			id="loyalty-form"
 			method="POST"
 			action="?/saveLoyalty"
-			use:enhance={() => ({ update }) => update({ reset: false })}
+			use:enhance={() =>
+				({ update }) =>
+					update({ reset: false })}
 		>
 			<input type="hidden" name="type" value={programType} />
 			<input type="hidden" name="stampsPerOrder" value={stampsPerOrder} />
@@ -278,7 +409,13 @@
 						<div class="grid gap-4 sm:grid-cols-2">
 							<div>
 								<Label class="mb-1 block" for="stampsPerOrderInput">Stamps per order</Label>
-								<Input id="stampsPerOrderInput" type="number" min="1" max="5" bind:value={stampsPerOrder} />
+								<Input
+									id="stampsPerOrderInput"
+									type="number"
+									min="1"
+									max="5"
+									bind:value={stampsPerOrder}
+								/>
 								<p class="mt-1 text-xs text-muted-foreground">Stamps earned per completed order.</p>
 							</div>
 							<div>
@@ -289,21 +426,39 @@
 						</div>
 						<div>
 							<Label class="mb-1 block" for="rewardDescriptionInput">Reward description</Label>
-							<Input id="rewardDescriptionInput" type="text" placeholder="e.g. Free item up to $15" bind:value={rewardDescription} />
-							<p class="mt-1 text-xs text-muted-foreground">Shown to customers on their digital stamp card.</p>
+							<Input
+								id="rewardDescriptionInput"
+								type="text"
+								placeholder="e.g. Free item up to $15"
+								bind:value={rewardDescription}
+							/>
+							<p class="mt-1 text-xs text-muted-foreground">
+								Shown to customers on their digital stamp card.
+							</p>
 						</div>
 						<div class="rounded-xl border bg-muted/40 p-4">
 							<p class="mb-3 text-xs font-semibold text-muted-foreground uppercase">Preview</p>
 							<div class="flex flex-wrap gap-1.5">
 								{#each { length: Math.min(rewardAt, 20) } as _, i (i)}
-									<div class="flex h-8 w-8 items-center justify-center rounded-full border-2 {i < stampsPerOrder ? 'border-primary bg-primary/10' : 'border-dashed border-muted-foreground/30 bg-background'}">
-										{#if i < stampsPerOrder}<Icon icon="mdi:star" class="h-4 w-4 text-primary" />{/if}
+									<div
+										class="flex h-8 w-8 items-center justify-center rounded-full border-2 {i <
+										stampsPerOrder
+											? 'border-primary bg-primary/10'
+											: 'border-dashed border-muted-foreground/30 bg-background'}"
+									>
+										{#if i < stampsPerOrder}<Icon
+												icon="mdi:star"
+												class="h-4 w-4 text-primary"
+											/>{/if}
 									</div>
 								{/each}
-								{#if rewardAt > 20}<span class="self-center text-xs text-muted-foreground">+{rewardAt - 20} more</span>{/if}
+								{#if rewardAt > 20}<span class="self-center text-xs text-muted-foreground"
+										>+{rewardAt - 20} more</span
+									>{/if}
 							</div>
 							<p class="mt-3 text-xs text-muted-foreground">
-								Collect {rewardAt} stamp{rewardAt !== 1 ? 's' : ''} → <span class="font-medium text-foreground">{rewardDescription}</span>
+								Collect {rewardAt} stamp{rewardAt !== 1 ? 's' : ''} →
+								<span class="font-medium text-foreground">{rewardDescription}</span>
 							</p>
 						</div>
 					</CardContent>
@@ -311,7 +466,11 @@
 						<Button type="submit" form="loyalty-form">Save program</Button>
 						{#if data.loyalty.enabled}
 							<form method="POST" action="?/disableLoyalty" use:enhance>
-								<Button type="submit" variant="outline" class="text-destructive hover:text-destructive">Disable loyalty</Button>
+								<Button
+									type="submit"
+									variant="outline"
+									class="text-destructive hover:text-destructive">Disable loyalty</Button
+								>
 							</form>
 						{/if}
 					</CardFooter>
@@ -323,8 +482,16 @@
 						<div class="grid gap-4 sm:grid-cols-2">
 							<div>
 								<Label class="mb-1 block" for="pointsPerDollarInput">Points per dollar</Label>
-								<Input id="pointsPerDollarInput" type="number" min="1" max="100" bind:value={pointsPerDollar} />
-								<p class="mt-1 text-xs text-muted-foreground">Points awarded per dollar of order total.</p>
+								<Input
+									id="pointsPerDollarInput"
+									type="number"
+									min="1"
+									max="100"
+									bind:value={pointsPerDollar}
+								/>
+								<p class="mt-1 text-xs text-muted-foreground">
+									Points awarded per dollar of order total.
+								</p>
 							</div>
 							<div>
 								<Label class="mb-1 block" for="redeemAtInput">Points to redeem</Label>
@@ -334,21 +501,43 @@
 						</div>
 						<div class="sm:w-1/2">
 							<Label class="mb-1 block" for="redeemValueInput">Reward value ($)</Label>
-							<div class="flex rounded-md border focus-within:border-ring focus-within:ring-1 focus-within:ring-ring">
-								<span class="flex items-center rounded-l-md border-r bg-muted/50 px-3 text-sm text-muted-foreground">$</span>
-								<Input id="redeemValueInput" type="number" min="0.01" step="0.01" bind:value={redeemValue} class="min-w-0 flex-1 rounded-none rounded-r-md border-0 shadow-none focus-visible:ring-0" />
+							<div
+								class="flex rounded-md border focus-within:border-ring focus-within:ring-1 focus-within:ring-ring"
+							>
+								<span
+									class="flex items-center rounded-l-md border-r bg-muted/50 px-3 text-sm text-muted-foreground"
+									>$</span
+								>
+								<Input
+									id="redeemValueInput"
+									type="number"
+									min="0.01"
+									step="0.01"
+									bind:value={redeemValue}
+									class="min-w-0 flex-1 rounded-none rounded-r-md border-0 shadow-none focus-visible:ring-0"
+								/>
 							</div>
-							<p class="mt-1 text-xs text-muted-foreground">Discount applied when points are redeemed.</p>
+							<p class="mt-1 text-xs text-muted-foreground">
+								Discount applied when points are redeemed.
+							</p>
 						</div>
 						<div class="rounded-xl border bg-muted/40 p-4">
 							<p class="mb-2 text-xs font-semibold text-muted-foreground uppercase">Preview</p>
 							<div class="flex items-center gap-3">
-								<div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10">
+								<div
+									class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10"
+								>
 									<Icon icon="mdi:gift-outline" class="h-5 w-5 text-primary" />
 								</div>
 								<div>
-									<p class="text-sm font-medium text-foreground">Earn {pointsPerDollar} pt{pointsPerDollar !== 1 ? 's' : ''} per $1 spent</p>
-									<p class="text-xs text-muted-foreground">{redeemAt} points = <span class="font-medium text-foreground">${redeemValue.toFixed(2)} off</span> your next order</p>
+									<p class="text-sm font-medium text-foreground">
+										Earn {pointsPerDollar} pt{pointsPerDollar !== 1 ? 's' : ''} per $1 spent
+									</p>
+									<p class="text-xs text-muted-foreground">
+										{redeemAt} points =
+										<span class="font-medium text-foreground">${redeemValue.toFixed(2)} off</span> your
+										next order
+									</p>
 								</div>
 							</div>
 						</div>
@@ -357,7 +546,11 @@
 						<Button type="submit" form="loyalty-form">Save program</Button>
 						{#if data.loyalty.enabled}
 							<form method="POST" action="?/disableLoyalty" use:enhance>
-								<Button type="submit" variant="outline" class="text-destructive hover:text-destructive">Disable loyalty</Button>
+								<Button
+									type="submit"
+									variant="outline"
+									class="text-destructive hover:text-destructive">Disable loyalty</Button
+								>
 							</form>
 						{/if}
 					</CardFooter>
@@ -366,16 +559,20 @@
 		</form>
 
 		<!-- How rewards are delivered -->
-		<div class="mb-6 flex gap-3 rounded-xl border border-blue-200 bg-blue-50 p-4 dark:border-blue-900/50 dark:bg-blue-950/30">
+		<div
+			class="mb-6 flex gap-3 rounded-xl border border-blue-200 bg-blue-50 p-4 dark:border-blue-900/50 dark:bg-blue-950/30"
+		>
 			<div class="mt-0.5 shrink-0">
 				<Icon icon="mdi:email-fast-outline" class="h-5 w-5 text-blue-600 dark:text-blue-400" />
 			</div>
 			<div>
-				<p class="text-sm font-semibold text-blue-900 dark:text-blue-200">Rewards are sent by email</p>
+				<p class="text-sm font-semibold text-blue-900 dark:text-blue-200">
+					Rewards are sent by email
+				</p>
 				<p class="mt-0.5 text-xs text-blue-700 dark:text-blue-400">
-					When a customer crosses the reward threshold on a completed order, they automatically receive an
-					email with a unique promo code. They apply it at checkout on their next order — no app or account
-					needed.
+					When a customer crosses the reward threshold on a completed order, they automatically
+					receive an email with a unique promo code. They apply it at checkout on their next order —
+					no app or account needed.
 				</p>
 			</div>
 		</div>
@@ -390,7 +587,9 @@
 			</Card>
 			<Card class="shadow-sm">
 				<CardContent class="pt-4 pb-3">
-					<p class="text-xs font-medium text-muted-foreground uppercase">{isStamps ? 'Stamps issued' : 'Points issued'}</p>
+					<p class="text-xs font-medium text-muted-foreground uppercase">
+						{isStamps ? 'Stamps issued' : 'Points issued'}
+					</p>
 					<p class="mt-1 text-2xl font-bold text-foreground">
 						{isStamps
 							? data.members.reduce((s, m) => s + m.totalStampsEarned, 0)
@@ -401,16 +600,22 @@
 			<Card class="shadow-sm">
 				<CardContent class="pt-4 pb-3">
 					<p class="text-xs font-medium text-muted-foreground uppercase">Rewards earned</p>
-					<p class="mt-1 text-2xl font-bold text-foreground">{data.members.reduce((s, m) => s + m.totalRewardsEarned, 0)}</p>
+					<p class="mt-1 text-2xl font-bold text-foreground">
+						{data.members.reduce((s, m) => s + m.totalRewardsEarned, 0)}
+					</p>
 				</CardContent>
 			</Card>
 			<Card class="shadow-sm">
 				<CardContent class="pt-4 pb-3">
-					<p class="text-xs font-medium text-muted-foreground uppercase">{isStamps ? 'Ready to redeem' : 'Can redeem now'}</p>
+					<p class="text-xs font-medium text-muted-foreground uppercase">
+						{isStamps ? 'Ready to redeem' : 'Can redeem now'}
+					</p>
 					<p class="mt-1 text-2xl font-bold text-foreground">
 						{isStamps
-							? data.members.filter((m) => m.currentStamps >= (data.loyalty.stamps.rewardAt || 10)).length
-							: data.members.filter((m) => m.currentPoints >= (data.loyalty.points.redeemAt || 100)).length}
+							? data.members.filter((m) => m.currentStamps >= (data.loyalty.stamps.rewardAt || 10))
+									.length
+							: data.members.filter((m) => m.currentPoints >= (data.loyalty.points.redeemAt || 100))
+									.length}
 					</p>
 				</CardContent>
 			</Card>
@@ -420,7 +625,9 @@
 		{#if data.members.length === 0}
 			<Card class="shadow-sm">
 				<CardContent class="py-10 text-center">
-					<div class="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-muted">
+					<div
+						class="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-muted"
+					>
 						<Icon icon="mdi:account-group-outline" class="h-5 w-5 text-muted-foreground" />
 					</div>
 					<p class="text-sm font-medium text-foreground">No members yet</p>
@@ -445,26 +652,45 @@
 						</TableHeader>
 						<TableBody>
 							{#each data.members as member (member.id)}
-								{@const rewardTarget = isStamps ? (data.loyalty.stamps.rewardAt || 10) : (data.loyalty.points.redeemAt || 100)}
-								{@const current = isStamps ? member.currentStamps % rewardTarget : member.currentPoints}
+								{@const rewardTarget = isStamps
+									? data.loyalty.stamps.rewardAt || 10
+									: data.loyalty.points.redeemAt || 100}
+								{@const current = isStamps
+									? member.currentStamps % rewardTarget
+									: member.currentPoints}
 								{@const pct = Math.min(100, Math.round((current / rewardTarget) * 100))}
 								<TableRow>
 									<TableCell>
 										<p class="text-sm font-medium text-foreground">{member.name ?? '—'}</p>
 										<p class="text-xs text-muted-foreground">{member.email}</p>
 									</TableCell>
-									<TableCell class="font-medium">{isStamps ? member.currentStamps : member.currentPoints.toLocaleString()}</TableCell>
+									<TableCell class="font-medium"
+										>{isStamps
+											? member.currentStamps
+											: member.currentPoints.toLocaleString()}</TableCell
+									>
 									<TableCell class="min-w-30">
 										<div class="flex items-center gap-2">
 											<div class="h-1.5 flex-1 overflow-hidden rounded-full bg-muted">
-												<div class="h-full rounded-full bg-primary transition-all" style="width: {pct}%"></div>
+												<div
+													class="h-full rounded-full bg-primary transition-all"
+													style="width: {pct}%"
+												></div>
 											</div>
-											<span class="shrink-0 text-xs text-muted-foreground">{current}/{rewardTarget}</span>
+											<span class="shrink-0 text-xs text-muted-foreground"
+												>{current}/{rewardTarget}</span
+											>
 										</div>
 									</TableCell>
 									<TableCell>{member.totalRewardsEarned}</TableCell>
 									<TableCell class="text-sm text-muted-foreground">
-										{member.lastOrderAt ? new Date(member.lastOrderAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : '—'}
+										{member.lastOrderAt
+											? new Date(member.lastOrderAt).toLocaleDateString(undefined, {
+													month: 'short',
+													day: 'numeric',
+													year: 'numeric'
+												})
+											: '—'}
 									</TableCell>
 								</TableRow>
 							{/each}

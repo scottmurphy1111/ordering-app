@@ -17,6 +17,8 @@
 		<a href={resolve('/')} class="text-sm font-bold tracking-tight text-foreground">
 			Order<span class="text-primary">Local</span>
 		</a>
-		<p class="text-xs text-muted-foreground">© {new Date().getFullYear()} Order Local. All rights reserved.</p>
+		<p class="text-xs text-muted-foreground">
+			© {new Date().getFullYear()} Order Local. All rights reserved.
+		</p>
 	</div>
 </footer>

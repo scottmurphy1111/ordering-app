@@ -194,16 +194,14 @@
 					<div class="min-w-0 flex-1">
 						<p class="truncate text-xs font-medium text-white">{data.user.email}</p>
 						{#if data.vendorRole}
-							<p class="text-[11px] capitalize text-white/45">{data.vendorRole}</p>
+							<p class="text-[11px] text-white/45 capitalize">{data.vendorRole}</p>
 						{/if}
 					</div>
 					<Icon icon="lucide:more-horizontal" class="h-4 w-4 shrink-0 text-white/40" />
 				</div>
 			</DropdownMenuTrigger>
 			<DropdownMenuContent align="end" side="top">
-				<DropdownMenuItem
-					onclick={() => goto(resolve('/dashboard/account/profile'))}
-				>
+				<DropdownMenuItem onclick={() => goto(resolve('/dashboard/account/profile'))}>
 					<Icon icon="mdi:account-circle-outline" class="h-4 w-4" />
 					Account settings
 				</DropdownMenuItem>
@@ -252,12 +250,15 @@
 	<!-- Main content -->
 	<main class="flex flex-1 flex-col overflow-y-auto">
 		<!-- Mobile top bar -->
-		<header class="sticky top-0 z-30 md:static md:z-auto flex items-center gap-3 border-b bg-gray-900 px-4 py-3 md:hidden">
+		<header
+			class="sticky top-0 z-30 flex items-center gap-3 border-b bg-gray-900 px-4 py-3 md:static md:z-auto md:hidden"
+		>
 			<!-- Plain <button> instead of shadcn <Button variant="ghost">: ghost's
 			     hover:bg-accent conflicts unpredictably with class-level hover overrides
 			     on dark surfaces. Tier 2 shadcn audit should standardize a "dark surface"
 			     Button variant; until then, plain element with explicit hover classes. -->
 			<button
+				type="button"
 				onclick={() => (sidebarOpen = true)}
 				class="shrink-0 rounded-md p-2 text-white/70 transition-colors hover:bg-gray-800 hover:text-white active:bg-gray-700"
 				aria-label="Open menu"

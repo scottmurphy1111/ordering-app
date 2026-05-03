@@ -21,7 +21,10 @@ export async function POST(event: RequestEvent) {
 	if (file.size > 5 * 1024 * 1024) throw error(400, 'File too large (max 5MB)');
 
 	try {
-		const bannerUrl = await uploadToR2(file, `${locals.vendor!.slug}/banners/banner-${locals.vendorId}`);
+		const bannerUrl = await uploadToR2(
+			file,
+			`${locals.vendor!.slug}/banners/banner-${locals.vendorId}`
+		);
 
 		await db
 			.update(vendor)

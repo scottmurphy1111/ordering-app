@@ -68,7 +68,7 @@
 	<main class="mx-auto max-w-lg space-y-4 px-4 py-8">
 		<!-- Payment / confirmation card -->
 		<Card
-			class="shadow-sm text-center"
+			class="text-center shadow-sm"
 			style={isPaid
 				? 'border-color: var(--background-color);'
 				: order.paymentStatus === 'pending'
@@ -82,7 +82,11 @@
 							class="flex h-14 w-14 items-center justify-center rounded-full"
 							style="background-color: color-mix(in srgb, var(--background-color) 12%, white);"
 						>
-							<Icon icon="mdi:check-circle" class="h-8 w-8" style="color: var(--background-color);" />
+							<Icon
+								icon="mdi:check-circle"
+								class="h-8 w-8"
+								style="color: var(--background-color);"
+							/>
 						</div>
 					</div>
 					<h1 class="text-xl font-bold text-foreground">Payment confirmed!</h1>
@@ -120,8 +124,12 @@
 				{/if}
 
 				<div class="mt-3 flex flex-wrap items-center justify-center gap-2">
-					<span class="font-mono text-sm font-semibold text-muted-foreground">{order.orderNumber}</span>
-					<span class="rounded-full bg-muted px-2.5 py-0.5 text-xs text-muted-foreground capitalize">
+					<span class="font-mono text-sm font-semibold text-muted-foreground"
+						>{order.orderNumber}</span
+					>
+					<span
+						class="rounded-full bg-muted px-2.5 py-0.5 text-xs text-muted-foreground capitalize"
+					>
 						{order.type}
 					</span>
 					{#if scheduledLabel}
@@ -217,11 +225,7 @@
 			</CardHeader>
 			<CardContent class="p-0">
 				{#each data.items as item, i (item.id)}
-					<div
-						class="flex items-start justify-between gap-3 px-4 py-3 {i > 0
-							? 'border-t '
-							: ''}"
-					>
+					<div class="flex items-start justify-between gap-3 px-4 py-3 {i > 0 ? 'border-t ' : ''}">
 						<div class="min-w-0 flex-1">
 							<p class="text-sm font-medium text-foreground">{item.name}</p>
 							{#if Array.isArray(item.selectedModifiers) && (item.selectedModifiers as { name: string }[]).length > 0}
@@ -274,7 +278,7 @@
 					</div>
 				{/if}
 				<div
-					class="mt-1.5 flex justify-between border-t  pt-1.5 font-semibold"
+					class="mt-1.5 flex justify-between border-t pt-1.5 font-semibold"
 					style="color: var(--background-color);"
 				>
 					<span>Total</span>
@@ -284,7 +288,7 @@
 		</Card>
 
 		{#if order.notes}
-			<div class="rounded-lg border  bg-muted/50 px-4 py-3 text-sm text-muted-foreground">
+			<div class="rounded-lg border bg-muted/50 px-4 py-3 text-sm text-muted-foreground">
 				<span class="font-medium">Notes: </span>{order.notes}
 			</div>
 		{/if}

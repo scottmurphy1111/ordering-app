@@ -101,9 +101,7 @@
 		return `${Math.floor(diff / 3600)} hr ago`;
 	}
 
-	const pickupCount = $derived(
-		data.orderTypeSplit.find((t) => t.type === 'pickup')?.count ?? 0
-	);
+	const pickupCount = $derived(data.orderTypeSplit.find((t) => t.type === 'pickup')?.count ?? 0);
 	const deliveryCount = $derived(
 		data.orderTypeSplit.find((t) => t.type === 'delivery')?.count ?? 0
 	);
@@ -134,6 +132,7 @@
 		{#if data.vendor?.slug}
 			<div class="flex items-center gap-2">
 				<button
+					type="button"
 					onclick={copyCatalogLink}
 					class="inline-flex h-10 items-center gap-1.5 rounded-md border px-3 text-sm font-medium text-muted-foreground transition-colors hover:border-gray-400 hover:bg-muted"
 				>
@@ -250,7 +249,9 @@
 				href={resolve('/dashboard/catalog/items?drawer=new')}
 				class="flex items-start gap-3 rounded-xl border p-4 transition-all hover:border-gray-300 hover:shadow-sm"
 			>
-				<div class="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+				<div
+					class="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10"
+				>
 					<Icon icon="mdi:plus" class="h-4 w-4 text-primary" />
 				</div>
 				<div>
@@ -262,7 +263,9 @@
 				href={resolve('/dashboard/catalog/categories')}
 				class="flex items-start gap-3 rounded-xl border p-4 transition-all hover:border-gray-300 hover:shadow-sm"
 			>
-				<div class="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+				<div
+					class="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10"
+				>
 					<Icon icon="mdi:view-grid-outline" class="h-4 w-4 text-primary" />
 				</div>
 				<div>
@@ -274,7 +277,9 @@
 				href={resolve('/dashboard/orders')}
 				class="flex items-start gap-3 rounded-xl border p-4 transition-all hover:border-gray-300 hover:shadow-sm"
 			>
-				<div class="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+				<div
+					class="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10"
+				>
 					<Icon icon="mdi:clipboard-list-outline" class="h-4 w-4 text-primary" />
 				</div>
 				<div>
@@ -326,7 +331,7 @@
 								<TableHead>Order</TableHead>
 								<TableHead class="hidden sm:table-cell">Customer</TableHead>
 								<TableHead>Status</TableHead>
-								<TableHead class="hidden sm:table-cell text-right">Total</TableHead>
+								<TableHead class="hidden text-right sm:table-cell">Total</TableHead>
 								<TableHead class="text-right">When</TableHead>
 							</TableRow>
 						</TableHeader>
@@ -345,7 +350,7 @@
 											{capitalize(order.status)}
 										</Badge>
 									</TableCell>
-									<TableCell class="hidden sm:table-cell text-right font-medium">
+									<TableCell class="hidden text-right font-medium sm:table-cell">
 										${(order.total / 100).toFixed(2)}
 									</TableCell>
 									<TableCell class="text-right text-xs text-muted-foreground">
@@ -393,10 +398,14 @@
 							{#each data.topItems as item, i (item.name)}
 								<li class="flex items-center justify-between gap-2">
 									<div class="flex min-w-0 items-center gap-2">
-										<span class="text-xs font-medium tabular-nums text-muted-foreground w-4">{i + 1}</span>
+										<span class="w-4 text-xs font-medium text-muted-foreground tabular-nums"
+											>{i + 1}</span
+										>
 										<span class="truncate text-sm text-foreground">{item.name}</span>
 									</div>
-									<span class="shrink-0 text-xs font-semibold text-muted-foreground">{item.qty}×</span>
+									<span class="shrink-0 text-xs font-semibold text-muted-foreground"
+										>{item.qty}×</span
+									>
 								</li>
 							{/each}
 						</ul>
@@ -430,7 +439,10 @@
 									<span class="text-xs font-semibold text-foreground">{100 - pickupPct}%</span>
 								</div>
 								<div class="h-2 w-full overflow-hidden rounded-full bg-muted">
-									<div class="h-full rounded-full bg-blue-500" style="width:{100 - pickupPct}%"></div>
+									<div
+										class="h-full rounded-full bg-blue-500"
+										style="width:{100 - pickupPct}%"
+									></div>
 								</div>
 								<p class="mt-0.5 text-xs text-muted-foreground">{deliveryCount} orders</p>
 							</div>

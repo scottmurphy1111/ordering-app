@@ -132,7 +132,9 @@
 		<CardContent class="space-y-4 pt-6">
 			<div>
 				<h2 class="font-semibold text-foreground">Assign items</h2>
-				<p class="mt-0.5 text-sm text-muted-foreground">Check items that belong to this category.</p>
+				<p class="mt-0.5 text-sm text-muted-foreground">
+					Check items that belong to this category.
+				</p>
 			</div>
 			{#if data.items.length === 0}
 				<p class="text-sm text-muted-foreground">No catalog items yet.</p>

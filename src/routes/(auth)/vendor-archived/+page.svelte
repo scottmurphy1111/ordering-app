@@ -7,16 +7,18 @@
 
 	async function handleSignOut() {
 		await signOut({
-			fetchOptions: { onSuccess: () => { window.location.href = '/login'; } }
+			fetchOptions: {
+				onSuccess: () => {
+					window.location.href = '/login';
+				}
+			}
 		});
 	}
 </script>
 
 <Card class="w-full max-w-sm">
 	<CardContent class="p-8 text-center">
-		<div
-			class="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-muted"
-		>
+		<div class="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-muted">
 			<Icon icon="mdi:store-off-outline" class="h-7 w-7 text-muted-foreground" />
 		</div>
 		<h1 class="text-lg font-semibold text-foreground">Store unavailable</h1>

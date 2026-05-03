@@ -207,7 +207,14 @@ export const actions: Actions = {
 		const isActive = formData.get('isActive') === 'on';
 
 		const maxOrders = maxOrdersRaw ? parseInt(maxOrdersRaw) : null;
-		const error = validateTemplateFields(name, days, windowStart, windowEnd, cutoffHours, maxOrders);
+		const error = validateTemplateFields(
+			name,
+			days,
+			windowStart,
+			windowEnd,
+			cutoffHours,
+			maxOrders
+		);
 		if (error) return fail(400, { templateError: error });
 
 		let locationId: number | null = null;
@@ -256,7 +263,14 @@ export const actions: Actions = {
 		const maxOrdersRaw = formData.get('maxOrders')?.toString().trim() || '';
 		const maxOrders = maxOrdersRaw ? parseInt(maxOrdersRaw) : null;
 
-		const error = validateTemplateFields(name, days, windowStart, windowEnd, cutoffHours, maxOrders);
+		const error = validateTemplateFields(
+			name,
+			days,
+			windowStart,
+			windowEnd,
+			cutoffHours,
+			maxOrders
+		);
 		if (error) return fail(400, { templateError: error });
 
 		// IDOR guard

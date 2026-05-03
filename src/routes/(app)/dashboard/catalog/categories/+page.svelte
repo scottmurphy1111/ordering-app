@@ -37,7 +37,13 @@
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
 	// ── Drawer state ──────────────────────────────────────────────
-	type DrawerCategory = { id: number; name: string; description: string | null; isActive: boolean | null; sortOrder: number | null };
+	type DrawerCategory = {
+		id: number;
+		name: string;
+		description: string | null;
+		isActive: boolean | null;
+		sortOrder: number | null;
+	};
 	let drawerOpen = $state(false);
 	let drawerMode = $state<'new' | 'edit'>('new');
 	let drawerCategory = $state<DrawerCategory | null>(null);
@@ -193,12 +199,20 @@
 					<CatalogViewToggle />
 					<DropdownMenu>
 						<DropdownMenuTrigger>
-							<button type="button" class="flex h-10 items-center gap-1.5 rounded-md border px-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted">
+							<button
+								type="button"
+								class="flex h-10 items-center gap-1.5 rounded-md border px-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted"
+							>
 								<Icon icon="mdi:dots-horizontal" class="h-4 w-4" /> More
 							</button>
 						</DropdownMenuTrigger>
 						<DropdownMenuContent align="end">
-							<DropdownMenuItem onclick={() => { sortMode = true; closeDrawer(); }}>
+							<DropdownMenuItem
+								onclick={() => {
+									sortMode = true;
+									closeDrawer();
+								}}
+							>
 								<Icon icon="mdi:drag-vertical" class="h-4 w-4" /> Reorder categories
 							</DropdownMenuItem>
 						</DropdownMenuContent>
@@ -228,12 +242,16 @@
 	</div>
 
 	{#if form?.error}
-		<div class="mb-4 rounded-md border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+		<div
+			class="mb-4 rounded-md border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive"
+		>
 			{form.error}
 		</div>
 	{/if}
 	{#if saveError}
-		<div class="mb-4 rounded-md border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+		<div
+			class="mb-4 rounded-md border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive"
+		>
 			{saveError}
 		</div>
 	{/if}
@@ -259,12 +277,18 @@
 							data-id={cat.id}
 							class="flex items-center gap-3 bg-background px-4 py-3 transition-colors hover:bg-muted/50"
 						>
-							<span class="drag-handle cursor-grab text-muted-foreground/40 transition-colors hover:text-muted-foreground active:cursor-grabbing">
+							<span
+								class="drag-handle cursor-grab text-muted-foreground/40 transition-colors hover:text-muted-foreground active:cursor-grabbing"
+							>
 								<Icon icon="mdi:drag-horizontal-variant" class="h-5 w-5" />
 							</span>
 							<span class="flex-1 text-sm font-medium text-foreground">{cat.name}</span>
 							<span class="text-xs text-muted-foreground">{cat.itemCount} items</span>
-							<Badge class={cat.isActive ? 'bg-green-100 text-green-700' : 'bg-muted text-muted-foreground'}>
+							<Badge
+								class={cat.isActive
+									? 'bg-green-100 text-green-700'
+									: 'bg-muted text-muted-foreground'}
+							>
 								{cat.isActive ? 'Active' : 'Hidden'}
 							</Badge>
 						</li>
@@ -285,7 +309,8 @@
 						<a
 							href={resolve(`/dashboard/catalog/items?categoryId=${cat.id}` as `/${string}`)}
 							class="mt-1 inline-block text-xs text-muted-foreground transition-colors hover:text-primary hover:underline"
-						>{cat.itemCount} {Number(cat.itemCount) === 1 ? 'item' : 'items'}</a>
+							>{cat.itemCount} {Number(cat.itemCount) === 1 ? 'item' : 'items'}</a
+						>
 					</div>
 					<div class="flex items-center justify-between border-t border-gray-100 px-4 py-2">
 						<form method="post" action="?/toggleActive" use:enhance>
@@ -294,9 +319,15 @@
 							<button
 								type="submit"
 								title={cat.isActive ? 'Active — click to hide' : 'Hidden — click to show'}
-								class="relative inline-flex h-5 w-9 items-center rounded-full transition-colors {cat.isActive ? 'bg-primary' : 'bg-gray-200'}"
+								class="relative inline-flex h-5 w-9 items-center rounded-full transition-colors {cat.isActive
+									? 'bg-primary'
+									: 'bg-gray-200'}"
 							>
-								<span class="inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform {cat.isActive ? 'translate-x-4.5' : 'translate-x-0.5'}"></span>
+								<span
+									class="inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform {cat.isActive
+										? 'translate-x-4.5'
+										: 'translate-x-0.5'}"
+								></span>
 							</button>
 						</form>
 						<div class="flex items-center gap-1">
@@ -311,9 +342,10 @@
 									onclick={async (e) => {
 										e.preventDefault();
 										const itemCount = Number(cat.itemCount);
-										const msg = itemCount > 0
-											? `Delete '${cat.name}'? This category contains ${itemCount} ${itemCount === 1 ? 'item' : 'items'}. They will become uncategorized.`
-											: `Delete '${cat.name}'?`;
+										const msg =
+											itemCount > 0
+												? `Delete '${cat.name}'? This category contains ${itemCount} ${itemCount === 1 ? 'item' : 'items'}. They will become uncategorized.`
+												: `Delete '${cat.name}'?`;
 										if (await confirmDialog(msg))
 											(e.currentTarget as HTMLButtonElement).form?.requestSubmit();
 									}}
@@ -336,6 +368,7 @@
 						{#each [['name', 'Name'], ['items', 'Items'], ['status', 'Status']] as const as [col, label] (col)}
 							<TableHead class="px-4 py-2.5">
 								<button
+									type="button"
 									onclick={() => sortBy(col)}
 									class="inline-flex items-center gap-1 font-medium text-muted-foreground transition-colors hover:text-foreground"
 								>
@@ -346,7 +379,9 @@
 												? 'mdi:chevron-up'
 												: 'mdi:chevron-down'
 											: 'mdi:unfold-more-horizontal'}
-										class="h-3.5 w-3.5 {sortCol === col ? 'text-foreground' : 'text-muted-foreground/40'}"
+										class="h-3.5 w-3.5 {sortCol === col
+											? 'text-foreground'
+											: 'text-muted-foreground/40'}"
 									/>
 								</button>
 							</TableHead>
@@ -367,7 +402,8 @@
 								<a
 									href={resolve(`/dashboard/catalog/items?categoryId=${cat.id}` as `/${string}`)}
 									class="text-sm text-muted-foreground transition-colors hover:text-primary hover:underline"
-								>{cat.itemCount} {Number(cat.itemCount) === 1 ? 'item' : 'items'}</a>
+									>{cat.itemCount} {Number(cat.itemCount) === 1 ? 'item' : 'items'}</a
+								>
 							</TableCell>
 							<TableCell class="px-4 py-3">
 								<form method="post" action="?/toggleActive" use:enhance>
@@ -376,15 +412,23 @@
 									<button
 										type="submit"
 										title={cat.isActive ? 'Active — click to hide' : 'Hidden — click to show'}
-										class="relative inline-flex h-5 w-9 items-center rounded-full transition-colors {cat.isActive ? 'bg-primary' : 'bg-gray-200'}"
+										class="relative inline-flex h-5 w-9 items-center rounded-full transition-colors {cat.isActive
+											? 'bg-primary'
+											: 'bg-gray-200'}"
 									>
-										<span class="inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform {cat.isActive ? 'translate-x-4.5' : 'translate-x-0.5'}"></span>
+										<span
+											class="inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform {cat.isActive
+												? 'translate-x-4.5'
+												: 'translate-x-0.5'}"
+										></span>
 									</button>
 								</form>
 							</TableCell>
 							<TableCell class="px-4 py-3">
 								<div class="flex items-center gap-2">
-									<Button size="sm" variant="outline" onclick={() => openEditDrawer(cat)}>Edit</Button>
+									<Button size="sm" variant="outline" onclick={() => openEditDrawer(cat)}
+										>Edit</Button
+									>
 									<form method="post" action="?/delete" use:enhance>
 										<input type="hidden" name="id" value={cat.id} />
 										<Button
@@ -395,9 +439,10 @@
 											onclick={async (e) => {
 												e.preventDefault();
 												const itemCount = Number(cat.itemCount);
-												const msg = itemCount > 0
-													? `Delete '${cat.name}'? This category contains ${itemCount} ${itemCount === 1 ? 'item' : 'items'}. They will become uncategorized.`
-													: `Delete '${cat.name}'?`;
+												const msg =
+													itemCount > 0
+														? `Delete '${cat.name}'? This category contains ${itemCount} ${itemCount === 1 ? 'item' : 'items'}. They will become uncategorized.`
+														: `Delete '${cat.name}'?`;
 												if (await confirmDialog(msg))
 													(e.currentTarget as HTMLButtonElement).form?.requestSubmit();
 											}}
@@ -417,10 +462,15 @@
 </div>
 
 <!-- ── Category drawer ────────────────────────────────────────── -->
-<Sheet bind:open={drawerOpen} onOpenChange={(open) => { if (!open) clearDrawerParam(); }}>
+<Sheet
+	bind:open={drawerOpen}
+	onOpenChange={(open) => {
+		if (!open) clearDrawerParam();
+	}}
+>
 	<SheetContent
 		side="right"
-		class="data-[side=right]:w-full data-[side=right]:sm:max-w-none data-[side=right]:md:max-w-[720px] flex flex-col gap-0 p-0"
+		class="flex flex-col gap-0 p-0 data-[side=right]:w-full data-[side=right]:sm:max-w-none data-[side=right]:md:max-w-[720px]"
 	>
 		<SheetHeader class="shrink-0 border-b px-6 py-4">
 			<SheetTitle>{drawerMode === 'new' ? 'New category' : 'Edit category'}</SheetTitle>
@@ -431,12 +481,16 @@
 
 		<div class="flex-1 overflow-y-auto px-6 py-5">
 			{#if drawerError}
-				<div class="mb-4 rounded-md border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+				<div
+					class="mb-4 rounded-md border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive"
+				>
 					{drawerError}
 				</div>
 			{/if}
 			{#if drawerSuccess}
-				<div class="mb-4 rounded-md border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
+				<div
+					class="mb-4 rounded-md border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700"
+				>
 					Saved.
 				</div>
 			{/if}
@@ -487,8 +541,16 @@
 							aria-label={drawerIsActive ? 'Disable category' : 'Enable category'}
 							class="flex items-center"
 						>
-							<div class="relative h-6 w-11 rounded-full transition-colors duration-200 {drawerIsActive ? 'bg-primary' : 'bg-muted'}">
-								<span class="absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-background shadow transition-transform duration-200 {drawerIsActive ? 'translate-x-5' : 'translate-x-0'}"></span>
+							<div
+								class="relative h-6 w-11 rounded-full transition-colors duration-200 {drawerIsActive
+									? 'bg-primary'
+									: 'bg-muted'}"
+							>
+								<span
+									class="absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-background shadow transition-transform duration-200 {drawerIsActive
+										? 'translate-x-5'
+										: 'translate-x-0'}"
+								></span>
 							</div>
 						</button>
 					</div>

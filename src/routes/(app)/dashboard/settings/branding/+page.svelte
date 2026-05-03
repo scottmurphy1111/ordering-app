@@ -14,12 +14,7 @@
 		CardContent,
 		CardFooter
 	} from '$lib/components/ui/card';
-	import {
-		Dialog,
-		DialogContent,
-		DialogHeader,
-		DialogTitle
-	} from '$lib/components/ui/dialog';
+	import { Dialog, DialogContent, DialogHeader, DialogTitle } from '$lib/components/ui/dialog';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
@@ -183,7 +178,6 @@
 							</div>
 						{/each}
 					</div>
-
 				</form>
 			</CardContent>
 			<CardFooter class="gap-3">
@@ -213,7 +207,9 @@
 							</div>
 							<div>
 								<p class="text-sm font-bold" style="color: {foregroundColor};">My Restaurant</p>
-								<p class="text-xs opacity-70" style="color: {foregroundColor};">Order ahead · pickup</p>
+								<p class="text-xs opacity-70" style="color: {foregroundColor};">
+									Order ahead · pickup
+								</p>
 							</div>
 						</div>
 					</div>
@@ -236,19 +232,24 @@
 					</div>
 					<!-- Catalog items -->
 					<div class="divide-y" style="background-color: {foregroundColor};">
-						{#each [
-							{ name: 'Classic Burger', desc: 'Beef patty, lettuce, tomato, pickles', price: '$14.00', color: '#fef3c7' },
-							{ name: 'Crispy Chicken', desc: 'Buttermilk fried, house slaw', price: '$13.50', color: '#dbeafe' },
-							{ name: 'Garden Salad', desc: 'Mixed greens, house vinaigrette', price: '$10.00', color: '#dcfce7' },
-							{ name: 'Lemonade', desc: 'Fresh squeezed, mint', price: '$4.50', color: '#fef9c3' }
-						] as item (item.name)}
+						{#each [{ name: 'Classic Burger', desc: 'Beef patty, lettuce, tomato, pickles', price: '$14.00', color: '#fef3c7' }, { name: 'Crispy Chicken', desc: 'Buttermilk fried, house slaw', price: '$13.50', color: '#dbeafe' }, { name: 'Garden Salad', desc: 'Mixed greens, house vinaigrette', price: '$10.00', color: '#dcfce7' }, { name: 'Lemonade', desc: 'Fresh squeezed, mint', price: '$4.50', color: '#fef9c3' }] as item (item.name)}
 							<div class="flex items-center justify-between gap-3 px-4 py-3">
 								<div class="flex items-center gap-3">
-									<div class="h-12 w-12 shrink-0 rounded-lg" style="background-color: {item.color};"></div>
+									<div
+										class="h-12 w-12 shrink-0 rounded-lg"
+										style="background-color: {item.color};"
+									></div>
 									<div>
 										<p class="text-sm font-semibold" style="color: {accentColor};">{item.name}</p>
-										<p class="mt-0.5 text-xs leading-tight" style="color: {accentColor}; opacity: 0.6;">{item.desc}</p>
-										<p class="mt-1 text-sm font-medium" style="color: {accentColor};">{item.price}</p>
+										<p
+											class="mt-0.5 text-xs leading-tight"
+											style="color: {accentColor}; opacity: 0.6;"
+										>
+											{item.desc}
+										</p>
+										<p class="mt-1 text-sm font-medium" style="color: {accentColor};">
+											{item.price}
+										</p>
 									</div>
 								</div>
 								<button
@@ -330,7 +331,11 @@
 					</Button>
 					{#if data.branding.logoUrl}
 						<form method="post" action="?/removeLogo" use:enhance>
-							<Button type="submit" variant="ghost" class="text-red-600 hover:bg-destructive/10 hover:text-red-500">Remove</Button>
+							<Button
+								type="submit"
+								variant="ghost"
+								class="text-red-600 hover:bg-destructive/10 hover:text-red-500">Remove</Button
+							>
 						</form>
 					{/if}
 				</div>
@@ -344,7 +349,9 @@
 		<Card class="shadow-sm">
 			<CardHeader class="border-b">
 				<CardTitle>Banner image</CardTitle>
-				<CardDescription>Full-bleed hero image shown at the top of your catalog page.</CardDescription>
+				<CardDescription
+					>Full-bleed hero image shown at the top of your catalog page.</CardDescription
+				>
 				<CardAction>
 					<span
 						class="rounded-full px-2.5 py-0.5 text-xs font-medium {data.branding.bannerUrl
@@ -389,7 +396,11 @@
 					</Button>
 					{#if data.branding.bannerUrl}
 						<form method="post" action="?/removeBanner" use:enhance>
-							<Button type="submit" variant="ghost" class="text-red-600 hover:bg-destructive/10 hover:text-red-500">Remove</Button>
+							<Button
+								type="submit"
+								variant="ghost"
+								class="text-red-600 hover:bg-destructive/10 hover:text-red-500">Remove</Button
+							>
 						</form>
 					{/if}
 				</div>
@@ -404,8 +415,8 @@
 			<CardHeader class="border-b">
 				<CardTitle>Background image</CardTitle>
 				<CardDescription
-					>Subtle full-page texture behind your catalog and cart. Works best with low-contrast images
-					(wood, marble, linen).</CardDescription
+					>Subtle full-page texture behind your catalog and cart. Works best with low-contrast
+					images (wood, marble, linen).</CardDescription
 				>
 				<CardAction>
 					<span
@@ -455,7 +466,11 @@
 					</Button>
 					{#if data.branding.backgroundImageUrl}
 						<form method="post" action="?/removeBackground" use:enhance>
-							<Button type="submit" variant="ghost" class="text-red-600 hover:bg-destructive/10 hover:text-red-500">Remove</Button>
+							<Button
+								type="submit"
+								variant="ghost"
+								class="text-red-600 hover:bg-destructive/10 hover:text-red-500">Remove</Button
+							>
 						</form>
 					{/if}
 				</div>

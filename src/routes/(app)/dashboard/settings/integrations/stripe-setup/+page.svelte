@@ -1,39 +1,39 @@
 <script lang="ts">
-	import { resolve } from'$app/paths';
-	import Icon from'@iconify/svelte';
+	import { resolve } from '$app/paths';
+	import Icon from '@iconify/svelte';
 
 	const integrationsHref = resolve('/dashboard/settings/integrations');
-	const stripeHref ='https://stripe.com';
-	const stripeApiKeysHref ='https://dashboard.stripe.com/apikeys';
+	const stripeHref = 'https://stripe.com';
+	const stripeApiKeysHref = 'https://dashboard.stripe.com/apikeys';
 
 	const steps = [
 		{
 			number: 1,
-			title:'Create a Stripe account',
+			title: 'Create a Stripe account',
 			description:
 				"Go to stripe.com and sign up. You'll need an email address and a password to get started."
 		},
 		{
 			number: 2,
-			title:'Verify your identity',
+			title: 'Verify your identity',
 			description:
 				"Stripe requires identity verification before you can accept live payments. You'll be prompted to provide your legal name, date of birth, and the last 4 digits of your SSN (or equivalent for your country). This is standard for any payment processor."
 		},
 		{
 			number: 3,
-			title:'Add your bank account',
+			title: 'Add your bank account',
 			description:
 				'To receive payouts, connect a bank account under Settings → Bank accounts and scheduling in your Stripe dashboard. Payouts typically arrive within 2 business days.'
 		},
 		{
 			number: 4,
-			title:'Get your secret API key',
+			title: 'Get your secret API key',
 			description:
 				"In your Stripe dashboard, go to Developers → API keys. You'll see a Publishable key and a Secret key. Copy the Secret key — it starts with sk_live_ for live mode or sk_test_ for test mode."
 		},
 		{
 			number: 5,
-			title:'Paste it into OrderLocal',
+			title: 'Paste it into OrderLocal',
 			description:
 				'Go back to Integrations, click"Connect Stripe", and paste your secret key. We\'ll verify it immediately. Use sk_test_ keys while testing and swap to sk_live_ when you\'re ready to go live.'
 		}
@@ -61,7 +61,9 @@
 			</div>
 			<div>
 				<h1 class="text-2xl font-bold text-foreground">Setting up Stripe</h1>
-				<p class="mt-0.5 text-sm text-muted-foreground">Follow these steps to start accepting payments.</p>
+				<p class="mt-0.5 text-sm text-muted-foreground">
+					Follow these steps to start accepting payments.
+				</p>
 			</div>
 		</div>
 	</div>

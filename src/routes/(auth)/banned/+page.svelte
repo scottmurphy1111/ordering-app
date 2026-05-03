@@ -1,20 +1,25 @@
 <script lang="ts">
 	import { signOut } from '$lib/auth-client';
-	import { resolve } from '$app/paths';
 	import Icon from '@iconify/svelte';
 	import { Button } from '$lib/components/ui/button';
 	import { Card, CardContent } from '$lib/components/ui/card';
 
 	async function handleSignOut() {
 		await signOut({
-			fetchOptions: { onSuccess: () => { window.location.href = '/login'; } }
+			fetchOptions: {
+				onSuccess: () => {
+					window.location.href = '/login';
+				}
+			}
 		});
 	}
 </script>
 
 <Card class="w-full max-w-sm">
 	<CardContent class="p-8 text-center">
-		<div class="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-destructive/10">
+		<div
+			class="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-destructive/10"
+		>
 			<Icon icon="mdi:account-cancel-outline" class="h-7 w-7 text-red-600" />
 		</div>
 		<h1 class="text-lg font-semibold text-foreground">Account suspended</h1>

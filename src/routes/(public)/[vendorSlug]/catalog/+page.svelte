@@ -134,7 +134,10 @@
 		if (!el) return;
 		const stickyBar = document.querySelector('.sticky') as HTMLElement | null;
 		const offset = (stickyBar?.offsetHeight ?? 0) + 16;
-		window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - offset, behavior: 'smooth' });
+		window.scrollTo({
+			top: el.getBoundingClientRect().top + window.scrollY - offset,
+			behavior: 'smooth'
+		});
 	}
 </script>
 
@@ -164,9 +167,17 @@
 					{/if}
 					<div>
 						{#if vendor.website}
-							<a href={vendor.website} target="_blank" rel="noopener noreferrer" class="transition-opacity hover:opacity-80">
+							<!-- vendor.website is an external URL; resolve() is for internal routes only -->
+							<!-- eslint-disable svelte/no-navigation-without-resolve -->
+							<a
+								href={vendor.website}
+								target="_blank"
+								rel="noopener noreferrer"
+								class="transition-opacity hover:opacity-80"
+							>
 								<h1 class="display text-3xl font-bold text-white drop-shadow">{vendor.name}</h1>
 							</a>
+							<!-- eslint-enable svelte/no-navigation-without-resolve -->
 						{:else}
 							<h1 class="display text-3xl font-bold text-white drop-shadow">{vendor.name}</h1>
 						{/if}
@@ -178,9 +189,14 @@
 				{#if openStatus !== null}
 					<div class="mt-3 flex flex-wrap items-center gap-2">
 						{#if openStatus}
-							<span class="rounded-full bg-white/20 px-2.5 py-0.5 text-xs font-semibold text-white">Open</span>
+							<span class="rounded-full bg-white/20 px-2.5 py-0.5 text-xs font-semibold text-white"
+								>Open</span
+							>
 						{:else}
-							<span class="rounded-full bg-red-600/90 px-2.5 py-0.5 text-xs font-semibold text-white">Closed</span>
+							<span
+								class="rounded-full bg-red-600/90 px-2.5 py-0.5 text-xs font-semibold text-white"
+								>Closed</span
+							>
 						{/if}
 					</div>
 				{/if}
@@ -199,21 +215,50 @@
 					{/if}
 					<div class="min-w-0 flex-1">
 						{#if vendor.website}
-							<a href={vendor.website} target="_blank" rel="noopener noreferrer" class="transition-opacity hover:opacity-80">
-								<h1 class="display text-3xl font-bold leading-tight" style="color: var(--foreground-color);">{vendor.name}</h1>
+							<!-- vendor.website is an external URL; resolve() is for internal routes only -->
+							<!-- eslint-disable svelte/no-navigation-without-resolve -->
+							<a
+								href={vendor.website}
+								target="_blank"
+								rel="noopener noreferrer"
+								class="transition-opacity hover:opacity-80"
+							>
+								<h1
+									class="display text-3xl leading-tight font-bold"
+									style="color: var(--foreground-color);"
+								>
+									{vendor.name}
+								</h1>
 							</a>
+							<!-- eslint-enable svelte/no-navigation-without-resolve -->
 						{:else}
-							<h1 class="display text-3xl font-bold leading-tight" style="color: var(--foreground-color);">{vendor.name}</h1>
+							<h1
+								class="display text-3xl leading-tight font-bold"
+								style="color: var(--foreground-color);"
+							>
+								{vendor.name}
+							</h1>
 						{/if}
 						{#if vendor.tagline}
-							<p class="mt-1.5 text-sm" style="color: color-mix(in srgb, var(--foreground-color) 70%, transparent);">{vendor.tagline}</p>
+							<p
+								class="mt-1.5 text-sm"
+								style="color: color-mix(in srgb, var(--foreground-color) 70%, transparent);"
+							>
+								{vendor.tagline}
+							</p>
 						{/if}
 						{#if openStatus !== null}
 							<div class="mt-3">
 								{#if openStatus}
-									<span class="rounded-full bg-white/20 px-2.5 py-0.5 text-xs font-semibold" style="color: var(--foreground-color);">Open</span>
+									<span
+										class="rounded-full bg-white/20 px-2.5 py-0.5 text-xs font-semibold"
+										style="color: var(--foreground-color);">Open</span
+									>
 								{:else}
-									<span class="rounded-full bg-red-600/90 px-2.5 py-0.5 text-xs font-semibold text-white">Closed</span>
+									<span
+										class="rounded-full bg-red-600/90 px-2.5 py-0.5 text-xs font-semibold text-white"
+										>Closed</span
+									>
 								{/if}
 							</div>
 						{/if}
@@ -225,7 +270,7 @@
 
 	<!-- ── Search bar ─────────────────────────────────────────────────────── -->
 	{#if data.items.length > 0}
-		<div class="sticky top-0 z-50 border-b  bg-background/95 backdrop-blur-sm">
+		<div class="sticky top-0 z-50 border-b bg-background/95 backdrop-blur-sm">
 			<div class="mx-auto max-w-2xl px-4 pt-2">
 				<!-- Search input -->
 				<div class="relative mb-2">
@@ -237,10 +282,11 @@
 						type="search"
 						placeholder="Search…"
 						bind:value={searchQuery}
-						class="w-full rounded-full border  bg-muted/50 py-2 pr-4 pl-9 text-sm transition-colors outline-none focus:border-gray-400 focus:bg-background"
+						class="w-full rounded-full border bg-muted/50 py-2 pr-4 pl-9 text-sm transition-colors outline-none focus:border-gray-400 focus:bg-background"
 					/>
 					{#if searchQuery}
 						<button
+							type="button"
 							onclick={() => {
 								searchQuery = '';
 							}}
@@ -258,7 +304,10 @@
 							{#each filteredCategorized as category (category.id)}
 								<a
 									href="#{category.id}"
-									onclick={(e) => { e.preventDefault(); scrollToSection(String(category.id)); }}
+									onclick={(e) => {
+										e.preventDefault();
+										scrollToSection(String(category.id));
+									}}
 									class="category-pill shrink-0 rounded-full px-4 py-1.5 text-sm font-medium text-muted-foreground transition-colors {activeCategoryId ===
 									String(category.id)
 										? 'active'
@@ -270,7 +319,10 @@
 							{#if filteredUncategorized.length > 0}
 								<a
 									href="#other"
-									onclick={(e) => { e.preventDefault(); scrollToSection('other'); }}
+									onclick={(e) => {
+										e.preventDefault();
+										scrollToSection('other');
+									}}
 									class="category-pill shrink-0 rounded-full px-4 py-1.5 text-sm font-medium text-muted-foreground transition-colors {activeCategoryId ===
 									'other'
 										? 'active'
@@ -291,14 +343,17 @@
 		class="mx-auto my-8 max-w-2xl space-y-10 rounded-2xl bg-background/80 px-4 py-8 backdrop-blur-sm"
 	>
 		{#if data.items.length === 0}
-			<div class="rounded-xl border border-dashed  p-12 text-center">
+			<div class="rounded-xl border border-dashed p-12 text-center">
 				<p class="text-muted-foreground">Coming soon.</p>
 			</div>
 		{:else if !hasResults}
-			<div class="rounded-xl border border-dashed  p-12 text-center">
+			<div class="rounded-xl border border-dashed p-12 text-center">
 				<Icon icon="mdi:magnify" class="mx-auto mb-3 h-8 w-8 text-muted-foreground/40" />
-				<p class="text-muted-foreground">No items match "<span class="font-medium">{searchQuery}</span>"</p>
+				<p class="text-muted-foreground">
+					No items match "<span class="font-medium">{searchQuery}</span>"
+				</p>
 				<button
+					type="button"
 					onclick={() => {
 						searchQuery = '';
 					}}
@@ -319,9 +374,7 @@
 						{#each category.items as item (item.id)}
 							{@const imgs = item.images as { url: string; isPrimary?: boolean }[] | null}
 							{@const primaryImage = imgs?.find((i) => i.isPrimary)?.url ?? imgs?.[0]?.url}
-							<div
-								class="item-card flex gap-4 rounded-xl border  bg-background p-4 shadow-sm"
-							>
+							<div class="item-card flex gap-4 rounded-xl border bg-background p-4 shadow-sm">
 								{#if primaryImage}
 									<img
 										src={primaryImage}
@@ -332,13 +385,15 @@
 								<div class="min-w-0 flex-1">
 									<p class="display font-semibold text-foreground">{item.name}</p>
 									{#if item.description}
-										<p class="mt-0.5 line-clamp-2 text-sm text-muted-foreground">{item.description}</p>
+										<p class="mt-0.5 line-clamp-2 text-sm text-muted-foreground">
+											{item.description}
+										</p>
 									{/if}
 									{#if Array.isArray(item.tags) && item.tags.length > 0}
 										<div class="mt-1.5 flex flex-wrap gap-1">
 											{#each item.tags as tag (tag)}
 												<span
-													class="capitalize rounded-full px-2 py-0.5 text-xs"
+													class="rounded-full px-2 py-0.5 text-xs capitalize"
 													style="background-color: color-mix(in srgb, var(--accent-color) 15%, white); color: var(--accent-color);"
 													>{tag.toLowerCase()}</span
 												>
@@ -360,7 +415,10 @@
 										{/if}
 									</div>
 									{#if item.status === 'sold_out'}
-										<span class="rounded-lg bg-amber-100 px-3 py-1.5 text-xs font-medium text-amber-700">Sold out</span>
+										<span
+											class="rounded-lg bg-amber-100 px-3 py-1.5 text-xs font-medium text-amber-700"
+											>Sold out</span
+										>
 									{:else if hasModifiers(item)}
 										<a
 											href={resolve(`/${data.vendorSlug}/item/${item.id}`)}
@@ -370,6 +428,7 @@
 										>
 									{:else}
 										<button
+											type="button"
 											onclick={() => addSimple(item)}
 											class="add-btn rounded-lg px-3 py-1.5 text-xs font-medium transition-all {pulsingId ===
 											item.id
@@ -401,9 +460,7 @@
 						{#each filteredUncategorized as item (item.id)}
 							{@const imgs = item.images as { url: string; isPrimary?: boolean }[] | null}
 							{@const primaryImage = imgs?.find((i) => i.isPrimary)?.url ?? imgs?.[0]?.url}
-							<div
-								class="item-card flex gap-4 rounded-xl border  bg-background p-4 shadow-sm"
-							>
+							<div class="item-card flex gap-4 rounded-xl border bg-background p-4 shadow-sm">
 								{#if primaryImage}
 									<img
 										src={primaryImage}
@@ -414,13 +471,15 @@
 								<div class="min-w-0 flex-1">
 									<p class="display font-semibold text-foreground">{item.name}</p>
 									{#if item.description}
-										<p class="mt-0.5 line-clamp-2 text-sm text-muted-foreground">{item.description}</p>
+										<p class="mt-0.5 line-clamp-2 text-sm text-muted-foreground">
+											{item.description}
+										</p>
 									{/if}
 									{#if Array.isArray(item.tags) && item.tags.length > 0}
 										<div class="mt-1.5 flex flex-wrap gap-1">
 											{#each item.tags as tag (tag)}
 												<span
-													class="capitalize rounded-full px-2 py-0.5 text-xs"
+													class="rounded-full px-2 py-0.5 text-xs capitalize"
 													style="background-color: color-mix(in srgb, var(--accent-color) 15%, white); color: var(--accent-color);"
 													>{tag.toLowerCase()}</span
 												>
@@ -442,7 +501,10 @@
 										{/if}
 									</div>
 									{#if item.status === 'sold_out'}
-										<span class="rounded-lg bg-amber-100 px-3 py-1.5 text-xs font-medium text-amber-700">Sold out</span>
+										<span
+											class="rounded-lg bg-amber-100 px-3 py-1.5 text-xs font-medium text-amber-700"
+											>Sold out</span
+										>
 									{:else if hasModifiers(item)}
 										<a
 											href={resolve(`/${data.vendorSlug}/item/${item.id}`)}
@@ -452,6 +514,7 @@
 										>
 									{:else}
 										<button
+											type="button"
 											onclick={() => addSimple(item)}
 											class="add-btn rounded-lg px-3 py-1.5 text-xs font-medium transition-all {pulsingId ===
 											item.id
@@ -480,7 +543,10 @@
 				class="flex w-full max-w-2xl items-center justify-between rounded-xl px-5 py-3.5 shadow-lg transition-opacity hover:opacity-90"
 			>
 				<span class="flex items-center gap-1.5">
-					<span class="flex h-6 w-6 items-center justify-center rounded-full bg-background/20 text-sm font-bold">{cart.count}</span>
+					<span
+						class="flex h-6 w-6 items-center justify-center rounded-full bg-background/20 text-sm font-bold"
+						>{cart.count}</span
+					>
 					<span class="text-sm font-medium opacity-80">{cart.count === 1 ? 'item' : 'items'}</span>
 				</span>
 				<span class="min-w-0 truncate px-2 text-sm font-medium opacity-80">{cartFirstItem}</span>

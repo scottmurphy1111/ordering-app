@@ -71,8 +71,7 @@ export function orderItemsTable(
 	const rows = items
 		.map((item) => {
 			const effectiveUnitPrice =
-				item.basePrice +
-				(item.selectedModifiers?.reduce((s, m) => s + m.priceAdjustment, 0) ?? 0);
+				item.basePrice + (item.selectedModifiers?.reduce((s, m) => s + m.priceAdjustment, 0) ?? 0);
 			const modifiers = item.selectedModifiers?.length
 				? `<br/><span style="color:#6b7280;font-size:12px;">${item.selectedModifiers.map((m) => m.name).join(', ')}</span>`
 				: '';

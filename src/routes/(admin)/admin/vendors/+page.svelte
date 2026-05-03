@@ -87,8 +87,12 @@
 						<TableRow class="hover:bg-transparent">
 							<TableHead class="px-4 py-2.5 text-muted-foreground">Vendor</TableHead>
 							<TableHead class="px-4 py-2.5 text-muted-foreground">Type</TableHead>
-							<TableHead class="hidden px-4 py-2.5 text-muted-foreground sm:table-cell">Plan</TableHead>
-							<TableHead class="hidden px-4 py-2.5 text-muted-foreground md:table-cell">Created</TableHead>
+							<TableHead class="hidden px-4 py-2.5 text-muted-foreground sm:table-cell"
+								>Plan</TableHead
+							>
+							<TableHead class="hidden px-4 py-2.5 text-muted-foreground md:table-cell"
+								>Created</TableHead
+							>
 							<TableHead class="px-4 py-2.5 text-muted-foreground">Status</TableHead>
 							<TableHead class="px-4 py-2.5"></TableHead>
 						</TableRow>
@@ -103,7 +107,9 @@
 								<TableCell class="px-4 py-3 text-sm text-muted-foreground capitalize">
 									{t.type?.replace('_', ' ') ?? '—'}
 								</TableCell>
-								<TableCell class="hidden px-4 py-3 text-sm text-muted-foreground capitalize sm:table-cell">
+								<TableCell
+									class="hidden px-4 py-3 text-sm text-muted-foreground capitalize sm:table-cell"
+								>
 									{t.subscriptionTier ?? '—'}
 								</TableCell>
 								<TableCell class="hidden px-4 py-3 text-sm text-muted-foreground md:table-cell">
@@ -144,7 +150,11 @@
 													type="submit"
 													onclick={async (e) => {
 														e.preventDefault();
-														if (await confirmDialog('Archive this vendor? It will be deactivated but not deleted.'))
+														if (
+															await confirmDialog(
+																'Archive this vendor? It will be deactivated but not deleted.'
+															)
+														)
 															(e.currentTarget as HTMLButtonElement).form?.requestSubmit();
 													}}
 													variant="ghost"
