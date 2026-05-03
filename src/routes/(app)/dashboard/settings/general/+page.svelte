@@ -1,8 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import type { PageData, ActionData } from './$types';
-	import Icon from '@iconify/svelte';
-	import { resolve } from '$app/paths';
 	import type { WeekHours } from '$lib/hours';
 	import { Button } from '$lib/components/ui/button';
 	import { Input } from '$lib/components/ui/input';

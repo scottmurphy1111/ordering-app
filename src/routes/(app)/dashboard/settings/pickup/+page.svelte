@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import type { PageData, ActionData } from './$types';
-	import { resolve } from '$app/paths';
 	import Icon from '@iconify/svelte';
 	import { RRule } from 'rrule';
 	import { SvelteMap } from 'svelte/reactivity';

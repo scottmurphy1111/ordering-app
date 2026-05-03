@@ -2,8 +2,6 @@
 	import { enhance } from '$app/forms';
 	import { confirmDialog } from '$lib/confirm.svelte';
 	import type { PageData, ActionData } from './$types';
-	import Icon from '@iconify/svelte';
-	import { resolve } from '$app/paths';
 	import { Button } from '$lib/components/ui/button';
 	import { Badge } from '$lib/components/ui/badge';
 	import { Input } from '$lib/components/ui/input';

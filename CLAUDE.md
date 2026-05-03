@@ -1036,9 +1036,9 @@ the `InnerNavLayout` component for inner navigation. The component lives at
   showing each destination as an icon + label row. The sidebar's title (e.g.,
   "ACCOUNT", "SETTINGS") sits above the nav items in the same uppercase
   treatment as section headings (`text-xs font-medium tracking-wider
-  text-gray-500 uppercase`). Active state: `bg-gray-100 font-medium
-  text-gray-900`. Inactive: `text-gray-500 hover:bg-gray-50
-  hover:text-gray-900`.
+text-gray-500 uppercase`). Active state: `bg-gray-100 font-medium
+text-gray-900`. Inactive: `text-gray-500 hover:bg-gray-50
+hover:text-gray-900`.
 - **Mobile (below `md:`):** a full-width shadcn `<Select>` at the top of
   the content area, below the page header. Trigger shows the active
   destination's icon + label. Selecting a different option navigates to that
