@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { PageData, ActionData } from './$types';
 	import type { DiscoveredItem } from '$lib/../routes/api/discover-stripe-items/+server';
-	import { SvelteMap, SvelteSet } from 'svelte/reactivity';
+	import { SvelteMap, SvelteSet, SvelteURLSearchParams } from 'svelte/reactivity';
 	import { resolve } from '$app/paths';
 	import Icon from '@iconify/svelte';
 	import { goto } from '$app/navigation';
@@ -150,9 +150,6 @@
 	let drawerLastCreated = $state<{ id: number; name: string } | null>(null);
 
 	function clearDrawerParam() {
-		const params = new URLSearchParams();
-		if (searchValue) params.set('search', searchValue);
-		if (selectedCategoryId) params.set('categoryId', selectedCategoryId);
 		const qs = params.toString();
 		goto(
 			resolve(
@@ -168,21 +165,17 @@
 	}
 
 	function openNewDrawer() {
-		const params = new URLSearchParams();
-		if (searchValue) params.set('search', searchValue);
-		if (selectedCategoryId) params.set('categoryId', selectedCategoryId);
-		params.set('drawer', 'new');
-		goto(resolve(`/dashboard/catalog/items?${params.toString()}` as `/${string}`), {
+		const next = new SvelteURLSearchParams(params);
+		next.set('drawer', 'new');
+		goto(resolve(`/dashboard/catalog/items?${next.toString()}` as `/${string}`), {
 			noScroll: true
 		});
 	}
 
 	function openEditDrawer(item: CatalogItem) {
-		const params = new URLSearchParams();
-		if (searchValue) params.set('search', searchValue);
-		if (selectedCategoryId) params.set('categoryId', selectedCategoryId);
-		params.set('drawer', String(item.id));
-		goto(resolve(`/dashboard/catalog/items?${params.toString()}` as `/${string}`), {
+		const next = new SvelteURLSearchParams(params);
+		next.set('drawer', String(item.id));
+		goto(resolve(`/dashboard/catalog/items?${next.toString()}` as `/${string}`), {
 			noScroll: true
 		});
 	}
@@ -207,40 +200,42 @@
 	// ── Search + category filter ──────────────────────────────────
 	let searchInput = $state<HTMLInputElement | null>(null);
 	let searchTimer: ReturnType<typeof setTimeout> | null = null;
-	let searchValue = $state(untrack(() => data.search ?? ''));
-	let selectedCategoryId = $state(
-		untrack(() => (data.selectedCategoryId ? String(data.selectedCategoryId) : ''))
-	);
 
-	$effect(() => {
-		searchValue = data.search ?? '';
-	});
-	$effect(() => {
-		selectedCategoryId = data.selectedCategoryId ? String(data.selectedCategoryId) : '';
+	// Derived params from data — recomputes on every navigation. Contains only
+	// search and categoryId; drawer param is never included here.
+	const params = $derived.by(() => {
+		const p = new SvelteURLSearchParams();
+		if (data.search) p.set('search', data.search);
+		if (data.selectedCategoryId) p.set('categoryId', String(data.selectedCategoryId));
+		return p;
 	});
 
-	function buildCatalogUrl(search: string, categoryId: string): `/${string}` {
-		const params = new URLSearchParams();
-		if (search) params.set('search', search);
-		if (categoryId) params.set('categoryId', categoryId);
-		const qs = params.toString();
-		return (qs ? `/dashboard/catalog/items?${qs}` : '/dashboard/catalog/items') as `/${string}`;
-	}
-
-	function onSearchInput() {
+	function onSearchInput(value: string) {
 		if (searchTimer) clearTimeout(searchTimer);
 		searchTimer = setTimeout(() => {
-			goto(resolve(buildCatalogUrl(searchValue, selectedCategoryId)), {
-				keepFocus: true,
-				noScroll: true,
-				replaceState: true
-			});
+			const next = new SvelteURLSearchParams(params);
+			if (value) next.set('search', value);
+			else next.delete('search');
+			const qs = next.toString();
+			goto(
+				resolve(
+					(qs ? `/dashboard/catalog/items?${qs}` : '/dashboard/catalog/items') as `/${string}`
+				),
+				{ keepFocus: true, noScroll: true, replaceState: true }
+			);
 		}, 300);
 	}
 
 	function clearSearch() {
-		searchValue = '';
-		goto(resolve(buildCatalogUrl('', selectedCategoryId)), { replaceState: true });
+		const next = new SvelteURLSearchParams(params);
+		next.delete('search');
+		const qs = next.toString();
+		goto(
+			resolve(
+				(qs ? `/dashboard/catalog/items?${qs}` : '/dashboard/catalog/items') as `/${string}`
+			),
+			{ replaceState: true }
+		);
 		searchInput?.focus();
 	}
 
@@ -466,14 +461,14 @@
 				bind:this={searchInput}
 				type="text"
 				name="search"
-				bind:value={searchValue}
+				value={params.get('search') ?? ''}
 				placeholder="Search items..."
-				oninput={onSearchInput}
-				class="h-10 w-full rounded-lg border border-gray-200 bg-background {searchValue
+				oninput={(e) => onSearchInput(e.currentTarget.value)}
+				class="h-10 w-full rounded-lg border border-gray-200 bg-background {params.get('search')
 					? 'pr-8'
 					: 'pr-4'} pl-9 text-sm text-foreground outline-none placeholder:text-muted-foreground focus:border-transparent focus:ring-2 focus:ring-primary/50"
 			/>
-			{#if searchValue}
+			{#if params.get('search')}
 				<button
 					type="button"
 					onclick={clearSearch}
@@ -488,16 +483,29 @@
 			<Select
 				type="single"
 				name="categoryId"
-				value={selectedCategoryId}
+				value={params.get('categoryId') ?? ''}
 				onValueChange={(val) => {
-					selectedCategoryId = val;
-					goto(resolve(buildCatalogUrl(searchValue, val)), { replaceState: true });
+					const next = new SvelteURLSearchParams(params);
+					if (val) next.set('categoryId', val);
+					else next.delete('categoryId');
+					const qs = next.toString();
+					goto(
+						resolve(
+							(qs
+								? `/dashboard/catalog/items?${qs}`
+								: '/dashboard/catalog/items') as `/${string}`
+						),
+						{ replaceState: true }
+					);
 				}}
 			>
 				<SelectTrigger class="w-44 shrink-0 border-gray-200">
 					<SelectValue>
-						{data.categories.find((c) => String(c.id) === selectedCategoryId)?.name ??
-							(selectedCategoryId === 'uncategorized' ? '— Uncategorized' : 'All categories')}
+						{data.categories.find((c) => String(c.id) === (params.get('categoryId') ?? ''))
+							?.name ??
+							(params.get('categoryId') === 'uncategorized'
+								? '— Uncategorized'
+								: 'All categories')}
 					</SelectValue>
 				</SelectTrigger>
 				<SelectContent>
@@ -587,8 +595,6 @@
 				<button
 					type="button"
 					onclick={() => {
-						searchValue = '';
-						selectedCategoryId = '';
 						goto(resolve('/dashboard/catalog/items'), { replaceState: true });
 					}}
 					class="text-sm font-medium text-green-600 hover:text-green-700"

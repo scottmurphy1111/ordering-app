@@ -188,7 +188,7 @@ Do **not** use local component state for any of the above. The URL is canonical.
 
 **Server load functions** read URL params using standard `url.searchParams` — server-side, no reactivity needed. The load function exposes initial values via `data`.
 
-**In components, use `SvelteURLSearchParams` for mutable filter/sort/pagination state.** The reactive params instance integrates with `$derived` and `$effect`. Initialize from `data` after load, mutate when the user changes filters, then `goto()` to sync the URL.
+**In components, use `SvelteURLSearchParams` for filter/sort/pagination state.** The params instance is derived from `data` (which reflects the current URL after every navigation), so it always matches what the server loaded. Writes build a fresh instance per call and navigate.
 
 ```svelte
 <script>
@@ -198,20 +198,22 @@ Do **not** use local component state for any of the above. The URL is canonical.
 
   let { data } = $props();
 
-  // Reactive mirror of the URL params
-  const params = new SvelteURLSearchParams();
-  $effect(() => {
-    // Sync from data whenever the load function re-runs
-    params.delete('search');
-    params.delete('categoryId');
-    if (data.search) params.set('search', data.search);
-    if (data.categoryId) params.set('categoryId', String(data.categoryId));
+  // Derived params instance — recomputes from data on every navigation.
+  // Reads in $derived and templates reflect the current URL state automatically.
+  const params = $derived.by(() => {
+    const p = new SvelteURLSearchParams();
+    if (data.search) p.set('search', data.search);
+    if (data.categoryId) p.set('categoryId', String(data.categoryId));
+    return p;
   });
 
+  // Writes build a fresh instance from current params, mutate it, then navigate.
+  // Don't mutate the derived `params` directly — it recomputes from data anyway.
   function updateSearch(value) {
-    if (value) params.set('search', value);
-    else params.delete('search');
-    goto(resolve('/dashboard/catalog/items?' + params.toString()), {
+    const next = new SvelteURLSearchParams(params);
+    if (value) next.set('search', value);
+    else next.delete('search');
+    goto(resolve('/dashboard/catalog/items?' + next.toString()), {
       replaceState: true,
       noScroll: true,
       keepFocus: true,
@@ -220,9 +222,9 @@ Do **not** use local component state for any of the above. The URL is canonical.
 </script>
 ```
 
-**Reads happen against the params instance.** `params.get('search')`, `params.has('categoryId')` in `$derived` re-run reactively when params mutate.
+**Reads happen against `params`.** `params.get('search')`, `params.has('categoryId')` in `$derived` and templates re-run reactively because `params` itself is a `$derived` value — it updates when `data` updates.
 
-**The `$effect` syncing from `data` is required.** Without it, programmatic navigation (browser back/forward, link clicks that change params, invalidation) updates `data` but leaves the params instance stale.
+**Writes copy, mutate, navigate.** Each write handler creates `new SvelteURLSearchParams(params)` (a copy of the current derived state), applies its mutations, and calls `goto()`. After navigation the load function re-runs, `data` updates, and `params` recomputes. No `$effect` is involved in this cycle — `$derived` handles it.
 
 ### Svelte 5 runes
 
@@ -279,7 +281,44 @@ params.set('search', value);
 - `MediaQuery` — for JS-driven viewport logic. SSR caution: `current` is `false` server-side, which may cause hydration mismatches.
 - `createSubscriber` — for bridging event-based browser APIs (WebSocket, IntersectionObserver) into reactivity.
 
-> **Technical debt:** Existing component code using built-in `Set`/`Map`/`URLSearchParams` (including the catalog items page that shipped with `$state` + `$effect` syncing) is technical debt and will be retrofitted in a follow-up audit/sweep.
+### When to use `$effect`
+
+`$effect` runs after Svelte updates the DOM in response to reactive state changes. It exists for synchronizing component state with **external systems** — things outside Svelte's reactivity graph.
+
+**Reach for `$effect` when:**
+- DOM interop that can't be expressed declaratively (focus management, third-party DOM libraries, manual measurement)
+- External subscriptions (WebSocket connections, IntersectionObserver, ResizeObserver, browser APIs that emit events)
+- Lifecycle effects (setting up and tearing down browser-only resources)
+- Logging, analytics, or other side effects that respond to state changes but don't produce derived values
+
+**Do not use `$effect` for:**
+- Computing derived state. Use `$derived` or `$derived.by`.
+- Synchronizing one piece of reactive state with another. Use `$derived` for one-way derivations, or restructure so both pieces share a single source of truth.
+- Updating state in response to other state. From Svelte's docs:
+
+> "Generally speaking, you should not update state inside effects, as it will make code more convoluted and will often lead to never-ending update cycles."
+> — https://svelte.dev/docs/svelte/$effect#When-not-to-use-$effect
+
+**Concrete examples in this codebase:**
+
+✅ **Correct** — The catalog items and catalog categories pages use `$effect` to read `data.drawer` and open the drawer sheet. This is a legitimate cross-graph sync: server-driven URL state triggers a component-owned UI action (`drawerOpen = true`). It uses `untrack` to prevent the effect from re-running when the drawer state itself changes.
+
+```svelte
+$effect(() => {
+  if (!data.drawer) return;
+  drawerMode = data.drawer.mode;
+  drawerOpen = true; // side effect — fine, this is external UI state
+});
+```
+
+❌ **Wrong** — Mirroring filter params from `data` into `$state` variables via `$effect`:
+
+```svelte
+let searchValue = $state(untrack(() => data.search ?? ''));
+$effect(() => { searchValue = data.search ?? ''; }); // state sync via effect — don't do this
+```
+
+The correct replacement is `$derived.by` returning a `SvelteURLSearchParams` instance — see the skeleton above under "URL is the source of truth for state."
 
 ### MCP tools available
 
@@ -1390,6 +1429,14 @@ The checklist auto-hides when all 4 steps complete and re-appears if a step regr
   `<Button>` primitive can be used. The primitive enforces consistency. Raw `<button>`
   is acceptable only for documented exceptions (state-transition blue, outlined-destructive
   red, and the dark-surface mobile hamburger — all flagged for Tier 2 shadcn audit).
+- ❌ Do not use `$effect` to synchronize one piece of reactive state with another.
+  Use `$derived` for derivations, or restructure so both pieces share a source of
+  truth. State sync inside `$effect` leads to convoluted code and update cycles.
+  (See: https://svelte.dev/docs/svelte/$effect#When-not-to-use-$effect)
+- ❌ Do not mutate a `$derived` value. If you need to update reactive state, change
+  the source it derives from, or make it `$state` instead. For URL params: build a
+  fresh `SvelteURLSearchParams` per write and navigate — the derived params instance
+  recomputes from `data` automatically.
 - ❌ Do not use `opacity-0 group-hover:opacity-100` for row actions in tables or
   cards. Row actions are always visible. Use `hover:bg-gray-50` on the row for
   hover feedback only.
