@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import { confirmDialog } from '$lib/confirm.svelte';
 	import type { PageData, ActionData } from './$types';
 	import Icon from '@iconify/svelte';
 	import { RRule } from 'rrule';
@@ -1101,26 +1102,23 @@
 													Deactivate
 												</Button>
 											</form>
-											<form
-												method="post"
-												action="?/deleteTemplate"
-												use:enhance
-												onsubmit={(e) => {
-													if (
-														!confirm(
-															`Delete "${tmpl.name}"? This will stop generating future occurrences for this template.`
-														)
-													) {
-														e.preventDefault();
-													}
-												}}
-											>
+											<form method="post" action="?/deleteTemplate" use:enhance>
 												<input type="hidden" name="id" value={tmpl.id} />
 												<Button
-													type="submit"
+													type="button"
 													variant="ghost"
 													size="sm"
 													class="h-auto p-0 text-xs text-muted-foreground hover:text-destructive"
+													onclick={async (e) => {
+														const btn = e.currentTarget as HTMLButtonElement;
+														if (
+															await confirmDialog(
+																`Delete "${tmpl.name}"? This will stop generating future occurrences for this template.`,
+																{ title: 'Delete template', confirmLabel: 'Delete' }
+															)
+														)
+															btn.form?.requestSubmit();
+													}}
 												>
 													Delete
 												</Button>
@@ -1206,26 +1204,23 @@
 												Deactivate
 											</Button>
 										</form>
-										<form
-											method="post"
-											action="?/deleteTemplate"
-											use:enhance
-											onsubmit={(e) => {
-												if (
-													!confirm(
-														`Delete "${tmpl.name}"? This will stop generating future occurrences for this template.`
-													)
-												) {
-													e.preventDefault();
-												}
-											}}
-										>
+										<form method="post" action="?/deleteTemplate" use:enhance>
 											<input type="hidden" name="id" value={tmpl.id} />
 											<Button
-												type="submit"
+												type="button"
 												variant="ghost"
 												size="sm"
 												class="h-auto p-0 text-xs text-muted-foreground hover:text-destructive"
+												onclick={async (e) => {
+													const btn = e.currentTarget as HTMLButtonElement;
+													if (
+														await confirmDialog(
+															`Delete "${tmpl.name}"? This will stop generating future occurrences for this template.`,
+															{ title: 'Delete template', confirmLabel: 'Delete' }
+														)
+													)
+														btn.form?.requestSubmit();
+												}}
 											>
 												Delete
 											</Button>

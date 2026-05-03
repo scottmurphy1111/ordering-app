@@ -25,7 +25,9 @@
 <Dialog bind:open={confirmState.open}>
 	<DialogContent showCloseButton={false}>
 		<DialogHeader>
-			<DialogTitle class="sr-only">Confirm</DialogTitle>
+			{#if confirmState.title}
+				<DialogTitle class="text-base font-semibold">{confirmState.title}</DialogTitle>
+			{/if}
 			<DialogDescription class="sr-only">Confirmation dialog</DialogDescription>
 		</DialogHeader>
 		<div class="flex items-start gap-3 pt-2">

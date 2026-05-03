@@ -7,12 +7,60 @@
 	import Icon from '@iconify/svelte';
 	import { Badge } from '$lib/components/ui/badge';
 	import { Input } from '$lib/components/ui/input';
+	import * as Popover from '$lib/components/ui/popover';
+	import { Calendar } from '$lib/components/ui/calendar';
+	import { parseDate, type CalendarDate } from '@internationalized/date';
 	import OrdersViewToggle from '$lib/components/OrdersViewToggle.svelte';
 	import OrdersSummaryBar from '$lib/components/OrdersSummaryBar.svelte';
 	import OrdersFilterTabs from '$lib/components/OrdersFilterTabs.svelte';
 	import { SvelteURLSearchParams } from 'svelte/reactivity';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
+
+	let fromOpen = $state(false);
+	let toOpen = $state(false);
+
+	const fromDate = $derived(data.from ? parseDate(data.from) : undefined);
+	const toDate = $derived(data.to ? parseDate(data.to) : undefined);
+
+	function formatPickerDate(dateStr: string): string {
+		const [y, m, d] = dateStr.split('-').map(Number);
+		return new Date(y, m - 1, d).toLocaleDateString('en-US', {
+			month: 'short',
+			day: 'numeric',
+			year: 'numeric'
+		});
+	}
+
+	function updateDateRange(which: 'from' | 'to', date: CalendarDate | undefined) {
+		const p = new SvelteURLSearchParams();
+		if (data.search) p.set('q', data.search);
+		if (data.statusFilter) p.set('status', data.statusFilter);
+		const nextFrom = which === 'from' ? date?.toString() : data.from;
+		const nextTo = which === 'to' ? date?.toString() : data.to;
+		if (nextFrom) p.set('from', nextFrom);
+		if (nextTo) p.set('to', nextTo);
+		const qs = p.toString();
+		goto(
+			qs
+				? resolve(`/dashboard/orders/history?${qs}` as `/${string}`)
+				: resolve('/dashboard/orders/history'),
+			{ replaceState: true }
+		);
+	}
+
+	function clearDates() {
+		const p = new SvelteURLSearchParams();
+		if (data.search) p.set('q', data.search);
+		if (data.statusFilter) p.set('status', data.statusFilter);
+		const qs = p.toString();
+		goto(
+			qs
+				? resolve(`/dashboard/orders/history?${qs}` as `/${string}`)
+				: resolve('/dashboard/orders/history'),
+			{ replaceState: true }
+		);
+	}
 
 	let debounceTimer: ReturnType<typeof setTimeout>;
 	function debounceSubmit(f: HTMLFormElement) {
@@ -157,53 +205,69 @@
 
 		<div class="flex flex-col gap-2 md:flex-row md:items-center">
 			<!-- Date range single container -->
-			<form method="GET">
-				<input type="hidden" name="status" value={data.statusFilter} />
-				<input type="hidden" name="q" value={data.search} />
-				<div
-					class="flex items-center gap-1.5 rounded-lg border border-gray-200 bg-background px-3 py-1.5"
-				>
-					<Icon icon="mdi:calendar-outline" class="h-3.5 w-3.5 shrink-0 text-muted-foreground/60" />
-					<input
-						id="date-from"
-						type="date"
-						name="from"
-						value={data.from}
-						class="w-32 border-none bg-transparent text-xs text-foreground outline-none focus:ring-0"
-						onchange={(e) => e.currentTarget.form?.requestSubmit()}
-					/>
-					<span class="text-muted-foreground/40">→</span>
-					<input
-						id="date-to"
-						type="date"
-						name="to"
-						value={data.to}
-						class="w-32 border-none bg-transparent text-xs text-foreground outline-none focus:ring-0"
-						onchange={(e) => e.currentTarget.form?.requestSubmit()}
-					/>
-					{#if data.from || data.to}
-						<button
-							type="button"
-							class="ml-1 text-muted-foreground transition-colors hover:text-foreground"
-							onclick={() => {
-								const entries = { q: data.search, status: data.statusFilter };
-								const p = new SvelteURLSearchParams(
-									Object.fromEntries(Object.entries(entries).filter(([, v]) => v))
-								);
-								const qs = p.toString();
-								goto(
-									qs
-										? resolve(`/dashboard/orders/history?${qs}` as `/${string}`)
-										: resolve('/dashboard/orders/history'),
-									{ replaceState: true }
-								);
+			<div
+				class="flex items-center gap-1.5 rounded-lg border border-gray-200 bg-background px-3 py-1.5"
+			>
+				<Icon icon="mdi:calendar-outline" class="h-3.5 w-3.5 shrink-0 text-muted-foreground/60" />
+				<Popover.Root bind:open={fromOpen}>
+					<Popover.Trigger>
+						{#snippet child({ props })}
+							<button
+								{...props}
+								type="button"
+								class="text-xs outline-none {data.from
+									? 'text-foreground'
+									: 'text-muted-foreground'}"
+							>
+								{data.from ? formatPickerDate(data.from) : 'From'}
+							</button>
+						{/snippet}
+					</Popover.Trigger>
+					<Popover.Content class="w-auto p-0" align="start">
+						<Calendar
+							type="single"
+							value={fromDate}
+							onValueChange={(date) => {
+								fromOpen = false;
+								updateDateRange('from', date as CalendarDate | undefined);
 							}}
-						>
-							<Icon icon="mdi:close" class="h-3 w-3" />
-						</button>
-					{/if}
-				</div>
-			</form>
+						/>
+					</Popover.Content>
+				</Popover.Root>
+				<span class="text-muted-foreground/40">→</span>
+				<Popover.Root bind:open={toOpen}>
+					<Popover.Trigger>
+						{#snippet child({ props })}
+							<button
+								{...props}
+								type="button"
+								class="text-xs outline-none {data.to ? 'text-foreground' : 'text-muted-foreground'}"
+							>
+								{data.to ? formatPickerDate(data.to) : 'To'}
+							</button>
+						{/snippet}
+					</Popover.Trigger>
+					<Popover.Content class="w-auto p-0" align="start">
+						<Calendar
+							type="single"
+							value={toDate}
+							onValueChange={(date) => {
+								toOpen = false;
+								updateDateRange('to', date as CalendarDate | undefined);
+							}}
+						/>
+					</Popover.Content>
+				</Popover.Root>
+				{#if data.from || data.to}
+					<button
+						type="button"
+						class="ml-1 text-muted-foreground transition-colors hover:text-foreground"
+						onclick={clearDates}
+					>
+						<Icon icon="mdi:close" class="h-3 w-3" />
+					</button>
+				{/if}
+			</div>
 
 			<!-- Results count + export -->
 			<div class="flex items-center gap-2">
