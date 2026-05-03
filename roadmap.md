@@ -219,19 +219,19 @@ Items vendors will encounter in their first week of use. The bar is "first impre
 
 ### Persistent CLAUDE.md violations sweep
 
-**Status:** Pending. Three violations have been flagged across Phase 1, 1.5b, and 1.5c without being fixed — they keep rolling forward in each prompt's "incidental violations" list.
+**Status:** Done — closed in the sweep phase that ran alongside catalog cleanup.
 
-**Why it matters:** Three rolling violations across three phases means they need a home other than "flagged again next phase." Individually small; collectively a sign that incidental cleanup needs explicit scheduling.
+**What was originally scoped:** Three known callsites — `text-blue-700` in catalog items CSV import results, `goto()` in CatalogViewToggle, `text-primary/90` in categories list page.
 
-**Scope:**
+**What actually shipped:**
 
-- `src/routes/(app)/dashboard/catalog/items/+page.svelte` — `text-blue-700` in the CSV import results dialog (line number may have shifted post-1.5c; locate via grep). Off-palette. Replace with a palette-consistent treatment (likely `text-blue-600` or another documented blue token; if no documented blue exists for this use, surface as a question).
-- `src/lib/components/CatalogViewToggle.svelte` — uses `goto()` instead of `<a href={resolve(...)}>` per CLAUDE.md href rule. Refactor to anchor-based navigation matching `OrdersViewToggle`'s pattern.
-- `src/routes/(app)/dashboard/catalog/categories/+page.svelte` — uses `text-primary/90` instead of a documented palette token. Replace with `text-green-700` (most likely palette match) or a more appropriate token based on visual review.
+- `text-blue-700` in items CSV import dialog → migrated to `text-foreground` (semantic neutral, since "Updated" count shouldn't read as success or failure)
+- `text-primary/90` violations: items CatalogItemForm success banner, three locations on dashboard stat card CTAs (`hover:text-primary/90`), plus the categories-page locations from a prior phase
+- Dashboard "Manage categories" subtitle: "Organise" → "Organize" (US spelling), "menu sections" → "catalog sections" (CLAUDE.md catalog-not-menu rule)
+- Dashboard "Add catalog item" subtitle: "your menu" → "your catalog"
+- CatalogItemForm success banner border/bg also migrated from `border-primary/20 bg-primary/5` opacity-modifiers to documented palette tokens (`border-green-200 bg-green-50`)
 
-**Estimated effort:** 30 minutes total. Three small, mechanical fixes. Single prompt sweep.
-
-**Trigger:** Standalone — fits into any short cleanup window. Run before any new prompt cycle that would otherwise add a fourth rolling violation.
+**What was NOT a violation (correction to original scope):** `goto()` in CatalogViewToggle is allowed per CLAUDE.md href rule — both `<a href={resolve(...)}>` and `goto(resolve(...))` are explicitly permitted. `OrdersViewToggle` uses the same pattern. The original entry's framing was a misread.
 
 ---
 

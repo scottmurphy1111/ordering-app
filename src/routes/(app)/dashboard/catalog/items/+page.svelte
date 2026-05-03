@@ -979,7 +979,7 @@
 					</div>
 					<div class="h-8 w-px bg-muted"></div>
 					<div class="text-center">
-						<p class="text-2xl font-bold text-blue-700">{importResult.updated}</p>
+						<p class="text-2xl font-bold text-foreground">{importResult.updated}</p>
 						<p class="mt-0.5 text-xs text-muted-foreground">Updated</p>
 					</div>
 					<div class="h-8 w-px bg-muted"></div>

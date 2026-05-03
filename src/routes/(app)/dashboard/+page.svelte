@@ -176,7 +176,7 @@
 					<p class="mt-1 text-3xl font-bold text-foreground">{data.stats.items}</p>
 					<a
 						href={resolve('/dashboard/catalog/items')}
-						class="mt-2 inline-flex items-center gap-0.5 text-xs font-medium text-primary transition-colors hover:text-primary/90"
+						class="mt-2 inline-flex items-center gap-0.5 text-xs font-medium text-primary transition-colors hover:text-green-700"
 					>
 						Manage <Icon icon="mdi:chevron-right" class="h-3 w-3" />
 					</a>
@@ -189,7 +189,7 @@
 					<p class="mt-1 text-3xl font-bold text-foreground">{data.stats.categories}</p>
 					<a
 						href={resolve('/dashboard/catalog/categories')}
-						class="mt-2 inline-flex items-center gap-0.5 text-xs font-medium text-primary transition-colors hover:text-primary/90"
+						class="mt-2 inline-flex items-center gap-0.5 text-xs font-medium text-primary transition-colors hover:text-green-700"
 					>
 						Manage <Icon icon="mdi:chevron-right" class="h-3 w-3" />
 					</a>
@@ -212,7 +212,7 @@
 						{:else}
 							<a
 								href={resolve('/dashboard/orders')}
-								class="inline-flex items-center gap-0.5 text-xs font-medium text-primary transition-colors hover:text-primary/90"
+								class="inline-flex items-center gap-0.5 text-xs font-medium text-primary transition-colors hover:text-green-700"
 							>
 								View <Icon icon="mdi:chevron-right" class="h-3 w-3" />
 							</a>
@@ -255,7 +255,7 @@
 				</div>
 				<div>
 					<p class="text-sm font-semibold text-foreground">Add catalog item</p>
-					<p class="mt-0.5 text-xs text-muted-foreground">Add a new item to your menu</p>
+					<p class="mt-0.5 text-xs text-muted-foreground">Add a new item to your catalog</p>
 				</div>
 			</a>
 			<a
@@ -267,7 +267,7 @@
 				</div>
 				<div>
 					<p class="text-sm font-semibold text-foreground">Manage categories</p>
-					<p class="mt-0.5 text-xs text-muted-foreground">Organise your menu sections</p>
+					<p class="mt-0.5 text-xs text-muted-foreground">Organize your catalog sections</p>
 				</div>
 			</a>
 			<a
