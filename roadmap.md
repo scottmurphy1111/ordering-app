@@ -163,64 +163,7 @@ The delivery option is being cut from Order Local. Sweep three layers:
 
 ---
 
-### Remove account/security route
-
-Auth model is Google OAuth + magic link only. Neither requires a security page. There's no password to change, no 2FA to configure, no API keys to manage. The route is empty scaffolding.
-
-**Status:** ready-to-execute
-
-**Scope:** Remove `src/routes/(app)/dashboard/account/security/`, remove the link from the account inner-nav layout, remove any associated load functions or imports.
-
----
-
-### account/notifications — render coming-soon placeholder
-
-The notifications page is being kept (route preserved) but no notification preferences are wired up yet. The actual preferences are scoped as a separate Tier 2 item below. For now, the page renders a placeholder so vendors who navigate to it understand what's planned.
-
-**Status:** ready-to-execute
-
-**Scope:** Replace the page content (or strip empty content) with an Alert component (`severity="info"`, `dismissible={false}`, no auto-fade) explaining: "Notification preferences coming soon. You'll be able to configure weekly summary digests, daily prep emails, and product update emails from this page." Adjust copy to match the actual planned features (see Tier 2 item below).
-
-The route, nav link, and load function stay — only the page body changes.
-
----
-
 ## Tier 2 — Launch polish
-
-### Forms & UI shadcn-svelte audit
-
-**Status:** Active technical debt. CatalogItemForm extraction (in progress) deliberately uses raw HTML inputs matching the existing edit form, not shadcn primitives. CLAUDE.md says "Components: shadcn-svelte primitives + Iconify." The codebase has drifted.
-
-**Goal:** Bring every form, button, dropdown, dialog, and selection control across the dashboard into consistent compliance with the shadcn-svelte rule. Codify the canonical patterns so future work follows them automatically.
-
-**Scope (in):**
-
-- Inventory every form/control across dashboard, settings, catalog, orders, account areas
-- Identify which use shadcn primitives today vs raw HTML
-- Identify controls that don't use a primitive but should (custom toggles, ad-hoc date pickers, inline confirmation prompts)
-- Document canonical patterns: which primitive for which use case, validation error rendering, disabled states, focus rings
-- Migrate highest-traffic surfaces first (catalog item form, order detail, settings forms)
-- Codify patterns in CLAUDE.md
-
-**Scope (out):**
-
-- Customer-facing public storefront (its own CSS variables driven by vendor branding — different design constraints)
-- Marketing site (separate property)
-- Pages pre-launch deferred (Promos & Loyalty add-on flows, etc.)
-- Anything requiring behavior changes, not just styling
-
-**Approach when prioritized:**
-
-1. Discovery prompt — full inventory of every form/control and which primitive it uses today
-2. Decisions prompt — Scott's input on canonical patterns (validation style, error rendering, etc.) before any migration
-3. Migration prompts in batches — one logical area at a time (catalog forms, then settings forms, then orders, etc.)
-4. CLAUDE.md update codifying the patterns
-
-**Estimated effort:** 1–2 weeks across batches. Not a single-prompt task.
-
-**Trigger:** Should land before public launch but doesn't block customer outreach. The kind of work that makes the product feel deliberate rather than assembled.
-
----
 
 ### `locals.vendor` staleness in dev-bypass mode
 
@@ -494,11 +437,25 @@ Multi-vendor switching from the vendor selector fails or doesn't navigate correc
 
 ### Make-internal-user action shows no feedback and fails
 
-Clicking "Make internal" on a team member produces no visible feedback and the action doesn't complete. May be devmode-related.
+Clicking "Make internal" on a team member produces no visible feedback. The action does succeed at the database level (member's isInternal flag toggles correctly) but no Alert renders to confirm. Same gap exists on cancelInvite, changeRole, and removeMember actions on the team page — all four return generic `{ success: true }` with no Alert wired.
 
-**Status:** needs-investigation
+Initial attempt 2026-05-04 wired specific success keys + Alerts to all four actions. Implementation completed but Scott reverted — wants to rethink the approach to action feedback patterns more broadly before applying.
 
-**Scope:** Reproduce, determine devmode vs real bug. If real, fix the action handler and add Alert feedback (success or error severity per Batch 10b Alert primitive).
+**Status:** needs-rethinking
+
+**Scope:** Design the action-feedback pattern. Open questions: should action feedback be Alert-based (current direction, may not fit all action types), toast-based (separate from page-level Alerts), inline-near-the-action (different visual model entirely)? Decide on canonical action-feedback pattern, then apply across team page actions plus any other action handlers in the codebase that currently lack feedback (likely many).
+
+---
+
+### Mobile UX — settings/team Make internal button hidden on mobile
+
+The Members tab "Make internal" button on settings/team uses `class="hidden ... sm:inline-flex"`, making it invisible on mobile viewports. A vendor managing their team from a phone (e.g., at a market) cannot promote members to internal status via the Members tab.
+
+Note: the same action exists on the Internal tab's "Promote a current member" section without the mobile-hidden class, so the action is reachable on mobile via that path. But the inconsistency is drift, not deliberate.
+
+**Status:** ready-to-execute
+
+**Scope:** Determine whether the `sm:inline-flex` hiding is intentional (mobile UX choice to avoid clutter in row actions) or drift. If drift, remove the hiding so the button is visible on mobile. If intentional, document the reason as a comment on the affected element.
 
 ---
 
@@ -522,23 +479,15 @@ Pickup windows, catalog items, catalog categories, and orders tables each render
 
 ---
 
-### settings/general — group business info, contact, address into one card
+### Standardize success Alert placement across settings/general
 
-Currently three separate cards each with their own Save button. All save to the vendor table and are conceptually "business profile." Consolidate into one card with one Save action.
+The settings/general page has four forms (business profile, delivery, checkout, hours) each rendering success Alerts. Currently all four render at page level (above the form). During the Tier 2 consolidation work, an audit recommended moving Alerts into each form's CardFooter for tighter contextual coupling, but that scope expansion was deferred.
 
-**Status:** ready-to-execute
+Decide on the canonical placement (page-level vs CardFooter) and sweep all four sections to match. Sibling-parity is the load-bearing property — all four sections render Alerts the same way.
 
-**Scope:** Merge the three cards' content into a single Card. Single form action handles all three sections' fields. Operating hours and pickup windows stay separate.
+**Status:** needs-design
 
----
-
-### settings/resources — drop WhatsApp share button
-
-Restrict share buttons to Facebook, Instagram, LinkedIn, X (Twitter). WhatsApp is dropped — US SMB vendor base doesn't typically use it for marketing.
-
-**Status:** ready-to-execute
-
-**Scope:** Remove the WhatsApp share button. Verify remaining four render correctly. Order: Facebook, Instagram, LinkedIn, X.
+**Scope:** Small once placement is decided. Audit captures all four Alert callsites; decide canonical, migrate.
 
 ---
 
