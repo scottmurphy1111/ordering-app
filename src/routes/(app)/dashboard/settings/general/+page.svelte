@@ -99,172 +99,167 @@
 
 	<form
 		method="post"
-		action="?/save"
+		action="?/saveBusinessProfile"
 		use:enhance={() =>
 			({ update }) =>
 				update({ reset: false })}
 		class="space-y-6"
 	>
-		<!-- Business identity -->
 		<Card class="shadow-sm">
 			<CardHeader>
-				<CardTitle>Business identity</CardTitle>
+				<CardTitle>Business profile</CardTitle>
 			</CardHeader>
-			<CardContent class="space-y-4">
-				<div class="grid gap-4 sm:grid-cols-2">
-					<div>
-						<Label class="mb-1 block" for="name">Business name *</Label>
-						<Input id="name" name="name" type="text" required value={data.info?.name ?? ''} />
+			<CardContent class="space-y-6">
+				<!-- Business identity -->
+				<div class="space-y-4">
+					<h3 class="text-sm font-medium text-gray-500">Business identity</h3>
+					<div class="grid gap-4 sm:grid-cols-2">
+						<div>
+							<Label class="mb-1 block" for="name">Business name *</Label>
+							<Input id="name" name="name" type="text" required value={data.info?.name ?? ''} />
+						</div>
+						<div>
+							<Label class="mb-1 block" for="legalName">Legal name</Label>
+							<Input
+								id="legalName"
+								name="legalName"
+								type="text"
+								value={data.info?.legalName ?? ''}
+								placeholder="If different from business name"
+							/>
+						</div>
 					</div>
-					<div>
-						<Label class="mb-1 block" for="legalName">Legal name</Label>
-						<Input
-							id="legalName"
-							name="legalName"
-							type="text"
-							value={data.info?.legalName ?? ''}
-							placeholder="If different from business name"
-						/>
+					<div class="sm:w-1/2">
+						<Label class="mb-1 block" for="type">Business type</Label>
+						<Select type="single" name="type" value={data.info?.type ?? ''}>
+							<SelectTrigger id="type" class="w-full">
+								<SelectValue placeholder="Select type" />
+							</SelectTrigger>
+							<SelectContent>
+								{#each businessTypes as bt (bt.value)}
+									<SelectItem value={bt.value}>{bt.label}</SelectItem>
+								{/each}
+							</SelectContent>
+						</Select>
 					</div>
 				</div>
-				<div class="sm:w-1/2">
-					<Label class="mb-1 block" for="type">Business type</Label>
-					<Select type="single" name="type" value={data.info?.type ?? ''}>
-						<SelectTrigger id="type" class="w-full">
-							<SelectValue placeholder="Select type" />
-						</SelectTrigger>
-						<SelectContent>
-							{#each businessTypes as bt (bt.value)}
-								<SelectItem value={bt.value}>{bt.label}</SelectItem>
-							{/each}
-						</SelectContent>
-					</Select>
-				</div>
-			</CardContent>
-		</Card>
 
-		<!-- Contact -->
-		<Card class="shadow-sm">
-			<CardHeader>
-				<CardTitle>Contact</CardTitle>
-			</CardHeader>
-			<CardContent class="space-y-4">
-				<div class="grid gap-4 sm:grid-cols-2">
-					<div>
-						<Label class="mb-1 block" for="phone">Phone</Label>
-						<Input
-							id="phone"
-							name="phone"
-							type="tel"
-							value={data.info?.phone ?? ''}
-							placeholder="+1 (555) 000-0000"
-						/>
+				<!-- Contact -->
+				<div class="space-y-4">
+					<h3 class="text-sm font-medium text-gray-500">Contact</h3>
+					<div class="grid gap-4 sm:grid-cols-2">
+						<div>
+							<Label class="mb-1 block" for="phone">Phone</Label>
+							<Input
+								id="phone"
+								name="phone"
+								type="tel"
+								value={data.info?.phone ?? ''}
+								placeholder="+1 (555) 000-0000"
+							/>
+						</div>
+						<div>
+							<Label class="mb-1 block" for="email">Email</Label>
+							<Input
+								id="email"
+								name="email"
+								type="email"
+								value={data.info?.email ?? ''}
+								placeholder="contact@yourbusiness.com"
+							/>
+						</div>
 					</div>
 					<div>
-						<Label class="mb-1 block" for="email">Email</Label>
-						<Input
-							id="email"
-							name="email"
-							type="email"
-							value={data.info?.email ?? ''}
-							placeholder="contact@yourbusiness.com"
-						/>
-					</div>
-				</div>
-				<div>
-					<Label class="mb-1 block" for="website">Website</Label>
-					<div
-						class="flex rounded-md border focus-within:border-ring focus-within:ring-1 focus-within:ring-ring"
-					>
-						<span
-							class="flex items-center rounded-l-md border-r bg-muted/50 px-3 text-sm text-muted-foreground"
-							>https://</span
+						<Label class="mb-1 block" for="website">Website</Label>
+						<div
+							class="flex rounded-md border focus-within:border-ring focus-within:ring-1 focus-within:ring-ring"
 						>
-						<Input
-							id="website"
-							name="website"
-							type="text"
-							value={(data.info?.website ?? '').replace(/^https?:\/\//, '')}
-							placeholder="yourbusiness.com"
-							class="min-w-0 flex-1 rounded-none rounded-r-md border-0 shadow-none focus-visible:ring-0"
-						/>
+							<span
+								class="flex items-center rounded-l-md border-r bg-muted/50 px-3 text-sm text-muted-foreground"
+								>https://</span
+							>
+							<Input
+								id="website"
+								name="website"
+								type="text"
+								value={(data.info?.website ?? '').replace(/^https?:\/\//, '')}
+								placeholder="yourbusiness.com"
+								class="min-w-0 flex-1 rounded-none rounded-r-md border-0 shadow-none focus-visible:ring-0"
+							/>
+						</div>
 					</div>
 				</div>
-			</CardContent>
-		</Card>
 
-		<!-- Address -->
-		<Card class="shadow-sm">
-			<CardHeader>
-				<CardTitle>Address</CardTitle>
-			</CardHeader>
-			<CardContent class="space-y-4">
-				<div>
-					<Label class="mb-1 block" for="street">Street</Label>
-					<Input
-						id="street"
-						name="street"
-						type="text"
-						value={address?.street ?? ''}
-						placeholder="123 Main St"
-					/>
-				</div>
-				<div class="grid gap-4 sm:grid-cols-3">
+				<!-- Address -->
+				<div class="space-y-4">
+					<h3 class="text-sm font-medium text-gray-500">Address</h3>
 					<div>
-						<Label class="mb-1 block" for="city">City</Label>
-						<Input id="city" name="city" type="text" value={address?.city ?? ''} />
-					</div>
-					<div>
-						<Label class="mb-1 block" for="state">State</Label>
+						<Label class="mb-1 block" for="street">Street</Label>
 						<Input
-							id="state"
-							name="state"
+							id="street"
+							name="street"
 							type="text"
-							value={address?.state ?? ''}
-							placeholder="TX"
+							value={address?.street ?? ''}
+							placeholder="123 Main St"
 						/>
 					</div>
-					<div>
-						<Label class="mb-1 block" for="zip">ZIP</Label>
-						<Input id="zip" name="zip" type="text" value={address?.zip ?? ''} />
+					<div class="grid gap-4 sm:grid-cols-3">
+						<div>
+							<Label class="mb-1 block" for="city">City</Label>
+							<Input id="city" name="city" type="text" value={address?.city ?? ''} />
+						</div>
+						<div>
+							<Label class="mb-1 block" for="state">State</Label>
+							<Input
+								id="state"
+								name="state"
+								type="text"
+								value={address?.state ?? ''}
+								placeholder="TX"
+							/>
+						</div>
+						<div>
+							<Label class="mb-1 block" for="zip">ZIP</Label>
+							<Input id="zip" name="zip" type="text" value={address?.zip ?? ''} />
+						</div>
 					</div>
-				</div>
-				<div class="sm:w-1/3">
-					<Label class="mb-1 block" for="country">Country</Label>
-					<Input
-						id="country"
-						name="country"
-						type="text"
-						value={address?.country ?? ''}
-						placeholder="US"
-					/>
-				</div>
-				<div class="sm:w-2/3">
-					<Label class="mb-1 block" for="timezone">Timezone</Label>
-					<Select type="single" name="timezone" bind:value={timezoneValue}>
-						<SelectTrigger id="timezone" class="w-full">
-							<SelectValue>{getTimezoneLabel(timezoneValue)}</SelectValue>
-						</SelectTrigger>
-						<SelectContent class="max-h-100">
-							<SelectGroup>
-								<SelectGroupHeading>United States</SelectGroupHeading>
-								{#each US_TIMEZONES as tz (tz.value)}
-									<SelectItem value={tz.value}>{tz.label}</SelectItem>
-								{/each}
-							</SelectGroup>
-							<SelectSeparator />
-							<SelectGroup>
-								<SelectGroupHeading>All timezones</SelectGroupHeading>
-								{#each otherTimezones as tz (tz)}
-									<SelectItem value={tz}>{tz}</SelectItem>
-								{/each}
-							</SelectGroup>
-						</SelectContent>
-					</Select>
+					<div class="sm:w-1/3">
+						<Label class="mb-1 block" for="country">Country</Label>
+						<Input
+							id="country"
+							name="country"
+							type="text"
+							value={address?.country ?? ''}
+							placeholder="US"
+						/>
+					</div>
+					<div class="sm:w-2/3">
+						<Label class="mb-1 block" for="timezone">Timezone</Label>
+						<Select type="single" name="timezone" bind:value={timezoneValue}>
+							<SelectTrigger id="timezone" class="w-full">
+								<SelectValue>{getTimezoneLabel(timezoneValue)}</SelectValue>
+							</SelectTrigger>
+							<SelectContent class="max-h-100">
+								<SelectGroup>
+									<SelectGroupHeading>United States</SelectGroupHeading>
+									{#each US_TIMEZONES as tz (tz.value)}
+										<SelectItem value={tz.value}>{tz.label}</SelectItem>
+									{/each}
+								</SelectGroup>
+								<SelectSeparator />
+								<SelectGroup>
+									<SelectGroupHeading>All timezones</SelectGroupHeading>
+									{#each otherTimezones as tz (tz)}
+										<SelectItem value={tz}>{tz}</SelectItem>
+									{/each}
+								</SelectGroup>
+							</SelectContent>
+						</Select>
+					</div>
 				</div>
 			</CardContent>
 			<CardFooter>
-				<Button type="submit" variant="default">Save business info</Button>
+				<Button type="submit" variant="default">Save changes</Button>
 			</CardFooter>
 		</Card>
 	</form>
