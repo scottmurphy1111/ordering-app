@@ -143,6 +143,55 @@ The current form (Name, Location, Days, Start time, End time, Cutoff hours, Max 
 
 ---
 
+### Custom domains — add-on feature
+
+Marketing and billing pages list custom domains as an available add-on for paid tiers. No implementation exists. Either the marketing claim is wrong or the feature needs to ship before launch — and given the add-on framing implies a paid upgrade, the marketing claim is load-bearing for the pricing story. Build the feature.
+
+**Status:** needs-investigation (phase 1) → ready-to-execute (phase 2, contingent on phase 1 outcome).
+
+**Why it matters:** The marketing/pricing pages describe custom domains as an available add-on. A prospect signing up expecting it and not finding it produces an immediate credibility hit on the entire pricing page — if the add-on listed at the top doesn't exist, what else doesn't? The longer this gap exists post-launch, the worse the risk gets. Building it before vendor #1 signs up removes the risk entirely. Building it later requires either retracting the marketing claim (awkward) or scrambling when a prospect asks for it.
+
+The pre-planning investigation already determined that Cloudflare for SaaS is the off-the-shelf answer for multi-tenant custom domains with automatic SSL, and that it can sit in front of Netlify origin without requiring a hosting migration. The remaining investigation is verifying this works end-to-end with the actual Order Local stack and confirming pricing math.
+
+**Phase 1 — Investigation (1–2 days):**
+
+- Set up a Cloudflare for SaaS test zone pointed at the existing Netlify origin
+- Provision a test custom hostname programmatically via the Cloudflare API
+- Verify SSL provisions correctly without manual intervention (the "no customer action required" claim is load-bearing for the UX)
+- Verify request routing — request to the custom hostname reaches the Netlify origin, the SvelteKit app receives the right host header, and routing to the correct vendor works
+- Confirm Cloudflare for SaaS pricing model and per-hostname cost. The add-on pricing has to leave a margin after Cloudflare's costs.
+- Document the DNS instructions a vendor would receive (CNAME target, TXT record for DCV, etc.). These become the Phase 2 UI copy.
+- Decision gate: if Phase 1 reveals Cloudflare for SaaS doesn't work in front of Netlify (unexpected), fall back to: (a) full Netlify-native implementation with manual coordination per vendor for first ~50, or (b) reconsider hosting migration to Cloudflare Pages. Both are larger scopes; revisit if Phase 1 fails.
+
+**Phase 2 — Build (3–5 days, contingent on Phase 1 success):**
+
+- Schema: `vendor_custom_domains` table mapping vendor → custom hostname → Cloudflare hostname ID → status (pending verification / active / failed). Per-vendor cap based on add-on tier.
+- Backend: Cloudflare API integration (create custom hostname, check verification status, list active hostnames, delete on cancellation). Server-side only — API tokens never reach the browser.
+- Vendor-facing UI: dashboard page (likely under `/dashboard/settings/branding` or its own `custom-domain` subpath) where vendor enters their domain. UI shows DNS instructions (CNAME and TXT records) with copy buttons, status indicator (pending verification / active / failed), and clear error states for common failure modes (DNS not propagated, CAA records blocking, domain already claimed elsewhere).
+- Routing: SvelteKit hook reads the request `Host` header, resolves to vendor by custom domain, routes to the correct storefront. Falls back to existing path-based routing for non-custom-domain requests. The existing storefront URL contract (`/[vendorSlug]/catalog`) keeps working.
+- Billing integration: Stripe add-on or metered line item for custom domain pricing. Vendor adds custom domain → Stripe charge initiated → on successful charge, custom domain provisioning proceeds. Cancellation removes the custom hostname from Cloudflare and stops billing.
+- Support docs: a Resources page section documenting "How to connect your domain" with the DNS instructions, common errors, and the timeline expectations (DNS propagation can take up to 48 hours, but typically minutes).
+- Error states: vendor enters an invalid domain → caught client-side. DNS not configured correctly → status stays "pending verification" with helpful copy. CAA records blocking → specific error message pointing to fix. Domain already in use by another vendor → blocked with explanation.
+
+**Out of scope for v1:**
+
+- Subdomain branding (`vendor.getorderlocal.com`). Already deliberately not pursued elsewhere in the roadmap; vendors who want a branded URL get it via custom domain instead.
+- Apex domain support beyond what Cloudflare for SaaS provides natively. If Cloudflare's apex flattening / CNAME-at-apex handles it, we get it for free; if not, vendors use a `www.` or other subdomain.
+- Vendor self-service domain purchase. Vendors bring their own domain; we don't sell domains.
+- Multiple custom domains per vendor in v1. One custom domain per vendor add-on. Multi-domain support is a future iteration if a Pro vendor specifically asks.
+
+**Verification:**
+
+- Static: `bun run check` clean post-implementation. Cloudflare API token stored in environment variables, never committed.
+- Behavioral: end-to-end test with a real test domain — purchase a cheap test domain, configure it via the UI, verify SSL provisions, verify storefront loads on the custom domain, verify removal cleans up the Cloudflare-side hostname.
+- Verification: confirm error states by intentionally misconfiguring DNS and verifying the UI surfaces the right message.
+
+**Estimated effort:** 4–7 days total. Phase 1 investigation is 1–2 days. Phase 2 build is 3–5 days. The largest unknowns are Cloudflare for SaaS pricing math (might force an add-on price change) and routing edge cases (host header handling in SvelteKit on Netlify).
+
+**Trigger:** Before vendor #1. The marketing/pricing pages already commit to this feature being available; launch can't happen with the claim live and the feature missing.
+
+---
+
 ### Tier 1B — Pre-fifty polish
 
 ### 30-min vendor setup gauntlet test
@@ -423,21 +472,6 @@ The dashboard currently uses hardcoded brand green for primary actions across al
 
 ---
 
-### Custom domains — add-on feature
-
-Vendor add-on for connecting their own domain (vendor.com) to point at their Order Local storefront. Revenue add-on for paid tiers.
-
-**Status:** needs-investigation
-
-**Open question:** Can this be automated? Two paths:
-
-- (a) Vercel-style automatic SSL/domain provisioning via hosting platform API — vendor enters domain, backend registers it, SSL provisions, DNS instructions shown. ~10 min setup. Scales well. Feasibility depends on hosting platform's API.
-- (b) Manual coordination per vendor — doesn't scale past ~50 vendors.
-
-Investigation needed: identify hosting platform (Vercel, Cloudflare Pages, Fly.io, custom VPS) and whether their API supports custom domains as a programmatic operation.
-
----
-
 ### Pickup locations: support full deletion (not just deactivate)
 
 Currently pickup locations can only be deactivated, not deleted entirely. Vendors who set up incorrect locations or want to clean up old data need a true delete option.
@@ -499,7 +533,9 @@ Currently unclear when production items (the items shown on the production view 
 
 ### account/notifications — build vendor notification preferences
 
-Once the coming-soon placeholder is shipped (Tier 1 above), build the actual notification preferences page. Order email/SMS for transactional order status are NOT user-configurable — those are built-in transactional behavior and shouldn't be a setting (toggling them off is a footgun).
+The page exists today as a placeholder — `/dashboard/account/notifications` renders the canonical "coming soon" Alert (see CLAUDE.md Pattern B example). Build the actual notification preferences page on top of that scaffolding.
+
+Order email/SMS for transactional order status are NOT user-configurable — those are built-in transactional behavior and shouldn't be a setting (toggling them off is a footgun).
 
 The notifications page hosts opt-in/opt-out for non-transactional communications:
 
@@ -510,15 +546,17 @@ The notifications page hosts opt-in/opt-out for non-transactional communications
 
 **Status:** needs-design
 
-**Scope:** Design the page layout (likely a list of toggleable preferences with descriptions). Build the schema (vendor_notification_preferences table or fields on vendor table). Build the email/digest jobs that read from preferences. Each preference type is a separate piece of work — the page UI is the smallest part; the digest job and prep summary job are the meaningful work.
+**Scope:** Replace the placeholder Alert with the actual page layout (likely a list of toggleable preferences with descriptions). Build the schema (vendor_notification_preferences table or fields on vendor table). Build the email/digest jobs that read from preferences. Each preference type is a separate piece of work — the page UI is the smallest part; the digest job and prep summary job are the meaningful work.
 
 **Sub-items:**
 
-- Page UI (toggles + descriptions) — small
+- Page UI (toggles + descriptions, replacing placeholder Alert) — small
 - Weekly summary digest backend (cron job, email template, query) — medium
 - Daily prep summary backend (cron job timing per vendor's pickup schedule, email template) — medium
 - Product update email infrastructure (mailing list, audience targeting, send mechanism) — large; likely external service (Resend audience, Customer.io, etc.)
 - Low inventory alerts — deferred until inventory tracking exists
+
+**Trigger:** When 3+ vendors specifically ask for digest emails or prep summaries, or when product-update email infrastructure is needed for marketing reasons (e.g., feature launches that warrant a vendor-wide email). The placeholder serves as a visible "we know this is coming" signal in the meantime — first-three vendors who notice it know the page is intentional, not broken.
 
 ---
 
@@ -627,16 +665,6 @@ Decide on the canonical placement (page-level vs CardFooter) and sweep all four 
 **Why:** A solo bakery owner with 5 orders a week doesn't need a dashboard. Analytics built before vendors have orders is vanity tooling that bloats the dashboard's nav.
 
 **Trigger:** When the average paying vendor has 50+ orders/month — at that point analytics actually has signal to surface.
-
----
-
-### Custom domains polish
-
-**Status:** Already an add-on offering. Defer polish until vendor traffic justifies.
-
-**Scope:** When ready: better DNS instructions, automatic Let's Encrypt cert provisioning, custom-domain-specific support docs.
-
-**Trigger:** When 3+ Pro vendors purchase the custom domain add-on AND report friction.
 
 ---
 

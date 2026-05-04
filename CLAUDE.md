@@ -5,6 +5,322 @@ making changes. Follow it exactly.
 
 ---
 
+## Workflow rule — patterns first, code second
+
+**Before writing any new component, page section, form, table, banner, dialog, list view, filter UI, or any other piece of UI or behavior:**
+
+1. Scan the Patterns Index below.
+2. If a documented pattern handles the shape of problem you're solving, use it. Do not invent a variant. Do not write a parallel implementation that resembles it.
+3. If you believe a documented pattern is wrong for your specific case, stop. Surface the conflict in your response before proceeding. Explain what the pattern says, why you think it doesn't fit, and what alternative you'd propose. Wait for direction.
+4. If no documented pattern matches, proceed — but flag in your response that you're building something the Patterns Index doesn't cover. That signals it might be worth documenting if reused.
+
+**The same rule applies to modification work.** When editing an existing component, page section, form, table, or any documented surface — even small changes like adding a column, renaming a button, swapping an icon — run the pattern check on the surface you're touching. If your edit introduces a class, height, color, structure, or convention that conflicts with the documented pattern for that surface, stop and surface the conflict before applying. Existing code that already violates a pattern is technical debt; don't extend the violation, and don't silently fix it without flagging — surface it for explicit decision.
+
+This is not a guideline. It is a required step in every task that produces new UI or behavior. Reading CLAUDE.md is necessary but not sufficient — the index exists so patterns get applied, not just read.
+
+**Sparse-usage patterns count.** A pattern documented here is intentional even if it appears in only one place in the codebase. Low usage is not a signal to ignore it or remove it. The documentation is the forcing function for future reuse.
+
+**Sibling parity is part of pattern application.** When a pattern is applied to one surface, every sibling surface that should look identical adopts the same treatment in the same task. Sibling parity is itself a pattern (see index below).
+
+---
+
+## Patterns Index
+
+One-line summaries and links to the detailed sections of this document. Scan this on every task before writing code.
+
+### Layout and structure
+
+- **Page header** — title left, mode toggle + primary CTA right. Single canonical structure across all dashboard pages. → [Page Header Pattern](#page-header-pattern)
+- **Inner navigation** — sidebar (desktop) / select (mobile) for pages with sub-pages. Use `InnerNavLayout` component. → [Inner navigation (Account, Settings)](#inner-navigation-account-settings)
+- **Mobile-first card two-column** — column on mobile, row on desktop. Never use `shrink-0` on right column without `md:` modifier. → [Card two-column pattern](#card-two-column-pattern)
+- **Search + filter toolbar** — search row above; filter pills (left) + date range (right) below. Two-row layout, not one. → [Search + Filter Toolbar Pattern](#search--filter-toolbar-pattern)
+- **Summary / stats bar** — divider-separated row of stats. Never a grid of bordered cards. → [Summary / Stats Bar](#summary--stats-bar)
+
+### Cards
+
+- **Content / navigation card** — for hubs (Settings, Catalog). Icon tile + title + description, hover lifts. → [Content / navigation card](#content--navigation-card-settings-hub-catalog-hub)
+- **Data / list card** — for order cards. Clickable body links to detail; action strip below is NOT inside the link. → [Data / list card](#data--list-card-order-cards)
+- **Stat card** — for dashboard overview. Label + value + CTA link. → [Stat card](#stat-card-dashboard-overview)
+
+### Tables and lists
+
+- **Table** — `rounded-xl overflow-hidden`, `border-gray-200`, header `bg-gray-50`. Row actions always visible, never hover-revealed. → [Tables](#tables)
+- **Inline toggle switch** — for boolean states in list rows. Use instead of "Active"/"Available" badges where toggleable. → [Inline Toggle Switches](#inline-toggle-switches)
+- **Empty state** — every list/table/filtered view must have one. Copy reflects active filter when filtered. → [Empty States](#empty-states)
+- **Loading skeleton** — every data-fetching component. Skeleton count matches expected results. → [Loading & Skeleton States](#loading--skeleton-states)
+
+### Forms and inputs
+
+- **Input / select / textarea** — `h-8` for single-line, explicit classes documented. Wrap native date inputs in styled containers. → [Forms & Inputs](#forms--inputs)
+- **Label vs value rendering** — DB enum values are canonical; never render raw values where labels belong. Use `.find()` against canonical lists. → [Label vs Value Rendering](#label-vs-value-rendering)
+- **Confirmation dialog** — required for any destructive/irreversible action. Confirm button names the action ("Delete", not "OK"). → [Confirmation Dialogs](#confirmation-dialogs)
+
+### Buttons
+
+- **Button sizing** — size determines height (32px default / 24px xs); variant determines color. They compose. Never apply ad-hoc `h-*` to override. → [Buttons](#buttons)
+- **Documented raw `<button>` exceptions** — nine specific cases where raw `<button>` is required instead of the primitive. → [Documented raw button exceptions](#documented-raw-button-exceptions)
+
+### Tabs and segmented controls
+
+- **Tabs (route-based)** — switching between sibling pages. `value` derives from `$page.url.pathname`; `onValueChange` calls `goto()`. Do NOT `bind:value`. → [Tabs (shadcn `<Tabs>`)](#tabs-shadcn-tabs)
+- **Tabs (in-page state)** — switching values within one page. `bind:value` for primitives, controlled `value=`/`onValueChange=` for typed unions. → [Tabs (shadcn `<Tabs>`)](#tabs-shadcn-tabs)
+- **FilterPills** — rounded-pill filters with counts and optional urgent dots. NOT the same as Tabs. → [FilterPills](#filterpills-rounded-pill-filters-with-counts)
+
+### Date and time
+
+- **Date range picker** — two separate `Popover`-wrapped `Calendar` instances, NOT a single range-mode Calendar. Preserves "from only" / "up to X" semantics. → [Date range picker](#date-range-picker-calendar--popover)
+- **Time column handling** — Drizzle `time` columns return `"HH:MM:SS"` strings; always split on `:` and take first two parts. → [Database & Server](#database--server)
+- **Vendor timezone** — stored as IANA in `vendors.timezone`; UI helpers in `src/lib/utils/timezones.ts`. Always use these. → [Database & Server](#database--server)
+
+### Feedback (Alerts)
+
+- **Alert Pattern A — transient action feedback** — success/error after form submission. Wrap in `{#if form?.someSuccess}` so it remounts on each submit. → [Alert (severity-based feedback)](#alert-severity-based-feedback)
+- **Alert Pattern B — persistent informational placeholder** — "coming soon" or deferred-feature contexts. `dismissible={false}` and `autofade={0}`. → [Alert (severity-based feedback)](#alert-severity-based-feedback)
+
+### Status
+
+- **Status badges** — color-coded pills with documented `statusStyles` map. Always `capitalize`. Never show when all items share one status. → [Badges & Status Pills](#badges--status-pills)
+- **Order state-transition buttons** — blue fill for state changes (confirmed/in production/ready/fulfilled). Brand green is reserved for primary CTAs. → [Order state-transition buttons](#order-state-transition-buttons)
+- **Outlined-destructive buttons** — Cancel order, Refund. Use outlined red, not filled, when adjacent to blue state-transition actions. → [Destructive actions on order detail](#destructive-actions-on-order-detail-cancel-order)
+
+### Navigation and routing
+
+- **Internal links** — always `resolve()` from `$app/paths`. Never bare strings. Applies to `href`, `goto()`, redirects. → [SvelteKit Conventions](#sveltekit-conventions)
+- **URL is source of truth for filter / sort / mode state** — read via `$page.url.searchParams` server-side, `SvelteURLSearchParams` derived in components. → [URL is the source of truth for state](#url-is-the-source-of-truth-for-state)
+- **No old-route redirects** — when a route is renamed, old URLs 404. Don't add `redirect()` rules to preserve them. → [Core Philosophy](#core-philosophy)
+
+### State management (Svelte 5)
+
+- **`$derived` for computed state, `$effect` for external sync only** — never `$effect` to sync state with state. → [When to use `$effect`](#when-to-use-effect)
+- **Reactive primitives** — `SvelteSet`, `SvelteMap`, `SvelteDate`, `SvelteURL`, `SvelteURLSearchParams` from `svelte/reactivity` instead of built-ins for mutable instances in components. → [Svelte reactivity primitives](#svelte-reactivity-primitives)
+- **URL filter state in components** — `$derived.by` returning a fresh `SvelteURLSearchParams` on reads; build a fresh instance per write and `goto()`. → [URL is the source of truth for state](#url-is-the-source-of-truth-for-state)
+
+### Data layer
+
+- **Order snapshot pattern** — `orders.items` JSONB written once at order creation, never mutated. Read from snapshot for display, not from FK. → [Order snapshot pattern](#order-snapshot-pattern)
+- **Pickup window snapshot** — `orders.pickupWindowSnapshot` is the receipt; `pickupWindowId` is just a join hint. Never re-derive display from FK. → [Pickup window snapshot](#pickup-window-snapshot-orderspickupwindowsnapshot)
+- **Vendor settings as gates** — check `settings.enableTips`, `settings.asapPickupEnabled` before rendering related UI. Default off. → [Vendor settings](#vendor-settings)
+
+### Design tokens and color
+
+- **Themable vs fixed semantic tokens** — `--primary` themes per vendor; `--success` and `--destructive` stay fixed. → [Color Palette](#color-palette)
+- **Text-green-600 decision rule** — primary action → `text-primary` (themable); positive indicator → `text-success` (fixed). → [Color Palette](#color-palette)
+
+### Cross-cutting conventions
+
+- **Sibling parity** — when changing a UI element on one page, update every sibling page in the same task. Apply this for every pattern in this index. → [Core Philosophy](#core-philosophy)
+- **Mobile-first base classes** — base classes describe mobile (≤375px); `md:` adds desktop enhancements. → [Mobile-First Convention](#mobile-first-convention)
+- **eslint-disable: block-form** — use `<!-- eslint-disable RULE -->` / `<!-- eslint-enable RULE -->` blocks, not `eslint-disable-next-line`. → [eslint-disable: block-form over next-line](#eslint-disable-block-form-over-next-line)
+- **Verification protocol** — `[STATIC]` tags for code-inspection checks, `[BEHAVIORAL]` for runtime exercise. Never claim PASS on `[BEHAVIORAL]` from inspection. → [Verification protocol](#verification-protocol)
+
+---
+
+## When you discover a pattern that should be in the index
+
+If a task surfaces a reusable pattern not currently in the Patterns Index, flag it in your response. Don't add it to the index unilaterally — index entries should be deliberate. The user adds entries when patterns are confirmed worth documenting.
+
+When a documented pattern's example becomes orphaned (e.g., the codebase no longer contains the example callsite the doc references), flag it. Don't silently remove the pattern. Sparse usage is intentional; orphaned examples need replacement, not deletion.
+
+---
+
+## Response self-check — before sending
+
+Before sending any response that produced or modified code, run this checklist. State the result of each check in your response, even briefly. Failed checks block the response — fix them first.
+
+**Routing and links:**
+- Every internal `href` in changed files uses `resolve()` from `$app/paths`.
+- Every `goto()` call uses `resolve()`.
+- No new `redirect()` rules were added for old/renamed routes.
+
+**Forms and inputs:**
+- Every new single-line input, select, or single-line input variant uses `h-8` (via shadcn primitive or explicit class).
+- Every new input has a visible label, not just a placeholder.
+- Every new destructive action has a confirmation dialog (or uses `window.confirm` with the existing deferred-shadcn-audit note).
+
+**Lists and data display:**
+- Every new list, table, or filtered view has an empty state.
+- Every new data-fetching component has a skeleton or loading state.
+- Row actions in tables and cards are always visible (no `opacity-0 group-hover:opacity-100`).
+
+**Tokens and colors:**
+- No new hex colors introduced. Colors come from the documented palette.
+- `text-green-600` callsites in changed code follow the decision rule (`text-primary` for themable, `text-success` for fixed semantic).
+- No `style={...}` inline attributes added.
+
+**Vocabulary:**
+- No new instance of "tenant," "restaurant," "merchant" referring to vendors.
+- No new instance of "menu" referring to the catalog feature.
+- `preparing` status renders as "In production" in any vendor-facing display.
+
+**Sibling parity:**
+- Every page that displays the affected element type was checked. List which pages were updated and which were intentionally left unchanged with reason. (See "Sibling enumeration" below.)
+
+**Scope:**
+- The change is the smallest diff that satisfies the prompt. Any expansion is listed under "Scope expansion" in the response.
+
+**Reactivity:**
+- No `$effect` used for state-to-state synchronization.
+- Mutable `Set`/`Map`/`Date`/`URL`/`URLSearchParams` instances in component code use `Svelte*` reactive versions.
+- No `eslint-disable-next-line` on multi-line elements; block-form is used.
+
+If a check is not applicable to this change (e.g., no forms touched), state "n/a" — don't skip silently.
+
+**When a self-check fails:**
+
+A failed self-check is not a "fix it silently and move on" situation. The whole purpose of the self-check is to make drift visible — silently fixing the failure defeats the audit.
+
+The rule:
+
+1. Do not rewrite the failing code to make the check pass without flagging.
+2. State the failure in your response: which check failed, what the offending code is, what the conforming version would be.
+3. Apply the conforming fix only if it is mechanical and unambiguous, AND the prompt clearly intended the conforming behavior. Example: prompt says "add a save button" and your draft used `h-9` — fixing to `h-8` is mechanical and the prompt clearly wanted a normal button. Apply the fix and note it.
+4. Do not apply the fix if it requires interpretation. Example: a self-check flags that you wrote `text-green-600` somewhere; the conforming fix is either `text-primary` (themable) or `text-success` (fixed semantic), and the choice depends on what the element is. Surface the choice; wait for direction.
+5. Either way, the response includes a "Self-check failures" section listing what failed and how it was resolved (mechanical fix applied, or pending direction).
+
+A response that ships with self-check failures fixed silently is worse than a response that ships with the failures surfaced. The audit only works if failures are visible.
+
+---
+
+## No silent scope expansion
+
+The "Smallest diff" principle in Core Philosophy is non-negotiable for code generation. Concretely:
+
+- **Don't bundle unrelated fixes.** If you notice a bug, typo, or pattern violation outside the prompt's stated scope, do NOT fix it as part of the current task. Surface it in the response under "Out of scope but observed" and let the user decide whether to spin off a new task.
+
+- **Don't refactor "while you're there."** Renaming variables, restructuring imports, reformatting code, modernizing syntax — none of these belong in a task that didn't ask for them. The diff should be auditable: every change traces back to a prompt requirement.
+
+- **List scope expansions explicitly.** If your change genuinely required touching a file or surface beyond the prompt's stated scope (e.g., a shared component had to change to support the new feature), list the expansion in your response under a "Scope expansion" heading. State (a) what was changed, (b) why it was necessary, (c) what would have been impossible without the expansion.
+
+- **A bigger diff is not a better diff.** A response that touched 30 files when the prompt asked for changes to 3 has either expanded scope silently or misunderstood the task. Both are problems.
+
+**Anti-examples:**
+
+- ❌ Prompt: "Add an end-date field to the pickup window form." Response touches the form file, the schema, and also reformats `expand.ts`'s imports. The reformat is silent scope expansion.
+- ❌ Prompt: "Fix the typo in the orders page header." Response fixes the typo and also migrates the page from raw inputs to shadcn primitives. The migration is silent scope expansion.
+- ✅ Prompt: "Add an end-date field to the pickup window form." Response touches the form file and the schema migration. Response notes: "Scope expansion: also added a `recurrence_end_date` column to `pickup_window_templates`. Necessary because the form field has nowhere to write to without it. Documented in the migration."
+
+---
+
+## Sibling enumeration
+
+When changing a UI element that has siblings (the same element type appearing on other pages), enumerate those siblings explicitly in your response.
+
+**The enumeration step:**
+
+1. Identify the element type changed (e.g., "page header," "primary CTA button," "filter pills row," "card action strip").
+2. List every page in the dashboard that displays that element type.
+3. State for each: was it updated in this task, intentionally left unchanged, or out of scope?
+4. If "left unchanged" or "out of scope," justify briefly.
+
+**Example response format:**
+
+> Changed the page header CTA button on `/dashboard/orders` from outline to solid. Sibling pages with primary CTAs in the page header:
+> - `/dashboard/orders/history` — updated to match (sibling parity)
+> - `/dashboard/catalog/items` — updated to match (sibling parity)
+> - `/dashboard/catalog/categories` — left unchanged (page has no primary CTA in the header today; not a sibling violation)
+> - `/dashboard/settings/*` — n/a (settings pages use the InnerNavLayout pattern, no page-level CTA)
+
+**When you can't enumerate confidently:**
+
+If you don't know whether a sibling exists (haven't seen the file, no grep result for the relevant element), say so. Don't claim sibling parity you didn't verify. "I checked the orders pages and updated both; I did not check catalog or settings pages — please confirm whether they need the same change" is a valid response.
+
+**The enumeration applies to every pattern in the Patterns Index.** A change to one Tabs callsite checks every Tabs callsite. A change to one FilterPills callsite checks every FilterPills callsite. The enumeration is the work that keeps the codebase consistent over time.
+
+---
+
+## Doc-vs-code conflicts
+
+CLAUDE.md and the actual codebase will sometimes disagree. A documented pattern's reference implementation may have drifted from the doc. A documented convention may have been replaced in code without the doc being updated. A primitive may have been customized in ways the doc doesn't reflect.
+
+**When you discover a conflict:**
+
+1. Stop. Do not silently align to either side.
+2. Quote the documented behavior verbatim from CLAUDE.md.
+3. Quote the actual codebase behavior verbatim from the relevant file.
+4. State which the user appears to want based on prompt context, but flag the conflict for explicit resolution.
+5. Wait for direction.
+
+**Why this matters:**
+
+If you align to the code without flagging, the doc decays — future tasks will misread the doc and produce inconsistent work.
+
+If you align to the doc without flagging, the code may regress — the doc may itself be wrong and the code change correct.
+
+The user decides which side is canonical. Your job is to surface the conflict, not resolve it.
+
+**Exception:** if the conflict is trivial and obviously a doc-update issue (e.g., the doc references a file at an old path, the code is at the new path), you may align silently AND note the doc fix in a "Documentation drift observed" section of your response. The user can then update the doc separately.
+
+---
+
+## Explicit "Not done in this prompt" lists
+
+End every multi-task response with a "Not done in this prompt" section listing items the prompt mentioned, implied, or naturally connects to but you did not complete in this task. Reasons may include: out of scope, blocked on a decision, deferred deliberately, requires behavioral verification, or requires user confirmation before proceeding.
+
+**Format:**
+
+```
+**Not done in this prompt:**
+- [Item] — [reason]
+- [Item] — [reason]
+```
+
+**An empty list is acceptable** when truly applicable. Write `**Not done in this prompt:** None.` rather than omitting the section. The presence of the section is the forcing function — if you skip it, you skip the audit.
+
+**Example:**
+
+> **Not done in this prompt:**
+> - Sibling parity check on `/dashboard/catalog/categories` — page wasn't accessible during work; please confirm or run separately.
+> - Migration to `text-success` token in `OrdersSummaryBar` — out of scope; flagged for the brand green sweep prompt.
+> - Behavioral verification of the new form submission flow — `[BEHAVIORAL]`, requires browser exercise.
+
+The list is a contract: anything not listed is implicitly claimed as either complete or genuinely out of scope. Anything listed is a known follow-up.
+
+---
+
+## Exceptions are enumerated, not invented
+
+Documented exceptions to any rule must be listed at the rule's location in CLAUDE.md. Do not invent unlisted exceptions in code without first proposing them as additions to the documented list.
+
+**The pattern:**
+
+- Rule: "Use `<Button>` for all button affordances."
+- Documented exceptions: 9 specific cases, each with a reason and the required class string.
+- Acceptable: a callsite matching one of the 9 documented exceptions uses raw `<button>` per the documented exception.
+- Not acceptable: a callsite uses raw `<button>` for a 10th reason that "seemed obvious" without proposing the exception first.
+
+**When you encounter a case that doesn't fit any documented exception:**
+
+1. Use the documented pattern as written. If the result is wrong (visually broken, ergonomically painful, technically impossible), surface that in your response.
+2. Propose the new exception explicitly: state the rule, state the case, state why no documented exception applies, propose the new exception's classes/conditions.
+3. Wait for direction. The user decides whether to add the exception to CLAUDE.md.
+
+**Anti-pattern:**
+
+- ❌ Code adds a raw `<button>` to a new surface with a comment `// custom for X reason` that doesn't appear in CLAUDE.md's exception list.
+- ❌ Code uses `text-green-700` somewhere because "it looked better than `text-green-600`" without proposing a palette addition.
+- ❌ Code introduces a `size="sm"` Button variant after the doc says "Retired sizes: sm" because "it fits the design."
+
+The Patterns Index protects existing patterns from being forgotten. This rule protects them from being silently bypassed. Both forces are needed.
+
+---
+
+## Editing CLAUDE.md itself
+
+CLAUDE.md is load-bearing infrastructure for code generation. Edits to it follow the same discipline as edits to code:
+
+- **Run the Workflow Rule on the doc.** Before adding a new section, scan the existing structure. If similar guidance already exists, extend it rather than duplicating.
+- **Update the Patterns Index when adding patterns.** A new pattern documented downstream is invisible if the index doesn't point at it. Adding patterns without indexing them recreates the memory-hole problem the index was designed to fix.
+- **Do not duplicate guidance across multiple sections.** If a rule is already in the "What Not to Do" list, don't restate it in a new section. Cross-reference instead.
+- **Do not edit CLAUDE.md inline as part of a code-change task.** When code work surfaces a needed doc update (a new pattern, a new exception, a clarification), surface it in the response under a "CLAUDE.md update needed" heading. The next prompt produces a separate artifact for the doc edit. Mixing code changes and doc changes in one diff makes both harder to review.
+- **Preserve historical context.** When a section's reasoning is no longer current (e.g., a deferred-shadcn-audit note, a "as of Batch 9" reference), do not delete it silently. Update it with a new note explaining what changed; the history matters for future contributors trying to understand why a convention exists.
+- **The Patterns Index is the user's to maintain.** When you discover a candidate pattern, flag it in your response. Do not add it to the index in the same task. Index entries are deliberate.
+
+**Exception — typo fixes and trivial corrections.** A single-character typo, a broken markdown link, a stale path reference — these can be corrected as a small inline fix with a "Documentation drift observed" note in the response. Use judgment: if the fix is small enough that proposing it as a separate artifact would create more friction than the fix is worth, just fix it and note it.
+
+The doc has more leverage than any single piece of code. A bad code change affects one feature; a bad CLAUDE.md change affects every future code change. Treat edits accordingly.
+
+---
+
 ## Project Configuration
 
 - **Language:** TypeScript
@@ -1287,6 +1603,8 @@ Note: `severity="success"` applies to both creation and destruction confirmation
 </Alert>
 ```
 
+> **TODO when notifications page ships:** This example references the live placeholder at `/dashboard/account/notifications`. When the actual notification preferences UI replaces the placeholder Alert, this example becomes orphaned. Either swap to another persistent-placeholder usage in the codebase, or revisit whether Pattern B is a real pattern worth documenting (current usage is one site; if there are no other persistent placeholders planned or in use, demote to a footnote or remove entirely). Roadmap reference: Tier 2 "account/notifications — build vendor notification preferences."
+
 Use for pages whose primary functionality is intentionally deferred. `dismissible={false}` prevents dismissal (the message must persist for context). `autofade={0}` disables auto-fade regardless of severity default. The Alert becomes a persistent informational element rather than a transient notification.
 
 Don't use Pattern B for active errors or warnings — those should use their natural severity defaults (`error` already persists; `warning` auto-fades after 8s).
@@ -1782,6 +2100,41 @@ Examples:
 
 In the final report, `[STATIC]` items show real evidence; `[BEHAVIORAL]` items show "Pending — human runs this" with the exact steps and queries.
 
+### When prompts don't tag verification steps
+
+If a prompt asks you to verify something but does not tag the step `[STATIC]` or `[BEHAVIORAL]`, classify it yourself and report the classification in the response. Never claim "verified" without specifying which kind of verification was performed.
+
+**Self-classification examples:**
+
+- "I verified that the import statement is correct" → `[STATIC]` (code inspection)
+- "I verified that the form submits successfully" → `[BEHAVIORAL]` (you cannot verify this without runtime exercise; flag as Pending)
+- "I verified that the Alert renders" → `[BEHAVIORAL]` if you mean visual rendering; `[STATIC]` if you mean the code includes the Alert component. Specify which.
+
+**The rule:** every "verified" claim in your response must include the `[STATIC]` or `[BEHAVIORAL]` classification. `[BEHAVIORAL]` claims that you performed yourself are invalid — those go in the "Pending behavioral verification" list with instructions for the human.
+
+### When no verification was performed at all
+
+Sometimes a response produces code without running any verification — not `bun run check`, not `bun run lint`, no inspection of imports, nothing. This is acceptable for small changes (single-line edits, copy tweaks, doc updates) but must be stated explicitly.
+
+If your response does not include verification of any kind, state this verbatim:
+
+> **No verification performed.** `[STATIC]` checks (`bun run check`, `bun run lint`) recommended before this change is merged.
+
+This is the correct behavior when:
+- The change is too small to warrant a verification step (typo fix, single-word copy change, comment addition)
+- You are in an environment without access to the verification commands
+- The prompt explicitly waived verification
+
+This is NOT acceptable when:
+- The change touches multiple files
+- The change introduces new types or modifies type signatures
+- The change adds or modifies a primitive
+- The prompt mentions verification as part of the deliverable
+
+In those cases, run the verification or state why you couldn't (and surface that as a blocker).
+
+The rule prevents responses that read as if verification was performed when it wasn't. "Looks correct to me" is not verification — neither `[STATIC]` nor `[BEHAVIORAL]`. Don't dress unverified inspection as either.
+
 ### Why this exists
 
 Static verification has caught zero load-bearing bugs in this codebase. Every real bug found through verification was found by behavioral testing — actual database queries, real browser clicks, observed runtime values. Treating "PASS by inspection" as equivalent to "PASS by observation" has hidden bugs that would have shipped to production. The protocol prevents that.
@@ -1946,8 +2299,41 @@ This applies to every Svelte and TypeScript file in this project — Prettier to
 
 ---
 
-## When in doubt
+## When in doubt — stop and ask
 
-If you're about to write something and you're not sure whether it matches the
-project's conventions: **stop and ask.** A 30-second clarification beats a
-500-line diff that doesn't match the codebase.
+The general rule: a 30-second clarification beats a 500-line diff that doesn't match the codebase.
+
+**Always stop and ask before:**
+
+- Introducing a new color, even one that "looks similar" to an existing one
+- Introducing a new size variant on Button, Input, or any other primitive
+- Adding a redirect rule from an old route to a new one
+- Adding a `style={...}` attribute (Tailwind only)
+- Naming something with a forbidden vocabulary term: `menu` (referring to catalog), `tenant`, `restaurant`, `merchant`
+- Adding a vendor type value not in the canonical list (`bakery`, `farm`, `butcher`, `florist`, `brewery`, `coffee_shop`, `food_truck`, `specialty_maker`, `market_vendor`, `other`)
+- Modifying any primitive in `src/lib/components/ui/` — these are heavily customized; changes affect every callsite
+- Adding a new external dependency (npm package, MCP server, third-party service)
+- Adding a `<form>` action that performs a destructive operation without a confirmation dialog
+- Inventing a "documented exception" to a rule. Documented exceptions live in CLAUDE.md and are added deliberately, not in code
+- Any operation that touches `vendors.settings` schema — the settings system is gated by Vendor settings rules
+- Any change that affects vendor-facing copy on the storefront (`/[vendorSlug]/catalog`) or in customer emails — these have separate voice rules
+
+**Always stop and ask if:**
+
+- The prompt is ambiguous about which of two valid patterns to apply
+- The change you're about to make would conflict with a documented pattern (per the Workflow Rule)
+- You discover that documented behavior conflicts with actual codebase behavior (see "Doc-vs-code conflicts" above)
+- A change required to satisfy the prompt would break sibling parity that you can't fix in the same task
+- The task as written would produce a non-trivial change to a primitive's API surface
+
+**Mid-task ambiguity is different from prompt ambiguity.**
+
+The triggers above mostly fire at the start of a task — when reading the prompt, you spot something unclear. But ambiguity also emerges *during* a task: the prompt was clear at the start, you've written 5 files, and now you're hitting a decision point the prompt didn't anticipate.
+
+The temptation is to push through and ship: you're committed, you've built momentum, the question feels small. Don't. The rule:
+
+1. **Stop at the next natural boundary** — finishing the current file or current logical unit, not mid-function.
+2. **State the ambiguity in your response.** Quote what the prompt said, describe what you've built so far, describe the decision point you've hit, propose 2–3 options.
+3. **Do not push through with assumptions.** Mid-task assumptions are the highest-drift category in long tasks because (a) they're not visible in the response (you assumed silently), (b) they compound (one assumption shapes the next), and (c) the user hasn't seen the early files yet to catch the drift.
+
+If the ambiguity is small enough that pushing through is genuinely the right call, surface it anyway in a "Mid-task decisions made without confirmation" section. State each decision and its alternative. The user can flag any that should have gone the other way.
