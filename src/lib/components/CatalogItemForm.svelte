@@ -14,6 +14,7 @@
 		SelectValue
 	} from '$lib/components/ui/select';
 	import { Switch } from '$lib/components/ui/switch';
+	import { Tabs, TabsList, TabsTrigger } from '$lib/components/ui/tabs';
 
 	type ImageEntry = { url: string; isPrimary?: boolean };
 
@@ -201,7 +202,6 @@
 						type="button"
 						onclick={clearImage}
 						variant="ghost"
-						size="sm"
 						class="text-xs text-destructive hover:text-destructive/80"
 					>
 						Remove image
@@ -358,20 +358,12 @@
 		{#if isSubscription}
 			<div>
 				<p class="mb-2 text-xs font-medium text-muted-foreground">Billing interval</p>
-				<div class="flex gap-2">
-					{#each [{ value: 'monthly', label: 'Monthly' }, { value: 'yearly', label: 'Yearly' }] as opt (opt.value)}
-						<button
-							type="button"
-							onclick={() => (billingInterval = opt.value)}
-							class="rounded-md border px-4 py-1.5 text-sm transition-colors {billingInterval ===
-							opt.value
-								? 'border-primary bg-primary/5 font-medium text-primary'
-								: ' text-muted-foreground hover:border-gray-300'}"
-						>
-							{opt.label}
-						</button>
-					{/each}
-				</div>
+				<Tabs bind:value={billingInterval}>
+					<TabsList>
+						<TabsTrigger value="monthly">Monthly</TabsTrigger>
+						<TabsTrigger value="yearly">Yearly</TabsTrigger>
+					</TabsList>
+				</Tabs>
 				<input type="hidden" name="billingInterval" value={billingInterval} />
 			</div>
 		{/if}

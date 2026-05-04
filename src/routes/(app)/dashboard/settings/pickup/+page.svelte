@@ -344,7 +344,6 @@
 						showAddForm = true;
 					}}
 					variant="outline"
-					size="sm"
 				>
 					+ Add location
 				</Button>
@@ -589,7 +588,6 @@
 												editError = null;
 											}}
 											variant="ghost"
-											size="sm"
 											class="h-auto p-0 text-xs text-muted-foreground hover:text-foreground"
 										>
 											Edit
@@ -599,7 +597,6 @@
 											<Button
 												type="submit"
 												variant="ghost"
-												size="sm"
 												class="h-auto p-0 text-xs {loc.isActive
 													? 'text-muted-foreground hover:text-destructive'
 													: 'text-muted-foreground hover:text-primary'}"
@@ -638,7 +635,6 @@
 						showAddTemplateForm = true;
 					}}
 					variant="outline"
-					size="sm"
 				>
 					+ Add window
 				</Button>
@@ -1086,7 +1082,6 @@
 													previewCutoffHours = tmpl.cutoffHours;
 												}}
 												variant="ghost"
-												size="sm"
 												class="h-auto p-0 text-xs text-muted-foreground hover:text-foreground"
 											>
 												Edit
@@ -1096,7 +1091,6 @@
 												<Button
 													type="submit"
 													variant="ghost"
-													size="sm"
 													class="h-auto p-0 text-xs text-muted-foreground hover:text-destructive"
 												>
 													Deactivate
@@ -1107,7 +1101,6 @@
 												<Button
 													type="button"
 													variant="ghost"
-													size="sm"
 													class="h-auto p-0 text-xs text-muted-foreground hover:text-destructive"
 													onclick={async (e) => {
 														const btn = e.currentTarget as HTMLButtonElement;
@@ -1188,7 +1181,6 @@
 												previewCutoffHours = tmpl.cutoffHours;
 											}}
 											variant="ghost"
-											size="sm"
 											class="h-auto p-0 text-xs text-muted-foreground hover:text-foreground"
 										>
 											Edit
@@ -1198,7 +1190,6 @@
 											<Button
 												type="submit"
 												variant="ghost"
-												size="sm"
 												class="h-auto p-0 text-xs text-muted-foreground hover:text-destructive"
 											>
 												Deactivate
@@ -1209,7 +1200,6 @@
 											<Button
 												type="button"
 												variant="ghost"
-												size="sm"
 												class="h-auto p-0 text-xs text-muted-foreground hover:text-destructive"
 												onclick={async (e) => {
 													const btn = e.currentTarget as HTMLButtonElement;

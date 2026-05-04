@@ -305,12 +305,7 @@
 									>
 										{catalogUrl}
 									</span>
-									<Button
-										onclick={copyCatalogUrl}
-										variant="outline"
-										size="sm"
-										class="shrink-0 gap-1.5"
-									>
+									<Button onclick={copyCatalogUrl} variant="outline" class="shrink-0 gap-1.5">
 										<Icon
 											icon={catalogUrlCopied ? 'mdi:check' : 'mdi:content-copy'}
 											class="h-4 w-4"
@@ -366,7 +361,7 @@
 							>
 								{catalogUrl}
 							</span>
-							<Button onclick={copyCatalogUrl} variant="outline" size="sm" class="shrink-0 gap-1.5">
+							<Button onclick={copyCatalogUrl} variant="outline" class="shrink-0 gap-1.5">
 								<Icon
 									icon={catalogUrlCopied ? 'mdi:check' : 'mdi:content-copy'}
 									class="h-3.5 w-3.5"
@@ -405,8 +400,7 @@
 							<Button
 								onclick={copyEmbed}
 								variant="outline"
-								size="sm"
-								class="absolute top-2 right-2 gap-1.5"
+								class="absolute top-2 right-2 gap-1.5 text-xs"
 							>
 								<Icon icon={embedCopied ? 'mdi:check' : 'mdi:content-copy'} class="h-3.5 w-3.5" />
 								{embedCopied ? 'Copied' : 'Copy'}
@@ -478,7 +472,7 @@
 									<p class="text-sm font-medium text-foreground">Square</p>
 									<p class="text-xs text-muted-foreground">1080 × 1080 · Instagram</p>
 								</div>
-								<Button onclick={downloadSocialCard} variant="default" size="sm" class="gap-1.5">
+								<Button onclick={downloadSocialCard} variant="default" class="gap-1.5">
 									<Icon icon="mdi:download" class="h-3.5 w-3.5" /> Download
 								</Button>
 							</div>
@@ -533,7 +527,7 @@
 									<p class="text-sm font-medium text-foreground">Landscape</p>
 									<p class="text-xs text-muted-foreground">1200 × 628 · Facebook / OG</p>
 								</div>
-								<Button onclick={downloadLandscapeCard} variant="default" size="sm" class="gap-1.5">
+								<Button onclick={downloadLandscapeCard} variant="default" class="gap-1.5">
 									<Icon icon="mdi:download" class="h-3.5 w-3.5" /> Download
 								</Button>
 							</div>
@@ -597,8 +591,7 @@
 								<Button
 									onclick={copyCaption}
 									variant="outline"
-									size="sm"
-									class="absolute top-2 right-2 gap-1.5"
+									class="absolute top-2 right-2 gap-1.5 text-xs"
 								>
 									<Icon
 										icon={captionCopied ? 'mdi:check' : 'mdi:content-copy'}

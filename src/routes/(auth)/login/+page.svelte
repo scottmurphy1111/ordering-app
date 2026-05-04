@@ -100,7 +100,6 @@
 						magicEmail = '';
 					}}
 					variant="ghost"
-					size="sm"
 					class="mt-3 h-auto p-0 text-xs text-primary underline hover:text-primary/90"
 					>Use a different email</Button
 				>

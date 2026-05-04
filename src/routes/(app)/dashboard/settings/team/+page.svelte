@@ -236,12 +236,7 @@
 						</p>
 						<div class="flex items-center gap-2">
 							<Input type="text" readonly value={inviteUrl} class="flex-1 text-xs" />
-							<Button
-								type="button"
-								onclick={() => copyLink(inviteUrl!, 'new')}
-								variant="outline"
-								size="sm"
-							>
+							<Button type="button" onclick={() => copyLink(inviteUrl!, 'new')} variant="outline">
 								{copiedToken === 'new' ? 'Copied!' : 'Copy'}
 							</Button>
 						</div>
@@ -326,7 +321,6 @@
 																	(e.currentTarget as HTMLButtonElement).form?.requestSubmit();
 															}}
 															variant="ghost"
-															size="sm"
 															class="hidden text-indigo-500 hover:text-indigo-700 sm:inline-flex"
 														>
 															Make internal
@@ -343,7 +337,6 @@
 																(e.currentTarget as HTMLButtonElement).form?.requestSubmit();
 														}}
 														variant="ghost"
-														size="sm"
 														class="text-destructive hover:text-destructive/80"
 													>
 														Remove
@@ -404,7 +397,6 @@
 														onclick={() =>
 															copyLink(`${data.origin}/invite/${invite.id}`, invite.id)}
 														variant="ghost"
-														size="sm"
 														class="text-blue-500 hover:text-blue-700"
 													>
 														{copiedToken === invite.id ? 'Copied!' : 'Copy link'}
@@ -419,7 +411,6 @@
 																	(e.currentTarget as HTMLButtonElement).form?.requestSubmit();
 															}}
 															variant="ghost"
-															size="sm"
 															class="text-destructive hover:text-destructive/80"
 														>
 															Cancel
@@ -493,7 +484,6 @@
 																(e.currentTarget as HTMLButtonElement).form?.requestSubmit();
 														}}
 														variant="ghost"
-														size="sm"
 														class="text-destructive hover:text-destructive/80"
 													>
 														Revoke internal
@@ -541,7 +531,6 @@
 																	(e.currentTarget as HTMLButtonElement).form?.requestSubmit();
 															}}
 															variant="outline"
-															size="sm"
 															class="border-indigo-300 text-indigo-600 hover:bg-indigo-50"
 														>
 															Make internal

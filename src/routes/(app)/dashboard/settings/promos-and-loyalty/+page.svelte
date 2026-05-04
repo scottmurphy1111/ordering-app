@@ -74,7 +74,6 @@
 					showForm = !showForm;
 				}}
 				variant="default"
-				size="sm"
 				class="gap-1.5"
 			>
 				<Icon icon={showForm ? 'mdi:close' : 'mdi:plus'} class="h-4 w-4" />
@@ -280,7 +279,6 @@
 														(e.currentTarget as HTMLButtonElement).form?.requestSubmit();
 												}}
 												variant="ghost"
-												size="sm"
 												class="text-destructive hover:text-destructive/80">Delete</Button
 											>
 										</form>

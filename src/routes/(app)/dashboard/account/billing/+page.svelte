@@ -16,6 +16,7 @@
 	import { resolve } from '$app/paths';
 	import { Button } from '$lib/components/ui/button';
 	import { Badge } from '$lib/components/ui/badge';
+	import { Tabs, TabsList, TabsTrigger } from '$lib/components/ui/tabs';
 	import { Card, CardHeader, CardTitle, CardAction, CardContent } from '$lib/components/ui/card';
 	import {
 		Dialog,
@@ -163,7 +164,7 @@
 			<CardAction>
 				{#if isPaidPlan}
 					<form method="post" action="?/openPortal" use:enhance>
-						<Button type="submit" variant="outline" size="sm" class="gap-1.5">
+						<Button type="submit" variant="outline" class="gap-1.5">
 							<Icon icon="mdi:cog-outline" class="h-3.5 w-3.5" /> Manage billing
 						</Button>
 					</form>
@@ -233,7 +234,6 @@
 							<Button
 								type="submit"
 								variant="outline"
-								size="sm"
 								class="gap-1.5 border-primary/20 bg-primary/5 text-primary/90 hover:bg-primary/10"
 							>
 								<Icon icon="mdi:arrow-up-circle-outline" class="h-3.5 w-3.5" />
@@ -249,9 +249,7 @@
 									update({ invalidateAll: true })}
 						>
 							<input type="hidden" name="interval" value="monthly" />
-							<Button type="submit" variant="outline" size="sm" class="gap-1.5">
-								Switch to monthly
-							</Button>
+							<Button type="submit" variant="outline" class="gap-1.5">Switch to monthly</Button>
 						</form>
 					{/if}
 				</div>
@@ -325,33 +323,21 @@
 								<div class="flex items-center justify-between gap-2">
 									<p class="font-semibold text-foreground">{tier.name}</p>
 									{#if tier.key === 'pro' && !isPaidPlan}
-										<div class="flex items-center rounded-lg border bg-muted/50 p-0.5">
-											<button
-												type="button"
-												onclick={() => (selectedInterval = 'monthly')}
-												class="rounded-md px-2.5 py-1 text-xs transition-colors {selectedInterval ===
-												'monthly'
-													? 'bg-background font-medium text-foreground shadow-sm'
-													: 'text-muted-foreground hover:text-foreground'}"
-											>
-												Monthly
-											</button>
-											<button
-												type="button"
-												onclick={() => (selectedInterval = 'annual')}
-												class="flex items-center gap-1 rounded-md px-2.5 py-1 text-xs transition-colors {selectedInterval ===
-												'annual'
-													? 'bg-background font-medium text-foreground shadow-sm'
-													: 'text-muted-foreground hover:text-foreground'}"
-											>
-												Annual
-												<span
-													class="rounded-full bg-primary/10 px-1.5 py-0.5 text-[9px] font-semibold text-primary"
-												>
-													-$168
-												</span>
-											</button>
-										</div>
+										<Tabs
+											value={selectedInterval}
+											onValueChange={(v) => (selectedInterval = v as BillingInterval)}
+										>
+											<TabsList>
+												<TabsTrigger value="monthly">Monthly</TabsTrigger>
+												<TabsTrigger value="annual">
+													Annual
+													<span
+														class="rounded-full bg-primary/10 px-1.5 py-0.5 text-[9px] font-semibold text-primary"
+														>-$168</span
+													>
+												</TabsTrigger>
+											</TabsList>
+										</Tabs>
 									{/if}
 								</div>
 								{#if tier.key === 'pro'}
@@ -558,37 +544,21 @@
 			{#if isActivate && pendingAddon.supportsAnnual}
 				<div class="flex items-center justify-between">
 					<p class="text-sm text-muted-foreground">Billing cycle</p>
-					<div class="flex items-center rounded-lg border bg-muted/50 p-0.5">
-						<Button
-							type="button"
-							onclick={() => (addonInterval = 'monthly')}
-							variant="ghost"
-							size="sm"
-							class="rounded-md px-3 py-1 {addonInterval === 'monthly'
-								? 'bg-background text-foreground shadow-sm'
-								: 'text-muted-foreground hover:text-muted-foreground'}"
-						>
-							Monthly
-						</Button>
-						<Button
-							type="button"
-							onclick={() => (addonInterval = 'annual')}
-							variant="ghost"
-							size="sm"
-							class="gap-1 rounded-md px-3 py-1 {addonInterval === 'annual'
-								? 'bg-background text-foreground shadow-sm'
-								: 'text-muted-foreground hover:text-muted-foreground'}"
-						>
-							Annual
-							{#if addonAnnualPricing}
-								<span
-									class="rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-semibold text-primary"
-								>
-									Save ${addonAnnualPricing.savings}/yr
-								</span>
-							{/if}
-						</Button>
-					</div>
+					<Tabs value={addonInterval} onValueChange={(v) => (addonInterval = v as BillingInterval)}>
+						<TabsList>
+							<TabsTrigger value="monthly">Monthly</TabsTrigger>
+							<TabsTrigger value="annual">
+								Annual
+								{#if addonAnnualPricing}
+									<span
+										class="rounded-full bg-primary/10 px-1.5 py-0.5 text-[9px] font-semibold text-primary"
+									>
+										Save ${addonAnnualPricing.savings}/yr
+									</span>
+								{/if}
+							</TabsTrigger>
+						</TabsList>
+					</Tabs>
 				</div>
 			{/if}
 

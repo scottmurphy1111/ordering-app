@@ -1,7 +1,9 @@
 <script lang="ts">
 	import type { PageData } from './$types';
 	import Icon from '@iconify/svelte';
+	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
+	import { Tabs, TabsList, TabsTrigger } from '$lib/components/ui/tabs';
 	import { Card, CardHeader, CardTitle, CardContent } from '$lib/components/ui/card';
 	import { Button } from '$lib/components/ui/button';
 	import { SvelteMap } from 'svelte/reactivity';
@@ -124,19 +126,22 @@
 			</p>
 		</div>
 		<div class="flex items-center gap-2">
-			<!-- Period toggle — standard segmented control -->
-			<div class="flex items-center overflow-hidden rounded-lg border border-gray-200">
-				{#each [[7, '7 days'], [30, '30 days']] as const as [d, label] (d)}
-					<a
-						href={resolve(d === 30 ? '/dashboard/analytics' : `/dashboard/analytics?range=${d}`)}
-						class="flex items-center gap-1.5 px-4 py-2 text-sm font-medium transition-colors
-							{rangeDays === d ? 'bg-gray-900 text-white' : 'bg-white text-gray-500 hover:bg-gray-50'}"
-					>
+			<Tabs
+				value={String(rangeDays)}
+				onValueChange={(v) =>
+					goto(resolve(Number(v) === 7 ? '/dashboard/analytics?range=7' : '/dashboard/analytics'))}
+			>
+				<TabsList>
+					<TabsTrigger value="30">
 						<Icon icon="mdi:calendar-outline" class="h-3.5 w-3.5" />
-						{label}
-					</a>
-				{/each}
-			</div>
+						30 days
+					</TabsTrigger>
+					<TabsTrigger value="7">
+						<Icon icon="mdi:calendar-outline" class="h-3.5 w-3.5" />
+						7 days
+					</TabsTrigger>
+				</TabsList>
+			</Tabs>
 			<Button variant="outline" class="gap-1.5">
 				<Icon icon="mdi:download-outline" class="h-3.5 w-3.5" />
 				Export

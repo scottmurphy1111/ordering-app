@@ -11,8 +11,9 @@
 	import { Button } from '$lib/components/ui/button';
 	import { Input } from '$lib/components/ui/input';
 	import { Skeleton } from '$lib/components/ui/skeleton';
-	import OrdersViewToggle from '$lib/components/OrdersViewToggle.svelte';
+	import OrdersTabs from '$lib/components/OrdersTabs.svelte';
 	import OrdersSummaryBar from '$lib/components/OrdersSummaryBar.svelte';
+	import { Tabs, TabsList, TabsTrigger } from '$lib/components/ui/tabs';
 	import OrdersFilterTabs from '$lib/components/OrdersFilterTabs.svelte';
 	import { SvelteURLSearchParams } from 'svelte/reactivity';
 
@@ -216,7 +217,7 @@
 		<div class="flex items-center gap-2">
 			<Button
 				variant="outline"
-				size="icon-lg"
+				size="icon"
 				onclick={toggleSound}
 				title={soundEnabled ? 'Mute new order alerts' : 'Enable new order alerts'}
 			>
@@ -225,7 +226,7 @@
 					class="h-4 w-4 {soundEnabled ? 'text-primary' : 'text-muted-foreground'}"
 				/>
 			</Button>
-			<OrdersViewToggle />
+			<OrdersTabs />
 		</div>
 	</div>
 
@@ -239,26 +240,28 @@
 
 	<!-- Orders / Production view toggle -->
 	<div class="mb-4 flex items-center justify-between gap-3">
-		<div class="inline-flex overflow-hidden rounded-lg border border-gray-200 bg-white p-0.5">
-			<a
-				href={resolve(viewOrdersUrl as `/${string}`)}
-				class="flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors
-					{data.view !== 'production' ? 'bg-gray-900 text-white' : 'text-gray-500 hover:bg-gray-50'}"
-				aria-current={data.view !== 'production' ? 'page' : undefined}
-			>
-				<Icon icon="mdi:format-list-bulleted" class="h-3.5 w-3.5" />
-				Orders
-			</a>
-			<a
-				href={resolve('/dashboard/orders?view=production')}
-				class="flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors
-					{data.view === 'production' ? 'bg-gray-900 text-white' : 'text-gray-500 hover:bg-gray-50'}"
-				aria-current={data.view === 'production' ? 'page' : undefined}
-			>
-				<Icon icon="mdi:clipboard-list-outline" class="h-3.5 w-3.5" />
-				Production
-			</a>
-		</div>
+		<Tabs
+			value={data.view === 'production' ? 'production' : 'orders'}
+			onValueChange={(v) =>
+				goto(
+					resolve(
+						v === 'production'
+							? '/dashboard/orders?view=production'
+							: (viewOrdersUrl as `/${string}`)
+					)
+				)}
+		>
+			<TabsList>
+				<TabsTrigger value="orders">
+					<Icon icon="mdi:format-list-bulleted" class="h-3.5 w-3.5" />
+					Orders
+				</TabsTrigger>
+				<TabsTrigger value="production">
+					<Icon icon="mdi:clipboard-list-outline" class="h-3.5 w-3.5" />
+					Production
+				</TabsTrigger>
+			</TabsList>
+		</Tabs>
 		{#if data.view !== 'production'}
 			<a
 				href={resolve(cancelledToggleUrl as `/${string}`)}

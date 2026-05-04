@@ -5,7 +5,7 @@
 	import { confirmDialog } from '$lib/confirm.svelte';
 	import type { PageData, ActionData } from './$types';
 	import Icon from '@iconify/svelte';
-	import CatalogViewToggle from '$lib/components/CatalogViewToggle.svelte';
+	import CatalogTabs from '$lib/components/CatalogTabs.svelte';
 	import Sortable from 'sortablejs';
 	import { Button } from '$lib/components/ui/button';
 	import {
@@ -197,7 +197,7 @@
 		{#if !sortMode}
 			<div class="flex flex-col gap-3 md:flex-row md:items-center md:gap-2">
 				<div class="flex items-center justify-between gap-2 md:justify-start">
-					<CatalogViewToggle />
+					<CatalogTabs />
 					<DropdownMenu>
 						<DropdownMenuTrigger>
 							{#snippet child({ props })}
@@ -329,7 +329,7 @@
 								<input type="hidden" name="id" value={cat.id} />
 								<Button
 									type="submit"
-									size="icon-lg"
+									size="icon"
 									variant="ghost"
 									class="text-red-400 hover:text-red-600"
 									onclick={async (e) => {
@@ -417,7 +417,7 @@
 										<input type="hidden" name="id" value={cat.id} />
 										<Button
 											type="submit"
-											size="icon-lg"
+											size="icon"
 											variant="ghost"
 											class="text-red-400 hover:text-red-600"
 											onclick={async (e) => {

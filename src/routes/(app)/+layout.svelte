@@ -338,7 +338,7 @@
 				newOrderToast = null;
 			}}
 			variant="ghost"
-			size="icon-sm"
+			size="icon"
 			class="shrink-0 text-muted-foreground/40 hover:text-muted-foreground"
 		>
 			<Icon icon="mdi:close" class="h-4 w-4" />

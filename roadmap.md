@@ -119,6 +119,36 @@ Items vendors will encounter in their first week of use. The bar is "first impre
 
 ---
 
+### Toast notifications: no auto-dismiss, no manual dismiss
+
+Toast messages shown after saving items or categories don't disappear automatically and have no X to dismiss them. Vendors are stuck with persistent toasts cluttering the UI.
+
+**Status:** ready-to-execute
+
+**Scope:** Identify the toast component, decide on auto-dismiss duration (5s standard? 8s for action-confirmation?), add dismiss X affordance with proper aria-label. Likely also fixes the toast dismiss X size question flagged in Batch 9 Checkpoint 2 (whether 32×32 is proportionally too large for the toast container).
+
+---
+
+### Cart → checkout page transition flash
+
+Navigating from cart to checkout briefly shows an empty cart page (visual flash) before checkout content renders.
+
+**Status:** needs-investigation
+
+**Scope:** Diagnose the navigation flow. Likely a SvelteKit data-loading race where checkout's load function reads the cart but the cart component re-renders empty mid-transition. Common fix: ensure cart state persists in URL or store across the navigation, or add a loading skeleton to mask the transition.
+
+---
+
+### Hardcoded brand green #1d9e75 — sweep to design tokens
+
+Brand green is hardcoded in multiple places rather than referencing the existing CSS custom property / design token. Means brand color changes require multi-file edits.
+
+**Status:** ready-to-execute
+
+**Scope:** Grep for "#1d9e75" across src/, replace with the canonical token reference. Verify visual parity post-sweep — every surface using brand green still renders identically. Related to Tier 2 "Brand the dashboard" item below; this is the precondition for vendor-color theming to work.
+
+---
+
 ## Tier 2 — Launch polish
 
 ### Forms & UI shadcn-svelte audit
@@ -310,6 +340,77 @@ Items vendors will encounter in their first week of use. The bar is "first impre
 
 ---
 
+### Status pills: replace with icons + semantic-color labels
+
+Current status pills (received, confirmed, in production, ready, fulfilled, cancelled) render as colored background pills which feel visually heavy and jarring across order list rows.
+
+**Status:** needs-design
+
+**Approach:** Each status gets a recognizable icon (received → inbox, confirmed → check, in production → cooking-pot, ready → bell, fulfilled → check-circle, cancelled → x-circle) plus the status label as neutral text. Color is preserved on the icon for at-a-glance scanability without the heavy background fill. Affects orders list, order detail, anywhere status is displayed.
+
+**Scope:** Design the icon mapping per status (verify each icon reads correctly at small size), update the StatusPill component (or wherever status renders) to use the new pattern, sweep all callsites. Sibling-parity check: every status display surface adopts the new treatment in the same prompt.
+
+---
+
+### Show ordered items in live order cards
+
+The /dashboard/orders order cards show order#, customer, total, pickup time, status, and action buttons but don't show what the customer actually ordered. Vendors need this info before fulfilling.
+
+**Status:** ready-to-execute
+
+**Scope:** Add a one-line item summary per order card. Format: "3× Sourdough Loaf, 2× Cinnamon Rolls". Truncation rule TBD during implementation — likely show first 3 items + "and N more" when over.
+
+---
+
+### Brand the dashboard — vendor accent color theming
+
+The dashboard currently uses hardcoded brand green for primary actions across all vendors. Vendors should see the dashboard themed with their own brand color (already collected in branding settings).
+
+**Status:** needs-investigation (sub-item-A is mechanical, sub-item-B is design)
+
+**Scope:** Two layers.
+
+**Sub-item A — Accent color theming (mechanical CSS variable work):** Set `--primary` CSS custom property at root level based on vendor data on load. Works with existing primitive system because Batch 7–9 consolidated to `bg-primary` references throughout. Requires the hardcoded brand green sweep (Tier 1 item above) to land first.
+
+**Sub-item B — Visual decoration (gradient/pattern):** Subtle gradient or pattern using vendor colors on dashboard chrome (sidebar, header, card backgrounds). Aesthetic layer beyond accent theming. Design exercise needed: how does the gradient interact with content backgrounds? Fallback for extreme colors? Contrast preservation?
+
+---
+
+### Custom domains — add-on feature
+
+Vendor add-on for connecting their own domain (vendor.com) to point at their Order Local storefront. Revenue add-on for paid tiers.
+
+**Status:** needs-investigation
+
+**Open question:** Can this be automated? Two paths:
+
+- (a) Vercel-style automatic SSL/domain provisioning via hosting platform API — vendor enters domain, backend registers it, SSL provisions, DNS instructions shown. ~10 min setup. Scales well. Feasibility depends on hosting platform's API.
+- (b) Manual coordination per vendor — doesn't scale past ~50 vendors.
+
+Investigation needed: identify hosting platform (Vercel, Cloudflare Pages, Fly.io, custom VPS) and whether their API supports custom domains as a programmatic operation.
+
+---
+
+### Pickup locations: support full deletion (not just deactivate)
+
+Currently pickup locations can only be deactivated, not deleted entirely. Vendors who set up incorrect locations or want to clean up old data need a true delete option.
+
+**Status:** needs-decision
+
+**Open question:** Should deletion be hard-delete (record gone forever) or soft-delete with a "Trash" archive view? Hard-delete is simpler but loses historical context (occurrences that referenced this location either get orphaned or cascade-deleted, both of which have implications for analytics). Soft-delete preserves history but adds Trash UI. Default recommendation: soft-delete with 30-day grace period before hard-delete, matching common SaaS patterns.
+
+---
+
+### Production items: clarify expiration behavior
+
+Currently unclear when production items (the items shown on the production view of /dashboard/orders) expire or get cleared. Vendors want manual control over clearing production items.
+
+**Status:** needs-investigation
+
+**Scope:** Investigate current expiration logic (server-side filter? local storage? something else?). Then decide: should there be a manual "Clear production" button? Should expiration be configurable per vendor? Currently neither exists.
+
+---
+
 ## Tier 3 — Post-launch
 
 ### Item photo uploads polish
@@ -405,6 +506,20 @@ Items vendors will encounter in their first week of use. The bar is "first impre
 **Estimated effort:** 5–7 days. Real integration work.
 
 **Trigger:** 5+ retail vendors specifically request it.
+
+---
+
+### Pause for the season — vendor-level pause feature
+
+Seasonal vendors (e.g., farmers selling specific produce in season, holiday-only bakeries) need to pause their entire storefront without deleting data. Storefront shows "We're closed for the season, back [date]" to customers; no orders accepted; vendor dashboard remains accessible.
+
+**Status:** needs-decision (multiple open questions)
+
+**Scope:** Technically straightforward — add `vendor.status` field (`'active' | 'paused'`) with dashboard toggle, storefront pause UI, and order-creation guard. Real questions:
+
+- Date-based (vendor sets resume date that auto-unpauses) or indefinite (vendor manually unpauses)?
+- Existing scheduled orders during pause: auto-cancel? grandfather them through the pause window?
+- Subscription billing during pause: halt charges (Stripe subscription pause) or continue billing while pausing fulfillment? Stripe-side implications either way.
 
 ---
 

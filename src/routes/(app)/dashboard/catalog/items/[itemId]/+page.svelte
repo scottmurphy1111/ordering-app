@@ -49,9 +49,7 @@
 				<p class="mt-0.5 text-xs text-muted-foreground">e.g. Size, Add-ons, Frosting, Pack size</p>
 			</div>
 			{#if !showAddGroup}
-				<Button onclick={() => (showAddGroup = true)} variant="outline" size="sm">
-					+ Add group
-				</Button>
+				<Button onclick={() => (showAddGroup = true)} variant="outline">+ Add group</Button>
 			{/if}
 		</div>
 
@@ -160,12 +158,9 @@
 								<Checkbox name="isRequired" checked={mod.isRequired ?? false} />
 								Required
 							</label>
-							<Button type="submit" variant="default" size="sm">Save</Button>
-							<Button
-								type="button"
-								onclick={() => (editingModifier = null)}
-								variant="outline"
-								size="sm">Cancel</Button
+							<Button type="submit" variant="default">Save</Button>
+							<Button type="button" onclick={() => (editingModifier = null)} variant="outline"
+								>Cancel</Button
 							>
 						</form>
 					{:else}
@@ -189,7 +184,6 @@
 									type="button"
 									onclick={() => (editingModifier = mod.id)}
 									variant="ghost"
-									size="sm"
 									class="h-auto p-0 text-xs text-muted-foreground hover:text-muted-foreground"
 								>
 									Edit
@@ -204,7 +198,6 @@
 												(e.currentTarget as HTMLButtonElement).form?.requestSubmit();
 										}}
 										variant="ghost"
-										size="sm"
 										class="h-auto p-0 text-xs text-red-400 hover:text-red-600"
 									>
 										Delete
@@ -301,13 +294,8 @@
 									Default
 								</label>
 								<div class="flex gap-1 pb-0.5">
-									<Button type="submit" variant="default" size="sm">Add</Button>
-									<Button
-										type="button"
-										onclick={() => (addingOptionTo = null)}
-										variant="outline"
-										size="sm"
-									>
+									<Button type="submit" variant="default">Add</Button>
+									<Button type="button" onclick={() => (addingOptionTo = null)} variant="outline">
 										<Icon icon="mdi:close" class="h-3.5 w-3.5" />
 									</Button>
 								</div>

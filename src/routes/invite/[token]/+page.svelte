@@ -172,7 +172,6 @@
 						type="button"
 						onclick={() => (showSignUp = true)}
 						variant="ghost"
-						size="sm"
 						class="mt-4 w-full text-xs text-muted-foreground hover:text-muted-foreground"
 					>
 						Don't have an account? Create one
@@ -229,7 +228,6 @@
 						type="button"
 						onclick={() => (showSignUp = false)}
 						variant="ghost"
-						size="sm"
 						class="mt-4 w-full text-xs text-muted-foreground hover:text-muted-foreground"
 					>
 						Already have an account? Sign in

@@ -9,7 +9,7 @@
 	import { enhance } from '$app/forms';
 	import { confirmDialog } from '$lib/confirm.svelte';
 	import Sortable from 'sortablejs';
-	import CatalogViewToggle from '$lib/components/CatalogViewToggle.svelte';
+	import CatalogTabs from '$lib/components/CatalogTabs.svelte';
 	import { Button } from '$lib/components/ui/button';
 	import { Badge } from '$lib/components/ui/badge';
 	import { Input } from '$lib/components/ui/input';
@@ -394,7 +394,7 @@
 		{#if !sortMode}
 			<div class="flex flex-col gap-3 md:flex-row md:items-center md:gap-2">
 				<div class="flex items-center justify-between gap-2 md:justify-start">
-					<CatalogViewToggle />
+					<CatalogTabs />
 					<DropdownMenu>
 						<DropdownMenuTrigger>
 							{#snippet child({ props })}
@@ -706,7 +706,7 @@
 								<Button
 									type="submit"
 									variant="ghost"
-									size="icon-lg"
+									size="icon"
 									onclick={async (e) => {
 										e.preventDefault();
 										if (await confirmDialog('Delete this item?'))
@@ -817,7 +817,7 @@
 										<Button
 											type="submit"
 											variant="ghost"
-											size="icon-lg"
+											size="icon"
 											onclick={async (e) => {
 												e.preventDefault();
 												if (await confirmDialog('Delete this item?'))
@@ -1089,7 +1089,6 @@
 							}
 						}}
 						variant="ghost"
-						size="sm"
 						class="h-auto p-0 text-xs text-muted-foreground underline hover:text-foreground"
 					>
 						{discoveredItems
@@ -1202,7 +1201,7 @@
 						<Button
 							onclick={() => (drawerLastCreated = null)}
 							variant="ghost"
-							size="icon-sm"
+							size="icon"
 							class="ml-4 text-primary/80 hover:text-primary"
 						>
 							<Icon icon="mdi:close" class="h-4 w-4" />

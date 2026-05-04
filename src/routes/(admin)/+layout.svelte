@@ -64,7 +64,6 @@
 						}
 					})}
 				variant="ghost"
-				size="sm"
 				class="text-xs text-muted-foreground hover:bg-background/10 hover:text-red-400"
 			>
 				Sign out

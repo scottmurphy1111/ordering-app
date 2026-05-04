@@ -132,7 +132,6 @@
 														(e.currentTarget as HTMLButtonElement).form?.requestSubmit();
 												}}
 												variant="ghost"
-												size="sm"
 												class="text-muted-foreground hover:text-foreground"
 											>
 												{u.isInternal ? 'Demote' : 'Promote'}
@@ -151,7 +150,6 @@
 															(e.currentTarget as HTMLButtonElement).form?.requestSubmit();
 													}}
 													variant="outline"
-													size="sm"
 												>
 													Unban
 												</Button>
@@ -171,7 +169,6 @@
 															(e.currentTarget as HTMLButtonElement).form?.requestSubmit();
 													}}
 													variant="ghost"
-													size="sm"
 													class="text-red-600 hover:bg-destructive/10 hover:text-red-500"
 												>
 													Suspend

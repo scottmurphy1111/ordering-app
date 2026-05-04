@@ -11,7 +11,7 @@
 	import * as Popover from '$lib/components/ui/popover';
 	import { Calendar } from '$lib/components/ui/calendar';
 	import { parseDate, type CalendarDate } from '@internationalized/date';
-	import OrdersViewToggle from '$lib/components/OrdersViewToggle.svelte';
+	import OrdersTabs from '$lib/components/OrdersTabs.svelte';
 	import OrdersSummaryBar from '$lib/components/OrdersSummaryBar.svelte';
 	import OrdersFilterTabs from '$lib/components/OrdersFilterTabs.svelte';
 	import { SvelteURLSearchParams } from 'svelte/reactivity';
@@ -142,7 +142,7 @@
 	<!-- Header -->
 	<div class="mb-6 flex items-center justify-between gap-4">
 		<h1 class="text-2xl font-bold text-foreground">Orders</h1>
-		<OrdersViewToggle />
+		<OrdersTabs />
 	</div>
 
 	{#if form?.error}

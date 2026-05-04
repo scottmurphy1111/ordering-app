@@ -126,7 +126,7 @@
 							type="button"
 							onclick={() => (showPk = !showPk)}
 							variant="ghost"
-							size="icon-sm"
+							size="icon-xs"
 							class="absolute top-1/2 right-2 -translate-y-1/2 text-muted-foreground hover:text-muted-foreground"
 						>
 							<Icon icon={showPk ? 'mdi:eye-off-outline' : 'mdi:eye-outline'} class="h-3.5 w-3.5" />
@@ -159,7 +159,7 @@
 							type="button"
 							onclick={() => (showKey = !showKey)}
 							variant="ghost"
-							size="icon-sm"
+							size="icon-xs"
 							class="absolute top-1/2 right-2 -translate-y-1/2 text-muted-foreground hover:text-muted-foreground"
 						>
 							<Icon
