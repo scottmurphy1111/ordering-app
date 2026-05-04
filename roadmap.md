@@ -149,6 +149,42 @@ Brand green is hardcoded in multiple places rather than referencing the existing
 
 ---
 
+### Remove delivery feature entirely
+
+The delivery option is being cut from Order Local. Sweep three layers:
+
+1. **UI:** Remove the delivery card from settings/general.
+2. **Cart/checkout:** Remove delivery as a fulfillment option from the customer order flow.
+3. **Schema:** Identify and remove any delivery-related fields, enums, or tables (likely fulfillment_type enum entries, delivery_address fields, delivery fee logic, etc.).
+
+**Status:** ready-to-execute
+
+**Scope:** Substantial — touches schema migrations, order flow, settings UI, and any business logic that branches on fulfillment type. Verify nothing breaks in the order pipeline post-removal. Existing orders with delivery fulfillment (if any in dev/test data) need a migration path or cleanup.
+
+---
+
+### Remove account/security route
+
+Auth model is Google OAuth + magic link only. Neither requires a security page. There's no password to change, no 2FA to configure, no API keys to manage. The route is empty scaffolding.
+
+**Status:** ready-to-execute
+
+**Scope:** Remove `src/routes/(app)/dashboard/account/security/`, remove the link from the account inner-nav layout, remove any associated load functions or imports.
+
+---
+
+### account/notifications — render coming-soon placeholder
+
+The notifications page is being kept (route preserved) but no notification preferences are wired up yet. The actual preferences are scoped as a separate Tier 2 item below. For now, the page renders a placeholder so vendors who navigate to it understand what's planned.
+
+**Status:** ready-to-execute
+
+**Scope:** Replace the page content (or strip empty content) with an Alert component (`severity="info"`, `dismissible={false}`, no auto-fade) explaining: "Notification preferences coming soon. You'll be able to configure weekly summary digests, daily prep emails, and product update emails from this page." Adjust copy to match the actual planned features (see Tier 2 item below).
+
+The route, nav link, and load function stay — only the page body changes.
+
+---
+
 ## Tier 2 — Launch polish
 
 ### Forms & UI shadcn-svelte audit
@@ -411,6 +447,100 @@ Currently unclear when production items (the items shown on the production view 
 
 ---
 
+### account/notifications — build vendor notification preferences
+
+Once the coming-soon placeholder is shipped (Tier 1 above), build the actual notification preferences page. Order email/SMS for transactional order status are NOT user-configurable — those are built-in transactional behavior and shouldn't be a setting (toggling them off is a footgun).
+
+The notifications page hosts opt-in/opt-out for non-transactional communications:
+
+- **Weekly summary digest** — opt-in. Email sent every Monday with last week's order count, revenue, top items.
+- **Daily prep summary** — opt-in. Email sent the night before a pickup window with the next-day's order list, prep quantities, pickup times.
+- **Product/feature update emails** — opt-out. Marketing-style emails from the Order Local team about new features, tips, etc.
+- **Low inventory alerts** — opt-in. Future, only relevant once inventory tracking exists. Mark as future sub-item.
+
+**Status:** needs-design
+
+**Scope:** Design the page layout (likely a list of toggleable preferences with descriptions). Build the schema (vendor_notification_preferences table or fields on vendor table). Build the email/digest jobs that read from preferences. Each preference type is a separate piece of work — the page UI is the smallest part; the digest job and prep summary job are the meaningful work.
+
+**Sub-items:**
+- Page UI (toggles + descriptions) — small
+- Weekly summary digest backend (cron job, email template, query) — medium
+- Daily prep summary backend (cron job timing per vendor's pickup schedule, email template) — medium
+- Product update email infrastructure (mailing list, audience targeting, send mechanism) — large; likely external service (Resend audience, Customer.io, etc.)
+- Low inventory alerts — deferred until inventory tracking exists
+
+---
+
+### Pickup window action vertical centering
+
+In the pickup windows table, action buttons (Edit, Delete, etc.) are not vertically centered against row content. Visual alignment issue.
+
+**Status:** ready-to-execute
+
+**Scope:** Locate the pickup window row markup in settings/pickup, fix the action cell's vertical alignment. Likely a missing `items-center` on the row container.
+
+---
+
+### Switching vendors doesn't work
+
+Multi-vendor switching from the vendor selector fails or doesn't navigate correctly. May be a devmode/seed-data artifact.
+
+**Status:** needs-investigation
+
+**Scope:** Reproduce in dev, identify devmode vs real bug. If real, fix.
+
+---
+
+### Make-internal-user action shows no feedback and fails
+
+Clicking "Make internal" on a team member produces no visible feedback and the action doesn't complete. May be devmode-related.
+
+**Status:** needs-investigation
+
+**Scope:** Reproduce, determine devmode vs real bug. If real, fix the action handler and add Alert feedback (success or error severity per Batch 10b Alert primitive).
+
+---
+
+### Card icon treatment inconsistency
+
+Green icons in the upper-left corner of cards across various pages are receiving different treatment — different sizes, background tints, positioning, or stroke weights.
+
+**Status:** needs-design + sweep
+
+**Scope:** Audit every card with a corner icon. Define canonical treatment (size, background tint, padding, color). Migrate all callsites. Sibling-parity check post-migration.
+
+---
+
+### Table action treatments inconsistent across surfaces
+
+Pickup windows, catalog items, catalog categories, and orders tables each render row actions with different visual treatments. Should converge on a single canonical pattern.
+
+**Status:** needs-design + sweep
+
+**Scope:** Audit every table with row actions. Define canonical (likely: right-aligned action cell, Edit as outline default-size, Delete as ghost icon, More dropdown if needed). Migrate all four tables. Sibling-parity check.
+
+---
+
+### settings/general — group business info, contact, address into one card
+
+Currently three separate cards each with their own Save button. All save to the vendor table and are conceptually "business profile." Consolidate into one card with one Save action.
+
+**Status:** ready-to-execute
+
+**Scope:** Merge the three cards' content into a single Card. Single form action handles all three sections' fields. Operating hours and pickup windows stay separate.
+
+---
+
+### settings/resources — drop WhatsApp share button
+
+Restrict share buttons to Facebook, Instagram, LinkedIn, X (Twitter). WhatsApp is dropped — US SMB vendor base doesn't typically use it for marketing.
+
+**Status:** ready-to-execute
+
+**Scope:** Remove the WhatsApp share button. Verify remaining four render correctly. Order: Facebook, Instagram, LinkedIn, X.
+
+---
+
 ## Tier 3 — Post-launch
 
 ### Item photo uploads polish
@@ -520,6 +650,16 @@ Seasonal vendors (e.g., farmers selling specific produce in season, holiday-only
 - Date-based (vendor sets resume date that auto-unpauses) or indefinite (vendor manually unpauses)?
 - Existing scheduled orders during pause: auto-cancel? grandfather them through the pause window?
 - Subscription billing during pause: halt charges (Stripe subscription pause) or continue billing while pausing fulfillment? Stripe-side implications either way.
+
+---
+
+### settings/resources — event-specific share cards
+
+In addition to the default share card (storefront URL, generic branding), support generating share cards for specific pickup windows or events (holiday markets, festivals, pop-ups). Includes time-bound messaging ("Saturday Farmers Market — Order by Friday") and event-specific URL.
+
+**Status:** needs-design
+
+**Scope:** Design the event-specific generation flow. Vendor selects a pickup window/event from a list, system generates the share card with appropriate context. Output sized for each social platform.
 
 ---
 
