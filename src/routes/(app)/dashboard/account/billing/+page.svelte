@@ -18,6 +18,7 @@
 	import { Badge } from '$lib/components/ui/badge';
 	import { Tabs, TabsList, TabsTrigger } from '$lib/components/ui/tabs';
 	import { Card, CardHeader, CardTitle, CardAction, CardContent } from '$lib/components/ui/card';
+	import { Alert } from '$lib/components/ui/alert';
 	import {
 		Dialog,
 		DialogContent,
@@ -134,27 +135,15 @@
 	</div>
 
 	{#if isUpgraded}
-		<div
-			class="mb-4 flex items-center gap-2 rounded-md border border-primary/20 bg-primary/5 px-4 py-3 text-sm text-primary/90"
+		<Alert severity="success" class="mb-4"
+			>Your plan has been upgraded. Welcome to {tierInfo.name}!</Alert
 		>
-			<Icon icon="mdi:check-circle-outline" class="h-4 w-4 shrink-0" />
-			Your plan has been upgraded. Welcome to {tierInfo.name}!
-		</div>
 	{/if}
 	{#if isDowngraded}
-		<div
-			class="mb-4 flex items-center gap-2 rounded-md border bg-muted/50 px-4 py-3 text-sm text-muted-foreground"
-		>
-			<Icon icon="mdi:check-circle-outline" class="h-4 w-4 shrink-0" />
-			Your plan has been changed to {tierInfo.name}.
-		</div>
+		<Alert severity="info" class="mb-4">Your plan has been changed to {tierInfo.name}.</Alert>
 	{/if}
 	{#if form?.error}
-		<div
-			class="mb-4 rounded-md border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive"
-		>
-			{form.error}
-		</div>
+		<Alert severity="error" class="mb-4">{form.error}</Alert>
 	{/if}
 
 	<!-- Current plan -->
@@ -442,23 +431,13 @@
 	<div>
 		<h2 class="mb-1 font-semibold text-foreground">Add-ons</h2>
 		{#if !isPaidPlan}
-			<div
-				class="mb-4 flex items-start gap-3 rounded-lg border border-amber-100 bg-amber-50 px-4 py-3"
+			<Alert severity="warning" class="mb-4"
+				>Add-ons require an active Pro plan. Upgrade above to unlock.</Alert
 			>
-				<Icon icon="mdi:lock-outline" class="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
-				<p class="text-sm text-amber-700">
-					Add-ons require an active Pro plan. Upgrade above to unlock.
-				</p>
-			</div>
 		{:else if !data.hasStripeSubscription}
-			<div
-				class="mb-4 flex items-start gap-3 rounded-lg border border-amber-100 bg-amber-50 px-4 py-3"
+			<Alert severity="warning" class="mb-4"
+				>Complete your plan upgrade through Stripe to activate add-ons.</Alert
 			>
-				<Icon icon="mdi:alert-outline" class="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
-				<p class="text-sm text-amber-700">
-					Complete your plan upgrade through Stripe to activate add-ons.
-				</p>
-			</div>
 		{:else}
 			<p class="mb-4 text-sm text-muted-foreground">
 				Activate or deactivate features. Changes are prorated on your next invoice.

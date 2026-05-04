@@ -15,6 +15,7 @@
 	} from '$lib/components/ui/select';
 	import { Switch } from '$lib/components/ui/switch';
 	import { Tabs, TabsList, TabsTrigger } from '$lib/components/ui/tabs';
+	import { Alert } from '$lib/components/ui/alert';
 
 	type ImageEntry = { url: string; isPrimary?: boolean };
 
@@ -447,16 +448,10 @@
 {/snippet}
 
 {#if internalError}
-	<div
-		class="mb-4 rounded-md border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive"
-	>
-		{internalError}
-	</div>
+	<Alert severity="error" class="mb-4">{internalError}</Alert>
 {/if}
 {#if internalSuccess}
-	<div class="mb-4 rounded-md border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
-		Saved.
-	</div>
+	<Alert severity="success" class="mb-4">Saved.</Alert>
 {/if}
 
 {#if variant === 'card'}

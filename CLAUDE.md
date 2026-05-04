@@ -358,7 +358,7 @@ Current shared components that must stay in sync:
 
 - `OrdersSummaryBar` — used on `/dashboard/orders` and `/dashboard/orders/history`
 - `OrdersFilterTabs` — used on both pages
-- `OrdersViewToggle` — (Live | History) used on both pages
+- `OrdersTabs` — Live | History view toggle, used on both pages
 - `OrdersSearchRow` — search input, used on both pages
 - `CatalogItemForm` — catalog item fields (image, name, description, price, category, tags, status, subscription). Used on `/dashboard/catalog/items` (inline new), `/dashboard/catalog/items/new` (standalone new), and `/dashboard/catalog/items/[itemId]` (edit). Do NOT duplicate item field markup across these three routes — always extend the shared component.
 
@@ -480,15 +480,16 @@ Every dashboard page follows this exact header structure:
 
 ### Sizes
 
-| Size         | Height                         | `size` prop                         | Used for                                                                                                              |
-| ------------ | ------------------------------ | ----------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
-| Default      | `h-10` (40px / 40×40 for icon) | `default` (text) · `icon-lg` (icon) | Standard — toolbars, page CTAs, form submits, modal footers; icon buttons sitting next to h-10 inputs or text buttons |
-| Small        | `h-8` (32px / 32×32 for icon)  | `sm` (text) · `icon` (icon)         | Compact — table row actions, card action strips; icon buttons in dense rows                                           |
-| Tight inline | — (28×28 for icon)             | `icon-sm`                           | Input field decorations, dialog/sheet close buttons, banner dismiss affordances                                       |
+| Size        | Height                        | `size` prop                      | Used for                                                                                                    |
+| ----------- | ----------------------------- | -------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| Default     | `h-8` (32px / 32×32 for icon) | `default` (text) · `icon` (icon) | Standard — toolbars, page CTAs, form submits, modal footers; icon buttons next to inputs or text buttons    |
+| Extra-small | `h-6` (24px / 24×24 for icon) | `xs` (text) · `icon-xs` (icon)   | Tight inline — dialog/sheet close buttons, input field decorations, banner dismiss, compact overlay actions |
 
-Icon buttons match their context. A delete icon in a table row uses `size="icon"` (32×32) so it aligns with `sm` text buttons in the same row. A toolbar icon button uses `size="icon-lg"` (40×40) so it aligns with `default` text buttons and inputs. The size system handles alignment automatically — pick the size based on what's adjacent.
+**Retired sizes (do not use):** `sm`, `icon-lg`, `icon-sm`. Removed in Batch 9. Migration: `sm` → `default`, `icon-lg` → `icon`, `icon-sm` → `icon` (or `icon-xs` if nested inside a control).
 
-**Height is a property of the size variant, not negotiable per callsite.** A `default` button is `h-10` everywhere. A `sm` button is `h-8` everywhere. When a `<Button>` sits next to a form input or select, they align automatically — `default` and `h-10` inputs are the same height. No special handling needed.
+Icon buttons match their context. A delete icon in a table row uses `size="icon"` (32×32) so it aligns with `default` text buttons. A close button inside a dialog uses `size="icon-xs"` (24×24) as a tight inline decoration. The size system handles alignment automatically — pick the size based on what's adjacent.
+
+**Height is a property of the size variant, not negotiable per callsite.** A `default` button is `h-8` everywhere. When a `<Button>` sits next to a form input or select, they align automatically — `default` and `h-8` inputs are the same height. No special handling needed.
 
 ### Variants
 
@@ -506,31 +507,45 @@ Variants and sizes compose freely:
 <!-- Standard primary CTA -->
 <Button>+ New item</Button>
 
-<!-- Compact secondary in a table row -->
-<Button size="sm" variant="outline">Edit</Button>
+<!-- Secondary action in a table row -->
+<Button variant="outline">Edit</Button>
 
 <!-- Destructive form footer -->
 <Button variant="destructive">Delete account</Button>
 
-<!-- Icon button in a toolbar (matches h-10 text buttons and inputs) -->
-<Button size="icon-lg" variant="ghost"><Icon icon="mdi:bell-outline" /></Button>
+<!-- Icon button in a toolbar (matches h-8 default text buttons and inputs) -->
+<Button size="icon" variant="ghost"><Icon icon="mdi:bell-outline" /></Button>
 
-<!-- Icon button in a row action (matches h-8 sm text buttons) -->
+<!-- Tight inline icon button (dialog close, input decoration) -->
+<Button size="icon-xs" variant="ghost"><Icon icon="mdi:close" /></Button>
+
+<!-- Low-emphasis icon button in a row action -->
 <Button size="icon" variant="ghost" class="text-red-400 hover:text-red-600"
 	><Icon icon="mdi:trash-can-outline" /></Button
 >
 ```
 
-### Raw `<button>` exceptions
+### Documented raw `<button>` exceptions
 
-Two patterns that stay as raw `<button>` due to color conflicts with existing shadcn variants:
+Use `<Button>` for all button affordances unless the callsite matches one of these documented exceptions. Each exception is flagged for the Tier 2 shadcn audit.
 
-- **State-transition buttons** ("Mark as confirmed", "Mark as in production", etc.): `rounded-md h-10 px-4 text-sm font-semibold bg-blue-600 text-white hover:bg-blue-700 transition-colors` (detail page) or `rounded-md h-8 px-2.5 text-xs font-semibold bg-blue-600 text-white hover:bg-blue-700 transition-colors` (list row). Brand green is reserved for primary page CTAs; blue signals the state-transition category.
-- **Outlined-destructive** (Cancel order, Refund on list and detail): `rounded-md h-10 px-4 text-sm font-semibold border border-red-200 text-red-500 hover:bg-red-50 transition-colors` (standard) or `rounded-md h-8 px-2.5 text-xs font-medium border border-red-200 text-red-500 hover:bg-red-50 transition-colors` (compact). The destructive variant uses filled red, which competes visually with adjacent primary blue actions.
+1. **State-transition buttons** ("Mark as confirmed", "Mark as in production", "Mark as ready", "Mark as fulfilled"): blue fill not available as a Button variant. Classes: `rounded-md h-8 px-4 text-sm font-semibold bg-blue-600 text-white hover:bg-blue-700 transition-colors` (detail page) or `rounded-md h-8 px-2.5 text-xs font-semibold bg-blue-600 text-white hover:bg-blue-700 transition-colors` (compact list row). Brand green is reserved for primary CTAs; blue signals the state-transition category.
 
-Both are flagged for the Tier 2 shadcn audit to add dedicated variants. For all other cases, use `<Button>` over raw `<button>`.
+2. **Outlined-destructive** (Cancel order, Refund): `<Button variant="destructive">` applies filled red, which competes visually with adjacent blue state-transition actions. Use outlined red instead: `rounded-md h-8 px-4 text-sm font-semibold border border-red-200 text-red-500 hover:bg-red-50 transition-colors` (detail page) or `rounded-md h-8 px-2.5 text-xs font-medium border border-red-200 text-red-500 hover:bg-red-50 transition-colors` (compact list row).
 
-The mobile hamburger is also a documented raw exception (dark-surface hover — see Mobile header section).
+3. **Dark-surface hamburger** (mobile nav header): `<Button variant="ghost">` hover uses `hover:bg-accent`, which conflicts with explicit dark-surface hover overrides. Use `hover:bg-gray-800` to match sidebar nav link convention. See Mobile header section.
+
+4. **Sortable table column headers**: column headers that toggle sort direction use a raw `<button>` because `<th>` is the semantic container and Button's padding/shape assumptions don't fit cleanly inside a header cell.
+
+5. **Accordion toggles**: when a custom expand/collapse UI overrides the shadcn Accordion primitive (e.g., full-row clickable headers inside a list), the toggle is a raw `<button>` wrapping the row content. Button's height constraints would require explicit overrides on every callsite.
+
+6. **Status filter pills**: the `FilterPills` / status tabs pattern (see Filter Pills section) uses raw `<button>` elements because the pill shape (`rounded-full px-3 py-1.5`) and the green/gray active/inactive color system don't map to any Button size or variant. Migrating would require a new `pill` variant.
+
+7. **`DropdownMenuItem` as form submit**: bits-ui's `DropdownMenuItem` renders its own interactive element. When a menu item must submit a form (e.g., a status change via `method="post"`), use a raw `<button type="submit">` inside the item — nesting a `<Button>` creates an invalid nested interactive element.
+
+8. **Popover triggers with custom interior**: bits-ui's `PopoverTrigger` renders its own `<button>` internally. Do not nest a `<Button>` inside `PopoverTrigger`. Apply trigger classes directly via the `class` prop on `PopoverTrigger`.
+
+9. **Absolutely-positioned input field decorations** (clear, eye toggle): buttons positioned `absolute` inside an input container conflict with `<Button>`'s internal padding and min-width. Use a raw `<button>` with explicit sizing (e.g., `size-6 rounded flex items-center justify-center`) and position classes. Exception: if the decoration sits outside the input's padding area, `size="icon-xs"` may fit.
 
 ### Rules
 
@@ -542,77 +557,309 @@ The mobile hamburger is also a documented raw exception (dark-surface hover — 
 
 ---
 
-## Mode Toggle (Segmented Control)
+## Tabs (shadcn `<Tabs>`)
 
-Used for switching between two views of the same page (e.g., Live/History).
-Always a single bordered container with both options inside.
+shadcn `<Tabs>` is the canonical primitive for two distinct use cases:
 
-```svelte
-<div class="inline-flex rounded-lg border border-gray-200 bg-white p-0.5">
-	<a
-		href={resolve(primaryHref)}
-		class={cn(
-			'flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
-			isPrimaryActive ? 'bg-gray-900 text-white' : 'text-gray-500 hover:bg-gray-50'
-		)}
-	>
-		<Icon icon={primaryIcon} class="h-3.5 w-3.5" />
-		{primaryLabel}
-	</a>
-	<a
-		href={resolve(secondaryHref)}
-		class={cn(
-			'flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
-			!isPrimaryActive ? 'bg-gray-900 text-white' : 'text-gray-500 hover:bg-gray-50'
-		)}
-	>
-		<Icon icon={secondaryIcon} class="h-3.5 w-3.5" />
-		{secondaryLabel}
-	</a>
-</div>
+1. **Route-based view toggles** — switching between pages that share a parent context (`catalog/items` vs `catalog/categories`; `orders` live vs history; orders vs production view).
+2. **In-page state segments** — switching between values within a single page (billing interval monthly/annual; analytics period 7d/30d; `CatalogItemForm` subscription interval).
+
+Both render identically via the same primitive. The team page Members/Internal users tabs are the visual reference.
+
+**Imports** — always named flat imports:
+
+```ts
+import { Tabs, TabsList, TabsTrigger } from '$lib/components/ui/tabs';
 ```
 
-**Rules:**
+Do not use `import * as Tabs` and `<Tabs.Root>` — flat imports match the canonical callsites.
 
-- Active segment: `bg-gray-900 text-white`
-- Inactive segment: `bg-white text-gray-500 hover:bg-gray-50`
-- The toggle must appear on **both** pages it controls. Use a shared component.
-- Derive active state from `$page.url.pathname`. Never use local state.
-- Each segment MUST include a contextual icon to the left of the label.
-  Icon size: `w-3.5 h-3.5`. Gap: `gap-1.5`. Icon color inherits from text.
-- Examples:
-  - Live → green dot span (`w-2 h-2 rounded-full bg-green-400`)
-  - History → `lucide:clock` or `lucide:history`
-  - Items → `lucide:list` or `lucide:utensils-crossed`
-  - Categories → `lucide:tag`
+**Pattern A — Route-based (`CatalogTabs`, `OrdersTabs`):**
+
+```svelte
+<script>
+	import { page } from '$app/state';
+	import { goto } from '$app/navigation';
+	import { resolve } from '$app/paths';
+	import { Tabs, TabsList, TabsTrigger } from '$lib/components/ui/tabs';
+
+	const activeValue = $derived(page.url.pathname.includes('/categories') ? 'categories' : 'items');
+
+	function handleValueChange(value: string) {
+		goto(
+			resolve(value === 'categories' ? '/dashboard/catalog/categories' : '/dashboard/catalog/items')
+		);
+	}
+</script>
+
+<Tabs value={activeValue} onValueChange={handleValueChange}>
+	<TabsList>
+		<TabsTrigger value="items">
+			<Icon icon="mdi:silverware-fork-knife" class="h-3.5 w-3.5" />
+			Items
+		</TabsTrigger>
+		<TabsTrigger value="categories">
+			<Icon icon="mdi:tag-multiple-outline" class="h-3.5 w-3.5" />
+			Categories
+		</TabsTrigger>
+	</TabsList>
+</Tabs>
+```
+
+Active state derives one-way from `$page.url.pathname` (or `searchParams` if the toggle uses a URL param). `onValueChange` calls `goto()`. Do NOT use `$effect` to sync state with navigation — that is the state-sync-via-effect anti-pattern. Do NOT use `bind:value` for route-based tabs.
+
+**Pattern B — Local state (billing interval, `CatalogItemForm` subscription interval):**
+
+```svelte
+<Tabs bind:value={billingInterval}>
+	<TabsList>
+		<TabsTrigger value="monthly">Monthly</TabsTrigger>
+		<TabsTrigger value="yearly">Yearly</TabsTrigger>
+	</TabsList>
+</Tabs>
+```
+
+When the bound state has a typed union (e.g. `BillingInterval = 'monthly' | 'annual'`), use controlled `value=` + `onValueChange=` with a cast at the callback boundary instead of `bind:value`:
+
+```svelte
+<Tabs
+  value={selectedInterval}
+  onValueChange={(v) => (selectedInterval = v as BillingInterval)}
+>
+  ...
+</Tabs>
+```
+
+This preserves the typed-union constraint downstream. Don't widen the state to `string` to satisfy `bind:value` — the type carries meaning.
+
+**Triggers with custom indicators** — `TabsTrigger` accepts arbitrary children. The Live segment in `OrdersTabs` uses an animated ping dot:
+
+```svelte
+<TabsTrigger value="live">
+	<span class="relative flex h-1.5 w-1.5 shrink-0">
+		{#if activeValue === 'live'}
+			<span
+				class="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary/70 opacity-75"
+			></span>
+		{/if}
+		<span
+			class="relative inline-flex h-1.5 w-1.5 rounded-full {activeValue === 'live'
+				? 'bg-primary'
+				: 'bg-muted-foreground/30'}"
+		></span>
+	</span>
+	Live
+</TabsTrigger>
+```
+
+The Annual billing segment shows a savings badge as a child:
+
+```svelte
+<TabsTrigger value="annual">
+	Annual
+	<span class="rounded-full bg-primary/10 px-1.5 py-0.5 text-[9px] font-semibold text-primary"
+		>-$168</span
+	>
+</TabsTrigger>
+```
+
+**Icon sizing inside `TabsTrigger`** — shadcn applies `[&_svg:not([class*='size-'])]:size-4` (16px) to SVG children. Author icons with `class="h-3.5 w-3.5"` and accept the 16px override — that is the canonical trigger icon size. Do not add `size-3.5` to fight it.
+
+**`TabsContent`** — only needed when the tab controls in-page panel visibility (team page Members/Internal users). For route-based tabs where SvelteKit renders the panel, skip `TabsContent` entirely.
+
+**`aria-label`** — pass a meaningful label on `<Tabs>` for accessibility:
+
+- `CatalogTabs`: `"Switch catalog view"`
+- `OrdersTabs`: `"Switch orders view"`
+- Billing interval: `"Choose billing interval"`
 
 ---
 
-## Filter Pills (Status Tabs)
+## FilterPills (rounded-pill filters with counts)
 
-Used for filtering a list by status. Horizontal row of pill buttons.
+`FilterPills` is the canonical component for status/filter selectors that need a rounded-full pill shape, plain-text counts, and optional urgent indicators. Currently the single consumer is `OrdersFilterTabs` (which wraps it) on the orders pages.
 
-```
-// Active pill
-class="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium
-       bg-green-600 text-white"
+Do not migrate `FilterPills` to shadcn `<Tabs>` — they are a distinct visual pattern. See "When to use FilterPills vs Tabs" below.
 
-// Inactive pill
-class="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium
-       bg-gray-100 text-gray-600 border border-gray-200 hover:bg-gray-200
-       transition-colors"
+**Import:**
+
+```ts
+import FilterPills from '$lib/components/FilterPills.svelte';
 ```
 
-Counts render as plain text inside the pill button — never wrapped in a
-`bg-white rounded-full` badge.
+**Prop interface** (`FilterPill` is exported from the component):
+
+```ts
+interface FilterPill {
+	label: string;
+	value: string;
+	count: number;
+	dot?: boolean; // show amber dot when count > 0 and not active
+}
+```
+
+**Pattern:**
+
+```svelte
+<FilterPills
+	pills={[
+		{ label: 'All', value: '', count: 16 },
+		{ label: 'Received', value: 'received', count: 6, dot: true },
+		{ label: 'Confirmed', value: 'confirmed', count: 6 }
+	]}
+	active={data.statusFilter ?? ''}
+	onSelect={(value) => goto(resolve(buildStatusPath(value)))}
+/>
+```
+
+**Visual treatment (rendered by the component):**
+
+- Container: `flex gap-1.5 overflow-x-auto pb-0.5`
+- Active pill: `bg-primary text-white`
+- Inactive pill: `border border-gray-200 bg-gray-100 text-gray-600 hover:bg-gray-200`
+- Count: plain text inside the pill — never a nested `bg-white rounded-full` badge
+- Urgent dot: `h-1.5 w-1.5 rounded-full bg-amber-400` — rendered only when `dot === true && count > 0 && !active`
 
 **Rules:**
 
-- Always show a count, even if 0.
-- The URL query string (`?status=received`) is the source of truth.
-- When a status count > 0 needs attention, add a small `w-1.5 h-1.5
-rounded-full bg-amber-400` dot inside the inactive pill.
-- Extract into a shared `<FilterPills>` or `<StatusTabs>` component.
+- Always pass a count, even if 0. Don't conditionally omit zero-count pills.
+- The URL query string (`?status=received`) is the source of truth. Pass `data.statusFilter` as `active` and navigate on `onSelect`.
+- The `dot` prop signals "needs attention" — use it for statuses that require action (e.g. `received`, `ready`). Do not add a dot to terminal statuses (`fulfilled`, `cancelled`).
+
+**When to use FilterPills vs Tabs:**
+
+- Use **Tabs** when choices are mutually exclusive views or modes (Items/Categories, Live/History, Monthly/Annual).
+- Use **FilterPills** when choices are filters over a list where each option can carry a count or urgent indicator (status filters, category filters).
+
+---
+
+## Date range picker (Calendar + Popover)
+
+The canonical pattern for date range filters — two separate `Popover`-wrapped `Calendar` instances, **not** a single range-mode Calendar. Two separate pickers preserve open-ended "from only" and "up to X" behaviors that the URL contract supports.
+
+Reference implementation: `src/routes/(app)/dashboard/orders/history/+page.svelte`.
+
+**Imports:**
+
+```ts
+import * as Popover from '$lib/components/ui/popover';
+import { Calendar } from '$lib/components/ui/calendar';
+import { parseDate, type CalendarDate } from '@internationalized/date';
+```
+
+**State:**
+
+```svelte
+<script>
+	let fromOpen = $state(false);
+	let toOpen = $state(false);
+
+	const fromDate = $derived(data.from ? parseDate(data.from) : undefined);
+	const toDate = $derived(data.to ? parseDate(data.to) : undefined);
+</script>
+```
+
+**`CalendarDate` ↔ string conversion:**
+
+- URL stores ISO date strings (`"2026-01-05"`)
+- `Calendar` uses `CalendarDate` from `@internationalized/date`
+- In: `parseDate(urlString)` → `CalendarDate`
+- Out: `calendarDate.toString()` → ISO string
+- The cast `as CalendarDate | undefined` at `onValueChange` is required — shadcn's `type="single"` Calendar types the callback as `DateValue | undefined`. The cast is safe at runtime because non-range mode only emits `CalendarDate`.
+
+**`updateDateRange` helper:**
+
+```ts
+function updateDateRange(which: 'from' | 'to', date: CalendarDate | undefined) {
+	const p = new SvelteURLSearchParams();
+	if (data.search) p.set('q', data.search);
+	if (data.statusFilter) p.set('status', data.statusFilter);
+	const nextFrom = which === 'from' ? date?.toString() : data.from;
+	const nextTo = which === 'to' ? date?.toString() : data.to;
+	if (nextFrom) p.set('from', nextFrom);
+	if (nextTo) p.set('to', nextTo);
+	const qs = p.toString();
+	goto(
+		qs
+			? resolve(`/dashboard/orders/history?${qs}` as `/${string}`)
+			: resolve('/dashboard/orders/history'),
+		{ replaceState: true }
+	);
+}
+```
+
+**`clearDates` helper** — clears both dates without clearing search/status:
+
+```ts
+function clearDates() {
+	const p = new SvelteURLSearchParams();
+	if (data.search) p.set('q', data.search);
+	if (data.statusFilter) p.set('status', data.statusFilter);
+	const qs = p.toString();
+	goto(
+		qs
+			? resolve(`/dashboard/orders/history?${qs}` as `/${string}`)
+			: resolve('/dashboard/orders/history'),
+		{ replaceState: true }
+	);
+}
+```
+
+Do not call `updateDateRange('from', undefined)` to clear both dates — that only clears `from` and preserves `to`. Use a dedicated `clearDates()`.
+
+**Template (both pickers inside a single shared container):**
+
+```svelte
+<div class="flex items-center gap-1.5 rounded-lg border border-gray-200 bg-background px-3 py-1.5">
+  <Icon icon="mdi:calendar-outline" class="h-3.5 w-3.5 shrink-0 text-muted-foreground/60" />
+
+  <Popover.Root bind:open={fromOpen}>
+    <Popover.Trigger>
+      {#snippet child({ props })}
+        <button {...props} type="button" class="text-xs outline-none {data.from ? 'text-foreground' : 'text-muted-foreground'}">
+          {data.from ? formatPickerDate(data.from) : 'From'}
+        </button>
+      {/snippet}
+    </Popover.Trigger>
+    <Popover.Content class="w-auto p-0" align="start">
+      <Calendar
+        type="single"
+        value={fromDate}
+        onValueChange={(date) => { fromOpen = false; updateDateRange('from', date as CalendarDate | undefined); }}
+      />
+    </Popover.Content>
+  </Popover.Root>
+
+  <span class="text-muted-foreground/40">→</span>
+
+  <Popover.Root bind:open={toOpen}>
+    <Popover.Trigger>
+      {#snippet child({ props })}
+        <button {...props} type="button" class="text-xs outline-none {data.to ? 'text-foreground' : 'text-muted-foreground'}">
+          {data.to ? formatPickerDate(data.to) : 'To'}
+        </button>
+      {/snippet}
+    </Popover.Trigger>
+    <Popover.Content class="w-auto p-0" align="start">
+      <Calendar
+        type="single"
+        value={toDate}
+        onValueChange={(date) => { toOpen = false; updateDateRange('to', date as CalendarDate | undefined); }}
+      />
+    </Popover.Content>
+  </Popover.Root>
+
+  {#if data.from || data.to}
+    <button type="button" class="ml-1 text-muted-foreground transition-colors hover:text-foreground" onclick={clearDates}>
+      <Icon icon="mdi:close" class="h-3 w-3" />
+    </button>
+  {/if}
+</div>
+```
+
+**Popover trigger via `{#snippet child({ props })}`** — passes bits-ui's aria props to a raw `<button>`. This is the documented Popover trigger exception (raw `<button>` inside `PopoverTrigger` keeps size/padding control while forwarding aria attributes). Do not nest a `<Button>` inside `PopoverTrigger`.
+
+**Layout rule** — both pickers share a single outer container (the rounded border wraps `From → To` together). Never render them as separate floating inputs. The container sits on the same row as `FilterPills` (right-aligned, `space-between` on the toolbar row).
 
 ---
 
@@ -860,12 +1107,12 @@ Resources page beats "Welcome! Start your journey here."
 
 ```
 // Text input — explicit height
-class="h-10 w-full px-3 text-sm border border-gray-200 rounded-lg bg-white
+class="h-8 w-full px-3 text-sm border border-gray-200 rounded-lg bg-white
        placeholder:text-gray-400 focus:outline-none focus:ring-2
        focus:ring-green-500 focus:border-transparent"
 
 // Select (raw)
-class="h-10 w-full px-3 text-sm border border-gray-200 rounded-lg bg-white
+class="h-8 w-full px-3 text-sm border border-gray-200 rounded-lg bg-white
        focus:outline-none focus:ring-2 focus:ring-green-500"
 
 // Textarea
@@ -885,14 +1132,14 @@ class="text-xs text-red-500 mt-1.5"
 class="border-red-300 focus:ring-red-500"
 ```
 
-All single-line form inputs (text, email, number, search, password, date) and selects use `h-10`
-(40px). The shadcn `<Input>` and `<SelectTrigger>` primitives default to `h-10` — do not override
+All single-line form inputs (text, email, number, search, password, date) and selects use `h-8`
+(32px). The shadcn `<Input>` and `<SelectTrigger>` primitives default to `h-8` — do not override
 to a different height per-callsite. Textareas are multi-line and are not subject to this rule;
 use `min-h-*` instead.
 
 **Raw vs shadcn migration:** The shadcn `<Input>` and `<SelectTrigger>` primitives have been
-updated to `h-10` as the default. New code should prefer the shadcn primitives. Raw `<input>`/
-`<select>` elements that exist today (settings, forms, etc.) follow the `h-10` rule via
+updated to `h-8` as the default. New code should prefer the shadcn primitives. Raw `<input>`/
+`<select>` elements that exist today (settings, forms, etc.) follow the `h-8` rule via
 per-callsite classes — these will eventually be migrated to shadcn primitives in a separate audit
 (see roadmap, "Forms & UI shadcn-svelte audit" in Tier 2).
 
@@ -980,11 +1227,11 @@ proper `<Dialog>` primitive with explicit confirm/cancel buttons. Current callsi
 
 Order state-transition buttons ("Mark as confirmed", "Mark as in production", "Mark as ready", "Mark as fulfilled") all use `bg-blue-600 hover:bg-blue-700 text-white` for consistency across both the orders list and order detail page. Brand green is reserved for primary page-level CTAs (setup checklist's "Set up →", create-new affordances). Per-stage color differentiation (blue/amber/violet/green per stage) was considered and deferred — labels carry the information; color carries the action category (state transition vs primary CTA vs destructive).
 
-Currently implemented as plain `<button>` elements with explicit classes. Height follows the size system: `h-10` on the order detail page (standard), `h-8` on the orders list (compact row action). Shadcn's `variant="default"` applies brand green, which conflicts with this convention. Tier 2 shadcn audit should add a Button variant for state-transition actions.
+Currently implemented as plain `<button>` elements with explicit classes. Height follows the size system: `h-8` on both the order detail page and the orders list. Shadcn's `variant="default"` applies brand green, which conflicts with this convention. Tier 2 shadcn audit should add a Button variant for state-transition actions.
 
 ### Destructive actions on order detail (Cancel order)
 
-The "Cancel order" and "Refund" buttons on the order detail page and list both use a plain `<button>` with outlined red classes rather than `<Button variant="destructive">`. The destructive variant applies filled `bg-red-600`, which competes visually with the blue state-transition primary action sitting beside them. Outlined red (`border-red-200 text-red-500 hover:bg-red-50`) is the quieter destructive treatment. Height: `h-10` on the detail page, `h-8` on the list card.
+The "Cancel order" and "Refund" buttons on the order detail page and list both use a plain `<button>` with outlined red classes rather than `<Button variant="destructive">`. The destructive variant applies filled `bg-red-600`, which competes visually with the blue state-transition primary action sitting beside them. Outlined red (`border-red-200 text-red-500 hover:bg-red-50`) is the quieter destructive treatment. Height: `h-8` on both the detail page and the list card.
 
 The mobile hamburger uses a plain `<button>` instead of `<Button variant="ghost">` due to dark-surface hover conflict. Cancel order and Refund use a plain `<button>` instead of `<Button variant="destructive">` for the same reason — the filled variant conflicts with adjacent primary actions. All are flagged for the Tier 2 shadcn audit: consider adding "dark-surface" and "outlined-destructive" Button variants to resolve these cases properly.
 
@@ -1159,6 +1406,76 @@ Skeleton count matches expected result count.
   SQL migration files 0000–0005 in `drizzle/` are historical record; see `drizzle/README.md`.
   New migrations going forward generate from the rebuilt baseline. `bun run db:generate` is
   safe again — run it normally.
+
+---
+
+## shadcn-svelte primitive install gotchas
+
+Five distinct issues have surfaced when installing or modifying shadcn-svelte primitives. Verify each on first use of any new primitive — static checks won't catch any of these.
+
+**1. bits-ui state attribute syntax**
+
+shadcn-svelte's installed primitives sometimes ship with `data-checked:` / `data-unchecked:` / `data-open:` / `data-closed:` / `data-active:` shorthand variant syntax in their class strings. This is wrong for bits-ui's actual rendering: bits-ui emits value-based state attributes (`data-state="checked"`, `data-state="open"`, etc.), not bare boolean attributes.
+
+The correct Tailwind syntax is `data-[state=checked]:`, `data-[state=unchecked]:`, `data-[state=open]:`, `data-[state=closed]:`, `data-[state=active]:` — the bracket form that targets the value of the data-state attribute.
+
+Symptoms when wrong: the primitive renders without the active-state visual (e.g., Switch unchecked thumb doesn't translate, Checkbox doesn't show its check fill, Dropdown doesn't animate open).
+
+Primitives previously fixed in this project: Switch, Checkbox, Accordion, Dialog, DropdownMenu, Select, Sheet, Tabs, Tooltip. Each had `data-X:` shorthand replaced with `data-[state=X]:`.
+
+Two attributes that should NOT be converted: `data-highlighted` (SelectItem) and `data-disabled` (DropdownMenuItem). Those are genuine boolean attributes, not `data-state` values.
+
+**Sweep on first install:** open every newly-installed primitive file and search for `data-checked\|data-unchecked\|data-open\|data-closed\|data-active` followed by `:`. Convert to `data-[state=X]:` form before using the primitive in any callsite.
+
+**2. tw-animate-css dependency**
+
+shadcn-svelte primitives reference animation utility classes (`animate-in`, `animate-out`, `fade-in-0`, `fade-out-0`, `zoom-in-95`, `zoom-out-95`, `slide-in-from-*`, `slide-out-to-*`) for overlay enter/exit. These are not part of Tailwind v4 by default. They require the `tw-animate-css` package:
+
+```bash
+bun add -D tw-animate-css
+```
+
+And in `src/routes/layout.css`, immediately after the Tailwind import:
+
+```css
+@import 'tailwindcss';
+@import 'tw-animate-css';
+```
+
+Symptom when missing: overlays pop in/out without easing; animations don't render at all. Static checks pass — the issue is invisible until visual exercise.
+
+`tw-animate-css` is already installed in this project. This note exists for reference if a future Tailwind upgrade or config reset removes it.
+
+**3. Primitive default colors may not work in light-on-light contexts**
+
+shadcn-svelte primitives use design tokens (`bg-input`, `bg-muted`, `bg-background`) for default backgrounds. In this project's light theme some of those tokens render invisibly against white surfaces.
+
+Example: Switch's unchecked track previously used `bg-input`, which rendered transparent against the white form background. Fixed by replacing with `bg-gray-300` at the primitive level.
+
+When installing a new primitive, visually verify each default state in the actual UI context where it will be used. If a default state renders invisibly or with insufficient contrast, override the affected token at the primitive file level — not at each callsite. Per-callsite overrides cause drift.
+
+**4. CLI `--overwrite` clobber risk**
+
+`bunx shadcn-svelte@latest add <primitive> --overwrite` regenerates primitives from upstream source. This destroys any project-specific customizations: size variants, comment markers, eslint-disable blocks, color overrides.
+
+Dependency primitives get regenerated too. When you `add Calendar`, Button gets pulled in as a dependency and regenerated, losing its size taxonomy additions.
+
+Workflow:
+
+- Prefer `bunx shadcn-svelte@latest add <primitive>` without `--overwrite`.
+- If `--overwrite` is required (e.g., upgrading shadcn-svelte), `git diff` every customized primitive after install and restore from git as needed.
+- The Button primitive is the most heavily customized file in this project (size taxonomy, variant additions, prop passthrough). Always verify it is intact after any `--overwrite` install.
+
+This has happened twice during the Batch 4–9 migration. Both times Button was clobbered and restored from git.
+
+**5. Component prop accepted but not rendered**
+
+Declaring a prop does not guarantee it renders. `ConfirmModal` accepted a `title` prop — surfaced as a documented option at ~7 callsites — before anyone noticed the title never appeared in the rendered dialog. The component silently ignored the prop. Static checks passed.
+
+When building or reviewing a component:
+
+- For each declared prop, verify the template consumes it.
+- If the prop produces visible output (text, class, visibility toggle), exercise it at least once in the browser before declaring the component done.
 
 ---
 
@@ -1371,6 +1688,35 @@ In the final report, `[STATIC]` items show real evidence; `[BEHAVIORAL]` items s
 
 Static verification has caught zero load-bearing bugs in this codebase. Every real bug found through verification was found by behavioral testing — actual database queries, real browser clicks, observed runtime values. Treating "PASS by inspection" as equivalent to "PASS by observation" has hidden bugs that would have shipped to production. The protocol prevents that.
 
+### Visual-reality-check phases
+
+Static checks (`bun run check`, `bun run lint`) verify type correctness and lint rules. They do not verify that primitives render correctly in real UI contexts.
+
+The Batch 4–9 migration surfaced multiple bug classes that passed static checks while being visually broken:
+
+- Switch and Checkbox rendering without active-state visuals (bits-ui `data-state` variant syntax mismatch)
+- Animations missing across 7 overlay primitives (`tw-animate-css` not installed)
+- Switch unchecked track invisible (`bg-input` transparent on white background)
+- `ConfirmModal` titles silently dropped (component accepted prop, didn't render it)
+- Orders/Production toggle missed entirely until noticed visually mid-session
+- Segmented control rendering with wrong canonical visual until compared against the team page Tabs reference
+
+**Every primitive and visual change requires at least one visual exercise before being considered done.** Static-only verification is not sufficient.
+
+Four required phases for any primitive or visual change:
+
+**Phase 1 — Static checks:** `bun run check`, `bun run lint`. Required floor; catches type errors and lint violations. Necessary but not sufficient.
+
+**Phase 2 — Sibling-parity check:** when a change affects multiple callsites that should look identical (all view toggles, all destructive buttons, all icon sizes in a row), explicitly compare their rendered output. Drift between siblings is the most common failure mode after a batch migration.
+
+**Phase 3 — Cross-context exercise:** render the primitive in every visual context where it will be used. A Button in an order card looks different from the same Button in a card action strip. Exercise both. For overlays (Dialog, Sheet, Popover): open them, close them, verify entry and exit animations play.
+
+**Phase 4 — Mobile-width check:** load affected pages at 375px viewport. Confirm spacing, wrapping, and tap-target sizes work at the smallest supported width.
+
+Phase 1 alone is not sufficient. Treat Phases 2–4 as required steps, not optional polish.
+
+When visual exercise reveals drift: fix at the primitive layer when the issue is the primitive's default. Fix at the callsite only when the issue is a wrong variant choice — and document why.
+
 ---
 
 ## /vendors redirect
@@ -1389,6 +1735,35 @@ The dashboard's setup checklist (`src/lib/components/SetupChecklist.svelte`) der
 - **Branding**: `vendors.logoUrl IS NOT NULL`
 
 The checklist auto-hides when all 4 steps complete and re-appears if a step regresses (e.g. Stripe key removed). The utility lives in `src/lib/server/setup/checklist.ts` and runs its three DB queries (vendor row + pickup count + catalog count) in parallel via `Promise.all`. It is called from the dashboard `+page.server.ts` inside the existing `Promise.all` to avoid sequential round trips. Derivation queries source from DB directly, not from `locals.vendor` — `locals.vendor` can be stale in dev-bypass mode.
+
+---
+
+## eslint-disable: block-form over next-line
+
+Single-line `<!-- eslint-disable-next-line RULE -->` comments are fragile when Prettier owns line breaks. Prettier may split a long element onto multiple lines, causing the disable comment to apply to the wrong resulting line and silently leaving the violation active.
+
+**Wrong — fragile after reformat:**
+
+```svelte
+<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
+<a href={vendor.website} target="_blank" rel="noreferrer noopener">Visit website</a>
+```
+
+After Prettier reformats the `<a>` to multiple lines, the `eslint-disable-next-line` applies to the opening-tag line, not to the `href` attribute line where the violation appears — the suppression silently stops working.
+
+**Right — block-form survives any reformat:**
+
+```svelte
+<!-- eslint-disable svelte/no-navigation-without-resolve -->
+<a href={vendor.website} target="_blank" rel="noreferrer noopener"> Visit website </a>
+<!-- eslint-enable svelte/no-navigation-without-resolve -->
+```
+
+The block-form applies to everything between the open and close comments regardless of how Prettier reformats the intervening lines.
+
+Use `eslint-disable-next-line` only when the target line is guaranteed to remain a single line after reformatting (short, no inner attributes that could push it over the line-length threshold). When in doubt, use block-form. The cost is two extra comment lines; the benefit is correctness across every future reformat.
+
+This applies to every Svelte and TypeScript file in this project — Prettier touches all of them.
 
 ---
 
@@ -1443,24 +1818,22 @@ The checklist auto-hides when all 4 steps complete and re-appears if a step regr
 - ❌ Do not wrap a built-in `Set`/`Map`/etc. in `$state` expecting its methods
   to become reactive — `$state` tracks references, not internal mutations. Use
   the reactive class (`SvelteSet`, `SvelteMap`, etc.) instead.
-- ❌ Do not use `<!-- eslint-disable-next-line ... -->` immediately above a
-  multi-line element where Prettier may reflow the line break. The "next line"
-  the directive targets can shift after Prettier runs, breaking the
-  suppression. Use block-form `<!-- eslint-disable RULE_NAME -->` /
-  `<!-- eslint-enable RULE_NAME -->` wrapping the entire element instead.
-  This applies to any file Prettier touches — practically, every Svelte and
-  TypeScript file in this project.
+- ❌ Do not use `<!-- eslint-disable-next-line ... -->` above a multi-line
+  element where Prettier may reflow the line break. Use block-form
+  `<!-- eslint-disable RULE_NAME -->` / `<!-- eslint-enable RULE_NAME -->`
+  instead. See the dedicated section "eslint-disable: block-form over next-line"
+  for rationale and examples.
 - ❌ Do not apply ad-hoc `h-*` to individual form element callsites. The project
-  standard is `h-10` for all text inputs, selects, and single-line inputs. Changes
+  standard is `h-8` for all text inputs, selects, and single-line inputs. Changes
   to that standard go in the shadcn primitives (`input.svelte`, `select-trigger.svelte`),
   not per-callsite.
 - ❌ Do not apply `class="h-*"` to a `<Button>` to override its size variant. Pick
-  the correct size variant (`default` for `h-10`, `sm` for `h-8`). If no variant
+  the correct size variant (`default` for `h-8`, `xs` for `h-6`). If no variant
   fits the use case, surface the question — do not invent a per-callsite height.
 - ❌ Do not use raw `<button>` with custom height class strings when the shadcn
   `<Button>` primitive can be used. The primitive enforces consistency. Raw `<button>`
-  is acceptable only for documented exceptions (state-transition blue, outlined-destructive
-  red, and the dark-surface mobile hamburger — all flagged for Tier 2 shadcn audit).
+  is acceptable only for the documented exceptions listed under "Documented raw
+  `<button>` exceptions" — all flagged for the Tier 2 shadcn audit.
 - ❌ Do not use `$effect` to synchronize one piece of reactive state with another.
   Use `$derived` for derivations, or restructure so both pieces share a source of
   truth. State sync inside `$effect` leads to convoluted code and update cycles.

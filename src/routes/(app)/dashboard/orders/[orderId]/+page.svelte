@@ -6,6 +6,7 @@
 	import { Button } from '$lib/components/ui/button';
 	import { Badge } from '$lib/components/ui/badge';
 	import { Card, CardHeader, CardTitle, CardContent } from '$lib/components/ui/card';
+	import { Alert } from '$lib/components/ui/alert';
 	import type { PageData, ActionData } from './$types';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
@@ -68,11 +69,7 @@
 	</a>
 
 	{#if form?.error}
-		<div
-			class="mb-4 rounded-md border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive"
-		>
-			{form.error}
-		</div>
+		<Alert severity="error" class="mb-4">{form.error}</Alert>
 	{/if}
 
 	<!-- Header -->

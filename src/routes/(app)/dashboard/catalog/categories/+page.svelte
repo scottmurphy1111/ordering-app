@@ -19,6 +19,7 @@
 	import { Switch } from '$lib/components/ui/switch';
 	import { Label } from '$lib/components/ui/label';
 	import { Card, CardContent } from '$lib/components/ui/card';
+	import { Alert } from '$lib/components/ui/alert';
 	import {
 		Table,
 		TableHeader,
@@ -242,18 +243,10 @@
 	</div>
 
 	{#if form?.error}
-		<div
-			class="mb-4 rounded-md border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive"
-		>
-			{form.error}
-		</div>
+		<Alert severity="error" class="mb-4">{form.error}</Alert>
 	{/if}
 	{#if saveError}
-		<div
-			class="mb-4 rounded-md border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive"
-		>
-			{saveError}
-		</div>
+		<Alert severity="error" class="mb-4">{saveError}</Alert>
 	{/if}
 
 	{#if data.categories.length === 0}
@@ -465,18 +458,10 @@
 
 		<div class="flex-1 overflow-y-auto px-6 py-5">
 			{#if drawerError}
-				<div
-					class="mb-4 rounded-md border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive"
-				>
-					{drawerError}
-				</div>
+				<Alert severity="error" class="mb-4">{drawerError}</Alert>
 			{/if}
 			{#if drawerSuccess}
-				<div
-					class="mb-4 rounded-md border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700"
-				>
-					Saved.
-				</div>
+				<Alert severity="success" class="mb-4">Saved.</Alert>
 			{/if}
 
 			<form

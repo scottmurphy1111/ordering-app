@@ -5,6 +5,7 @@
 	import { Input } from '$lib/components/ui/input';
 	import { Label } from '$lib/components/ui/label';
 	import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '$lib/components/ui/card';
+	import { Alert } from '$lib/components/ui/alert';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 </script>
@@ -23,18 +24,10 @@
 			</CardHeader>
 			<CardContent>
 				{#if form?.profileError}
-					<div
-						class="mb-4 rounded-md border border-destructive/20 bg-destructive/10 px-3 py-2 text-sm text-destructive"
-					>
-						{form.profileError}
-					</div>
+					<Alert severity="error" class="mb-4">{form.profileError}</Alert>
 				{/if}
 				{#if form?.profileSuccess}
-					<div
-						class="mb-4 rounded-md border border-primary/20 bg-primary/5 px-3 py-2 text-sm text-primary/90"
-					>
-						Profile updated.
-					</div>
+					<Alert severity="success" class="mb-4">Profile updated.</Alert>
 				{/if}
 
 				<form

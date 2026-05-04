@@ -22,6 +22,7 @@
 		TableRow,
 		TableCell
 	} from '$lib/components/ui/table';
+	import { Alert } from '$lib/components/ui/alert';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
@@ -79,32 +80,16 @@
 		<!-- ── MEMBERS TAB ── -->
 		<TabsContent value="members">
 			{#if form?.addError}
-				<div
-					class="mb-4 rounded-md border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive"
-				>
-					{form.addError}
-				</div>
+				<Alert severity="error" class="mb-4">{form.addError}</Alert>
 			{/if}
 			{#if form?.error}
-				<div
-					class="mb-4 rounded-md border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive"
-				>
-					{form.error}
-				</div>
+				<Alert severity="error" class="mb-4">{form.error}</Alert>
 			{/if}
 			{#if form?.addSuccess}
-				<div
-					class="mb-4 rounded-md border border-primary/20 bg-primary/5 px-4 py-3 text-sm text-primary/90"
-				>
-					Member added.
-				</div>
+				<Alert severity="success" class="mb-4">Member added.</Alert>
 			{/if}
 			{#if form?.inviteError}
-				<div
-					class="mb-4 rounded-md border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive"
-				>
-					{form.inviteError}
-				</div>
+				<Alert severity="error" class="mb-4">{form.inviteError}</Alert>
 			{/if}
 
 			{#if data.currentRole === 'owner' || data.currentRole === 'manager'}

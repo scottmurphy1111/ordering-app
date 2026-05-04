@@ -13,6 +13,7 @@
 		CardContent,
 		CardFooter
 	} from '$lib/components/ui/card';
+	import { Alert } from '$lib/components/ui/alert';
 	import { Dialog, DialogContent, DialogHeader, DialogTitle } from '$lib/components/ui/dialog';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
@@ -83,18 +84,10 @@
 	</div>
 
 	{#if form?.error}
-		<div
-			class="mb-4 rounded-md border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive"
-		>
-			{form.error}
-		</div>
+		<Alert severity="error" class="mb-4">{form.error}</Alert>
 	{/if}
 	{#if form?.success}
-		<div
-			class="mb-4 rounded-md border border-primary/20 bg-primary/5 px-4 py-3 text-sm text-primary/90"
-		>
-			{form.message}
-		</div>
+		<Alert severity="success" class="mb-4">{form.message}</Alert>
 	{/if}
 
 	<div class="space-y-6">

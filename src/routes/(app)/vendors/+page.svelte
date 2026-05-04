@@ -19,6 +19,7 @@
 	import { Checkbox } from '$lib/components/ui/checkbox';
 	import { BUSINESS_TYPES, businessTypeLabel } from '$lib/utils/business-type-labels';
 	import { US_TIMEZONES, getAllTimezones, getTimezoneLabel } from '$lib/utils/timezones';
+	import { Alert } from '$lib/components/ui/alert';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
@@ -71,11 +72,7 @@
 		</div>
 
 		{#if form?.error}
-			<div
-				class="mb-4 rounded-md border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive"
-			>
-				{form.error}
-			</div>
+			<Alert severity="error" class="mb-4">{form.error}</Alert>
 		{/if}
 
 		{#if data.vendors.length > 4}

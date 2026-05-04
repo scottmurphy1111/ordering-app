@@ -51,6 +51,7 @@
 		SheetDescription
 	} from '$lib/components/ui/sheet';
 	import CatalogItemForm from '$lib/components/CatalogItemForm.svelte';
+	import { Alert } from '$lib/components/ui/alert';
 
 	let { data }: { data: PageData } = $props();
 	type CatalogItem = (typeof data)['items'][number];
@@ -517,11 +518,7 @@
 	{/if}
 
 	{#if sortSaveError}
-		<div
-			class="mb-4 rounded-md border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive"
-		>
-			{sortSaveError}
-		</div>
+		<Alert severity="error" class="mb-4">{sortSaveError}</Alert>
 	{/if}
 
 	{#if sortMode}
@@ -950,11 +947,7 @@
 				</div>
 
 				{#if importError}
-					<div
-						class="rounded-md border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive"
-					>
-						{importError}
-					</div>
+					<Alert severity="error">{importError}</Alert>
 				{/if}
 
 				<DialogFooter class="flex gap-2 sm:flex-row">
@@ -1046,15 +1039,9 @@
 					<p class="text-sm">Loading products from Stripe…</p>
 				</div>
 			{:else if discoverError}
-				<div
-					class="rounded-md border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive"
-				>
-					{discoverError}
-				</div>
+				<Alert severity="error">{discoverError}</Alert>
 			{:else if discoverResult}
-				<div
-					class="rounded-md border border-primary/20 bg-primary/5 px-4 py-3 text-sm text-primary/90"
-				>
+				<Alert severity="success">
 					<p class="font-medium">Import complete</p>
 					<p class="mt-0.5">
 						{discoverResult.imported} item{discoverResult.imported !== 1 ? 's' : ''} imported{discoverResult.skipped >
@@ -1062,7 +1049,7 @@
 							? `, ${discoverResult.skipped} skipped (already exist)`
 							: ''}.
 					</p>
-				</div>
+				</Alert>
 			{:else if discoveredItems.length === 0}
 				<div class="py-10 text-center text-sm text-muted-foreground">
 					No active one-time products found in your Stripe account.
@@ -1188,25 +1175,17 @@
 		<div class="flex-1 overflow-y-auto px-6 py-5">
 			{#if drawerMode === 'new'}
 				{#if drawerLastCreated}
-					<div
-						class="mb-4 flex items-center justify-between rounded-lg border border-primary/20 bg-primary/5 px-4 py-2.5 text-sm text-primary/90"
+					<Alert
+						severity="success"
+						class="mb-4"
+						dismissible
+						ondismiss={() => (drawerLastCreated = null)}
 					>
-						<span>
-							✓ <strong>{drawerLastCreated.name}</strong> created —
-							<a
-								href={resolve(`/dashboard/catalog/items/${drawerLastCreated.id}`)}
-								class="underline hover:text-primary/80">edit item</a
-							>
-						</span>
-						<Button
-							onclick={() => (drawerLastCreated = null)}
-							variant="ghost"
-							size="icon"
-							class="ml-4 text-primary/80 hover:text-primary"
+						<strong>{drawerLastCreated.name}</strong> created —
+						<a href={resolve(`/dashboard/catalog/items/${drawerLastCreated.id}`)} class="underline"
+							>edit item</a
 						>
-							<Icon icon="mdi:close" class="h-4 w-4" />
-						</Button>
-					</div>
+					</Alert>
 				{/if}
 				<CatalogItemForm
 					mode="new"

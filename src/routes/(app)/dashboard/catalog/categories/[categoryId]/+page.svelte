@@ -11,6 +11,7 @@
 	import { Switch } from '$lib/components/ui/switch';
 	import { Label } from '$lib/components/ui/label';
 	import { Card, CardContent, CardFooter } from '$lib/components/ui/card';
+	import { Alert } from '$lib/components/ui/alert';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
@@ -50,16 +51,10 @@
 	</div>
 
 	{#if form?.error}
-		<div
-			class="rounded-md border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive"
-		>
-			{form.error}
-		</div>
+		<Alert severity="error">{form.error}</Alert>
 	{/if}
 	{#if form?.success}
-		<div class="rounded-md border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
-			Saved.
-		</div>
+		<Alert severity="success">Saved.</Alert>
 	{/if}
 
 	<!-- Category details -->

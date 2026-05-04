@@ -339,7 +339,7 @@
 			}}
 			variant="ghost"
 			size="icon"
-			class="shrink-0 text-muted-foreground/40 hover:text-muted-foreground"
+			class="shrink-0 text-muted-foreground hover:text-foreground"
 		>
 			<Icon icon="mdi:close" class="h-4 w-4" />
 		</Button>

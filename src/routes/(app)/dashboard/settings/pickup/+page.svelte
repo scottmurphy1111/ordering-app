@@ -26,6 +26,7 @@
 		TableHeader,
 		TableRow
 	} from '$lib/components/ui/table';
+	import { Alert } from '$lib/components/ui/alert';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
@@ -351,28 +352,16 @@
 		</div>
 
 		{#if form?.createSuccess}
-			<div
-				class="mb-3 rounded-md border border-primary/20 bg-primary/5 px-4 py-3 text-sm text-primary/90"
-			>
-				Location saved.
-			</div>
+			<Alert severity="success" class="mb-3">Location saved.</Alert>
 		{/if}
 		{#if form?.updateSuccess}
-			<div
-				class="mb-3 rounded-md border border-primary/20 bg-primary/5 px-4 py-3 text-sm text-primary/90"
-			>
-				Location updated.
-			</div>
+			<Alert severity="success" class="mb-3">Location updated.</Alert>
 		{/if}
 
 		<!-- Edit form -->
 		{#if editingId !== null && editingLocation !== null}
 			{#if editError}
-				<div
-					class="mb-3 rounded-md border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive"
-				>
-					{editError}
-				</div>
+				<Alert severity="error" class="mb-3">{editError}</Alert>
 			{/if}
 			<Card class="mb-4 shadow-sm">
 				<form method="post" action="?/updateLocation" use:enhance={handleEditEnhance}>
@@ -466,11 +455,7 @@
 		<!-- Add form -->
 		{#if showAddForm}
 			{#if addError}
-				<div
-					class="mb-3 rounded-md border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive"
-				>
-					{addError}
-				</div>
+				<Alert severity="error" class="mb-3">{addError}</Alert>
 			{/if}
 			<Card class="mb-4 shadow-sm">
 				<form method="post" action="?/createLocation" use:enhance={handleAddEnhance}>
@@ -642,35 +627,19 @@
 		</div>
 
 		{#if form?.createTemplateSuccess}
-			<div
-				class="mb-3 rounded-md border border-primary/20 bg-primary/5 px-4 py-3 text-sm text-primary/90"
-			>
-				Window saved.
-			</div>
+			<Alert severity="success" class="mb-3">Window saved.</Alert>
 		{/if}
 		{#if form?.updateTemplateSuccess}
-			<div
-				class="mb-3 rounded-md border border-primary/20 bg-primary/5 px-4 py-3 text-sm text-primary/90"
-			>
-				Window updated.
-			</div>
+			<Alert severity="success" class="mb-3">Window updated.</Alert>
 		{/if}
 		{#if form?.deleteTemplateSuccess}
-			<div
-				class="mb-3 rounded-md border border-primary/20 bg-primary/5 px-4 py-3 text-sm text-primary/90"
-			>
-				Window removed.
-			</div>
+			<Alert severity="success" class="mb-3">Window removed.</Alert>
 		{/if}
 
 		<!-- Edit template form -->
 		{#if editingTemplateId !== null && editingTemplate !== null}
 			{#if editTemplateError}
-				<div
-					class="mb-3 rounded-md border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive"
-				>
-					{editTemplateError}
-				</div>
+				<Alert severity="error" class="mb-3">{editTemplateError}</Alert>
 			{/if}
 			<Card class="mb-4 shadow-sm">
 				<form method="post" action="?/updateTemplate" use:enhance={handleEditTemplateEnhance}>
@@ -844,11 +813,7 @@
 		<!-- Add template form -->
 		{#if showAddTemplateForm}
 			{#if addTemplateError}
-				<div
-					class="mb-3 rounded-md border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive"
-				>
-					{addTemplateError}
-				</div>
+				<Alert severity="error" class="mb-3">{addTemplateError}</Alert>
 			{/if}
 			<Card class="mb-4 shadow-sm">
 				<form method="post" action="?/createTemplate" use:enhance={handleAddTemplateEnhance}>

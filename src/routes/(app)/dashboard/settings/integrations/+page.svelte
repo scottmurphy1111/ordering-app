@@ -10,6 +10,7 @@
 	import { Input } from '$lib/components/ui/input';
 	import { Label } from '$lib/components/ui/label';
 	import { Card, CardContent, CardFooter } from '$lib/components/ui/card';
+	import { Alert } from '$lib/components/ui/alert';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
@@ -71,23 +72,13 @@
 			</div>
 
 			{#if form?.error}
-				<div
-					class="mt-3 rounded-md border border-destructive/20 bg-destructive/10 px-3 py-2 text-sm text-destructive"
-				>
-					{form.error}
-				</div>
+				<Alert severity="error" class="mt-3">{form.error}</Alert>
 			{/if}
 			{#if form?.success}
-				<div
-					class="mt-3 rounded-md border border-primary/20 bg-primary/5 px-3 py-2 text-sm text-primary/90"
-				>
-					Stripe connected successfully.
-				</div>
+				<Alert severity="success" class="mt-3">Stripe connected successfully.</Alert>
 			{/if}
 			{#if form?.cleared}
-				<div class="mt-3 rounded-md border bg-muted/50 px-3 py-2 text-sm text-muted-foreground">
-					Stripe key removed.
-				</div>
+				<Alert severity="success" class="mt-3">Stripe key removed.</Alert>
 			{/if}
 
 			<div class="mt-4 space-y-2">

@@ -19,6 +19,7 @@
 	import { Checkbox } from '$lib/components/ui/checkbox';
 	import { BUSINESS_TYPES } from '$lib/utils/business-type-labels';
 	import { US_TIMEZONES, getAllTimezones, getTimezoneLabel } from '$lib/utils/timezones';
+	import { Alert } from '$lib/components/ui/alert';
 
 	let { data, form: _form }: { data: PageData; form: ActionData } = $props();
 	const form = $derived(_form as (ActionData & { deliverySuccess?: boolean }) | null);
@@ -90,18 +91,10 @@
 	</div>
 
 	{#if form?.error}
-		<div
-			class="mb-4 rounded-md border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive"
-		>
-			{form.error}
-		</div>
+		<Alert severity="error" class="mb-4">{form.error}</Alert>
 	{/if}
 	{#if form?.success}
-		<div
-			class="mb-4 rounded-md border border-primary/20 bg-primary/5 px-4 py-3 text-sm text-primary/90"
-		>
-			Changes saved.
-		</div>
+		<Alert severity="success" class="mb-4">Changes saved.</Alert>
 	{/if}
 
 	<form
@@ -278,11 +271,7 @@
 
 	<!-- Delivery — separate form/action -->
 	{#if form?.deliverySuccess}
-		<div
-			class="mt-4 rounded-md border border-primary/20 bg-primary/5 px-4 py-3 text-sm text-primary/90"
-		>
-			Delivery settings saved.
-		</div>
+		<Alert severity="success" class="mt-4">Delivery settings saved.</Alert>
 	{/if}
 	<form
 		method="post"
@@ -334,11 +323,7 @@
 
 	<!-- Checkout settings — tipping + ASAP -->
 	{#if form?.checkoutSuccess}
-		<div
-			class="mt-4 rounded-md border border-primary/20 bg-primary/5 px-4 py-3 text-sm text-primary/90"
-		>
-			Checkout settings saved.
-		</div>
+		<Alert severity="success" class="mt-4">Checkout settings saved.</Alert>
 	{/if}
 	<form
 		method="post"
@@ -387,11 +372,7 @@
 
 	<!-- Operating hours — separate form/action -->
 	{#if form?.hoursSuccess}
-		<div
-			class="mt-4 rounded-md border border-primary/20 bg-primary/5 px-4 py-3 text-sm text-primary/90"
-		>
-			Hours saved.
-		</div>
+		<Alert severity="success" class="mt-4">Hours saved.</Alert>
 	{/if}
 	<form
 		method="post"

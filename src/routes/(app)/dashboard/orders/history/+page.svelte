@@ -15,6 +15,7 @@
 	import OrdersSummaryBar from '$lib/components/OrdersSummaryBar.svelte';
 	import OrdersFilterTabs from '$lib/components/OrdersFilterTabs.svelte';
 	import { SvelteURLSearchParams } from 'svelte/reactivity';
+	import { Alert } from '$lib/components/ui/alert';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
@@ -146,11 +147,7 @@
 	</div>
 
 	{#if form?.error}
-		<div
-			class="mb-4 rounded-md border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive"
-		>
-			{form.error}
-		</div>
+		<Alert severity="error" class="mb-4">{form.error}</Alert>
 	{/if}
 
 	<!-- Summary bar -->
