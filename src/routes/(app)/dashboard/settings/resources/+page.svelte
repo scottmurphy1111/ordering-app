@@ -59,6 +59,15 @@
 		});
 	}
 
+	let instagramUrlCopied = $state(false);
+
+	function copyForInstagram() {
+		navigator.clipboard.writeText(catalogUrl).then(() => {
+			instagramUrlCopied = true;
+			setTimeout(() => (instagramUrlCopied = false), 2000);
+		});
+	}
+
 	async function downloadSocialCard() {
 		const qrUrl = await qrDataUrl;
 		if (!qrUrl || !vendor) return;
@@ -603,15 +612,6 @@
 						</div>
 						<div class="flex flex-wrap gap-2">
 							<Button
-								href="https://wa.me/?text={encodeURIComponent(shareCaption)}"
-								variant="outline"
-								class="gap-2"
-								target="_blank"
-								rel="noopener noreferrer"
-							>
-								<Icon icon="mdi:whatsapp" class="h-4 w-4" /> Share on WhatsApp
-							</Button>
-							<Button
 								href="https://www.facebook.com/sharer/sharer.php?u={encodeURIComponent(catalogUrl)}"
 								variant="outline"
 								class="gap-2"
@@ -619,6 +619,30 @@
 								rel="noopener noreferrer"
 							>
 								<Icon icon="mdi:facebook" class="h-4 w-4" /> Share on Facebook
+							</Button>
+							<Button onclick={copyForInstagram} variant="outline" class="gap-2">
+								<Icon icon="mdi:instagram" class="h-4 w-4" />
+								{instagramUrlCopied ? 'Copied!' : 'Copy for Instagram'}
+							</Button>
+							<Button
+								href="https://www.linkedin.com/sharing/share-offsite/?url={encodeURIComponent(
+									catalogUrl
+								)}"
+								variant="outline"
+								class="gap-2"
+								target="_blank"
+								rel="noopener noreferrer"
+							>
+								<Icon icon="mdi:linkedin" class="h-4 w-4" /> Share on LinkedIn
+							</Button>
+							<Button
+								href="https://x.com/intent/tweet?text={encodeURIComponent(shareCaption)}"
+								variant="outline"
+								class="gap-2"
+								target="_blank"
+								rel="noopener noreferrer"
+							>
+								<Icon icon="mdi:twitter-x" class="h-4 w-4" /> Share on X
 							</Button>
 						</div>
 						<p class="text-xs text-muted-foreground">

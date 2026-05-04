@@ -1,24 +1,28 @@
 <script lang="ts" module>
 	export type AlertSeverity = 'success' | 'warning' | 'error' | 'info';
 
-	type SeverityConfig = { icon: string; classes: string };
+	type SeverityConfig = { icon: string; classes: string; duration: number };
 
 	export const SEVERITY_CONFIG: Record<AlertSeverity, SeverityConfig> = {
 		success: {
 			icon: 'mdi:check-circle-outline',
-			classes: 'border-green-200 bg-green-50 text-green-700'
+			classes: 'border-green-200 bg-green-50 text-green-700',
+			duration: 5000
 		},
 		warning: {
 			icon: 'mdi:alert-outline',
-			classes: 'border-amber-200 bg-amber-50 text-amber-700'
+			classes: 'border-amber-200 bg-amber-50 text-amber-700',
+			duration: 8000
 		},
 		error: {
 			icon: 'mdi:alert-circle-outline',
-			classes: 'border-destructive/20 bg-destructive/10 text-destructive'
+			classes: 'border-destructive/20 bg-destructive/10 text-destructive',
+			duration: 0
 		},
 		info: {
 			icon: 'mdi:information-outline',
-			classes: 'border-blue-200 bg-blue-50 text-blue-700'
+			classes: 'border-blue-200 bg-blue-50 text-blue-700',
+			duration: 5000
 		}
 	};
 </script>
@@ -30,8 +34,8 @@
 
 	let {
 		severity,
-		dismissible = false,
-		autofade = 0,
+		dismissible = true,
+		autofade,
 		ondismiss,
 		class: className,
 		children
@@ -46,11 +50,13 @@
 
 	let shown = $state(true);
 
+	const effectiveDuration = $derived(autofade ?? SEVERITY_CONFIG[severity].duration);
+
 	$effect(() => {
-		if (autofade > 0) {
+		if (effectiveDuration > 0) {
 			const timer = setTimeout(() => {
 				shown = false;
-			}, autofade);
+			}, effectiveDuration);
 			return () => clearTimeout(timer);
 		}
 	});

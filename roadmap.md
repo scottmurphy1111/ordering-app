@@ -463,6 +463,7 @@ The notifications page hosts opt-in/opt-out for non-transactional communications
 **Scope:** Design the page layout (likely a list of toggleable preferences with descriptions). Build the schema (vendor_notification_preferences table or fields on vendor table). Build the email/digest jobs that read from preferences. Each preference type is a separate piece of work — the page UI is the smallest part; the digest job and prep summary job are the meaningful work.
 
 **Sub-items:**
+
 - Page UI (toggles + descriptions) — small
 - Weekly summary digest backend (cron job, email template, query) — medium
 - Daily prep summary backend (cron job timing per vendor's pickup schedule, email template) — medium
