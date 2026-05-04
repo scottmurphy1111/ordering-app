@@ -12,19 +12,20 @@ Last updated: April 2026.
 
 Items vendors will encounter in their first week of use. The bar is "first impression reflects the product's quality" — these get polished thoughtfully before vendor outreach begins. No external timing pressure; doing these well matters more than doing them fast.
 
+Tier 1 is split into two sub-tiers based on which outreach wave they gate:
+
+- **Tier 1A — Pre-outreach blockers (first three vendors).** Load-bearing for the founding cohort. Cannot ship the product to vendor #1 without these. The founding cohort gets hand-walked through setup, so items that compensate for "no human in the room" (tutorials, polish, homepage clarity) move to 1B.
+- **Tier 1B — Pre-fifty polish (before broader outreach).** Load-bearing once outreach scales beyond the founding cohort. The product has to teach itself, support itself, and produce a polished first impression to prospects you haven't met. These don't block first-three but do block first-fifty.
+
 **Convention notes:**
 
 - Items here gate vendor outreach, not internal milestones
 - Polish here is intentional; polish elsewhere is deferred until evidence justifies it
 - When something feels mostly-done but not quite, it stays here until it's actually done
+- 1A items ship before any vendor outreach. 1B items can be in flight during the founding-cohort onboarding period, but should be done before reaching out to vendor #4.
+- An item can move from 1B → 1A if a specific founding-cohort vendor needs it (e.g., a seasonal vendor in first three would promote any pickup-window seasonality work to 1A).
 
-### 30-min vendor setup gauntlet test
-
-**Status:** Pending — Scott to run himself.
-
-**Why:** The pricing pitch promises "set up in 10 minutes." Need to actually time it end-to-end with a fresh account: signup → connect Stripe → add 5 catalog items → set pickup hours → share link → take a test order. Anywhere it takes longer than 10 min is a launch-blocking polish target.
-
----
+### Tier 1A — Pre-outreach blockers
 
 ### Stripe Connect end-to-end real-money test
 
@@ -58,6 +59,97 @@ Items vendors will encounter in their first week of use. The bar is "first impre
 **Estimated effort:** Half a day. Most of that is configuring the autoresponder and updating templates.
 
 **Trigger:** Before any vendor outreach. Vendors who can't reach support are vendors who churn loudly.
+
+---
+
+### Remove delivery feature entirely
+
+The delivery option is being cut from Order Local. Sweep three layers:
+
+1. **UI:** Remove the delivery card from settings/general.
+2. **Cart/checkout:** Remove delivery as a fulfillment option from the customer order flow.
+3. **Schema:** Identify and remove any delivery-related fields, enums, or tables (likely fulfillment_type enum entries, delivery_address fields, delivery fee logic, etc.).
+
+**Status:** ready-to-execute
+
+**Scope:** Substantial — touches schema migrations, order flow, settings UI, and any business logic that branches on fulfillment type. Verify nothing breaks in the order pipeline post-removal. Existing orders with delivery fulfillment (if any in dev/test data) need a migration path or cleanup.
+
+---
+
+### Hardcoded brand green — sweep to design tokens
+
+Brand green is hardcoded as Tailwind utility classes (`bg-green-600`, `text-green-600`, etc.) across the dashboard rather than referencing the token system. Means brand color changes require multi-file edits and blocks the "Brand the dashboard" Tier 2 vendor-theming item.
+
+**Status:** ready-to-execute — but read the decision rule below before starting.
+
+**Scope:**
+
+- Add `--success` token to `src/routes/layout.css` (alongside `--primary`, `--destructive`). Value: `oklch(0.612 0.17 152.75)` initially (matches today's `--primary`, locks them as independent values). Add corresponding `@theme inline` mapping for `--color-success`. **Already done — token exists in layout.css.**
+- Grep targets — sweep all of these:
+  - `bg-green-600`, `bg-green-700`, `bg-green-50`, `bg-green-500`, `bg-green-100` (status pills only — most others)
+  - `text-green-600`, `text-green-700`
+  - `border-green-500`, `border-green-600`
+  - `ring-green-500`
+  - `hover:bg-green-700`, `hover:bg-green-50`
+  - `#1d9e75`, `#16a34a`, `#15803d`, `#22c55e`, `#f0fdf4` (any inline hex equivalents)
+- Per-callsite decision rule: "would a vendor with a purple brand want this element to be purple?"
+  - **Yes** (primary action, CTA, brand affordance) → migrate to `bg-primary` / `text-primary` / `border-primary` / `ring-ring` / `bg-primary/10` (replaces `bg-green-50` for primary tint contexts)
+  - **No** (positive indicator, money value, "paid"/"available"/"fulfilled" status pill, successful state confirmation) → migrate to `text-success` / `bg-success/10`
+  - **Unclear** → flag the callsite for review rather than guessing. Common ambiguous cases: "Edit" links in row actions (probably themable), revenue figures in stat cards (definitely not), green checkmark icons in success Alert (not — Alert severity already encodes this).
+- Status pill map (`statusStyles` in CLAUDE.md): leave as-is for this sweep. Status pills use `bg-green-100 text-green-700` — outside the sweep's grep targets and a separate future migration when status pill treatments are revisited (see Tier 2 "Status pills: replace with icons + semantic-color labels").
+- Verification:
+  - Static: `bun run check` clean, no remaining grep hits for the listed targets outside `statusStyles`.
+  - Visual: dashboard primary actions, money values, and "paid"/"available" pills render identically to pre-sweep at default theme (no vendor accent applied).
+  - Cross-context: render a primary action and a money value side-by-side. Confirm they look identical at default theme — that's the test that the sweep correctly classified them, since they'll diverge once vendor theming lands.
+
+**Out of scope:**
+
+- Vendor accent theming itself (sub-item A of "Brand the dashboard" Tier 2). This sweep is the precondition; the actual `--primary` override at vendor load is the next step.
+- Status pill restyling (Tier 2 "Status pills: replace with icons + semantic-color labels"). Status pills keep their current `green-100`/`green-700` treatment through this sweep.
+
+**Estimated effort:** Half a day. Most of the time is the decision-rule pass on ambiguous callsites and the visual verification, not the find-and-replace.
+
+**Trigger:** Before the "Brand the dashboard" Tier 2 sub-item A (vendor accent theming) can ship. This sweep is the precondition. No external pressure on its own — internal-only work.
+
+---
+
+### Pickup window date bounds (start date, end date)
+
+**Status:** Pending — needs-design for UI, scope clear for schema/expand.
+
+**Why it matters:** Seasonal vendors are central to the wedge audience — farmers markets running May–October, holiday bakers active only in November–December, CSA seasons with defined start and end dates, summer-only farm stands. Today, pickup window templates have no way to express "starts on X" or "ends on Y" — recurrence is open-ended in both directions, with the cron extending occurrences on a rolling 12-week horizon indefinitely. Seasonal vendors are forced to either deactivate windows manually at season's end (and remember to reactivate next year), delete and recreate templates each season (losing history), or accept that occurrences keep generating during their off-season. None of those reflect a 10-minute setup story for a seasonal maker.
+
+The current form (Name, Location, Days, Start time, End time, Cutoff hours, Max orders, Active) reads as "every selected day, forever" — which is wrong for the seasonal half of the audience.
+
+**Scope:**
+
+- Add two fields to `pickup_window_templates`: `recurrence_start_date` (nullable, defaults to template creation date) and `recurrence_end_date` (nullable, null = indefinite).
+- Form additions: "Starts on" date picker (defaults to today), "Ends on" date picker with a clear "indefinite" / "no end date" option (default).
+- `expandTemplate()` in `src/lib/server/pickup/expand.ts` honors both bounds. Pass `dtstart` from `recurrence_start_date` and `until` from `recurrence_end_date` to the RRULE expansion. Materialization continues to generate the 12-week rolling window but truncates at `recurrence_end_date` when set.
+- Display in the templates list: include date bounds in the summary line when present (e.g., "9am–12pm · Every Sat · May 1–Oct 31 · Cutoff 48h"). When unbounded, omit — current "Every Sat" reads correctly for indefinite.
+- Empty-bounds-list state: when a template's end date has passed and there are no future occurrences, the upcoming-windows section should communicate "season ended [date]" rather than render empty.
+- Decision needed: when a vendor sets an end date that falls before existing future occurrences with attached orders, how does materialization behave? Recommended: orderful occurrences past the new end date are preserved (matches existing "future occurrences with orders are preserved" policy); orderless occurrences past the new end date are deleted on next materialize call. Document this in the materialize.ts policy comment.
+- Cross-reference with the Tier 3 "Pause for the season" item: that one toggles the entire shop on/off. This one bounds individual templates. They serve different needs — a year-round bakery with a seasonal market booth wants per-window date bounds, not whole-shop pause. Both can coexist; not redundant.
+
+**Out of scope (defer to Tier 2):**
+
+- Non-weekly recurrence patterns (every other week, monthly on the Nth weekday, specific day of month, custom intervals). Tracked as a separate Tier 2 entry: "Pickup window non-weekly recurrence patterns." The two items compose cleanly — `dtstart` and `until` from this item apply identically across all recurrence kinds when the Tier 2 work lands.
+- "Skip these specific dates" (holiday exceptions to a recurring pattern). Per-occurrence cancellation already handles one-off skips; bulk-skip is a separate feature.
+- Auto-renewal of seasonal windows year-over-year ("repeat this May–Oct schedule next year"). Solvable later; for v1, vendors set new dates each season.
+
+**Estimated effort:** 1–2 days. Schema migration is small (two nullable columns). `expandTemplate` change is narrow — add `dtstart` and `until` to the RRULE options. UI is two date pickers in an existing form. Materialization policy update for past-end-date occurrences is the most subtle piece; the rest is mechanical.
+
+**Trigger:** Before any vendor outreach that targets seasonal makers (farmers markets, CSAs, holiday bakers). The wedge audience profile names these explicitly, so this gates outreach to those segments.
+
+---
+
+### Tier 1B — Pre-fifty polish
+
+### 30-min vendor setup gauntlet test
+
+**Status:** Pending — Scott to run himself.
+
+**Why:** The pricing pitch promises "set up in 10 minutes." Need to actually time it end-to-end with a fresh account: signup → connect Stripe → add 5 catalog items → set pickup hours → share link → take a test order. Anywhere it takes longer than 10 min is a launch-blocking polish target.
 
 ---
 
@@ -136,30 +228,6 @@ Navigating from cart to checkout briefly shows an empty cart page (visual flash)
 **Status:** needs-investigation
 
 **Scope:** Diagnose the navigation flow. Likely a SvelteKit data-loading race where checkout's load function reads the cart but the cart component re-renders empty mid-transition. Common fix: ensure cart state persists in URL or store across the navigation, or add a loading skeleton to mask the transition.
-
----
-
-### Hardcoded brand green #1d9e75 — sweep to design tokens
-
-Brand green is hardcoded in multiple places rather than referencing the existing CSS custom property / design token. Means brand color changes require multi-file edits.
-
-**Status:** ready-to-execute
-
-**Scope:** Grep for "#1d9e75" across src/, replace with the canonical token reference. Verify visual parity post-sweep — every surface using brand green still renders identically. Related to Tier 2 "Brand the dashboard" item below; this is the precondition for vendor-color theming to work.
-
----
-
-### Remove delivery feature entirely
-
-The delivery option is being cut from Order Local. Sweep three layers:
-
-1. **UI:** Remove the delivery card from settings/general.
-2. **Cart/checkout:** Remove delivery as a fulfillment option from the customer order flow.
-3. **Schema:** Identify and remove any delivery-related fields, enums, or tables (likely fulfillment_type enum entries, delivery_address fields, delivery fee logic, etc.).
-
-**Status:** ready-to-execute
-
-**Scope:** Substantial — touches schema migrations, order flow, settings UI, and any business logic that branches on fulfillment type. Verify nothing breaks in the order pipeline post-removal. Existing orders with delivery fulfillment (if any in dev/test data) need a migration path or cleanup.
 
 ---
 
@@ -377,6 +445,45 @@ Currently pickup locations can only be deactivated, not deleted entirely. Vendor
 **Status:** needs-decision
 
 **Open question:** Should deletion be hard-delete (record gone forever) or soft-delete with a "Trash" archive view? Hard-delete is simpler but loses historical context (occurrences that referenced this location either get orphaned or cascade-deleted, both of which have implications for analytics). Soft-delete preserves history but adds Trash UI. Default recommendation: soft-delete with 30-day grace period before hard-delete, matching common SaaS patterns.
+
+---
+
+### Pickup window non-weekly recurrence patterns
+
+**Status:** Pending — needs-design.
+
+**Why it matters:** Today's RRULE constraint is `FREQ=WEEKLY;BYDAY=...` — the only recurrence pattern templates can express is "every selected day each week." This covers the dominant case (weekly farmers markets, regular bakery pickup days) but misses real wedge-audience patterns:
+
+- **Every other week** — biweekly CSA boxes are a standard subscription model. Vendors today either run weekly templates and manually cancel alternate occurrences, or split into two month-by-month manual schedules.
+- **Monthly on the Nth weekday** — "first Saturday of each month" specialty markets, "third Thursday" wine releases, "last Sunday" pop-ups. Common for makers with low-frequency drops.
+- **Specific day of month** — "the 15th of each month" subscription pickups. Less common but real.
+- **Multiple-week intervals** — "every 4 weeks," "every 6 weeks." Rare but the RRULE primitive (`INTERVAL=N`) handles it for free if the form does.
+
+Solvable today only by per-occurrence cancellation against a denser weekly template, which is annoying for the vendor and confusing in the upcoming-windows list (lots of "cancelled" entries between active ones).
+
+**Scope:**
+
+- Schema: replace single `recurrence` RRULE string field with structured columns or keep as RRULE string and parse — decision needed during design. The RRULE string approach is more flexible (handles edge cases the form may not surface) but harder to query; structured columns are queryable but constrain the recurrence vocabulary to what the schema models. Recommended: keep as RRULE string but add a `recurrence_kind` enum (`weekly`, `biweekly`, `monthly_by_weekday`, `monthly_by_day`, `custom_interval`) so the form can round-trip cleanly without re-parsing. Custom RRULE strings outside the supported kinds either get rejected at save or stored verbatim with `recurrence_kind = 'custom'`.
+- Form: replace today's bare "Days" weekday selector with a recurrence-pattern picker. Likely shape: a top-level "Repeats" select (Weekly · Every other week · Monthly on the Nth weekday · Monthly on a specific date · Custom), with the day selector adapting based on choice. Real design work — the form gets meaningfully busier and needs careful disclosure to avoid overwhelming vendors who only need weekly.
+- `expandTemplate()` already uses the `rrule` package, which handles all of these patterns natively. Implementation is largely "remove the BYDAY-only constraint" plus tests for each pattern × timezone × DST-boundary combination.
+- Display: the templates-list summary line ("9am–12pm · Every Sat · Cutoff 48h") needs to express richer patterns succinctly. "Every other Sat," "First Sat of each month," "15th of each month," etc. Likely a small label helper that takes `recurrence_kind` plus parsed RRULE bits and produces the summary string. Worth doing alongside the form — same vocabulary, two surfaces.
+- The date-bounds Tier 1 item (start date / end date) composes cleanly with this — `dtstart` and `until` apply identically across all recurrence kinds. No cross-cutting complications.
+
+**Open questions for design:**
+
+- Default recurrence on a fresh template: weekly is right for the dominant case, but what's the form transition look like when a vendor switches from weekly to monthly mid-edit? The day selector needs to gracefully reset or migrate values.
+- Validation around impossible patterns ("monthly on the 31st" misses February, April, June, etc.). RRule handles these by skipping non-existent dates, but the upcoming-windows preview should make the skipped months obvious so vendors aren't surprised.
+- Subscription pricing implications: a biweekly subscription is half the frequency of weekly, which affects per-window pricing math and possibly Stripe subscription interval. Needs a check across the subscription code path (`isSubscription`, `billingInterval` in the order snapshot) before this ships.
+
+**Out of scope:**
+
+- Yearly patterns ("annual holiday market every December 15"). Defer until a vendor specifically asks. RRULE supports `FREQ=YEARLY` for free, but the UI design for yearly patterns is its own thing and the use case is rare.
+- Hybrid patterns ("Saturdays plus the third Thursday"). RRULE supports composing multiple rules but the UI gets unwieldy fast. If a vendor needs this, two separate templates is the answer for now.
+- Holiday-aware skipping ("every Saturday except December 25"). Per-occurrence cancellation already handles this — just deeper than most vendors will go.
+
+**Estimated effort:** 4–6 days. Form redesign is the biggest piece (1–2 days for design, 1–2 days for implementation). Schema migration plus `expandTemplate` updates plus summary-helper plus tests for the recurrence × timezone × DST matrix is another 2 days. The DST tests matter — biweekly and monthly patterns crossing a DST transition is exactly where time-handling bugs live.
+
+**Trigger:** When 3+ vendors specifically ask for non-weekly patterns. The Tier 1 date-bounds item handles the bulk of seasonal-vendor needs without requiring this; biweekly and monthly are differentiated value but not blocking. CSA-heavy vendor cohort hitting the trigger first is most likely.
 
 ---
 

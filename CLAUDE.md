@@ -386,33 +386,56 @@ inputs must always be wrapped in a single bordered pill/container.
 
 ## Color Palette
 
-Use only these values. Do not introduce new colors.
+The dashboard uses CSS custom properties (design tokens) for colors that may need to vary by context — primary brand actions theme to vendor accent colors (per the "Brand the dashboard" roadmap item), while semantic indicators (success, destructive) stay fixed across all vendors.
 
-| Role               | Tailwind class     | Hex     |
-| ------------------ | ------------------ | ------- |
-| Primary action     | `bg-green-600`     | #16a34a |
-| Primary hover      | `bg-green-700`     | #15803d |
-| Primary light bg   | `bg-green-50`      | #f0fdf4 |
-| Primary border     | `border-green-500` | #22c55e |
-| Focus ring         | `ring-green-500`   | #22c55e |
-| Urgent / warning   | `text-amber-500`   | #f59e0b |
-| Urgent text (dark) | `text-amber-700`   | #b45309 |
-| Urgent bg          | `bg-amber-50`      | #fffbeb |
-| Urgent border      | `border-amber-400` | #fbbf24 |
-| Destructive        | `text-red-500`     | #ef4444 |
-| Destructive bg     | `bg-red-50`        | #fef2f2 |
-| Positive / money   | `text-green-600`   | #16a34a |
-| Body text          | `text-gray-900`    | #111827 |
-| Secondary text     | `text-gray-500`    | #6b7280 |
-| Muted text         | `text-gray-400`    | #9ca3af |
-| Border             | `border-gray-200`  | #e5e7eb |
-| Subtle bg          | `bg-gray-50`       | #f9fafb |
-| White              | `bg-white`         | #ffffff |
+Use the **Token** column for new code. The **Legacy class** column is what you'll see in older callsites; migrate when touching.
 
-**Storefront-specific colors:** the public storefront (`/[vendorSlug]/catalog`)
-uses CSS variables driven by the vendor's branding settings (background,
-foreground, accent). The palette above applies only to the dashboard, marketing
-site, and admin areas.
+### Themable (vendor accent)
+
+These tokens repaint when a vendor's brand color is applied at the root level.
+
+| Role | Token | Legacy class | Hex (default) |
+| --- | --- | --- | --- |
+| Primary action (bg) | `bg-primary` | `bg-green-600` | #16a34a |
+| Primary hover | `hover:bg-primary/90` | `hover:bg-green-700` | — |
+| Primary tint (subtle bg) | `bg-primary/10` | `bg-green-50` | — |
+| Primary border | `border-primary` | `border-green-500` | #22c55e |
+| Focus ring | `ring-ring` | `ring-green-500` | #22c55e |
+| Primary text (on white) | `text-primary` | `text-green-600` | #16a34a |
+
+### Fixed semantic (do not theme)
+
+These tokens stay constant regardless of vendor brand. Money should read as money, errors should read as errors.
+
+| Role | Token | Legacy class | Hex |
+| --- | --- | --- | --- |
+| Positive / money / "paid" / available | `text-success` | `text-green-600` (positive use) | #16a34a |
+| Success bg tint | `bg-success/10` | `bg-green-50` (positive use) | — |
+| Destructive | `text-destructive` | `text-red-500` | #ef4444 |
+| Destructive bg | `bg-destructive/10` | `bg-red-50` | — |
+
+### Status pills (fixed, by status)
+
+Status pills use fixed hex colors per status — see the `statusStyles` map in the Badges & Status Pills section. Not subject to vendor theming.
+
+### Always-fixed (no token, no migration)
+
+| Role | Class | Hex |
+| --- | --- | --- |
+| Urgent / warning | `text-amber-500` | #f59e0b |
+| Urgent text (dark) | `text-amber-700` | #b45309 |
+| Urgent bg | `bg-amber-50` | #fffbeb |
+| Urgent border | `border-amber-400` | #fbbf24 |
+| Body text | `text-gray-900` | #111827 |
+| Secondary text | `text-gray-500` | #6b7280 |
+| Muted text | `text-gray-400` | #9ca3af |
+| Border | `border-gray-200` | #e5e7eb |
+| Subtle bg | `bg-gray-50` | #f9fafb |
+| White | `bg-white` | #ffffff |
+
+**Storefront-specific colors:** the public storefront (`/[vendorSlug]/catalog`) uses CSS variables driven by the vendor's branding settings (background, foreground, accent). The palette above applies only to the dashboard, marketing site, and admin areas.
+
+**Decision rule for `text-green-600` callsites during the sweep:** if the role is "primary action / brand affordance," migrate to `text-primary` (themable). If the role is "positive indicator / money / successful state," migrate to `text-success` (fixed). When unclear, the question to ask is: "would a vendor with a purple brand want this element to be purple?" If yes → `text-primary`. If no → `text-success`.
 
 ---
 
@@ -1209,6 +1232,81 @@ refund, bulk operations).
 a temporary measure. When the shadcn component audit lands, migrate all `confirm()` calls to a
 proper `<Dialog>` primitive with explicit confirm/cancel buttons. Current callsites:
 `/dashboard/settings/pickup` — `deleteTemplate` form (×2).
+
+---
+
+## Alert (severity-based feedback)
+
+Alert is the canonical primitive for transient action feedback (form submissions, save confirmations, errors) and for persistent informational placeholders. Replaces all raw banner-shaped markup across the dashboard. Currently 47 callsites across settings, catalog, account, and orders pages.
+
+**Import:**
+
+```ts
+import { Alert } from '$lib/components/ui/alert';
+```
+
+**Severities and defaults:**
+
+| Severity | Palette | Auto-fades after | Dismissible | Icon |
+|---|---|---|---|---|
+| `success` | green | 5000ms | yes | `mdi:check-circle-outline` |
+| `info` | blue | 5000ms | yes | `mdi:information-outline` |
+| `warning` | amber | 8000ms | yes | `mdi:alert-outline` |
+| `error` | red | never (persistent) | yes | `mdi:alert-circle-outline` |
+
+Errors persist by default — auto-fading them risks users missing critical feedback.
+
+**Pattern A — Transient action feedback (the dominant pattern):**
+
+```svelte
+{#if form?.someSuccess}
+  <Alert severity="success">Changes saved.</Alert>
+{/if}
+{#if form?.error}
+  <Alert severity="error">{form.error}</Alert>
+{/if}
+```
+
+Wrapped in `{#if ...}` so the Alert mounts/unmounts on form-action state changes. Each new form submission creates a fresh Alert instance with `shown = true` and starts a fresh timer.
+
+Severity choice follows the action's semantic outcome:
+- Action completed (save, remove, state change): `severity="success"`
+- Server or validation error: `severity="error"`
+- State change without celebration or alarm: `severity="info"`
+- Needs attention, not blocking: `severity="warning"`
+
+Note: `severity="success"` applies to both creation and destruction confirmations. "Window removed" and "Member added" both use `success` — the severity signals the action completed cleanly, not that something was added.
+
+**Pattern B — Persistent informational placeholder:**
+
+```svelte
+<Alert severity="info" dismissible={false} autofade={0}>
+  Notification preferences coming soon. You'll be able to opt in to weekly
+  summary digests, daily prep emails before pickup windows, and product
+  updates from the Order Local team.
+</Alert>
+```
+
+Use for pages whose primary functionality is intentionally deferred. `dismissible={false}` prevents dismissal (the message must persist for context). `autofade={0}` disables auto-fade regardless of severity default. The Alert becomes a persistent informational element rather than a transient notification.
+
+Don't use Pattern B for active errors or warnings — those should use their natural severity defaults (`error` already persists; `warning` auto-fades after 8s).
+
+**Props:**
+
+| Prop | Type | Default | Notes |
+|---|---|---|---|
+| `severity` | `'success' \| 'info' \| 'warning' \| 'error'` | required | Determines palette, icon, and default duration |
+| `dismissible` | `boolean` | `true` | Whether the × dismiss button renders |
+| `autofade` | `number` | severity default | Override auto-fade duration in ms. `autofade={0}` disables |
+| `ondismiss` | `() => void` | — | Callback when dismissed |
+| `class` | `string` | — | Additional classes (typically spacing: `mb-4`, `mt-4`) |
+
+**Rules:**
+
+- Never write raw banner markup (`border-green-200 bg-green-50`, etc.) for any colored message box. Alert is the answer.
+- Don't override the severity icon at the callsite — severity determines icon consistently across the dashboard.
+- Don't use `autofade={0}` on error Alerts — errors are already persistent by default.
+- Field-level validation errors (invalid email, missing required field) render as `text-xs text-red-500 mt-1.5` below the input, not as Alert. Alert is for form-level action feedback only.
 
 ---
 
