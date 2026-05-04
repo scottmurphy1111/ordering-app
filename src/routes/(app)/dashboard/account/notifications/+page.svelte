@@ -1,9 +1,15 @@
-<div>
-	<h1 class="mb-1 text-2xl font-bold text-gray-900">Notifications</h1>
-	<p class="mb-8 text-sm text-gray-500">Control how and when you receive alerts.</p>
+<script lang="ts">
+	import { Alert } from '$lib/components/ui/alert';
+</script>
 
-	<div class="rounded-xl border border-gray-200 bg-gray-50 px-6 py-10 text-center">
-		<p class="text-sm font-medium text-gray-700">Notification preferences coming soon.</p>
-		<p class="mt-1 text-xs text-gray-400">New order alerts are already active via the dashboard.</p>
+<div class="max-w-xl">
+	<div class="mb-6">
+		<h1 class="text-2xl font-bold text-foreground">Notifications</h1>
+		<p class="mt-0.5 text-sm text-muted-foreground">Control how and when you hear from us.</p>
 	</div>
+
+	<Alert severity="info" dismissible={false} autofade={0}>
+		Notification preferences coming soon. You'll be able to opt in to weekly summary digests, daily
+		prep emails before pickup windows, and product updates from the Order Local team.
+	</Alert>
 </div>
