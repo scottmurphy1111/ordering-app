@@ -21,14 +21,25 @@ export const load: PageServerLoad = async ({ locals, depends }) => {
 	tomorrowStart.setDate(tomorrowStart.getDate() + 1);
 	const dayAfterStart = new Date(tomorrowStart);
 	dayAfterStart.setDate(dayAfterStart.getDate() + 1);
+	const horizonEnd = new Date(dayAfterStart);
+	horizonEnd.setDate(horizonEnd.getDate() + 1);
+
+	const dayKey = (d: Date | string): string => {
+		const date = typeof d === 'string' ? new Date(d) : d;
+		return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+	};
+
+	const todayKey = dayKey(todayStart);
+	const tomorrowKey = dayKey(tomorrowStart);
+	const dayAfterKey = dayKey(dayAfterStart);
 
 	const [
 		itemCount,
 		categoryCount,
 		orderStats,
-		todayWindowsRows,
-		todayProductionRows,
-		tomorrowProductionRows,
+		horizonWindowRows,
+		horizonOrderRows,
+		horizonProductionRows,
 		setupChecklist
 	] = await Promise.all([
 		db
@@ -50,35 +61,55 @@ export const load: PageServerLoad = async ({ locals, depends }) => {
 			.from(orders)
 			.where(eq(orders.vendorId, vendorId)),
 
-		// Today's pickup windows with order counts
+		// All pickup windows in 3-day horizon
 		db
 			.select({
 				id: pickupWindows.id,
 				name: pickupWindows.name,
 				startsAt: pickupWindows.startsAt,
 				endsAt: pickupWindows.endsAt,
-				locationName: pickupLocations.name,
-				orderCount: sql<number>`count(distinct ${orders.id}) filter (where ${orders.id} is not null and ${orders.status} != 'cancelled')`
+				locationName: pickupLocations.name
 			})
 			.from(pickupWindows)
 			.leftJoin(pickupLocations, eq(pickupWindows.locationId, pickupLocations.id))
-			.leftJoin(orders, eq(orders.pickupWindowId, pickupWindows.id))
 			.where(
 				and(
 					eq(pickupWindows.vendorId, vendorId),
 					gte(pickupWindows.endsAt, todayStart),
-					lt(pickupWindows.startsAt, tomorrowStart)
+					lt(pickupWindows.startsAt, horizonEnd)
 				)
 			)
-			.groupBy(pickupWindows.id, pickupLocations.name)
 			.orderBy(asc(pickupWindows.startsAt)),
 
-		// Today's production preview — top 5 items needed across today's windows
+		// All orders attached to horizon windows
+		db
+			.select({
+				id: orders.id,
+				orderNumber: orders.orderNumber,
+				customerName: orders.customerName,
+				total: orders.total,
+				status: orders.status,
+				windowStartsAt: pickupWindows.startsAt
+			})
+			.from(orders)
+			.innerJoin(pickupWindows, eq(orders.pickupWindowId, pickupWindows.id))
+			.where(
+				and(
+					eq(orders.vendorId, vendorId),
+					ne(orders.status, 'cancelled' as typeof orders.status._.data),
+					gte(pickupWindows.endsAt, todayStart),
+					lt(pickupWindows.startsAt, horizonEnd)
+				)
+			)
+			.orderBy(asc(pickupWindows.startsAt), asc(orders.createdAt)),
+
+		// All production items in 3-day horizon (grouped per window for day bucketing)
 		db
 			.select({
 				itemName: orderItems.name,
 				selectedModifiers: orderItems.selectedModifiers,
-				totalQuantity: sum(orderItems.quantity)
+				totalQuantity: sum(orderItems.quantity),
+				windowStartsAt: pickupWindows.startsAt
 			})
 			.from(orderItems)
 			.innerJoin(orders, eq(orderItems.orderId, orders.id))
@@ -88,37 +119,57 @@ export const load: PageServerLoad = async ({ locals, depends }) => {
 					eq(orders.vendorId, vendorId),
 					ne(orders.status, 'cancelled' as typeof orders.status._.data),
 					gte(pickupWindows.endsAt, todayStart),
-					lt(pickupWindows.startsAt, tomorrowStart)
+					lt(pickupWindows.startsAt, horizonEnd)
 				)
 			)
-			.groupBy(orderItems.name, orderItems.selectedModifiers)
-			.orderBy(desc(sum(orderItems.quantity)), asc(orderItems.name))
-			.limit(5),
-
-		// Tomorrow's production preview — same shape as today, shifted by 24h
-		db
-			.select({
-				itemName: orderItems.name,
-				selectedModifiers: orderItems.selectedModifiers,
-				totalQuantity: sum(orderItems.quantity)
-			})
-			.from(orderItems)
-			.innerJoin(orders, eq(orderItems.orderId, orders.id))
-			.innerJoin(pickupWindows, eq(orders.pickupWindowId, pickupWindows.id))
-			.where(
-				and(
-					eq(orders.vendorId, vendorId),
-					ne(orders.status, 'cancelled' as typeof orders.status._.data),
-					gte(pickupWindows.endsAt, tomorrowStart),
-					lt(pickupWindows.startsAt, dayAfterStart)
-				)
-			)
-			.groupBy(orderItems.name, orderItems.selectedModifiers)
-			.orderBy(desc(sum(orderItems.quantity)), asc(orderItems.name))
-			.limit(5),
+			.groupBy(orderItems.name, orderItems.selectedModifiers, pickupWindows.startsAt)
+			.orderBy(desc(sum(orderItems.quantity)), asc(orderItems.name)),
 
 		getSetupChecklist(vendorId)
 	]);
+
+	function bucketWindows(key: string) {
+		return horizonWindowRows
+			.filter((r) => dayKey(r.startsAt) === key)
+			.map((r) => ({
+				id: r.id,
+				name: r.name,
+				startsAt: r.startsAt,
+				endsAt: r.endsAt,
+				locationName: r.locationName ?? null
+			}));
+	}
+
+	function bucketOrders(key: string) {
+		return horizonOrderRows
+			.filter((r) => dayKey(r.windowStartsAt) === key)
+			.map((r) => ({
+				id: r.id,
+				orderNumber: r.orderNumber,
+				customerName: r.customerName,
+				total: r.total,
+				status: r.status
+			}));
+	}
+
+	function bucketProduction(key: string) {
+		const map = new Map<string, { itemName: string; modifiers: string[]; totalQuantity: number }>();
+		for (const r of horizonProductionRows) {
+			if (dayKey(r.windowStartsAt) !== key) continue;
+			const modifiers = Array.isArray(r.selectedModifiers)
+				? (r.selectedModifiers as Array<{ name: string }>).map((m) => m.name)
+				: [];
+			const mapKey = `${r.itemName}||${[...modifiers].sort().join('|')}`;
+			const existing = map.get(mapKey);
+			const qty = parseInt(r.totalQuantity ?? '0');
+			if (existing) {
+				existing.totalQuantity += qty;
+			} else {
+				map.set(mapKey, { itemName: r.itemName, modifiers, totalQuantity: qty });
+			}
+		}
+		return [...map.values()].sort((a, b) => b.totalQuantity - a.totalQuantity);
+	}
 
 	const recentOrders = await db.query.orders.findMany({
 		where: eq(orders.vendorId, vendorId),
@@ -144,28 +195,24 @@ export const load: PageServerLoad = async ({ locals, depends }) => {
 			revenue: Number(orderStats[0]?.revenue ?? 0),
 			pendingOrders: Number(orderStats[0]?.pending ?? 0)
 		},
-		todayWindows: todayWindowsRows.map((r) => ({
-			id: r.id,
-			name: r.name,
-			startsAt: r.startsAt,
-			endsAt: r.endsAt,
-			locationName: r.locationName ?? null,
-			orderCount: Number(r.orderCount ?? 0)
-		})),
-		todayProduction: todayProductionRows.map((r) => ({
-			itemName: r.itemName,
-			modifiers: Array.isArray(r.selectedModifiers)
-				? (r.selectedModifiers as Array<{ name: string }>).map((m) => m.name)
-				: [],
-			totalQuantity: parseInt(r.totalQuantity ?? '0')
-		})),
-		tomorrowProduction: tomorrowProductionRows.map((r) => ({
-			itemName: r.itemName,
-			modifiers: Array.isArray(r.selectedModifiers)
-				? (r.selectedModifiers as Array<{ name: string }>).map((m) => m.name)
-				: [],
-			totalQuantity: parseInt(r.totalQuantity ?? '0')
-		})),
+		horizon: {
+			today: {
+				windows: bucketWindows(todayKey),
+				orders: bucketOrders(todayKey),
+				production: bucketProduction(todayKey)
+			},
+			tomorrow: {
+				windows: bucketWindows(tomorrowKey),
+				orders: bucketOrders(tomorrowKey),
+				production: bucketProduction(tomorrowKey)
+			},
+			dayAfter: {
+				windows: bucketWindows(dayAfterKey),
+				orders: bucketOrders(dayAfterKey),
+				production: bucketProduction(dayAfterKey)
+			},
+			dayAfterDate: dayAfterStart
+		},
 		vendorTimezone: locals.vendor?.timezone ?? 'America/New_York',
 		recentOrders
 	};

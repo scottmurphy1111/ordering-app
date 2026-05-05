@@ -426,6 +426,50 @@ Navigating from cart to checkout briefly shows an empty cart page (visual flash)
 
 ---
 
+### Skeleton-state coverage sweep across data-fetching dashboard surfaces
+
+**Status:** Pending — needs-audit.
+
+**Why it matters:** The 3-day horizon grid on Overview landed with skeleton placeholders sized to match the hydrated layout, eliminating layout shift on hydration. This is now the project's canonical pattern for any UI section that displays fetched data. Other dashboard surfaces shipped before this convention solidified — many lack skeleton coverage. Each affected surface produces a brief flash of empty content on hard-refresh, slow connections, or client-side navigation transitions. The fix is mechanical (`mounted` gate + `<Skeleton>` placeholders sized to match hydrated heights) but needs a deliberate audit to apply consistently.
+
+**Decision rule:** any UI section that renders data from a server load (or future client fetch) should have a skeleton state. Static layout chrome (sidebar, header, fixed-text headings) and form fields don't need skeletons. The decision is "would there be a visible empty state during load if I removed the data?" If yes → skeleton.
+
+**Skeleton-coverage standard:**
+- Use the existing `Skeleton` primitive from `$lib/components/ui/skeleton`
+- Gate visibility behind `let mounted = $state(false); onMount(() => { mounted = true; });` (the existing pattern on Overview)
+- Skeleton placeholder heights MUST match the hydrated content heights so layout doesn't shift on mount. For fixed-height containers (`h-X`), use the same height in the skeleton container.
+- Skeleton placeholder counts approximately match expected content density (e.g., 5 rows for a list that typically shows ~5 items; 3 rows for a denser list)
+
+**Audit targets** (surfaces likely missing skeleton coverage; verify each):
+- `/dashboard/orders` — orders list cards (live view)
+- `/dashboard/orders` — orders list cards (production view)
+- `/dashboard/orders/history` — history table
+- `/dashboard/orders/[orderId]` — order detail page
+- `/dashboard/catalog/items` — catalog items list (left column) and slideout (right column)
+- `/dashboard/catalog/items/[itemId]` — standalone item edit page (modifier groups especially)
+- `/dashboard/catalog/categories` — categories list
+- `/dashboard/analytics` — analytics charts and stats
+- `/dashboard/settings/general` — settings cards
+- `/dashboard/settings/pickup` — pickup windows list
+- `/dashboard/settings/team` — team members list
+- `/dashboard/settings/branding` — branding form
+- `/dashboard/settings/promos-and-loyalty` — promos lists
+- `/dashboard/account/notifications` — when the placeholder is replaced with real content
+- Customer-facing surfaces (`/[vendorSlug]/catalog`, `/[vendorSlug]/item/[itemId]`, etc.) — secondary priority; customer flows are mostly server-rendered with less perceived load latency
+
+**Reference implementation:** the 3-day horizon grid in `src/routes/(app)/dashboard/+page.svelte`. Each card section has a skeleton container at the same fixed height as the hydrated content (`h-16` / `h-40` / `h-32`), with skeleton rows approximating the post-hydration density.
+
+**Out of scope:**
+- Skeleton states on form inputs (the inputs themselves are static; only their surrounding data-driven layout might need skeletons)
+- Customer-facing checkout/cart surfaces (deferred — customer flows have different perceived-latency tolerances and the audit can run separately)
+- Custom skeleton animations or shimmer effects (use the project's existing `Skeleton` primitive as-is)
+
+**Estimated effort:** 1-2 days for the full dashboard sweep. Each surface is a small mechanical change (~5-15 lines per page). Most of the time is the audit pass: visiting each surface, observing what loads from the server, sizing the skeleton placeholders correctly so layout doesn't shift.
+
+**Trigger:** Before vendor outreach. Skeleton coverage is part of the polished-first-impression bar that Tier 1B work targets. This sits in Tier 2 because the absence of skeletons doesn't block first impressions — most loads complete fast enough that the missing skeleton is briefly visible at worst — but a polished SaaS feels more polished with consistent skeleton coverage. Pair with the Mobile UX — tables and actions Tier 1 audit if convenient (similar audit pattern, similar surface coverage).
+
+---
+
 ### Customer email-capture / repeat list
 
 **Status:** Pending. Identified as a wedge differentiator for retention during Phase 0 vendor research.

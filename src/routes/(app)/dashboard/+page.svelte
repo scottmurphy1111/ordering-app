@@ -102,13 +102,12 @@
 		return `${fmtTime(start, tz)}–${fmtTime(end, tz)}`;
 	}
 
-	function fmtTodayLabel(tz: string): string {
+	function fmtWeekday(d: Date | string, tz: string): string {
+		const date = typeof d === 'string' ? new Date(d) : d;
 		return new Intl.DateTimeFormat('en-US', {
 			timeZone: tz,
-			weekday: 'long',
-			month: 'long',
-			day: 'numeric'
-		}).format(new Date());
+			weekday: 'long'
+		}).format(date);
 	}
 </script>
 
@@ -287,10 +286,148 @@
 		</div>
 	</section>
 
-	<!-- Lower grid: recent orders + sidebar -->
-	<div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
-		<!-- Recent orders (full width) -->
-		<div class="lg:col-span-3">
+	<!-- Day card snippet -->
+	{#snippet dayCard(label: string, dayData: typeof data.horizon.today)}
+		<Card class="shadow-sm">
+			<CardContent>
+				<div class="mb-3">
+					<h3 class="text-sm font-semibold text-foreground">{label}</h3>
+				</div>
+
+				{#if !mounted}
+					<div class="mb-3">
+						<Skeleton class="mb-1.5 h-3 w-16 rounded" />
+						<div class="h-16 space-y-1">
+							<Skeleton class="h-3 w-3/4 rounded" />
+							<Skeleton class="h-3 w-1/2 rounded" />
+						</div>
+					</div>
+					<div class="mb-3 border-t pt-3">
+						<Skeleton class="mb-1.5 h-3 w-16 rounded" />
+						<div class="h-40 space-y-1.5">
+							<Skeleton class="h-3 w-full rounded" />
+							<Skeleton class="h-3 w-full rounded" />
+							<Skeleton class="h-3 w-full rounded" />
+							<Skeleton class="h-3 w-4/5 rounded" />
+						</div>
+					</div>
+					<div class="border-t pt-3">
+						<Skeleton class="mb-1.5 h-3 w-20 rounded" />
+						<div class="h-32 space-y-1.5">
+							<Skeleton class="h-3 w-full rounded" />
+							<Skeleton class="h-3 w-3/4 rounded" />
+							<Skeleton class="h-3 w-full rounded" />
+						</div>
+					</div>
+				{:else}
+					<!-- Pickup windows -->
+					<div class="mb-3">
+						<h4 class="mb-1.5 text-xs font-medium tracking-wide text-gray-500 uppercase">
+							Windows
+						</h4>
+						<div class="h-16 overflow-y-auto">
+							{#if dayData.windows.length > 0}
+								<ul class="space-y-1">
+									{#each dayData.windows as w (w.id)}
+										<li>
+											<span class="text-xs text-foreground"
+												>{fmtTimeRange(w.startsAt, w.endsAt, data.vendorTimezone)}</span
+											>
+											{#if w.locationName}
+												<span class="block text-xs text-gray-500">{w.locationName}</span>
+											{/if}
+										</li>
+									{/each}
+								</ul>
+							{:else}
+								<p class="text-xs text-gray-400">No pickup windows</p>
+							{/if}
+						</div>
+					</div>
+
+					<!-- Orders -->
+					<div class="mb-3 border-t pt-3">
+						<h4 class="mb-1.5 text-xs font-medium tracking-wide text-gray-500 uppercase">Orders</h4>
+						<div class="h-40 overflow-y-auto">
+							{#if dayData.orders.length > 0}
+								{@const shown = dayData.orders.slice(0, 5)}
+								{@const remaining = dayData.orders.length - shown.length}
+								<ul class="space-y-1">
+									{#each shown as o (o.id)}
+										<li>
+											<a
+												href={resolve(`/dashboard/orders/${o.id}`)}
+												class="flex items-center gap-2 text-xs hover:text-primary"
+											>
+												<span class="font-mono text-gray-400">{shortOrderId(o.orderNumber)}</span>
+												<span class="min-w-0 flex-1 truncate text-gray-600"
+													>{o.customerName ?? '—'}</span
+												>
+												<span class="shrink-0 font-medium text-gray-900"
+													>${(o.total / 100).toFixed(2)}</span
+												>
+											</a>
+										</li>
+									{/each}
+								</ul>
+								{#if remaining > 0}
+									<a
+										href={resolve('/dashboard/orders')}
+										class="mt-1.5 inline-block text-xs text-primary hover:underline"
+									>
+										+{remaining} more
+									</a>
+								{/if}
+							{:else}
+								<p class="text-xs text-gray-400">No orders</p>
+							{/if}
+						</div>
+					</div>
+
+					<!-- Production -->
+					<div class="border-t pt-3">
+						<h4 class="mb-1.5 text-xs font-medium tracking-wide text-gray-500 uppercase">
+							Production
+						</h4>
+						<div class="h-32 overflow-y-auto">
+							{#if dayData.production.length > 0}
+								<ul class="space-y-1">
+									{#each dayData.production as p, i (i)}
+										<li class="flex items-center justify-between gap-2">
+											<div class="min-w-0 flex-1">
+												<span class="truncate text-xs text-foreground">{p.itemName}</span>
+												{#if p.modifiers.length > 0}
+													<span class="block truncate text-xs text-gray-500"
+														>{p.modifiers.join(', ')}</span
+													>
+												{/if}
+											</div>
+											<span class="shrink-0 text-xs font-semibold text-foreground tabular-nums"
+												>{p.totalQuantity}×</span
+											>
+										</li>
+									{/each}
+								</ul>
+								<a
+									href={resolve('/dashboard/orders?view=production')}
+									class="mt-2 inline-flex items-center gap-1 text-xs text-primary hover:underline"
+								>
+									View production <Icon icon="mdi:arrow-right" class="h-3 w-3" />
+								</a>
+							{:else}
+								<p class="text-xs text-gray-400">Nothing to prep</p>
+							{/if}
+						</div>
+					</div>
+				{/if}
+			</CardContent>
+		</Card>
+	{/snippet}
+
+	<!-- Lower sections -->
+	<div class="space-y-6">
+		<!-- Recent orders -->
+		<div>
 			{#if !mounted}
 				<Skeleton class="mb-3 h-4 w-32 rounded" />
 				<Card class="p-0 shadow-sm">
@@ -397,108 +534,17 @@
 			{/if}
 		</div>
 
-		<!-- Sidebar (1/3 width) -->
-		<div class="space-y-4">
-			<!-- Today -->
-			<Card class="shadow-sm">
-				<CardContent>
-					<div class="mb-3 flex items-baseline justify-between">
-						<h3 class="text-sm font-semibold text-foreground">Today</h3>
-						<span class="text-xs text-gray-500">{fmtTodayLabel(data.vendorTimezone)}</span>
-					</div>
-
-					<!-- Pickup windows section -->
-					<div class="mb-4">
-						<h4 class="mb-2 text-xs font-medium tracking-wide text-gray-500 uppercase">
-							Pickup windows
-						</h4>
-						{#if data.todayWindows.length > 0}
-							<ul class="space-y-1.5">
-								{#each data.todayWindows as w (w.id)}
-									<li class="flex items-center justify-between gap-2">
-										<div class="flex min-w-0 flex-col">
-											<span class="text-sm text-foreground"
-												>{fmtTimeRange(w.startsAt, w.endsAt, data.vendorTimezone)}</span
-											>
-											{#if w.locationName}
-												<span class="text-xs text-gray-500">{w.locationName}</span>
-											{/if}
-										</div>
-										<span class="shrink-0 text-xs text-gray-500"
-											>{w.orderCount}
-											{w.orderCount === 1 ? 'order' : 'orders'}</span
-										>
-									</li>
-								{/each}
-							</ul>
-						{:else}
-							<p class="text-xs text-gray-500">No pickup windows today.</p>
-						{/if}
-					</div>
-
-					<!-- Production today section -->
-					<div class="border-t pt-3">
-						<h4 class="mb-2 text-xs font-medium tracking-wide text-gray-500 uppercase">
-							Production today
-						</h4>
-						{#if data.todayProduction.length > 0}
-							<ul class="space-y-1.5">
-								{#each data.todayProduction as p, i (i)}
-									<li class="flex items-center justify-between gap-2">
-										<div class="flex min-w-0 flex-col">
-											<span class="truncate text-sm text-foreground">{p.itemName}</span>
-											{#if p.modifiers.length > 0}
-												<span class="truncate text-xs text-gray-500">{p.modifiers.join(', ')}</span>
-											{/if}
-										</div>
-										<span class="shrink-0 text-sm font-semibold text-foreground tabular-nums"
-											>{p.totalQuantity}×</span
-										>
-									</li>
-								{/each}
-							</ul>
-						{:else}
-							<p class="text-xs text-gray-500">No orders to prepare today.</p>
-						{/if}
-					</div>
-
-					<!-- Production tomorrow section -->
-					<div class="mt-4 border-t pt-3">
-						<h4 class="mb-2 text-xs font-medium tracking-wide text-gray-500 uppercase">
-							Production tomorrow
-						</h4>
-						{#if data.tomorrowProduction.length > 0}
-							<ul class="space-y-1.5">
-								{#each data.tomorrowProduction as p, i (i)}
-									<li class="flex items-center justify-between gap-2">
-										<div class="flex min-w-0 flex-col">
-											<span class="truncate text-sm text-foreground">{p.itemName}</span>
-											{#if p.modifiers.length > 0}
-												<span class="truncate text-xs text-gray-500">{p.modifiers.join(', ')}</span>
-											{/if}
-										</div>
-										<span class="shrink-0 text-sm font-semibold text-foreground tabular-nums"
-											>{p.totalQuantity}×</span
-										>
-									</li>
-								{/each}
-							</ul>
-						{:else}
-							<p class="text-xs text-gray-500">Nothing scheduled for tomorrow yet.</p>
-						{/if}
-					</div>
-
-					{#if data.todayProduction.length > 0 || data.tomorrowProduction.length > 0}
-						<a
-							href={resolve('/dashboard/orders?view=production')}
-							class="mt-3 inline-flex items-center gap-1 text-xs text-primary hover:underline"
-						>
-							View production
-							<Icon icon="mdi:arrow-right" class="h-3.5 w-3.5" />
-						</a>
-					{/if}
-				</CardContent>
-			</Card>
-		</div>
+		<!-- 3-day horizon grid -->
+		<section>
+			<h2 class="mb-3 text-base font-semibold text-foreground">Next 3 days</h2>
+			<div class="grid grid-cols-1 gap-4 md:grid-cols-3">
+				{@render dayCard('Today', data.horizon.today)}
+				{@render dayCard('Tomorrow', data.horizon.tomorrow)}
+				{@render dayCard(
+					fmtWeekday(data.horizon.dayAfterDate, data.vendorTimezone),
+					data.horizon.dayAfter
+				)}
+			</div>
+		</section>
 	</div>
 </div>
