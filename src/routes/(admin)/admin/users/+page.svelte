@@ -125,11 +125,11 @@
 												type="submit"
 												onclick={async (e) => {
 													e.preventDefault();
+													const form = (e.currentTarget as HTMLButtonElement).form;
 													const msg = u.isInternal
 														? `Remove super admin from ${u.name}?`
 														: `Make ${u.name} a super admin?`;
-													if (await confirmDialog(msg))
-														(e.currentTarget as HTMLButtonElement).form?.requestSubmit();
+													if (await confirmDialog(msg)) form?.requestSubmit();
 												}}
 												variant="ghost"
 												class="text-muted-foreground hover:text-foreground"
@@ -146,8 +146,9 @@
 													type="submit"
 													onclick={async (e) => {
 														e.preventDefault();
+														const form = (e.currentTarget as HTMLButtonElement).form;
 														if (await confirmDialog(`Restore access for ${u.name}?`))
-															(e.currentTarget as HTMLButtonElement).form?.requestSubmit();
+															form?.requestSubmit();
 													}}
 													variant="outline"
 												>
@@ -161,12 +162,13 @@
 													type="submit"
 													onclick={async (e) => {
 														e.preventDefault();
+														const form = (e.currentTarget as HTMLButtonElement).form;
 														if (
 															await confirmDialog(
 																`Suspend ${u.name}? They will be logged out immediately.`
 															)
 														)
-															(e.currentTarget as HTMLButtonElement).form?.requestSubmit();
+															form?.requestSubmit();
 													}}
 													variant="ghost"
 													class="text-red-600 hover:bg-destructive/10 hover:text-red-500"

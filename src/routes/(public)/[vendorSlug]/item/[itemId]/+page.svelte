@@ -17,32 +17,34 @@
 	);
 	const primaryImage = $derived(images.find((i) => i.isPrimary) ?? images[0]);
 
-	let selections = $state<Record<number, string[]>>({});
+	let selections = $state<Record<number, number[]>>({});
 
 	$effect(() => {
-		const initial: Record<number, string[]> = {};
+		const initial: Record<number, number[]> = {};
 		for (const group of modifierGroups) {
-			initial[group.id] = group.options.filter((o) => o.isDefault).map((o) => o.name);
+			initial[group.id] = group.options.filter((o) => o.isDefault).map((o) => o.id);
 		}
 		selections = initial;
 	});
 
-	function toggleOption(groupId: number, optionName: string, maxSelections: number) {
+	function toggleOption(groupId: number, optionId: number, maxSelections: number) {
 		const current = selections[groupId] ?? [];
-		if (current.includes(optionName)) {
-			selections[groupId] = current.filter((n) => n !== optionName);
+		if (current.includes(optionId)) {
+			selections[groupId] = current.filter((id) => id !== optionId);
 		} else if (maxSelections === 1) {
-			selections[groupId] = [optionName];
+			selections[groupId] = [optionId];
 		} else if (current.length < maxSelections) {
-			selections[groupId] = [...current, optionName];
+			selections[groupId] = [...current, optionId];
 		}
 	}
 
 	const selectedModifiers = $derived<CartModifier[]>(
 		modifierGroups.flatMap((group) =>
-			(selections[group.id] ?? []).map((name) => {
-				const opt = group.options.find((o) => o.name === name);
-				return { group: group.name, name, priceAdjustment: opt?.priceAdjustment ?? 0 };
+			(selections[group.id] ?? []).flatMap((id) => {
+				const opt = group.options.find((o) => o.id === id);
+				return opt
+					? [{ group: group.name, name: opt.name, priceAdjustment: opt.priceAdjustment }]
+					: [];
 			})
 		)
 	);
@@ -162,8 +164,8 @@
 					</div>
 				</div>
 				<div class="space-y-2">
-					{#each group.options as option (option.name)}
-						{@const isSelected = chosen.includes(option.name)}
+					{#each group.options as option (option.id)}
+						{@const isSelected = chosen.includes(option.id)}
 						{@const isDisabled = isMulti && !isSelected && chosen.length >= group.maxSelections}
 						<label
 							style={isSelected
@@ -178,7 +180,7 @@
 									type="checkbox"
 									checked={isSelected}
 									disabled={isDisabled}
-									onchange={() => toggleOption(group.id, option.name, group.maxSelections)}
+									onchange={() => toggleOption(group.id, option.id, group.maxSelections)}
 									style="accent-color: var(--background-color);"
 									class="h-4 w-4 rounded"
 								/>

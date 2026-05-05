@@ -39,6 +39,7 @@ export const load: PageServerLoad = async ({ locals, params }) => {
 			required: mod.isRequired ?? false,
 			maxSelections: mod.maxSelections ?? 1,
 			options: mod.options.map((opt) => ({
+				id: opt.id,
 				name: opt.name,
 				priceAdjustment: opt.priceAdjustment ?? 0,
 				isDefault: opt.isDefault ?? false

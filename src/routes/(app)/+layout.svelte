@@ -243,7 +243,7 @@
 	</Sheet>
 
 	<!-- Desktop sidebar: always-visible -->
-	<aside class="print:hidden hidden w-56 flex-col bg-gray-900 text-white md:flex">
+	<aside class="hidden w-56 flex-col bg-gray-900 text-white md:flex print:hidden">
 		{@render sidebarContent()}
 	</aside>
 
@@ -251,7 +251,7 @@
 	<main class="flex flex-1 flex-col overflow-y-auto">
 		<!-- Mobile top bar -->
 		<header
-			class="print:hidden sticky top-0 z-30 flex items-center gap-3 border-b bg-gray-900 px-4 py-3 md:static md:z-auto md:hidden"
+			class="sticky top-0 z-30 flex items-center gap-3 border-b bg-gray-900 px-4 py-3 md:static md:z-auto md:hidden print:hidden"
 		>
 			<!-- Plain <button> instead of shadcn <Button variant="ghost">: ghost's
 			     hover:bg-accent conflicts unpredictably with class-level hover overrides
@@ -289,7 +289,7 @@
 		<div class="mx-auto w-full max-w-5xl flex-1 px-4 py-6 sm:px-6 sm:py-8">
 			{@render children()}
 		</div>
-		<footer class="print:hidden border-t px-6 py-4">
+		<footer class="border-t px-6 py-4 print:hidden">
 			<div class="mx-auto flex max-w-5xl items-center justify-between gap-4">
 				<p class="text-xs text-muted-foreground">
 					© {new Date().getFullYear()} Order<span class="text-primary">Local</span>

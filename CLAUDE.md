@@ -134,37 +134,45 @@ When a documented pattern's example becomes orphaned (e.g., the codebase no long
 Before sending any response that produced or modified code, run this checklist. State the result of each check in your response, even briefly. Failed checks block the response — fix them first.
 
 **Routing and links:**
+
 - Every internal `href` in changed files uses `resolve()` from `$app/paths`.
 - Every `goto()` call uses `resolve()`.
 - No new `redirect()` rules were added for old/renamed routes.
 
 **Forms and inputs:**
+
 - Every new single-line input, select, or single-line input variant uses `h-8` (via shadcn primitive or explicit class).
 - Every new input has a visible label, not just a placeholder.
 - Every new destructive action has a confirmation dialog (or uses `window.confirm` with the existing deferred-shadcn-audit note).
 
 **Lists and data display:**
+
 - Every new list, table, or filtered view has an empty state.
 - Every new data-fetching component has a skeleton or loading state.
 - Row actions in tables and cards are always visible (no `opacity-0 group-hover:opacity-100`).
 
 **Tokens and colors:**
+
 - No new hex colors introduced. Colors come from the documented palette.
 - `text-green-600` callsites in changed code follow the decision rule (`text-primary` for themable, `text-success` for fixed semantic).
 - No `style={...}` inline attributes added.
 
 **Vocabulary:**
+
 - No new instance of "tenant," "restaurant," "merchant" referring to vendors.
 - No new instance of "menu" referring to the catalog feature.
 - `preparing` status renders as "In production" in any vendor-facing display.
 
 **Sibling parity:**
+
 - Every page that displays the affected element type was checked. List which pages were updated and which were intentionally left unchanged with reason. (See "Sibling enumeration" below.)
 
 **Scope:**
+
 - The change is the smallest diff that satisfies the prompt. Any expansion is listed under "Scope expansion" in the response.
 
 **Reactivity:**
+
 - No `$effect` used for state-to-state synchronization.
 - Mutable `Set`/`Map`/`Date`/`URL`/`URLSearchParams` instances in component code use `Svelte*` reactive versions.
 - No `eslint-disable-next-line` on multi-line elements; block-form is used.
@@ -221,6 +229,7 @@ When changing a UI element that has siblings (the same element type appearing on
 **Example response format:**
 
 > Changed the page header CTA button on `/dashboard/orders` from outline to solid. Sibling pages with primary CTAs in the page header:
+>
 > - `/dashboard/orders/history` — updated to match (sibling parity)
 > - `/dashboard/catalog/items` — updated to match (sibling parity)
 > - `/dashboard/catalog/categories` — left unchanged (page has no primary CTA in the header today; not a sibling violation)
@@ -275,6 +284,7 @@ End every multi-task response with a "Not done in this prompt" section listing i
 **Example:**
 
 > **Not done in this prompt:**
+>
 > - Sibling parity check on `/dashboard/catalog/categories` — page wasn't accessible during work; please confirm or run separately.
 > - Migration to `text-success` token in `OrdersSummaryBar` — out of scope; flagged for the brand green sweep prompt.
 > - Behavioral verification of the new form submission flow — `[BEHAVIORAL]`, requires browser exercise.
@@ -716,25 +726,25 @@ Use the **Token** column for new code. The **Legacy class** column is what you'l
 
 These tokens repaint when a vendor's brand color is applied at the root level.
 
-| Role | Token | Legacy class | Hex (default) |
-| --- | --- | --- | --- |
-| Primary action (bg) | `bg-primary` | `bg-green-600` | #16a34a |
-| Primary hover | `hover:bg-primary/90` | `hover:bg-green-700` | — |
-| Primary tint (subtle bg) | `bg-primary/10` | `bg-green-50` | — |
-| Primary border | `border-primary` | `border-green-500` | #22c55e |
-| Focus ring | `ring-ring` | `ring-green-500` | #22c55e |
-| Primary text (on white) | `text-primary` | `text-green-600` | #16a34a |
+| Role                     | Token                 | Legacy class         | Hex (default) |
+| ------------------------ | --------------------- | -------------------- | ------------- |
+| Primary action (bg)      | `bg-primary`          | `bg-green-600`       | #16a34a       |
+| Primary hover            | `hover:bg-primary/90` | `hover:bg-green-700` | —             |
+| Primary tint (subtle bg) | `bg-primary/10`       | `bg-green-50`        | —             |
+| Primary border           | `border-primary`      | `border-green-500`   | #22c55e       |
+| Focus ring               | `ring-ring`           | `ring-green-500`     | #22c55e       |
+| Primary text (on white)  | `text-primary`        | `text-green-600`     | #16a34a       |
 
 ### Fixed semantic (do not theme)
 
 These tokens stay constant regardless of vendor brand. Money should read as money, errors should read as errors.
 
-| Role | Token | Legacy class | Hex |
-| --- | --- | --- | --- |
-| Positive / money / "paid" / available | `text-success` | `text-green-600` (positive use) | #16a34a |
-| Success bg tint | `bg-success/10` | `bg-green-50` (positive use) | — |
-| Destructive | `text-destructive` | `text-red-500` | #ef4444 |
-| Destructive bg | `bg-destructive/10` | `bg-red-50` | — |
+| Role                                  | Token               | Legacy class                    | Hex     |
+| ------------------------------------- | ------------------- | ------------------------------- | ------- |
+| Positive / money / "paid" / available | `text-success`      | `text-green-600` (positive use) | #16a34a |
+| Success bg tint                       | `bg-success/10`     | `bg-green-50` (positive use)    | —       |
+| Destructive                           | `text-destructive`  | `text-red-500`                  | #ef4444 |
+| Destructive bg                        | `bg-destructive/10` | `bg-red-50`                     | —       |
 
 ### Status pills (fixed, by status)
 
@@ -742,18 +752,18 @@ Status pills use fixed hex colors per status — see the `statusStyles` map in t
 
 ### Always-fixed (no token, no migration)
 
-| Role | Class | Hex |
-| --- | --- | --- |
-| Urgent / warning | `text-amber-500` | #f59e0b |
-| Urgent text (dark) | `text-amber-700` | #b45309 |
-| Urgent bg | `bg-amber-50` | #fffbeb |
-| Urgent border | `border-amber-400` | #fbbf24 |
-| Body text | `text-gray-900` | #111827 |
-| Secondary text | `text-gray-500` | #6b7280 |
-| Muted text | `text-gray-400` | #9ca3af |
-| Border | `border-gray-200` | #e5e7eb |
-| Subtle bg | `bg-gray-50` | #f9fafb |
-| White | `bg-white` | #ffffff |
+| Role               | Class              | Hex     |
+| ------------------ | ------------------ | ------- |
+| Urgent / warning   | `text-amber-500`   | #f59e0b |
+| Urgent text (dark) | `text-amber-700`   | #b45309 |
+| Urgent bg          | `bg-amber-50`      | #fffbeb |
+| Urgent border      | `border-amber-400` | #fbbf24 |
+| Body text          | `text-gray-900`    | #111827 |
+| Secondary text     | `text-gray-500`    | #6b7280 |
+| Muted text         | `text-gray-400`    | #9ca3af |
+| Border             | `border-gray-200`  | #e5e7eb |
+| Subtle bg          | `bg-gray-50`       | #f9fafb |
+| White              | `bg-white`         | #ffffff |
 
 **Storefront-specific colors:** the public storefront (`/[vendorSlug]/catalog`) uses CSS variables driven by the vendor's branding settings (background, foreground, accent). The palette above applies only to the dashboard, marketing site, and admin areas.
 
@@ -1328,11 +1338,11 @@ The canonical reference implementations are `src/routes/(app)/dashboard/orders/+
 
 A two-size, two-weight, three-color system establishes scan-order on the cards:
 
-| Tier | Class string | Use for |
-| --- | --- | --- |
-| Primary | `text-sm font-medium text-gray-900` | Customer name, price |
-| Secondary | `text-xs text-gray-500` | Order number, delivery address, items summary, status label next to progress row |
-| Tertiary | `text-xs text-gray-400` | Created date (history page), relative-time annotations |
+| Tier      | Class string                        | Use for                                                                          |
+| --------- | ----------------------------------- | -------------------------------------------------------------------------------- |
+| Primary   | `text-sm font-medium text-gray-900` | Customer name, price                                                             |
+| Secondary | `text-xs text-gray-500`             | Order number, delivery address, items summary, status label next to progress row |
+| Tertiary  | `text-xs text-gray-400`             | Created date (history page), relative-time annotations                           |
 
 Order number is monospace (`font-mono`) and joins the secondary tier — monospace alone gives findability; weight isn't needed.
 
@@ -1644,12 +1654,12 @@ import { Alert } from '$lib/components/ui/alert';
 
 **Severities and defaults:**
 
-| Severity | Palette | Auto-fades after | Dismissible | Icon |
-|---|---|---|---|---|
-| `success` | green | 5000ms | yes | `mdi:check-circle-outline` |
-| `info` | blue | 5000ms | yes | `mdi:information-outline` |
-| `warning` | amber | 8000ms | yes | `mdi:alert-outline` |
-| `error` | red | never (persistent) | yes | `mdi:alert-circle-outline` |
+| Severity  | Palette | Auto-fades after   | Dismissible | Icon                       |
+| --------- | ------- | ------------------ | ----------- | -------------------------- |
+| `success` | green   | 5000ms             | yes         | `mdi:check-circle-outline` |
+| `info`    | blue    | 5000ms             | yes         | `mdi:information-outline`  |
+| `warning` | amber   | 8000ms             | yes         | `mdi:alert-outline`        |
+| `error`   | red     | never (persistent) | yes         | `mdi:alert-circle-outline` |
 
 Errors persist by default — auto-fading them risks users missing critical feedback.
 
@@ -1657,16 +1667,17 @@ Errors persist by default — auto-fading them risks users missing critical feed
 
 ```svelte
 {#if form?.someSuccess}
-  <Alert severity="success">Changes saved.</Alert>
+	<Alert severity="success">Changes saved.</Alert>
 {/if}
 {#if form?.error}
-  <Alert severity="error">{form.error}</Alert>
+	<Alert severity="error">{form.error}</Alert>
 {/if}
 ```
 
 Wrapped in `{#if ...}` so the Alert mounts/unmounts on form-action state changes. Each new form submission creates a fresh Alert instance with `shown = true` and starts a fresh timer.
 
 Severity choice follows the action's semantic outcome:
+
 - Action completed (save, remove, state change): `severity="success"`
 - Server or validation error: `severity="error"`
 - State change without celebration or alarm: `severity="info"`
@@ -1678,9 +1689,8 @@ Note: `severity="success"` applies to both creation and destruction confirmation
 
 ```svelte
 <Alert severity="info" dismissible={false} autofade={0}>
-  Notification preferences coming soon. You'll be able to opt in to weekly
-  summary digests, daily prep emails before pickup windows, and product
-  updates from the Order Local team.
+	Notification preferences coming soon. You'll be able to opt in to weekly summary digests, daily
+	prep emails before pickup windows, and product updates from the Order Local team.
 </Alert>
 ```
 
@@ -1692,13 +1702,13 @@ Don't use Pattern B for active errors or warnings — those should use their nat
 
 **Props:**
 
-| Prop | Type | Default | Notes |
-|---|---|---|---|
-| `severity` | `'success' \| 'info' \| 'warning' \| 'error'` | required | Determines palette, icon, and default duration |
-| `dismissible` | `boolean` | `true` | Whether the × dismiss button renders |
-| `autofade` | `number` | severity default | Override auto-fade duration in ms. `autofade={0}` disables |
-| `ondismiss` | `() => void` | — | Callback when dismissed |
-| `class` | `string` | — | Additional classes (typically spacing: `mb-4`, `mt-4`) |
+| Prop          | Type                                          | Default          | Notes                                                      |
+| ------------- | --------------------------------------------- | ---------------- | ---------------------------------------------------------- |
+| `severity`    | `'success' \| 'info' \| 'warning' \| 'error'` | required         | Determines palette, icon, and default duration             |
+| `dismissible` | `boolean`                                     | `true`           | Whether the × dismiss button renders                       |
+| `autofade`    | `number`                                      | severity default | Override auto-fade duration in ms. `autofade={0}` disables |
+| `ondismiss`   | `() => void`                                  | —                | Callback when dismissed                                    |
+| `class`       | `string`                                      | —                | Additional classes (typically spacing: `mb-4`, `mt-4`)     |
 
 **Rules:**
 
@@ -1781,7 +1791,9 @@ Server-side: include `selectedModifiers` in both the SELECT and GROUP BY. Postgr
 Client-side rendering format:
 
 ```svelte
-{item.name}{#if item.modifiers.length > 0}<span class="text-gray-500"> — {item.modifiers.join(', ')}</span>{/if}
+{item.name}{#if item.modifiers.length > 0}<span class="text-gray-500">
+		— {item.modifiers.join(', ')}</span
+	>{/if}
 ```
 
 Item name in primary color (`text-gray-900`); modifier list in `text-gray-500` with em-dash separator; comma-separated modifiers when multiple. No suffix when modifiers array is empty.
@@ -1860,9 +1872,9 @@ For printable views (production list, receipt, etc.), use Tailwind's `print:` va
 **Layout-level chrome** receives `print:hidden` on the wrapping element:
 
 ```svelte
-<aside class="... print:hidden">...</aside>
-<header class="... print:hidden">...</header>
-<footer class="... print:hidden">...</footer>
+<aside class="print:hidden ...">...</aside>
+<header class="print:hidden ...">...</header>
+<footer class="print:hidden ...">...</footer>
 ```
 
 **Page-level chrome** (search, filters, tabs, summary bars, toolbars) also gets `print:hidden` on its wrapping element.
@@ -1871,8 +1883,8 @@ For printable views (production list, receipt, etc.), use Tailwind's `print:` va
 
 ```svelte
 <div class="hidden print:mb-6 print:block">
-  <h1 class="text-xl font-bold text-gray-900">Production list</h1>
-  <p class="text-sm text-gray-500">{vendorName} · Printed {date}</p>
+	<h1 class="text-xl font-bold text-gray-900">Production list</h1>
+	<p class="text-sm text-gray-500">{vendorName} · Printed {date}</p>
 </div>
 ```
 
@@ -1880,11 +1892,11 @@ For printable views (production list, receipt, etc.), use Tailwind's `print:` va
 
 ```svelte
 <style>
-  @media print {
-    :global(body) {
-      background: white !important;
-    }
-  }
+	@media print {
+		:global(body) {
+			background: white !important;
+		}
+	}
 </style>
 ```
 
@@ -2295,11 +2307,13 @@ If your response does not include verification of any kind, state this verbatim:
 > **No verification performed.** `[STATIC]` checks (`bun run check`, `bun run lint`) recommended before this change is merged.
 
 This is the correct behavior when:
+
 - The change is too small to warrant a verification step (typo fix, single-word copy change, comment addition)
 - You are in an environment without access to the verification commands
 - The prompt explicitly waived verification
 
 This is NOT acceptable when:
+
 - The change touches multiple files
 - The change introduces new types or modifies type signatures
 - The change adds or modifies a primitive
@@ -2502,7 +2516,7 @@ The general rule: a 30-second clarification beats a 500-line diff that doesn't m
 
 **Mid-task ambiguity is different from prompt ambiguity.**
 
-The triggers above mostly fire at the start of a task — when reading the prompt, you spot something unclear. But ambiguity also emerges *during* a task: the prompt was clear at the start, you've written 5 files, and now you're hitting a decision point the prompt didn't anticipate.
+The triggers above mostly fire at the start of a task — when reading the prompt, you spot something unclear. But ambiguity also emerges _during_ a task: the prompt was clear at the start, you've written 5 files, and now you're hitting a decision point the prompt didn't anticipate.
 
 The temptation is to push through and ship: you're committed, you've built momentum, the question feels small. Don't. The rule:
 

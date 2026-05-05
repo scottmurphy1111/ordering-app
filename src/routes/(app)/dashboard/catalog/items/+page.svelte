@@ -706,8 +706,8 @@
 									size="icon"
 									onclick={async (e) => {
 										e.preventDefault();
-										if (await confirmDialog('Delete this item?'))
-											(e.currentTarget as HTMLButtonElement).form?.requestSubmit();
+										const form = (e.currentTarget as HTMLButtonElement).form;
+										if (await confirmDialog('Delete this item?')) form?.requestSubmit();
 									}}
 									aria-label="Delete {item.name}"
 									class="text-red-400 hover:bg-red-50 hover:text-red-600"
@@ -817,8 +817,8 @@
 											size="icon"
 											onclick={async (e) => {
 												e.preventDefault();
-												if (await confirmDialog('Delete this item?'))
-													(e.currentTarget as HTMLButtonElement).form?.requestSubmit();
+												const form = (e.currentTarget as HTMLButtonElement).form;
+												if (await confirmDialog('Delete this item?')) form?.requestSubmit();
 											}}
 											aria-label="Delete item"
 											class="text-red-400 hover:bg-red-50 hover:text-red-600"

@@ -327,13 +327,13 @@
 									class="text-red-400 hover:text-red-600"
 									onclick={async (e) => {
 										e.preventDefault();
+										const form = (e.currentTarget as HTMLButtonElement).form;
 										const itemCount = Number(cat.itemCount);
 										const msg =
 											itemCount > 0
 												? `Delete '${cat.name}'? This category contains ${itemCount} ${itemCount === 1 ? 'item' : 'items'}. They will become uncategorized.`
 												: `Delete '${cat.name}'?`;
-										if (await confirmDialog(msg))
-											(e.currentTarget as HTMLButtonElement).form?.requestSubmit();
+										if (await confirmDialog(msg)) form?.requestSubmit();
 									}}
 									aria-label="Delete category"
 								>
@@ -415,13 +415,13 @@
 											class="text-red-400 hover:text-red-600"
 											onclick={async (e) => {
 												e.preventDefault();
+												const form = (e.currentTarget as HTMLButtonElement).form;
 												const itemCount = Number(cat.itemCount);
 												const msg =
 													itemCount > 0
 														? `Delete '${cat.name}'? This category contains ${itemCount} ${itemCount === 1 ? 'item' : 'items'}. They will become uncategorized.`
 														: `Delete '${cat.name}'?`;
-												if (await confirmDialog(msg))
-													(e.currentTarget as HTMLButtonElement).form?.requestSubmit();
+												if (await confirmDialog(msg)) form?.requestSubmit();
 											}}
 											aria-label="Delete category"
 										>

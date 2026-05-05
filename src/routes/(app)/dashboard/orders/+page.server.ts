@@ -1,7 +1,21 @@
 import type { PageServerLoad, Actions } from './$types';
 import { fail } from '@sveltejs/kit';
 import { db } from '$lib/server/db';
-import { eq, and, asc, desc, or, not, ne, inArray, gte, isNotNull, sql, sum } from 'drizzle-orm';
+import {
+	eq,
+	and,
+	asc,
+	desc,
+	or,
+	not,
+	ne,
+	inArray,
+	gte,
+	isNotNull,
+	isNull,
+	sql,
+	sum
+} from 'drizzle-orm';
 import { orders, orderItems } from '$lib/server/db/schema';
 import { vendor } from '$lib/server/db/vendor';
 import { pickupWindows, pickupLocations } from '$lib/server/db/pickup';
@@ -32,10 +46,17 @@ export const load: PageServerLoad = async ({ locals, url, depends }) => {
 	const todayStart = new Date();
 	todayStart.setHours(0, 0, 0, 0);
 
-	// Base conditions: vendor scope + recency window for terminal statuses
+	// Subquery: pickup windows that have not yet ended (today or later)
+	const activeWindowIds = db
+		.select({ id: pickupWindows.id })
+		.from(pickupWindows)
+		.where(gte(pickupWindows.endsAt, todayStart));
+
+	// Base conditions: vendor scope + recency window for terminal statuses + active-window filter
 	const baseConditions = [
 		eq(orders.vendorId, vendorId),
-		or(not(inArray(orders.status, ['fulfilled', 'cancelled'])), gte(orders.updatedAt, cutoff))!
+		or(not(inArray(orders.status, ['fulfilled', 'cancelled'])), gte(orders.updatedAt, cutoff))!,
+		or(isNull(orders.pickupWindowId), inArray(orders.pickupWindowId, activeWindowIds))!
 	];
 
 	// Summary stats fetched for both views
@@ -48,6 +69,7 @@ export const load: PageServerLoad = async ({ locals, url, depends }) => {
 				and(
 					eq(orders.vendorId, vendorId),
 					isNotNull(orders.scheduledFor),
+					gte(orders.scheduledFor, todayStart),
 					or(
 						not(inArray(orders.status, ['fulfilled', 'cancelled'])),
 						gte(orders.updatedAt, cutoff)
@@ -90,7 +112,8 @@ export const load: PageServerLoad = async ({ locals, url, depends }) => {
 			.where(
 				and(
 					eq(orders.vendorId, vendorId),
-					ne(orders.status, 'cancelled' as typeof orders.status._.data)
+					ne(orders.status, 'cancelled' as typeof orders.status._.data),
+					gte(pickupWindows.endsAt, todayStart)
 				)
 			)
 			.groupBy(

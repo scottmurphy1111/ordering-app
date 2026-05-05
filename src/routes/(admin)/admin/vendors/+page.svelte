@@ -133,8 +133,8 @@
 													type="submit"
 													onclick={async (e) => {
 														e.preventDefault();
-														if (await confirmDialog('Restore this vendor?'))
-															(e.currentTarget as HTMLButtonElement).form?.requestSubmit();
+														const form = (e.currentTarget as HTMLButtonElement).form;
+														if (await confirmDialog('Restore this vendor?')) form?.requestSubmit();
 													}}
 													variant="outline"
 												>
@@ -149,12 +149,13 @@
 													type="submit"
 													onclick={async (e) => {
 														e.preventDefault();
+														const form = (e.currentTarget as HTMLButtonElement).form;
 														if (
 															await confirmDialog(
 																'Archive this vendor? It will be deactivated but not deleted.'
 															)
 														)
-															(e.currentTarget as HTMLButtonElement).form?.requestSubmit();
+															form?.requestSubmit();
 													}}
 													variant="ghost"
 													class="text-muted-foreground hover:text-foreground"
@@ -172,12 +173,13 @@
 													type="submit"
 													onclick={async (e) => {
 														e.preventDefault();
+														const form = (e.currentTarget as HTMLButtonElement).form;
 														if (
 															await confirmDialog(
 																`Delete "${t.name}"? This is a soft delete — the vendor can be restored.`
 															)
 														)
-															(e.currentTarget as HTMLButtonElement).form?.requestSubmit();
+															form?.requestSubmit();
 													}}
 													variant="ghost"
 													class="text-red-600 hover:bg-destructive/10 hover:text-red-500"

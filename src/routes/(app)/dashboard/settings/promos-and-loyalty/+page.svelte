@@ -272,8 +272,8 @@
 												type="submit"
 												onclick={async (e) => {
 													e.preventDefault();
-													if (await confirmDialog('Delete this code?'))
-														(e.currentTarget as HTMLButtonElement).form?.requestSubmit();
+													const form = (e.currentTarget as HTMLButtonElement).form;
+													if (await confirmDialog('Delete this code?')) form?.requestSubmit();
 												}}
 												variant="ghost"
 												class="text-destructive hover:text-destructive/80">Delete</Button

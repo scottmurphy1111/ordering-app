@@ -16,7 +16,7 @@
 	import OrdersSummaryBar from '$lib/components/OrdersSummaryBar.svelte';
 	import { Tabs, TabsList, TabsTrigger } from '$lib/components/ui/tabs';
 	import OrdersFilterTabs from '$lib/components/OrdersFilterTabs.svelte';
-	import { SvelteURLSearchParams } from 'svelte/reactivity';
+	import { SvelteURLSearchParams, SvelteMap } from 'svelte/reactivity';
 	import { Alert } from '$lib/components/ui/alert';
 	import { lifecycleStages } from '$lib/utils/order-lifecycle';
 
@@ -215,7 +215,7 @@
 
 	const productionDays = $derived.by<ProductionDay[]>(() => {
 		if (data.view !== 'production') return [];
-		const dayMap = new Map<string, ProductionDay>();
+		const dayMap = new SvelteMap<string, ProductionDay>();
 
 		for (const group of data.productionGroups) {
 			const date = new Date(group.window.startsAt);
@@ -241,7 +241,11 @@
 				if (existing) {
 					existing.totalQuantity += item.totalQuantity;
 				} else {
-					day.items.push({ name: item.name, modifiers: item.modifiers, totalQuantity: item.totalQuantity });
+					day.items.push({
+						name: item.name,
+						modifiers: item.modifiers,
+						totalQuantity: item.totalQuantity
+					});
 				}
 				day.totalUnits += item.totalQuantity;
 			}
@@ -257,7 +261,7 @@
 
 <div>
 	<!-- Header -->
-	<div class="print:hidden mb-5 flex items-center justify-between gap-3">
+	<div class="mb-5 flex items-center justify-between gap-3 print:hidden">
 		<h1 class="text-2xl font-bold text-gray-900">Orders</h1>
 		<div class="flex items-center gap-2">
 			<Button
@@ -280,7 +284,7 @@
 	{/if}
 
 	<!-- Orders / Production view toggle -->
-	<div class="print:hidden mb-4 flex items-center justify-between gap-3">
+	<div class="mb-4 flex items-center justify-between gap-3 print:hidden">
 		<Tabs
 			value={data.view === 'production' ? 'production' : 'orders'}
 			onValueChange={(v) =>
@@ -342,8 +346,10 @@
 			</div>
 		{:else}
 			<!-- Production toolbar: grouping toggle + print -->
-			<div class="production-toolbar print:hidden mb-4 flex items-center justify-between">
-				<div class="inline-flex items-center gap-1 rounded-lg border border-gray-200 bg-white p-0.5">
+			<div class="production-toolbar mb-4 flex items-center justify-between print:hidden">
+				<div
+					class="inline-flex items-center gap-1 rounded-lg border border-gray-200 bg-white p-0.5"
+				>
 					<a
 						href={resolve('/dashboard/orders?view=production')}
 						class="rounded-md px-3 py-1 text-xs font-medium transition-colors {groupMode === 'day'
@@ -354,7 +360,8 @@
 					</a>
 					<a
 						href={resolve('/dashboard/orders?view=production&group=window')}
-						class="rounded-md px-3 py-1 text-xs font-medium transition-colors {groupMode === 'window'
+						class="rounded-md px-3 py-1 text-xs font-medium transition-colors {groupMode ===
+						'window'
 							? 'bg-gray-900 text-white'
 							: 'text-gray-500 hover:text-gray-900'}"
 					>
@@ -372,7 +379,7 @@
 			</div>
 
 			<!-- Print-only header (hidden on screen, visible when printing) -->
-			<div class="hidden print:block print:mb-6">
+			<div class="hidden print:mb-6 print:block">
 				<h1 class="text-xl font-bold text-gray-900">Production list</h1>
 				<p class="text-sm text-gray-500">
 					{data.vendor?.name ?? ''} · Printed {new Date().toLocaleDateString([], {
@@ -402,8 +409,8 @@
 										<tr>
 											<td class="px-4 py-3 text-sm text-gray-900">
 												{item.name}{#if item.modifiers.length > 0}<span class="text-gray-500">
-													— {item.modifiers.join(', ')}</span
-												>{/if}
+														— {item.modifiers.join(', ')}</span
+													>{/if}
 											</td>
 											<td class="px-4 py-3 text-right">
 												<span class="font-mono text-sm font-semibold text-gray-900">
@@ -439,8 +446,8 @@
 										<tr>
 											<td class="px-4 py-3 text-sm text-gray-900">
 												{item.name}{#if item.modifiers.length > 0}<span class="text-gray-500">
-													— {item.modifiers.join(', ')}</span
-												>{/if}
+														— {item.modifiers.join(', ')}</span
+													>{/if}
 											</td>
 											<td class="px-4 py-3 text-right">
 												<span class="font-mono text-sm font-semibold text-gray-900">

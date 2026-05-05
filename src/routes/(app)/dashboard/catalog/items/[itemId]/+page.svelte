@@ -194,8 +194,9 @@
 										type="submit"
 										onclick={async (e) => {
 											e.preventDefault();
-											if (await confirmDialog(`Delete"${mod.name}"? This cannot be undone.`))
-												(e.currentTarget as HTMLButtonElement).form?.requestSubmit();
+											const form = (e.currentTarget as HTMLButtonElement).form;
+											if (await confirmDialog(`Delete "${mod.name}"? This cannot be undone.`))
+												form?.requestSubmit();
 										}}
 										variant="ghost"
 										class="h-auto p-0 text-xs text-red-400 hover:text-red-600"
@@ -233,8 +234,9 @@
 											type="submit"
 											onclick={async (e) => {
 												e.preventDefault();
-												if (await confirmDialog(`Delete option"${opt.name}"?`))
-													(e.currentTarget as HTMLButtonElement).form?.requestSubmit();
+												const form = (e.currentTarget as HTMLButtonElement).form;
+												if (await confirmDialog(`Delete option "${opt.name}"?`))
+													form?.requestSubmit();
 											}}
 											variant="ghost"
 											size="icon"
@@ -324,8 +326,9 @@
 				type="submit"
 				onclick={async (e) => {
 					e.preventDefault();
+					const form = (e.currentTarget as HTMLButtonElement).form;
 					if (await confirmDialog('Delete this item? This cannot be undone.'))
-						(e.currentTarget as HTMLButtonElement).form?.requestSubmit();
+						form?.requestSubmit();
 				}}
 				variant="destructive"
 			>

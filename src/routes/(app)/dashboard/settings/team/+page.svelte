@@ -297,13 +297,14 @@
 															type="submit"
 															onclick={async (e) => {
 																e.preventDefault();
+																const form = (e.currentTarget as HTMLButtonElement).form;
 																if (
 																	await confirmDialog(
 																		`Grant internal platform access to ${member.name}?`,
 																		{ danger: false }
 																	)
 																)
-																	(e.currentTarget as HTMLButtonElement).form?.requestSubmit();
+																	form?.requestSubmit();
 															}}
 															variant="ghost"
 															class="hidden text-indigo-500 hover:text-indigo-700 sm:inline-flex"
@@ -318,8 +319,9 @@
 														type="submit"
 														onclick={async (e) => {
 															e.preventDefault();
+															const form = (e.currentTarget as HTMLButtonElement).form;
 															if (await confirmDialog(`Remove ${member.name} from this vendor?`))
-																(e.currentTarget as HTMLButtonElement).form?.requestSubmit();
+																form?.requestSubmit();
 														}}
 														variant="ghost"
 														class="text-destructive hover:text-destructive/80"
@@ -392,8 +394,9 @@
 															type="submit"
 															onclick={async (e) => {
 																e.preventDefault();
+																const form = (e.currentTarget as HTMLButtonElement).form;
 																if (await confirmDialog(`Cancel invite for ${invite.email}?`))
-																	(e.currentTarget as HTMLButtonElement).form?.requestSubmit();
+																	form?.requestSubmit();
 															}}
 															variant="ghost"
 															class="text-destructive hover:text-destructive/80"
@@ -465,8 +468,9 @@
 														type="submit"
 														onclick={async (e) => {
 															e.preventDefault();
+															const form = (e.currentTarget as HTMLButtonElement).form;
 															if (await confirmDialog(`Revoke internal access for ${u.name}?`))
-																(e.currentTarget as HTMLButtonElement).form?.requestSubmit();
+																form?.requestSubmit();
 														}}
 														variant="ghost"
 														class="text-destructive hover:text-destructive/80"
@@ -507,13 +511,14 @@
 															type="submit"
 															onclick={async (e) => {
 																e.preventDefault();
+																const form = (e.currentTarget as HTMLButtonElement).form;
 																if (
 																	await confirmDialog(
 																		`Grant internal platform access to ${member.name}?`,
 																		{ danger: false }
 																	)
 																)
-																	(e.currentTarget as HTMLButtonElement).form?.requestSubmit();
+																	form?.requestSubmit();
 															}}
 															variant="outline"
 															class="border-indigo-300 text-indigo-600 hover:bg-indigo-50"
