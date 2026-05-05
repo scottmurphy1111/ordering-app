@@ -81,7 +81,7 @@ One-line summaries and links to the detailed sections of this document. Scan thi
 ### Status
 
 - **Status badges** — color-coded pills with documented `statusStyles` map. Always `capitalize`. Never show when all items share one status. → [Badges & Status Pills](#badges--status-pills)
-- **Order lifecycle progress** — icon row from `order-lifecycle.ts` showing completed/current/pending stages. Compact icon strip on list cards; full labeled stepper with connector lines on detail page. Never use colored `<Badge>` for lifecycle status. → [Order lifecycle progress](#order-lifecycle-progress)
+- **Order lifecycle progress** — icon row from `order-lifecycle.ts` showing completed/current/pending stages. Three forms: compact icon strip on list cards, full labeled stepper on detail page, single icon + label in narrow table cells. Never use colored `<Badge>` for lifecycle status. → [Order lifecycle progress](#order-lifecycle-progress)
 - **Order state-transition buttons** — appear ONLY on the detail page Actions card, never on list cards. Default `<Button>` (brand green) with an icon matching the destination stage from `actionConfig`. → [Order state-transition buttons](#order-state-transition-buttons)
 - **Outlined-destructive buttons** — Cancel order, Refund payment on the detail page. `<Button variant="outline">` with red classes. Filled red is never used in this codebase. → [Destructive actions](#destructive-actions-cancel-refund)
 - **Card action strip** — list-card actions sit in a right-aligned `border-t border-gray-100 px-4 py-2` strip below the body, separated by a divider. Strip is conditionally rendered (no empty strip when there are no actions). On list cards (`/dashboard/orders`, `/dashboard/orders/history`), Cancel and Refund are quiet text links, not buttons. → [Data / list card](#data--list-card-order-cards)
@@ -105,6 +105,8 @@ One-line summaries and links to the detailed sections of this document. Scan thi
 - **Pickup window snapshot** — `orders.pickupWindowSnapshot` is the receipt; `pickupWindowId` is just a join hint. Never re-derive display from FK. → [Pickup window snapshot](#pickup-window-snapshot-orderspickupwindowsnapshot)
 - **Vendor settings as gates** — check `settings.enableTips`, `settings.asapPickupEnabled` before rendering related UI. Default off. → [Vendor settings](#vendor-settings)
 - **Modifier-aware aggregation** — always include `selectedModifiers` in GROUP BY for production queries. Different modifier sets = separate rows. Render as `Item Name — mod1, mod2` with mods in `text-gray-500`. → [Modifier-aware item aggregation](#modifier-aware-item-aggregation)
+- **"Today's calendar day" live filter** — live/production views filter out past-window orders. `gte(pickupWindows.endsAt, todayStart)` for window-bound; `gte(scheduledFor, todayStart)` for scheduled. Free-form orders bypass this filter (open design question). → [Database & Server](#database--server)
+- **Stale-order auto-resolve** — `resolveStaleOrders(vendorId)` runs lazily on each live-orders page load. 7-day grace past `pickupWindow.endsAt`. Paid → fulfilled, unpaid → cancelled, refunded untouched. Best-effort; never blocks the page. → [Database & Server](#database--server)
 
 ### Design tokens and color
 
@@ -1738,7 +1740,9 @@ The order lifecycle is visualized as an icon-based progress row, not a colored `
 
 **Full stepper (detail page):** same icon treatment, larger (`h-5 w-5`), with stage labels below and `h-px flex-1` connector lines (`bg-primary` for completed segments, `bg-gray-200` for pending). Cancelled orders skip the stepper and show the icon + label inline instead.
 
-**When to use:** whenever lifecycle status needs to be communicated on an order card or detail page. Do not fall back to Badge for lifecycle — the icon row is the only treatment.
+**Compact icon + label (dashboard overview Recent orders table):** single icon at `h-3.5 w-3.5` next to a small text label, no progression visualization. Active stages use `text-primary`; cancelled uses `text-red-500` with `mdi:close-circle`; scheduled uses `text-amber-600` with `mdi:calendar-clock`. Defensive fallback for unknown statuses uses `mdi:help-circle-outline` in `text-gray-400`. Use this form in narrow table cells where the full progression isn't useful — it's a status indicator, not a workboard.
+
+**When to use:** whenever lifecycle status needs to be communicated on an order card, detail page, or compact list. Do not fall back to Badge for lifecycle — the icon row is the only treatment. The customer-facing order status page uses an intentionally divergent vocabulary (different icons, different labels) — see the Customer-facing surfaces section.
 
 ### Order state-transition buttons
 
@@ -1966,6 +1970,68 @@ Skeleton count matches expected result count.
   lists inline. In client components that need the browser's local timezone, auto-detect in
   `onMount` with `Intl.DateTimeFormat().resolvedOptions().timeZone`; SSR initializes to the
   default, `onMount` corrects to the user's browser timezone.
+
+- **"Today's calendar day" live filter.** Live and production views (`/dashboard/orders` and `/dashboard/orders?view=production`) filter out past-window orders so the workboard shows only active and future work. The boundary is the start of today (server time):
+
+  ```ts
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+
+  // Window-bound orders: filter via subquery against pickup_windows
+  const activeWindowIds = db
+  	.select({ id: pickupWindows.id })
+  	.from(pickupWindows)
+  	.where(gte(pickupWindows.endsAt, todayStart));
+
+  const baseConditions = [
+  	eq(orders.vendorId, vendorId),
+  	// ... other status conditions
+  	or(isNull(orders.pickupWindowId), inArray(orders.pickupWindowId, activeWindowIds))!
+  ];
+
+  // Scheduled orders: filter directly on scheduledFor
+  const scheduledCount = await db
+  	.select({ count: sql<number>`count(*)` })
+  	.from(orders)
+  	.where(
+  		and(
+  			eq(orders.vendorId, vendorId),
+  			isNotNull(orders.scheduledFor),
+  			gte(orders.scheduledFor, todayStart)
+  			// ... other conditions
+  		)
+  	);
+  ```
+
+  A pickup window with `endsAt` at any point today stays visible all day. At midnight, the window's orders disappear from the live view (next page load or invalidation). Free-form orders (`pickupWindowId IS NULL`) bypass this filter — they have no window to anchor staleness to. **Free-form lifecycle is currently an open design question** (no time anchor exists; subscriptions and walk-ins shouldn't auto-expire, but abandoned custom orders probably should). Vendor-timezone awareness is a deferred enhancement — server time is the boundary for now, which is fine for US-domestic vendors but may need per-vendor timezone resolution later.
+
+- **Stale-order auto-resolve.** Orders that hit their pickup window without manual cleanup transition to terminal state via `resolveStaleOrders` (`$lib/server/orders/resolveStale`). The helper is called lazily from the live orders page load:
+
+  ```ts
+  import { resolveStaleOrders } from '$lib/server/orders/resolveStale';
+
+  export const load: PageServerLoad = async ({ locals }) => {
+  	await resolveStaleOrders(locals.vendorId!);
+  	// ... rest of load
+  };
+  ```
+
+  **Mapping:**
+  - `paymentStatus = 'paid'` and non-terminal status → `status = 'fulfilled'`
+  - `paymentStatus IN ('pending', 'failed')` and non-terminal status → `status = 'cancelled'`
+  - `paymentStatus = 'refunded'` → not touched (already cancelled per workflow)
+
+  **Grace period:** 7 days past `pickupWindow.endsAt`. Vendors have a full week to manually resolve before the system makes its best guess.
+
+  **Scope:** window-bound orders only (`pickupWindowId IS NOT NULL`). Free-form orders are not auto-resolved; same lifecycle question flagged in the today's-calendar-day filter note.
+
+  **Failure mode:** errors are caught and logged inside the helper. Page load never fails because of auto-resolve. Idempotent — safe to call on every page load; SQL filter ensures already-terminal orders are never touched.
+
+  **Logging:** when non-zero rows are resolved, the helper logs `[auto-resolve] vendor N: X → fulfilled, Y → cancelled` to the server console.
+
+  **Provenance is not tracked.** Auto-resolved orders are indistinguishable from manually-resolved ones at the data level. If analytics or audit trails need to distinguish vendor-action from system-action, an `autoResolvedAt: timestamp | null` column on `orders` is the natural addition — set by the helper, null on manual resolution. Deferred until there's a concrete need.
+
+  **Trigger choice — lazy on read.** The helper runs once per live-orders page load. An alternative would be running it in the existing daily cron (see `transitionScheduledOrders` invoked via `/api/cron/materialize`). Lazy on read was chosen because (a) the live orders page is the most-loaded admin surface for active vendors, (b) the cost is bounded — usually zero rows updated per call, and (c) no new cron schedule is needed. If per-page-load cost ever becomes a concern, moving to the existing daily cron is a clean refactor: same helper, just called from the cron endpoint instead.
 
 ---
 

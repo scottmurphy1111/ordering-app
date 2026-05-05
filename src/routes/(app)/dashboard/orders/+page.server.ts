@@ -24,6 +24,7 @@ import { sendEmail } from '$lib/server/email';
 import { orderReadyEmail } from '$lib/server/email/templates/orderReady';
 import { orderCancelledEmail } from '$lib/server/email/templates/orderCancelled';
 import { orderRefundedEmail } from '$lib/server/email/templates/orderRefunded';
+import { resolveStaleOrders } from '$lib/server/orders/resolveStale';
 
 const HISTORY_CUTOFF_MS = 24 * 60 * 60 * 1000;
 
@@ -38,6 +39,11 @@ export type WindowGroupKey = {
 export const load: PageServerLoad = async ({ locals, url, depends }) => {
 	depends('app:orders');
 	const vendorId = locals.vendorId!;
+
+	// Lazy auto-resolve: paid stale orders → fulfilled, unpaid stale orders → cancelled.
+	// Best-effort cleanup; never throws. See $lib/server/orders/resolveStale.
+	await resolveStaleOrders(vendorId);
+
 	const view = url.searchParams.get('view') === 'production' ? 'production' : 'orders';
 	const showCancelled = url.searchParams.get('cancelled') === 'show';
 	const statusFilter = url.searchParams.get('status') ?? '';
