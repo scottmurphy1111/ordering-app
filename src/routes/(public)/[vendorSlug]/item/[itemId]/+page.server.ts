@@ -20,7 +20,7 @@ export const load: PageServerLoad = async ({ locals, params }) => {
 			modifiers: {
 				with: {
 					modifier: {
-						with: { options: { orderBy: (o, { asc }) => [asc(o.id)] } }
+						with: { options: { orderBy: (o, { asc }) => [asc(o.sortOrder), asc(o.id)] } }
 					}
 				}
 			}

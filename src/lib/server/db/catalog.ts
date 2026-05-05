@@ -92,7 +92,8 @@ export const modifierOptions = pgTable('modifier_options', {
 		.references(() => modifiers.id, { onDelete: 'cascade' }),
 	name: varchar('name', { length: 255 }).notNull(),
 	priceAdjustment: integer('price_adjustment').default(0),
-	isDefault: boolean('is_default').default(false)
+	isDefault: boolean('is_default').default(false),
+	sortOrder: integer('sort_order').default(0)
 });
 
 // Junction: catalog item <-> modifier

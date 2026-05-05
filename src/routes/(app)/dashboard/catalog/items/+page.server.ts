@@ -11,6 +11,15 @@ import {
 	createCatalogItem,
 	updateCatalogItem
 } from '$lib/server/catalog/itemActions';
+import {
+	ModifierActionError,
+	addModifierGroup,
+	updateModifierGroup,
+	deleteModifierGroup,
+	addModifierOption,
+	updateModifierOption,
+	deleteModifierOption
+} from '$lib/server/catalog/modifierActions';
 
 export const load: PageServerLoad = async (event) => {
 	const vendorId = requireVendor(event);
@@ -103,7 +112,16 @@ export const load: PageServerLoad = async (event) => {
 					isSubscription: true,
 					billingInterval: true
 				},
-				with: { category: { columns: { id: true, name: true } } }
+				with: {
+					category: { columns: { id: true, name: true } },
+					modifiers: {
+						with: {
+							modifier: {
+								with: { options: { orderBy: (o, { asc }) => [asc(o.sortOrder), asc(o.id)] } }
+							}
+						}
+					}
+				}
 			})
 		: undefined;
 	if (drawerItemId && !drawerItemResult) {
@@ -181,6 +199,82 @@ export const actions: Actions = {
 			return { success: true, item };
 		} catch (e) {
 			if (e instanceof CatalogItemError) return fail(e.status, { error: e.message });
+			throw e;
+		}
+	},
+
+	addModifier: async ({ request, locals }) => {
+		const vendorId = locals.vendorId!;
+		const formData = await request.formData();
+		const itemId = parseInt(formData.get('itemId')?.toString() ?? '');
+		if (isNaN(itemId)) return fail(400, { modifierError: 'Invalid item' });
+		const name = formData.get('modifierName')?.toString().trim();
+		if (!name) return fail(400, { modifierError: 'Group name is required' });
+		const isRequired = formData.get('isRequired') === 'on';
+		const maxSelections = parseInt(formData.get('maxSelections')?.toString() ?? '1') || 1;
+		try {
+			await addModifierGroup(vendorId, itemId, name, isRequired, maxSelections);
+			return { success: true };
+		} catch (e) {
+			if (e instanceof ModifierActionError) return fail(e.status, { modifierError: e.message });
+			throw e;
+		}
+	},
+
+	updateModifier: async ({ request, locals }) => {
+		const vendorId = locals.vendorId!;
+		const formData = await request.formData();
+		return updateModifierGroup(formData, vendorId);
+	},
+
+	deleteModifier: async ({ request, locals }) => {
+		const vendorId = locals.vendorId!;
+		const formData = await request.formData();
+		const modifierId = parseInt(formData.get('modifierId')?.toString() ?? '');
+		if (!modifierId) return fail(400, { modifierError: 'Invalid request' });
+		try {
+			await deleteModifierGroup(vendorId, modifierId);
+			return { success: true };
+		} catch (e) {
+			if (e instanceof ModifierActionError) return fail(e.status, { modifierError: e.message });
+			throw e;
+		}
+	},
+
+	addOption: async ({ request, locals }) => {
+		const vendorId = locals.vendorId!;
+		const formData = await request.formData();
+		const modifierId = parseInt(formData.get('modifierId')?.toString() ?? '');
+		const name = formData.get('optionName')?.toString().trim();
+		if (!modifierId || !name) return fail(400, { modifierError: 'Invalid request' });
+		const priceAdjStr = formData.get('priceAdjustment')?.toString() ?? '0';
+		const priceAdjustment = Math.round(parseFloat(priceAdjStr || '0') * 100);
+		const isDefault = formData.get('isDefault') === 'on';
+		try {
+			await addModifierOption(vendorId, modifierId, name, priceAdjustment, isDefault);
+			return { success: true };
+		} catch (e) {
+			if (e instanceof ModifierActionError) return fail(e.status, { modifierError: e.message });
+			throw e;
+		}
+	},
+
+	updateOption: async ({ request, locals }) => {
+		const vendorId = locals.vendorId!;
+		const formData = await request.formData();
+		return updateModifierOption(formData, vendorId);
+	},
+
+	deleteOption: async ({ request, locals }) => {
+		const vendorId = locals.vendorId!;
+		const formData = await request.formData();
+		const optionId = parseInt(formData.get('optionId')?.toString() ?? '');
+		if (!optionId) return fail(400, { modifierError: 'Invalid request' });
+		try {
+			await deleteModifierOption(vendorId, optionId);
+			return { success: true };
+		} catch (e) {
+			if (e instanceof ModifierActionError) return fail(e.status, { modifierError: e.message });
 			throw e;
 		}
 	}

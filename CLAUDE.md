@@ -55,6 +55,7 @@ One-line summaries and links to the detailed sections of this document. Scan thi
 - **Input / select / textarea** — `h-8` for single-line, explicit classes documented. Wrap native date inputs in styled containers. → [Forms & Inputs](#forms--inputs)
 - **Label vs value rendering** — DB enum values are canonical; never render raw values where labels belong. Use `.find()` against canonical lists. → [Label vs Value Rendering](#label-vs-value-rendering)
 - **Confirmation dialog** — required for any destructive/irreversible action. Confirm button names the action ("Delete", not "OK"). → [Confirmation Dialogs](#confirmation-dialogs)
+- **Async confirm-then-submit** — capture form ref BEFORE the await; `e.currentTarget` is null after `await confirmDialog(...)`. Bit 19 callsites once. → [Form-ref before `await` in async event handlers](#form-ref-before-await-in-async-event-handlers)
 
 ### Buttons
 
@@ -98,6 +99,7 @@ One-line summaries and links to the detailed sections of this document. Scan thi
 - **`$derived` for computed state, `$effect` for external sync only** — never `$effect` to sync state with state. → [When to use `$effect`](#when-to-use-effect)
 - **Reactive primitives** — `SvelteSet`, `SvelteMap`, `SvelteDate`, `SvelteURL`, `SvelteURLSearchParams` from `svelte/reactivity` instead of built-ins for mutable instances in components. → [Svelte reactivity primitives](#svelte-reactivity-primitives)
 - **URL filter state in components** — `$derived.by` returning a fresh `SvelteURLSearchParams` on reads; build a fresh instance per write and `goto()`. → [URL is the source of truth for state](#url-is-the-source-of-truth-for-state)
+- **Keyed `{#each}` requires stable identity** — never key by display labels (names, titles); duplicates throw `each_key_duplicate` and break reactivity silently. Key by id. → [Keyed `{#each}` requires stable identity, not display labels](#keyed-each-requires-stable-identity-not-display-labels)
 
 ### Data layer
 
@@ -1637,6 +1639,8 @@ refund, bulk operations).
 - The cancel button always dismisses without action.
 - Never auto-execute destructive actions on single click.
 
+**Implementation gotcha.** When the confirm dialog is async (`await confirmDialog(...)`) and the next step is `form.requestSubmit()`, capture the form reference synchronously — `e.currentTarget` is null after the await. See [Form-ref before `await` in async event handlers](#form-ref-before-await-in-async-event-handlers).
+
 **Deferred to shadcn audit:** Any confirmation currently implemented with `window.confirm()` is
 a temporary measure. When the shadcn component audit lands, migrate all `confirm()` calls to a
 proper `<Dialog>` primitive with explicit confirm/cancel buttons. Current callsites:
@@ -2074,6 +2078,90 @@ Skeleton count matches expected result count.
   SQL migration files 0000–0005 in `drizzle/` are historical record; see `drizzle/README.md`.
   New migrations going forward generate from the rebuilt baseline. `bun run db:generate` is
   safe again — run it normally.
+
+---
+
+## Svelte gotchas
+
+Framework-level traps that have bitten this codebase. Read these once.
+
+### Form-ref before `await` in async event handlers
+
+When a form-submit button's `onclick` handler is async — typically because it shows a confirmation dialog before submitting — capturing `e.currentTarget` AFTER the await silently fails. The DOM resets `currentTarget` once the synchronous portion of the event handler completes; subsequent property accesses see `null`. Optional chaining swallows the null without throwing, so the form is never submitted, no error appears, and the user reports "I clicked, confirmed, and nothing happened."
+
+**Wrong:**
+
+```svelte
+<form method="post" action="?/delete" use:enhance>
+  <Button
+    type="submit"
+    onclick={async (e) => {
+      e.preventDefault();
+      if (await confirmDialog(`Delete "${item.name}"?`))
+        (e.currentTarget as HTMLButtonElement).form?.requestSubmit();
+        // ❌ currentTarget is null here. Silent failure.
+    }}
+  >
+    Delete
+  </Button>
+</form>
+```
+
+**Right:** capture the form reference synchronously, before the await.
+
+```svelte
+<form method="post" action="?/delete" use:enhance>
+  <Button
+    type="submit"
+    onclick={async (e) => {
+      e.preventDefault();
+      const form = (e.currentTarget as HTMLButtonElement).form;
+      if (await confirmDialog(`Delete "${item.name}"?`))
+        form?.requestSubmit();
+    }}
+  >
+    Delete
+  </Button>
+</form>
+```
+
+This bug shipped in 19 callsites across 7 files before being fixed in a single sweep. The pattern was originally written once and copy-pasted; nothing tested the delete flows end-to-end after copying. The static check that catches recurrence: `grep -r "(e.currentTarget as HTMLButtonElement).form?.requestSubmit()" src/` should return zero matches across the codebase.
+
+Applies to any async event handler that needs the event target after an await — not only form-submit. The general rule: **save references to event-bound objects synchronously, before the first await, then use the saved references after.**
+
+### Keyed `{#each}` requires stable identity, not display labels
+
+Keying a `{#each}` block by a field that can have duplicates throws `each_key_duplicate` and breaks reactivity for the entire component. The error is logged to the console once at render time; the visible symptom is "the UI renders, but clicking checkboxes / buttons does nothing." Future updates don't propagate. Reactivity is broken until the component remounts.
+
+**Wrong:**
+
+```svelte
+{#each group.options as option (option.name)}
+	<!-- ❌ option.name is the human-readable label.
+       If the vendor created two options with the same name, this throws. -->
+	<label>
+		<input type="checkbox" onchange={() => toggle(option.name)} />
+		{option.name}
+	</label>
+{/each}
+```
+
+**Right:** key by stable identity (database id, UUID, etc.). Keep names for display only.
+
+```svelte
+{#each group.options as option (option.id)}
+	<label>
+		<input type="checkbox" onchange={() => toggle(option.id)} />
+		{option.name}
+	</label>
+{/each}
+```
+
+The same lesson cascades into adjacent state. If selections are stored as `Record<groupId, optionName[]>`, two same-named options will toggle together. Store identity, not labels: `Record<groupId, optionId[]>`. The cart payload (or wire format) can still surface the human-readable name by looking it up from the option object at submit time.
+
+**The general rule: keys are identity, never display.** Database ids are always safe; user-edited strings never are. If your data only has names, generate stable client-side ids (e.g. `crypto.randomUUID()` at insert time) rather than keying by index — index-keying loses Svelte's reconciliation benefit when the list is reordered.
+
+This bug surfaced as "customer can't add modifier options to cart" and the root cause was the dashboard delete-modifier button (the form-ref gotcha above) silently failing — vendors couldn't delete duplicate-named options, so duplicates accumulated, eventually breaking the customer-side rendering. Two unrelated-looking bugs, one root cause: trusting volatile data as identity.
 
 ---
 

@@ -17,15 +17,15 @@
 	);
 	const primaryImage = $derived(images.find((i) => i.isPrimary) ?? images[0]);
 
-	let selections = $state<Record<number, number[]>>({});
-
-	$effect(() => {
+	function computeDefaults(): Record<number, number[]> {
 		const initial: Record<number, number[]> = {};
 		for (const group of modifierGroups) {
 			initial[group.id] = group.options.filter((o) => o.isDefault).map((o) => o.id);
 		}
-		selections = initial;
-	});
+		return initial;
+	}
+
+	let selections = $state<Record<number, number[]>>(computeDefaults());
 
 	function toggleOption(groupId: number, optionId: number, maxSelections: number) {
 		const current = selections[groupId] ?? [];

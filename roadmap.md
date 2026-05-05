@@ -35,6 +35,27 @@ Tier 1 is split into two sub-tiers based on which outreach wave they gate:
 
 ---
 
+### Database baseline migration
+
+**Status:** Pending — Scott to run himself.
+
+**Why it matters:** During build-out, schema iteration mixes `db:push` (direct sync) and generated migrations. The migration history accumulates exploratory work that doesn't reflect a clean target schema. Once production data exists, every change must apply forward-only against this history, handle existing rows correctly, and roll back cleanly. A messy history complicates all three. The fix is a one-time squash: generate a single baseline migration representing the current schema as the new starting point, then archive the prior migration files. From the baseline forward, every migration is incremental and applies cleanly to a known state.
+
+**Scope:**
+
+- Confirm the development schema reflects the desired production starting state — no half-finished features, no exploratory columns waiting to be removed.
+- Drop the development database and any local migration history.
+- Generate a fresh baseline migration against the current schema (`bun run db:generate`).
+- Archive (or delete) the previous migration files.
+- Apply the baseline migration to a fresh production database.
+- Stop using `db:push` against production from this point forward — every schema change goes through `bun run db:generate` + apply.
+
+**Estimated effort:** Half a day. Schema review is the most subtle piece; the migration generation and file archival are mechanical.
+
+**Trigger:** Before vendor #1 — specifically, before any paying customer's data lands in production. Treat as a hard gate on launch readiness alongside the Stripe Connect test and ToS/Privacy items.
+
+---
+
 ### Terms of Service + Privacy Policy
 
 **Status:** Pending.

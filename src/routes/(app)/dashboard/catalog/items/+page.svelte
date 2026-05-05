@@ -51,10 +51,14 @@
 		SheetDescription
 	} from '$lib/components/ui/sheet';
 	import CatalogItemForm from '$lib/components/CatalogItemForm.svelte';
+	import ModifierGroupsManager from '$lib/components/ModifierGroupsManager.svelte';
 	import { Alert } from '$lib/components/ui/alert';
 
 	let { data }: { data: PageData } = $props();
 	type CatalogItem = (typeof data)['items'][number];
+	type DrawerEditItem = NonNullable<
+		Extract<NonNullable<typeof data.drawer>, { mode: 'edit' }>['item']
+	>;
 
 	// ── Table sorting ─────────────────────────────────────────────
 	type SortCol = 'name' | 'category' | 'price' | 'status';
@@ -149,7 +153,7 @@
 	// ── Item drawer ────────────────────────────────────────────────
 	let drawerOpen = $state(false);
 	let drawerMode = $state<'new' | 'edit'>('new');
-	let drawerItem = $state<CatalogItem | null>(null);
+	let drawerItem = $state<DrawerEditItem | null>(null);
 	let drawerLastCreated = $state<{ id: number; name: string } | null>(null);
 
 	function clearDrawerParam() {
@@ -192,7 +196,7 @@
 			drawerOpen = true;
 		} else if (data.drawer.mode === 'edit' && data.drawer.item) {
 			drawerMode = 'edit';
-			drawerItem = data.drawer.item as CatalogItem;
+			drawerItem = data.drawer.item as DrawerEditItem;
 			drawerLastCreated = null;
 			drawerOpen = true;
 		}
@@ -1211,6 +1215,14 @@
 					variant="flat"
 					onCancel={() => closeDrawer()}
 				/>
+				<div class="mt-8">
+					<ModifierGroupsManager
+						groups={drawerItem.modifiers
+							.map((m) => m.modifier)
+							.sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0))}
+						itemId={drawerItem.id}
+					/>
+				</div>
 			{/if}
 		</div>
 	</SheetContent>
