@@ -5,6 +5,7 @@
 	import { onMount } from 'svelte';
 	import type { PageData, ActionData } from './$types';
 	import { resolve } from '$app/paths';
+	import { page } from '$app/state';
 	import { formatDistanceToNow } from 'date-fns';
 	import Icon from '@iconify/svelte';
 	import { Badge } from '$lib/components/ui/badge';
@@ -198,12 +199,66 @@
 		const qs = params.toString();
 		return qs ? `/dashboard/orders?${qs}` : '/dashboard/orders';
 	});
+
+	// ── Production view: day/window grouping ────────────────────────────────────
+	const groupMode = $derived(
+		data.view === 'production' ? (page.url.searchParams.get('group') ?? 'day') : 'day'
+	);
+
+	type ProductionDay = {
+		dateKey: string;
+		dateLabel: string;
+		windowCount: number;
+		totalUnits: number;
+		items: Array<{ name: string; modifiers: string[]; totalQuantity: number }>;
+	};
+
+	const productionDays = $derived.by<ProductionDay[]>(() => {
+		if (data.view !== 'production') return [];
+		const dayMap = new Map<string, ProductionDay>();
+
+		for (const group of data.productionGroups) {
+			const date = new Date(group.window.startsAt);
+			const dateKey = date.toISOString().slice(0, 10);
+			const dateLabel = new Intl.DateTimeFormat('en-US', {
+				timeZone: vendorTimezone,
+				weekday: 'long',
+				month: 'long',
+				day: 'numeric'
+			}).format(date);
+
+			if (!dayMap.has(dateKey)) {
+				dayMap.set(dateKey, { dateKey, dateLabel, windowCount: 0, totalUnits: 0, items: [] });
+			}
+			const day = dayMap.get(dateKey)!;
+			day.windowCount += 1;
+
+			for (const item of group.items) {
+				const modifierKey = item.modifiers.slice().sort().join('|');
+				const existing = day.items.find(
+					(it) => it.name === item.name && it.modifiers.slice().sort().join('|') === modifierKey
+				);
+				if (existing) {
+					existing.totalQuantity += item.totalQuantity;
+				} else {
+					day.items.push({ name: item.name, modifiers: item.modifiers, totalQuantity: item.totalQuantity });
+				}
+				day.totalUnits += item.totalQuantity;
+			}
+		}
+
+		for (const day of dayMap.values()) {
+			day.items.sort((a, b) => b.totalQuantity - a.totalQuantity || a.name.localeCompare(b.name));
+		}
+
+		return Array.from(dayMap.values()).sort((a, b) => a.dateKey.localeCompare(b.dateKey));
+	});
 </script>
 
 <div>
 	<!-- Header -->
-	<div class="mb-5 flex items-center justify-between gap-3">
-		<h1 class="text-2xl font-bold text-foreground">Orders</h1>
+	<div class="print:hidden mb-5 flex items-center justify-between gap-3">
+		<h1 class="text-2xl font-bold text-gray-900">Orders</h1>
 		<div class="flex items-center gap-2">
 			<Button
 				variant="outline"
@@ -213,7 +268,7 @@
 			>
 				<Icon
 					icon={soundEnabled ? 'mdi:bell-outline' : 'mdi:bell-off-outline'}
-					class="h-4 w-4 {soundEnabled ? 'text-primary' : 'text-muted-foreground'}"
+					class="h-4 w-4 {soundEnabled ? 'text-primary' : 'text-gray-400'}"
 				/>
 			</Button>
 			<OrdersTabs />
@@ -225,7 +280,7 @@
 	{/if}
 
 	<!-- Orders / Production view toggle -->
-	<div class="mb-4 flex items-center justify-between gap-3">
+	<div class="print:hidden mb-4 flex items-center justify-between gap-3">
 		<Tabs
 			value={data.view === 'production' ? 'production' : 'orders'}
 			onValueChange={(v) =>
@@ -251,7 +306,7 @@
 		{#if data.view !== 'production'}
 			<a
 				href={resolve(cancelledToggleUrl as `/${string}`)}
-				class="text-xs text-muted-foreground underline-offset-2 hover:underline"
+				class="text-xs text-gray-500 underline-offset-2 hover:text-gray-700 hover:underline"
 			>
 				{data.view === 'orders' && data.showCancelled ? 'Hide cancelled' : 'Show cancelled'}
 			</a>
@@ -260,65 +315,145 @@
 
 	<!-- Summary bar -->
 	{#if mounted}
-		<OrdersSummaryBar
-			compact
-			stats={[
-				{ label: 'Needs action', value: needsAction, urgent: needsAction > 0 },
-				{ label: 'In progress', value: inProgress },
-				{ label: 'Scheduled', value: data.scheduledCount },
-				{ label: "Today's revenue", value: `$${(data.todayRevenue / 100).toFixed(2)}` }
-			]}
-		/>
+		<div class="print:hidden">
+			<OrdersSummaryBar
+				compact
+				stats={[
+					{ label: 'Needs action', value: needsAction, urgent: needsAction > 0 },
+					{ label: 'In progress', value: inProgress },
+					{ label: 'Scheduled', value: data.scheduledCount },
+					{ label: "Today's revenue", value: `$${(data.todayRevenue / 100).toFixed(2)}` }
+				]}
+			/>
+		</div>
 	{/if}
 
 	{#if data.view === 'production'}
 		<!-- ── Production view ──────────────────────────────────────────────── -->
 		{#if data.productionGroups.length === 0}
 			<div class="flex flex-col items-center py-16 text-center">
-				<div class="flex h-16 w-16 items-center justify-center rounded-2xl bg-muted">
-					<Icon icon="mdi:clipboard-list-outline" class="h-8 w-8 text-muted-foreground/40" />
+				<div class="flex h-16 w-16 items-center justify-center rounded-2xl bg-gray-100">
+					<Icon icon="mdi:clipboard-list-outline" class="h-8 w-8 text-gray-400" />
 				</div>
-				<h2 class="mt-4 text-base font-semibold text-foreground">Nothing to prep yet</h2>
-				<p class="mt-1 max-w-xs text-sm text-muted-foreground">
+				<h2 class="mt-4 text-base font-semibold text-gray-900">Nothing to prep yet</h2>
+				<p class="mt-1 max-w-xs text-sm text-gray-500">
 					Once customers place orders for upcoming pickup windows, you'll see what to prep here.
 				</p>
 			</div>
 		{:else}
+			<!-- Production toolbar: grouping toggle + print -->
+			<div class="production-toolbar print:hidden mb-4 flex items-center justify-between">
+				<div class="inline-flex items-center gap-1 rounded-lg border border-gray-200 bg-white p-0.5">
+					<a
+						href={resolve('/dashboard/orders?view=production')}
+						class="rounded-md px-3 py-1 text-xs font-medium transition-colors {groupMode === 'day'
+							? 'bg-gray-900 text-white'
+							: 'text-gray-500 hover:text-gray-900'}"
+					>
+						By day
+					</a>
+					<a
+						href={resolve('/dashboard/orders?view=production&group=window')}
+						class="rounded-md px-3 py-1 text-xs font-medium transition-colors {groupMode === 'window'
+							? 'bg-gray-900 text-white'
+							: 'text-gray-500 hover:text-gray-900'}"
+					>
+						By window
+					</a>
+				</div>
+				<button
+					type="button"
+					onclick={() => window.print()}
+					class="inline-flex items-center gap-1.5 rounded-md border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 transition-colors hover:bg-gray-50"
+				>
+					<Icon icon="mdi:printer-outline" class="h-3.5 w-3.5" />
+					Print
+				</button>
+			</div>
+
+			<!-- Print-only header (hidden on screen, visible when printing) -->
+			<div class="hidden print:block print:mb-6">
+				<h1 class="text-xl font-bold text-gray-900">Production list</h1>
+				<p class="text-sm text-gray-500">
+					{data.vendor?.name ?? ''} · Printed {new Date().toLocaleDateString([], {
+						weekday: 'long',
+						month: 'long',
+						day: 'numeric',
+						year: 'numeric'
+					})}
+				</p>
+			</div>
+
 			<div class="space-y-6">
-				{#each data.productionGroups as group (group.window.windowId)}
-					<div class="overflow-hidden rounded-xl border border-gray-200 bg-white">
-						<!-- Window group header -->
-						<div class="border-b border-gray-100 bg-gray-50 px-4 py-3">
-							<p class="text-sm font-semibold text-gray-900">
-								{fmtWindowDate(group.window.startsAt)} · {fmtWindowTime(
-									group.window.startsAt
-								)}–{fmtWindowTime(group.window.endsAt)}
-								{#if group.window.locationName}
-									· <span class="font-normal text-gray-500">{group.window.locationName}</span>
-								{/if}
-							</p>
-							<p class="mt-0.5 text-xs text-gray-500">
-								{group.orderCount}
-								{group.orderCount === 1 ? 'order' : 'orders'}
-							</p>
+				{#if groupMode === 'day'}
+					{#each productionDays as day (day.dateKey)}
+						<div class="overflow-hidden rounded-xl border border-gray-200 bg-white">
+							<div class="border-b border-gray-100 bg-gray-50 px-4 py-3">
+								<p class="text-sm font-semibold text-gray-900">{day.dateLabel}</p>
+								<p class="mt-0.5 text-xs text-gray-500">
+									{day.totalUnits}
+									{day.totalUnits === 1 ? 'item' : 'items'} to prep · {day.windowCount}
+									pickup {day.windowCount === 1 ? 'window' : 'windows'}
+								</p>
+							</div>
+							<table class="w-full">
+								<tbody class="divide-y divide-gray-50">
+									{#each day.items as item, i (i)}
+										<tr>
+											<td class="px-4 py-3 text-sm text-gray-900">
+												{item.name}{#if item.modifiers.length > 0}<span class="text-gray-500">
+													— {item.modifiers.join(', ')}</span
+												>{/if}
+											</td>
+											<td class="px-4 py-3 text-right">
+												<span class="font-mono text-sm font-semibold text-gray-900">
+													{item.totalQuantity}
+												</span>
+											</td>
+										</tr>
+									{/each}
+								</tbody>
+							</table>
 						</div>
-						<!-- Item aggregation table -->
-						<table class="w-full">
-							<tbody class="divide-y divide-gray-50">
-								{#each group.items as item (item.name)}
-									<tr class="px-4">
-										<td class="px-4 py-3 text-sm text-gray-900">{item.name}</td>
-										<td class="px-4 py-3 text-right">
-											<span class="font-mono text-sm font-semibold text-gray-900">
-												{item.totalQuantity}
-											</span>
-										</td>
-									</tr>
-								{/each}
-							</tbody>
-						</table>
-					</div>
-				{/each}
+					{/each}
+				{:else}
+					{#each data.productionGroups as group (group.window.windowId)}
+						<div class="overflow-hidden rounded-xl border border-gray-200 bg-white">
+							<div class="border-b border-gray-100 bg-gray-50 px-4 py-3">
+								<p class="text-sm font-semibold text-gray-900">
+									{fmtWindowDate(group.window.startsAt)} · {fmtWindowTime(
+										group.window.startsAt
+									)}–{fmtWindowTime(group.window.endsAt)}
+									{#if group.window.locationName}
+										· <span class="font-normal text-gray-500">{group.window.locationName}</span>
+									{/if}
+								</p>
+								<p class="mt-0.5 text-xs text-gray-500">
+									{group.orderCount}
+									{group.orderCount === 1 ? 'order' : 'orders'}
+								</p>
+							</div>
+							<table class="w-full">
+								<tbody class="divide-y divide-gray-50">
+									{#each group.items as item, i (i)}
+										<tr>
+											<td class="px-4 py-3 text-sm text-gray-900">
+												{item.name}{#if item.modifiers.length > 0}<span class="text-gray-500">
+													— {item.modifiers.join(', ')}</span
+												>{/if}
+											</td>
+											<td class="px-4 py-3 text-right">
+												<span class="font-mono text-sm font-semibold text-gray-900">
+													{item.totalQuantity}
+												</span>
+											</td>
+										</tr>
+									{/each}
+								</tbody>
+							</table>
+						</div>
+					{/each}
+				{/if}
 			</div>
 		{/if}
 	{:else}
@@ -328,7 +463,7 @@
 		<div class="relative mb-3">
 			<Icon
 				icon="mdi:magnify"
-				class="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+				class="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-gray-400"
 			/>
 			<Input
 				type="search"
@@ -385,15 +520,15 @@
 		{:else if data.windowGroups.length === 0 && data.freeFormOrders.length === 0}
 			<!-- No orders at all -->
 			<div class="flex flex-col items-center py-16 text-center">
-				<div class="flex h-16 w-16 items-center justify-center rounded-2xl bg-muted">
-					<Icon icon="mdi:clipboard-list-outline" class="h-8 w-8 text-muted-foreground/40" />
+				<div class="flex h-16 w-16 items-center justify-center rounded-2xl bg-gray-100">
+					<Icon icon="mdi:clipboard-list-outline" class="h-8 w-8 text-gray-400" />
 				</div>
-				<h2 class="mt-4 text-base font-semibold text-foreground">
+				<h2 class="mt-4 text-base font-semibold text-gray-900">
 					No {data.statusFilter
 						? (statusLabels[data.statusFilter] ?? data.statusFilter).toLowerCase() + ' '
 						: ''}orders
 				</h2>
-				<p class="mt-1 text-sm text-muted-foreground">
+				<p class="mt-1 text-sm text-gray-500">
 					{data.statusFilter
 						? `Orders with "${statusLabels[data.statusFilter] ?? data.statusFilter}" status will appear here.`
 						: 'Orders will appear here when customers place them.'}
@@ -411,11 +546,11 @@
 
 			{#if !anySearchMatch}
 				<div class="flex flex-col items-center py-16 text-center">
-					<div class="flex h-16 w-16 items-center justify-center rounded-2xl bg-muted">
-						<Icon icon="mdi:magnify" class="h-8 w-8 text-muted-foreground/40" />
+					<div class="flex h-16 w-16 items-center justify-center rounded-2xl bg-gray-100">
+						<Icon icon="mdi:magnify" class="h-8 w-8 text-gray-400" />
 					</div>
-					<h2 class="mt-4 text-base font-semibold text-foreground">No results</h2>
-					<p class="mt-1 text-sm text-muted-foreground">No orders match "{searchQuery}".</p>
+					<h2 class="mt-4 text-base font-semibold text-gray-900">No results</h2>
+					<p class="mt-1 text-sm text-gray-500">No orders match "{searchQuery}".</p>
 					<Button variant="link" onclick={() => (searchQuery = '')} class="mt-3 h-auto p-0 text-xs"
 						>Clear search</Button
 					>
@@ -558,9 +693,13 @@
 												<Icon icon={stage.icon} class="h-3.5 w-3.5 text-primary" />
 											</span>
 										{:else if isCompleted}
-											<Icon icon={stage.icon} class="h-3.5 w-3.5 text-primary" />
+											<span class="inline-flex items-center justify-center p-0.5">
+												<Icon icon={stage.icon} class="h-3.5 w-3.5 text-primary" />
+											</span>
 										{:else}
-											<Icon icon={stage.icon} class="h-3.5 w-3.5 text-gray-300" />
+											<span class="inline-flex items-center justify-center p-0.5">
+												<Icon icon={stage.icon} class="h-3.5 w-3.5 text-gray-300" />
+											</span>
 										{/if}
 									{/each}
 								</span>
@@ -664,3 +803,11 @@
 		{/if}
 	</div>
 {/snippet}
+
+<style>
+	@media print {
+		:global(body) {
+			background: white !important;
+		}
+	}
+</style>

@@ -39,7 +39,7 @@
 	<!-- Back link -->
 	<a
 		href={resolve('/dashboard/orders')}
-		class="mb-4 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-muted-foreground"
+		class="mb-4 inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700"
 	>
 		<Icon icon="mdi:chevron-left" class="h-4 w-4" /> Orders
 	</a>
@@ -52,8 +52,8 @@
 	<div class="mb-6 flex items-start justify-between">
 		<div>
 			<div class="flex flex-wrap items-center gap-2">
-				<h1 class="font-mono text-2xl font-bold text-foreground">{order.orderNumber}</h1>
-				<Badge class="bg-muted text-muted-foreground capitalize">{order.type}</Badge>
+				<h1 class="font-mono text-2xl font-bold text-gray-900">{order.orderNumber}</h1>
+				<Badge class="bg-gray-100 text-gray-500 capitalize">{order.type}</Badge>
 				{#if order.paymentStatus === 'paid'}
 					<Badge class="bg-emerald-100 text-emerald-700">paid</Badge>
 				{:else if order.paymentStatus === 'refunded'}
@@ -61,10 +61,10 @@
 				{:else if order.paymentStatus === 'failed'}
 					<Badge class="bg-red-100 text-red-600">payment failed</Badge>
 				{:else}
-					<Badge class="bg-muted text-muted-foreground">pending payment</Badge>
+					<Badge class="bg-amber-50 text-amber-700">pending payment</Badge>
 				{/if}
 			</div>
-			<p class="mt-1 text-sm text-muted-foreground">
+			<p class="mt-1 text-sm text-gray-500">
 				{new Date(order.createdAt).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}
 			</p>
 			{#if order.scheduledFor}
@@ -101,10 +101,14 @@
 								</span>
 								<span class="mt-1 text-xs font-semibold text-gray-900">{stage.label}</span>
 							{:else if isCompleted}
-								<Icon icon={stage.icon} class="h-5 w-5 text-primary" />
+								<span class="inline-flex items-center justify-center p-1.5">
+									<Icon icon={stage.icon} class="h-5 w-5 text-primary" />
+								</span>
 								<span class="mt-1 text-xs font-medium text-gray-900">{stage.label}</span>
 							{:else}
-								<Icon icon={stage.icon} class="h-5 w-5 text-gray-300" />
+								<span class="inline-flex items-center justify-center p-1.5">
+									<Icon icon={stage.icon} class="h-5 w-5 text-gray-300" />
+								</span>
 								<span class="mt-1 text-xs text-gray-400">{stage.label}</span>
 							{/if}
 						</div>
@@ -116,7 +120,7 @@
 				</div>
 			{/if}
 		</div>
-		<p class="text-2xl font-bold text-foreground">{formatCents(order.total)}</p>
+		<p class="text-xl font-semibold text-gray-900">{formatCents(order.total)}</p>
 	</div>
 
 	<!-- Customer info -->
@@ -129,24 +133,24 @@
 		<CardContent class="space-y-1.5">
 			{#if order.customerName}
 				<div class="flex items-center gap-2 text-sm">
-					<Icon icon="mdi:account-outline" class="h-4 w-4 shrink-0 text-muted-foreground" />
+					<Icon icon="mdi:account-outline" class="h-4 w-4 shrink-0 text-gray-500" />
 					{order.customerName}
 				</div>
 			{/if}
 			{#if order.customerEmail}
 				<div class="flex items-center gap-2 text-sm">
-					<Icon icon="mdi:email-outline" class="h-4 w-4 shrink-0 text-muted-foreground" />
+					<Icon icon="mdi:email-outline" class="h-4 w-4 shrink-0 text-gray-500" />
 					<a href="mailto:{order.customerEmail}" class="hover:underline">{order.customerEmail}</a>
 				</div>
 			{/if}
 			{#if order.customerPhone}
 				<div class="flex items-center gap-2 text-sm">
-					<Icon icon="mdi:phone-outline" class="h-4 w-4 shrink-0 text-muted-foreground" />
+					<Icon icon="mdi:phone-outline" class="h-4 w-4 shrink-0 text-gray-500" />
 					<a href="tel:{order.customerPhone}" class="hover:underline">{order.customerPhone}</a>
 				</div>
 			{/if}
 			{#if !order.customerName && !order.customerEmail && !order.customerPhone}
-				<p class="text-sm text-muted-foreground">No customer info recorded.</p>
+				<p class="text-sm text-gray-500">No customer info recorded.</p>
 			{/if}
 		</CardContent>
 	</Card>
@@ -165,14 +169,14 @@
 						<div>
 							<p class="text-sm font-medium">{item.name}</p>
 							{#if item.selectedModifiers?.length}
-								<p class="mt-0.5 text-xs text-muted-foreground">
+								<p class="mt-0.5 text-xs text-gray-500">
 									{item.selectedModifiers.map((m) => m.name).join(',')}
 								</p>
 							{/if}
 						</div>
 						<div class="ml-4 shrink-0 text-right">
 							<p class="text-sm">×{item.quantity}</p>
-							<p class="text-xs text-muted-foreground">
+							<p class="text-xs text-gray-400">
 								{formatCents(
 									(item.basePrice +
 										(item.selectedModifiers?.reduce((s, m) => s + m.priceAdjustment, 0) ?? 0)) *
@@ -186,14 +190,14 @@
 
 			<!-- Totals -->
 			<div class="mt-1 space-y-1.5 border-t pt-3">
-				<div class="flex justify-between text-sm text-muted-foreground">
+				<div class="flex justify-between text-sm text-gray-500">
 					<span>Subtotal</span><span>{formatCents(order.subtotal)}</span>
 				</div>
-				<div class="flex justify-between text-sm text-muted-foreground">
+				<div class="flex justify-between text-sm text-gray-500">
 					<span>Tax</span><span>{formatCents(order.tax)}</span>
 				</div>
 				{#if order.tip && order.tip > 0}
-					<div class="flex justify-between text-sm text-muted-foreground">
+					<div class="flex justify-between text-sm text-gray-500">
 						<span>Tip</span><span>{formatCents(order.tip)}</span>
 					</div>
 				{/if}
@@ -207,13 +211,13 @@
 					</div>
 				{/if}
 				{#if order.deliveryFee && order.deliveryFee > 0}
-					<div class="flex justify-between text-sm text-muted-foreground">
+					<div class="flex justify-between text-sm text-gray-500">
 						<span>Delivery fee</span><span>{formatCents(order.deliveryFee)}</span>
 					</div>
 				{/if}
 				{#if order.deliveryAddress}
 					<div
-						class="mt-2 flex items-start gap-1.5 rounded-md bg-muted px-3 py-2 text-sm text-muted-foreground"
+						class="mt-2 flex items-start gap-1.5 rounded-md bg-gray-50 px-3 py-2 text-sm text-gray-500"
 					>
 						<Icon icon="mdi:map-marker-outline" class="mt-0.5 h-4 w-4 shrink-0" />
 						{order.deliveryAddress}

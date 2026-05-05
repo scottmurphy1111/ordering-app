@@ -6,7 +6,6 @@
 	import { resolve } from '$app/paths';
 	import Icon from '@iconify/svelte';
 	import { formatDistanceToNow } from 'date-fns';
-	import { Badge } from '$lib/components/ui/badge';
 	import { Button } from '$lib/components/ui/button';
 	import { Card, CardContent } from '$lib/components/ui/card';
 	import { Skeleton } from '$lib/components/ui/skeleton';
@@ -19,6 +18,7 @@
 		TableRow,
 		TableCell
 	} from '$lib/components/ui/table';
+	import { lifecycleStages } from '$lib/utils/order-lifecycle';
 
 	let { data }: { data: PageData } = $props();
 
@@ -71,23 +71,6 @@
 				copied = false;
 			}, 2000);
 		});
-	}
-
-	function getStatusBadge(status: string): string {
-		const map: Record<string, string> = {
-			pending: 'bg-amber-100 text-amber-700',
-			received: 'bg-gray-100 text-gray-600',
-			confirmed: 'bg-purple-100 text-purple-700',
-			preparing: 'bg-blue-100 text-blue-700',
-			ready: 'bg-teal-100 text-teal-700',
-			fulfilled: 'bg-green-100 text-green-700',
-			cancelled: 'bg-red-100 text-red-700'
-		};
-		return map[status] ?? 'bg-gray-100 text-gray-600';
-	}
-
-	function capitalize(s: string): string {
-		return s.charAt(0).toUpperCase() + s.slice(1);
 	}
 
 	function shortOrderId(num: string): string {
@@ -343,9 +326,28 @@
 									</TableCell>
 									<TableCell class="hidden sm:table-cell">{order.customerName ?? '—'}</TableCell>
 									<TableCell>
-										<Badge class={getStatusBadge(order.status)}>
-											{capitalize(order.status)}
-										</Badge>
+										{@const stage = lifecycleStages.find((s) => s.value === order.status)}
+										{#if stage}
+											<span class="inline-flex items-center gap-1.5">
+												<Icon icon={stage.icon} class="h-3.5 w-3.5 text-primary" />
+												<span class="text-xs font-medium text-gray-700">{stage.label}</span>
+											</span>
+										{:else if order.status === 'cancelled'}
+											<span class="inline-flex items-center gap-1.5">
+												<Icon icon="mdi:close-circle" class="h-3.5 w-3.5 text-red-500" />
+												<span class="text-xs font-medium text-gray-700">Cancelled</span>
+											</span>
+										{:else if order.status === 'scheduled'}
+											<span class="inline-flex items-center gap-1.5">
+												<Icon icon="mdi:calendar-clock" class="h-3.5 w-3.5 text-amber-600" />
+												<span class="text-xs font-medium text-gray-700">Scheduled</span>
+											</span>
+										{:else}
+											<span class="inline-flex items-center gap-1.5">
+												<Icon icon="mdi:help-circle-outline" class="h-3.5 w-3.5 text-gray-400" />
+												<span class="text-xs font-medium text-gray-700">{order.status}</span>
+											</span>
+										{/if}
 									</TableCell>
 									<TableCell class="hidden text-right font-medium sm:table-cell">
 										${(order.total / 100).toFixed(2)}
@@ -362,7 +364,7 @@
 							Showing {data.recentOrders.length} of {data.stats.orders} orders
 						</span>
 						<a
-							href={resolve('/dashboard/orders/history')}
+							href={resolve('/dashboard/orders')}
 							class="text-xs font-medium text-primary hover:underline"
 						>
 							View all orders →

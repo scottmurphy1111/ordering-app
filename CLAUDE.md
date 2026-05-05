@@ -41,6 +41,7 @@ One-line summaries and links to the detailed sections of this document. Scan thi
 - **Content / navigation card** — for hubs (Settings, Catalog). Icon tile + title + description, hover lifts. → [Content / navigation card](#content--navigation-card-settings-hub-catalog-hub)
 - **Data / list card** — for order cards. Clickable body links to detail; action strip below is NOT inside the link. → [Data / list card](#data--list-card-order-cards)
 - **Stat card** — for dashboard overview. Label + value + CTA link. → [Stat card](#stat-card-dashboard-overview)
+- **Order card typography** — two sizes (`text-sm` primary / `text-xs` secondary), two weights (`font-medium` primary / regular secondary), three gray levels (`text-gray-900` primary / `text-gray-500` secondary / `text-gray-400` tertiary). Status labels are secondary, not primary — the progress row carries visual weight. Amber for time/scheduling, red for destructive — fixed semantic, not hierarchy levels. → [Order card typography hierarchy](#order-card-typography-hierarchy)
 
 ### Tables and lists
 
@@ -58,7 +59,7 @@ One-line summaries and links to the detailed sections of this document. Scan thi
 ### Buttons
 
 - **Button sizing** — size determines height (32px default / 24px xs); variant determines color. They compose. Never apply ad-hoc `h-*` to override. → [Buttons](#buttons)
-- **Documented raw `<button>` exceptions** — eight specific cases where raw `<button>` is required instead of the primitive. → [Documented raw button exceptions](#documented-raw-button-exceptions)
+- **Documented raw `<button>` exceptions** — nine specific cases where raw `<button>` is required instead of the primitive. → [Documented raw button exceptions](#documented-raw-button-exceptions)
 
 ### Tabs and segmented controls
 
@@ -81,14 +82,16 @@ One-line summaries and links to the detailed sections of this document. Scan thi
 
 - **Status badges** — color-coded pills with documented `statusStyles` map. Always `capitalize`. Never show when all items share one status. → [Badges & Status Pills](#badges--status-pills)
 - **Order lifecycle progress** — icon row from `order-lifecycle.ts` showing completed/current/pending stages. Compact icon strip on list cards; full labeled stepper with connector lines on detail page. Never use colored `<Badge>` for lifecycle status. → [Order lifecycle progress](#order-lifecycle-progress)
-- **Order state-transition buttons** — `<Button>` default variant (green fill) with stage icon from `order-lifecycle.ts` `actionConfig`. Never use raw `<button>` with blue classes. → [Order state-transition buttons](#order-state-transition-buttons)
-- **Destructive order actions** — Cancel order: `<Button variant="destructive">` (filled red, primary weight). Refund: `<Button variant="outline">` with red classes (secondary weight). Both use the `<Button>` primitive. → [Destructive actions on order detail](#destructive-actions-on-order-detail-cancel-order)
+- **Order state-transition buttons** — appear ONLY on the detail page Actions card, never on list cards. Default `<Button>` (brand green) with an icon matching the destination stage from `actionConfig`. → [Order state-transition buttons](#order-state-transition-buttons)
+- **Outlined-destructive buttons** — Cancel order, Refund payment on the detail page. `<Button variant="outline">` with red classes. Filled red is never used in this codebase. → [Destructive actions](#destructive-actions-cancel-refund)
+- **Card action strip** — list-card actions sit in a right-aligned `border-t border-gray-100 px-4 py-2` strip below the body, separated by a divider. Strip is conditionally rendered (no empty strip when there are no actions). On list cards (`/dashboard/orders`, `/dashboard/orders/history`), Cancel and Refund are quiet text links, not buttons. → [Data / list card](#data--list-card-order-cards)
 
 ### Navigation and routing
 
 - **Internal links** — always `resolve()` from `$app/paths`. Never bare strings. Applies to `href`, `goto()`, redirects. → [SvelteKit Conventions](#sveltekit-conventions)
 - **URL is source of truth for filter / sort / mode state** — read via `$page.url.searchParams` server-side, `SvelteURLSearchParams` derived in components. → [URL is the source of truth for state](#url-is-the-source-of-truth-for-state)
 - **No old-route redirects** — when a route is renamed, old URLs 404. Don't add `redirect()` rules to preserve them. → [Core Philosophy](#core-philosophy)
+- **Production view day-grouping** — default groups by day; `?group=window` toggles to window view. Client-side `$derived` re-buckets server's window-level data. → [Production view day-grouping](#production-view-day-grouping)
 
 ### State management (Svelte 5)
 
@@ -101,6 +104,7 @@ One-line summaries and links to the detailed sections of this document. Scan thi
 - **Order snapshot pattern** — `orders.items` JSONB written once at order creation, never mutated. Read from snapshot for display, not from FK. → [Order snapshot pattern](#order-snapshot-pattern)
 - **Pickup window snapshot** — `orders.pickupWindowSnapshot` is the receipt; `pickupWindowId` is just a join hint. Never re-derive display from FK. → [Pickup window snapshot](#pickup-window-snapshot-orderspickupwindowsnapshot)
 - **Vendor settings as gates** — check `settings.enableTips`, `settings.asapPickupEnabled` before rendering related UI. Default off. → [Vendor settings](#vendor-settings)
+- **Modifier-aware aggregation** — always include `selectedModifiers` in GROUP BY for production queries. Different modifier sets = separate rows. Render as `Item Name — mod1, mod2` with mods in `text-gray-500`. → [Modifier-aware item aggregation](#modifier-aware-item-aggregation)
 
 ### Design tokens and color
 
@@ -113,6 +117,7 @@ One-line summaries and links to the detailed sections of this document. Scan thi
 - **Mobile-first base classes** — base classes describe mobile (≤375px); `md:` adds desktop enhancements. → [Mobile-First Convention](#mobile-first-convention)
 - **eslint-disable: block-form** — use `<!-- eslint-disable RULE -->` / `<!-- eslint-enable RULE -->` blocks, not `eslint-disable-next-line`. → [eslint-disable: block-form over next-line](#eslint-disable-block-form-over-next-line)
 - **Verification protocol** — `[STATIC]` tags for code-inspection checks, `[BEHAVIORAL]` for runtime exercise. Never claim PASS on `[BEHAVIORAL]` from inspection. → [Verification protocol](#verification-protocol)
+- **Print pattern** — `print:hidden` to opt-out chrome from printing; `hidden print:block` for print-only headers; `<style>` body reset. Apply to future printable views. → [Print pattern](#print-pattern)
 
 ---
 
@@ -869,21 +874,23 @@ Variants and sizes compose freely:
 
 Use `<Button>` for all button affordances unless the callsite matches one of these documented exceptions. Each exception is flagged for the Tier 2 shadcn audit.
 
-1. **Outlined-destructive** (Cancel order, Refund): `<Button variant="destructive">` applies filled red, which competes visually with the adjacent solid primary action. Use `<Button variant="outline">` with additional red classes instead: add `class="border-red-200 text-red-500 hover:bg-red-50"` to the outline variant.
+1. **Quiet text-link actions in card action strips**: list-card action strips (`/dashboard/orders`, `/dashboard/orders/history`) place Cancel and Refund as quiet text affordances rather than buttons. The shadcn `<Button>` primitive's padding and min-width assumptions force a button shape that conflicts with the text-link aesthetic. Use raw `<button>` with classes `text-sm font-medium text-red-500 transition-colors hover:text-red-600`. The wrapping `<form>` carries the `?/cancel` or `?/refund` action; the button is just the rendered affordance.
 
-2. **Dark-surface hamburger** (mobile nav header): `<Button variant="ghost">` hover uses `hover:bg-accent`, which conflicts with explicit dark-surface hover overrides. Use `hover:bg-gray-800` to match sidebar nav link convention. See Mobile header section.
+2. **Outlined-destructive** (Cancel order, Refund payment) on the detail page: `<Button variant="destructive">` applies filled red. Outlined red is the documented quieter treatment. Use `<Button variant="outline" class="border-red-200 text-red-500 hover:bg-red-50">`. NOTE: this is now implemented via the `<Button>` primitive (variant + class override), not via raw `<button>`. The exception remains documented because the class-override pattern is non-default behavior worth noting; converting to a `destructive-outline` Button variant is a Tier 2 shadcn audit candidate.
 
-3. **Sortable table column headers**: column headers that toggle sort direction use a raw `<button>` because `<th>` is the semantic container and Button's padding/shape assumptions don't fit cleanly inside a header cell.
+3. **Dark-surface hamburger** (mobile nav header): `<Button variant="ghost">` hover uses `hover:bg-accent`, which conflicts with explicit dark-surface hover overrides. Use `hover:bg-gray-800` to match sidebar nav link convention. See Mobile header section.
 
-4. **Accordion toggles**: when a custom expand/collapse UI overrides the shadcn Accordion primitive (e.g., full-row clickable headers inside a list), the toggle is a raw `<button>` wrapping the row content. Button's height constraints would require explicit overrides on every callsite.
+4. **Sortable table column headers**: column headers that toggle sort direction use a raw `<button>` because `<th>` is the semantic container and Button's padding/shape assumptions don't fit cleanly inside a header cell.
 
-5. **Status filter pills**: the `FilterPills` / status tabs pattern (see Filter Pills section) uses raw `<button>` elements because the pill shape (`rounded-full px-3 py-1.5`) and the green/gray active/inactive color system don't map to any Button size or variant. Migrating would require a new `pill` variant.
+5. **Accordion toggles**: when a custom expand/collapse UI overrides the shadcn Accordion primitive (e.g., full-row clickable headers inside a list), the toggle is a raw `<button>` wrapping the row content. Button's height constraints would require explicit overrides on every callsite.
 
-6. **`DropdownMenuItem` as form submit**: bits-ui's `DropdownMenuItem` renders its own interactive element. When a menu item must submit a form (e.g., a status change via `method="post"`), use a raw `<button type="submit">` inside the item — nesting a `<Button>` creates an invalid nested interactive element.
+6. **Status filter pills**: the `FilterPills` / status tabs pattern (see Filter Pills section) uses raw `<button>` elements because the pill shape (`rounded-full px-3 py-1.5`) and the green/gray active/inactive color system don't map to any Button size or variant. Migrating would require a new `pill` variant.
 
-7. **Popover triggers with custom interior**: bits-ui's `PopoverTrigger` renders its own `<button>` internally. Do not nest a `<Button>` inside `PopoverTrigger`. Apply trigger classes directly via the `class` prop on `PopoverTrigger`.
+7. **`DropdownMenuItem` as form submit**: bits-ui's `DropdownMenuItem` renders its own interactive element. When a menu item must submit a form (e.g., a status change via `method="post"`), use a raw `<button type="submit">` inside the item — nesting a `<Button>` creates an invalid nested interactive element.
 
-8. **Absolutely-positioned input field decorations** (clear, eye toggle): buttons positioned `absolute` inside an input container conflict with `<Button>`'s internal padding and min-width. Use a raw `<button>` with explicit sizing (e.g., `size-6 rounded flex items-center justify-center`) and position classes. Exception: if the decoration sits outside the input's padding area, `size="icon-xs"` may fit.
+8. **Popover triggers with custom interior**: bits-ui's `PopoverTrigger` renders its own `<button>` internally. Do not nest a `<Button>` inside `PopoverTrigger`. Apply trigger classes directly via the `class` prop on `PopoverTrigger`.
+
+9. **Absolutely-positioned input field decorations** (clear, eye toggle): buttons positioned `absolute` inside an input container conflict with `<Button>`'s internal padding and min-width. Use a raw `<button>` with explicit sizing (e.g., `size-6 rounded flex items-center justify-center`) and position classes. Exception: if the decoration sits outside the input's padding area, `size="icon-xs"` may fit.
 
 ### Rules
 
@@ -1033,6 +1040,7 @@ interface FilterPill {
 	value: string;
 	count: number;
 	dot?: boolean; // show amber dot when count > 0 and not active
+	icon?: string; // Iconify icon name (e.g. 'mdi:check-circle-outline'); renders at h-3 w-3 left of label
 }
 ```
 
@@ -1042,8 +1050,8 @@ interface FilterPill {
 <FilterPills
 	pills={[
 		{ label: 'All', value: '', count: 16 },
-		{ label: 'Received', value: 'received', count: 6, dot: true },
-		{ label: 'Confirmed', value: 'confirmed', count: 6 }
+		{ label: 'Received', value: 'received', count: 6, dot: true, icon: 'mdi:inbox-arrow-down' },
+		{ label: 'Confirmed', value: 'confirmed', count: 6, icon: 'mdi:check-circle-outline' }
 	]}
 	active={data.statusFilter ?? ''}
 	onSelect={(value) => goto(resolve(buildStatusPath(value)))}
@@ -1055,6 +1063,7 @@ interface FilterPill {
 - Container: `flex gap-1.5 overflow-x-auto pb-0.5`
 - Active pill: `bg-primary text-white`
 - Inactive pill: `border border-gray-200 bg-gray-100 text-gray-600 hover:bg-gray-200`
+- Icon (when `icon` prop is set): `h-3 w-3 shrink-0` rendered to the left of the label. The "All" pill omits the icon by convention — the asymmetry signals "meta-option, not filtered."
 - Count: plain text inside the pill — never a nested `bg-white rounded-full` badge
 - Urgent dot: `h-1.5 w-1.5 rounded-full bg-amber-400` — rendered only when `dot === true && count > 0 && !active`
 
@@ -1275,18 +1284,91 @@ Row 2: [ Filter pills (left)          Date range picker (right) ]
 
 ### Data / list card (order cards)
 
+The canonical reference implementations are `src/routes/(app)/dashboard/orders/+page.svelte` and `src/routes/(app)/dashboard/orders/history/+page.svelte`. Both follow the body + action strip pattern below.
+
 ```svelte
 <div
-	class="overflow-hidden rounded-xl border border-gray-200 bg-white transition-colors hover:border-gray-300"
+	class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm transition-shadow hover:shadow-md
+		{isCancelled ? 'opacity-50' : ''}"
 >
-	<a href={resolve(`/dashboard/orders/${order.id}`)} class="block p-4">
-		<!-- card body — clickable, navigates to detail -->
-	</a>
-	<div class="flex items-center gap-2 border-t border-gray-100 px-4 py-2">
-		<!-- action strip — NOT inside the link -->
+	<!-- Card body: clickable, navigates to detail -->
+	<div
+		role="button"
+		tabindex="0"
+		class="cursor-pointer px-4 py-3"
+		onclick={() => goto(resolve(`/dashboard/orders/${order.id}`))}
+		onkeydown={(e) => {
+			if (e.key === 'Enter' || e.key === ' ') goto(resolve(`/dashboard/orders/${order.id}`));
+		}}
+	>
+		<!-- card content: badges row, customer, time, items summary, price -->
 	</div>
+
+	<!-- Action strip: only renders when there are actions -->
+	{#if hasActions}
+		<div class="flex items-center justify-end gap-3 border-t border-gray-100 px-4 py-2">
+			<!-- text-link actions, right-aligned -->
+		</div>
+	{/if}
 </div>
 ```
+
+**Body padding** is `px-4 py-3` for list-card visual density. The previous `p-4` was looser; `py-3` is the implementation choice for compact lists.
+
+**Hover treatment** uses `shadow-sm hover:shadow-md transition-shadow` for visual feedback. Do NOT use `hover:bg-muted/50`, `hover:bg-gray-50`, or any background-color hover on cards — shadow lift is the canonical signal. Background-color hovers on full cards read as "this row is selected" rather than "this is interactive," which conflicts with the click-to-navigate model.
+
+**Action strip** is conditionally rendered. Cards with no available actions (e.g., fulfilled orders) end after the body. The strip never renders empty. Inside the strip:
+
+- Right-aligned (`justify-end gap-3`)
+- Border above (`border-t border-gray-100`)
+- Padding `px-4 py-2`
+- Affordances are quiet text links, not buttons. See [Documented raw `<button>` exceptions](#documented-raw-button-exceptions) entry #1.
+
+#### Order card typography hierarchy
+
+A two-size, two-weight, three-color system establishes scan-order on the cards:
+
+| Tier | Class string | Use for |
+| --- | --- | --- |
+| Primary | `text-sm font-medium text-gray-900` | Customer name, price |
+| Secondary | `text-xs text-gray-500` | Order number, delivery address, items summary, status label next to progress row |
+| Tertiary | `text-xs text-gray-400` | Created date (history page), relative-time annotations |
+
+Order number is monospace (`font-mono`) and joins the secondary tier — monospace alone gives findability; weight isn't needed.
+
+**Fixed semantic colors** (not hierarchy levels):
+
+- Pickup time / scheduled-for: `text-xs text-amber-700` (with relative-time portion in `text-amber-500`)
+- Destructive text-link: `text-sm font-medium text-red-500 hover:text-red-600`
+
+Amber and red signal "attention" and "destructive" respectively; they don't fit the gray-scale tier system.
+
+**Customer name and price are equal-tier primary information.** Both `text-sm font-medium text-gray-900`. Earlier implementations had price at `text-base font-semibold` while customer was plain `text-sm`; that asymmetry was unearned. Vendor needs both who and how much; both get the same weight.
+
+**Status label adjacent to the progress row is secondary**, not primary. The progress row carries the visual weight; the textual label is reinforcement.
+
+**How the hierarchy applies to the detail page:**
+
+The detail page (`/dashboard/orders/[orderId]`) uses the same three-tier gray scale for body content (`text-gray-900` primary, `text-gray-500` secondary, `text-gray-400` tertiary). Two documented exceptions:
+
+1. **Card section headers** (`<CardTitle>` with `text-xs font-semibold tracking-wide text-muted-foreground uppercase`) keep their muted-token convention. This is the detail-page section-heading style, not part of the card typography vocabulary.
+2. **Items card "Total" line** (`text-sm font-bold`) — semantic emphasis for the receipt's final answer, not hierarchy drift.
+
+The detail-page page-header price uses `text-xl font-semibold text-gray-900` — one tier above cards' `text-sm font-medium text-gray-900` price, because it's a page-level data point rather than a list-card summary. The detail page `<h1>` (`text-2xl font-bold text-gray-900`) stays the loudest element on the page.
+
+**Dashboard overview "Recent orders" table** (added in the lifecycle-vocabulary alignment prompt): the Status column uses the same icon + label vocabulary as the cards' progress row, in compact form (`h-3.5 w-3.5` icon, `text-xs font-medium text-gray-700` label). Active stages render in `text-primary`, cancelled in `text-red-500`, scheduled in `text-amber-600`. The same canonical `lifecycleStages` source is used.
+
+**Customer-facing order status page** (`src/routes/(public)/[vendorSlug]/orders/[orderId]/+page.svelte`) intentionally diverges from the vendor-side lifecycle vocabulary. Three differences are deliberate, not drift:
+
+1. **Icons.** The customer-side STEPS constant uses `mdi:receipt-text-outline` for received, `mdi:package-variant-closed` for in-production, and `mdi:bell-ring-outline` for ready. The vendor-side `lifecycleStages` uses `mdi:inbox-arrow-down`, `mdi:progress-wrench`, and `mdi:package-variant-closed` respectively. The vendor metaphors are worker-task-oriented; the customer metaphors are buyer-perspective-oriented. The `bell-ring-outline` for ready is a stronger "come pick up your order" signal than a neutral package icon.
+
+2. **Labels.** Customer-side uses "Ready!" (with celebratory exclamation) and "Done" (warmer than "Fulfilled"). Vendor side uses neutral "Ready" and "Fulfilled."
+
+3. **Visual treatment.** Customer-side stepper uses circular badges with `border-2` rings; vendor-side uses transparent containers with `bg-primary/10` only on the current stage. The richer customer treatment is appropriate for a single-order context that the customer reads once.
+
+**Do not migrate the customer-side STEPS constant to import from `lifecycleStages`.** The divergence is intentional. If a future change touches the customer-side icons or labels, the change should preserve the buyer-perspective metaphors.
+
+The customer page also legitimately uses themable tokens (`text-foreground`, `text-muted-foreground`) and CSS custom properties (`--background-color`, `--accent-color`, `--foreground-color`) for vendor branding. The gray-scale typography hierarchy used on vendor surfaces does NOT apply here — vendor theming requires themable tokens. This is the documented exception.
 
 ### Stat card (dashboard overview)
 
@@ -1650,34 +1732,61 @@ The order lifecycle is visualized as an icon-based progress row, not a colored `
 
 ### Order state-transition buttons
 
-Order state-transition buttons (Confirm, Start production, Mark ready, Fulfill) use `<Button>` (default variant — green fill) with a stage icon from `actionConfig` in `src/lib/utils/order-lifecycle.ts`. Import `actionConfig` from that module; do not redefine stage labels or icons locally.
+Order state-transition buttons ("Confirm", "Start production", "Mark ready", "Fulfill") appear ONLY on the order detail page Actions card (`/dashboard/orders/[orderId]`). They do NOT appear on list cards in `/dashboard/orders` or `/dashboard/orders/history`. List cards are clickable and navigate to the detail page; vendors advance order status from there.
+
+Implemented via the default `<Button>` primitive (brand green). Each button includes an `<Icon>` matching the destination stage from `actionConfig` in `src/lib/utils/order-lifecycle.ts`. Button labels and icons are sourced from that single canonical map.
 
 ```svelte
 {@const action = actionConfig[order.status]}
 <Button type="submit">
-  <Icon icon={action.icon} class="h-3.5 w-3.5" />
-  {action.label}
+	<Icon icon={action.icon} class="h-3.5 w-3.5" />
+	{action.label}
 </Button>
 ```
 
-Height is `h-8` (default Button size). The default green variant is correct here — state-transition is a primary action on its page context (order detail) or row context (live orders list). There is no blue exception; Exception #1 has been removed from the raw `<button>` list.
+The detail page is the only state-transition surface. Brand green is the canonical primary-CTA treatment for that surface — there is no longer a competing per-card button to displace it. The earlier convention of `bg-blue-600 hover:bg-blue-700 text-white` on raw `<button>` elements was never implemented; the convention before this rewrite was a class override (`bg-gray-900 text-white hover:bg-gray-800`) that briefly applied during a transitional state. Both are retired.
 
-### Destructive actions on order detail (Cancel order)
+### Destructive actions (Cancel, Refund)
 
-Two destructive actions appear on order cards and the detail page:
+Destructive actions take two forms in this codebase, depending on surface context:
 
-- **Cancel order** — `<Button variant="destructive">` (filled red). This is a clear destructive primary action and the filled treatment is intentional — vendors should see it as a high-weight decision.
-- **Refund payment** — `<Button variant="outline" class="border-red-200 text-red-500 hover:bg-red-50">`. Refund appears only on cancelled orders with paid status; it is a secondary action and the quieter outlined treatment is appropriate.
+**On the detail page (`/dashboard/orders/[orderId]`):** "Cancel order" and "Refund payment" use `<Button variant="outline">` with class override `border-red-200 text-red-500 hover:bg-red-50`. The filled `variant="destructive"` is never used — outlined red is the canonical quieter treatment. The detail page sits these buttons next to the brand-green state-transition button, so the quieter treatment prevents the destructive action from competing with the primary CTA.
 
-Both use the shadcn `<Button>` primitive. The prior raw `<button>` with blue-competing rationale no longer applies since state-transition buttons now use the default green `<Button>`.
+**On list cards (`/dashboard/orders`, `/dashboard/orders/history`):** Cancel and Refund are quiet text affordances in the card action strip below the body, NOT outlined buttons. Raw `<button>` element with classes `text-sm font-medium text-red-500 transition-colors hover:text-red-600`. The strip itself signals "these are actions"; the affordances inside don't need button shape to read as actionable. See "Card action strip" pattern under [Data / list card](#data--list-card-order-cards).
 
-The mobile hamburger is the only remaining raw `<button>` in the order actions surface — due to the dark-surface hover conflict described in the Mobile header section.
+The mobile hamburger uses a plain `<button>` instead of `<Button variant="ghost">` due to dark-surface hover conflict — flagged for Tier 2 shadcn audit alongside a potential `dark-surface` variant. The outlined-destructive treatment on detail page is also flagged for the same audit (a `destructive-outline` variant would eliminate the class override).
 
 ### Mobile header
 
 The mobile header (`md:hidden` in `+layout.svelte`) is `sticky top-0 z-30` so the hamburger remains accessible during scroll. Desktop is `md:static md:z-auto` — the persistent sidebar provides navigation and a sticky decorative header would steal vertical space. The Sheet/drawer overlay sits at `z-50`, above the sticky header.
 
 The hamburger uses a plain `<button>` rather than shadcn `<Button variant="ghost">` because ghost's `hover:bg-accent` conflicts unpredictably with explicit dark-surface hover overrides. Hover convention matches sidebar nav links: `hover:bg-gray-800`. Tier 2 shadcn audit should add a "dark surface" Button variant to resolve this properly.
+
+### Production view day-grouping
+
+The production view (`/dashboard/orders?view=production`) defaults to grouping by **day**, not by pickup window. Vendors think in days ("what do I bake Saturday?"), not in implementation-detail pickup-window IDs. The day grouping is computed client-side via a `$derived` value that re-buckets the server's window-grouped data into days, summing quantities across windows on the same date.
+
+A toggle in the production toolbar swaps between day and window grouping. State is in URL via `?group=window` — the day view is the default, no param needed. URL state allows bookmarking and survives reload.
+
+When applying this pattern to other views: server should query at the natural SQL granularity (whatever the database aggregation key is); client should re-bucket into the user-mental-model grouping via `$derived`. The toggle, if needed, lives in URL search params — not component-local state.
+
+Day-card header format: `Saturday, May 2 · 12 items to prep · 2 pickup windows` (plural-aware on both counts).
+
+### Modifier-aware item aggregation
+
+When aggregating order items for production views, **always include modifier identity in the GROUP BY**. Two items with the same name but different modifier sets represent different prep work. Aggregating them together hides production-relevant variance.
+
+Server-side: include `selectedModifiers` in both the SELECT and GROUP BY. PostgreSQL's JSONB grouping correctly distinguishes different modifier sets (canonical representation handles object key ordering; array order is preserved as part of identity).
+
+Client-side rendering format:
+
+```svelte
+{item.name}{#if item.modifiers.length > 0}<span class="text-gray-500"> — {item.modifiers.join(', ')}</span>{/if}
+```
+
+Item name in primary color (`text-gray-900`); modifier list in `text-gray-500` with em-dash separator; comma-separated modifiers when multiple. No suffix when modifiers array is empty.
+
+When deduplicating client-side (e.g., for day-grouping re-bucketing), the deduplication key is `name + sorted(modifiers).join('|')` — sorting ensures `[crusty, sliced]` and `[sliced, crusty]` collapse to the same row.
 
 ---
 
@@ -1741,6 +1850,49 @@ If the bare parent route (e.g., `/dashboard/settings`) needs to redirect to
 a default sub-page, use `+page.server.ts` with a `redirect(302, ...)`. The
 sub-pages themselves do not include back links to the parent — the inner
 sidebar/select handles navigation.
+
+---
+
+## Print pattern
+
+For printable views (production list, receipt, etc.), use Tailwind's `print:` variants for opt-out chrome hiding. The default behavior is "everything prints"; explicit `print:hidden` on chrome elements removes them from print. This scales better than opt-in approaches because new content added to the page prints correctly without needing print-specific markup.
+
+**Layout-level chrome** receives `print:hidden` on the wrapping element:
+
+```svelte
+<aside class="... print:hidden">...</aside>
+<header class="... print:hidden">...</header>
+<footer class="... print:hidden">...</footer>
+```
+
+**Page-level chrome** (search, filters, tabs, summary bars, toolbars) also gets `print:hidden` on its wrapping element.
+
+**Print-only headers** use `hidden print:block` so they're invisible on screen but appear in print:
+
+```svelte
+<div class="hidden print:mb-6 print:block">
+  <h1 class="text-xl font-bold text-gray-900">Production list</h1>
+  <p class="text-sm text-gray-500">{vendorName} · Printed {date}</p>
+</div>
+```
+
+**Body reset** for print, in a `<style>` block on the page that has the printable content:
+
+```svelte
+<style>
+  @media print {
+    :global(body) {
+      background: white !important;
+    }
+  }
+</style>
+```
+
+This neutralizes any vendor-themed or dark page background so print output is clean.
+
+**Print trigger** is `window.print()` from a button click. No PDF generation, no new dependencies.
+
+Apply this pattern to any future printable view (order receipts, invoices, end-of-day summaries, etc.).
 
 ---
 

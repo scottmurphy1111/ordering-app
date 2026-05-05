@@ -345,7 +345,7 @@
 											{order.status}
 										</span>
 									{/if}
-									<Badge class="bg-muted text-muted-foreground capitalize">{order.type}</Badge>
+									<Badge class="bg-gray-100 text-gray-500 capitalize">{order.type}</Badge>
 									{#if order.paymentStatus && paymentBadge[order.paymentStatus]}
 										<Badge class={paymentBadge[order.paymentStatus].cls}>
 											{paymentBadge[order.paymentStatus].label}

@@ -105,8 +105,8 @@
 					</p>
 				{:else if order.paymentStatus === 'pending'}
 					<div class="mb-3 flex justify-center">
-						<div class="flex h-14 w-14 items-center justify-center rounded-full bg-yellow-50">
-							<Icon icon="mdi:clock-outline" class="h-8 w-8 text-yellow-500" />
+						<div class="flex h-14 w-14 items-center justify-center rounded-full bg-amber-50">
+							<Icon icon="mdi:clock-outline" class="h-8 w-8 text-amber-500" />
 						</div>
 					</div>
 					<h1 class="text-xl font-bold text-foreground">Awaiting payment</h1>

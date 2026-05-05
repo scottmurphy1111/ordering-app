@@ -79,6 +79,7 @@ export const load: PageServerLoad = async ({ locals, url, depends }) => {
 				windowName: pickupWindows.name,
 				locationName: pickupLocations.name,
 				itemName: orderItems.name,
+				selectedModifiers: orderItems.selectedModifiers,
 				totalQuantity: sum(orderItems.quantity),
 				orderCount: sql<number>`count(distinct ${orders.id})`
 			})
@@ -98,7 +99,8 @@ export const load: PageServerLoad = async ({ locals, url, depends }) => {
 				pickupWindows.endsAt,
 				pickupWindows.name,
 				pickupLocations.name,
-				orderItems.name
+				orderItems.name,
+				orderItems.selectedModifiers
 			)
 			.orderBy(asc(pickupWindows.startsAt), desc(sum(orderItems.quantity)), asc(orderItems.name));
 
@@ -108,7 +110,7 @@ export const load: PageServerLoad = async ({ locals, url, depends }) => {
 			{
 				window: WindowGroupKey;
 				orderCount: number;
-				items: Array<{ name: string; totalQuantity: number }>;
+				items: Array<{ name: string; modifiers: string[]; totalQuantity: number }>;
 			}
 		>();
 
@@ -129,6 +131,9 @@ export const load: PageServerLoad = async ({ locals, url, depends }) => {
 			}
 			productionMap.get(wid)!.items.push({
 				name: row.itemName,
+				modifiers: Array.isArray(row.selectedModifiers)
+					? (row.selectedModifiers as Array<{ name: string }>).map((m) => m.name)
+					: [],
 				totalQuantity: parseInt(row.totalQuantity ?? '0')
 			});
 		}
