@@ -513,6 +513,28 @@ Current status pills (received, confirmed, in production, ready, fulfilled, canc
 
 ---
 
+### StatusBadge component — extract status pill color logic
+
+**Status:** Pending — ready-to-execute. Code-health item.
+
+**Why it matters:** Status pill color logic is repeated across multiple surfaces — catalog item rows (`available` / `sold_out` / `hidden`), order rows (`received` / `confirmed` / `preparing` / `ready` / `fulfilled` / `cancelled`), and likely others. Each callsite recomputes the color mapping inline (e.g., `bg-green-100 text-green-700` for available, `bg-amber-100 text-amber-700` for sold_out). When the status pill design changes (e.g., the Tier 2 "Status pills: replace with icons + semantic-color labels" item lands), every callsite needs identical updates. DRY: extract a single `<StatusBadge status={...} />` component that owns the mapping.
+
+**Scope:**
+- New component: `src/lib/components/StatusBadge.svelte`. Accepts `status` (string) and optionally `domain` (`'item' | 'order'` to scope which status enum is being rendered).
+- Internal mapping: status → color class + label. Single source of truth.
+- Sweep callsites: catalog items list (mobile + desktop), catalog item slideout, orders list, order detail, order history. Replace inline color logic with `<StatusBadge>` usage.
+- Composable with the future "Status pills: replace with icons" item — when that lands, the mapping changes inside `StatusBadge` only; callsites unchanged.
+
+**Out of scope:**
+- Status pill REDESIGN (separate Tier 2 entry — "Status pills: replace with icons + semantic-color labels"). This entry is just the extraction.
+- Adding new status types or changing the existing enum.
+
+**Estimated effort:** Half a day. Mechanical extraction + sweep.
+
+**Trigger:** Before the "Status pills: replace with icons" Tier 2 work ships, OR when next touching a status pill callsite for any reason. Pair with any work that already touches one of these surfaces — natural moment to extract.
+
+---
+
 ### Brand the dashboard — vendor accent color theming
 
 The dashboard currently uses hardcoded brand green for primary actions across all vendors. Vendors should see the dashboard themed with their own brand color (already collected in branding settings).
@@ -534,6 +556,122 @@ Currently pickup locations can only be deactivated, not deleted entirely. Vendor
 **Status:** needs-decision
 
 **Open question:** Should deletion be hard-delete (record gone forever) or soft-delete with a "Trash" archive view? Hard-delete is simpler but loses historical context (occurrences that referenced this location either get orphaned or cascade-deleted, both of which have implications for analytics). Soft-delete preserves history but adds Trash UI. Default recommendation: soft-delete with 30-day grace period before hard-delete, matching common SaaS patterns.
+
+---
+
+### Catalog: bulk actions on items list
+
+**Status:** Pending — needs-design.
+
+**Why it matters:** A vendor with 50+ items wants to mark 10 as "sold out" simultaneously, archive a seasonal batch, or apply a category change in one operation. Single-row actions force 50 individual clicks. Bulk actions are table stakes at scale; their absence becomes a daily friction point as catalogs grow.
+
+**Scope:**
+- Checkbox column on the catalog items list (mobile cards + desktop table). Header checkbox toggles "select all on this page."
+- Selection state persists across pagination within a session; each page selects independently.
+- Bulk action bar appears when ≥1 selected, fixed to bottom of viewport on mobile, top of table area on desktop. Bar shows: count selected, action buttons (Mark available / Mark sold out / Mark hidden / Delete), Cancel.
+- Each bulk action confirms via `confirmDialog` before applying. Delete confirms with stronger copy ("Delete N items? This cannot be undone").
+- Server actions: new `?/bulkSetStatus` and `?/bulkDelete` actions handling arrays of item IDs. Existing single-item actions stay as-is.
+- The `Checkbox` primitive is already imported in the items page (was already in the imports for unrelated reasons).
+- Empty selection clears the action bar; selecting items repopulates it.
+
+**Out of scope:**
+- Bulk category re-assignment (separate, more complex — needs a category picker mini-flow). Defer.
+- Bulk price changes (similar — needs a percent-or-amount mini-form). Defer.
+- Bulk tag add/remove (similar). Defer.
+- Cross-page selection ("select all 247 items across all pages"). Single-page selection only for v1.
+
+**Estimated effort:** 1–2 days. UI is straightforward (existing Checkbox + new action bar); server actions are mechanical (loop with auth check); confirm dialog already wired.
+
+**Trigger:** When the first vendor with 30+ items signs up, or when a vendor specifically asks for bulk operations. The pre-launch wedge audience (artisan makers) typically has small catalogs (10–30 items), so this is unlikely to be the first thing requested.
+
+---
+
+### Catalog: duplicate item affordance
+
+**Status:** Pending — ready-to-execute.
+
+**Why it matters:** Vendors with variant products ("Sourdough Loaf" → "Sourdough Loaf — Whole Wheat", "Standard Soap" → "Soap with extra essential oils") need to clone-and-edit. Today they manually re-enter every field. Duplicate is a common SaaS pattern; its absence is a daily friction point for vendors with parallel product variants.
+
+**Scope:**
+- New action on each item row: "Duplicate" button or menu item (placement TBD — could be in row actions or in the slideout edit form).
+- Server action: `?/duplicate` accepts an item ID, copies all fields except `id`, `name` (suffix with " (copy)"), `sortOrder` (placed at end), and modifier groups (clone the group structure with empty options OR full clone — design decision).
+- Modifier groups: design decision — clone the modifier groups structure (group names + isRequired + maxSelections, options array) so the duplicated item has the same modifier setup. This is the more useful default; a soap variant typically has the same modifier groups (Scent, Size) as the original.
+- Image: copy the image URL reference (don't re-upload, same image works).
+- After duplicate, navigate to the new item's edit page (or open it in the slideout) so vendor can edit the copy.
+
+**Open question for design:**
+- "Duplicate" placement: row-level action button vs in the slideout's footer? Row-level is more discoverable but adds another action button to already-busy rows. Slideout footer is less discoverable but doesn't crowd the list.
+
+**Estimated effort:** Half a day. Server action is small; design decision on placement is the time investment.
+
+**Trigger:** When a vendor with parallel variants signs up (e.g., a soap maker with 5 essential-oil scents) and asks for duplicate.
+
+---
+
+### Catalog: tag input as token chips
+
+**Status:** Pending — needs-design.
+
+**Why it matters:** Tags are currently rendered as a single comma-separated text input. A user typing tags has no visual confirmation that the comma has split the value, no way to remove a single tag without re-typing, no autocomplete from existing tags. The input feels like a database field, not a curated list. Token-style chip inputs (each tag is a removable pill, type-and-press-comma adds a new chip, tags from other items autocomplete) are the standard SaaS UX for this pattern.
+
+**Scope:**
+- New component: `src/lib/components/TagInput.svelte`. Renders existing tags as removable chips, an input field for new tag entry, autocomplete dropdown sourced from all tags across the vendor's catalog.
+- Replace the current `<Input name="tags">` in `CatalogItemForm.svelte` with `<TagInput bind:tags />`.
+- Form submit: serialize chips as comma-separated string for the existing server action (which already splits on comma).
+- Autocomplete source: query all distinct tags across the vendor's catalog items on form load; pass to `TagInput` as a suggestion list.
+- Round-trip preserves array structure correctly (existing concern resolved by the chip model — no fragile string parsing).
+
+**Out of scope:**
+- Tag taxonomy / tag management page (managing tags as first-class entities). Tags stay as freeform per-item arrays.
+- Cross-vendor tag suggestions (privacy concern, no value).
+- Tag colors or icons.
+
+**Estimated effort:** 1 day. The component is the time investment; the form integration is small; autocomplete source query is a half-hour add.
+
+**Trigger:** When tag UX surfaces friction in vendor feedback, OR when a CSV import surfaces tag-handling questions (current CSV import standardized on comma delimiter — works correctly but exposes the same "no visual confirmation" issue).
+
+---
+
+### Catalog items list: "Updated N ago" orientation signal
+
+**Status:** Pending — ready-to-execute.
+
+**Why it matters:** Vendors editing items frequently lose track: "did I update this yesterday or last week?" The schema has `updatedAt` for every item, but it's not surfaced in the list view. Adding a small "Updated 2 days ago" line provides at-a-glance orientation without crowding the row.
+
+**Scope:**
+- Add `updatedAt` to the items query column projection (`+page.server.ts`).
+- Render a small `text-xs text-muted-foreground` timestamp on each row, formatted with a relative-time helper ("just now" / "2 hours ago" / "3 days ago" / "2 weeks ago"). Existing relative-time helpers may exist in the project; if not, a small `formatRelative(date)` helper.
+- Mobile cards: timestamp on its own line below the category/price line.
+- Desktop table: new column or an additional line in the existing name cell.
+
+**Out of scope:**
+- "Updated by" attribution (would need user tracking on item updates).
+- Filterable / sortable by updated date.
+
+**Estimated effort:** 1–2 hours. Query column add + render + helper if needed.
+
+**Trigger:** Whenever the catalog items list is being touched for another reason. Standalone value is small but compounds with other catalog work.
+
+---
+
+### Catalog items list: persist sort state via URL params
+
+**Status:** Pending — ready-to-execute.
+
+**Why it matters:** Sort state on `/dashboard/catalog/items` (sort by name / category / price / status, ascending or descending) is component-local Svelte state. Refreshing the page or sharing the URL loses the sort selection. Vendors who prefer "always sort by recent updates" or "always sort by price descending" lose their preference on every page reload. Search and filter state already persist via URL params (`?search=...`, `?categoryId=...`); sort should match.
+
+**Scope:**
+- Server load: accept `sortBy` (`name` | `category` | `price` | `status`) and `sortDir` (`asc` | `desc`) query params. Default `sortBy=sortOrder` (the drag-sort order) when neither is set.
+- Client: replace the component-local `sortCol` and `sortDir` $state with URL-derived state. Clicking column headers updates the URL (uses `goto` with `replaceState: true`, matching the existing search/filter pattern).
+- Default behavior: when no sort param, fall back to vendor-set sort order (sortOrder column) — preserves the drag-sort UX.
+
+**Out of scope:**
+- Multi-column sort.
+- Sort persistence on other catalog surfaces (categories list).
+
+**Estimated effort:** 1–2 hours. Mechanical conversion of $state to URL-derived; matches existing search/filter pattern in the same file.
+
+**Trigger:** Whenever the catalog items list is being touched for another reason, OR when a vendor reports losing their preferred sort on refresh.
 
 ---
 
@@ -576,6 +714,72 @@ Solvable today only by per-occurrence cancellation against a denser weekly templ
 
 ---
 
+### Modifier system: cross-group drag for option reassignment
+
+**Status:** Pending — needs-design.
+
+**Why it matters:** The modifier system supports drag-sort within a group (reorder options inside Size: Small/Medium/Large) but not across groups. A vendor who initially put "Vegan" under Add-ons but later realizes it should be under Dietary has to delete-and-recreate. Cross-group drag is a SaaS-grade polish that the current single-group sort doesn't quite reach.
+
+**Scope:**
+- Update the SortableJS configuration in `ModifierGroupsManager.svelte` to enable cross-group drag (likely `group: { name: 'modifier-options', pull: true, put: true }`).
+- Server endpoint: `/api/move-modifier-option` accepting `optionId`, `targetModifierId`, `newSortOrder`. Validates that the option's current modifier and target modifier belong to the same vendor.
+- Optimistic UI: option moves immediately on drop; error rolls back and shows "Reload to revert" alert (consistent with current reorder failure pattern).
+- Visual cue during drag: dragged option shows a "moving to {targetGroup}" hint.
+
+**Out of scope:**
+- Cross-item drag (moving an option from one item's modifier group to another item's modifier group). Items don't share modifier groups directly — they share via the junction table — so this is a fundamentally different operation.
+- Bulk move (selecting multiple options and moving them together).
+
+**Estimated effort:** 1 day. SortableJS config is small; new endpoint is mechanical; the design question is the visual treatment during drag (drop target highlighting, etc.).
+
+**Trigger:** When a vendor reorganizes their modifiers and asks for the gesture, OR when the next round of modifier system polish is being done.
+
+---
+
+### Modifier system: optimistic UI rollback on reorder failure
+
+**Status:** Pending — ready-to-execute. Code-health item.
+
+**Why it matters:** Currently, the drag-sort reorder endpoints (`/api/reorder-modifiers` and `/api/reorder-modifier-options`) handle failures by displaying "Reload to revert" alert text. Vendor must manually refresh to undo a failed reorder — annoying and confusing ("did my change save or not?"). Optimistic UI with proper rollback on failure is the standard pattern: optimistically update UI, on failure restore the prior order automatically.
+
+**Scope:**
+- Capture the original sort order before issuing the reorder request.
+- On success, the optimistic update stands; no action.
+- On failure (network error, 500 response, validation failure), restore the captured order and show a toast or alert ("Reorder failed — order restored").
+- Apply the pattern to all reorder surfaces: `/api/reorder-categories`, `/api/reorder-items`, `/api/reorder-modifiers`, `/api/reorder-modifier-options`. Sibling-parity check.
+
+**Out of scope:**
+- Reorder undo via toast action button. Restore-on-failure only.
+- Conflict resolution if two vendors edit simultaneously (uses last-write-wins).
+
+**Estimated effort:** 2–3 hours per surface; 1 day for all four.
+
+**Trigger:** Pair with any work touching a reorder surface, OR address as a small batch when the optimistic-update pattern is being formalized.
+
+---
+
+### Drag-handle icon convention sweep
+
+**Status:** Pending — ready-to-execute.
+
+**Why it matters:** The modifier system landed with two distinct drag-handle icons by deliberate convention: `mdi:drag` (6-dot grid) for "block-level" sortables (modifier groups, where a group is a block), `mdi:drag-vertical` (2-column dots) for "row-level" sortables (modifier options within a group). The convention is documented in CLAUDE.md and reinforced visually with `hover:bg-muted/30` on the group container. The convention is NOT yet applied on other sortable surfaces: catalog items list, catalog categories list. Both currently use a mix of icons that predate the modifier-system convention.
+
+**Scope:**
+- Audit catalog items list (`/dashboard/catalog/items`) sort-mode UI. The list is row-level sortable → should use `mdi:drag-vertical`.
+- Audit catalog categories list (`/dashboard/catalog/categories`). Categories are block-level (each category contains multiple items) → should use `mdi:drag` (6-dot).
+- Update the icon usages to match the convention.
+- Add hover-tint to group containers if appropriate (`hover:bg-muted/30 transition-colors` per the modifier system pattern).
+- Cross-reference with CLAUDE.md to ensure the convention is captured there.
+
+**Out of scope:**
+- Other sortable surfaces (pickup window day-order, etc.). The convention is documented; future sortables follow it without explicit sweep.
+
+**Estimated effort:** 1–2 hours. Icon swaps + hover-tint addition.
+
+**Trigger:** When next touching the catalog items or categories surfaces. Standalone value is small (visual polish).
+
+---
+
 ### Production items: clarify expiration behavior
 
 Currently unclear when production items (the items shown on the production view of /dashboard/orders) expire or get cleared. Vendors want manual control over clearing production items.
@@ -583,6 +787,49 @@ Currently unclear when production items (the items shown on the production view 
 **Status:** needs-investigation
 
 **Scope:** Investigate current expiration logic (server-side filter? local storage? something else?). Then decide: should there be a manual "Clear production" button? Should expiration be configurable per vendor? Currently neither exists.
+
+---
+
+### Orders page: `?windowId=N` filter parameter
+
+**Status:** Pending — ready-to-execute.
+
+**Why it matters:** The 3-day horizon grid on `/dashboard` includes "+N more" links when a day's orders exceed the 5-row cap. Today, the link goes to `/dashboard/orders` (unfiltered) — a vendor expecting to see "tomorrow's orders" sees the full list and has to mentally filter. Adding a `?windowId=N` query param to the orders page, plus updating the "+N more" link to include it, closes this navigation loop.
+
+**Scope:**
+- Server load (`/dashboard/orders/+page.server.ts`): accept `windowId` query param. When present, filter orders to those attached to the named pickup window. Existing filters (`status`, `cancelled`, etc.) compose normally.
+- UI affordance: when filtered, render a removable filter chip near the page header ("Filtered: Saturday Farmers Market 9–11am · clear ×").
+- Update the "+N more" link in the 3-day horizon grid to pass `?windowId={w.id}` for the relevant window.
+- The window's display name (time + location) is what the chip shows; resolved server-side from the windowId.
+
+**Out of scope:**
+- Multi-window filtering (`?windowId=1,2,3`). Single-window filter only.
+- Date-range filtering on the orders page. Separate concern.
+
+**Estimated effort:** 2–3 hours. Filter is a `where` clause addition; chip UI is small; link update is one line.
+
+**Trigger:** Pair with any work that touches `/dashboard/orders`, or surface independently as a small polish PR. The "+N more" link from the 3-day grid is the immediate user-facing motivation; standalone value is small until that link sees usage.
+
+---
+
+### Production aggregations: link to catalog item
+
+**Status:** Pending — ready-to-execute.
+
+**Why it matters:** Production view aggregations (on `/dashboard/orders?view=production` and the 3-day horizon grid's Production sections) show item names with quantities — "Sourdough Loaf · Small × 12" — but the item name is not linked. A vendor seeing an unexpected quantity ("why 12 when I usually make 4?") wants to inspect the catalog item: check price, modifier setup, recent edits. Today they have to navigate manually.
+
+**Scope:**
+- In production view rows: wrap the item name in `<a href="/dashboard/catalog/items/{itemId}">`. Subtle hover treatment (color shift, no underline at rest) — affordance is "this is clickable for context" not "this is a primary action."
+- In 3-day horizon grid Production sections: same treatment.
+- Server load: production aggregation queries already group by `orderItems.name`, but the rows don't include the catalog item ID. Add an aggregation that resolves the catalog item ID (join through `orderItems.catalogItemId` if that column exists, or look up by name as a fallback). Edge case: items deleted from catalog but still in historical orders — render as plain text without a link.
+
+**Out of scope:**
+- Linking modifier values to modifier configuration. The aggregation key includes modifiers, but linking modifier names to the modifier group's edit page is a separate, narrower feature.
+- Surfacing an inline edit form in the production view. Just navigation.
+
+**Estimated effort:** Half a day. Aggregation query update is small (add a column to the SELECT); UI change is one wrapping element per row.
+
+**Trigger:** When a vendor explicitly asks "how do I jump from production to the item's catalog page" or when production view sees regular usage and the gap surfaces in feedback.
 
 ---
 

@@ -39,7 +39,7 @@
 		item?: ItemData;
 		categories: { id: number; name: string }[];
 		hasSubscriptionsAddon: boolean;
-		onSuccess?: (item: { id: number; name: string }) => void;
+		onSuccess?: (item: { id: number; name: string }, opts: { addAnother: boolean }) => void;
 		onCancel?: () => void;
 		twoColumn?: boolean;
 		itemId?: number;
@@ -114,7 +114,7 @@
 	}
 
 	function handleEnhance({ submitter }: { submitter: HTMLElement | null; [key: string]: unknown }) {
-		const shouldClose = submitter?.getAttribute('data-close') === '1';
+		const addAnother = submitter?.getAttribute('data-add-another') === '1';
 
 		return async ({
 			result,
@@ -136,10 +136,14 @@
 				internalSuccess = true;
 				await update({ reset: false });
 			} else if (onSuccess && result.type === 'success') {
-				onSuccess(result.data?.item as { id: number; name: string });
-				userImageUrl = null;
-				await update({ reset: true });
-				if (shouldClose && onCancel) onCancel();
+				const item = result.data?.item as { id: number; name: string };
+				if (addAnother) {
+					userImageUrl = null;
+					await update({ reset: true });
+				}
+				// "Save & add modifiers" path: parent handles the navigation,
+				// no local form reset needed because the page will re-render in edit mode.
+				onSuccess(item, { addAnother });
 			} else {
 				await update();
 			}
@@ -420,14 +424,14 @@
 			type="submit"
 			disabled={uploading}
 			variant="default"
-			class={fullWidth ? 'w-full md:w-auto' : ''}>Save &amp; add another</Button
+			class={fullWidth ? 'w-full md:w-auto' : ''}>Save &amp; add modifiers</Button
 		>
 		<Button
 			type="submit"
-			data-close="1"
+			data-add-another="1"
 			disabled={uploading}
 			variant="outline"
-			class={fullWidth ? 'w-full md:w-auto' : ''}>Save &amp; close</Button
+			class={fullWidth ? 'w-full md:w-auto' : ''}>Save &amp; add another</Button
 		>
 	{:else}
 		<Button

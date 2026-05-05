@@ -5,7 +5,7 @@
 	import { resolve } from '$app/paths';
 	import Icon from '@iconify/svelte';
 	import { goto } from '$app/navigation';
-	import { untrack } from 'svelte';
+	import { onMount } from 'svelte';
 	import { enhance } from '$app/forms';
 	import { confirmDialog } from '$lib/confirm.svelte';
 	import Sortable from 'sortablejs';
@@ -53,12 +53,18 @@
 	import CatalogItemForm from '$lib/components/CatalogItemForm.svelte';
 	import ModifierGroupsManager from '$lib/components/ModifierGroupsManager.svelte';
 	import { Alert } from '$lib/components/ui/alert';
+	import { Skeleton } from '$lib/components/ui/skeleton';
 
 	let { data }: { data: PageData } = $props();
 	type CatalogItem = (typeof data)['items'][number];
 	type DrawerEditItem = NonNullable<
 		Extract<NonNullable<typeof data.drawer>, { mode: 'edit' }>['item']
 	>;
+
+	let mounted = $state(false);
+	onMount(() => {
+		mounted = true;
+	});
 
 	// ── Table sorting ─────────────────────────────────────────────
 	type SortCol = 'name' | 'category' | 'price' | 'status';
@@ -154,7 +160,6 @@
 	let drawerOpen = $state(false);
 	let drawerMode = $state<'new' | 'edit'>('new');
 	let drawerItem = $state<DrawerEditItem | null>(null);
-	let drawerLastCreated = $state<{ id: number; name: string } | null>(null);
 
 	function clearDrawerParam() {
 		const qs = params.toString();
@@ -189,15 +194,12 @@
 	$effect(() => {
 		if (!data.drawer) return;
 		if (data.drawer.mode === 'new') {
-			const isAlreadyOpenNew = untrack(() => drawerOpen && drawerMode === 'new');
 			drawerMode = 'new';
 			drawerItem = null;
-			if (!isAlreadyOpenNew) drawerLastCreated = null;
 			drawerOpen = true;
 		} else if (data.drawer.mode === 'edit' && data.drawer.item) {
 			drawerMode = 'edit';
 			drawerItem = data.drawer.item as DrawerEditItem;
-			drawerLastCreated = null;
 			drawerOpen = true;
 		}
 	});
@@ -297,9 +299,9 @@
 
 	const TEMPLATE_CSV = [
 		'name,price,description,category,discounted_price,tags,available',
-		'"Classic Burger",12.99,"Beef patty with lettuce and tomato",Burgers,,burger|popular,true',
-		'"Caesar Salad",9.50,"Romaine lettuce with caesar dressing",Salads,7.99,salad|healthy,true',
-		'"Lemonade",3.00,"Freshly squeezed",Drinks,,,true'
+		'"Sourdough Loaf",8.00,"Naturally leavened, 24-hour cold ferment",Breads,,"sourdough,popular",true',
+		'"Honey Lavender Soap",12.00,"Cold-process bar soap with local honey",Soaps,,handmade,true',
+		'"Microgreens Mix",6.50,"Pea, radish, and sunflower",Vegetables,,"fresh,weekly",true'
 	].join('\n');
 
 	function downloadTemplate() {
@@ -563,10 +565,7 @@
 									<div
 										class="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-muted"
 									>
-										<Icon
-											icon="mdi:silverware-fork-knife"
-											class="h-4 w-4 text-muted-foreground/40"
-										/>
+										<Icon icon="mdi:package-outline" class="h-4 w-4 text-muted-foreground/40" />
 									</div>
 								{/if}
 								<span class="flex-1 text-sm font-medium text-foreground">{item.name}</span>
@@ -579,7 +578,7 @@
 				</div>
 			{/each}
 		</div>
-	{:else if data.items.length === 0}
+	{:else if mounted && data.items.length === 0}
 		{#if data.search || data.selectedCategoryId}
 			<div class="rounded-xl border border-gray-200 bg-white p-12 text-center">
 				<h3 class="mb-1 text-base font-semibold text-gray-900">No results match your filters</h3>
@@ -597,7 +596,7 @@
 		{:else}
 			<div class="flex flex-col items-center py-16 text-center">
 				<div class="flex h-16 w-16 items-center justify-center rounded-2xl bg-muted">
-					<Icon icon="mdi:silverware-fork-knife" class="h-8 w-8 text-muted-foreground/40" />
+					<Icon icon="mdi:package-outline" class="h-8 w-8 text-muted-foreground/40" />
 				</div>
 				<h2 class="mt-4 text-base font-semibold text-foreground">No items yet</h2>
 				<p class="mt-1 text-sm text-muted-foreground">
@@ -667,62 +666,83 @@
 
 		<!-- Mobile card list — hidden at md+ -->
 		<div class="block space-y-2 md:hidden">
-			{#each sortedItems as item (item.id)}
-				{@const primaryImage =
-					(item.images as { url: string; isPrimary?: boolean }[] | null)?.find(
-						(img) => img.isPrimary
-					) ?? (item.images as { url: string }[] | null)?.[0]}
-				<div class="overflow-hidden rounded-xl border border-gray-200 bg-white">
-					<a href={resolve(`/dashboard/catalog/items/${item.id}`)} class="block">
+			{#if !mounted}
+				{#each [0, 1, 2, 3, 4] as i (i)}
+					<div class="overflow-hidden rounded-xl border border-gray-200 bg-white">
 						<div class="flex flex-row gap-3 px-4 pt-3 pb-2">
-							{#if primaryImage}
-								<img
-									src={primaryImage.url}
-									alt={item.name}
-									class="h-10 w-10 shrink-0 rounded-md object-cover"
-								/>
-							{:else}
-								<div
-									class="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-gray-100"
-								>
-									<Icon icon="mdi:image-outline" class="h-4 w-4 text-gray-300" />
-								</div>
-							{/if}
-							<div class="min-w-0 flex-1">
-								<p class="truncate text-sm font-medium text-gray-900">{item.name}</p>
-								<p class="truncate text-xs text-gray-500">
-									{item.category?.name ?? 'Uncategorized'} · ${item.discountedPrice
-										? (item.discountedPrice / 100).toFixed(2)
-										: (item.price / 100).toFixed(2)}
-								</p>
+							<Skeleton class="h-10 w-10 shrink-0 rounded-md" />
+							<div class="min-w-0 flex-1 space-y-2 py-1">
+								<Skeleton class="h-4 w-3/4 rounded" />
+								<Skeleton class="h-3 w-1/2 rounded" />
 							</div>
 						</div>
-					</a>
-					<div class="flex items-center justify-between gap-2 border-t border-gray-100 px-4 py-2">
-						{@render statusDropdown(item)}
-						<div class="flex items-center gap-1">
-							<Button variant="outline" onclick={() => openEditDrawer(item)}>Edit</Button>
-							<form method="post" action="?/delete" use:enhance>
-								<input type="hidden" name="id" value={item.id} />
-								<Button
-									type="submit"
-									variant="ghost"
-									size="icon"
-									onclick={async (e) => {
-										e.preventDefault();
-										const form = (e.currentTarget as HTMLButtonElement).form;
-										if (await confirmDialog('Delete this item?')) form?.requestSubmit();
-									}}
-									aria-label="Delete {item.name}"
-									class="text-red-400 hover:bg-red-50 hover:text-red-600"
-								>
-									<Icon icon="mdi:trash-can-outline" class="h-4 w-4" />
-								</Button>
-							</form>
+						<div class="flex items-center justify-between gap-2 border-t border-gray-100 px-4 py-2">
+							<Skeleton class="h-6 w-20 rounded-full" />
+							<div class="flex items-center gap-1">
+								<Skeleton class="h-8 w-12 rounded-md" />
+								<Skeleton class="h-8 w-8 rounded-md" />
+							</div>
 						</div>
 					</div>
-				</div>
-			{/each}
+				{/each}
+			{:else}
+				{#each sortedItems as item (item.id)}
+					{@const primaryImage =
+						(item.images as { url: string; isPrimary?: boolean }[] | null)?.find(
+							(img) => img.isPrimary
+						) ?? (item.images as { url: string }[] | null)?.[0]}
+					<div class="overflow-hidden rounded-xl border border-gray-200 bg-white">
+						<a href={resolve(`/dashboard/catalog/items/${item.id}`)} class="block">
+							<div class="flex flex-row gap-3 px-4 pt-3 pb-2">
+								{#if primaryImage}
+									<img
+										src={primaryImage.url}
+										alt={item.name}
+										class="h-10 w-10 shrink-0 rounded-md object-cover"
+									/>
+								{:else}
+									<div
+										class="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-gray-100"
+									>
+										<Icon icon="mdi:image-outline" class="h-4 w-4 text-gray-300" />
+									</div>
+								{/if}
+								<div class="min-w-0 flex-1">
+									<p class="truncate text-sm font-medium text-gray-900">{item.name}</p>
+									<p class="truncate text-xs text-gray-500">
+										{item.category?.name ?? 'Uncategorized'} · ${item.discountedPrice
+											? (item.discountedPrice / 100).toFixed(2)
+											: (item.price / 100).toFixed(2)}
+									</p>
+								</div>
+							</div>
+						</a>
+						<div class="flex items-center justify-between gap-2 border-t border-gray-100 px-4 py-2">
+							{@render statusDropdown(item)}
+							<div class="flex items-center gap-1">
+								<Button variant="outline" onclick={() => openEditDrawer(item)}>Edit</Button>
+								<form method="post" action="?/delete" use:enhance>
+									<input type="hidden" name="id" value={item.id} />
+									<Button
+										type="submit"
+										variant="ghost"
+										size="icon"
+										onclick={async (e) => {
+											e.preventDefault();
+											const form = (e.currentTarget as HTMLButtonElement).form;
+											if (await confirmDialog('Delete this item?')) form?.requestSubmit();
+										}}
+										aria-label="Delete {item.name}"
+										class="text-red-400 hover:bg-red-50 hover:text-red-600"
+									>
+										<Icon icon="mdi:trash-can-outline" class="h-4 w-4" />
+									</Button>
+								</form>
+							</div>
+						</div>
+					</div>
+				{/each}
+			{/if}
 		</div>
 
 		<!-- Desktop table — hidden below md -->
@@ -758,82 +778,113 @@
 					</TableRow>
 				</TableHeader>
 				<TableBody>
-					{#each sortedItems as item (item.id)}
-						{@const primaryImage =
-							(item.images as { url: string; isPrimary?: boolean }[] | null)?.find(
-								(img) => img.isPrimary
-							) ?? (item.images as { url: string }[] | null)?.[0]}
-						<TableRow class="hover:bg-gray-50">
-							<TableCell class="w-14 px-4 py-3">
-								{#if primaryImage}
-									<img
-										src={primaryImage.url}
-										alt={item.name}
-										class="h-10 w-10 rounded-md object-cover"
-									/>
-								{:else}
-									<div class="flex h-10 w-10 items-center justify-center rounded-md bg-gray-100">
-										<Icon icon="mdi:image-outline" class="h-4 w-4 text-gray-300" />
+					{#if !mounted}
+						{#each [0, 1, 2, 3, 4] as i (i)}
+							<TableRow class="hover:bg-transparent">
+								<TableCell class="w-14 px-4 py-3">
+									<Skeleton class="h-10 w-10 rounded-md" />
+								</TableCell>
+								<TableCell class="max-w-0 px-4 py-3">
+									<div class="space-y-1.5">
+										<Skeleton class="h-4 w-2/3 rounded" />
+										<Skeleton class="h-3 w-1/2 rounded" />
 									</div>
-								{/if}
-							</TableCell>
-							<TableCell class="max-w-0 px-4 py-3 whitespace-normal">
-								<div class="min-w-0">
-									<a
-										href={resolve(`/dashboard/catalog/items/${item.id}`)}
-										class="block truncate text-sm font-medium text-gray-900 hover:text-gray-700"
-									>
-										{item.name}
-									</a>
-									{#if item.description}
-										<p class="block truncate text-xs text-gray-500">{item.description}</p>
+								</TableCell>
+								<TableCell class="w-36 px-4 py-3">
+									<Skeleton class="h-4 w-20 rounded" />
+								</TableCell>
+								<TableCell class="w-20 px-4 py-3">
+									<Skeleton class="h-4 w-12 rounded" />
+								</TableCell>
+								<TableCell class="w-28 px-4 py-3">
+									<Skeleton class="h-6 w-20 rounded-full" />
+								</TableCell>
+								<TableCell class="w-20 px-4 py-3">
+									<div class="flex items-center justify-end gap-1">
+										<Skeleton class="h-8 w-12 rounded-md" />
+										<Skeleton class="h-8 w-8 rounded-md" />
+									</div>
+								</TableCell>
+							</TableRow>
+						{/each}
+					{:else}
+						{#each sortedItems as item (item.id)}
+							{@const primaryImage =
+								(item.images as { url: string; isPrimary?: boolean }[] | null)?.find(
+									(img) => img.isPrimary
+								) ?? (item.images as { url: string }[] | null)?.[0]}
+							<TableRow class="hover:bg-gray-50">
+								<TableCell class="w-14 px-4 py-3">
+									{#if primaryImage}
+										<img
+											src={primaryImage.url}
+											alt={item.name}
+											class="h-10 w-10 rounded-md object-cover"
+										/>
+									{:else}
+										<div class="flex h-10 w-10 items-center justify-center rounded-md bg-gray-100">
+											<Icon icon="mdi:image-outline" class="h-4 w-4 text-gray-300" />
+										</div>
 									{/if}
-								</div>
-							</TableCell>
-							<TableCell class="w-36 px-4 py-3 text-sm text-gray-500">
-								{item.category?.name ?? '—'}
-							</TableCell>
-							<TableCell class="w-20 px-4 py-3">
-								{#if item.discountedPrice}
-									<div class="flex flex-col gap-0.5">
-										<span class="text-xs text-gray-400 line-through"
-											>${(item.price / 100).toFixed(2)}</span
+								</TableCell>
+								<TableCell class="max-w-0 px-4 py-3 whitespace-normal">
+									<div class="min-w-0">
+										<a
+											href={resolve(`/dashboard/catalog/items/${item.id}`)}
+											class="block truncate text-sm font-medium text-gray-900 hover:text-gray-700"
 										>
-										<span class="text-sm font-semibold text-green-600"
-											>${(item.discountedPrice / 100).toFixed(2)}</span
-										>
+											{item.name}
+										</a>
+										{#if item.description}
+											<p class="block truncate text-xs text-gray-500">{item.description}</p>
+										{/if}
 									</div>
-								{:else}
-									<span class="text-sm text-gray-900">${(item.price / 100).toFixed(2)}</span>
-								{/if}
-							</TableCell>
-							<TableCell class="w-28 px-4 py-3">
-								{@render statusDropdown(item)}
-							</TableCell>
-							<TableCell class="w-20 px-4 py-3 text-right">
-								<div class="flex items-center justify-end gap-1">
-									<Button variant="outline" onclick={() => openEditDrawer(item)}>Edit</Button>
-									<form method="post" action="?/delete" use:enhance>
-										<input type="hidden" name="id" value={item.id} />
-										<Button
-											type="submit"
-											variant="ghost"
-											size="icon"
-											onclick={async (e) => {
-												e.preventDefault();
-												const form = (e.currentTarget as HTMLButtonElement).form;
-												if (await confirmDialog('Delete this item?')) form?.requestSubmit();
-											}}
-											aria-label="Delete item"
-											class="text-red-400 hover:bg-red-50 hover:text-red-600"
-										>
-											<Icon icon="mdi:trash-can-outline" class="h-3.5 w-3.5" />
-										</Button>
-									</form>
-								</div>
-							</TableCell>
-						</TableRow>
-					{/each}
+								</TableCell>
+								<TableCell class="w-36 px-4 py-3 text-sm text-gray-500">
+									{item.category?.name ?? '—'}
+								</TableCell>
+								<TableCell class="w-20 px-4 py-3">
+									{#if item.discountedPrice}
+										<div class="flex flex-col gap-0.5">
+											<span class="text-xs text-gray-400 line-through"
+												>${(item.price / 100).toFixed(2)}</span
+											>
+											<span class="text-sm font-semibold text-green-600"
+												>${(item.discountedPrice / 100).toFixed(2)}</span
+											>
+										</div>
+									{:else}
+										<span class="text-sm text-gray-900">${(item.price / 100).toFixed(2)}</span>
+									{/if}
+								</TableCell>
+								<TableCell class="w-28 px-4 py-3">
+									{@render statusDropdown(item)}
+								</TableCell>
+								<TableCell class="w-20 px-4 py-3 text-right">
+									<div class="flex items-center justify-end gap-1">
+										<Button variant="outline" onclick={() => openEditDrawer(item)}>Edit</Button>
+										<form method="post" action="?/delete" use:enhance>
+											<input type="hidden" name="id" value={item.id} />
+											<Button
+												type="submit"
+												variant="ghost"
+												size="icon"
+												onclick={async (e) => {
+													e.preventDefault();
+													const form = (e.currentTarget as HTMLButtonElement).form;
+													if (await confirmDialog('Delete this item?')) form?.requestSubmit();
+												}}
+												aria-label="Delete item"
+												class="text-red-400 hover:bg-red-50 hover:text-red-600"
+											>
+												<Icon icon="mdi:trash-can-outline" class="h-3.5 w-3.5" />
+											</Button>
+										</form>
+									</div>
+								</TableCell>
+							</TableRow>
+						{/each}
+					{/if}
 				</TableBody>
 			</Table>
 		</div>
@@ -923,8 +974,13 @@
 						<code class="rounded bg-muted px-1 text-xs">available</code>
 					</p>
 					<p class="text-xs text-muted-foreground">
-						Separate multiple tags with <code class="rounded bg-muted px-1">|</code>. Existing items
-						are updated by name. New categories are created automatically. Max 500 rows.
+						Separate multiple tags with <code class="rounded bg-muted px-1">,</code> (use quotes for
+						tags containing commas:
+						<code class="rounded bg-muted px-1">"sourdough,popular"</code>). Existing items are
+						updated by name. New categories are created automatically. Max 500 rows.
+					</p>
+					<p class="text-xs text-muted-foreground">
+						Images aren't imported via CSV — add them per-item after import.
 					</p>
 				</div>
 
@@ -1055,8 +1111,21 @@
 					</p>
 				</Alert>
 			{:else if discoveredItems.length === 0}
-				<div class="py-10 text-center text-sm text-muted-foreground">
-					No active one-time products found in your Stripe account.
+				<div
+					class="flex flex-col items-center gap-3 py-10 text-center text-sm text-muted-foreground"
+				>
+					<p>No active one-time products found in your Stripe account.</p>
+					<!-- eslint-disable svelte/no-navigation-without-resolve -->
+					<a
+						href="https://dashboard.stripe.com/products"
+						target="_blank"
+						rel="noopener noreferrer"
+						class="inline-flex items-center gap-1 text-xs text-primary hover:underline"
+					>
+						Manage products in Stripe
+						<Icon icon="mdi:open-in-new" class="h-3 w-3" />
+					</a>
+					<!-- eslint-enable svelte/no-navigation-without-resolve -->
 				</div>
 			{:else}
 				<!-- Select-all toggle -->
@@ -1110,7 +1179,7 @@
 								/>
 							{:else}
 								<div class="flex h-10 w-10 shrink-0 items-center justify-center rounded bg-muted">
-									<Icon icon="mdi:silverware-fork-knife" class="h-5 w-5 text-muted-foreground" />
+									<Icon icon="mdi:package-outline" class="h-5 w-5 text-muted-foreground" />
 								</div>
 							{/if}
 							<label for="discover-{item.stripeProductId}" class="min-w-0 flex-1 cursor-pointer">
@@ -1178,19 +1247,6 @@
 		</SheetHeader>
 		<div class="flex-1 overflow-y-auto px-6 py-5">
 			{#if drawerMode === 'new'}
-				{#if drawerLastCreated}
-					<Alert
-						severity="success"
-						class="mb-4"
-						dismissible
-						ondismiss={() => (drawerLastCreated = null)}
-					>
-						<strong>{drawerLastCreated.name}</strong> created —
-						<a href={resolve(`/dashboard/catalog/items/${drawerLastCreated.id}`)} class="underline"
-							>edit item</a
-						>
-					</Alert>
-				{/if}
 				<CatalogItemForm
 					mode="new"
 					formAction="?/create"
@@ -1198,8 +1254,20 @@
 					hasSubscriptionsAddon={data.hasSubscriptionsAddon}
 					twoColumn={true}
 					variant="flat"
-					onSuccess={(item) => {
-						drawerLastCreated = item;
+					onSuccess={(item, { addAnother }) => {
+						const next = new SvelteURLSearchParams(params);
+						if (addAnother) {
+							next.set('drawer', 'new');
+						} else {
+							next.set('drawer', String(item.id));
+						}
+						const qs = next.toString();
+						goto(
+							resolve(
+								(qs ? `/dashboard/catalog/items?${qs}` : '/dashboard/catalog/items') as `/${string}`
+							),
+							{ replaceState: true, invalidateAll: true }
+						);
 					}}
 					onCancel={() => closeDrawer()}
 				/>

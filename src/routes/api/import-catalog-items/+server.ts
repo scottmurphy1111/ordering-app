@@ -135,7 +135,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 		const tagsRaw = row['tags']?.trim();
 		const tags = tagsRaw
 			? tagsRaw
-					.split('|')
+					.split(',')
 					.map((t) => t.trim())
 					.filter(Boolean)
 			: [];

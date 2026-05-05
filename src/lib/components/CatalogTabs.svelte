@@ -17,7 +17,7 @@
 <Tabs value={activeValue} onValueChange={handleValueChange}>
 	<TabsList>
 		<TabsTrigger value="items">
-			<Icon icon="mdi:silverware-fork-knife" class="h-3.5 w-3.5" />
+			<Icon icon="mdi:package-outline" class="h-3.5 w-3.5" />
 			Items
 		</TabsTrigger>
 		<TabsTrigger value="categories">
