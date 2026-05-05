@@ -102,27 +102,6 @@ export const actions: Actions = {
 		return { hoursSuccess: true };
 	},
 
-	saveDelivery: async ({ request, locals }) => {
-		const vendorId = locals.vendorId!;
-		const formData = await request.formData();
-
-		const enableDelivery = formData.get('enableDelivery') === 'on';
-		const deliveryFeeRaw = parseFloat(formData.get('deliveryFee')?.toString() ?? '0');
-		const deliveryFee = isNaN(deliveryFeeRaw) ? 0 : Math.round(deliveryFeeRaw * 100);
-
-		const record = await db.query.vendor.findFirst({
-			where: eq(vendor.id, vendorId),
-			columns: { settings: true }
-		});
-		const current = (record?.settings ?? {}) as Record<string, unknown>;
-		await db
-			.update(vendor)
-			.set({ settings: { ...current, enableDelivery, deliveryFee }, updatedAt: new Date() })
-			.where(eq(vendor.id, vendorId));
-
-		return { deliverySuccess: true };
-	},
-
 	saveCheckout: async ({ request, locals }) => {
 		const vendorId = locals.vendorId!;
 		const formData = await request.formData();

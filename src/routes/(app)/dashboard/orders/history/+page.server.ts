@@ -63,7 +63,6 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 				createdAt: true,
 				updatedAt: true,
 				scheduledFor: true,
-				deliveryAddress: true,
 				stripePaymentIntentId: true
 			},
 			with: { items: { columns: { name: true, quantity: true } } }

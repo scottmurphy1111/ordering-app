@@ -40,13 +40,11 @@ export const POST: RequestHandler = async ({ request }) => {
 		customer: { name: string; email?: string; phone?: string };
 		notes?: string;
 		orderType: string;
-		deliveryAddress?: string | null;
 		scheduledFor?: string | null;
 		pickupWindowId?: number | null;
 		subtotal: number;
 		tax: number;
 		tip?: number;
-		deliveryFee?: number;
 		discount?: number;
 		promoCode?: string | null;
 		total: number;
@@ -60,7 +58,6 @@ export const POST: RequestHandler = async ({ request }) => {
 		customer,
 		notes,
 		orderType,
-		deliveryAddress,
 		scheduledFor,
 		pickupWindowId,
 		tip,
@@ -92,22 +89,13 @@ export const POST: RequestHandler = async ({ request }) => {
 
 	// Recompute totals from validated (current-price) items — server is authoritative.
 	// Tax is 0 for subscription carts.
-	const vendorSettings = vendorRecord.settings as {
-		taxRate?: number;
-		deliveryFee?: number;
-		enableDelivery?: boolean;
-	} | null;
+	const vendorSettings = vendorRecord.settings as { taxRate?: number } | null;
 	const taxRate = vendorSettings?.taxRate ?? 0.0825;
 	const serverSubtotal = validatedItems.reduce(
 		(s, item) => s + itemUnitPrice(item) * item.quantity,
 		0
 	);
 	const serverTax = isSubscription ? 0 : Math.round(serverSubtotal * taxRate);
-
-	const verifiedDeliveryFee =
-		orderType === 'delivery' && vendorSettings?.enableDelivery
-			? (vendorSettings.deliveryFee ?? 0)
-			: 0;
 
 	let verifiedDiscount = 0;
 	let verifiedPromoCode: string | null = null;
@@ -136,10 +124,7 @@ export const POST: RequestHandler = async ({ request }) => {
 		}
 	}
 
-	const verifiedTotal = Math.max(
-		0,
-		serverSubtotal + serverTax + (tip ?? 0) + verifiedDeliveryFee - verifiedDiscount
-	);
+	const verifiedTotal = Math.max(0, serverSubtotal + serverTax + (tip ?? 0) - verifiedDiscount);
 
 	// Pickup window validation — runs before Stripe so we never charge for an invalid slot.
 	// Subscriptions never send pickupWindowId so this block is naturally skipped for them.
@@ -176,13 +161,11 @@ export const POST: RequestHandler = async ({ request }) => {
 			paymentStatus: 'pending',
 			subtotal: serverSubtotal,
 			tax: serverTax,
-			deliveryFee: verifiedDeliveryFee,
 			tip: tip ?? 0,
 			discount: verifiedDiscount,
 			promoCode: verifiedPromoCode,
 			total: verifiedTotal,
 			items: validatedItems,
-			deliveryAddress: deliveryAddress || null,
 			notes: notes || null,
 			scheduledFor: resolvedScheduledFor,
 			pickupWindowId: resolvedPickupWindowId,
@@ -263,17 +246,6 @@ export const POST: RequestHandler = async ({ request }) => {
 				price_data: { currency: 'usd', unit_amount: tip, product_data: { name: 'Tip' } }
 			});
 		}
-		if (verifiedDeliveryFee > 0) {
-			lineItems.push({
-				quantity: 1,
-				price_data: {
-					currency: 'usd',
-					unit_amount: verifiedDeliveryFee,
-					product_data: { name: 'Delivery fee' }
-				}
-			});
-		}
-
 		let stripeCouponId: string | undefined;
 		if (verifiedDiscount > 0) {
 			const coupon = await stripe.coupons.create({

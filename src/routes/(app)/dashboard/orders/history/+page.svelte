@@ -369,12 +369,6 @@
 										})}
 									</p>
 								{/if}
-								{#if order.deliveryAddress}
-									<p class="mt-0.5 flex items-center gap-1 text-xs text-gray-500">
-										<Icon icon="mdi:map-marker-outline" class="h-3.5 w-3.5 shrink-0" />
-										{order.deliveryAddress}
-									</p>
-								{/if}
 								{#if order.items && order.items.length > 0}
 									<p class="mt-1.5 line-clamp-2 text-xs text-gray-500">
 										{order.items.map((i) => `${i.quantity}× ${i.name}`).join(', ')}

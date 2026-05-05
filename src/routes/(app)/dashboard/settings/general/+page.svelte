@@ -22,7 +22,7 @@
 	import { Alert } from '$lib/components/ui/alert';
 
 	let { data, form: _form }: { data: PageData; form: ActionData } = $props();
-	const form = $derived(_form as (ActionData & { deliverySuccess?: boolean }) | null);
+	const form = $derived(_form as ActionData | null);
 
 	const address = $derived(
 		data.info?.address as {
@@ -37,14 +37,6 @@
 	const savedHours = $derived(
 		(data.info as unknown as { settings?: { hours?: WeekHours } } | null)?.settings?.hours ?? {}
 	);
-	const savedDelivery = $derived(
-		(
-			data.info as unknown as {
-				settings?: { enableDelivery?: boolean; deliveryFee?: number };
-			} | null
-		)?.settings ?? {}
-	);
-
 	const DAYS = [
 		{ key: 'monday', label: 'Mon' },
 		{ key: 'tuesday', label: 'Tue' },
@@ -260,58 +252,6 @@
 			</CardContent>
 			<CardFooter>
 				<Button type="submit" variant="default">Save changes</Button>
-			</CardFooter>
-		</Card>
-	</form>
-
-	<!-- Delivery — separate form/action -->
-	{#if form?.deliverySuccess}
-		<Alert severity="success" class="mt-4">Delivery settings saved.</Alert>
-	{/if}
-	<form
-		method="post"
-		action="?/saveDelivery"
-		use:enhance={() =>
-			({ update }) =>
-				update({ reset: false })}
-		class="mt-6"
-	>
-		<Card class="shadow-sm">
-			<CardHeader>
-				<CardTitle>Delivery</CardTitle>
-			</CardHeader>
-			<CardContent class="space-y-4">
-				<p class="text-xs text-muted-foreground">
-					Enable delivery as an order type at checkout and set a flat delivery fee.
-				</p>
-				<label class="flex cursor-pointer items-center gap-3">
-					<Checkbox name="enableDelivery" checked={savedDelivery.enableDelivery ?? false} />
-					<span class="text-sm font-medium text-muted-foreground">Enable delivery orders</span>
-				</label>
-				<div class="sm:w-48">
-					<Label class="mb-1 block" for="deliveryFee">Delivery fee</Label>
-					<div
-						class="flex rounded-md border focus-within:border-ring focus-within:ring-1 focus-within:ring-ring"
-					>
-						<span
-							class="flex items-center rounded-l-md border-r bg-muted/50 px-3 text-sm text-muted-foreground"
-							>$</span
-						>
-						<Input
-							id="deliveryFee"
-							name="deliveryFee"
-							type="number"
-							min="0"
-							step="0.01"
-							placeholder="0.00"
-							value={((savedDelivery.deliveryFee ?? 0) / 100).toFixed(2)}
-							class="min-w-0 flex-1 rounded-none rounded-r-md border-0 shadow-none focus-visible:ring-0"
-						/>
-					</div>
-				</div>
-			</CardContent>
-			<CardFooter>
-				<Button type="submit" variant="default">Save delivery</Button>
 			</CardFooter>
 		</Card>
 	</form>

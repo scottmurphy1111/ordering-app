@@ -63,7 +63,6 @@ export const vendor = pgTable(
 			enableTips: false,
 			defaultTipPercentages: [15, 18, 20],
 			allowPickup: true,
-			allowDelivery: false,
 			minimumOrderAmount: 0,
 			estimatedPrepTimeMinutes: 15,
 			asapPickupEnabled: false,

@@ -256,12 +256,6 @@
 					<span>Tax</span>
 					<span>${(order.tax / 100).toFixed(2)}</span>
 				</div>
-				{#if order.deliveryFee && order.deliveryFee > 0}
-					<div class="flex justify-between text-muted-foreground">
-						<span>Delivery fee</span>
-						<span>${(order.deliveryFee / 100).toFixed(2)}</span>
-					</div>
-				{/if}
 				{#if order.tip && order.tip > 0}
 					<div class="flex justify-between text-muted-foreground">
 						<span>Tip</span>

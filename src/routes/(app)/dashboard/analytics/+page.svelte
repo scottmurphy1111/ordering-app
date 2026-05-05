@@ -67,14 +67,12 @@
 
 	const typeIcons: Record<string, string> = {
 		pickup: 'mdi:bag-personal-outline',
-		'dine-in': 'mdi:silverware-fork-knife',
-		delivery: 'mdi:truck-delivery-outline'
+		subscription: 'mdi:refresh-circle'
 	};
 
 	const typeLabels: Record<string, string> = {
 		pickup: 'Pickup',
-		'dine-in': 'Dine-in',
-		delivery: 'Delivery'
+		subscription: 'Subscription'
 	};
 
 	const totalTypeRevenue = $derived(typeBreakdown.reduce((s, r) => s + (r.revenue ?? 0), 0) || 1);

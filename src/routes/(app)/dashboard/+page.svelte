@@ -85,14 +85,31 @@
 		return `${Math.floor(diff / 3600)} hr ago`;
 	}
 
-	const pickupCount = $derived(data.orderTypeSplit.find((t) => t.type === 'pickup')?.count ?? 0);
-	const deliveryCount = $derived(
-		data.orderTypeSplit.find((t) => t.type === 'delivery')?.count ?? 0
-	);
-	const totalSplitCount = $derived(pickupCount + deliveryCount);
-	const pickupPct = $derived(
-		totalSplitCount > 0 ? Math.round((pickupCount / totalSplitCount) * 100) : 0
-	);
+	function fmtTime(d: Date | string, tz: string): string {
+		const date = typeof d === 'string' ? new Date(d) : d;
+		return new Intl.DateTimeFormat('en-US', {
+			timeZone: tz,
+			hour: 'numeric',
+			minute: '2-digit',
+			hour12: true
+		})
+			.format(date)
+			.toLowerCase()
+			.replace(' ', '');
+	}
+
+	function fmtTimeRange(start: Date | string, end: Date | string, tz: string): string {
+		return `${fmtTime(start, tz)}–${fmtTime(end, tz)}`;
+	}
+
+	function fmtTodayLabel(tz: string): string {
+		return new Intl.DateTimeFormat('en-US', {
+			timeZone: tz,
+			weekday: 'long',
+			month: 'long',
+			day: 'numeric'
+		}).format(new Date());
+	}
 </script>
 
 <div>
@@ -272,8 +289,8 @@
 
 	<!-- Lower grid: recent orders + sidebar -->
 	<div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
-		<!-- Recent orders (2/3 width) -->
-		<div class="lg:col-span-2">
+		<!-- Recent orders (full width) -->
+		<div class="lg:col-span-3">
 			{#if !mounted}
 				<Skeleton class="mb-3 h-4 w-32 rounded" />
 				<Card class="p-0 shadow-sm">
@@ -299,7 +316,7 @@
 							<span
 								class="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary/60 opacity-75"
 							></span>
-							<span class="relative inline-flex h-2 w-2 rounded-full bg-primary/100"></span>
+							<span class="relative inline-flex h-2 w-2 rounded-full bg-primary"></span>
 						</span>
 						Live · updated {relativeTime(lastUpdated)}
 					</span>
@@ -382,72 +399,103 @@
 
 		<!-- Sidebar (1/3 width) -->
 		<div class="space-y-4">
-			<!-- Top items -->
+			<!-- Today -->
 			<Card class="shadow-sm">
 				<CardContent>
-					<h3 class="mb-3 text-sm font-semibold text-foreground">Top items</h3>
-					{#if !mounted}
-						<div class="space-y-2">
-							{#each [0, 1, 2] as i (i)}
-								<Skeleton class="h-4 w-full rounded" />
-							{/each}
-						</div>
-					{:else if data.topItems.length > 0}
-						<ul class="space-y-2.5">
-							{#each data.topItems as item, i (item.name)}
-								<li class="flex items-center justify-between gap-2">
-									<div class="flex min-w-0 items-center gap-2">
-										<span class="w-4 text-xs font-medium text-muted-foreground tabular-nums"
-											>{i + 1}</span
-										>
-										<span class="truncate text-sm text-foreground">{item.name}</span>
-									</div>
-									<span class="shrink-0 text-xs font-semibold text-muted-foreground"
-										>{item.qty}×</span
-									>
-								</li>
-							{/each}
-						</ul>
-					{:else}
-						<p class="text-xs text-muted-foreground">No order data yet.</p>
-					{/if}
-				</CardContent>
-			</Card>
+					<div class="mb-3 flex items-baseline justify-between">
+						<h3 class="text-sm font-semibold text-foreground">Today</h3>
+						<span class="text-xs text-gray-500">{fmtTodayLabel(data.vendorTimezone)}</span>
+					</div>
 
-			<!-- Order type split -->
-			<Card class="shadow-sm">
-				<CardContent>
-					<h3 class="mb-3 text-sm font-semibold text-foreground">Order type</h3>
-					{#if !mounted}
-						<Skeleton class="h-24 w-full rounded" />
-					{:else if totalSplitCount > 0}
-						<div class="space-y-3">
-							<div>
-								<div class="mb-1 flex items-center justify-between">
-									<span class="text-xs text-muted-foreground">Pickup</span>
-									<span class="text-xs font-semibold text-foreground">{pickupPct}%</span>
-								</div>
-								<div class="h-2 w-full overflow-hidden rounded-full bg-muted">
-									<div class="h-full rounded-full bg-primary" style="width:{pickupPct}%"></div>
-								</div>
-								<p class="mt-0.5 text-xs text-muted-foreground">{pickupCount} orders</p>
-							</div>
-							<div>
-								<div class="mb-1 flex items-center justify-between">
-									<span class="text-xs text-muted-foreground">Delivery</span>
-									<span class="text-xs font-semibold text-foreground">{100 - pickupPct}%</span>
-								</div>
-								<div class="h-2 w-full overflow-hidden rounded-full bg-muted">
-									<div
-										class="h-full rounded-full bg-blue-500"
-										style="width:{100 - pickupPct}%"
-									></div>
-								</div>
-								<p class="mt-0.5 text-xs text-muted-foreground">{deliveryCount} orders</p>
-							</div>
-						</div>
-					{:else}
-						<p class="text-xs text-muted-foreground">No order data yet.</p>
+					<!-- Pickup windows section -->
+					<div class="mb-4">
+						<h4 class="mb-2 text-xs font-medium tracking-wide text-gray-500 uppercase">
+							Pickup windows
+						</h4>
+						{#if data.todayWindows.length > 0}
+							<ul class="space-y-1.5">
+								{#each data.todayWindows as w (w.id)}
+									<li class="flex items-center justify-between gap-2">
+										<div class="flex min-w-0 flex-col">
+											<span class="text-sm text-foreground"
+												>{fmtTimeRange(w.startsAt, w.endsAt, data.vendorTimezone)}</span
+											>
+											{#if w.locationName}
+												<span class="text-xs text-gray-500">{w.locationName}</span>
+											{/if}
+										</div>
+										<span class="shrink-0 text-xs text-gray-500"
+											>{w.orderCount}
+											{w.orderCount === 1 ? 'order' : 'orders'}</span
+										>
+									</li>
+								{/each}
+							</ul>
+						{:else}
+							<p class="text-xs text-gray-500">No pickup windows today.</p>
+						{/if}
+					</div>
+
+					<!-- Production today section -->
+					<div class="border-t pt-3">
+						<h4 class="mb-2 text-xs font-medium tracking-wide text-gray-500 uppercase">
+							Production today
+						</h4>
+						{#if data.todayProduction.length > 0}
+							<ul class="space-y-1.5">
+								{#each data.todayProduction as p, i (i)}
+									<li class="flex items-center justify-between gap-2">
+										<div class="flex min-w-0 flex-col">
+											<span class="truncate text-sm text-foreground">{p.itemName}</span>
+											{#if p.modifiers.length > 0}
+												<span class="truncate text-xs text-gray-500">{p.modifiers.join(', ')}</span>
+											{/if}
+										</div>
+										<span class="shrink-0 text-sm font-semibold text-foreground tabular-nums"
+											>{p.totalQuantity}×</span
+										>
+									</li>
+								{/each}
+							</ul>
+						{:else}
+							<p class="text-xs text-gray-500">No orders to prepare today.</p>
+						{/if}
+					</div>
+
+					<!-- Production tomorrow section -->
+					<div class="mt-4 border-t pt-3">
+						<h4 class="mb-2 text-xs font-medium tracking-wide text-gray-500 uppercase">
+							Production tomorrow
+						</h4>
+						{#if data.tomorrowProduction.length > 0}
+							<ul class="space-y-1.5">
+								{#each data.tomorrowProduction as p, i (i)}
+									<li class="flex items-center justify-between gap-2">
+										<div class="flex min-w-0 flex-col">
+											<span class="truncate text-sm text-foreground">{p.itemName}</span>
+											{#if p.modifiers.length > 0}
+												<span class="truncate text-xs text-gray-500">{p.modifiers.join(', ')}</span>
+											{/if}
+										</div>
+										<span class="shrink-0 text-sm font-semibold text-foreground tabular-nums"
+											>{p.totalQuantity}×</span
+										>
+									</li>
+								{/each}
+							</ul>
+						{:else}
+							<p class="text-xs text-gray-500">Nothing scheduled for tomorrow yet.</p>
+						{/if}
+					</div>
+
+					{#if data.todayProduction.length > 0 || data.tomorrowProduction.length > 0}
+						<a
+							href={resolve('/dashboard/orders?view=production')}
+							class="mt-3 inline-flex items-center gap-1 text-xs text-primary hover:underline"
+						>
+							View production
+							<Icon icon="mdi:arrow-right" class="h-3.5 w-3.5" />
+						</a>
 					{/if}
 				</CardContent>
 			</Card>

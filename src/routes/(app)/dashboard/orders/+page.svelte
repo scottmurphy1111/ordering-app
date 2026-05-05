@@ -643,7 +643,6 @@
 	createdAt: Date;
 	notes: string | null;
 	scheduledFor: Date | null;
-	deliveryAddress: string | null;
 	stripePaymentIntentId: string | null;
 	items: { name: string; quantity: number }[];
 })}
@@ -741,13 +740,6 @@
 							<span class="text-amber-500">
 								· {formatDistanceToNow(new Date(order.scheduledFor), { addSuffix: true })}
 							</span>
-						</p>
-					{/if}
-					<!-- Delivery address -->
-					{#if order.deliveryAddress}
-						<p class="mt-0.5 flex items-center gap-1 text-xs text-gray-500">
-							<Icon icon="mdi:map-marker-outline" class="h-3.5 w-3.5 shrink-0" />
-							{order.deliveryAddress}
 						</p>
 					{/if}
 					{#if order.items && order.items.length > 0}

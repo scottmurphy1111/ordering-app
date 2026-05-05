@@ -39,7 +39,6 @@ export const load: PageServerLoad = async ({ url, locals }) => {
 			subtotal: order.subtotal,
 			tax: order.tax,
 			tip: order.tip ?? 0,
-			deliveryFee: order.deliveryFee ?? 0,
 			discount: order.discount ?? 0,
 			total: order.total,
 			type: order.type,

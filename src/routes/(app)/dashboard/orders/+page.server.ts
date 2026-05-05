@@ -203,7 +203,6 @@ export const load: PageServerLoad = async ({ locals, url, depends }) => {
 			createdAt: true,
 			notes: true,
 			scheduledFor: true,
-			deliveryAddress: true,
 			stripePaymentIntentId: true,
 			pickupWindowId: true
 		},

@@ -232,12 +232,6 @@
 									<span>-{fmt(data.order.discount)}</span>
 								</div>
 							{/if}
-							{#if data.order.deliveryFee > 0}
-								<div class="flex justify-between text-sm text-muted-foreground">
-									<span>Delivery fee</span>
-									<span>{fmt(data.order.deliveryFee)}</span>
-								</div>
-							{/if}
 							{#if data.order.tax > 0}
 								<div class="flex justify-between text-sm text-muted-foreground">
 									<span>Tax</span>

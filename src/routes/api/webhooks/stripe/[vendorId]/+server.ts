@@ -293,7 +293,6 @@ async function handleEvent(event: Stripe.Event, ctx: VendorCtx) {
 					paymentStatus: 'paid',
 					subtotal: original.subtotal,
 					tax: 0,
-					deliveryFee: 0,
 					tip: 0,
 					discount: 0,
 					total: original.subtotal,

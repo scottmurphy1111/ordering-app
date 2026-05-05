@@ -33,7 +33,6 @@ export const orders = pgTable(
 
 		subtotal: integer('subtotal').notNull(),
 		tax: integer('tax').notNull(),
-		deliveryFee: integer('delivery_fee').default(0),
 		tip: integer('tip').default(0),
 		total: integer('total').notNull(),
 
@@ -42,7 +41,6 @@ export const orders = pgTable(
 		discount: integer('discount').default(0),
 		promoCode: varchar('promo_code', { length: 50 }),
 
-		deliveryAddress: text('delivery_address'),
 		notes: text('notes'),
 		scheduledFor: timestamp('scheduled_for'),
 		estimatedReadyTime: timestamp('estimated_ready_time'),

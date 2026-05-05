@@ -52,12 +52,6 @@
 	let email = $state('');
 	let phone = $state('');
 	let notes = $state('');
-	let orderType = $state<'pickup' | 'delivery'>('pickup');
-	let deliveryStreet = $state('');
-	let deliveryApt = $state('');
-	let deliveryCity = $state('');
-	let deliveryState = $state('');
-	let deliveryZip = $state('');
 	let pickupTiming = $state<'asap' | 'scheduled'>('asap');
 	let pickupDate = $state('');
 	let pickupTimeValue = $state('');
@@ -98,16 +92,12 @@
 			taxRate?: number;
 			enableTips?: boolean;
 			defaultTipPercentages?: number[];
-			enableDelivery?: boolean;
-			deliveryFee?: number;
 			asapPickupEnabled?: boolean;
 		} | null
 	);
 	const TAX_RATE = $derived(settings?.taxRate ?? 0.0825);
 	const tipPercentages = $derived(settings?.defaultTipPercentages ?? [15, 18, 20]);
 	const tipsEnabled = $derived(settings?.enableTips === true);
-	const deliveryEnabled = $derived(settings?.enableDelivery === true);
-	const tenantDeliveryFee = $derived(settings?.deliveryFee ?? 0);
 	const asapPickupEnabled = $derived(settings?.asapPickupEnabled === true);
 
 	$effect(() => {
@@ -207,10 +197,7 @@
 		return Math.round(subtotal * (tipPercent / 100));
 	});
 	const discountCents = $derived(isSubscriptionCart ? 0 : (promoApplied?.discount ?? 0));
-	const deliveryFeeCents = $derived(
-		isSubscriptionCart ? 0 : orderType === 'delivery' ? tenantDeliveryFee : 0
-	);
-	const total = $derived(Math.max(0, subtotal + tax + tipCents + deliveryFeeCents - discountCents));
+	const total = $derived(Math.max(0, subtotal + tax + tipCents - discountCents));
 
 	async function checkout() {
 		if (cart.items.length === 0) return;
@@ -227,16 +214,7 @@
 			checkoutError = 'Please enter your name.';
 			return;
 		}
-		if (orderType === 'delivery' && !deliveryStreet.trim()) {
-			checkoutError = 'Please enter a delivery address.';
-			return;
-		}
-		if (
-			!isSubscriptionCart &&
-			orderType === 'pickup' &&
-			data.availableWindows.length > 0 &&
-			!selectedWindowId
-		) {
+		if (!isSubscriptionCart && data.availableWindows.length > 0 && !selectedWindowId) {
 			checkoutError = 'Please select a pickup window.';
 			return;
 		}
@@ -251,28 +229,19 @@
 				items: cart.items,
 				customer: { name: customerName, email, phone },
 				notes: notes || null,
-				orderType: isSubscriptionCart ? 'subscription' : orderType,
-				deliveryAddress:
-					orderType === 'delivery' && !isSubscriptionCart
-						? [deliveryStreet, deliveryApt, deliveryCity, deliveryState, deliveryZip]
-								.filter(Boolean)
-								.join(', ')
-						: null,
+				orderType: isSubscriptionCart ? 'subscription' : 'pickup',
 				scheduledFor:
 					!isSubscriptionCart &&
-					orderType === 'pickup' &&
 					!hasWindows &&
 					pickupTiming === 'scheduled' &&
 					pickupDate &&
 					pickupTimeValue
 						? new Date(`${pickupDate}T${pickupTimeValue}`).toISOString()
 						: null,
-				pickupWindowId:
-					!isSubscriptionCart && orderType === 'pickup' ? (selectedWindowId ?? null) : null,
+				pickupWindowId: !isSubscriptionCart ? (selectedWindowId ?? null) : null,
 				subtotal,
 				tax,
 				tip: tipCents,
-				deliveryFee: deliveryFeeCents,
 				discount: discountCents,
 				promoCode: promoApplied?.code ?? null,
 				total
@@ -537,38 +506,8 @@
 				</CardContent>
 			</Card>
 
-			<!-- Order type -->
-			{#if deliveryEnabled && !isSubscriptionCart}
-				<Card class="shadow-sm">
-					<CardContent class="p-4">
-						<p class="mb-2 text-sm font-semibold text-foreground">Order type</p>
-						<div class="flex gap-3">
-							{#each [{ value: 'pickup', label: 'Pickup', icon: 'mdi:bag-personal-outline' }, { value: 'delivery', label: 'Delivery', icon: 'mdi:moped-outline' }] as type (type.value)}
-								<label
-									style={orderType === type.value
-										? 'background-color: var(--background-color); color: var(--foreground-color); border-color: var(--background-color);'
-										: ''}
-									class="flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-lg border py-2.5 text-sm font-medium transition-colors
-								{orderType === type.value ? '' : ' text-muted-foreground hover:bg-muted/50'}"
-								>
-									<input
-										type="radio"
-										name="orderType"
-										value={type.value}
-										bind:group={orderType}
-										class="sr-only"
-									/>
-									<Icon icon={type.icon} class="h-4 w-4" />
-									{type.label}
-								</label>
-							{/each}
-						</div>
-					</CardContent>
-				</Card>
-			{/if}
-
-			<!-- Pickup timing (pickup only) -->
-			{#if orderType === 'pickup' && !isSubscriptionCart}
+			<!-- Pickup timing -->
+			{#if !isSubscriptionCart}
 				<Card class="shadow-sm">
 					<CardContent class="p-4">
 						<p class="mb-2 text-sm font-semibold text-foreground">Pickup time</p>
@@ -706,79 +645,6 @@
 								{/if}
 							{/if}
 						{/if}
-					</CardContent>
-				</Card>
-			{/if}
-
-			<!-- Delivery address -->
-			{#if orderType === 'delivery'}
-				<Card class="shadow-sm">
-					<CardContent class="space-y-3 p-4">
-						<p class="text-sm font-semibold text-foreground">Delivery address</p>
-						<div>
-							<label
-								class="mb-1 block text-xs font-medium text-muted-foreground"
-								for="delivery-street">Street address *</label
-							>
-							<input
-								id="delivery-street"
-								type="text"
-								bind:value={deliveryStreet}
-								placeholder="123 Main St"
-								class="branded-input w-full rounded-lg border px-3 py-2 text-sm transition-colors outline-none"
-							/>
-						</div>
-						<div>
-							<label class="mb-1 block text-xs font-medium text-muted-foreground" for="delivery-apt"
-								>Apt / Suite</label
-							>
-							<input
-								id="delivery-apt"
-								type="text"
-								bind:value={deliveryApt}
-								placeholder="Apt 2B (optional)"
-								class="branded-input w-full rounded-lg border px-3 py-2 text-sm transition-colors outline-none"
-							/>
-						</div>
-						<div class="grid grid-cols-3 gap-2">
-							<div class="col-span-1">
-								<label
-									class="mb-1 block text-xs font-medium text-muted-foreground"
-									for="delivery-city">City</label
-								>
-								<input
-									id="delivery-city"
-									type="text"
-									bind:value={deliveryCity}
-									class="branded-input w-full rounded-lg border px-3 py-2 text-sm transition-colors outline-none"
-								/>
-							</div>
-							<div>
-								<label
-									class="mb-1 block text-xs font-medium text-muted-foreground"
-									for="delivery-state">State</label
-								>
-								<input
-									id="delivery-state"
-									type="text"
-									bind:value={deliveryState}
-									placeholder="TX"
-									class="branded-input w-full rounded-lg border px-3 py-2 text-sm transition-colors outline-none"
-								/>
-							</div>
-							<div>
-								<label
-									class="mb-1 block text-xs font-medium text-muted-foreground"
-									for="delivery-zip">ZIP</label
-								>
-								<input
-									id="delivery-zip"
-									type="text"
-									bind:value={deliveryZip}
-									class="branded-input w-full rounded-lg border px-3 py-2 text-sm transition-colors outline-none"
-								/>
-							</div>
-						</div>
 					</CardContent>
 				</Card>
 			{/if}
@@ -970,7 +836,7 @@
 								Recurring subscription — billed {subscriptionInterval}
 							</p>
 						</div>
-					{:else if orderType === 'pickup'}
+					{:else}
 						<div
 							class="mb-0.5 flex items-center justify-between border-b pb-1.5 text-muted-foreground"
 						>
@@ -1001,12 +867,6 @@
 							<span>Tax ({(TAX_RATE * 100).toFixed(2)}%)</span>
 							<span>${(tax / 100).toFixed(2)}</span>
 						</div>
-						{#if deliveryFeeCents > 0}
-							<div class="flex justify-between text-muted-foreground">
-								<span>Delivery fee</span>
-								<span>${(deliveryFeeCents / 100).toFixed(2)}</span>
-							</div>
-						{/if}
 						{#if tipCents > 0}
 							<div class="flex justify-between text-muted-foreground">
 								<span
