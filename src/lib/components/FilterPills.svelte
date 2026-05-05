@@ -1,9 +1,12 @@
 <script lang="ts">
+	import Icon from '@iconify/svelte';
+
 	export interface FilterPill {
 		label: string;
 		value: string;
 		count: number;
 		dot?: boolean;
+		icon?: string;
 	}
 
 	let {
@@ -28,6 +31,9 @@
 				? 'bg-primary text-white'
 				: 'border border-gray-200 bg-gray-100 text-gray-600 hover:bg-gray-200'}"
 		>
+			{#if pill.icon}
+				<Icon icon={pill.icon} class="h-3 w-3 shrink-0" />
+			{/if}
 			{pill.label}
 			{pill.count}
 			{#if showDot}

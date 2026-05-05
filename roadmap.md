@@ -448,16 +448,6 @@ Current status pills (received, confirmed, in production, ready, fulfilled, canc
 
 ---
 
-### Show ordered items in live order cards
-
-The /dashboard/orders order cards show order#, customer, total, pickup time, status, and action buttons but don't show what the customer actually ordered. Vendors need this info before fulfilling.
-
-**Status:** ready-to-execute
-
-**Scope:** Add a one-line item summary per order card. Format: "3× Sourdough Loaf, 2× Cinnamon Rolls". Truncation rule TBD during implementation — likely show first 3 items + "and N more" when over.
-
----
-
 ### Brand the dashboard — vendor accent color theming
 
 The dashboard currently uses hardcoded brand green for primary actions across all vendors. Vendors should see the dashboard themed with their own brand color (already collected in branding settings).

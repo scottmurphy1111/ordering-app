@@ -58,7 +58,7 @@ One-line summaries and links to the detailed sections of this document. Scan thi
 ### Buttons
 
 - **Button sizing** — size determines height (32px default / 24px xs); variant determines color. They compose. Never apply ad-hoc `h-*` to override. → [Buttons](#buttons)
-- **Documented raw `<button>` exceptions** — nine specific cases where raw `<button>` is required instead of the primitive. → [Documented raw button exceptions](#documented-raw-button-exceptions)
+- **Documented raw `<button>` exceptions** — eight specific cases where raw `<button>` is required instead of the primitive. → [Documented raw button exceptions](#documented-raw-button-exceptions)
 
 ### Tabs and segmented controls
 
@@ -80,8 +80,9 @@ One-line summaries and links to the detailed sections of this document. Scan thi
 ### Status
 
 - **Status badges** — color-coded pills with documented `statusStyles` map. Always `capitalize`. Never show when all items share one status. → [Badges & Status Pills](#badges--status-pills)
-- **Order state-transition buttons** — blue fill for state changes (confirmed/in production/ready/fulfilled). Brand green is reserved for primary CTAs. → [Order state-transition buttons](#order-state-transition-buttons)
-- **Outlined-destructive buttons** — Cancel order, Refund. Use outlined red, not filled, when adjacent to blue state-transition actions. → [Destructive actions on order detail](#destructive-actions-on-order-detail-cancel-order)
+- **Order lifecycle progress** — icon row from `order-lifecycle.ts` showing completed/current/pending stages. Compact icon strip on list cards; full labeled stepper with connector lines on detail page. Never use colored `<Badge>` for lifecycle status. → [Order lifecycle progress](#order-lifecycle-progress)
+- **Order state-transition buttons** — `<Button>` default variant (green fill) with stage icon from `order-lifecycle.ts` `actionConfig`. Never use raw `<button>` with blue classes. → [Order state-transition buttons](#order-state-transition-buttons)
+- **Destructive order actions** — Cancel order: `<Button variant="destructive">` (filled red, primary weight). Refund: `<Button variant="outline">` with red classes (secondary weight). Both use the `<Button>` primitive. → [Destructive actions on order detail](#destructive-actions-on-order-detail-cancel-order)
 
 ### Navigation and routing
 
@@ -868,23 +869,21 @@ Variants and sizes compose freely:
 
 Use `<Button>` for all button affordances unless the callsite matches one of these documented exceptions. Each exception is flagged for the Tier 2 shadcn audit.
 
-1. **State-transition buttons** ("Mark as confirmed", "Mark as in production", "Mark as ready", "Mark as fulfilled"): blue fill not available as a Button variant. Classes: `rounded-md h-8 px-4 text-sm font-semibold bg-blue-600 text-white hover:bg-blue-700 transition-colors` (detail page) or `rounded-md h-8 px-2.5 text-xs font-semibold bg-blue-600 text-white hover:bg-blue-700 transition-colors` (compact list row). Brand green is reserved for primary CTAs; blue signals the state-transition category.
+1. **Outlined-destructive** (Cancel order, Refund): `<Button variant="destructive">` applies filled red, which competes visually with the adjacent solid primary action. Use `<Button variant="outline">` with additional red classes instead: add `class="border-red-200 text-red-500 hover:bg-red-50"` to the outline variant.
 
-2. **Outlined-destructive** (Cancel order, Refund): `<Button variant="destructive">` applies filled red, which competes visually with adjacent blue state-transition actions. Use outlined red instead: `rounded-md h-8 px-4 text-sm font-semibold border border-red-200 text-red-500 hover:bg-red-50 transition-colors` (detail page) or `rounded-md h-8 px-2.5 text-xs font-medium border border-red-200 text-red-500 hover:bg-red-50 transition-colors` (compact list row).
+2. **Dark-surface hamburger** (mobile nav header): `<Button variant="ghost">` hover uses `hover:bg-accent`, which conflicts with explicit dark-surface hover overrides. Use `hover:bg-gray-800` to match sidebar nav link convention. See Mobile header section.
 
-3. **Dark-surface hamburger** (mobile nav header): `<Button variant="ghost">` hover uses `hover:bg-accent`, which conflicts with explicit dark-surface hover overrides. Use `hover:bg-gray-800` to match sidebar nav link convention. See Mobile header section.
+3. **Sortable table column headers**: column headers that toggle sort direction use a raw `<button>` because `<th>` is the semantic container and Button's padding/shape assumptions don't fit cleanly inside a header cell.
 
-4. **Sortable table column headers**: column headers that toggle sort direction use a raw `<button>` because `<th>` is the semantic container and Button's padding/shape assumptions don't fit cleanly inside a header cell.
+4. **Accordion toggles**: when a custom expand/collapse UI overrides the shadcn Accordion primitive (e.g., full-row clickable headers inside a list), the toggle is a raw `<button>` wrapping the row content. Button's height constraints would require explicit overrides on every callsite.
 
-5. **Accordion toggles**: when a custom expand/collapse UI overrides the shadcn Accordion primitive (e.g., full-row clickable headers inside a list), the toggle is a raw `<button>` wrapping the row content. Button's height constraints would require explicit overrides on every callsite.
+5. **Status filter pills**: the `FilterPills` / status tabs pattern (see Filter Pills section) uses raw `<button>` elements because the pill shape (`rounded-full px-3 py-1.5`) and the green/gray active/inactive color system don't map to any Button size or variant. Migrating would require a new `pill` variant.
 
-6. **Status filter pills**: the `FilterPills` / status tabs pattern (see Filter Pills section) uses raw `<button>` elements because the pill shape (`rounded-full px-3 py-1.5`) and the green/gray active/inactive color system don't map to any Button size or variant. Migrating would require a new `pill` variant.
+6. **`DropdownMenuItem` as form submit**: bits-ui's `DropdownMenuItem` renders its own interactive element. When a menu item must submit a form (e.g., a status change via `method="post"`), use a raw `<button type="submit">` inside the item — nesting a `<Button>` creates an invalid nested interactive element.
 
-7. **`DropdownMenuItem` as form submit**: bits-ui's `DropdownMenuItem` renders its own interactive element. When a menu item must submit a form (e.g., a status change via `method="post"`), use a raw `<button type="submit">` inside the item — nesting a `<Button>` creates an invalid nested interactive element.
+7. **Popover triggers with custom interior**: bits-ui's `PopoverTrigger` renders its own `<button>` internally. Do not nest a `<Button>` inside `PopoverTrigger`. Apply trigger classes directly via the `class` prop on `PopoverTrigger`.
 
-8. **Popover triggers with custom interior**: bits-ui's `PopoverTrigger` renders its own `<button>` internally. Do not nest a `<Button>` inside `PopoverTrigger`. Apply trigger classes directly via the `class` prop on `PopoverTrigger`.
-
-9. **Absolutely-positioned input field decorations** (clear, eye toggle): buttons positioned `absolute` inside an input container conflict with `<Button>`'s internal padding and min-width. Use a raw `<button>` with explicit sizing (e.g., `size-6 rounded flex items-center justify-center`) and position classes. Exception: if the decoration sits outside the input's padding area, `size="icon-xs"` may fit.
+8. **Absolutely-positioned input field decorations** (clear, eye toggle): buttons positioned `absolute` inside an input container conflict with `<Button>`'s internal padding and min-width. Use a raw `<button>` with explicit sizing (e.g., `size-6 rounded flex items-center justify-center`) and position classes. Exception: if the decoration sits outside the input's padding area, `size="icon-xs"` may fit.
 
 ### Rules
 
@@ -1639,17 +1638,40 @@ Don't use Pattern B for active errors or warnings — those should use their nat
 - Query params (`?status=received`, `?category=breads`) are always the source
   of truth for filter state. Read via `$page.url.searchParams`.
 
+### Order lifecycle progress
+
+The order lifecycle is visualized as an icon-based progress row, not a colored `<Badge>`. Icons and labels come from `lifecycleStages` in `src/lib/utils/order-lifecycle.ts`. Never add a new status icon outside that module.
+
+**Compact (list cards):** a row of icons without labels. Completed stages: icon at full `text-primary` opacity. Current stage: icon wrapped in `bg-primary/10 rounded-full p-0.5`. Pending stages: icon at `text-gray-300`. Cancelled orders: `mdi:close-circle` in `text-red-500` with the label "Cancelled".
+
+**Full stepper (detail page):** same icon treatment, larger (`h-5 w-5`), with stage labels below and `h-px flex-1` connector lines (`bg-primary` for completed segments, `bg-gray-200` for pending). Cancelled orders skip the stepper and show the icon + label inline instead.
+
+**When to use:** whenever lifecycle status needs to be communicated on an order card or detail page. Do not fall back to Badge for lifecycle — the icon row is the only treatment.
+
 ### Order state-transition buttons
 
-Order state-transition buttons ("Mark as confirmed", "Mark as in production", "Mark as ready", "Mark as fulfilled") all use `bg-blue-600 hover:bg-blue-700 text-white` for consistency across both the orders list and order detail page. Brand green is reserved for primary page-level CTAs (setup checklist's "Set up →", create-new affordances). Per-stage color differentiation (blue/amber/violet/green per stage) was considered and deferred — labels carry the information; color carries the action category (state transition vs primary CTA vs destructive).
+Order state-transition buttons (Confirm, Start production, Mark ready, Fulfill) use `<Button>` (default variant — green fill) with a stage icon from `actionConfig` in `src/lib/utils/order-lifecycle.ts`. Import `actionConfig` from that module; do not redefine stage labels or icons locally.
 
-Currently implemented as plain `<button>` elements with explicit classes. Height follows the size system: `h-8` on both the order detail page and the orders list. Shadcn's `variant="default"` applies brand green, which conflicts with this convention. Tier 2 shadcn audit should add a Button variant for state-transition actions.
+```svelte
+{@const action = actionConfig[order.status]}
+<Button type="submit">
+  <Icon icon={action.icon} class="h-3.5 w-3.5" />
+  {action.label}
+</Button>
+```
+
+Height is `h-8` (default Button size). The default green variant is correct here — state-transition is a primary action on its page context (order detail) or row context (live orders list). There is no blue exception; Exception #1 has been removed from the raw `<button>` list.
 
 ### Destructive actions on order detail (Cancel order)
 
-The "Cancel order" and "Refund" buttons on the order detail page and list both use a plain `<button>` with outlined red classes rather than `<Button variant="destructive">`. The destructive variant applies filled `bg-red-600`, which competes visually with the blue state-transition primary action sitting beside them. Outlined red (`border-red-200 text-red-500 hover:bg-red-50`) is the quieter destructive treatment. Height: `h-8` on both the detail page and the list card.
+Two destructive actions appear on order cards and the detail page:
 
-The mobile hamburger uses a plain `<button>` instead of `<Button variant="ghost">` due to dark-surface hover conflict. Cancel order and Refund use a plain `<button>` instead of `<Button variant="destructive">` for the same reason — the filled variant conflicts with adjacent primary actions. All are flagged for the Tier 2 shadcn audit: consider adding "dark-surface" and "outlined-destructive" Button variants to resolve these cases properly.
+- **Cancel order** — `<Button variant="destructive">` (filled red). This is a clear destructive primary action and the filled treatment is intentional — vendors should see it as a high-weight decision.
+- **Refund payment** — `<Button variant="outline" class="border-red-200 text-red-500 hover:bg-red-50">`. Refund appears only on cancelled orders with paid status; it is a secondary action and the quieter outlined treatment is appropriate.
+
+Both use the shadcn `<Button>` primitive. The prior raw `<button>` with blue-competing rationale no longer applies since state-transition buttons now use the default green `<Button>`.
+
+The mobile hamburger is the only remaining raw `<button>` in the order actions surface — due to the dark-surface hover conflict described in the Mobile header section.
 
 ### Mobile header
 

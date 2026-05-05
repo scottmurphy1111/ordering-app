@@ -132,11 +132,6 @@
 		failed: { cls: 'bg-red-100 text-red-600', label: 'Failed' },
 		unpaid: { cls: 'bg-gray-100 text-gray-500', label: 'Unpaid' }
 	};
-
-	const statusBadge: Record<string, string> = {
-		fulfilled: 'bg-muted text-muted-foreground',
-		cancelled: 'bg-red-100 text-red-600'
-	};
 </script>
 
 <div>
@@ -194,8 +189,18 @@
 		<OrdersFilterTabs
 			tabs={[
 				{ label: 'All', value: '', count: Number(data.summary.total) },
-				{ label: 'Fulfilled', value: 'fulfilled', count: Number(data.summary.fulfilled) },
-				{ label: 'Cancelled', value: 'cancelled', count: Number(data.summary.cancelled) }
+				{
+					label: 'Fulfilled',
+					value: 'fulfilled',
+					count: Number(data.summary.fulfilled),
+					icon: 'mdi:flag-checkered'
+				},
+				{
+					label: 'Cancelled',
+					value: 'cancelled',
+					count: Number(data.summary.cancelled),
+					icon: 'mdi:close-circle'
+				}
 			]}
 			active={data.statusFilter}
 			onchange={(val) => goto(resolve(buildStatusPath(val)))}
@@ -303,74 +308,88 @@
 	{:else}
 		<div class="space-y-2">
 			{#each data.orders as order (order.id)}
+				{@const showRefund = order.status === 'cancelled' && order.paymentStatus === 'paid'}
 				<div
-					role="button"
-					tabindex="0"
-					class="cursor-pointer overflow-hidden rounded-xl border bg-background shadow-sm transition-colors hover:bg-muted/40"
-					onclick={() => goto(resolve(`/dashboard/orders/${order.id}`))}
-					onkeydown={(e) => {
-						if (e.key === 'Enter' || e.key === ' ') {
-							e.preventDefault();
-							goto(resolve(`/dashboard/orders/${order.id}`));
-						}
-					}}
+					class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm transition-shadow hover:shadow-md"
 				>
-					<div class="flex flex-col gap-3 px-4 py-3 md:flex-row md:items-start md:gap-3">
-						<!-- Main info -->
-						<div class="min-w-0 flex-1">
-							<div class="mb-1 flex flex-wrap items-center gap-2">
-								<span class="font-mono text-sm font-semibold">{order.orderNumber}</span>
-								<Badge
-									class="{statusBadge[order.status] ?? 'bg-muted text-muted-foreground'} capitalize"
-								>
-									{order.status}
-								</Badge>
-								<Badge class="bg-muted text-muted-foreground capitalize">{order.type}</Badge>
-								{#if order.paymentStatus && paymentBadge[order.paymentStatus]}
-									<Badge class={paymentBadge[order.paymentStatus].cls}>
-										{paymentBadge[order.paymentStatus].label}
-									</Badge>
+					<!-- Card body: clickable, navigates to detail -->
+					<div
+						role="button"
+						tabindex="0"
+						class="cursor-pointer px-4 py-3"
+						onclick={() => goto(resolve(`/dashboard/orders/${order.id}`))}
+						onkeydown={(e) => {
+							if (e.key === 'Enter' || e.key === ' ') {
+								e.preventDefault();
+								goto(resolve(`/dashboard/orders/${order.id}`));
+							}
+						}}
+					>
+						<div class="flex flex-col gap-3 md:flex-row md:items-start md:gap-3">
+							<!-- Main info -->
+							<div class="min-w-0 flex-1">
+								<div class="mb-1 flex flex-wrap items-center gap-2">
+									<span class="font-mono text-xs text-gray-500">{order.orderNumber}</span>
+									{#if order.status === 'cancelled'}
+										<span class="inline-flex items-center gap-1.5">
+											<Icon icon="mdi:close-circle" class="h-3.5 w-3.5 text-red-500" />
+											<span class="text-xs text-gray-500">Cancelled</span>
+										</span>
+									{:else if order.status === 'fulfilled'}
+										<span class="inline-flex items-center gap-1.5">
+											<Icon icon="mdi:flag-checkered" class="h-3.5 w-3.5 text-primary" />
+											<span class="text-xs text-gray-500">Fulfilled</span>
+										</span>
+									{:else}
+										<span class="text-xs text-gray-500">
+											{order.status}
+										</span>
+									{/if}
+									<Badge class="bg-muted text-muted-foreground capitalize">{order.type}</Badge>
+									{#if order.paymentStatus && paymentBadge[order.paymentStatus]}
+										<Badge class={paymentBadge[order.paymentStatus].cls}>
+											{paymentBadge[order.paymentStatus].label}
+										</Badge>
+									{/if}
+								</div>
+								{#if order.customerName}
+									<p class="text-sm font-medium text-gray-900">
+										{order.customerName}{order.customerPhone ? ` · ${order.customerPhone}` : ''}
+									</p>
+								{/if}
+								{#if order.scheduledFor}
+									<p class="mt-1 flex items-center gap-1 text-xs text-amber-700">
+										<Icon icon="mdi:calendar-clock" class="h-3.5 w-3.5 shrink-0" />
+										Scheduled: {new Date(order.scheduledFor).toLocaleString([], {
+											weekday: 'short',
+											month: 'short',
+											day: 'numeric',
+											hour: 'numeric',
+											minute: '2-digit'
+										})}
+									</p>
+								{/if}
+								{#if order.deliveryAddress}
+									<p class="mt-0.5 flex items-center gap-1 text-xs text-gray-500">
+										<Icon icon="mdi:map-marker-outline" class="h-3.5 w-3.5 shrink-0" />
+										{order.deliveryAddress}
+									</p>
+								{/if}
+								{#if order.items && order.items.length > 0}
+									<p class="mt-1.5 line-clamp-2 text-xs text-gray-500">
+										{order.items.map((i) => `${i.quantity}× ${i.name}`).join(', ')}
+									</p>
 								{/if}
 							</div>
-							{#if order.customerName}
-								<p class="text-sm text-muted-foreground">
-									{order.customerName}{order.customerPhone ? ` · ${order.customerPhone}` : ''}
-								</p>
-							{/if}
-							{#if order.scheduledFor}
-								<p class="mt-1 flex items-center gap-1 text-xs font-medium text-amber-600">
-									<Icon icon="mdi:calendar-clock" class="h-3.5 w-3.5 shrink-0" />
-									Scheduled: {new Date(order.scheduledFor).toLocaleString([], {
-										weekday: 'short',
-										month: 'short',
-										day: 'numeric',
-										hour: 'numeric',
-										minute: '2-digit'
-									})}
-								</p>
-							{/if}
-							{#if order.deliveryAddress}
-								<p class="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground">
-									<Icon icon="mdi:map-marker-outline" class="h-3.5 w-3.5 shrink-0" />
-									{order.deliveryAddress}
-								</p>
-							{/if}
-							{#if order.items && order.items.length > 0}
-								<p class="mt-1.5 text-xs text-muted-foreground">
-									{order.items.map((i) => `${i.quantity}× ${i.name}`).join(', ')}
-								</p>
-							{/if}
-						</div>
 
-						<!-- Right side: price + date + refund -->
-						<div
-							role="none"
-							class="flex flex-col gap-2 md:shrink-0 md:items-end md:gap-2"
-							onclick={(e) => e.stopPropagation()}
-						>
-							<div class="md:text-right">
-								<p class="font-semibold">${(order.total / 100).toFixed(2)}</p>
-								<p class="text-xs text-muted-foreground">
+							<!-- Right: price + date -->
+							<div
+								role="none"
+								class="flex flex-col gap-1 md:shrink-0 md:items-end"
+								onclick={(e) => e.stopPropagation()}
+							>
+								<p class="text-sm font-medium text-gray-900">${(order.total / 100).toFixed(2)}</p>
+								<p class="text-xs text-gray-400">
 									{new Date(order.createdAt).toLocaleString([], {
 										month: 'short',
 										day: 'numeric',
@@ -380,25 +399,29 @@
 									})}
 								</p>
 							</div>
-							{#if order.status === 'cancelled' && order.paymentStatus === 'paid'}
-								<form method="post" action="?/refund" use:enhance>
-									<input type="hidden" name="id" value={order.id} />
-									<Button
-										type="submit"
-										variant="destructive"
-										onclick={async (e) => {
-											e.preventDefault();
-											const btn = e.currentTarget as HTMLButtonElement;
-											if (await confirmDialog('Issue a full refund for this order?'))
-												btn.form?.requestSubmit();
-										}}
-									>
-										Refund
-									</Button>
-								</form>
-							{/if}
 						</div>
 					</div>
+
+					<!-- Action strip: only for cancelled+paid orders -->
+					{#if showRefund}
+						<div class="flex items-center justify-end gap-3 border-t border-gray-100 px-4 py-2">
+							<form method="post" action="?/refund" use:enhance class="flex">
+								<input type="hidden" name="id" value={order.id} />
+								<button
+									type="submit"
+									class="text-sm font-medium text-red-500 transition-colors hover:text-red-600"
+									onclick={async (e) => {
+										e.preventDefault();
+										const btn = e.currentTarget as HTMLButtonElement;
+										if (await confirmDialog('Issue a full refund for this order?'))
+											btn.form?.requestSubmit();
+									}}
+								>
+									Refund
+								</button>
+							</form>
+						</div>
+					{/if}
 				</div>
 			{/each}
 		</div>

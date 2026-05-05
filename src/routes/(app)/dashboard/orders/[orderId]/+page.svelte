@@ -8,39 +8,15 @@
 	import { Card, CardHeader, CardTitle, CardContent } from '$lib/components/ui/card';
 	import { Alert } from '$lib/components/ui/alert';
 	import type { PageData, ActionData } from './$types';
+	import { lifecycleStages, actionConfig } from '$lib/utils/order-lifecycle';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
 	const order = $derived(data.order);
 
-	const statusColors: Record<string, string> = {
-		received: 'bg-blue-100 text-blue-700',
-		confirmed: 'bg-purple-100 text-purple-700',
-		preparing: 'bg-yellow-100 text-yellow-700',
-		ready: 'bg-green-100 text-primary/90',
-		fulfilled: 'bg-muted text-muted-foreground',
-		cancelled: 'bg-red-100 text-red-600'
-	};
-
-	const statusLabels: Record<string, string> = {
-		received: 'Received',
-		confirmed: 'Confirmed',
-		preparing: 'In production',
-		ready: 'Ready',
-		fulfilled: 'Fulfilled',
-		cancelled: 'Cancelled'
-	};
-
 	const nextStatus: Record<string, string> = {
 		received: 'confirmed',
 		confirmed: 'preparing',
-		preparing: 'ready',
-		ready: 'fulfilled'
-	};
-
-	const nextStatusLabels: Record<string, string> = {
-		received: 'confirmed',
-		confirmed: 'in production',
 		preparing: 'ready',
 		ready: 'fulfilled'
 	};
@@ -77,9 +53,6 @@
 		<div>
 			<div class="flex flex-wrap items-center gap-2">
 				<h1 class="font-mono text-2xl font-bold text-foreground">{order.orderNumber}</h1>
-				<Badge class={statusColors[order.status] ?? 'bg-muted'}>
-					{statusLabels[order.status] ?? order.status}
-				</Badge>
 				<Badge class="bg-muted text-muted-foreground capitalize">{order.type}</Badge>
 				{#if order.paymentStatus === 'paid'}
 					<Badge class="bg-emerald-100 text-emerald-700">paid</Badge>
@@ -105,6 +78,42 @@
 						minute: '2-digit'
 					})}
 				</p>
+			{/if}
+			<!-- Lifecycle stepper -->
+			{#if order.status === 'cancelled'}
+				<div class="mt-4 flex items-center gap-2">
+					<Icon icon="mdi:close-circle" class="h-5 w-5 text-red-500" />
+					<span class="text-base font-medium text-gray-900">Cancelled</span>
+				</div>
+			{:else}
+				<div class="mt-4 flex items-center">
+					{#each lifecycleStages as stage, i (stage.value)}
+						{@const stageIndex = lifecycleStages.findIndex((s) => s.value === stage.value)}
+						{@const currentIndex = lifecycleStages.findIndex((s) => s.value === order.status)}
+						{@const isCompleted = stageIndex < currentIndex}
+						{@const isCurrent = stageIndex === currentIndex}
+						<div class="flex flex-col items-center">
+							{#if isCurrent}
+								<span
+									class="inline-flex items-center justify-center rounded-full bg-primary/10 p-1.5"
+								>
+									<Icon icon={stage.icon} class="h-5 w-5 text-primary" />
+								</span>
+								<span class="mt-1 text-xs font-semibold text-gray-900">{stage.label}</span>
+							{:else if isCompleted}
+								<Icon icon={stage.icon} class="h-5 w-5 text-primary" />
+								<span class="mt-1 text-xs font-medium text-gray-900">{stage.label}</span>
+							{:else}
+								<Icon icon={stage.icon} class="h-5 w-5 text-gray-300" />
+								<span class="mt-1 text-xs text-gray-400">{stage.label}</span>
+							{/if}
+						</div>
+						{#if i < lifecycleStages.length - 1}
+							{@const lineCompleted = stageIndex < currentIndex}
+							<div class="mx-2 h-px flex-1 {lineCompleted ? 'bg-primary' : 'bg-gray-200'}"></div>
+						{/if}
+					{/each}
+				</div>
 			{/if}
 		</div>
 		<p class="text-2xl font-bold text-foreground">{formatCents(order.total)}</p>
@@ -241,11 +250,13 @@
 			</CardHeader>
 			<CardContent class="flex flex-wrap gap-2">
 				{#if nextStatus[order.status]}
+					{@const action = actionConfig[order.status]}
 					<form method="post" action="?/updateStatus" use:enhance autocomplete="off">
 						<input type="hidden" name="id" value={order.id} />
 						<input type="hidden" name="status" value={nextStatus[order.status]} />
 						<Button type="submit">
-							Mark as {nextStatusLabels[order.status] ?? nextStatus[order.status]}
+							<Icon icon={action.icon} class="h-3.5 w-3.5" />
+							{action.label}
 						</Button>
 					</form>
 				{/if}
@@ -254,7 +265,8 @@
 						<input type="hidden" name="id" value={order.id} />
 						<Button
 							type="submit"
-							variant="destructive"
+							variant="outline"
+							class="border-red-200 text-red-500 hover:bg-red-50"
 							onclick={async (e) => {
 								e.preventDefault();
 								const btn = e.currentTarget as HTMLButtonElement;
