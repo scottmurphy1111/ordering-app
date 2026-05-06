@@ -102,14 +102,6 @@ export const ADDONS = [
 
 export type AddonKey = (typeof ADDONS)[number]['key'];
 
-// Add-ons that support annual billing and their pricing
-export const ANNUAL_ADDON_PRICING: Partial<
-	Record<AddonKey, { monthly: number; total: number; savings: number }>
-> = {
-	loyalty: { monthly: 24, total: 288, savings: 60 },
-	subscriptions: { monthly: 24, total: 288, savings: 60 }
-};
-
 export function getTier(key: string) {
 	return TIERS.find((t) => t.key === key) ?? TIERS[0];
 }
@@ -121,4 +113,82 @@ export function getItemLimit(tierKey: string): number | null {
 export function isAtItemLimit(tierKey: string, itemCount: number): boolean {
 	const limit = getItemLimit(tierKey);
 	return limit !== null && itemCount >= limit;
+}
+
+// Returns the next billing anchor date: the upcoming 15th of the month.
+// If today is the 15th, returns today (no bridge invoice — full cycle starts immediately).
+// If today is before the 15th, returns the 15th of the current month.
+// If today is past the 15th, returns the 15th of the following month.
+//
+// Timezone-naive — uses local server time. For pre-launch, server local time is
+// sufficient. If multi-timezone vendor billing becomes a concern post-launch, pass
+// an IANA timezone and convert `from` accordingly.
+export function nextBillingAnchor(from: Date = new Date()): Date {
+	const day = from.getDate();
+	const result = new Date(from);
+	// End-of-day local. Midnight would put the anchor in the past on the 15th itself,
+	// causing Stripe to reject billing_cycle_anchor (must be future-or-now).
+	result.setHours(23, 59, 59, 999);
+	if (day === 15) {
+		// Already on an anchor — use today
+		return result;
+	}
+	if (day < 15) {
+		result.setDate(15);
+	} else {
+		// Past the 15th — next 15th is next month.
+		// Set to 1st before advancing month to prevent JavaScript date overflow
+		// (e.g. Jan 31 → setMonth(1) would overflow to March 3 without this guard).
+		result.setDate(1);
+		result.setMonth(result.getMonth() + 1);
+		result.setDate(15);
+	}
+	return result;
+}
+
+export function unixTimestamp(date: Date): number {
+	return Math.floor(date.getTime() / 1000);
+}
+
+/**
+ * Compute refund preview for an immediate (mid-period) cancel of an annual
+ * subscription. Cancel-effective = end of current month (clamped to period_end
+ * if end-of-month is past period_end). Unused months = whole calendar months
+ * strictly between cancel-effective and period_end. Refund = unusedMonths/12 ×
+ * annual total.
+ *
+ * Returns refund=0 and unusedMonths=0 when cancel-effective ≥ period_end (the
+ * vendor is in the final month of the period; nothing left to refund).
+ *
+ * Pure function — no Stripe calls. Caller resolves period_end from the live
+ * subscription before invoking.
+ */
+export function cancelImmediateRefundPreview(args: {
+	periodEnd: Date;
+	annualTotalCents: number;
+	now?: Date;
+}): {
+	cancelEffective: Date;
+	unusedMonths: number;
+	refundCents: number;
+} {
+	const now = args.now ?? new Date();
+	// End of current month, local time. Day 0 of next month = last day of this month.
+	const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+	const cancelEffective =
+		endOfMonth.getTime() > args.periodEnd.getTime() ? args.periodEnd : endOfMonth;
+
+	if (cancelEffective.getTime() >= args.periodEnd.getTime()) {
+		return { cancelEffective, unusedMonths: 0, refundCents: 0 };
+	}
+
+	// Whole calendar months strictly between cancelEffective (end of month X)
+	// and periodEnd (the 15th of some month Y). Equivalently: count of full
+	// months from the 1st-of-(X+1) up to but not including the month containing periodEnd.
+	const startMonthIdx = cancelEffective.getFullYear() * 12 + cancelEffective.getMonth() + 1; // first full month after cancel
+	const endMonthIdx = args.periodEnd.getFullYear() * 12 + args.periodEnd.getMonth(); // month of periodEnd (partial, excluded)
+	const unusedMonths = Math.max(0, endMonthIdx - startMonthIdx);
+
+	const refundCents = Math.round((unusedMonths * args.annualTotalCents) / 12);
+	return { cancelEffective, unusedMonths, refundCents };
 }

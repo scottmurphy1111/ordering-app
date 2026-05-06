@@ -80,6 +80,19 @@ export const vendor = pgTable(
 		subscriptionTier: varchar('subscription_tier', { length: 50 }).default('starter'),
 		subscriptionStatus: varchar('subscription_status', { length: 50 }).default('active'),
 		subscriptionEndsAt: timestamp('subscription_ends_at'),
+		// Marks that the immediate-cancel path was used (cancelImmediate action),
+		// independent of whether money actually moved. Set when:
+		//   - a prorated refund was issued (to card or to customer balance), or
+		//   - the vendor was in their final period month and nothing was owed back
+		//     (refundCents === 0).
+		// Used to (a) block the reactivate "Don't cancel" button, (b) swap the
+		// persistent cancel banner to the "this is final" copy, (c) block re-running
+		// cancelImmediate on the same subscription.
+		// Reset to null on every new subscription create in the upgrade action.
+		// Edge case: stays null if a refund was attempted (refundCents > 0) but BOTH
+		// the card refund AND the balance-credit fallback threw. Vendor loses service
+		// in that path with no audit row — pre-existing failure mode, separate concern.
+		subscriptionRefundedAt: timestamp('subscription_refunded_at'),
 		stripeCustomerId: varchar('stripe_customer_id', { length: 255 }),
 		stripeSubscriptionId: varchar('stripe_subscription_id', { length: 255 }),
 

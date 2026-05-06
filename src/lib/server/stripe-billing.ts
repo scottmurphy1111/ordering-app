@@ -38,13 +38,19 @@ export function getTierKeyFromPriceId(priceId: string): string | null {
 	return null;
 }
 
-const ANNUAL_CAPABLE_ADDONS = new Set(['loyalty', 'subscriptions']);
-
-export function getAddonPriceId(
-	addonKey: string,
-	interval: 'monthly' | 'annual' = 'monthly'
-): string | undefined {
-	const monthlyMap: Record<string, string | undefined> = {
+// Add-on subscription items inherit the parent subscription's billing_cycle_anchor
+// automatically. The new add-on item's first charge is prorated from today to the
+// next anchor date (15th), and full add-on charges land on the 15th going forward.
+// No explicit billing_cycle_anchor is needed when creating add-on items.
+//
+// Add-ons are monthly-only. Annual variants existed previously for `loyalty` and
+// `subscriptions` and were removed because the per-row asymmetry created UX
+// problems (which add-ons can be annual? — confusing) and complicated cancel-with-refund
+// math. The corresponding `STRIPE_PRICE_ADDON_LOYALTY_ANNUAL` and
+// `STRIPE_PRICE_ADDON_SUBSCRIPTIONS_ANNUAL` env vars and Stripe Dashboard prices
+// remain available if this decision is reversed.
+export function getAddonPriceId(addonKey: string): string | undefined {
+	const map: Record<string, string | undefined> = {
 		sms_notifications: env.STRIPE_PRICE_ADDON_SMS,
 		custom_domain: env.STRIPE_PRICE_ADDON_CUSTOM_DOMAIN,
 		analytics: env.STRIPE_PRICE_ADDON_ANALYTICS,
@@ -52,13 +58,5 @@ export function getAddonPriceId(
 		promo_codes: env.STRIPE_PRICE_ADDON_PROMO_CODES,
 		subscriptions: env.STRIPE_PRICE_ADDON_SUBSCRIPTIONS
 	};
-	const annualMap: Record<string, string | undefined> = {
-		loyalty: env.STRIPE_PRICE_ADDON_LOYALTY_ANNUAL,
-		subscriptions: env.STRIPE_PRICE_ADDON_SUBSCRIPTIONS_ANNUAL
-	};
-
-	if (interval === 'annual' && ANNUAL_CAPABLE_ADDONS.has(addonKey)) {
-		return annualMap[addonKey];
-	}
-	return monthlyMap[addonKey];
+	return map[addonKey];
 }

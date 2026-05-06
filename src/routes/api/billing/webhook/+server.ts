@@ -158,7 +158,10 @@ export const POST: RequestHandler = async ({ request }) => {
 					.update(vendor)
 					.set({
 						subscriptionTier: 'starter',
-						subscriptionStatus: 'cancelled',
+						// Status reflects the current vendor state, not the prior subscription's
+						// terminal state. After teardown, the vendor is on free Starter — which
+						// is always 'active'. Avoids the "Starter | Cancelled" badge inconsistency.
+						subscriptionStatus: 'active',
 						subscriptionEndsAt: null,
 						stripeSubscriptionId: null,
 						addons: [],

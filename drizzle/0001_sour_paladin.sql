@@ -1,0 +1,1 @@
+ALTER TABLE "vendors" ADD COLUMN "subscription_refunded_at" timestamp;

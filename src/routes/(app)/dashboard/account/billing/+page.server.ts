@@ -4,8 +4,17 @@ import { db } from '$lib/server/db';
 import { eq, count } from 'drizzle-orm';
 import { vendor } from '$lib/server/db/vendor';
 import { catalogItems } from '$lib/server/db/schema';
-import { ADDONS, type AddonItem, type BillingInterval } from '$lib/billing';
+import {
+	ADDONS,
+	TIERS,
+	type AddonItem,
+	type BillingInterval,
+	nextBillingAnchor,
+	unixTimestamp,
+	cancelImmediateRefundPreview
+} from '$lib/billing';
 import { requireStaff } from '$lib/server/roles';
+import type Stripe from 'stripe';
 import { getOrderLocalStripe, getPlanPriceId, getAddonPriceId } from '$lib/server/stripe-billing';
 
 const VALID_ADDON_KEYS = new Set<string>(ADDONS.map((a) => a.key));
@@ -23,6 +32,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 				subscriptionTier: true,
 				subscriptionStatus: true,
 				subscriptionEndsAt: true,
+				subscriptionRefundedAt: true,
 				stripeCustomerId: true,
 				stripeSubscriptionId: true,
 				addons: true
@@ -61,6 +71,9 @@ export const load: PageServerLoad = async ({ locals }) => {
 		subscriptionEndsAt: vendorRecord?.subscriptionEndsAt
 			? vendorRecord.subscriptionEndsAt.toISOString()
 			: null,
+		subscriptionRefundedAt: vendorRecord?.subscriptionRefundedAt
+			? vendorRecord.subscriptionRefundedAt.toISOString()
+			: null,
 		hasStripeSubscription: !!vendorRecord?.stripeSubscriptionId,
 		hasStripeCustomer: !!vendorRecord?.stripeCustomerId,
 		addons: (vendorRecord?.addons ?? []) as AddonItem[],
@@ -71,7 +84,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 };
 
 export const actions: Actions = {
-	upgrade: async ({ request, locals, url }) => {
+	upgrade: async ({ request, locals }) => {
 		requireStaff(locals);
 		const vendorId = locals.vendorId!;
 		const formData = await request.formData();
@@ -107,7 +120,13 @@ export const actions: Actions = {
 					return meta === 'plan' || !meta;
 				}) ?? subscription.items.data[0];
 			if (planItem) {
-				await stripe.subscriptionItems.update(planItem.id, { price: priceId });
+				// Match downgrade/switchInterval: explicit create_prorations so the unused
+				// current-tier time is credited and the new tier's prorated cost lands on
+				// the next invoice (not charged immediately).
+				await stripe.subscriptionItems.update(planItem.id, {
+					price: priceId,
+					proration_behavior: 'create_prorations'
+				});
 				await db
 					.update(vendor)
 					.set({ subscriptionTier: planKey, updatedAt: new Date() })
@@ -127,15 +146,33 @@ export const actions: Actions = {
 			await db.update(vendor).set({ stripeCustomerId: customerId }).where(eq(vendor.id, vendorId));
 		}
 
-		const session = await stripe.checkout.sessions.create({
+		const anchorDate = nextBillingAnchor();
+		const subscription = await stripe.subscriptions.create({
 			customer: customerId,
-			mode: 'subscription',
-			line_items: [{ price: priceId, quantity: 1 }],
-			success_url: `${url.origin}/dashboard/account/billing?upgraded=1`,
-			cancel_url: `${url.origin}/dashboard/account/billing`,
-			metadata: { vendorId: String(vendorId), planKey, interval }
+			items: [{ price: priceId }],
+			payment_behavior: 'default_incomplete',
+			payment_settings: {
+				save_default_payment_method: 'on_subscription',
+				payment_method_types: ['card']
+			},
+			metadata: { vendorId: String(vendorId), planKey, interval },
+			// Anchor billing to the next 15th of the month.
+			// Stripe creates a prorated bridge invoice immediately for the partial period
+			// (today → anchor), then full-cycle invoices land on the 15th going forward.
+			// If anchorDate is today (vendor signed up on the 15th), no bridge —
+			// full cycle starts immediately.
+			billing_cycle_anchor: unixTimestamp(anchorDate),
+			proration_behavior: 'create_prorations'
 		});
-		redirect(303, session.url!);
+		await db
+			.update(vendor)
+			.set({
+				stripeSubscriptionId: subscription.id,
+				subscriptionRefundedAt: null,
+				updatedAt: new Date()
+			})
+			.where(eq(vendor.id, vendorId));
+		redirect(303, `/dashboard/account/billing/checkout?subscriptionId=${subscription.id}`);
 	},
 
 	downgrade: async ({ request, locals }) => {
@@ -215,6 +252,8 @@ export const actions: Actions = {
 
 	switchInterval: async ({ request, locals }) => {
 		requireStaff(locals);
+		// Switching monthly ↔ annual preserves the existing billing_cycle_anchor (the 15th).
+		// Stripe handles proration of the unused portion of the current cycle automatically.
 		const vendorId = locals.vendorId!;
 		const formData = await request.formData();
 		const intervalRaw = formData.get('interval')?.toString();
@@ -251,20 +290,152 @@ export const actions: Actions = {
 		return { success: true };
 	},
 
-	openPortal: async ({ locals, url }) => {
+	reactivate: async ({ locals }) => {
 		requireStaff(locals);
 		const vendorId = locals.vendorId!;
 		const record = await db.query.vendor.findFirst({
 			where: eq(vendor.id, vendorId),
-			columns: { stripeCustomerId: true }
+			columns: { stripeSubscriptionId: true, subscriptionEndsAt: true }
 		});
-		if (!record?.stripeCustomerId) return fail(400, { error: 'No billing account found.' });
+		if (!record?.stripeSubscriptionId) return fail(400, { error: 'No active subscription.' });
+		if (!record.subscriptionEndsAt) return fail(400, { error: 'No cancellation scheduled.' });
+
 		const stripe = getOrderLocalStripe();
-		const session = await stripe.billingPortal.sessions.create({
-			customer: record.stripeCustomerId,
-			return_url: `${url.origin}/dashboard/account/billing`
+		await stripe.subscriptions.update(record.stripeSubscriptionId, {
+			cancel_at_period_end: false
 		});
-		redirect(303, session.url);
+		await db
+			.update(vendor)
+			.set({ subscriptionEndsAt: null, updatedAt: new Date() })
+			.where(eq(vendor.id, vendorId));
+		return { success: true, reactivated: true };
+	},
+
+	cancelImmediate: async ({ locals }) => {
+		requireStaff(locals);
+		const vendorId = locals.vendorId!;
+
+		const record = await db.query.vendor.findFirst({
+			where: eq(vendor.id, vendorId),
+			columns: {
+				stripeSubscriptionId: true,
+				stripeCustomerId: true,
+				subscriptionTier: true,
+				subscriptionRefundedAt: true
+			}
+		});
+		if (!record?.stripeSubscriptionId)
+			return fail(400, { error: 'No active subscription to cancel.' });
+		if (!record.subscriptionTier || !PAID_TIERS.has(record.subscriptionTier))
+			return fail(400, { error: 'Only paid subscriptions can be cancelled this way.' });
+		if (record.subscriptionRefundedAt)
+			return fail(400, { error: 'A refund has already been issued for this subscription.' });
+
+		const stripe = getOrderLocalStripe();
+		const subscription = await stripe.subscriptions.retrieve(record.stripeSubscriptionId, {
+			// Stripe v22: payment_intent moved off Invoice. Expand payments list so we
+			// can navigate to the payment intent ID, then retrieve separately for charge.
+			expand: ['items', 'latest_invoice.payments.data.payment.payment_intent']
+		});
+		const planItem =
+			subscription.items.data.find((i) => {
+				const meta = i.price.metadata?.type;
+				return meta === 'plan' || !meta;
+			}) ?? subscription.items.data[0];
+		if (!planItem) return fail(500, { error: 'Could not find subscription item.' });
+
+		// Annual-only guard.
+		if (planItem.price.recurring?.interval !== 'year')
+			return fail(400, { error: 'Immediate cancellation with refund is annual-only.' });
+
+		const periodEndUnix = planItem.current_period_end;
+		if (!periodEndUnix) return fail(500, { error: 'Subscription period_end unavailable.' });
+		const periodEnd = new Date(periodEndUnix * 1000);
+
+		const tier = TIERS.find((t) => t.key === record.subscriptionTier);
+		const annualTotal = tier && 'annualTotal' in tier ? (tier.annualTotal as number) : 0;
+		if (!annualTotal) return fail(500, { error: 'Annual price not configured.' });
+
+		const { cancelEffective, refundCents } = cancelImmediateRefundPreview({
+			periodEnd,
+			annualTotalCents: annualTotal * 100
+		});
+
+		// Resolve charge for refund via Stripe v22 invoice payments path:
+		// Invoice.payments[0].payment_details.payment_intent → PaymentIntent.latest_charge
+		let refundIssued = false;
+		if (refundCents > 0) {
+			const latestInvoice = subscription.latest_invoice as Stripe.Invoice | null;
+			const firstPayment = latestInvoice?.payments?.data?.[0];
+			const piRef = firstPayment?.payment?.payment_intent;
+			const paymentIntentId = typeof piRef === 'string' ? piRef : piRef?.id;
+
+			let chargeId: string | null = null;
+			if (paymentIntentId) {
+				try {
+					const pi = await stripe.paymentIntents.retrieve(paymentIntentId, {
+						expand: ['latest_charge']
+					});
+					chargeId =
+						typeof pi.latest_charge === 'string'
+							? pi.latest_charge
+							: ((pi.latest_charge as Stripe.Charge | null)?.id ?? null);
+				} catch {
+					// Can't retrieve PI — fall through to balance credit below
+				}
+			}
+
+			if (chargeId) {
+				try {
+					await stripe.refunds.create({ charge: chargeId, amount: refundCents });
+					refundIssued = true;
+				} catch (err) {
+					// Charge not refundable (disputed, expired, etc). Fall back to
+					// customer balance credit — applies to next invoice if vendor
+					// returns; otherwise sits on the customer record.
+					console.error('Refund to charge failed; falling back to balance credit:', err);
+					if (record.stripeCustomerId) {
+						await stripe.customers.createBalanceTransaction(record.stripeCustomerId, {
+							amount: -refundCents,
+							currency: 'usd',
+							description: `Order Local refund — immediate cancellation (${refundCents} cents)`
+						});
+						refundIssued = true;
+					}
+				}
+			} else if (record.stripeCustomerId) {
+				// No charge found (PI unavailable) — use balance credit as primary path
+				await stripe.customers.createBalanceTransaction(record.stripeCustomerId, {
+					amount: -refundCents,
+					currency: 'usd',
+					description: `Order Local refund — immediate cancellation (${refundCents} cents)`
+				});
+				refundIssued = true;
+			}
+		}
+
+		// Persist refund state and cancel-effective BEFORE calling cancel.
+		// If cancel fails after this point, the refund record stays — webhook will
+		// eventually reconcile subscription state when Stripe confirms.
+		await db
+			.update(vendor)
+			.set({
+				subscriptionRefundedAt: refundIssued || refundCents === 0 ? new Date() : null,
+				subscriptionEndsAt: cancelEffective,
+				updatedAt: new Date()
+			})
+			.where(eq(vendor.id, vendorId));
+
+		// Cancel the subscription immediately. Stripe fires customer.subscription.deleted;
+		// existing webhook flips tier to starter, clears addons, etc.
+		try {
+			await stripe.subscriptions.cancel(record.stripeSubscriptionId);
+		} catch (err) {
+			console.error('Subscription cancel failed after refund:', err);
+			return { success: true, cancelDeferred: true, refundCents };
+		}
+
+		return { success: true, cancelImmediate: true, refundCents };
 	},
 
 	activateAddon: async ({ request, locals }) => {
@@ -272,8 +443,6 @@ export const actions: Actions = {
 		const vendorId = locals.vendorId!;
 		const formData = await request.formData();
 		const key = formData.get('key')?.toString();
-		const intervalRaw = formData.get('interval')?.toString();
-		const interval: BillingInterval = intervalRaw === 'annual' ? 'annual' : 'monthly';
 
 		if (!key || !VALID_ADDON_KEYS.has(key)) return fail(400, { error: 'Invalid add-on.' });
 
@@ -291,7 +460,7 @@ export const actions: Actions = {
 		const current = (record.addons ?? []) as AddonItem[];
 		if (current.some((a) => a.key === key)) return { success: true };
 
-		const priceId = getAddonPriceId(key, interval);
+		const priceId = getAddonPriceId(key);
 		if (!priceId) return fail(500, { error: 'Add-on price not configured. Contact support.' });
 
 		const stripe = getOrderLocalStripe();

@@ -8,6 +8,13 @@
       "when": 1778063641690,
       "tag": "0000_wet_millenium_guard",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1778093538787,
+      "tag": "0001_sour_paladin",
+      "breakpoints": true
     }
   ]
 }

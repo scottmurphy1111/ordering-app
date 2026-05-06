@@ -369,6 +369,7 @@ Navigating from cart to checkout briefly shows an empty cart page (visual flash)
 - `upgrade` action in `src/routes/(app)/dashboard/account/billing/+page.server.ts` creates a Stripe Checkout Session and redirects to Stripe-hosted checkout.
 - Customer-side order checkout (`/[vendorSlug]/checkout`) uses Stripe Elements within Order Local UI.
 - Customer-side success redirect handles Order Local-branded confirmation; vendor side relies on Stripe's confirmation page → redirect.
+- Anchored billing on the 15th of the month for all vendors. Prorated bridge from signup date to next 15th at the cycle's per-month rate (annual-monthly rate for annual, monthly for monthly). Add-ons inherit the anchor.
 
 **Path options (decide before building):**
 
