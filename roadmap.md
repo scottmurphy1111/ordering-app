@@ -303,6 +303,36 @@ Navigating from cart to checkout briefly shows an empty cart page (visual flash)
 
 ## Tier 2 — Launch polish
 
+### Resend verification email
+
+**Status:** Pending — tied to email-change feature.
+
+**Why deferred:** Today, no user in the app reaches an unverified state. Magic link sign-in proves email ownership. Google OAuth provides a verified email from Google. There's no email+password flow and no email-change flow. So `user.emailVerified` is always true for real users; a "Resend verification" button has no real fire path.
+
+**When this becomes real:** When email-change ships. A user changing their email from `old@example.com` to `new@example.com` is unverified at the new address until they click a verification link. At that moment, the resend button has a real reason to exist.
+
+**Implementation when triggered:**
+
+1. **BetterAuth config additions** in `src/lib/server/auth.ts`: add an `emailVerification` block with a `sendVerificationEmail` callback (mirrors the existing `sendMagicLink` callback in shape — uses the same `emailWrapper` helper). Decide: `sendOnSignUp: true` or false? With magic-link auto-verify, this may be redundant for new users; primarily relevant for email-change.
+
+2. **Profile page UI**: in the Account card's email verification row, when `emailVerified === false`, show a "Resend" link/button next to the "Unverified" badge. Currently shows "Unverified — contact support" as a hold-over.
+
+3. **Server action** `resendVerification` in `src/routes/(app)/dashboard/account/profile/+page.server.ts` calling `auth.api.sendVerificationEmail({...})` for the current user's email.
+
+4. **Throttling** — once per minute per user. BetterAuth may handle this internally; verify.
+
+**Affected callsites:**
+- `src/lib/server/auth.ts` — new `emailVerification` config block
+- `src/lib/server/email/...` — possibly a new verification email template variant
+- `src/routes/(app)/dashboard/account/profile/+page.server.ts` — new `resendVerification` action
+- `src/routes/(app)/dashboard/account/profile/+page.svelte` — wire the resend button into the unverified branch
+
+**Estimated effort:** ~3 hours including the BetterAuth config and email template, assuming the email-change feature already exists when this triggers.
+
+**Trigger:** When email-change feature work begins. Not before — a resend button without a path to unverified users is dead UI.
+
+---
+
 ### `locals.vendor` staleness in dev-bypass mode
 
 **Status:** Pending. Surfaced during setup checklist implementation.

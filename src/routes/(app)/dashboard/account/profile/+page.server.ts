@@ -4,11 +4,21 @@ import { db } from '$lib/server/db';
 import { eq } from 'drizzle-orm';
 import { user } from '$lib/server/db/auth.schema';
 
-export const load: PageServerLoad = ({ locals }) => {
+export const load: PageServerLoad = async ({ locals }) => {
+	const userRecord = await db.query.user.findFirst({
+		where: eq(user.id, locals.user!.id),
+		columns: { name: true, email: true, emailVerified: true, image: true, createdAt: true }
+	});
+
 	return {
 		user: {
-			name: locals.user!.name,
-			email: locals.user!.email
+			name: userRecord?.name ?? locals.user!.name,
+			email: userRecord?.email ?? locals.user!.email,
+			emailVerified: userRecord?.emailVerified ?? false,
+			image: userRecord?.image ?? null,
+			createdAt: userRecord?.createdAt
+				? userRecord.createdAt.toISOString()
+				: new Date().toISOString()
 		}
 	};
 };
@@ -24,5 +34,11 @@ export const actions: Actions = {
 
 		await db.update(user).set({ name }).where(eq(user.id, userId));
 		return { profileSuccess: true };
+	},
+
+	removeAvatar: async ({ locals }) => {
+		const userId = locals.user!.id;
+		await db.update(user).set({ image: null, updatedAt: new Date() }).where(eq(user.id, userId));
+		return { avatarRemoved: true };
 	}
 };

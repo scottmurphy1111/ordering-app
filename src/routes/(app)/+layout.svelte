@@ -187,9 +187,13 @@
 			>
 				<div class="flex items-center gap-2.5">
 					<div
-						class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary text-sm font-medium text-white"
+						class="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary text-sm font-medium text-white"
 					>
-						{data.user.email.split('@')[0]?.[0]?.toUpperCase() ?? '?'}
+						{#if data.user.image}
+							<img src={data.user.image} alt="" class="h-full w-full object-cover" />
+						{:else}
+							{data.user.email.split('@')[0]?.[0]?.toUpperCase() ?? '?'}
+						{/if}
 					</div>
 					<div class="min-w-0 flex-1">
 						<p class="truncate text-xs font-medium text-white">{data.user.email}</p>
