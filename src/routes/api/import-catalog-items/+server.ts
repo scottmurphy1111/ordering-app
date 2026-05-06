@@ -68,7 +68,9 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 			where: eq(vendor.id, vendorId),
 			columns: { subscriptionTier: true }
 		});
-		if (vendorRecord?.subscriptionTier !== 'pro') throw error(403, 'Pro plan required');
+		const IMPORT_TIERS = new Set(['market', 'pro']);
+		if (!IMPORT_TIERS.has(vendorRecord?.subscriptionTier ?? ''))
+			throw error(403, 'Market or Pro plan required');
 	}
 
 	const formData = await request.formData();

@@ -87,7 +87,9 @@ export const load: PageServerLoad = async (event) => {
 		columns: { subscriptionTier: true, addons: true }
 	});
 	const canImportCsv =
-		vendorRecord?.subscriptionTier === 'pro' || (event.locals.user?.isInternal ?? false);
+		vendorRecord?.subscriptionTier === 'pro' ||
+		vendorRecord?.subscriptionTier === 'market' ||
+		(event.locals.user?.isInternal ?? false);
 	const addons = (vendorRecord?.addons ?? []) as AddonItem[];
 
 	// ── Drawer param ──────────────────────────────────────────────

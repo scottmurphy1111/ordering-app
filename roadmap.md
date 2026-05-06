@@ -329,6 +329,47 @@ Navigating from cart to checkout briefly shows an empty cart page (visual flash)
 
 ---
 
+### Branded subscription checkout (replace Stripe-hosted)
+
+**Status:** Pending — needs-design.
+
+**Why it matters:** Vendors upgrading to Market or Pro currently get redirected to `checkout.stripe.com` for payment. Visual jump from Order Local UI to Stripe's hosted checkout breaks brand continuity at the most important conversion moment. The customer-side order checkout (`/[vendorSlug]/checkout`) is fully Order Local-branded with Stripe Elements — that pattern proves the codebase can do branded checkout. Subscription checkout should match.
+
+**Current state:**
+- `upgrade` action in `src/routes/(app)/dashboard/account/billing/+page.server.ts` creates a Stripe Checkout Session and redirects to Stripe-hosted checkout.
+- Customer-side order checkout (`/[vendorSlug]/checkout`) uses Stripe Elements within Order Local UI.
+- Customer-side success redirect handles Order Local-branded confirmation; vendor side relies on Stripe's confirmation page → redirect.
+
+**Path options (decide before building):**
+
+- **Path A — Stripe Dashboard branding only.** Configure logo, colors, business name in Stripe Settings → Branding. Stripe Checkout uses them. Effort: ~1 hour. Improvement: modest. Still on Stripe domain. Acceptable as interim measure.
+- **Path B — Stripe Embedded Checkout.** Embed Stripe's checkout UI inside `/dashboard/account/billing/upgrade` (or similar new route). Vendor sees Order Local nav and branding around Stripe-owned form. Effort: ~1 day. Improvement: significant. Stripe still owns the form fields.
+- **Path C — Stripe Elements (custom UI).** Build a subscription checkout page matching customer-side patterns. Effort: ~3–5 days. Improvement: full parity. Requires handling subscription-specific Stripe primitives (Setup Intents for default payment method, recurring-billing mandate display, agreement language).
+
+**Decision rule:**
+- If launching to first-25 founding vendors soon and brand consistency at signup matters: pick Path B for medium effort + significant improvement.
+- If first-25 vendors will be onboarded with hand-holding (manual checkout assistance, founding-rate coupon coordination): defer to Path C or stay on Stripe-hosted.
+- If existing vendor flow is rare (most vendors hit billing once on upgrade, never again): Path A may suffice indefinitely.
+
+**Affected callsites when implementing:**
+- `src/routes/(app)/dashboard/account/billing/+page.server.ts` — `upgrade` action's checkout session creation
+- New route under `dashboard/account/billing/` for the branded checkout (Path B/C)
+- Possibly extract checkout component from customer-side for shared use (Path C)
+
+**Estimated effort by path:**
+- Path A: 1–2 hours (Stripe Dashboard config + verify rendering)
+- Path B: 1 day (new route + Embedded Checkout integration + success/cancel handling)
+- Path C: 3–5 days (custom subscription checkout, mandate display, payment method storage flow)
+
+**Trigger:** Before public marketing push that drives Starter→Paid conversion. The checkout is the conversion moment; the visual jump may suppress conversions at scale. For first-25 founding vendors with hand-holding, less urgent.
+
+**Out of scope of this entry:**
+- Founding rate $19/mo Market subscription wiring (separate concern).
+- Customer-side checkout changes (already branded).
+- Stripe Customer Portal styling (separate Stripe surface, separate concern).
+
+---
+
 ### Marketing site copy sweep
 
 **Status:** Pending. Tier 2 cleanup landed inside the dashboard but didn't touch marketing pages by design.
@@ -629,6 +670,35 @@ Currently pickup locations can only be deactivated, not deleted entirely. Vendor
 **Estimated effort:** 1 day. The component is the time investment; the form integration is small; autocomplete source query is a half-hour add.
 
 **Trigger:** When tag UX surfaces friction in vendor feedback, OR when a CSV import surfaces tag-handling questions (current CSV import standardized on comma delimiter — works correctly but exposes the same "no visual confirmation" issue).
+
+---
+
+### CSV import — revisit tier gating when Market tier lands
+
+**Status:** Pending — strategic, deferred until Market tier exists.
+
+**Current state:** CSV import is gated to `subscriptionTier === 'pro'` (or internal users). The Starter tier sees an upsell modal pointing to billing. Server-side enforces the same check defensively. Pro feature bullet on the billing page advertises "Bulk import catalog items via CSV."
+
+**Why this is captured:** The current two-tier structure (Starter $0, Pro $79) doesn't have an obvious middle tier. If a Market tier lands (target persona: market vendors with 20–50 items who've outgrown Starter's 10-item cap but don't need full Pro feature set), CSV import is a candidate feature for that tier — bulk import is most useful for vendors with mid-scale catalogs, which is exactly the Market profile.
+
+**Decision rule when Market lands:**
+- If Market includes CSV import: update `canImportCsv` to `tier === 'market' || tier === 'pro' || isInternal`. Update server-side check in `src/routes/api/import-catalog-items/+server.ts`. Update billing-page bullets on both Market and Pro tier cards. Update upsell modal copy if Starter still sees it.
+- If Market does NOT include CSV import: leave gating as-is; Market becomes another tier shown the upsell modal.
+
+**Affected callsites when revisiting:**
+- `src/routes/(app)/dashboard/catalog/items/+page.server.ts` — `canImportCsv` derivation
+- `src/routes/api/import-catalog-items/+server.ts` — server-side 403 check
+- `src/routes/(app)/dashboard/catalog/items/+page.svelte` — upsell modal copy
+- `src/lib/billing.ts` — Pro tier features list
+- Marketing/billing page copy
+
+**Estimated effort:** 2–3 hours when triggered. Mechanical updates across the listed callsites.
+
+**Trigger:** When designing the Market tier's feature set. Don't make this change in isolation — it should be part of the overall Market tier launch.
+
+**Out of scope:**
+- Designing the Market tier itself (separate strategic decision)
+- Removing the Pro paywall on CSV (current decision is to keep it Pro-only until the tier structure has a meaningful middle option)
 
 ---
 

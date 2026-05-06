@@ -24,6 +24,16 @@ export const TIERS = [
 		]
 	},
 	{
+		key: 'market',
+		name: 'Market',
+		price: 29,
+		annualMonthly: 24,
+		annualTotal: 290,
+		annualSavings: 58,
+		itemLimit: 30,
+		features: ['Up to 30 catalog items', 'Everything in Starter', 'CSV catalog import']
+	},
+	{
 		key: 'pro',
 		name: 'Pro',
 		price: 79,
@@ -33,9 +43,8 @@ export const TIERS = [
 		itemLimit: null,
 		features: [
 			'Unlimited catalog items',
-			'Everything in Starter',
+			'Everything in Market',
 			'All add-ons unlocked',
-			'Bulk import catalog items via CSV',
 			'White-label — remove OrderLocal branding',
 			'Integrations — QuickBooks, Xero, Mailchimp, Zapier & more (coming soon)',
 			'Dedicated support'

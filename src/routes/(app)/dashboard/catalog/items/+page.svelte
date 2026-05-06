@@ -918,7 +918,7 @@
 <Dialog bind:open={showImportUpsell}>
 	<DialogContent class="max-w-sm">
 		<DialogHeader>
-			<DialogTitle>Pro plan required</DialogTitle>
+			<DialogTitle>Upgrade required</DialogTitle>
 			<DialogDescription class="sr-only">Upgrade to import items via CSV</DialogDescription>
 		</DialogHeader>
 		<div class="space-y-3">
@@ -926,8 +926,9 @@
 				<Icon icon="mdi:upload" class="h-6 w-6 text-primary" />
 			</div>
 			<p class="text-sm text-muted-foreground">
-				CSV import is available on the <span class="font-semibold text-foreground">Pro plan</span>.
-				Upgrade to bulk-import unlimited items from a spreadsheet.
+				CSV import is available on the <span class="font-semibold text-foreground"
+					>Market and Pro plans</span
+				>. Upgrade to bulk-import catalog items from a spreadsheet.
 			</p>
 		</div>
 		<DialogFooter class="flex gap-2 sm:flex-row">
@@ -936,7 +937,7 @@
 				href={resolve('/dashboard/account/billing')}
 				class="inline-flex items-center justify-center gap-1.5 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary/90"
 			>
-				<Icon icon="mdi:arrow-right" class="h-4 w-4" /> Upgrade to Pro
+				<Icon icon="mdi:arrow-right" class="h-4 w-4" /> View plans
 			</a>
 		</DialogFooter>
 	</DialogContent>

@@ -49,7 +49,9 @@
 		</Select>
 	</div>
 
-	<nav class="hidden w-44 shrink-0 md:block">
+	<nav
+		class="hidden w-44 shrink-0 md:sticky md:top-8 md:block md:max-h-[calc(100vh-4rem)] md:self-start md:overflow-y-auto"
+	>
 		<p class="mb-3 text-xs font-medium tracking-wider text-gray-500 uppercase">{title}</p>
 		<ul class="space-y-0.5">
 			{#each items as item (item.href)}

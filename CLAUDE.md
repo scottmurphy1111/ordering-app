@@ -1871,6 +1871,8 @@ a default sub-page, use `+page.server.ts` with a `redirect(302, ...)`. The
 sub-pages themselves do not include back links to the parent — the inner
 sidebar/select handles navigation.
 
+**Sticky positioning (desktop only):** the desktop sidebar uses `md:sticky md:top-8` (matches page `py-8` so nav doesn't visually shift on scroll) plus `md:self-start` (required for sticky inside flex — without it, flex stretches the nav to row height, defeating sticky) and `md:max-h-[calc(100vh-4rem)] md:overflow-y-auto` as a defensive cap. The mobile Select is NOT sticky — mobile viewports are vertical-space-precious and sub-nav scroll-away matches platform convention.
+
 ---
 
 ## Print pattern

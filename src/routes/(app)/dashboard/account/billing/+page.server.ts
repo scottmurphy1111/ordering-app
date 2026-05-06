@@ -9,7 +9,7 @@ import { requireStaff } from '$lib/server/roles';
 import { getOrderLocalStripe, getPlanPriceId, getAddonPriceId } from '$lib/server/stripe-billing';
 
 const VALID_ADDON_KEYS = new Set<string>(ADDONS.map((a) => a.key));
-const PAID_TIERS = new Set(['pro']);
+const PAID_TIERS = new Set(['market', 'pro']);
 
 export const load: PageServerLoad = async ({ locals }) => {
 	requireStaff(locals);
@@ -139,26 +139,62 @@ export const actions: Actions = {
 		const vendorId = locals.vendorId!;
 		const formData = await request.formData();
 		const planKey = formData.get('planKey')?.toString();
-		if (planKey !== 'starter') return fail(400, { error: 'Invalid plan' });
+		const intervalRaw = formData.get('interval')?.toString();
+		const interval: BillingInterval = intervalRaw === 'annual' ? 'annual' : 'monthly';
+
+		if (planKey !== 'starter' && !PAID_TIERS.has(planKey ?? ''))
+			return fail(400, { error: 'Invalid plan' });
 
 		const record = await db.query.vendor.findFirst({
 			where: eq(vendor.id, vendorId),
 			columns: { stripeSubscriptionId: true, subscriptionTier: true }
 		});
-		if (record?.subscriptionTier === 'starter') return fail(400, { error: 'Already on Starter.' });
+		if (record?.subscriptionTier === planKey) return fail(400, { error: 'Already on this plan.' });
 
 		const stripe = getOrderLocalStripe();
-		if (record?.stripeSubscriptionId)
-			await stripe.subscriptions.cancel(record.stripeSubscriptionId);
+
+		// Path 1: Cancel subscription entirely (any paid tier → Starter).
+		if (planKey === 'starter') {
+			if (record?.stripeSubscriptionId)
+				await stripe.subscriptions.cancel(record.stripeSubscriptionId);
+			await db
+				.update(vendor)
+				.set({
+					subscriptionTier: 'starter',
+					subscriptionStatus: 'cancelled',
+					stripeSubscriptionId: null,
+					addons: [],
+					updatedAt: new Date()
+				})
+				.where(eq(vendor.id, vendorId));
+			return { success: true, downgraded: true };
+		}
+
+		// Path 2: Tier-down between paid plans (e.g. Pro → Market).
+		// Updates the Stripe subscription item; add-ons preserved (Market supports all).
+		if (!record?.stripeSubscriptionId)
+			return fail(400, { error: 'No active subscription to downgrade.' });
+
+		const priceId = getPlanPriceId(planKey!, interval);
+		if (!priceId) return fail(500, { error: 'Plan price not configured. Contact support.' });
+
+		const subscription = await stripe.subscriptions.retrieve(record.stripeSubscriptionId, {
+			expand: ['items']
+		});
+		const planItem =
+			subscription.items.data.find((i) => {
+				const meta = i.price.metadata?.type;
+				return meta === 'plan' || !meta;
+			}) ?? subscription.items.data[0];
+		if (!planItem) return fail(500, { error: 'Could not find subscription item.' });
+
+		await stripe.subscriptionItems.update(planItem.id, {
+			price: priceId,
+			proration_behavior: 'create_prorations'
+		});
 		await db
 			.update(vendor)
-			.set({
-				subscriptionTier: 'starter',
-				subscriptionStatus: 'cancelled',
-				stripeSubscriptionId: null,
-				addons: [],
-				updatedAt: new Date()
-			})
+			.set({ subscriptionTier: planKey, updatedAt: new Date() })
 			.where(eq(vendor.id, vendorId));
 		return { success: true, downgraded: true };
 	},
@@ -174,10 +210,14 @@ export const actions: Actions = {
 			where: eq(vendor.id, vendorId),
 			columns: { stripeSubscriptionId: true, subscriptionTier: true }
 		});
-		if (record?.subscriptionTier !== 'pro' || !record.stripeSubscriptionId)
-			return fail(400, { error: 'No active Pro subscription.' });
+		if (
+			!record?.subscriptionTier ||
+			!PAID_TIERS.has(record.subscriptionTier) ||
+			!record.stripeSubscriptionId
+		)
+			return fail(400, { error: 'No active paid subscription.' });
 
-		const priceId = getPlanPriceId('pro', interval);
+		const priceId = getPlanPriceId(record.subscriptionTier, interval);
 		if (!priceId) return fail(500, { error: 'Price not configured. Contact support.' });
 
 		const stripe = getOrderLocalStripe();

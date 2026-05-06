@@ -18,7 +18,9 @@ export function getPlanPriceId(
 ): string | undefined {
 	const map: Record<string, string | undefined> = {
 		'pro:monthly': env.STRIPE_PRICE_PRO,
-		'pro:annual': env.STRIPE_PRICE_PRO_ANNUAL
+		'pro:annual': env.STRIPE_PRICE_PRO_ANNUAL,
+		'market:monthly': env.STRIPE_PRICE_MARKET,
+		'market:annual': env.STRIPE_PRICE_MARKET_ANNUAL
 	};
 	return map[`${planKey}:${interval}`];
 }
