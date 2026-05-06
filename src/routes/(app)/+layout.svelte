@@ -212,19 +212,14 @@
 				<DropdownMenuSeparator />
 				<DropdownMenuItem
 					variant="destructive"
-					onclick={() => {
-						if (data.isDevBypass) {
-							window.location.href = '/dev-signout';
-						} else {
-							signOut({
-								fetchOptions: {
-									onSuccess: () => {
-										window.location.href = '/login';
-									}
+					onclick={() =>
+						signOut({
+							fetchOptions: {
+								onSuccess: () => {
+									window.location.href = '/login';
 								}
-							});
-						}
-					}}
+							}
+						})}
 				>
 					<Icon icon="mdi:logout" class="h-4 w-4" />
 					Sign out

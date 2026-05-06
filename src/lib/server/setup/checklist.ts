@@ -17,10 +17,9 @@ export type SetupChecklistResult = {
 };
 
 export async function getSetupChecklist(vendorId: number): Promise<SetupChecklistResult> {
-	// Read vendor fields fresh from DB — the locals.vendor object is cached
-	// in dev-bypass mode and may be stale relative to write paths like
-	// upload-logo. Always source completion truth from the DB, not from
-	// a passed-in vendor object.
+	// Read vendor fields fresh from DB — locals.vendor is read at session-load
+	// time and may be stale relative to write paths like upload-logo within
+	// the same request lifecycle. Always source completion truth from the DB.
 	const [vendorRow, pickupRow, catalogRow] = await Promise.all([
 		db.query.vendor.findFirst({
 			where: eq(vendor.id, vendorId),

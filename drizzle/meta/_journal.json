@@ -5,15 +5,8 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1777563211011,
-      "tag": "0000_pickup_windows_baseline",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1777563507594,
-      "tag": "0001_rebaseline_post_introspect",
+      "when": 1778063641690,
+      "tag": "0000_wet_millenium_guard",
       "breakpoints": true
     }
   ]
