@@ -1008,6 +1008,77 @@ Decide on the canonical placement (page-level vs CardFooter) and sweep all four 
 
 ---
 
+### Pause/resume subscription
+
+**Status:** Pending — needs-design + build.
+
+**Why it matters:** Marketing copy on the homepage and `/for-farmers-markets` explicitly promises subscription pause/resume for seasonal vendors:
+- Homepage FAQ: "You can pause Market and Pro subscriptions and resume when you're ready."
+- Farmers markets FAQ: "Market and Pro plans can be paused anytime. When you resume, your catalog, settings, and order history are all still there."
+
+The wedge audience (farmers market vendors) is explicitly seasonal. The pause promise is a real signup driver. The implementation does not exist — a vendor signing up based on this promise would discover post-payment that no pause UI exists. Promise-vs-reality gap; ship before scaling vendor outreach.
+
+Note: the existing Tier 3 entry "Pause for the season" covers storefront-level pause (stopping order intake). This entry is specifically about billing pause — halting charges during an off-season without cancelling the subscription.
+
+**Approach options:**
+- **Stripe-native pause:** `stripe.subscriptions.update(id, { pause_collection: { behavior: 'mark_uncollectible' } })` pauses billing without cancelling. Vendor keeps access; resume by clearing the pause field. Simplest implementation, matches the marketing promise.
+- **Cancel-and-rejoin:** vendor cancels (existing flow), comes back later, signs up fresh. No data loss (vendor record persists), but loses billing continuity. Implementable today; no new code needed but doesn't match "resume."
+- **Hybrid:** Stripe-native pause for billing; existing storefront-pause for order intake. Both can be wired independently.
+
+**Decision rule:** Stripe-native pause is the right answer for the billing side — matches the marketing promise and preserves subscription continuity.
+
+**Affected callsites when implementing:**
+- New action `pauseSubscription` in `src/routes/(app)/dashboard/account/billing/+page.server.ts`
+- New action `resumeSubscription` in same file
+- Webhook `customer.subscription.updated` already handles status updates; verify `pause_collection` state is reflected (Stripe status may stay `active` during pause)
+- New DB column or status value for "paused" — design decision: overload `subscriptionStatus` with `'paused'`, or add `subscriptionPausedAt: timestamp`
+- Billing page UI: pause button on Current plan card; resume button when paused; clear visual indicator; hide upgrade/downgrade/switch-interval CTAs while paused
+
+**Open questions:**
+- During pause, does the vendor still have access to paid features? (Probably yes — "your catalog, settings, and order history are all still there.")
+- Add-ons during pause: also paused or cancelled?
+- Maximum pause duration?
+- Item limit enforcement during pause?
+
+**Estimated effort:** 2–3 days. Action handlers + UI + design decisions on open questions.
+
+**Trigger:** Before public marketing push that drives signups based on the pause promise. For first-25 founding vendors with personal onboarding, less urgent — but the FAQ is publicly indexed.
+
+---
+
+### Founding rate $19/mo Market — wire into code
+
+**Status:** Pending — needs-design.
+
+**Why it matters:** `/for-farmers-markets` page promotes a founding rate: "Lock in Market at $19/mo — for life. We're signing up our first 25 market vendor partners at a founding rate." The promise is live on the marketing site. No code path exists for this rate. Currently handled manually — the coordinator onboarding founding vendors has to handle their Stripe subscriptions directly.
+
+**Approach options:**
+- **Separate Stripe price ID** (`STRIPE_PRICE_MARKET_FOUNDING=price_...`). Code references it explicitly. Vendors with a "founding" flag get the founding price; everyone else gets standard Market. Adds a `isFoundingMember: boolean` column to the vendor row. Cleanest and most auditable.
+- **Stripe coupon** applied to `STRIPE_PRICE_MARKET`. Coupon discounts $10/mo permanently. Simpler — no new env var, no schema change. Coupon code distributed manually to founding vendors. Risk: coupon code leak if it spreads beyond the curated cohort.
+- **Manual handling indefinitely.** First 25 vendors hand-onboarded; coordinator handles their Stripe subscriptions directly. Acceptable for the founding cohort but doesn't scale and leaves no DB record of who has the founding rate.
+
+**Decision rule:** Separate price ID is most robust. Coupon is acceptable if leak risk is tolerable (founding cohort is curated). Manual handling is the current fallback.
+
+**Affected callsites when implementing (separate price ID path):**
+- New env var: `STRIPE_PRICE_MARKET_FOUNDING` (and annual variant if applicable)
+- `src/lib/server/stripe-billing.ts` — new branch in `getPlanPriceId` or separate helper
+- `src/lib/server/db/vendor.ts` — new column `isFoundingMember: boolean` (default false)
+- `src/routes/(app)/dashboard/account/billing/+page.server.ts` — `upgrade` action selects founding price ID when vendor is flagged
+- Admin tooling to flag a vendor as founding member (manual DB update or lightweight admin route)
+- Optional: founding badge on Current plan card in billing UI
+
+**Open questions:**
+- 25 spots — when do we close the offer and how does the landing page know?
+- Annual variant of the founding rate?
+- If a founding vendor cancels and re-subscribes, do they keep the founding rate? ("for life" suggests yes — price ID approach handles this naturally.)
+- If a founding vendor downgrades to Starter and later returns?
+
+**Estimated effort:** 1 day for separate price ID approach + admin tooling.
+
+**Trigger:** Before vendor #1 of the first 25 is onboarded. If onboarding starts before this lands, the coordinator handles it manually in Stripe and notes which vendors received the founding rate; flag them in DB once the column exists.
+
+---
+
 ## Tier 3 — Post-launch
 
 ### Item photo uploads polish

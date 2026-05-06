@@ -25,6 +25,19 @@ export function getPlanPriceId(
 	return map[`${planKey}:${interval}`];
 }
 
+/**
+ * Reverse-map a Stripe price ID back to the tier key.
+ * Returns null if the price ID doesn't match any known plan price.
+ *
+ * Used by webhook handlers to resolve tier from a subscription's plan item.
+ */
+export function getTierKeyFromPriceId(priceId: string): string | null {
+	if (priceId === env.STRIPE_PRICE_MARKET || priceId === env.STRIPE_PRICE_MARKET_ANNUAL)
+		return 'market';
+	if (priceId === env.STRIPE_PRICE_PRO || priceId === env.STRIPE_PRICE_PRO_ANNUAL) return 'pro';
+	return null;
+}
+
 const ANNUAL_CAPABLE_ADDONS = new Set(['loyalty', 'subscriptions']);
 
 export function getAddonPriceId(

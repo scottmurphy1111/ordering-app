@@ -5,7 +5,7 @@ import { env } from '$env/dynamic/private';
 import { db } from '$lib/server/db';
 import { eq } from 'drizzle-orm';
 import { vendor } from '$lib/server/db/vendor';
-import { getOrderLocalStripe } from '$lib/server/stripe-billing';
+import { getOrderLocalStripe, getTierKeyFromPriceId } from '$lib/server/stripe-billing';
 import { sendEmail } from '$lib/server/email';
 import { subscriptionConfirmedEmail } from '$lib/server/email/templates/subscriptionConfirmed';
 import { paymentFailedEmail } from '$lib/server/email/templates/paymentFailed';
@@ -90,7 +90,8 @@ export const POST: RequestHandler = async ({ request }) => {
 				break;
 			}
 
-			case 'customer.subscription.updated': {
+			case 'customer.subscription.updated':
+			case 'customer.subscription.created': {
 				const subscription = event.data.object as Stripe.Subscription;
 				const customerId =
 					typeof subscription.customer === 'string'
@@ -99,12 +100,20 @@ export const POST: RequestHandler = async ({ request }) => {
 
 				const vendorRecord = await db.query.vendor.findFirst({
 					where: eq(vendor.stripeCustomerId, customerId),
-					columns: { id: true }
+					columns: { id: true, subscriptionTier: true }
 				});
 				if (!vendorRecord) break;
 
+				// Resolve tier from the subscription's plan item price ID.
+				const planItem =
+					subscription.items.data.find((i) => {
+						const meta = i.price.metadata?.type;
+						return meta === 'plan' || !meta;
+					}) ?? subscription.items.data[0];
+				const tierKey = planItem ? getTierKeyFromPriceId(planItem.price.id) : null;
+
 				const status =
-					subscription.status === 'active'
+					subscription.status === 'active' || subscription.status === 'trialing'
 						? 'active'
 						: subscription.status === 'past_due'
 							? 'past_due'
@@ -112,10 +121,23 @@ export const POST: RequestHandler = async ({ request }) => {
 								? 'cancelled'
 								: subscription.status;
 
-				await db
-					.update(vendor)
-					.set({ subscriptionStatus: status, updatedAt: new Date() })
-					.where(eq(vendor.id, vendorRecord.id));
+				// cancel_at is always populated by Stripe when cancel_at_period_end is set.
+				const endsAt =
+					subscription.cancel_at_period_end && subscription.cancel_at
+						? new Date(subscription.cancel_at * 1000)
+						: null;
+
+				const updates: Record<string, unknown> = {
+					subscriptionStatus: status,
+					subscriptionEndsAt: endsAt,
+					stripeSubscriptionId: subscription.id,
+					updatedAt: new Date()
+				};
+				// Only update tier if we successfully resolved one — guard against
+				// updates fired from add-on subscription items or unrecognized prices.
+				if (tierKey) updates.subscriptionTier = tierKey;
+
+				await db.update(vendor).set(updates).where(eq(vendor.id, vendorRecord.id));
 				break;
 			}
 
@@ -137,6 +159,7 @@ export const POST: RequestHandler = async ({ request }) => {
 					.set({
 						subscriptionTier: 'starter',
 						subscriptionStatus: 'cancelled',
+						subscriptionEndsAt: null,
 						stripeSubscriptionId: null,
 						addons: [],
 						updatedAt: new Date()

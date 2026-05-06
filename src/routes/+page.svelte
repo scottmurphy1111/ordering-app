@@ -128,8 +128,8 @@
 			name: 'Pro',
 			tagline: 'The full toolkit for shops, bakeries, and growing businesses.',
 			monthlyPrice: 79,
-			annualYearlyPrice: 790,
-			annualSavings: 'Save $158/yr',
+			annualYearlyPrice: 780,
+			annualSavings: 'Save $168/yr',
 			features: [
 				'Everything in Market',
 				'Unlimited catalog items',

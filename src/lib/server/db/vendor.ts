@@ -79,6 +79,7 @@ export const vendor = pgTable(
 		// Subscription & billing info
 		subscriptionTier: varchar('subscription_tier', { length: 50 }).default('starter'),
 		subscriptionStatus: varchar('subscription_status', { length: 50 }).default('active'),
+		subscriptionEndsAt: timestamp('subscription_ends_at'),
 		stripeCustomerId: varchar('stripe_customer_id', { length: 255 }),
 		stripeSubscriptionId: varchar('stripe_subscription_id', { length: 255 }),
 

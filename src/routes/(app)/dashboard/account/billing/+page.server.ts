@@ -22,6 +22,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 			columns: {
 				subscriptionTier: true,
 				subscriptionStatus: true,
+				subscriptionEndsAt: true,
 				stripeCustomerId: true,
 				stripeSubscriptionId: true,
 				addons: true
@@ -57,6 +58,9 @@ export const load: PageServerLoad = async ({ locals }) => {
 		itemCount: countResult[0]?.count ?? 0,
 		subscriptionTier: vendorRecord?.subscriptionTier ?? 'starter',
 		subscriptionStatus: vendorRecord?.subscriptionStatus ?? 'active',
+		subscriptionEndsAt: vendorRecord?.subscriptionEndsAt
+			? vendorRecord.subscriptionEndsAt.toISOString()
+			: null,
 		hasStripeSubscription: !!vendorRecord?.stripeSubscriptionId,
 		hasStripeCustomer: !!vendorRecord?.stripeCustomerId,
 		addons: (vendorRecord?.addons ?? []) as AddonItem[],
@@ -153,17 +157,27 @@ export const actions: Actions = {
 
 		const stripe = getOrderLocalStripe();
 
-		// Path 1: Cancel subscription entirely (any paid tier → Starter).
+		// Path 1: Schedule cancellation at period end (any paid tier → Starter).
+		// Vendor keeps paid features for the time they've already paid for.
+		// Stripe fires customer.subscription.deleted at period end; webhook handles
+		// the actual tier flip + addon clearing then.
 		if (planKey === 'starter') {
-			if (record?.stripeSubscriptionId)
-				await stripe.subscriptions.cancel(record.stripeSubscriptionId);
+			if (!record?.stripeSubscriptionId)
+				return fail(400, { error: 'No active subscription to cancel.' });
+
+			const subscription = await stripe.subscriptions.update(record.stripeSubscriptionId, {
+				cancel_at_period_end: true
+			});
+
+			// Mirror the scheduled-end state to DB so UI renders correctly without
+			// waiting for the webhook. Webhook will reconfirm.
+			// cancel_at is always populated by Stripe when cancel_at_period_end is set.
+			const endsAt = subscription.cancel_at ? new Date(subscription.cancel_at * 1000) : null;
+
 			await db
 				.update(vendor)
 				.set({
-					subscriptionTier: 'starter',
-					subscriptionStatus: 'cancelled',
-					stripeSubscriptionId: null,
-					addons: [],
+					subscriptionEndsAt: endsAt,
 					updatedAt: new Date()
 				})
 				.where(eq(vendor.id, vendorId));
