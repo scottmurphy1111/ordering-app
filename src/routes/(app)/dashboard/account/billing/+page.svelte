@@ -117,6 +117,16 @@
 		addonInterval = 'monthly';
 	}
 
+	let pendingIntervalSwitch = $state<'monthly' | 'annual' | null>(null);
+
+	function openIntervalSwitchModal(target: 'monthly' | 'annual') {
+		pendingIntervalSwitch = target;
+	}
+
+	function closeIntervalSwitchModal() {
+		pendingIntervalSwitch = null;
+	}
+
 	function calcProration(addonPrice: number, action: 'activate' | 'deactivate'): number | null {
 		if (!data.nextBillingDate || !data.periodStart) return null;
 		const now = Date.now();
@@ -126,6 +136,26 @@
 		const daysLeft = Math.max(0, (end - now) / 86_400_000);
 		const amount = addonPrice * (daysLeft / totalDays);
 		return action === 'activate' ? amount : -amount;
+	}
+
+	function calcUnusedMonthlyCredit(monthlyPrice: number): number {
+		if (!data.nextBillingDate || !data.periodStart) return 0;
+		const now = Date.now();
+		const end = new Date(data.nextBillingDate).getTime();
+		const start = new Date(data.periodStart).getTime();
+		const totalDays = (end - start) / 86_400_000;
+		const daysLeft = Math.max(0, (end - now) / 86_400_000);
+		return monthlyPrice * (daysLeft / totalDays);
+	}
+
+	function calcUnusedAnnualCredit(annualTotal: number): number {
+		if (!data.nextBillingDate || !data.periodStart) return 0;
+		const now = Date.now();
+		const end = new Date(data.nextBillingDate).getTime();
+		const start = new Date(data.periodStart).getTime();
+		const totalDays = (end - start) / 86_400_000;
+		const daysLeft = Math.max(0, (end - now) / 86_400_000);
+		return annualTotal * (daysLeft / totalDays);
 	}
 
 	function fmtDate(iso: string) {
@@ -234,34 +264,24 @@
 			{#if isPaidPlan && data.hasStripeSubscription && !isCancelScheduled}
 				<div class="mt-4 flex items-center gap-3">
 					{#if data.billingInterval === 'monthly'}
-						<form
-							method="post"
-							action="?/switchInterval"
-							use:enhance={() =>
-								({ update }) =>
-									update({ invalidateAll: true })}
+						<Button
+							type="button"
+							variant="outline"
+							class="gap-1.5 border-primary/20 bg-primary/5 text-primary hover:bg-primary/10 hover:text-primary"
+							onclick={() => openIntervalSwitchModal('annual')}
 						>
-							<input type="hidden" name="interval" value="annual" />
-							<Button
-								type="submit"
-								variant="outline"
-								class="gap-1.5 border-primary/20 bg-primary/5 text-primary hover:bg-primary/10 hover:text-primary"
-							>
-								<Icon icon="mdi:arrow-up-circle-outline" class="h-3.5 w-3.5" />
-								Switch to annual — save ${tierAnnualInfo?.savings ?? 0}/yr
-							</Button>
-						</form>
+							<Icon icon="mdi:arrow-up-circle-outline" class="h-3.5 w-3.5" />
+							Switch to annual — save ${tierAnnualInfo?.savings ?? 0}/yr
+						</Button>
 					{:else}
-						<form
-							method="post"
-							action="?/switchInterval"
-							use:enhance={() =>
-								({ update }) =>
-									update({ invalidateAll: true })}
+						<Button
+							type="button"
+							variant="outline"
+							class="gap-1.5"
+							onclick={() => openIntervalSwitchModal('monthly')}
 						>
-							<input type="hidden" name="interval" value="monthly" />
-							<Button type="submit" variant="outline" class="gap-1.5">Switch to monthly</Button>
-						</form>
+							Switch to monthly
+						</Button>
 					{/if}
 				</div>
 			{/if}
@@ -571,7 +591,13 @@
 					{isActivate ? 'Activate' : 'Deactivate'}
 					{pendingAddon.name}?
 				</DialogTitle>
-				<DialogDescription class="sr-only">Addon billing confirmation</DialogDescription>
+				<DialogDescription class="text-sm text-muted-foreground">
+					{#if isActivate}
+						You're adding {pendingAddon.name} to your {tierInfo?.name ?? 'plan'}.
+					{:else}
+						{pendingAddon.name} will be removed from your plan.
+					{/if}
+				</DialogDescription>
 			</DialogHeader>
 			<div class="flex flex-col gap-3">
 				<!-- Annual billing toggle (activate only, for supported add-ons) -->
@@ -634,7 +660,7 @@
 
 				<!-- Proration note -->
 				{#if proration !== null}
-					<Alert severity="info" dismissible={false}>
+					<Alert severity="info" dismissible={false} autofade={0}>
 						{#if isActivate}
 							You'll be charged a prorated amount of <strong>{fmtMoney(proration)}</strong> today for
 							the remaining days in this billing cycle.
@@ -653,6 +679,11 @@
 						)}.
 					</p>
 				{/if}
+
+				<!-- Trust footer -->
+				<p class="text-center text-xs text-muted-foreground">
+					Secure payment by Stripe · Cancel anytime · Receipt sent to your email
+				</p>
 			</div>
 			<DialogFooter class="flex gap-3 sm:flex-row">
 				<Button type="button" onclick={closeModal} variant="outline" class="flex-1">Cancel</Button>
@@ -675,6 +706,122 @@
 							Confirm — {fmtMoney(proration ?? addonEffectiveTotal)} today
 						{:else}
 							Confirm removal
+						{/if}
+					</Button>
+				</form>
+			</DialogFooter>
+		</DialogContent>
+	</Dialog>
+{/if}
+
+<!-- Interval switch confirmation modal -->
+{#if pendingIntervalSwitch && tierAnnualInfo}
+	{@const target = pendingIntervalSwitch}
+	{@const switchingToAnnual = target === 'annual'}
+	{@const annualMonthly = tierAnnualInfo.monthly}
+	{@const annualTotal = tierAnnualInfo.total}
+	{@const annualSavings = tierAnnualInfo.savings}
+	{@const todayChargeEstimate = switchingToAnnual
+		? Math.max(0, annualTotal - calcUnusedMonthlyCredit(tierInfo.price))
+		: 0}
+	{@const todayCreditEstimate = switchingToAnnual ? 0 : calcUnusedAnnualCredit(annualTotal)}
+
+	<Dialog
+		open={!!pendingIntervalSwitch}
+		onOpenChange={(open) => {
+			if (!open) closeIntervalSwitchModal();
+		}}
+	>
+		<DialogContent class="max-w-md">
+			<DialogHeader>
+				<DialogTitle>Switch to {target} billing?</DialogTitle>
+				<DialogDescription class="text-sm text-muted-foreground">
+					{#if switchingToAnnual}
+						Lock in annual pricing and save ${annualSavings}/yr.
+					{:else}
+						Switch back to monthly billing on your next cycle.
+					{/if}
+				</DialogDescription>
+			</DialogHeader>
+
+			<div class="flex flex-col gap-3">
+				<!-- Billing summary -->
+				<div class="space-y-1.5 rounded-xl border bg-muted/50 px-4 py-3">
+					<p class="mb-2 text-xs font-medium tracking-wide text-muted-foreground uppercase">
+						Billing summary
+					</p>
+					<div class="flex items-center justify-between text-sm text-muted-foreground">
+						<span>Current billing</span>
+						<span class="font-medium">
+							{#if data.billingInterval === 'monthly'}
+								${tierInfo.price}/mo
+							{:else}
+								${annualTotal}/yr
+							{/if}
+						</span>
+					</div>
+					<div class="flex items-center justify-between text-sm text-foreground">
+						<span>New billing</span>
+						<span class="font-medium">
+							{#if switchingToAnnual}
+								${annualTotal}/yr
+								<span class="text-xs text-muted-foreground">(${annualMonthly}/mo)</span>
+							{:else}
+								${tierInfo.price}/mo
+							{/if}
+						</span>
+					</div>
+					{#if switchingToAnnual}
+						<div
+							class="flex items-center justify-between border-t pt-2 text-sm font-semibold text-foreground"
+						>
+							<span>Charged today</span>
+							<span>~{fmtMoney(todayChargeEstimate)}</span>
+						</div>
+					{/if}
+				</div>
+
+				<!-- Proration / credit note -->
+				{#if switchingToAnnual}
+					<Alert severity="info" dismissible={false} autofade={0}>
+						You'll be charged <strong>~{fmtMoney(todayChargeEstimate)}</strong> today (annual price
+						minus credit for unused days in your current cycle). Your subscription renews next on {fmtDate(
+							new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString()
+						)}.
+					</Alert>
+				{:else}
+					<Alert severity="info" dismissible={false} autofade={0}>
+						You'll receive a prorated credit of <strong>~{fmtMoney(todayCreditEstimate)}</strong> on your
+						next invoice. Monthly billing starts on your next cycle.
+					</Alert>
+				{/if}
+
+				<!-- Trust footer -->
+				<p class="text-center text-xs text-muted-foreground">
+					Secure payment by Stripe · Cancel anytime · Receipt sent to your email
+				</p>
+			</div>
+
+			<DialogFooter class="flex gap-3 sm:flex-row">
+				<Button type="button" onclick={closeIntervalSwitchModal} variant="outline" class="flex-1">
+					Cancel
+				</Button>
+				<form
+					method="post"
+					action="?/switchInterval"
+					use:enhance={() =>
+						({ update }) => {
+							pendingIntervalSwitch = null;
+							update({ invalidateAll: true });
+						}}
+					class="flex-1"
+				>
+					<input type="hidden" name="interval" value={target} />
+					<Button type="submit" variant="default" class="w-full">
+						{#if switchingToAnnual}
+							Confirm — {fmtMoney(todayChargeEstimate)} today
+						{:else}
+							Confirm switch
 						{/if}
 					</Button>
 				</form>
