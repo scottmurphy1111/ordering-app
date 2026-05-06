@@ -361,43 +361,40 @@ Navigating from cart to checkout briefly shows an empty cart page (visual flash)
 
 ### Branded subscription checkout (replace Stripe-hosted)
 
-**Status:** Pending — needs-design.
+**Status:** Resolved (2026-05-06) — shipped Path C, Stripe Elements custom UI.
 
-**Why it matters:** Vendors upgrading to Market or Pro currently get redirected to `checkout.stripe.com` for payment. Visual jump from Order Local UI to Stripe's hosted checkout breaks brand continuity at the most important conversion moment. The customer-side order checkout (`/[vendorSlug]/checkout`) is fully Order Local-branded with Stripe Elements — that pattern proves the codebase can do branded checkout. Subscription checkout should match.
-
-**Current state:**
-- `upgrade` action in `src/routes/(app)/dashboard/account/billing/+page.server.ts` creates a Stripe Checkout Session and redirects to Stripe-hosted checkout.
-- Customer-side order checkout (`/[vendorSlug]/checkout`) uses Stripe Elements within Order Local UI.
-- Customer-side success redirect handles Order Local-branded confirmation; vendor side relies on Stripe's confirmation page → redirect.
+**What shipped:**
+- New route `/dashboard/account/billing/checkout` with embedded Stripe Elements payment form, Order Local branding (green primary, system fonts, dashboard typography).
+- `upgrade` action in `src/routes/(app)/dashboard/account/billing/+page.server.ts` creates a Stripe subscription with `payment_behavior: 'default_incomplete'` instead of a Checkout Session. Redirects to the embedded checkout page, passing the subscription ID.
+- Embedded checkout reads `clientSecret` from the latest invoice's `confirmation_secret.client_secret` (Stripe v22 surface), mounts a Payment Element, confirms via `stripe.confirmPayment` with a return URL of `/dashboard/account/billing?upgraded=1`.
+- Order summary panel shows plan name, billing interval, "Total due today" (bridge amount from `invoice.amount_due`), next charge or renewal line (uses `isBridgeFree` flag to swap "Then" vs "Renews" copy), and feature list.
+- Welcome email fires from the `customer.subscription.updated` webhook handler when the sub transitions `incomplete → active` (the moment payment confirms via Elements).
 - Anchored billing on the 15th of the month for all vendors. Prorated bridge from signup date to next 15th at the cycle's per-month rate (annual-monthly rate for annual, monthly for monthly). Add-ons inherit the anchor.
 
-**Path options (decide before building):**
+**Files involved:**
+- `src/routes/(app)/dashboard/account/billing/checkout/+page.server.ts` (new)
+- `src/routes/(app)/dashboard/account/billing/checkout/+page.svelte` (new)
+- `src/routes/(app)/dashboard/account/billing/+page.server.ts` — `upgrade` action rewrite
+- `src/routes/api/billing/webhook/+server.ts` — welcome email transition handler
 
-- **Path A — Stripe Dashboard branding only.** Configure logo, colors, business name in Stripe Settings → Branding. Stripe Checkout uses them. Effort: ~1 hour. Improvement: modest. Still on Stripe domain. Acceptable as interim measure.
-- **Path B — Stripe Embedded Checkout.** Embed Stripe's checkout UI inside `/dashboard/account/billing/upgrade` (or similar new route). Vendor sees Order Local nav and branding around Stripe-owned form. Effort: ~1 day. Improvement: significant. Stripe still owns the form fields.
-- **Path C — Stripe Elements (custom UI).** Build a subscription checkout page matching customer-side patterns. Effort: ~3–5 days. Improvement: full parity. Requires handling subscription-specific Stripe primitives (Setup Intents for default payment method, recurring-billing mandate display, agreement language).
+**Out of scope of this entry (still applies):**
+- Founding rate $19/mo Market subscription wiring (separate roadmap entry, still pending).
+- Customer-side checkout changes (already branded; unchanged).
+- Stripe Customer Portal styling (separate Stripe surface).
 
-**Decision rule:**
-- If launching to first-25 founding vendors soon and brand consistency at signup matters: pick Path B for medium effort + significant improvement.
-- If first-25 vendors will be onboarded with hand-holding (manual checkout assistance, founding-rate coupon coordination): defer to Path C or stay on Stripe-hosted.
-- If existing vendor flow is rare (most vendors hit billing once on upgrade, never again): Path A may suffice indefinitely.
+**Historical analysis (preserved for reference):**
 
-**Affected callsites when implementing:**
-- `src/routes/(app)/dashboard/account/billing/+page.server.ts` — `upgrade` action's checkout session creation
-- New route under `dashboard/account/billing/` for the branded checkout (Path B/C)
-- Possibly extract checkout component from customer-side for shared use (Path C)
-
-**Estimated effort by path:**
-- Path A: 1–2 hours (Stripe Dashboard config + verify rendering)
-- Path B: 1 day (new route + Embedded Checkout integration + success/cancel handling)
-- Path C: 3–5 days (custom subscription checkout, mandate display, payment method storage flow)
-
-**Trigger:** Before public marketing push that drives Starter→Paid conversion. The checkout is the conversion moment; the visual jump may suppress conversions at scale. For first-25 founding vendors with hand-holding, less urgent.
-
-**Out of scope of this entry:**
-- Founding rate $19/mo Market subscription wiring (separate concern).
-- Customer-side checkout changes (already branded).
-- Stripe Customer Portal styling (separate Stripe surface, separate concern).
+> **Original status:** Pending — needs-design.
+>
+> **Why it matters:** Vendors upgrading to Market or Pro currently get redirected to `checkout.stripe.com` for payment. Visual jump from Order Local UI to Stripe's hosted checkout breaks brand continuity at the most important conversion moment. The customer-side order checkout (`/[vendorSlug]/checkout`) is fully Order Local-branded with Stripe Elements — that pattern proves the codebase can do branded checkout. Subscription checkout should match.
+>
+> **Path options considered:**
+>
+> - **Path A — Stripe Dashboard branding only.** Configure logo, colors, business name in Stripe Settings → Branding. Stripe Checkout uses them. Effort: ~1 hour. Improvement: modest. Still on Stripe domain. Acceptable as interim measure.
+> - **Path B — Stripe Embedded Checkout.** Embed Stripe's checkout UI inside `/dashboard/account/billing/upgrade` (or similar new route). Vendor sees Order Local nav and branding around Stripe-owned form. Effort: ~1 day. Improvement: significant. Stripe still owns the form fields.
+> - **Path C — Stripe Elements (custom UI).** Build a subscription checkout page matching customer-side patterns. Effort: ~3–5 days. Improvement: full parity. Requires handling subscription-specific Stripe primitives (Setup Intents for default payment method, recurring-billing mandate display, agreement language).
+>
+> **Decision:** Path C. Full brand parity with customer-side checkout was prioritized over the shorter-effort options. The customer-side `[vendorSlug]/checkout` pattern was a working reference for the technical shape; subscription-specific concerns (recurring mandate, default payment method) handled via `payment_behavior: 'default_incomplete'` and `save_default_payment_method: 'on_subscription'` on the subscription create call.
 
 ---
 

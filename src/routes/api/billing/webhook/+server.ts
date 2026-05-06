@@ -100,7 +100,7 @@ export const POST: RequestHandler = async ({ request }) => {
 
 				const vendorRecord = await db.query.vendor.findFirst({
 					where: eq(vendor.stripeCustomerId, customerId),
-					columns: { id: true, subscriptionTier: true }
+					columns: { id: true, name: true, email: true, subscriptionTier: true }
 				});
 				if (!vendorRecord) break;
 
@@ -138,6 +138,35 @@ export const POST: RequestHandler = async ({ request }) => {
 				if (tierKey) updates.subscriptionTier = tierKey;
 
 				await db.update(vendor).set(updates).where(eq(vendor.id, vendorRecord.id));
+
+				// Welcome email on first-payment confirmation via embedded checkout.
+				// The subscription was created with payment_behavior: 'default_incomplete';
+				// when the vendor confirms payment in the embedded UI, Stripe transitions
+				// status incomplete → active and fires this event with previous_attributes
+				// containing the prior status. This predicate matches that transition and
+				// only that transition — it won't fire on plan/interval switches or add-on
+				// changes (in those cases the prior status was already 'active').
+				//
+				// The 'created' event has no previous_attributes; optional-chain returns
+				// undefined and the email is skipped (the sub is created in incomplete state
+				// with no payment confirmed yet).
+				const prevStatus = (event.data.previous_attributes as { status?: string } | undefined)
+					?.status;
+				const justActivated = prevStatus === 'incomplete' && subscription.status === 'active';
+				const tierForEmail = tierKey ?? vendorRecord.subscriptionTier;
+				if (justActivated && vendorRecord.email && tierForEmail && PAID_TIERS.has(tierForEmail)) {
+					const item = subscription.items.data[0];
+					const amount = item?.price?.unit_amount ?? 0;
+					await sendEmail({
+						to: vendorRecord.email,
+						subject: `You're on Order Local ${tierForEmail.charAt(0).toUpperCase() + tierForEmail.slice(1)}`,
+						html: subscriptionConfirmedEmail({
+							tenantName: vendorRecord.name,
+							planName: tierForEmail.charAt(0).toUpperCase() + tierForEmail.slice(1),
+							amount: formatAmount(amount)
+						})
+					}).catch(console.error);
+				}
 				break;
 			}
 
