@@ -51,13 +51,40 @@ export const load: PageServerLoad = async ({ locals }) => {
 	let periodStart: string | null = null;
 	let billingInterval: BillingInterval = 'monthly';
 
+	// Account utilities card data: default payment method + recent invoices.
+	// Empty defaults so the card can render even when the vendor has no Stripe
+	// customer yet (free vendors who haven't subscribed).
+	let defaultPaymentMethod: {
+		brand: string;
+		last4: string;
+		expMonth: number;
+		expYear: number;
+	} | null = null;
+	let totalPaymentMethods = 0;
+	let recentInvoices: Array<{
+		id: string;
+		number: string | null;
+		created: number;
+		status: string;
+		total: number;
+		hostedInvoiceUrl: string | null;
+		invoicePdf: string | null;
+	}> = [];
+
 	if (vendorRecord?.stripeSubscriptionId) {
 		try {
 			const stripe = getOrderLocalStripe();
-			const [subscription, preview] = await Promise.all([
+			const [subscription, preview, pmList, invoiceList, customer] = await Promise.all([
 				stripe.subscriptions.retrieve(vendorRecord.stripeSubscriptionId, { expand: ['items'] }),
-				stripe.invoices.createPreview({ subscription: vendorRecord.stripeSubscriptionId })
+				stripe.invoices.createPreview({ subscription: vendorRecord.stripeSubscriptionId }),
+				stripe.paymentMethods.list({
+					customer: vendorRecord.stripeCustomerId!,
+					type: 'card'
+				}),
+				stripe.invoices.list({ customer: vendorRecord.stripeCustomerId!, limit: 3 }),
+				stripe.customers.retrieve(vendorRecord.stripeCustomerId!)
 			]);
+
 			const planItem =
 				subscription.items.data.find((i) => {
 					const meta = i.price.metadata?.type;
@@ -66,13 +93,55 @@ export const load: PageServerLoad = async ({ locals }) => {
 			billingInterval = planItem?.price.recurring?.interval === 'year' ? 'annual' : 'monthly';
 			periodStart = new Date(preview.period_start * 1000).toISOString();
 			nextBillingDate = new Date(preview.period_end * 1000).toISOString();
+
+			totalPaymentMethods = pmList.data.length;
+
+			// Subscription's default payment method takes priority over customer-level
+			// default. Fall back to first card if neither is set explicitly.
+			const subDefaultId =
+				typeof subscription.default_payment_method === 'string'
+					? subscription.default_payment_method
+					: (subscription.default_payment_method?.id ?? null);
+			const customerDefaultId =
+				!customer.deleted && customer.invoice_settings.default_payment_method
+					? typeof customer.invoice_settings.default_payment_method === 'string'
+						? customer.invoice_settings.default_payment_method
+						: customer.invoice_settings.default_payment_method.id
+					: null;
+			const defaultPm =
+				pmList.data.find((pm) => pm.id === subDefaultId) ??
+				pmList.data.find((pm) => pm.id === customerDefaultId) ??
+				pmList.data[0];
+
+			if (defaultPm?.card) {
+				defaultPaymentMethod = {
+					brand: defaultPm.card.brand,
+					last4: defaultPm.card.last4,
+					expMonth: defaultPm.card.exp_month,
+					expYear: defaultPm.card.exp_year
+				};
+			}
+
+			recentInvoices = invoiceList.data.map((inv) => ({
+				id: inv.id ?? '',
+				number: inv.number,
+				created: inv.created,
+				status: inv.status ?? 'draft',
+				total: inv.total,
+				hostedInvoiceUrl: inv.hosted_invoice_url ?? null,
+				invoicePdf: inv.invoice_pdf ?? null
+			}));
 		} catch {
-			// Stripe preview unavailable — billing dates stay null
+			// Stripe preview unavailable — billing dates stay null, account
+			// utilities stay empty. Card UI handles empty state gracefully.
 		}
 	}
 
 	return {
 		itemCount: countResult[0]?.count ?? 0,
+		defaultPaymentMethod,
+		totalPaymentMethods,
+		recentInvoices,
 		subscriptionTier: vendorRecord?.subscriptionTier ?? 'starter',
 		subscriptionStatus: vendorRecord?.subscriptionStatus ?? 'active',
 		subscriptionEndsAt: vendorRecord?.subscriptionEndsAt

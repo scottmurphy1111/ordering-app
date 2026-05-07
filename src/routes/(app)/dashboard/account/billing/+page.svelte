@@ -3,7 +3,6 @@
 	import { page } from '$app/state';
 	import Icon from '@iconify/svelte';
 	import type { PageData, ActionData } from './$types';
-	import { untrack } from 'svelte';
 	import {
 		TIERS,
 		ADDONS,
@@ -13,12 +12,10 @@
 		type BillingInterval,
 		type AddonItem
 	} from '$lib/billing';
-	import { confirmDialog } from '$lib/confirm.svelte';
 	import { resolve } from '$app/paths';
 	import { Button } from '$lib/components/ui/button';
 	import { Badge } from '$lib/components/ui/badge';
-	import { Tabs, TabsList, TabsTrigger } from '$lib/components/ui/tabs';
-	import { Card, CardHeader, CardTitle, CardAction, CardContent } from '$lib/components/ui/card';
+	import { Card, CardHeader, CardTitle, CardContent } from '$lib/components/ui/card';
 	import { Alert } from '$lib/components/ui/alert';
 	import {
 		Dialog,
@@ -54,15 +51,6 @@
 		ADDONS.filter((a) => hasAddon(activeAddons, a.key)).reduce((s, a) => s + a.price, 0)
 	);
 	const currentMonthly = $derived(tierInfo.price + addonMonthlyTotal);
-
-	// Per-card interval selection. Defaults to vendor's current billing interval
-	// so comparisons start at the cadence they already use.
-	let cardIntervals = $state<Record<string, BillingInterval>>(
-		untrack(() => {
-			const initial = data.billingInterval ?? 'monthly';
-			return { market: initial, pro: initial };
-		})
-	);
 
 	const tierAnnualInfo = $derived(
 		'annualMonthly' in tierInfo
@@ -150,33 +138,42 @@
 	const minPauseDate = $derived(todayPlusDays(1));
 	const maxPauseDate = $derived(todayPlusDays(90));
 
-	// --- Tier upgrade confirmation modal (paid → paid tier change) ---
-	type PendingUpgrade = {
+	// --- Unified plan-change modal (paid → paid upgrade OR downgrade) ---
+	type PendingPlanChange = {
+		direction: 'upgrade' | 'downgrade';
 		targetTierKey: string;
 		targetTierName: string;
 		targetMonthlyPrice: number;
 		targetAnnualMonthly: number;
 		targetAnnualTotal: number;
-		targetInterval: BillingInterval;
+		targetAnnualSavings: number;
+		// Selected interval is bindable inside the dialog. Defaults to vendor's
+		// current billing interval at open time.
+		selectedInterval: BillingInterval;
 	};
-	let pendingUpgrade = $state<PendingUpgrade | null>(null);
+	let pendingPlanChange = $state<PendingPlanChange | null>(null);
 
-	function openUpgradeModal(tier: (typeof TIERS)[number], interval: BillingInterval) {
-		// Only for paid → paid transitions. Free Starter upgrades go straight
-		// through to embedded checkout via the form submit (no modal).
-		pendingUpgrade = {
+	function openPlanChangeModal(tier: (typeof TIERS)[number], direction: 'upgrade' | 'downgrade') {
+		const annualMonthly =
+			'annualMonthly' in tier ? (tier as { annualMonthly: number }).annualMonthly : 0;
+		const annualTotal = 'annualTotal' in tier ? (tier as { annualTotal: number }).annualTotal : 0;
+		const annualSavings =
+			'annualSavings' in tier ? (tier as { annualSavings: number }).annualSavings : 0;
+
+		pendingPlanChange = {
+			direction,
 			targetTierKey: tier.key,
 			targetTierName: tier.name,
 			targetMonthlyPrice: tier.price,
-			targetAnnualMonthly:
-				'annualMonthly' in tier ? (tier as { annualMonthly: number }).annualMonthly : 0,
-			targetAnnualTotal: 'annualTotal' in tier ? (tier as { annualTotal: number }).annualTotal : 0,
-			targetInterval: interval
+			targetAnnualMonthly: annualMonthly,
+			targetAnnualTotal: annualTotal,
+			targetAnnualSavings: annualSavings,
+			selectedInterval: data.billingInterval ?? 'monthly'
 		};
 	}
 
-	function closeUpgradeModal() {
-		pendingUpgrade = null;
+	function closePlanChangeModal() {
+		pendingPlanChange = null;
 	}
 
 	function calcProration(addonPrice: number, action: 'activate' | 'deactivate'): number | null {
@@ -299,37 +296,16 @@
 		<Alert severity="error" class="mb-4">{form.error}</Alert>
 	{/if}
 
-	<!-- Current plan -->
-	<Card class="mb-8 shadow-sm">
-		<CardHeader class="border-b">
-			<CardTitle>Current plan</CardTitle>
-			<CardAction>
-				{#if data.hasStripeCustomer}
-					<div class="flex items-center gap-2">
-						<Button
-							href={resolve('/dashboard/account/billing/payment-methods')}
-							variant="outline"
-							class="gap-1.5"
-						>
-							<Icon icon="mdi:credit-card-outline" class="h-3.5 w-3.5" />
-							Payment methods
-						</Button>
-						<Button
-							href={resolve('/dashboard/account/billing/invoices')}
-							variant="outline"
-							class="gap-1.5"
-						>
-							<Icon icon="mdi:file-document-outline" class="h-3.5 w-3.5" />
-							Invoices
-						</Button>
-					</div>
-				{/if}
-			</CardAction>
-		</CardHeader>
-		<CardContent>
-			<div class="flex flex-wrap items-start justify-between gap-4">
-				<div>
-					<div class="flex flex-wrap items-center gap-2">
+	<!-- Current plan + Account utilities: two-column grid on large screens. -->
+	<div class="mb-8 grid gap-4 lg:grid-cols-3">
+		<Card class="col-span-3 shadow-sm">
+			<CardHeader>
+				<CardTitle>Current plan</CardTitle>
+			</CardHeader>
+			<CardContent class="p-0">
+				<div class="px-6 pb-6">
+					<!-- Row 1: Plan name + status badges -->
+					<div class="mb-2 flex flex-wrap items-center gap-2">
 						<span class="text-xl font-bold text-foreground">{tierInfo.name}</span>
 						<Badge class={statusColors[data.subscriptionStatus ?? 'active'] ?? statusColors.active}>
 							{data.subscriptionStatus === 'past_due'
@@ -344,7 +320,9 @@
 							</Badge>
 						{/if}
 					</div>
-					<div class="mt-0.5 flex flex-wrap items-center gap-2">
+
+					<!-- Row 2: Price + renewal date -->
+					<div class="flex flex-wrap items-center gap-2">
 						<p class="text-sm text-muted-foreground">
 							{#if tierInfo.price === 0}
 								Free
@@ -354,7 +332,7 @@
 								${tierInfo.price}/month
 							{/if}
 							{#if addonMonthlyTotal > 0}
-								<span class="text-muted-foreground">+ ${addonMonthlyTotal}/mo add-ons</span>
+								<span>+ ${addonMonthlyTotal}/mo add-ons</span>
 							{/if}
 						</p>
 						{#if !isCancelScheduled && !isPaused && data.nextBillingDate && isPaidPlan}
@@ -366,153 +344,261 @@
 							</span>
 						{/if}
 					</div>
+
+					<!-- Row 3: Cancel scheduled date -->
 					{#if isCancelScheduled && data.subscriptionEndsAt}
-						<p class="mt-0.5 text-xs font-medium text-amber-700">
+						<p class="mt-1 text-xs font-medium text-amber-700">
 							Plan ends {fmtDate(data.subscriptionEndsAt)}
 						</p>
 					{/if}
-				</div>
-				{#if data.subscriptionStatus === 'past_due'}
-					<Button
-						href={resolve('/dashboard/account/billing/payment-methods')}
-						class="gap-1.5 border border-amber-400 bg-amber-50 text-amber-700 hover:bg-amber-100"
-					>
-						<Icon icon="mdi:alert-outline" class="h-3.5 w-3.5" /> Update payment method
-					</Button>
-				{/if}
-			</div>
 
-			<!-- Action row: switch interval, pause/resume, reactivate. Single horizontal
-			     container; conditionals render buttons directly into it. Wraps on narrow viewports. -->
-			<div class="mt-5 flex flex-wrap items-center gap-3">
-				{#if isPaidPlan && data.hasStripeSubscription && !isCancelScheduled}
-					{#if data.billingInterval === 'monthly'}
-						<Button
-							type="button"
-							variant="outline"
-							class="gap-1.5 border-primary/20 bg-primary/5 text-primary hover:bg-primary/10 hover:text-primary"
-							onclick={() => openIntervalSwitchModal('annual')}
-						>
-							<Icon icon="mdi:arrow-up-circle-outline" class="h-3.5 w-3.5" />
-							Switch to annual — save ${tierAnnualInfo?.savings ?? 0}/yr
-						</Button>
+					<!-- Row 4: Item usage bar -->
+					{#if itemLimit !== null}
+						<div class="mt-5">
+							<div class="mb-1.5 flex items-center justify-between text-sm">
+								<span class="font-medium text-muted-foreground">Items</span>
+								<span
+									class={atLimit
+										? 'font-semibold text-red-600'
+										: nearLimit
+											? 'font-semibold text-amber-600'
+											: 'text-muted-foreground'}
+								>
+									{itemCount} / {itemLimit}
+								</span>
+							</div>
+							<div class="h-2 w-full rounded-full bg-muted">
+								<div
+									class="h-2 rounded-full transition-all {atLimit
+										? 'bg-destructive'
+										: nearLimit
+											? 'bg-amber-400'
+											: 'bg-primary'}"
+									style="width: {usagePct}%"
+								></div>
+							</div>
+							{#if atLimit}
+								<p class="mt-2 flex items-center gap-1.5 text-sm text-red-600">
+									<Icon icon="mdi:alert-circle-outline" class="h-4 w-4 shrink-0" />
+									Item limit reached. Upgrade your plan to add more.
+								</p>
+							{:else if nearLimit}
+								<p class="mt-2 flex items-center gap-1.5 text-sm text-amber-600">
+									<Icon icon="mdi:alert-outline" class="h-4 w-4 shrink-0" />
+									Approaching your item limit.
+								</p>
+							{/if}
+						</div>
 					{:else}
+						<div class="mt-4 flex items-center gap-2 text-sm text-muted-foreground">
+							<Icon icon="mdi:infinity" class="h-4 w-4 text-primary" />
+							Unlimited catalog items
+						</div>
+					{/if}
+				</div>
+
+				<!-- Action strip: 5 mutually exclusive states. -->
+				{#if isPaused}
+					<div data-slot="card-footer" class="flex items-center border-t border-gray-100 px-4 py-2">
+						<form
+							method="post"
+							action="?/resumeSubscription"
+							use:enhance={() =>
+								async ({ result, update }) => {
+									if (result.type === 'redirect') {
+										window.location.href = result.location;
+									} else {
+										await update({ invalidateAll: true });
+									}
+								}}
+						>
+							<Button
+								type="submit"
+								variant="outline"
+								class="gap-1.5 border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100 hover:text-amber-900"
+							>
+								<Icon icon="mdi:play-circle-outline" class="h-3.5 w-3.5" />
+								Resume now
+							</Button>
+						</form>
+					</div>
+				{:else if isCancelScheduled && data.hasStripeSubscription && !data.subscriptionRefundedAt}
+					<div data-slot="card-footer" class="flex items-center border-t border-gray-100 px-4 py-2">
+						<form
+							method="post"
+							action="?/reactivate"
+							use:enhance={() =>
+								async ({ result, update }) => {
+									if (result.type === 'success') {
+										window.location.href = resolve('/dashboard/account/billing') + '?reactivated=1';
+									} else {
+										await update({ invalidateAll: true });
+									}
+								}}
+						>
+							<Button
+								type="submit"
+								variant="outline"
+								class="gap-1.5 border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100 hover:text-amber-900"
+							>
+								<Icon icon="mdi:undo-variant" class="h-3.5 w-3.5" />
+								Don't cancel — keep {tierInfo.name}
+							</Button>
+						</form>
+					</div>
+				{:else if data.subscriptionStatus === 'past_due'}
+					<div data-slot="card-footer" class="flex items-center border-t border-gray-100 px-4 py-2">
+						<Button
+							href={resolve('/dashboard/account/billing/payment-methods')}
+							class="gap-1.5 border-amber-400 bg-amber-50 text-amber-700 hover:bg-amber-100"
+						>
+							<Icon icon="mdi:alert-outline" class="h-3.5 w-3.5" /> Update payment method
+						</Button>
+					</div>
+				{:else if isPaidPlan && data.hasStripeSubscription}
+					<div data-slot="card-footer" class="flex flex-wrap items-center gap-3 border-t border-gray-100 px-4 py-2">
+						{#if data.billingInterval === 'monthly'}
+							<Button
+								type="button"
+								variant="outline"
+								class="gap-1.5 border-primary/20 bg-primary/5 text-primary hover:bg-primary/10 hover:text-primary"
+								onclick={() => openIntervalSwitchModal('annual')}
+							>
+								<Icon icon="mdi:arrow-up-circle-outline" class="h-3.5 w-3.5" />
+								Switch to annual — save ${tierAnnualInfo?.savings ?? 0}/yr
+							</Button>
+						{:else}
+							<Button
+								type="button"
+								variant="outline"
+								class="gap-1.5"
+								onclick={() => openIntervalSwitchModal('monthly')}
+							>
+								<Icon icon="mdi:swap-horizontal" class="h-3.5 w-3.5" />
+								Switch to monthly
+							</Button>
+						{/if}
 						<Button
 							type="button"
 							variant="outline"
 							class="gap-1.5"
-							onclick={() => openIntervalSwitchModal('monthly')}
+							onclick={() => (pendingPauseOpen = true)}
 						>
-							<Icon icon="mdi:swap-horizontal" class="h-3.5 w-3.5" />
-							Switch to monthly
+							<Icon icon="mdi:pause-circle-outline" class="h-3.5 w-3.5" />
+							Pause billing
 						</Button>
-					{/if}
+					</div>
+				{/if}
+			</CardContent>
+		</Card>
+
+		<!-- Account utilities card -->
+		<Card class="col-span-3 shadow-sm">
+			<CardHeader>
+				<CardTitle>Payment & invoices</CardTitle>
+			</CardHeader>
+			<CardContent class="p-0">
+				<!-- Default payment method -->
+				{#if data.defaultPaymentMethod}
+					<div class="px-4 pt-4 pb-3">
+						<p class="mb-2 text-xs font-medium tracking-wide text-muted-foreground uppercase">
+							Default card
+						</p>
+						<div class="flex items-center gap-3">
+							<div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-muted">
+								<Icon icon="mdi:credit-card-outline" class="h-4 w-4 text-muted-foreground" />
+							</div>
+							<div>
+								<p class="text-sm font-medium text-foreground capitalize">
+									{data.defaultPaymentMethod.brand} ···· {data.defaultPaymentMethod.last4}
+								</p>
+								<p class="text-xs text-muted-foreground">
+									Expires {data.defaultPaymentMethod.expMonth}/{data.defaultPaymentMethod.expYear}
+								</p>
+							</div>
+						</div>
+					</div>
+				{:else}
+					<div class="px-4 pt-4 pb-3">
+						<p class="text-sm text-muted-foreground">
+							{data.hasStripeCustomer
+								? 'No default card on file.'
+								: 'Add a payment method after upgrading.'}
+						</p>
+					</div>
 				{/if}
 
-				{#if isPaused}
-					<form
-						method="post"
-						action="?/resumeSubscription"
-						use:enhance={() =>
-							async ({ result, update }) => {
-								if (result.type === 'redirect') {
-									window.location.href = result.location;
-								} else {
-									await update({ invalidateAll: true });
-								}
-							}}
-					>
-						<Button
-							type="submit"
-							variant="outline"
-							class="gap-1.5 border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100 hover:text-amber-900"
+				<!-- Recent invoices -->
+				{#if data.recentInvoices.length > 0}
+					<div class="border-t border-gray-100">
+						<p
+							class="px-4 pt-3 pb-2 text-xs font-medium tracking-wide text-muted-foreground uppercase"
 						>
-							<Icon icon="mdi:play-circle-outline" class="h-3.5 w-3.5" />
-							Resume now
-						</Button>
-					</form>
-				{:else if isPaidPlan && data.hasStripeSubscription && !isCancelScheduled && data.subscriptionStatus !== 'past_due'}
+							Recent invoices
+						</p>
+						<ul class="divide-y divide-gray-50">
+							{#each data.recentInvoices as invoice (invoice.id)}
+								<li class="flex items-center justify-between px-4 py-2">
+									<div>
+										<p class="text-xs font-medium text-foreground">
+											{invoice.number ?? 'Invoice'}
+										</p>
+										<p class="text-xs text-muted-foreground">
+											{new Date(invoice.created * 1000).toLocaleDateString('en-US', {
+												month: 'short',
+												day: 'numeric',
+												year: 'numeric'
+											})}
+										</p>
+									</div>
+									<div class="flex items-center gap-2">
+										<span class="text-xs font-semibold text-foreground">
+											${(invoice.total / 100).toFixed(2)}
+										</span>
+										{#if invoice.invoicePdf}
+											<!-- eslint-disable svelte/no-navigation-without-resolve -->
+											<a
+												href={invoice.invoicePdf}
+												target="_blank"
+												rel="noopener noreferrer"
+												class="text-muted-foreground transition-colors hover:text-foreground"
+												aria-label="Download PDF"
+											>
+												<Icon icon="mdi:file-download-outline" class="h-3.5 w-3.5" />
+											</a>
+											<!-- eslint-enable svelte/no-navigation-without-resolve -->
+										{/if}
+									</div>
+								</li>
+							{/each}
+						</ul>
+					</div>
+				{/if}
+
+				<!-- Action strip links -->
+				<div data-slot="card-footer" class="flex items-center gap-4 border-t border-gray-100 px-4 py-2">
 					<Button
 						type="button"
 						variant="outline"
 						class="gap-1.5"
-						onclick={() => (pendingPauseOpen = true)}
+						href={resolve('/dashboard/account/billing/payment-methods')}
 					>
-						<Icon icon="mdi:pause-circle-outline" class="h-3.5 w-3.5" />
-						Pause billing
+						<Icon icon="mdi:credit-card-outline" class="h-3.5 w-3.5" />
+						Payment methods
 					</Button>
-				{/if}
-
-				{#if isCancelScheduled && data.hasStripeSubscription && !data.subscriptionRefundedAt}
-					<form
-						method="post"
-						action="?/reactivate"
-						use:enhance={() =>
-							async ({ result, update }) => {
-								if (result.type === 'success') {
-									window.location.href = resolve('/dashboard/account/billing') + '?reactivated=1';
-								} else {
-									await update({ invalidateAll: true });
-								}
-							}}
+					<Button
+						type="button"
+						variant="outline"
+						class="gap-1.5"
+						href={resolve('/dashboard/account/billing/invoices')}
 					>
-						<Button
-							type="submit"
-							variant="outline"
-							class="gap-1.5 border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100 hover:text-amber-900"
-						>
-							<Icon icon="mdi:undo-variant" class="h-3.5 w-3.5" />
-							Don't cancel — keep {tierInfo.name}
-						</Button>
-					</form>
-				{/if}
-			</div>
-
-			<!-- Item usage -->
-			{#if itemLimit !== null}
-				<div class="mt-5">
-					<div class="mb-1.5 flex items-center justify-between text-sm">
-						<span class="font-medium text-muted-foreground">Items</span>
-						<span
-							class={atLimit
-								? 'font-semibold text-red-600'
-								: nearLimit
-									? 'font-semibold text-amber-600'
-									: 'text-muted-foreground'}
-						>
-							{itemCount} / {itemLimit}
-						</span>
-					</div>
-					<div class="h-2 w-full rounded-full bg-muted">
-						<div
-							class="h-2 rounded-full transition-all {atLimit
-								? 'bg-destructive'
-								: nearLimit
-									? 'bg-amber-400'
-									: 'bg-primary'}"
-							style="width: {usagePct}%"
-						></div>
-					</div>
-					{#if atLimit}
-						<p class="mt-2 flex items-center gap-1.5 text-sm text-red-600">
-							<Icon icon="mdi:alert-circle-outline" class="h-4 w-4 shrink-0" />
-							Item limit reached. Upgrade your plan to add more.
-						</p>
-					{:else if nearLimit}
-						<p class="mt-2 flex items-center gap-1.5 text-sm text-amber-600">
-							<Icon icon="mdi:alert-outline" class="h-4 w-4 shrink-0" />
-							Approaching your item limit.
-						</p>
-					{/if}
+						<Icon icon="mdi:file-document-outline" class="h-3.5 w-3.5" />
+						All invoices
+					</Button>
 				</div>
-			{:else}
-				<div class="mt-4 flex items-center gap-2 text-sm text-muted-foreground">
-					<Icon icon="mdi:infinity" class="h-4 w-4 text-primary" />
-					Unlimited catalog items
-				</div>
-			{/if}
-		</CardContent>
-	</Card>
+			</CardContent>
+		</Card>
+	</div>
 
 	<!-- Plans -->
 	<div class="mb-8">
@@ -532,49 +618,34 @@
 					{/if}
 					<Card class="h-full shadow-sm {isCurrent ? 'ring-2 ring-primary/70 ring-offset-0' : ''}">
 						<CardContent class="flex flex-1 flex-col">
-							{@const cardInterval = cardIntervals[tier.key] ?? 'monthly'}
-							{@const showToggle = !isCurrent && tier.price > 0}
+							<!-- Tier header -->
 							<div class="mb-4">
 								<p class="font-semibold text-foreground">{tier.name}</p>
-								{#if showToggle}
-									<div class="mt-2">
-										<Tabs
-											value={cardInterval}
-											onValueChange={(v) => (cardIntervals[tier.key] = v as BillingInterval)}
-										>
-											<TabsList>
-												<TabsTrigger value="monthly">Monthly</TabsTrigger>
-												<TabsTrigger value="annual">
-													Annual
-													{#if 'annualSavings' in tier}
-														<span
-															class="rounded-full bg-primary/10 px-1.5 py-0.5 text-[9px] font-semibold text-primary"
-															>−${(tier as { annualSavings: number }).annualSavings}</span
-														>
-													{/if}
-												</TabsTrigger>
-											</TabsList>
-										</Tabs>
-									</div>
-								{/if}
+
+								<!-- Price block: three rows for vertical alignment across cards.
+								     Row 1: annual total (or "Free" for Starter) — large, bold.
+								     Row 2: annual monthly equivalent — small, primary green.
+								     Row 3: monthly billing alternative — small, muted gray.
+								     Starter's rows 2 and 3 use invisible spacers so the total
+								     vertical height matches the paid cards. -->
 								{#if tier.price === 0}
-									<p class="mt-0.5 text-2xl font-bold text-foreground">Free</p>
+									<p class="mt-1 text-2xl font-bold text-foreground">Free</p>
+									<p class="invisible mt-0.5 text-xs font-medium">spacer line a</p>
+									<p class="invisible mt-0.5 text-xs">spacer line b</p>
 								{:else}
-									{@const displayPrice =
-										cardInterval === 'annual' && 'annualMonthly' in tier
-											? (tier as { annualMonthly: number }).annualMonthly
-											: tier.price}
+									{@const annualTotal =
+										'annualTotal' in tier ? (tier as { annualTotal: number }).annualTotal : 0}
+									{@const annualMonthly =
+										'annualMonthly' in tier ? (tier as { annualMonthly: number }).annualMonthly : 0}
 									<p class="mt-1 text-2xl font-bold text-foreground">
-										${displayPrice}<span class="text-sm font-normal text-muted-foreground">/mo</span
-										>
+										${annualTotal}<span class="text-sm font-normal text-muted-foreground">/yr</span>
 									</p>
-									{#if cardInterval === 'annual' && 'annualTotal' in tier}
-										<p class="mt-0.5 text-xs font-medium text-primary">
-											Billed ${(tier as { annualTotal: number }).annualTotal}/yr · save ${(
-												tier as { annualSavings: number }
-											).annualSavings}
-										</p>
-									{/if}
+									<p class="mt-0.5 text-xs font-medium text-primary">
+										${annualMonthly}/mo when paid annually
+									</p>
+									<p class="mt-0.5 text-xs text-muted-foreground">
+										${tier.price}/mo when paid monthly
+									</p>
 								{/if}
 							</div>
 							<ul class="mb-5 flex-1 space-y-2">
@@ -602,24 +673,24 @@
 										type="button"
 										variant="default"
 										class="w-full"
-										onclick={() => openUpgradeModal(tier, cardIntervals[tier.key] ?? 'monthly')}
+										onclick={() => openPlanChangeModal(tier, 'upgrade')}
 									>
 										Upgrade to {tier.name}
-										{#if cardIntervals[tier.key] === 'annual'}
-											— Annual{/if}
 									</Button>
 								{:else}
+									<!-- Free → paid path: no current sub to mutate, so fire form
+									     directly with vendor's current interval (monthly default
+									     since they're on Starter). The vendor can switch interval
+									     on the embedded checkout page that follows. -->
 									<form method="post" action="?/upgrade" use:enhance>
 										<input type="hidden" name="planKey" value={tier.key} />
 										<input
 											type="hidden"
 											name="interval"
-											value={cardIntervals[tier.key] ?? 'monthly'}
+											value={data.billingInterval ?? 'monthly'}
 										/>
 										<Button type="submit" variant="default" class="w-full">
 											Upgrade to {tier.name}
-											{#if cardIntervals[tier.key] === 'annual'}
-												— Annual{/if}
 										</Button>
 									</form>
 								{/if}
@@ -644,16 +715,6 @@
 							{:else}
 								{@const isCancellation = tier.key === 'starter'}
 								{@const isAnnualCancel = isCancellation && data.billingInterval === 'annual'}
-								{@const endsAtStr = data.subscriptionEndsAt
-									? fmtDate(data.subscriptionEndsAt)
-									: data.nextBillingDate
-										? fmtDate(data.nextBillingDate)
-										: 'the end of your billing cycle'}
-								{@const downgradeMsg = isCancellation
-									? activeAddons.length > 0
-										? `Downgrade to Starter? Your subscription will continue until ${endsAtStr}. After that, you'll be moved to Starter and your add-ons (${formatAddonList(activeAddons)}) will end with your plan.`
-										: `Downgrade to Starter? Your subscription will continue until ${endsAtStr}. After that, you'll be moved to Starter.`
-									: `Downgrade to ${tier.name}? Your subscription will be moved to ${tier.name} pricing on the next billing cycle (Stripe credits the unused portion). Add-ons stay active.`}
 								{#if isAnnualCancel}
 									<Button
 										type="button"
@@ -664,48 +725,14 @@
 										Downgrade to Starter
 									</Button>
 								{:else}
-									<form
-										method="post"
-										action="?/downgrade"
-										use:enhance={() =>
-											async ({ result, update }) => {
-												if (result.type === 'success') {
-													window.location.href =
-														resolve('/dashboard/account/billing') + '?downgraded=1';
-												} else {
-													await update({ invalidateAll: true });
-												}
-											}}
+									<Button
+										type="button"
+										onclick={() => openPlanChangeModal(tier, 'downgrade')}
+										variant="outline"
+										class="w-full text-muted-foreground"
 									>
-										<input type="hidden" name="planKey" value={tier.key} />
-										<input
-											type="hidden"
-											name="interval"
-											value={cardIntervals[tier.key] ?? 'monthly'}
-										/>
-										<Button
-											type="submit"
-											onclick={async (e) => {
-												e.preventDefault();
-												const form = (e.currentTarget as HTMLButtonElement).closest(
-													'form'
-												) as HTMLFormElement;
-												if (
-													await confirmDialog(downgradeMsg, {
-														title: `Downgrade to ${tier.name}`,
-														confirmLabel: 'Downgrade',
-														cancelLabel: 'Keep current plan',
-														danger: true
-													})
-												)
-													form.requestSubmit();
-											}}
-											variant="outline"
-											class="w-full text-muted-foreground"
-										>
-											Downgrade to {tier.name}
-										</Button>
-									</form>
+										Downgrade to {tier.name}
+									</Button>
 								{/if}
 							{/if}
 						</CardContent>
@@ -1272,14 +1299,15 @@
 	</Dialog>
 {/if}
 
-<!-- Upgrade confirmation modal (paid → paid tier change) -->
-{#if pendingUpgrade}
-	{@const targetIsAnnual = pendingUpgrade.targetInterval === 'annual'}
+<!-- Unified plan-change dialog (paid → paid upgrade or downgrade) -->
+{#if pendingPlanChange}
+	{@const targetIsAnnual = pendingPlanChange.selectedInterval === 'annual'}
 	{@const currentIsAnnual = data.billingInterval === 'annual'}
+	{@const isUpgrade = pendingPlanChange.direction === 'upgrade'}
 
 	{@const newTierCost = targetIsAnnual
-		? pendingUpgrade.targetAnnualTotal
-		: calcUnusedMonthlyCredit(pendingUpgrade.targetMonthlyPrice)}
+		? pendingPlanChange.targetAnnualTotal
+		: calcUnusedMonthlyCredit(pendingPlanChange.targetMonthlyPrice)}
 
 	{@const currentCredit = currentIsAnnual
 		? calcUnusedAnnualCredit(
@@ -1290,23 +1318,89 @@
 	{@const nextInvoiceEstimate = Math.max(0, newTierCost - currentCredit)}
 
 	<Dialog
-		open={!!pendingUpgrade}
+		open={!!pendingPlanChange}
 		onOpenChange={(open) => {
-			if (!open) closeUpgradeModal();
+			if (!open) closePlanChangeModal();
 		}}
 	>
 		<DialogContent class="max-w-md">
 			<DialogHeader>
 				<DialogTitle>
-					Upgrade to {pendingUpgrade.targetTierName}{targetIsAnnual ? ' — Annual' : ''}
+					{isUpgrade ? 'Upgrade to' : 'Downgrade to'}
+					{pendingPlanChange.targetTierName}
 				</DialogTitle>
 				<DialogDescription class="text-sm text-muted-foreground">
-					You'll get {pendingUpgrade.targetTierName} access right away. The prorated charge appears on
-					your next invoice.
+					{#if isUpgrade}
+						You'll get {pendingPlanChange.targetTierName} access right away. The prorated charge appears
+						on your next invoice.
+					{:else if pendingPlanChange.targetTierKey === 'starter'}
+						Your subscription stays active until the next billing cycle, then moves to Starter.
+						{#if activeAddons.length > 0}
+							Your add-ons ({formatAddonList(activeAddons)}) keep their monthly charges until then,
+							then end with your plan.
+						{/if}
+					{:else}
+						Your subscription moves to {pendingPlanChange.targetTierName} pricing on the next billing
+						cycle. Stripe credits the unused portion. Add-ons stay active.
+					{/if}
 				</DialogDescription>
 			</DialogHeader>
 
 			<div class="flex flex-col gap-3">
+				<!-- Interval picker: two card-style radios. Vendor picks Monthly or
+				     Annual for the target plan. Defaults to current interval at open.
+				     Hidden when target is Starter (free tier has no interval). -->
+				{#if pendingPlanChange.targetTierKey !== 'starter'}
+					<div class="grid grid-cols-2 gap-2">
+						<button
+							type="button"
+							onclick={() => {
+								if (pendingPlanChange) pendingPlanChange.selectedInterval = 'monthly';
+							}}
+							class="flex flex-col gap-0.5 rounded-xl border px-3 py-2.5 text-left transition-colors {pendingPlanChange.selectedInterval ===
+							'monthly'
+								? 'border-primary bg-primary/5'
+								: 'border-gray-200 hover:border-gray-300'}"
+						>
+							<span class="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+								Monthly
+							</span>
+							<span class="text-base font-semibold text-foreground">
+								${pendingPlanChange.targetMonthlyPrice}/mo
+							</span>
+						</button>
+						<button
+							type="button"
+							onclick={() => {
+								if (pendingPlanChange) pendingPlanChange.selectedInterval = 'annual';
+							}}
+							class="flex flex-col gap-0.5 rounded-xl border px-3 py-2.5 text-left transition-colors {pendingPlanChange.selectedInterval ===
+							'annual'
+								? 'border-primary bg-primary/5'
+								: 'border-gray-200 hover:border-gray-300'}"
+						>
+							<div class="flex items-center justify-between">
+								<span class="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+									Annual
+								</span>
+								{#if pendingPlanChange.targetAnnualSavings > 0}
+									<span
+										class="rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-semibold text-primary"
+									>
+										save ${pendingPlanChange.targetAnnualSavings}
+									</span>
+								{/if}
+							</div>
+							<span class="text-base font-semibold text-foreground">
+								${pendingPlanChange.targetAnnualMonthly}/mo
+							</span>
+							<span class="text-xs text-muted-foreground">
+								${pendingPlanChange.targetAnnualTotal}/yr
+							</span>
+						</button>
+					</div>
+				{/if}
+
 				<!-- Billing summary -->
 				<div class="space-y-1.5 rounded-xl border bg-muted/50 px-4 py-3">
 					<p class="mb-2 text-xs font-medium tracking-wide text-muted-foreground uppercase">
@@ -1324,29 +1418,42 @@
 					<div class="flex items-center justify-between text-sm text-foreground">
 						<span>New plan</span>
 						<span class="font-medium">
-							{pendingUpgrade.targetTierName}
+							{pendingPlanChange.targetTierName}
 							{#if targetIsAnnual}
-								· ${pendingUpgrade.targetAnnualTotal}/yr
+								· ${pendingPlanChange.targetAnnualTotal}/yr
 								<span class="text-xs text-muted-foreground"
-									>(${pendingUpgrade.targetAnnualMonthly}/mo)</span
+									>(${pendingPlanChange.targetAnnualMonthly}/mo)</span
 								>
 							{:else}
-								· ${pendingUpgrade.targetMonthlyPrice}/mo
+								· ${pendingPlanChange.targetMonthlyPrice}/mo
 							{/if}
 						</span>
 					</div>
 					<div
 						class="flex items-center justify-between border-t pt-2 text-sm font-semibold text-foreground"
 					>
-						<span>Added to next invoice</span>
-						<span>~{fmtMoney(nextInvoiceEstimate)}</span>
+						<span>{isUpgrade ? 'Added to next invoice' : 'Effective next invoice'}</span>
+						<span>
+							{#if isUpgrade}
+								~{fmtMoney(nextInvoiceEstimate)}
+							{:else}
+								{targetIsAnnual
+									? `$${pendingPlanChange.targetAnnualTotal}/yr`
+									: `$${pendingPlanChange.targetMonthlyPrice}/mo`}
+							{/if}
+						</span>
 					</div>
 				</div>
 
 				<!-- Proration note -->
 				<Alert severity="info" dismissible={false} autofade={0}>
-					Stripe credits the unused portion of your current plan and adds the new plan's prorated
-					cost to your next invoice. Your access to {pendingUpgrade.targetTierName} starts immediately.
+					{#if isUpgrade}
+						Stripe credits the unused portion of your current plan and adds the new plan's prorated
+						cost to your next invoice. Access to {pendingPlanChange.targetTierName} starts immediately.
+					{:else}
+						Your current plan stays active until the next billing cycle. After that, you're moved to
+						{pendingPlanChange.targetTierName}. Stripe credits the unused portion automatically.
+					{/if}
 				</Alert>
 
 				<!-- Trust footer -->
@@ -1356,26 +1463,34 @@
 			</div>
 
 			<DialogFooter class="flex gap-3 sm:flex-row">
-				<Button type="button" onclick={closeUpgradeModal} variant="outline" class="flex-1">
-					Cancel
+				<Button type="button" onclick={closePlanChangeModal} variant="outline" class="flex-1">
+					{isUpgrade ? 'Cancel' : 'Keep current plan'}
 				</Button>
 				<form
 					method="post"
-					action="?/upgrade"
+					action={isUpgrade ? '?/upgrade' : '?/downgrade'}
 					use:enhance={() =>
 						async ({ result, update }) => {
-							pendingUpgrade = null;
+							const wasUpgrade = isUpgrade;
+							pendingPlanChange = null;
 							if (result.type === 'success') {
-								window.location.href = resolve('/dashboard/account/billing') + '?upgraded=1';
+								const flag = wasUpgrade ? 'upgraded=1' : 'downgraded=1';
+								window.location.href = resolve('/dashboard/account/billing') + `?${flag}`;
 							} else {
 								await update({ invalidateAll: true });
 							}
 						}}
 					class="flex-1"
 				>
-					<input type="hidden" name="planKey" value={pendingUpgrade.targetTierKey} />
-					<input type="hidden" name="interval" value={pendingUpgrade.targetInterval} />
-					<Button type="submit" variant="default" class="w-full">Confirm upgrade</Button>
+					<input type="hidden" name="planKey" value={pendingPlanChange.targetTierKey} />
+					<input type="hidden" name="interval" value={pendingPlanChange.selectedInterval} />
+					<Button
+						type="submit"
+						variant={isUpgrade ? 'default' : 'outline'}
+						class="w-full {isUpgrade ? '' : 'text-muted-foreground'}"
+					>
+						{isUpgrade ? 'Confirm upgrade' : 'Confirm downgrade'}
+					</Button>
 				</form>
 			</DialogFooter>
 		</DialogContent>
