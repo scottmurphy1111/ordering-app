@@ -12,6 +12,7 @@
 		type BillingInterval,
 		type AddonItem
 	} from '$lib/billing';
+	import { SvelteDate } from 'svelte/reactivity';
 	import { resolve } from '$app/paths';
 	import { Button } from '$lib/components/ui/button';
 	import { Badge } from '$lib/components/ui/badge';
@@ -115,28 +116,36 @@
 	}
 
 	// --- Pause modal ---
-	type PauseDuration = '30' | '60' | '90' | 'custom';
+	// Preset values represent months. Custom uses an explicit YYYY-MM-DD string.
+	// Server enforces the same 6-month maximum as the UI.
+	type PauseDuration = '1' | '3' | '6' | 'custom';
 	let pendingPauseOpen = $state(false);
-	let pauseDuration = $state<PauseDuration>('30');
+	let pauseDuration = $state<PauseDuration>('1');
 	let pauseCustomDate = $state('');
 
 	function todayPlusDays(n: number): string {
 		return new Date(Date.now() + n * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
 	}
 
+	function todayPlusMonths(n: number): string {
+		const d = new SvelteDate();
+		d.setMonth(d.getMonth() + n);
+		return d.toISOString().slice(0, 10);
+	}
+
 	function computePauseDate(): string {
 		if (pauseDuration === 'custom') return pauseCustomDate;
-		return todayPlusDays(parseInt(pauseDuration, 10));
+		return todayPlusMonths(parseInt(pauseDuration, 10));
 	}
 
 	function closePauseModal() {
 		pendingPauseOpen = false;
-		pauseDuration = '30';
+		pauseDuration = '1';
 		pauseCustomDate = '';
 	}
 
 	const minPauseDate = $derived(todayPlusDays(1));
-	const maxPauseDate = $derived(todayPlusDays(90));
+	const maxPauseDate = $derived(todayPlusMonths(6));
 
 	// --- Unified plan-change modal (paid → paid upgrade OR downgrade) ---
 	type PendingPlanChange = {
@@ -456,7 +465,10 @@
 						</Button>
 					</div>
 				{:else if isPaidPlan && data.hasStripeSubscription}
-					<div data-slot="card-footer" class="flex flex-wrap items-center gap-3 border-t border-gray-100 px-4 py-2">
+					<div
+						data-slot="card-footer"
+						class="flex flex-wrap items-center gap-3 border-t border-gray-100 px-4 py-2"
+					>
 						{#if data.billingInterval === 'monthly'}
 							<Button
 								type="button"
@@ -576,7 +588,10 @@
 				{/if}
 
 				<!-- Action strip links -->
-				<div data-slot="card-footer" class="flex items-center gap-4 border-t border-gray-100 px-4 py-2">
+				<div
+					data-slot="card-footer"
+					class="flex items-center gap-4 border-t border-gray-100 px-4 py-2"
+				>
 					<Button
 						type="button"
 						variant="outline"
@@ -630,7 +645,7 @@
 								     vertical height matches the paid cards. -->
 								{#if tier.price === 0}
 									<p class="mt-1 text-2xl font-bold text-foreground">Free</p>
-									<p class="invisible mt-0.5 text-xs font-medium">spacer line a</p>
+									<p class="mt-0.5 text-xs text-muted-foreground">Free to use, forever</p>
 									<p class="invisible mt-0.5 text-xs">spacer line b</p>
 								{:else}
 									{@const annualTotal =
@@ -1205,7 +1220,7 @@
 			<div class="flex flex-col gap-4">
 				<!-- Duration picker -->
 				<div class="grid grid-cols-3 gap-2">
-					{#each [{ value: '30', label: '30 days' }, { value: '60', label: '60 days' }, { value: '90', label: '90 days' }] as opt (opt.value)}
+					{#each [{ value: '1', label: '1 month' }, { value: '3', label: '3 months' }, { value: '6', label: '6 months' }] as opt (opt.value)}
 						<button
 							type="button"
 							onclick={() => {
@@ -1258,7 +1273,7 @@
 				</Alert>
 
 				<p class="text-center text-xs text-muted-foreground">
-					Pause duration cannot exceed 90 days.
+					Pause duration cannot exceed 6 months.
 				</p>
 			</div>
 

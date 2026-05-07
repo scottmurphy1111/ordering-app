@@ -625,10 +625,10 @@ export const actions: Actions = {
 			return fail(400, { error: 'Pause date must be in the future.' });
 
 		const maxDate = new Date(today);
-		maxDate.setDate(maxDate.getDate() + 90);
+		maxDate.setMonth(maxDate.getMonth() + 6);
 		const maxStr = maxDate.toISOString().slice(0, 10);
 		if (pauseUntilDate > maxStr)
-			return fail(400, { error: 'Pause duration cannot exceed 90 days.' });
+			return fail(400, { error: 'Pause duration cannot exceed 6 months.' });
 
 		const tz = record.timezone ?? 'America/New_York';
 		const resumeAt = pauseUntilTimestamp(pauseUntilDate, tz);

@@ -42,6 +42,7 @@ One-line summaries and links to the detailed sections of this document. Scan thi
 - **Data / list card** — for order cards. Clickable body links to detail; action strip below is NOT inside the link. → [Data / list card](#data--list-card-order-cards)
 - **Stat card** — for dashboard overview. Label + value + CTA link. → [Stat card](#stat-card-dashboard-overview)
 - **Order card typography** — two sizes (`text-sm` primary / `text-xs` secondary), two weights (`font-medium` primary / regular secondary), three gray levels (`text-gray-900` primary / `text-gray-500` secondary / `text-gray-400` tertiary). Status labels are secondary, not primary — the progress row carries visual weight. Amber for time/scheduling, red for destructive — fixed semantic, not hierarchy levels. → [Order card typography hierarchy](#order-card-typography-hierarchy)
+- **Card footer auto-strip** — `<Card>` has `pb-4` baked into its base classes; a `<CardFooter>` child auto-strips it via `has-data-[slot=card-footer]:pb-0`. Hand-rolled action strips inside `<Card>` must include `data-slot="card-footer"` to opt into the same behavior, or the card renders with orphan padding below the strip. → [Data / list card](#data--list-card-order-cards)
 
 ### Tables and lists
 

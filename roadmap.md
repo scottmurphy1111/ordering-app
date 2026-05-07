@@ -4,7 +4,7 @@
 
 **Convention:** Items are tagged by tier. Tier 1 is things every new vendor encounters in their first week — get these right before outreach, no rush. Tier 2 is launch polish. Tier 3 is post-launch. Tier 4 is punted or deliberately not pursued.
 
-Last updated: April 2026.
+Last updated: May 2026.
 
 ---
 
@@ -1066,41 +1066,86 @@ Decide on the canonical placement (page-level vs CardFooter) and sweep all four 
 
 ---
 
+### Admin foundation — impersonation, observability, and panel pages
+
+**Status:** Resolved (2026-05-07) — single-admin internal tooling shipped end-to-end.
+
+**What shipped:**
+- **Impersonation reuse of `/vendors`.** When `users.is_internal === true`, the existing vendor switcher at `/vendors` shows all non-deleted vendors instead of just the user's memberships. Heading reads "All vendors — Admin view · N vendors." Owned vendors keep their actual role label; unowned vendors render with a synthetic `'admin'` role. Selecting any vendor uses the existing cookie + middleware mechanism — no new auth surface needed.
+- **Persistent impersonation banner** in `(app)/+layout.svelte` chrome. Amber bar reading "Acting as **[Vendor]** as admin · Switch back" appears whenever an internal user is acting as a vendor they don't own. Banner does NOT appear on `/[vendorSlug]/*` storefronts (so admins can verify customer-facing UX as the vendor sees it).
+- **`/admin` overview index page** with four stat tiles (active vendors, paid subscriptions, signups in 7 days, signups in 30 days) plus a Scheduled jobs status card showing each cron job's last-run timestamp + OK/Error pill + 7-day error count.
+- **`/admin/metrics` page** with vendor-by-tier breakdown (Starter / Market / Pro), subscriptions-by-state breakdown (Active / Paused / Cancel-scheduled / Past-due), MRR estimate (with disclosure footnote), and 30-day daily-signups chart (hand-rolled bar chart matching the `/dashboard/analytics` pattern).
+- **`/admin/activity` page** with vendor list ordered by `vendor.updatedAt DESC`. Filters: All / Paused / Cancel scheduled / Past due / Recent signups (last 7 days). Search by vendor slug or name. Click a row to impersonate (form submits to existing `/vendors?/select` action).
+- **`/admin/system-events` page** — paginated event table with type filter (cron / webhook) and status filter (OK / Error). Cron rows show `processed` count and any errors in the metadata payload; webhook rows show event type and vendor.
+- **`system_events` table** (migration `0003_slow_praxagora.sql` + status-column follow-up migration). Schema: `id, eventType, status, vendorId, metadata jsonb, createdAt`. Indexed on `createdAt`. Cron runners write a row per run; webhook handler writes a row per event with a `webhook.error` row in the catch block.
+- **Admin link relocation.** Initially placed in the dashboard sidebar; moved to the identity dropdown menu (between "Account settings" and "Sign out") to match the rare-use convention. Visible only when `isInternal === true`.
+- **Auth gate via existing `users.is_internal` boolean.** `(admin)/+layout.server.ts` redirects non-internal users to `/vendors`. All `requireOwner` / `requireAdmin` / `requireStaff` helpers short-circuit when `isInternal === true`, so impersonation gives the admin full vendor capabilities automatically.
+
+**Files involved:**
+- `src/lib/server/db/system-events.ts` — schema
+- `src/routes/(app)/vendors/+page.{server.ts,svelte}` — two-mode vendor switcher
+- `src/routes/(app)/+layout.{server.ts,svelte}` — impersonation banner + `isImpersonating` flag
+- `src/routes/(admin)/+layout.{server.ts,svelte}` — sidebar + auth gate
+- `src/routes/(admin)/admin/+page.{server.ts,svelte}` — overview index
+- `src/routes/(admin)/admin/metrics/+page.{server.ts,svelte}` — metrics dashboard
+- `src/routes/(admin)/admin/activity/+page.{server.ts,svelte}` — activity feed
+- `src/routes/(admin)/admin/system-events/+page.{server.ts,svelte}` — events log
+- `src/routes/(admin)/admin/vendors/+page.{server.ts,svelte}` and `users/+page.{server.ts,svelte}` — pre-existing
+- `src/lib/server/jobs/resume-due.ts`, `src/lib/server/jobs/pause-reminders.ts` — write to system_events
+- `src/routes/api/billing/webhook/+server.ts` — `recordSystemEvent` helper, success and error rows
+- Migrations: `drizzle/0003_slow_praxagora.sql` (system_events table), follow-up status-column migration
+
+**Out of scope of this entry (still applies):**
+- Multi-admin RBAC. Single admin (Scott) only. `is_internal` is the gate.
+- Action logging during impersonation. Skipped — single-admin scale, good-faith assumption.
+- Vendor self-service activity log. Admin-only. Vendors don't see system events.
+- Bypass actions (force refund, comp month, manual subscription manipulation). All vendor-side actions plus impersonation cover these without bespoke admin endpoints.
+- Accessibility / mobile UX for admin pages. Admin is desktop-first; revisit if a second admin user ever appears.
+- Real-time alerting on cron / webhook errors. Surface via `/admin` overview cron tile and the system events page; no Slack/email push.
+
+---
+
 ### Pause/resume subscription
 
-**Status:** Pending — needs-design + build.
+**Status:** Resolved (2026-05-07) — shipped Stripe-native pause + storefront gating + auto-resume cron + reminder emails.
 
-**Why it matters:** Marketing copy on the homepage and `/for-farmers-markets` explicitly promises subscription pause/resume for seasonal vendors:
-- Homepage FAQ: "You can pause Market and Pro subscriptions and resume when you're ready."
-- Farmers markets FAQ: "Market and Pro plans can be paused anytime. When you resume, your catalog, settings, and order history are all still there."
+**What shipped:**
+- New `pauseSubscription` and `resumeSubscription` actions in `src/routes/(app)/dashboard/account/billing/+page.server.ts`. Pause uses `stripe.subscriptions.update(id, { pause_collection: { behavior: 'mark_uncollectible' } })`; resume clears the pause field.
+- Two new vendor schema columns: `subscription_paused_at: timestamp` and `pause_until: timestamp`. Migration `0002_steady_skin.sql`.
+- Pause modal on the billing page with three duration presets (1 month / 3 months / 6 months) and a Custom date picker. Maximum pause duration is 6 months. Selected duration computed via `setMonth(getMonth() + n)` for calendar-month semantics.
+- Resume button on the Current plan action strip when paused. Persistent amber "subscription is paused" banner on the billing page.
+- Storefront pause gating: when a vendor is paused, `/[vendorSlug]/catalog`, `/[vendorSlug]/item/[itemId]`, and `/[vendorSlug]/cart` all show an amber "Online ordering is temporarily unavailable" banner, item Add buttons become Unavailable pills, sticky cart bar hides, and `/api/create-checkout` + `/api/create-payment-intent` return 503. Customer-facing copy is vendor-neutral (no subscription/billing terminology).
+- Daily cron at `netlify/functions/scheduled-billing.mts` → `src/routes/api/cron/billing/+server.ts` calls `runResumeDue` (auto-resumes vendors whose `pause_until` has passed) and `runPauseReminders` (emails 7/3/1 days before resume) in `src/lib/server/jobs/`.
+- Three new email templates: `pauseConfirmedEmail`, `pauseReminderEmail`, `pauseResumedEmail`.
+- Webhook handler defensively mirrors pause state from `customer.subscription.updated` events.
+- Cancel/upgrade/downgrade/interval-switch CTAs hidden while paused. Resume CTA is the only intra-plan action available during pause.
+- System events table records each cron run + each webhook event for observability.
 
-The wedge audience (farmers market vendors) is explicitly seasonal. The pause promise is a real signup driver. The implementation does not exist — a vendor signing up based on this promise would discover post-payment that no pause UI exists. Promise-vs-reality gap; ship before scaling vendor outreach.
+**Files involved:**
+- `src/lib/server/db/vendor.ts` — pause columns
+- `src/lib/server/db/system-events.ts` — observability table (added in admin foundation work)
+- `src/lib/billing.ts` — `pauseUntilTimestamp` helper (date + IANA timezone → end-of-day UTC)
+- `src/lib/server/jobs/{resume-due.ts, pause-reminders.ts, index.ts}` — cron runners
+- `src/lib/server/email/templates/{pauseConfirmed.ts, pauseReminder.ts, pauseResumed.ts}` — email bodies
+- `src/routes/(app)/dashboard/account/billing/+page.{server.ts,svelte}` — modal, action strip, banner
+- `src/routes/(public)/[vendorSlug]/catalog/+page.svelte`, `.../item/[itemId]/+page.svelte`, `.../cart/+page.svelte` — storefront gating
+- `src/routes/api/create-checkout/+server.ts`, `src/routes/api/create-payment-intent/+server.ts` — 503 guards
+- `src/routes/api/billing/webhook/+server.ts` — defensive mirror
+- `netlify/functions/scheduled-billing.mts`, `src/routes/api/cron/billing/+server.ts` — scheduler shell
+- Migrations: `drizzle/0002_steady_skin.sql`
 
-Note: the existing Tier 3 entry "Pause for the season" covers storefront-level pause (stopping order intake). This entry is specifically about billing pause — halting charges during an off-season without cancelling the subscription.
+**Out of scope of this entry (still applies):**
+- Item limit enforcement during pause: not implemented; paused vendors retain their tier's item limit.
+- Per-vendor pause analytics (how often each vendor pauses) — not built.
+- Pause for storefront-only without billing pause — separate Tier 3 "Pause for the season" entry.
 
-**Approach options:**
-- **Stripe-native pause:** `stripe.subscriptions.update(id, { pause_collection: { behavior: 'mark_uncollectible' } })` pauses billing without cancelling. Vendor keeps access; resume by clearing the pause field. Simplest implementation, matches the marketing promise.
-- **Cancel-and-rejoin:** vendor cancels (existing flow), comes back later, signs up fresh. No data loss (vendor record persists), but loses billing continuity. Implementable today; no new code needed but doesn't match "resume."
-- **Hybrid:** Stripe-native pause for billing; existing storefront-pause for order intake. Both can be wired independently.
+**Resolved questions:**
+- Vendor keeps access to paid features during pause (data safe, dashboard accessible). ✓
+- Add-ons stay attached but are not billed during pause. ✓
+- Maximum pause duration: 6 months. ✓ (originally undecided; settled this session.)
+- Item limit enforcement during pause: deferred — vendors keep their existing limits unchanged.
 
-**Decision rule:** Stripe-native pause is the right answer for the billing side — matches the marketing promise and preserves subscription continuity.
-
-**Affected callsites when implementing:**
-- New action `pauseSubscription` in `src/routes/(app)/dashboard/account/billing/+page.server.ts`
-- New action `resumeSubscription` in same file
-- Webhook `customer.subscription.updated` already handles status updates; verify `pause_collection` state is reflected (Stripe status may stay `active` during pause)
-- New DB column or status value for "paused" — design decision: overload `subscriptionStatus` with `'paused'`, or add `subscriptionPausedAt: timestamp`
-- Billing page UI: pause button on Current plan card; resume button when paused; clear visual indicator; hide upgrade/downgrade/switch-interval CTAs while paused
-
-**Open questions:**
-- During pause, does the vendor still have access to paid features? (Probably yes — "your catalog, settings, and order history are all still there.")
-- Add-ons during pause: also paused or cancelled?
-- Maximum pause duration?
-- Item limit enforcement during pause?
-
-**Estimated effort:** 2–3 days. Action handlers + UI + design decisions on open questions.
-
-**Trigger:** Before public marketing push that drives signups based on the pause promise. For first-25 founding vendors with personal onboarding, less urgent — but the FAQ is publicly indexed.
+> **Original analysis (preserved for context):** The implementation gap between the pause promise on the marketing site and the actual product was the forcing function for this entry. Stripe-native pause was the right answer — matches the marketing copy and preserves subscription continuity without a cancel-and-rejoin hack. The hybrid approach (billing pause + storefront pause independently wired) is what shipped.
 
 ---
 
