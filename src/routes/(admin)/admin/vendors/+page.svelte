@@ -118,7 +118,7 @@
 								<TableCell class="px-4 py-3">
 									<Badge class={statusClass(t)}>
 										{#if t.isActive && !t.deletedAt}
-											<span class="h-1.5 w-1.5 rounded-full bg-primary/100"></span>
+											<span class="h-1.5 w-1.5 rounded-full bg-primary"></span>
 										{/if}
 										{statusLabel(t)}
 									</Badge>

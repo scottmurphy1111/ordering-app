@@ -108,7 +108,7 @@
 										<Badge class="bg-destructive/10 text-red-600">Suspended</Badge>
 									{:else if u.emailVerified}
 										<Badge class="bg-success/10 text-success">
-											<span class="h-1.5 w-1.5 rounded-full bg-primary/100"></span>
+											<span class="h-1.5 w-1.5 rounded-full bg-primary"></span>
 											Active
 										</Badge>
 									{:else}

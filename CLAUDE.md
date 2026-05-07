@@ -808,6 +808,16 @@ Status pills use fixed hex colors per status — see the `statusStyles` map in t
 | Subtle bg          | `bg-gray-50`       | #f9fafb |
 | White              | `bg-white`         | #ffffff |
 
+### Hardcoded color exception zones
+
+Three zones in the codebase use hardcoded hex colors for brand green. These are NOT drift; do not migrate them to design tokens.
+
+- **Email templates** (`src/lib/server/email/templates/*.ts`) — inline-styled HTML. Many email clients (Outlook, parts of the Gmail rendering surface) don't resolve CSS custom properties, so emails ship with hex codes inline. When updating email styling, hex codes are correct.
+- **Stripe Elements appearance configs** (`(app)/dashboard/account/billing/checkout/+page.svelte`, `(app)/dashboard/account/billing/payment-methods/add/+page.svelte`) — Stripe Elements renders in an iframe and cannot read the parent's CSS variables. The `appearance` config object passed to Stripe must use literal hex.
+- **Marketing page mockup decoration** (`src/routes/+page.svelte` lines 477 and 522) — the homepage shows a mocked-up dashboard preview that illustrates the brand-default aesthetic. It's pictorial, not interactive, and never themed.
+
+When auditing brand colors: grep for green class strings or hex codes, then exclude these three zones. What remains is the migration target.
+
 **Storefront-specific colors:** the public storefront (`/[vendorSlug]/catalog`) uses CSS variables driven by the vendor's branding settings (background, foreground, accent). The palette above applies only to the dashboard, marketing site, and admin areas.
 
 **Decision rule for `text-green-600` callsites during the sweep:** if the role is "primary action / brand affordance," migrate to `text-primary` (themable). If the role is "positive indicator / money / successful state," migrate to `text-success` (fixed). When unclear, the question to ask is: "would a vendor with a purple brand want this element to be purple?" If yes → `text-primary`. If no → `text-success`.

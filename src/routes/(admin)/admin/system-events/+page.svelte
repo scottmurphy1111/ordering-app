@@ -44,7 +44,7 @@
 	<div class="mb-4 flex flex-wrap items-center gap-3">
 		<input
 			type="text"
-			class="h-8 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm placeholder:text-gray-400 focus:border-transparent focus:ring-2 focus:ring-green-500 focus:outline-none md:w-64"
+			class="h-8 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm placeholder:text-gray-400 focus:border-transparent focus:ring-2 focus:ring-ring focus:outline-none md:w-64"
 			placeholder="Filter by type (e.g. cron, webhook)"
 			value={data.typeFilter}
 			oninput={(e) => navigate({ type: (e.target as HTMLInputElement).value })}

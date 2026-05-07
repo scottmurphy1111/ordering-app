@@ -71,7 +71,7 @@
 		<input
 			type="text"
 			placeholder="Search by name or slug…"
-			class="h-8 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm placeholder:text-gray-400 focus:border-transparent focus:ring-2 focus:ring-green-500 focus:outline-none md:w-64"
+			class="h-8 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm placeholder:text-gray-400 focus:border-transparent focus:ring-2 focus:ring-ring focus:outline-none md:w-64"
 			value={data.search}
 			oninput={(e) => navigate({ search: (e.target as HTMLInputElement).value })}
 		/>

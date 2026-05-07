@@ -1255,7 +1255,7 @@
 							bind:value={pauseCustomDate}
 							min={minPauseDate}
 							max={maxPauseDate}
-							class="h-8 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm focus:ring-2 focus:ring-green-500 focus:outline-none"
+							class="h-8 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm focus:ring-2 focus:ring-ring focus:outline-none"
 						/>
 					</div>
 				{:else}

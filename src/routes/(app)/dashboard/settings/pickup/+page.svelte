@@ -1509,7 +1509,7 @@
 									min="1"
 									value={occ.maxOrders ?? ''}
 									placeholder={tmpl.maxOrders ? String(tmpl.maxOrders) : 'No limit'}
-									class="w-24 rounded-md border border-gray-200 px-2 py-1 text-xs focus:ring-1 focus:ring-green-500 focus:outline-none"
+									class="w-24 rounded-md border border-gray-200 px-2 py-1 text-xs focus:ring-1 focus:ring-ring focus:outline-none"
 								/>
 								<p class="mt-0.5 text-[10px] text-muted-foreground">
 									Template default: {tmpl.maxOrders ? `${tmpl.maxOrders} orders` : 'No cap'}
@@ -1526,7 +1526,7 @@
 									maxlength="500"
 									rows="2"
 									placeholder="E.g. Pickup at side door this week"
-									class="w-full resize-none rounded-md border border-gray-200 px-2 py-1 text-xs focus:ring-1 focus:ring-green-500 focus:outline-none"
+									class="w-full resize-none rounded-md border border-gray-200 px-2 py-1 text-xs focus:ring-1 focus:ring-ring focus:outline-none"
 									>{occ.notes ?? ''}</textarea
 								>
 								<p class="mt-0.5 text-[10px] text-muted-foreground">
