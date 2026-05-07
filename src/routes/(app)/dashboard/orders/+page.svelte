@@ -261,7 +261,7 @@
 
 <div>
 	<!-- Header -->
-	<div class="mb-5 flex items-center justify-between gap-3 print:hidden">
+	<div class="mb-5 flex flex-col gap-3 print:hidden md:flex-row md:items-center md:justify-between">
 		<h1 class="text-2xl font-bold text-gray-900">Orders</h1>
 		<div class="flex items-center gap-2">
 			<Button
@@ -284,7 +284,7 @@
 	{/if}
 
 	<!-- Orders / Production view toggle -->
-	<div class="mb-4 flex items-center justify-between gap-3 print:hidden">
+	<div class="mb-4 flex flex-col gap-3 print:hidden md:flex-row md:items-center md:justify-between">
 		<Tabs
 			value={data.view === 'production' ? 'production' : 'orders'}
 			onValueChange={(v) =>

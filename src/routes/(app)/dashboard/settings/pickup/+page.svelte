@@ -621,7 +621,7 @@
 					<TableHeader>
 						<TableRow>
 							<TableHead>Name</TableHead>
-							<TableHead>Address</TableHead>
+							<TableHead class="hidden md:table-cell">Address</TableHead>
 							<TableHead>Status</TableHead>
 							<TableHead class="text-right">Actions</TableHead>
 						</TableRow>
@@ -630,7 +630,7 @@
 						{#each data.locations as loc (loc.id)}
 							<TableRow>
 								<TableCell class="font-medium">{loc.name}</TableCell>
-								<TableCell class="text-sm text-muted-foreground">
+								<TableCell class="hidden text-sm text-muted-foreground md:table-cell">
 									{formatAddress(loc.address)}
 								</TableCell>
 								<TableCell>
@@ -641,7 +641,7 @@
 									{/if}
 								</TableCell>
 								<TableCell class="text-right">
-									<div class="flex items-center justify-end gap-3">
+									<div class="flex flex-col items-stretch gap-1 md:flex-row md:items-center md:justify-end md:gap-3">
 										<Button
 											type="button"
 											onclick={() => {
@@ -650,7 +650,7 @@
 												editError = null;
 											}}
 											variant="ghost"
-											class="h-auto p-0 text-xs text-muted-foreground hover:text-foreground"
+											class="h-auto w-full p-0 text-xs text-muted-foreground hover:text-foreground md:w-auto"
 										>
 											Edit
 										</Button>
@@ -659,7 +659,7 @@
 											<Button
 												type="submit"
 												variant="ghost"
-												class="h-auto p-0 text-xs {loc.isActive
+												class="h-auto w-full p-0 text-xs md:w-auto {loc.isActive
 													? 'text-muted-foreground hover:text-destructive'
 													: 'text-muted-foreground hover:text-primary'}"
 											>
@@ -1188,7 +1188,7 @@
 									data.timezone
 								)}
 								<div class={i > 0 ? 'border-t' : ''}>
-									<div class="flex items-center justify-between px-4 py-3">
+									<div class="flex flex-col gap-2 px-4 py-3 md:flex-row md:items-center md:justify-between">
 										<span class="text-sm text-foreground">
 											{formatTime(tmpl.windowStart)}–{formatTime(tmpl.windowEnd)}
 											· {formatRecurrence(tmpl.recurrence)}
@@ -1196,7 +1196,7 @@
 												? `Max ${tmpl.maxOrders}`
 												: 'No cap'}{tmplDateRange ? ` · ${tmplDateRange}` : ''}
 										</span>
-										<div class="flex shrink-0 items-baseline gap-3 pl-4">
+										<div class="flex shrink-0 items-baseline gap-3 md:pl-4">
 											<Button
 												type="button"
 												onclick={() => {
@@ -1310,7 +1310,7 @@
 								data.timezone
 							)}
 							<div class={i > 0 ? 'border-t' : ''}>
-								<div class="flex items-center justify-between px-4 py-3">
+								<div class="flex flex-col gap-2 px-4 py-3 md:flex-row md:items-center md:justify-between">
 									<span class="text-sm text-foreground">
 										{formatTime(tmpl.windowStart)}–{formatTime(tmpl.windowEnd)}
 										· {formatRecurrence(tmpl.recurrence)}
@@ -1318,7 +1318,7 @@
 											? `Max ${tmpl.maxOrders}`
 											: 'No cap'}{tmplDateRange ? ` · ${tmplDateRange}` : ''}
 									</span>
-									<div class="flex shrink-0 items-center gap-3 pl-4">
+									<div class="flex shrink-0 items-center gap-3 md:pl-4">
 										<Button
 											type="button"
 											onclick={() => {

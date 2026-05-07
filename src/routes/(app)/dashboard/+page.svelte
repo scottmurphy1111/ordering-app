@@ -467,9 +467,9 @@
 						<TableHeader>
 							<TableRow class="hover:bg-transparent">
 								<TableHead>Order</TableHead>
-								<TableHead class="hidden sm:table-cell">Customer</TableHead>
+								<TableHead class="hidden md:table-cell">Customer</TableHead>
 								<TableHead>Status</TableHead>
-								<TableHead class="hidden text-right sm:table-cell">Total</TableHead>
+								<TableHead class="hidden text-right md:table-cell">Total</TableHead>
 								<TableHead class="text-right">When</TableHead>
 							</TableRow>
 						</TableHeader>
@@ -482,7 +482,7 @@
 									<TableCell class="font-mono text-xs font-medium">
 										{shortOrderId(order.orderNumber)}
 									</TableCell>
-									<TableCell class="hidden sm:table-cell">{order.customerName ?? '—'}</TableCell>
+									<TableCell class="hidden md:table-cell">{order.customerName ?? '—'}</TableCell>
 									<TableCell>
 										{@const stage = lifecycleStages.find((s) => s.value === order.status)}
 										{#if stage}
@@ -507,7 +507,7 @@
 											</span>
 										{/if}
 									</TableCell>
-									<TableCell class="hidden text-right font-medium sm:table-cell">
+									<TableCell class="hidden text-right font-medium md:table-cell">
 										${(order.total / 100).toFixed(2)}
 									</TableCell>
 									<TableCell class="text-right text-xs text-muted-foreground">

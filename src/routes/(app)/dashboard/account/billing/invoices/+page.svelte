@@ -79,7 +79,7 @@
 					<TableHeader>
 						<TableRow class="hover:bg-transparent">
 							<TableHead class="px-4 py-2.5">Date</TableHead>
-							<TableHead class="hidden px-4 py-2.5 sm:table-cell">Invoice</TableHead>
+							<TableHead class="hidden px-4 py-2.5 md:table-cell">Invoice</TableHead>
 							<TableHead class="px-4 py-2.5">Amount</TableHead>
 							<TableHead class="px-4 py-2.5">Status</TableHead>
 							<TableHead class="px-4 py-2.5"></TableHead>
@@ -91,7 +91,7 @@
 								<TableCell class="px-4 py-3 text-sm text-gray-900">
 									{formatDate(invoice.created)}
 								</TableCell>
-								<TableCell class="hidden px-4 py-3 sm:table-cell">
+								<TableCell class="hidden px-4 py-3 md:table-cell">
 									<span class="font-mono text-xs text-muted-foreground">
 										{invoice.number ?? '—'}
 									</span>
@@ -109,7 +109,7 @@
 									</span>
 								</TableCell>
 								<TableCell class="px-4 py-3 text-right">
-									<div class="flex items-center justify-end gap-1">
+									<div class="flex flex-col items-stretch gap-1 md:flex-row md:items-center md:justify-end">
 										{#if invoice.hostedInvoiceUrl}
 											<!-- eslint-disable svelte/no-navigation-without-resolve -->
 											<Button
@@ -118,7 +118,7 @@
 												rel="noopener noreferrer"
 												variant="ghost"
 												size="xs"
-												class="gap-1"
+												class="w-full gap-1 md:w-auto"
 											>
 												<Icon icon="mdi:eye-outline" class="h-3.5 w-3.5" />
 												View
@@ -133,7 +133,7 @@
 												rel="noopener noreferrer"
 												variant="ghost"
 												size="xs"
-												class="gap-1"
+												class="w-full gap-1 md:w-auto"
 											>
 												<Icon icon="mdi:download" class="h-3.5 w-3.5" />
 												PDF

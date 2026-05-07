@@ -236,7 +236,7 @@
 							<TableRow class="hover:bg-transparent">
 								<TableHead class="px-4 py-2.5">User</TableHead>
 								<TableHead class="px-4 py-2.5">Role</TableHead>
-								<TableHead class="hidden px-4 py-2.5 sm:table-cell">Added</TableHead>
+								<TableHead class="hidden px-4 py-2.5 md:table-cell">Added</TableHead>
 								<TableHead class="px-4 py-2.5"></TableHead>
 							</TableRow>
 						</TableHeader>
@@ -279,7 +279,7 @@
 											</Badge>
 										{/if}
 									</TableCell>
-									<TableCell class="hidden px-4 py-3 text-xs text-muted-foreground sm:table-cell">
+									<TableCell class="hidden px-4 py-3 text-xs text-muted-foreground md:table-cell">
 										{new Date(member.assignedAt).toLocaleDateString([], {
 											month: 'short',
 											day: 'numeric',
@@ -288,7 +288,7 @@
 									</TableCell>
 									<TableCell class="px-4 py-3 text-right">
 										{#if member.userId !== data.currentUserId && (data.currentRole === 'owner' || data.currentRole === 'manager')}
-											<div class="flex items-center justify-end gap-3">
+											<div class="flex flex-col items-stretch gap-1 md:flex-row md:items-center md:justify-end md:gap-3">
 												{#if data.canManageInternal && !member.isInternal}
 													<form method="post" action="?/toggleInternal" use:enhance>
 														<input type="hidden" name="userId" value={member.userId} />
@@ -307,7 +307,7 @@
 																	form?.requestSubmit();
 															}}
 															variant="ghost"
-															class="hidden text-indigo-500 hover:text-indigo-700 sm:inline-flex"
+															class="w-full text-indigo-500 hover:text-indigo-700 md:w-auto"
 														>
 															Make internal
 														</Button>
@@ -324,7 +324,7 @@
 																form?.requestSubmit();
 														}}
 														variant="ghost"
-														class="text-destructive hover:text-destructive/80"
+														class="w-full text-destructive hover:text-destructive/80 md:w-auto"
 													>
 														Remove
 													</Button>
@@ -353,7 +353,7 @@
 									<TableRow class="hover:bg-transparent">
 										<TableHead class="px-4 py-2.5">Email</TableHead>
 										<TableHead class="px-4 py-2.5">Role</TableHead>
-										<TableHead class="hidden px-4 py-2.5 sm:table-cell">Expires</TableHead>
+										<TableHead class="hidden px-4 py-2.5 md:table-cell">Expires</TableHead>
 										<TableHead class="px-4 py-2.5"></TableHead>
 									</TableRow>
 								</TableHeader>
@@ -369,7 +369,7 @@
 												</Badge>
 											</TableCell>
 											<TableCell
-												class="hidden px-4 py-3 text-xs text-muted-foreground sm:table-cell"
+												class="hidden px-4 py-3 text-xs text-muted-foreground md:table-cell"
 											>
 												{new Date(invite.expiresAt).toLocaleDateString([], {
 													month: 'short',
@@ -378,13 +378,13 @@
 												})}
 											</TableCell>
 											<TableCell class="px-4 py-3 text-right">
-												<div class="flex items-center justify-end gap-3">
+												<div class="flex flex-col items-stretch gap-1 md:flex-row md:items-center md:justify-end md:gap-3">
 													<Button
 														type="button"
 														onclick={() =>
 															copyLink(`${data.origin}/invite/${invite.id}`, invite.id)}
 														variant="ghost"
-														class="text-blue-500 hover:text-blue-700"
+														class="w-full text-blue-500 hover:text-blue-700 md:w-auto"
 													>
 														{copiedToken === invite.id ? 'Copied!' : 'Copy link'}
 													</Button>
@@ -399,7 +399,7 @@
 																	form?.requestSubmit();
 															}}
 															variant="ghost"
-															class="text-destructive hover:text-destructive/80"
+															class="w-full text-destructive hover:text-destructive/80 md:w-auto"
 														>
 															Cancel
 														</Button>
@@ -440,7 +440,7 @@
 								<TableHeader>
 									<TableRow class="hover:bg-transparent">
 										<TableHead class="px-4 py-2.5">User</TableHead>
-										<TableHead class="hidden px-4 py-2.5 sm:table-cell">Account created</TableHead>
+										<TableHead class="hidden px-4 py-2.5 md:table-cell">Account created</TableHead>
 										<TableHead class="px-4 py-2.5"></TableHead>
 									</TableRow>
 								</TableHeader>
@@ -452,7 +452,7 @@
 												<p class="text-xs text-muted-foreground">{u.email}</p>
 											</TableCell>
 											<TableCell
-												class="hidden px-4 py-3 text-xs text-muted-foreground sm:table-cell"
+												class="hidden px-4 py-3 text-xs text-muted-foreground md:table-cell"
 											>
 												{new Date(u.createdAt).toLocaleDateString([], {
 													month: 'short',

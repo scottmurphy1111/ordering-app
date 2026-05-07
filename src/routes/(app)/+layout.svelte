@@ -203,7 +203,7 @@
 					Account settings
 				</DropdownMenuItem>
 				{#if data.user.isInternal}
-					<DropdownMenuItem onclick={() => goto(resolve('/admin/vendors'))}>
+					<DropdownMenuItem onclick={() => goto(resolve('/admin'))}>
 						<Icon icon="mdi:shield-crown-outline" class="h-4 w-4" />
 						Admin panel
 					</DropdownMenuItem>

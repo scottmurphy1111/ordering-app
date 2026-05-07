@@ -211,7 +211,7 @@
 							<TableRow class="hover:bg-transparent">
 								<TableHead class="px-4 py-2.5">Code</TableHead>
 								<TableHead class="px-4 py-2.5">Discount</TableHead>
-								<TableHead class="hidden px-4 py-2.5 sm:table-cell">Usage</TableHead>
+								<TableHead class="hidden px-4 py-2.5 md:table-cell">Usage</TableHead>
 								<TableHead class="hidden px-4 py-2.5 md:table-cell">Expires</TableHead>
 								<TableHead class="px-4 py-2.5">Status</TableHead>
 								<TableHead class="px-4 py-2.5"></TableHead>
@@ -234,7 +234,7 @@
 									<TableCell class="px-4 py-3 font-semibold text-foreground"
 										>{formatAmount(promo.type, promo.amount)}</TableCell
 									>
-									<TableCell class="hidden px-4 py-3 text-muted-foreground sm:table-cell"
+									<TableCell class="hidden px-4 py-3 text-muted-foreground md:table-cell"
 										>{promo.usedCount}{promo.maxUses !== null
 											? ` / ${promo.maxUses}`
 											: ''}</TableCell

@@ -3,6 +3,7 @@
 	import { SvelteDate } from 'svelte/reactivity';
 	import type { PageData } from './$types';
 	import { cart, itemUnitPrice } from '$lib/cart.svelte';
+	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import Icon from '@iconify/svelte';
 	import { Card, CardContent } from '$lib/components/ui/card';
@@ -277,8 +278,8 @@
 					loading = false;
 					return;
 				}
-				cart.clear();
 				window.location.href = result.url;
+				cart.clear();
 			} else {
 				// One-time orders use custom Payment Element checkout
 				const res = await fetch('/api/create-payment-intent', {
@@ -303,8 +304,8 @@
 					loading = false;
 					return;
 				}
+				await goto(resolve(`/${data.vendorSlug}/checkout?orderId=${result.orderId}` as `/${string}`));
 				cart.clear();
-				window.location.href = `/${data.vendorSlug}/checkout?orderId=${result.orderId}`;
 			}
 		} catch {
 			checkoutError = 'Network error. Please try again.';
