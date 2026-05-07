@@ -170,20 +170,10 @@
 				Switch shop
 			</a>
 		{/if}
-		{#if data.user.isInternal}
-			<a
-				href={resolve('/admin/vendors')}
-				class="flex items-center gap-2.5 rounded-md px-3 py-2 text-sm font-normal text-muted-foreground transition-colors hover:bg-gray-800 hover:text-white"
-			>
-				<Icon icon="mdi:shield-crown-outline" class="h-4 w-4 shrink-0" />
-				Admin panel
-			</a>
-		{/if}
-
 		<!-- Identity card -->
 		<DropdownMenu>
 			<DropdownMenuTrigger
-				class="w-full rounded-lg border border-white/8 bg-white/6 px-3 py-2.5 text-left transition-colors hover:bg-white/9 focus:outline-none"
+				class="w-full rounded-lg px-3 py-2.5 text-left transition-colors hover:bg-white/9 focus:outline-none"
 			>
 				<div class="flex items-center gap-2.5">
 					<div
@@ -209,6 +199,12 @@
 					<Icon icon="mdi:account-circle-outline" class="h-4 w-4" />
 					Account settings
 				</DropdownMenuItem>
+				{#if data.user.isInternal}
+					<DropdownMenuItem onclick={() => goto(resolve('/admin/vendors'))}>
+						<Icon icon="mdi:shield-crown-outline" class="h-4 w-4" />
+						Admin panel
+					</DropdownMenuItem>
+				{/if}
 				<DropdownMenuSeparator />
 				<DropdownMenuItem
 					variant="destructive"
