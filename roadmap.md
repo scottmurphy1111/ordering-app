@@ -398,6 +398,36 @@ Navigating from cart to checkout briefly shows an empty cart page (visual flash)
 
 ---
 
+### Shared data display primitives — extract from hand-rolled callsites
+
+**Status:** Pending — needs-design.
+
+**Why it matters:** Stat tiles and charts appear on `/dashboard` (overview KPIs), `/dashboard/analytics` (revenue chart, top-items, fulfillment), `/admin` (overview tiles + cron status), `/admin/metrics` (richer stat tiles + signups chart), and admin activity surfaces. Every callsite is hand-rolled — `<Card>` + inline flex layouts for tiles, `<div>` bars with inline `style="height: ..."` for charts. The visual treatment drifts: tile padding varies, icon sizing varies, chart bar widths vary. Centralizing into a `<StatTile>` and a small chart primitive (likely `<BarChart>` for now) would reduce drift and make future styling tweaks one-touch.
+
+**Current state:**
+- `/dashboard/analytics/+page.svelte` has the canonical hand-rolled chart pattern (`<div class="flex h-36 items-end gap-px">` with per-bar `style="height: {height}px"`).
+- `/dashboard/+page.svelte` overview KPI tiles use `<Card>` + inline flex.
+- `/admin/+page.svelte` and `/admin/metrics/+page.svelte` follow the same pattern.
+
+**Path options (decide before building):**
+
+- **Path A — `<StatTile>` only.** Extract the icon + label + value tile pattern. Skips charts. Effort: ~half a day. Most callsites covered.
+- **Path B — `<StatTile>` + `<BarChart>`.** Extract both primitives. The bar chart has tooltips, hover state, and "not enough data" fallback that's currently duplicated. Effort: ~1 day.
+- **Path C — Adopt a chart library** (LayerChart, Chart.js, Recharts). Migrates all chart callsites to the library's idioms. Effort: 2–3 days plus visual review for parity.
+
+**Decision rule:**
+- If the next data display is also hand-rolled → A is enough.
+- If a third or fourth chart appears (e.g., admin metrics adds a churn chart, analytics adds a category breakdown) → B becomes worth it.
+- If a complex chart is ever needed (multi-series, stacked, area) → C is the right answer; hand-rolled won't scale.
+
+**Trigger:** When the third chart callsite is added, OR when a styling tweak to existing chart bars feels frustrating (i.e., having to update three files to change the bar color).
+
+**Out of scope of this entry:**
+- Customer-facing chart treatments (storefront has none today).
+- Replacing the analytics page's KPI summary bar with a tile primitive (it's a horizontal strip, different shape).
+
+---
+
 ### Marketing site copy sweep
 
 **Status:** Pending. Tier 2 cleanup landed inside the dashboard but didn't touch marketing pages by design.

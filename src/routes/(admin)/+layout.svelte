@@ -11,6 +11,8 @@
 
 	const navItems = [
 		{ href: '/admin', label: 'Overview', icon: 'mdi:view-dashboard-outline' },
+		{ href: '/admin/metrics', label: 'Metrics', icon: 'mdi:chart-line' },
+		{ href: '/admin/activity', label: 'Activity', icon: 'mdi:lightning-bolt-outline' },
 		{ href: '/admin/vendors', label: 'Vendors', icon: 'mdi:store-outline' },
 		{ href: '/admin/users', label: 'Users', icon: 'mdi:account-group-outline' },
 		{ href: '/admin/system-events', label: 'System events', icon: 'mdi:timeline-clock-outline' }
