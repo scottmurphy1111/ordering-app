@@ -11,6 +11,7 @@
 	onMount(() => cart.init(data.vendorSlug));
 
 	const modifierGroups = $derived(data.modifierGroups);
+	const isPaused = $derived(!!data.vendor.subscriptionPausedAt);
 	const basePrice = $derived(data.item.discountedPrice ?? data.item.price);
 	const images = $derived(
 		(data.item.images as { url: string; alt?: string; isPrimary?: boolean }[] | null) ?? []
@@ -217,16 +218,28 @@
 		{/if}
 
 		<!-- Add to cart -->
-		<div class="sticky bottom-4">
-			<button
-				type="button"
-				onclick={addToCart}
-				disabled={!canAdd}
-				style="background-color: var(--background-color); color: var(--foreground-color);"
-				class="w-full rounded-xl px-6 py-4 text-base font-semibold shadow-lg transition-opacity hover:opacity-90 disabled:opacity-50"
+		{#if isPaused}
+			<div
+				class="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-center text-sm text-amber-800"
 			>
-				Add to Cart — ${(totalPrice / 100).toFixed(2)}
-			</button>
-		</div>
+				<Icon
+					icon="mdi:pause-circle-outline"
+					class="mb-0.5 inline-block h-4 w-4 align-text-bottom"
+				/>
+				Online ordering is temporarily unavailable. Check back soon.
+			</div>
+		{:else}
+			<div class="sticky bottom-4">
+				<button
+					type="button"
+					onclick={addToCart}
+					disabled={!canAdd}
+					style="background-color: var(--background-color); color: var(--foreground-color);"
+					class="w-full rounded-xl px-6 py-4 text-base font-semibold shadow-lg transition-opacity hover:opacity-90 disabled:opacity-50"
+				>
+					Add to Cart — ${(totalPrice / 100).toFixed(2)}
+				</button>
+			</div>
+		{/if}
 	</main>
 </div>

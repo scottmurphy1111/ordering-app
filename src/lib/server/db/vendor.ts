@@ -93,6 +93,8 @@ export const vendor = pgTable(
 		// the card refund AND the balance-credit fallback threw. Vendor loses service
 		// in that path with no audit row — pre-existing failure mode, separate concern.
 		subscriptionRefundedAt: timestamp('subscription_refunded_at'),
+		subscriptionPausedAt: timestamp('subscription_paused_at'),
+		pauseUntil: timestamp('pause_until'),
 		stripeCustomerId: varchar('stripe_customer_id', { length: 255 }),
 		stripeSubscriptionId: varchar('stripe_subscription_id', { length: 255 }),
 

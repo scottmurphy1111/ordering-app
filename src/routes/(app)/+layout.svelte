@@ -285,6 +285,25 @@
 			</a>
 		</header>
 
+		{#if data.isImpersonating && data.vendor}
+			<div
+				class="border-b border-amber-200 bg-amber-50 px-4 py-2 text-sm text-amber-900 print:hidden"
+			>
+				<div class="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3">
+					<span class="flex items-center gap-2">
+						<Icon icon="mdi:shield-account-outline" class="h-4 w-4 shrink-0" />
+						Acting as <strong class="font-semibold">{data.vendor.name}</strong> as admin.
+					</span>
+					<a
+						href={resolve('/vendors')}
+						class="font-medium text-amber-900 underline transition-colors hover:text-amber-700"
+					>
+						Switch back
+					</a>
+				</div>
+			</div>
+		{/if}
+
 		<div class="mx-auto w-full max-w-5xl flex-1 px-4 py-6 sm:px-6 sm:py-8">
 			{@render children()}
 		</div>

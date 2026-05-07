@@ -10,11 +10,15 @@
 	let { data, children }: { data: LayoutData; children: import('svelte').Snippet } = $props();
 
 	const navItems = [
+		{ href: '/admin', label: 'Overview', icon: 'mdi:view-dashboard-outline' },
 		{ href: '/admin/vendors', label: 'Vendors', icon: 'mdi:store-outline' },
-		{ href: '/admin/users', label: 'Users', icon: 'mdi:account-group-outline' }
+		{ href: '/admin/users', label: 'Users', icon: 'mdi:account-group-outline' },
+		{ href: '/admin/system-events', label: 'System events', icon: 'mdi:timeline-clock-outline' }
 	];
 
 	function isActive(href: string) {
+		// /admin must match exactly; otherwise it would highlight on every /admin/* page.
+		if (href === '/admin') return page.url.pathname === '/admin';
 		return page.url.pathname.startsWith(href);
 	}
 </script>

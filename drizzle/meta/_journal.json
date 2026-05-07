@@ -15,6 +15,20 @@
       "when": 1778093538787,
       "tag": "0001_sour_paladin",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1778108133729,
+      "tag": "0002_steady_skin",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1778113589214,
+      "tag": "0003_slow_praxagora",
+      "breakpoints": true
     }
   ]
 }

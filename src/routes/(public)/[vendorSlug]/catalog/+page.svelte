@@ -13,6 +13,7 @@
 
 	const vendor = $derived(data.vendor);
 	const settings = $derived(vendor.settings as Record<string, unknown> | null);
+	const isPaused = $derived(!!data.vendor.subscriptionPausedAt);
 
 	// ── Open/closed status ───────────────────────────────────────────────────
 	let openStatus = $state<boolean | null>(null);
@@ -268,6 +269,14 @@
 		</header>
 	{/if}
 
+	<!-- ── Pause notice ──────────────────────────────────────────────────── -->
+	{#if isPaused}
+		<div class="border-b border-amber-200 bg-amber-50 px-4 py-3 text-center text-sm text-amber-800">
+			<Icon icon="mdi:pause-circle-outline" class="mb-0.5 inline-block h-4 w-4 align-text-bottom" />
+			Online ordering is temporarily unavailable. Check back soon.
+		</div>
+	{/if}
+
 	<!-- ── Search bar ─────────────────────────────────────────────────────── -->
 	{#if data.items.length > 0}
 		<div class="sticky top-0 z-50 border-b bg-background/95 backdrop-blur-sm">
@@ -419,6 +428,11 @@
 											class="rounded-lg bg-amber-100 px-3 py-1.5 text-xs font-medium text-amber-700"
 											>Sold out</span
 										>
+									{:else if isPaused}
+										<span
+											class="rounded-lg bg-gray-100 px-3 py-1.5 text-xs font-medium text-gray-400"
+											>Unavailable</span
+										>
 									{:else if hasModifiers(item)}
 										<a
 											href={resolve(`/${data.vendorSlug}/item/${item.id}`)}
@@ -505,6 +519,11 @@
 											class="rounded-lg bg-amber-100 px-3 py-1.5 text-xs font-medium text-amber-700"
 											>Sold out</span
 										>
+									{:else if isPaused}
+										<span
+											class="rounded-lg bg-gray-100 px-3 py-1.5 text-xs font-medium text-gray-400"
+											>Unavailable</span
+										>
 									{:else if hasModifiers(item)}
 										<a
 											href={resolve(`/${data.vendorSlug}/item/${item.id}`)}
@@ -535,7 +554,7 @@
 	</main>
 
 	<!-- ── Sticky cart bar ────────────────────────────────────────────────── -->
-	{#if cart.count > 0}
+	{#if cart.count > 0 && !isPaused}
 		<div class="sticky bottom-0 flex justify-center p-4">
 			<a
 				href={resolve(`/${data.vendorSlug}/cart` as `/${string}`)}

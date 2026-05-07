@@ -163,6 +163,48 @@ export function unixTimestamp(date: Date): number {
  * Pure function — no Stripe calls. Caller resolves period_end from the live
  * subscription before invoking.
  */
+/**
+ * Convert a YYYY-MM-DD date string to a UTC timestamp representing the last
+ * millisecond of that calendar day in the vendor's local timezone
+ * (i.e. 23:59:59.999 local = the instant just before the next day starts).
+ *
+ * Probe strategy: start at noon UTC of the NEXT calendar day. For all US
+ * timezones (UTC-4 to UTC-11), this renders as an early AM hour on the next
+ * local day, so subtracting those hours/minutes/seconds lands exactly on
+ * local midnight of the next day. End-of-day = that midnight - 1 ms.
+ *
+ * Falls back to UTC end-of-day on invalid timezone.
+ */
+export function pauseUntilTimestamp(dateYYYYMMDD: string, vendorTimezone: string): Date {
+	let tz = vendorTimezone;
+	try {
+		new Intl.DateTimeFormat('en-US', { timeZone: tz });
+	} catch {
+		tz = 'UTC';
+	}
+
+	const [y, m, d] = dateYYYYMMDD.split('-').map(Number);
+	const probe = new Date(Date.UTC(y, m - 1, d + 1, 12, 0, 0, 0));
+
+	const parts = Object.fromEntries(
+		new Intl.DateTimeFormat('en-US', {
+			timeZone: tz,
+			hour: '2-digit',
+			minute: '2-digit',
+			second: '2-digit',
+			hour12: false
+		})
+			.formatToParts(probe)
+			.map(({ type, value }) => [type, value])
+	);
+
+	const h = parseInt(parts.hour === '24' ? '0' : parts.hour, 10);
+	const mi = parseInt(parts.minute, 10);
+	const s = parseInt(parts.second, 10);
+	const midnightUtc = probe.getTime() - (h * 3600 + mi * 60 + s) * 1000;
+	return new Date(midnightUtc - 1);
+}
+
 export function cancelImmediateRefundPreview(args: {
 	periodEnd: Date;
 	annualTotalCents: number;

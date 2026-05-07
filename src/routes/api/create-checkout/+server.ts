@@ -72,6 +72,8 @@ export const POST: RequestHandler = async ({ request }) => {
 
 	const vendorRecord = await db.query.vendor.findFirst({ where: eq(vendor.slug, vendorSlug) });
 	if (!vendorRecord?.isActive) throw error(404, 'Store not found');
+	if (vendorRecord.subscriptionPausedAt)
+		throw error(503, 'This store is temporarily not accepting orders');
 	if (!vendorRecord.stripeSecretKey) throw error(400, 'Stripe not configured for this store');
 
 	const stripe = getStripe(vendorRecord.stripeSecretKey);

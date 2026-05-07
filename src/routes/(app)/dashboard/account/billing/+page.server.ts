@@ -11,8 +11,12 @@ import {
 	type BillingInterval,
 	nextBillingAnchor,
 	unixTimestamp,
-	cancelImmediateRefundPreview
+	cancelImmediateRefundPreview,
+	pauseUntilTimestamp
 } from '$lib/billing';
+import { sendEmail } from '$lib/server/email';
+import { pauseConfirmedEmail } from '$lib/server/email/templates/pauseConfirmed';
+import { pauseResumedEmail } from '$lib/server/email/templates/pauseResumed';
 import { requireStaff } from '$lib/server/roles';
 import type Stripe from 'stripe';
 import { getOrderLocalStripe, getPlanPriceId, getAddonPriceId } from '$lib/server/stripe-billing';
@@ -33,6 +37,9 @@ export const load: PageServerLoad = async ({ locals }) => {
 				subscriptionStatus: true,
 				subscriptionEndsAt: true,
 				subscriptionRefundedAt: true,
+				subscriptionPausedAt: true,
+				pauseUntil: true,
+				timezone: true,
 				stripeCustomerId: true,
 				stripeSubscriptionId: true,
 				addons: true
@@ -79,7 +86,12 @@ export const load: PageServerLoad = async ({ locals }) => {
 		addons: (vendorRecord?.addons ?? []) as AddonItem[],
 		nextBillingDate,
 		periodStart,
-		billingInterval
+		billingInterval,
+		subscriptionPausedAt: vendorRecord?.subscriptionPausedAt
+			? vendorRecord.subscriptionPausedAt.toISOString()
+			: null,
+		pauseUntil: vendorRecord?.pauseUntil ? vendorRecord.pauseUntil.toISOString() : null,
+		vendorTimezone: vendorRecord?.timezone ?? 'America/New_York'
 	};
 };
 
@@ -503,5 +515,124 @@ export const actions: Actions = {
 			.set({ addons: current.filter((a) => a.key !== key), updatedAt: new Date() })
 			.where(eq(vendor.id, vendorId));
 		return { success: true };
+	},
+
+	pauseSubscription: async ({ request, locals }) => {
+		requireStaff(locals);
+		const vendorId = locals.vendorId!;
+		const formData = await request.formData();
+		const pauseUntilDate = formData.get('pauseUntilDate')?.toString();
+
+		if (!pauseUntilDate || !/^\d{4}-\d{2}-\d{2}$/.test(pauseUntilDate))
+			return fail(400, { error: 'Invalid pause date.' });
+
+		const record = await db.query.vendor.findFirst({
+			where: eq(vendor.id, vendorId),
+			columns: {
+				subscriptionTier: true,
+				subscriptionStatus: true,
+				subscriptionEndsAt: true,
+				subscriptionPausedAt: true,
+				stripeSubscriptionId: true,
+				timezone: true,
+				name: true,
+				email: true
+			}
+		});
+
+		if (!record?.subscriptionTier || !PAID_TIERS.has(record.subscriptionTier))
+			return fail(400, { error: 'Only paid subscriptions can be paused.' });
+		if (!record.stripeSubscriptionId)
+			return fail(400, { error: 'No active subscription to pause.' });
+		if (record.subscriptionPausedAt) return fail(400, { error: 'Subscription is already paused.' });
+		if (record.subscriptionEndsAt)
+			return fail(400, { error: 'Cannot pause a subscription that is scheduled to cancel.' });
+		if (record.subscriptionStatus === 'past_due')
+			return fail(400, { error: 'Cannot pause a subscription with a past-due payment.' });
+
+		const today = new Date();
+		const todayStr = today.toISOString().slice(0, 10);
+		if (pauseUntilDate <= todayStr)
+			return fail(400, { error: 'Pause date must be in the future.' });
+
+		const maxDate = new Date(today);
+		maxDate.setDate(maxDate.getDate() + 90);
+		const maxStr = maxDate.toISOString().slice(0, 10);
+		if (pauseUntilDate > maxStr)
+			return fail(400, { error: 'Pause duration cannot exceed 90 days.' });
+
+		const tz = record.timezone ?? 'America/New_York';
+		const resumeAt = pauseUntilTimestamp(pauseUntilDate, tz);
+
+		const stripe = getOrderLocalStripe();
+		await stripe.subscriptions.update(record.stripeSubscriptionId, {
+			pause_collection: { behavior: 'mark_uncollectible' }
+		});
+
+		const now = new Date();
+		await db
+			.update(vendor)
+			.set({ subscriptionPausedAt: now, pauseUntil: resumeAt, updatedAt: now })
+			.where(eq(vendor.id, vendorId));
+
+		if (record.email) {
+			const planName =
+				record.subscriptionTier.charAt(0).toUpperCase() + record.subscriptionTier.slice(1);
+			const pauseUntilStr = resumeAt.toLocaleDateString('en-US', {
+				month: 'long',
+				day: 'numeric',
+				year: 'numeric'
+			});
+			await sendEmail({
+				to: record.email,
+				subject: 'Your Order Local subscription has been paused',
+				html: pauseConfirmedEmail({ tenantName: record.name, planName, pauseUntil: pauseUntilStr })
+			}).catch(console.error);
+		}
+
+		redirect(303, '/dashboard/account/billing?paused=1');
+	},
+
+	resumeSubscription: async ({ locals }) => {
+		requireStaff(locals);
+		const vendorId = locals.vendorId!;
+
+		const record = await db.query.vendor.findFirst({
+			where: eq(vendor.id, vendorId),
+			columns: {
+				subscriptionPausedAt: true,
+				stripeSubscriptionId: true,
+				subscriptionTier: true,
+				name: true,
+				email: true
+			}
+		});
+
+		if (!record?.subscriptionPausedAt) return fail(400, { error: 'Subscription is not paused.' });
+		if (!record.stripeSubscriptionId) return fail(400, { error: 'No active subscription.' });
+
+		const stripe = getOrderLocalStripe();
+		await stripe.subscriptions.update(record.stripeSubscriptionId, {
+			pause_collection: '' as Stripe.Emptyable<Stripe.SubscriptionUpdateParams.PauseCollection>
+		});
+
+		const now = new Date();
+		await db
+			.update(vendor)
+			.set({ subscriptionPausedAt: null, pauseUntil: null, updatedAt: now })
+			.where(eq(vendor.id, vendorId));
+
+		if (record.email) {
+			const planName =
+				(record.subscriptionTier ?? 'plan').charAt(0).toUpperCase() +
+				(record.subscriptionTier ?? 'plan').slice(1);
+			await sendEmail({
+				to: record.email,
+				subject: 'Your Order Local subscription has resumed',
+				html: pauseResumedEmail({ tenantName: record.name, planName })
+			}).catch(console.error);
+		}
+
+		redirect(303, '/dashboard/account/billing?resumed=1');
 	}
 };

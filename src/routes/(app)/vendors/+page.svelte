@@ -65,8 +65,14 @@
 <div class="flex min-h-screen flex-col items-center justify-center bg-muted/50 px-4 py-16">
 	<div class="w-full max-w-lg">
 		<div class="mb-6">
-			<h1 class="text-2xl font-bold text-foreground">Your shops</h1>
-			{#if data.vendors.length > 1}
+			<h1 class="text-2xl font-bold text-foreground">
+				{data.isInternal ? 'All vendors' : 'Your shops'}
+			</h1>
+			{#if data.isInternal}
+				<p class="mt-1 text-sm text-muted-foreground">
+					Admin view · {data.vendors.length} vendor{data.vendors.length === 1 ? '' : 's'}
+				</p>
+			{:else if data.vendors.length > 1}
 				<p class="mt-1 text-sm text-muted-foreground">{data.vendors.length} shops</p>
 			{/if}
 		</div>

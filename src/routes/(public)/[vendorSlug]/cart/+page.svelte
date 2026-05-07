@@ -9,6 +9,8 @@
 
 	let { data }: { data: PageData } = $props();
 
+	const isPaused = $derived(!!data.vendor.subscriptionPausedAt);
+
 	onMount(() => {
 		cart.init(data.vendorSlug);
 		validateCart();
@@ -336,6 +338,18 @@
 	<main
 		class="mx-auto my-8 max-w-lg space-y-5 rounded-2xl bg-background/80 px-4 py-6 backdrop-blur-sm"
 	>
+		{#if isPaused}
+			<div
+				class="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-center text-sm text-amber-800"
+			>
+				<Icon
+					icon="mdi:pause-circle-outline"
+					class="mb-0.5 inline-block h-4 w-4 align-text-bottom"
+				/>
+				Online ordering is temporarily unavailable. Check back soon.
+			</div>
+		{/if}
+
 		{#if unavailableItems.length > 0}
 			<div class="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700">
 				<div class="flex items-start justify-between gap-2">
@@ -907,7 +921,7 @@
 			<button
 				type="button"
 				onclick={checkout}
-				disabled={loading || cart.items.length === 0}
+				disabled={loading || cart.items.length === 0 || isPaused}
 				style="background-color: var(--background-color); color: var(--foreground-color);"
 				class="w-full rounded-xl px-6 py-4 text-base font-semibold shadow-sm transition-opacity hover:opacity-90 disabled:opacity-50"
 			>

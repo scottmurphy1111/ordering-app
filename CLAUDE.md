@@ -60,6 +60,7 @@ One-line summaries and links to the detailed sections of this document. Scan thi
 ### Buttons
 
 - **Button sizing** — size determines height (32px default / 24px xs); variant determines color. They compose. Never apply ad-hoc `h-*` to override. → [Buttons](#buttons)
+- **Button color treatments by intent** — Critical alert (amber-400), state-recovery (amber-300), promotional upsell (primary-tinted), vendor-initiated change (plain outline). Pick a category before picking classes; reuse the category's exact treatment. → [Button color treatments](#button-color-treatments)
 - **Documented raw `<button>` exceptions** — nine specific cases where raw `<button>` is required instead of the primitive. → [Documented raw button exceptions](#documented-raw-button-exceptions)
 
 ### Tabs and segmented controls
@@ -160,6 +161,7 @@ Before sending any response that produced or modified code, run this checklist. 
 - No new hex colors introduced. Colors come from the documented palette.
 - `text-green-600` callsites in changed code follow the decision rule (`text-primary` for themable, `text-success` for fixed semantic).
 - No `style={...}` inline attributes added.
+- Any new color-tinted button on an existing page was matched against an existing sibling category from [Button color treatments](#button-color-treatments). Verify a same-category sibling already exists with identical classes via `grep`. If no sibling exists, the button is establishing the category — flag this for review rather than adopt new classes silently.
 
 **Vocabulary:**
 
@@ -244,6 +246,41 @@ When changing a UI element that has siblings (the same element type appearing on
 If you don't know whether a sibling exists (haven't seen the file, no grep result for the relevant element), say so. Don't claim sibling parity you didn't verify. "I checked the orders pages and updated both; I did not check catalog or settings pages — please confirm whether they need the same change" is a valid response.
 
 **The enumeration applies to every pattern in the Patterns Index.** A change to one Tabs callsite checks every Tabs callsite. A change to one FilterPills callsite checks every FilterPills callsite. The enumeration is the work that keeps the codebase consistent over time.
+
+---
+
+## Surface-wide audit prompts
+
+Sibling enumeration catches drift **within a prompt**. Surface-wide audits catch drift that accumulates **across prompts**. Each prompt can be internally consistent and individually correct, while the surface as a whole drifts because no single prompt sees the full picture.
+
+After a series of related prompts has shipped to one surface (e.g., billing, orders, settings), trigger a surface-wide audit before moving to a new feature area. The audit explicitly enumerates the affected element types — buttons, banners, modals, action affordances — and verifies they match the documented hierarchy.
+
+**When to trigger:**
+
+- After 5+ related prompts have touched a single feature surface.
+- After adding a new state to an existing surface (cancel-scheduled, past-due, paused, etc.).
+- When the user notices visual inconsistency that "looks right per prompt but feels wrong as a whole."
+
+**Trigger phrasing examples:**
+
+- "We just shipped six prompts on billing; audit the surface."
+- "Audit the buttons on the billing page for hierarchy."
+- "Are the banners on the orders page consistent with the documented pattern?"
+
+**The agent's audit response should:**
+
+1. List the element type being audited (buttons, banners, modals, etc.).
+2. Enumerate every callsite of that element type on the surface.
+3. Group callsites by the documented category they belong to (e.g., critical alert, state-recovery, etc.).
+4. Flag mismatches — siblings that should share classes but don't, or callsites that don't fit any documented category.
+5. Output a small follow-up prompt (or set of prompts) that brings the surface into alignment, not a sprawling rewrite.
+
+**Past audits in this codebase:**
+
+- Billing surface five-issue audit (before pause/resume design conversation) — caught silent tier-upgrade, dead `isBridgeFree` data flow, "Starter | Cancelled" badge inconsistency, missing past-due banner, drifted column-comment semantics.
+- Current plan card button hierarchy audit (after pause/resume implementation) — caught Resume now using primary-green when its sibling Don't cancel used amber-300; caught Pause billing using muted text when its sibling Switch to monthly used plain outline.
+
+The audit is a meta-prompt, not part of every prompt's overhead. Use it deliberately at the natural pause points between feature surfaces.
 
 ---
 
@@ -883,6 +920,21 @@ Variants and sizes compose freely:
 	><Icon icon="mdi:trash-can-outline" /></Button
 >
 ```
+
+### Button color treatments
+
+The variant system (default/outline/ghost/destructive/link) handles **shape**. For buttons that need a color tint beyond their variant — to communicate state or intent — pick one of these four categories. Pick the category first; copy the exact classes. Do not improvise color treatments per callsite.
+
+| Category                          | Treatment                                                                               | Use when                                                                                                     | Example callsite                                      |
+| --------------------------------- | --------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------- |
+| **Critical alert**                | `border-amber-400 bg-amber-50 text-amber-700 hover:bg-amber-100`                        | The system surfaced a problem; vendor must act to resolve. Eye-catching.                                     | Past-due "Update payment method" on the billing page  |
+| **State-recovery (affirmative)**  | `border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100 hover:text-amber-900`  | Vendor entered a non-default state intentionally and is reversing it. Lighter amber than critical alert.     | "Don't cancel — keep [Plan]," "Resume now"            |
+| **Promotional upsell**            | `border-primary/20 bg-primary/5 text-primary hover:bg-primary/10 hover:text-primary`   | Vendor saves money or unlocks something by clicking. Pulls the eye toward the offer.                         | "Switch to annual — save $X"                          |
+| **Vendor-initiated change**       | plain `variant="outline"` (no color tint)                                               | Vendor changes something without recovering from a problem and without being upsold.                         | "Switch to monthly," "Pause billing"                  |
+
+**Sibling parity is non-negotiable.** Two buttons that fall in the same category share the exact same classes — verify with `grep` before merging. If two siblings disagree on classes, one of them is wrong; figure out which before adding a new one.
+
+**The category list is closed.** If a button doesn't fit one of the four, surface that in the response and ask before improvising. Do not introduce a fifth category without explicit approval — the four exist to constrain the visual vocabulary.
 
 ### Documented raw `<button>` exceptions
 

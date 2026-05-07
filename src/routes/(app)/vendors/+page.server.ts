@@ -1,7 +1,7 @@
 import type { PageServerLoad, Actions } from './$types';
 import { fail, redirect } from '@sveltejs/kit';
 import { db } from '$lib/server/db';
-import { eq } from 'drizzle-orm';
+import { eq, isNull } from 'drizzle-orm';
 import { vendor, vendorUsers } from '$lib/server/db/schema';
 import { seedDemoVendor } from '$lib/server/seed-demo';
 
@@ -13,39 +13,76 @@ function canCreateVendor(isInternal: boolean, userVendors: Array<{ role: string 
 
 export const load: PageServerLoad = async ({ locals, url }) => {
 	const userId = locals.user!.id;
-
-	const userVendors = await db
-		.select({
-			id: vendor.id,
-			name: vendor.name,
-			slug: vendor.slug,
-			type: vendor.type,
-			isActive: vendor.isActive,
-			logoUrl: vendor.logoUrl,
-			subscriptionTier: vendor.subscriptionTier,
-			role: vendorUsers.role,
-			createdAt: vendor.createdAt
-		})
-		.from(vendorUsers)
-		.innerJoin(vendor, eq(vendorUsers.vendorId, vendor.id))
-		.where(eq(vendorUsers.userId, userId));
-
-	userVendors.sort((a, b) => a.name.localeCompare(b.name));
-
-	const manageOverride = url.searchParams.get('manage') === 'true';
 	const isInternal = locals.user!.isInternal;
 
-	if (
-		!manageOverride &&
-		!isInternal &&
-		userVendors.length === 1 &&
-		userVendors[0].isActive === true
-	) {
+	let vendors: Array<{
+		id: number;
+		name: string;
+		slug: string;
+		type: string | null;
+		isActive: boolean;
+		logoUrl: string | null;
+		subscriptionTier: string | null;
+		role: string;
+		createdAt: Date;
+	}>;
+
+	if (isInternal) {
+		// Admin view: list every vendor (skip soft-deleted), with synthetic role 'admin'.
+		// Owned vendors get their actual role overlaid below so the rendered label is
+		// honest ("Owner" for vendors I own, "Admin" for the rest).
+		const allVendors = await db
+			.select({
+				id: vendor.id,
+				name: vendor.name,
+				slug: vendor.slug,
+				type: vendor.type,
+				isActive: vendor.isActive,
+				logoUrl: vendor.logoUrl,
+				subscriptionTier: vendor.subscriptionTier,
+				createdAt: vendor.createdAt
+			})
+			.from(vendor)
+			.where(isNull(vendor.deletedAt));
+
+		const memberships = await db
+			.select({ vendorId: vendorUsers.vendorId, role: vendorUsers.role })
+			.from(vendorUsers)
+			.where(eq(vendorUsers.userId, userId));
+		const roleByVendorId = new Map<number, string>(memberships.map((m) => [m.vendorId, m.role]));
+
+		vendors = allVendors.map((v) => ({
+			...v,
+			role: roleByVendorId.get(v.id) ?? 'admin'
+		}));
+	} else {
+		vendors = await db
+			.select({
+				id: vendor.id,
+				name: vendor.name,
+				slug: vendor.slug,
+				type: vendor.type,
+				isActive: vendor.isActive,
+				logoUrl: vendor.logoUrl,
+				subscriptionTier: vendor.subscriptionTier,
+				role: vendorUsers.role,
+				createdAt: vendor.createdAt
+			})
+			.from(vendorUsers)
+			.innerJoin(vendor, eq(vendorUsers.vendorId, vendor.id))
+			.where(eq(vendorUsers.userId, userId));
+	}
+
+	vendors.sort((a, b) => a.name.localeCompare(b.name));
+
+	const manageOverride = url.searchParams.get('manage') === 'true';
+
+	if (!manageOverride && !isInternal && vendors.length === 1 && vendors[0].isActive === true) {
 		throw redirect(303, '/dashboard');
 	}
 
-	const canCreate = canCreateVendor(isInternal, userVendors);
-	return { vendors: userVendors, isInternal, canCreate };
+	const canCreate = canCreateVendor(isInternal, vendors);
+	return { vendors, isInternal, canCreate };
 };
 
 export const actions: Actions = {

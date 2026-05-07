@@ -41,6 +41,9 @@
 	const isDowngraded = $derived(page.url.searchParams.get('downgraded') === '1');
 	const isReactivated = $derived(page.url.searchParams.get('reactivated') === '1');
 	const isRefunded = $derived(page.url.searchParams.get('refunded') === '1');
+	const isPausedSuccess = $derived(page.url.searchParams.get('paused') === '1');
+	const isResumed = $derived(page.url.searchParams.get('resumed') === '1');
+	const isPaused = $derived(!!data.subscriptionPausedAt);
 
 	const itemLimit = $derived(tierInfo.itemLimit);
 	const usagePct = $derived(itemLimit ? Math.min(100, (itemCount / itemLimit) * 100) : 0);
@@ -122,6 +125,30 @@
 	function closeIntervalSwitchModal() {
 		pendingIntervalSwitch = null;
 	}
+
+	// --- Pause modal ---
+	type PauseDuration = '30' | '60' | '90' | 'custom';
+	let pendingPauseOpen = $state(false);
+	let pauseDuration = $state<PauseDuration>('30');
+	let pauseCustomDate = $state('');
+
+	function todayPlusDays(n: number): string {
+		return new Date(Date.now() + n * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+	}
+
+	function computePauseDate(): string {
+		if (pauseDuration === 'custom') return pauseCustomDate;
+		return todayPlusDays(parseInt(pauseDuration, 10));
+	}
+
+	function closePauseModal() {
+		pendingPauseOpen = false;
+		pauseDuration = '30';
+		pauseCustomDate = '';
+	}
+
+	const minPauseDate = $derived(todayPlusDays(1));
+	const maxPauseDate = $derived(todayPlusDays(90));
 
 	// --- Tier upgrade confirmation modal (paid → paid tier change) ---
 	type PendingUpgrade = {
@@ -228,9 +255,26 @@
 			will appear on your original payment method within 5–10 business days.
 		</Alert>
 	{/if}
+	{#if isPausedSuccess}
+		<Alert severity="success" class="mb-4">
+			Your subscription has been paused. Billing will resume automatically on
+			{data.pauseUntil ? fmtDate(data.pauseUntil) : 'your chosen date'}.
+		</Alert>
+	{/if}
+	{#if isResumed}
+		<Alert severity="success" class="mb-4">
+			Your subscription has resumed. Normal billing is now active.
+		</Alert>
+	{/if}
 
 	<!-- Persistent state banners. These render whenever the vendor is in the
 	     relevant state, not just immediately after the action. -->
+	{#if isPaused && data.pauseUntil}
+		<Alert severity="warning" class="mb-4" dismissible={false} autofade={0}>
+			Your subscription is paused. Billing resumes automatically on {fmtDate(data.pauseUntil)}. Use
+			"Resume now" below to restart billing early.
+		</Alert>
+	{/if}
 	{#if data.subscriptionStatus === 'past_due'}
 		<Alert severity="warning" class="mb-4" dismissible={false} autofade={0}>
 			Your last payment didn't go through. Update your payment method to keep {tierInfo.name}.
@@ -300,25 +344,31 @@
 							</Badge>
 						{/if}
 					</div>
-					<p class="mt-0.5 text-sm text-muted-foreground">
-						{#if tierInfo.price === 0}
-							Free
-						{:else if data.billingInterval === 'annual' && tierAnnualInfo}
-							${tierAnnualInfo.monthly}/mo · ${tierAnnualInfo.total}/yr
-						{:else}
-							${tierInfo.price}/month
+					<div class="mt-0.5 flex flex-wrap items-center gap-2">
+						<p class="text-sm text-muted-foreground">
+							{#if tierInfo.price === 0}
+								Free
+							{:else if data.billingInterval === 'annual' && tierAnnualInfo}
+								${tierAnnualInfo.monthly}/mo · ${tierAnnualInfo.total}/yr
+							{:else}
+								${tierInfo.price}/month
+							{/if}
+							{#if addonMonthlyTotal > 0}
+								<span class="text-muted-foreground">+ ${addonMonthlyTotal}/mo add-ons</span>
+							{/if}
+						</p>
+						{#if !isCancelScheduled && !isPaused && data.nextBillingDate && isPaidPlan}
+							<span
+								class="inline-flex items-center gap-1 rounded-full border border-primary/15 bg-primary/5 px-2 py-0.5 text-xs font-medium text-primary"
+							>
+								<Icon icon="mdi:calendar-outline" class="h-3 w-3" />
+								Renews {fmtDate(data.nextBillingDate)}
+							</span>
 						{/if}
-						{#if addonMonthlyTotal > 0}
-							<span class="text-muted-foreground">+ ${addonMonthlyTotal}/mo add-ons</span>
-						{/if}
-					</p>
+					</div>
 					{#if isCancelScheduled && data.subscriptionEndsAt}
 						<p class="mt-0.5 text-xs font-medium text-amber-700">
 							Plan ends {fmtDate(data.subscriptionEndsAt)}
-						</p>
-					{:else if data.nextBillingDate && isPaidPlan}
-						<p class="mt-0.5 text-xs text-muted-foreground">
-							Renews {fmtDate(data.nextBillingDate)}
 						</p>
 					{/if}
 				</div>
@@ -332,9 +382,10 @@
 				{/if}
 			</div>
 
-			<!-- Switch billing interval -->
-			{#if isPaidPlan && data.hasStripeSubscription && !isCancelScheduled}
-				<div class="mt-4 flex items-center gap-3">
+			<!-- Action row: switch interval, pause/resume, reactivate. Single horizontal
+			     container; conditionals render buttons directly into it. Wraps on narrow viewports. -->
+			<div class="mt-5 flex flex-wrap items-center gap-3">
+				{#if isPaidPlan && data.hasStripeSubscription && !isCancelScheduled}
 					{#if data.billingInterval === 'monthly'}
 						<Button
 							type="button"
@@ -352,37 +403,70 @@
 							class="gap-1.5"
 							onclick={() => openIntervalSwitchModal('monthly')}
 						>
+							<Icon icon="mdi:swap-horizontal" class="h-3.5 w-3.5" />
 							Switch to monthly
 						</Button>
 					{/if}
-				</div>
-			{/if}
+				{/if}
 
-			<!-- Reactivate: visible only when cancellation is scheduled -->
-			{#if isCancelScheduled && data.hasStripeSubscription && !data.subscriptionRefundedAt}
-				<form
-					method="post"
-					action="?/reactivate"
-					class="mt-4"
-					use:enhance={() =>
-						async ({ result, update }) => {
-							if (result.type === 'success') {
-								window.location.href = resolve('/dashboard/account/billing') + '?reactivated=1';
-							} else {
-								await update({ invalidateAll: true });
-							}
-						}}
-				>
-					<Button
-						type="submit"
-						variant="outline"
-						class="gap-1.5 border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100 hover:text-amber-900"
+				{#if isPaused}
+					<form
+						method="post"
+						action="?/resumeSubscription"
+						use:enhance={() =>
+							async ({ result, update }) => {
+								if (result.type === 'redirect') {
+									window.location.href = result.location;
+								} else {
+									await update({ invalidateAll: true });
+								}
+							}}
 					>
-						<Icon icon="mdi:undo-variant" class="h-3.5 w-3.5" />
-						Don't cancel — keep {tierInfo.name}
+						<Button
+							type="submit"
+							variant="outline"
+							class="gap-1.5 border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100 hover:text-amber-900"
+						>
+							<Icon icon="mdi:play-circle-outline" class="h-3.5 w-3.5" />
+							Resume now
+						</Button>
+					</form>
+				{:else if isPaidPlan && data.hasStripeSubscription && !isCancelScheduled && data.subscriptionStatus !== 'past_due'}
+					<Button
+						type="button"
+						variant="outline"
+						class="gap-1.5"
+						onclick={() => (pendingPauseOpen = true)}
+					>
+						<Icon icon="mdi:pause-circle-outline" class="h-3.5 w-3.5" />
+						Pause billing
 					</Button>
-				</form>
-			{/if}
+				{/if}
+
+				{#if isCancelScheduled && data.hasStripeSubscription && !data.subscriptionRefundedAt}
+					<form
+						method="post"
+						action="?/reactivate"
+						use:enhance={() =>
+							async ({ result, update }) => {
+								if (result.type === 'success') {
+									window.location.href = resolve('/dashboard/account/billing') + '?reactivated=1';
+								} else {
+									await update({ invalidateAll: true });
+								}
+							}}
+					>
+						<Button
+							type="submit"
+							variant="outline"
+							class="gap-1.5 border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100 hover:text-amber-900"
+						>
+							<Icon icon="mdi:undo-variant" class="h-3.5 w-3.5" />
+							Don't cancel — keep {tierInfo.name}
+						</Button>
+					</form>
+				{/if}
+			</div>
 
 			<!-- Item usage -->
 			{#if itemLimit !== null}
@@ -539,6 +623,14 @@
 										</Button>
 									</form>
 								{/if}
+							{:else if isPaused}
+								<Button
+									disabled
+									variant="outline"
+									class="w-full cursor-default text-muted-foreground"
+								>
+									Resume to change plan
+								</Button>
 							{:else if isCancelScheduled && tier.key === 'starter'}
 								<Button
 									disabled
@@ -645,7 +737,7 @@
 		<div class="grid gap-4 sm:grid-cols-2">
 			{#each ADDONS as addon (addon.key)}
 				{@const isActive = hasAddon(activeAddons, addon.key)}
-				{@const canToggle = isPaidPlan && data.hasStripeSubscription}
+				{@const canToggle = isPaidPlan && data.hasStripeSubscription && !isPaused}
 				{@const canActivate = canToggle && !isCancelScheduled}
 				<div class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
 					<div class="px-4 py-3">
@@ -1060,6 +1152,119 @@
 						{:else}
 							Confirm switch
 						{/if}
+					</Button>
+				</form>
+			</DialogFooter>
+		</DialogContent>
+	</Dialog>
+{/if}
+
+<!-- Pause billing modal -->
+{#if pendingPauseOpen}
+	<Dialog
+		open={pendingPauseOpen}
+		onOpenChange={(open) => {
+			if (!open) closePauseModal();
+		}}
+	>
+		<DialogContent class="max-w-md">
+			<DialogHeader>
+				<DialogTitle>Pause billing</DialogTitle>
+				<DialogDescription class="text-sm text-muted-foreground">
+					Choose how long to pause your {tierInfo.name} subscription.
+				</DialogDescription>
+			</DialogHeader>
+
+			<div class="flex flex-col gap-4">
+				<!-- Duration picker -->
+				<div class="grid grid-cols-3 gap-2">
+					{#each [{ value: '30', label: '30 days' }, { value: '60', label: '60 days' }, { value: '90', label: '90 days' }] as opt (opt.value)}
+						<button
+							type="button"
+							onclick={() => {
+								pauseDuration = opt.value as typeof pauseDuration;
+							}}
+							class="rounded-lg border px-3 py-2 text-sm transition-colors {pauseDuration ===
+							opt.value
+								? 'border-primary bg-primary/5 font-medium text-primary'
+								: 'border-gray-200 text-muted-foreground hover:border-gray-300'}"
+						>
+							{opt.label}
+						</button>
+					{/each}
+				</div>
+				<button
+					type="button"
+					onclick={() => {
+						pauseDuration = 'custom';
+					}}
+					class="rounded-lg border px-3 py-2 text-sm transition-colors {pauseDuration === 'custom'
+						? 'border-primary bg-primary/5 font-medium text-primary'
+						: 'border-gray-200 text-muted-foreground hover:border-gray-300'}"
+				>
+					Custom date
+				</button>
+
+				{#if pauseDuration === 'custom'}
+					<div>
+						<label for="pause-custom-date" class="mb-1.5 block text-sm font-medium text-gray-700"
+							>Resume billing on</label
+						>
+						<input
+							id="pause-custom-date"
+							type="date"
+							bind:value={pauseCustomDate}
+							min={minPauseDate}
+							max={maxPauseDate}
+							class="h-8 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm focus:ring-2 focus:ring-green-500 focus:outline-none"
+						/>
+					</div>
+				{:else}
+					<p class="text-sm text-muted-foreground">
+						Billing resumes automatically on <strong>{fmtDate(computePauseDate())}</strong>.
+					</p>
+				{/if}
+
+				<Alert severity="info" dismissible={false} autofade={0}>
+					Your storefront stays active and your data is safe while paused. You can resume early at
+					any time from this page.
+				</Alert>
+
+				<p class="text-center text-xs text-muted-foreground">
+					Pause duration cannot exceed 90 days.
+				</p>
+			</div>
+
+			<DialogFooter class="flex gap-3 sm:flex-row">
+				<Button type="button" onclick={closePauseModal} variant="outline" class="flex-1">
+					Cancel
+				</Button>
+				<form
+					method="post"
+					action="?/pauseSubscription"
+					use:enhance={() =>
+						async ({ result, update }) => {
+							closePauseModal();
+							if (result.type === 'redirect') {
+								window.location.href = result.location;
+							} else {
+								await update({ invalidateAll: true });
+							}
+						}}
+					class="flex-1"
+				>
+					<input type="hidden" name="pauseUntilDate" value={computePauseDate()} />
+					<Button
+						type="submit"
+						variant="default"
+						class="w-full"
+						disabled={pauseDuration === 'custom' && !pauseCustomDate}
+					>
+						Pause until {pauseDuration !== 'custom'
+							? fmtDate(computePauseDate())
+							: pauseCustomDate
+								? fmtDate(pauseCustomDate)
+								: '…'}
 					</Button>
 				</form>
 			</DialogFooter>

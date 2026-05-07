@@ -5,10 +5,23 @@ import { env } from '$env/dynamic/private';
 import { db } from '$lib/server/db';
 import { eq } from 'drizzle-orm';
 import { vendor } from '$lib/server/db/vendor';
+import { systemEvents } from '$lib/server/db/system-events';
 import { getOrderLocalStripe, getTierKeyFromPriceId } from '$lib/server/stripe-billing';
 import { sendEmail } from '$lib/server/email';
 import { subscriptionConfirmedEmail } from '$lib/server/email/templates/subscriptionConfirmed';
 import { paymentFailedEmail } from '$lib/server/email/templates/paymentFailed';
+
+async function recordSystemEvent(
+	eventType: string,
+	vendorId: number | null,
+	metadata?: Record<string, unknown>
+) {
+	try {
+		await db.insert(systemEvents).values({ eventType, vendorId, metadata: metadata ?? null });
+	} catch (e) {
+		console.error('[system-events] failed to record:', eventType, e);
+	}
+}
 
 const PAID_TIERS = new Set(['market', 'pro']);
 
@@ -87,6 +100,11 @@ export const POST: RequestHandler = async ({ request }) => {
 						})
 					}).catch(console.error);
 				}
+				await recordSystemEvent('webhook.checkout_completed', vendorId, {
+					stripeEventId: event.id,
+					planKey,
+					subscriptionId: subscriptionId ?? null
+				});
 				break;
 			}
 
@@ -100,7 +118,13 @@ export const POST: RequestHandler = async ({ request }) => {
 
 				const vendorRecord = await db.query.vendor.findFirst({
 					where: eq(vendor.stripeCustomerId, customerId),
-					columns: { id: true, name: true, email: true, subscriptionTier: true }
+					columns: {
+						id: true,
+						name: true,
+						email: true,
+						subscriptionTier: true,
+						subscriptionPausedAt: true
+					}
 				});
 				if (!vendorRecord) break;
 
@@ -139,6 +163,26 @@ export const POST: RequestHandler = async ({ request }) => {
 
 				await db.update(vendor).set(updates).where(eq(vendor.id, vendorRecord.id));
 
+				// Defensive pause_collection mirror: keep DB in sync if Stripe's pause
+				// state diverges from the vendor record (e.g. manual unpausing from the
+				// Stripe dashboard). This is a best-effort mirror — the primary path is
+				// the pauseSubscription / resumeSubscription actions.
+				const stripeIsPaused = subscription.pause_collection?.behavior === 'mark_uncollectible';
+				const dbIsPaused = !!vendorRecord.subscriptionPausedAt;
+				if (!stripeIsPaused && dbIsPaused) {
+					// Stripe cleared pause_collection but DB still shows paused — mirror clear.
+					await db
+						.update(vendor)
+						.set({ subscriptionPausedAt: null, pauseUntil: null, updatedAt: new Date() })
+						.where(eq(vendor.id, vendorRecord.id));
+				} else if (stripeIsPaused && !dbIsPaused) {
+					// Stripe shows paused but DB doesn't — mirror the pause timestamp.
+					await db
+						.update(vendor)
+						.set({ subscriptionPausedAt: new Date(), updatedAt: new Date() })
+						.where(eq(vendor.id, vendorRecord.id));
+				}
+
 				// Welcome email on first-payment confirmation via embedded checkout.
 				// The subscription was created with payment_behavior: 'default_incomplete';
 				// when the vendor confirms payment in the embedded UI, Stripe transitions
@@ -167,6 +211,11 @@ export const POST: RequestHandler = async ({ request }) => {
 						})
 					}).catch(console.error);
 				}
+				await recordSystemEvent('webhook.subscription_updated', vendorRecord.id, {
+					stripeEventId: event.id,
+					status,
+					tierKey: tierKey ?? null
+				});
 				break;
 			}
 
@@ -197,6 +246,9 @@ export const POST: RequestHandler = async ({ request }) => {
 						updatedAt: new Date()
 					})
 					.where(eq(vendor.id, vendorRecord.id));
+				await recordSystemEvent('webhook.subscription_deleted', vendorRecord.id, {
+					stripeEventId: event.id
+				});
 				break;
 			}
 
@@ -236,6 +288,10 @@ export const POST: RequestHandler = async ({ request }) => {
 						})
 					}).catch(console.error);
 				}
+				await recordSystemEvent('webhook.payment_failed', vendorRecord.id, {
+					stripeEventId: event.id,
+					amountDue: invoice.amount_due ?? 0
+				});
 				break;
 			}
 		}
