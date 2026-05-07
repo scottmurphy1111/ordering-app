@@ -4,8 +4,6 @@
 	import { cart } from '$lib/cart.svelte';
 	import { resolve } from '$app/paths';
 	import Icon from '@iconify/svelte';
-	import { getOpenStatus } from '$lib/hours';
-	import type { WeekHours } from '$lib/hours';
 
 	let { data }: { data: PageData } = $props();
 
@@ -14,17 +12,6 @@
 	const vendor = $derived(data.vendor);
 	const settings = $derived(vendor.settings as Record<string, unknown> | null);
 	const isPaused = $derived(!!data.vendor.subscriptionPausedAt);
-
-	// ── Open/closed status ───────────────────────────────────────────────────
-	let openStatus = $state<boolean | null>(null);
-	onMount(() => {
-		const hours = settings?.hours as WeekHours | undefined;
-		openStatus = getOpenStatus(hours);
-		const interval = setInterval(() => {
-			openStatus = getOpenStatus(hours);
-		}, 60_000);
-		return () => clearInterval(interval);
-	});
 
 	// ── Category/item data ───────────────────────────────────────────────────
 	const categorized = $derived(
@@ -187,20 +174,6 @@
 						{/if}
 					</div>
 				</div>
-				{#if openStatus !== null}
-					<div class="mt-3 flex flex-wrap items-center gap-2">
-						{#if openStatus}
-							<span class="rounded-full bg-white/20 px-2.5 py-0.5 text-xs font-semibold text-white"
-								>Open</span
-							>
-						{:else}
-							<span
-								class="rounded-full bg-red-600/90 px-2.5 py-0.5 text-xs font-semibold text-white"
-								>Closed</span
-							>
-						{/if}
-					</div>
-				{/if}
 			</div>
 		</div>
 	{:else}
@@ -247,21 +220,6 @@
 							>
 								{vendor.tagline}
 							</p>
-						{/if}
-						{#if openStatus !== null}
-							<div class="mt-3">
-								{#if openStatus}
-									<span
-										class="rounded-full bg-white/20 px-2.5 py-0.5 text-xs font-semibold"
-										style="color: var(--foreground-color);">Open</span
-									>
-								{:else}
-									<span
-										class="rounded-full bg-red-600/90 px-2.5 py-0.5 text-xs font-semibold text-white"
-										>Closed</span
-									>
-								{/if}
-							</div>
 						{/if}
 					</div>
 				</div>

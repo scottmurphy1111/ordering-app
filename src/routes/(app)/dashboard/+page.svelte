@@ -124,17 +124,21 @@
 				</p>
 			{/if}
 			{#if catalogUrl}
-				<p class="mt-0.5 text-xs text-muted-foreground/70">
-					{catalogUrl.replace(/^https?:\/\//, '')}
+				<p class="mt-0.5 inline-flex items-center gap-1.5 text-xs text-muted-foreground/70">
+					<span>{catalogUrl.replace(/^https?:\/\//, '')}</span>
+					<button
+						type="button"
+						onclick={copyCatalogLink}
+						class="inline-flex items-center text-muted-foreground transition-colors hover:text-foreground"
+						aria-label={copied ? 'Copied' : 'Copy catalog link'}
+					>
+						<Icon icon={copied ? 'mdi:check' : 'mdi:content-copy'} class="h-3 w-3" />
+					</button>
 				</p>
 			{/if}
 		</div>
 		{#if data.vendor?.slug}
 			<div class="flex items-center gap-2">
-				<Button variant="outline" onclick={copyCatalogLink} class="gap-1.5">
-					<Icon icon={copied ? 'mdi:check' : 'mdi:content-copy'} class="h-3.5 w-3.5" />
-					{copied ? 'Copied!' : 'Copy link'}
-				</Button>
 				<a
 					data-tour="view-catalog"
 					href={resolve(`/${data.vendor.slug}/catalog`)}

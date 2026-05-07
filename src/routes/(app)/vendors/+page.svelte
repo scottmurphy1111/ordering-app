@@ -62,8 +62,7 @@
 	}
 </script>
 
-<div class="flex min-h-screen flex-col items-center justify-center bg-muted/50 px-4 py-16">
-	<div class="w-full max-w-lg">
+<div class="mx-auto mt-8 w-full max-w-lg">
 		<div class="mb-6">
 			<h1 class="text-2xl font-bold text-foreground">
 				{data.isInternal ? 'All vendors' : 'Your shops'}
@@ -254,5 +253,4 @@
 				</CardContent>
 			</Card>
 		{/if}
-	</div>
 </div>

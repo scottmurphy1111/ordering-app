@@ -720,7 +720,14 @@
 						<div class="flex items-center justify-between gap-2 border-t border-gray-100 px-4 py-2">
 							{@render statusDropdown(item)}
 							<div class="flex items-center gap-1">
-								<Button variant="outline" onclick={() => openEditDrawer(item)}>Edit</Button>
+								<Button
+									variant="ghost"
+									size="icon"
+									onclick={() => openEditDrawer(item)}
+									aria-label="Edit item"
+								>
+									<Icon icon="mdi:pencil-outline" class="h-3.5 w-3.5" />
+								</Button>
 								<form method="post" action="?/delete" use:enhance>
 									<input type="hidden" name="id" value={item.id} />
 									<Button
@@ -862,7 +869,14 @@
 								</TableCell>
 								<TableCell class="w-20 px-4 py-3 text-right">
 									<div class="flex items-center justify-end gap-1">
-										<Button variant="outline" onclick={() => openEditDrawer(item)}>Edit</Button>
+										<Button
+											variant="ghost"
+											size="icon"
+											onclick={() => openEditDrawer(item)}
+											aria-label="Edit item"
+										>
+											<Icon icon="mdi:pencil-outline" class="h-3.5 w-3.5" />
+										</Button>
 										<form method="post" action="?/delete" use:enhance>
 											<input type="hidden" name="id" value={item.id} />
 											<Button

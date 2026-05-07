@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import type { PageData, ActionData } from './$types';
-	import type { WeekHours } from '$lib/hours';
 	import { Button } from '$lib/components/ui/button';
 	import { Input } from '$lib/components/ui/input';
 	import { Label } from '$lib/components/ui/label';
@@ -34,19 +33,6 @@
 		} | null
 	);
 
-	const savedHours = $derived(
-		(data.info as unknown as { settings?: { hours?: WeekHours } } | null)?.settings?.hours ?? {}
-	);
-	const DAYS = [
-		{ key: 'monday', label: 'Mon' },
-		{ key: 'tuesday', label: 'Tue' },
-		{ key: 'wednesday', label: 'Wed' },
-		{ key: 'thursday', label: 'Thu' },
-		{ key: 'friday', label: 'Fri' },
-		{ key: 'saturday', label: 'Sat' },
-		{ key: 'sunday', label: 'Sun' }
-	];
-
 	const businessTypes = BUSINESS_TYPES;
 
 	const US_TZ_SET = new Set(US_TIMEZONES.map((t) => t.value));
@@ -65,13 +51,7 @@
 		)?.settings ?? {}
 	);
 
-	let closedDays = $state<Record<string, boolean>>({});
 
-	$effect(() => {
-		for (const day of DAYS) {
-			closedDays[day.key] = savedHours[day.key]?.closed ?? false;
-		}
-	});
 </script>
 
 <div class="max-w-2xl">
@@ -305,74 +285,4 @@
 		</Card>
 	</form>
 
-	<!-- Operating hours — separate form/action -->
-	{#if form?.hoursSuccess}
-		<Alert severity="success" class="mt-4">Hours saved.</Alert>
-	{/if}
-	<form
-		method="post"
-		action="?/saveHours"
-		use:enhance={() =>
-			({ update }) =>
-				update({ reset: false })}
-		class="mt-6"
-	>
-		<Card class="shadow-sm">
-			<CardHeader>
-				<CardTitle>Operating hours</CardTitle>
-			</CardHeader>
-			<CardContent>
-				<p class="px-4 pb-3 text-xs text-muted-foreground">
-					Customers will see open/closed status on your catalog page. Leave all days unset to hide
-					the status.
-				</p>
-				<div class="divide-y divide-border px-4">
-					{#each DAYS as day (day.key)}
-						{@const h = savedHours[day.key]}
-						<div class="flex flex-col gap-2 py-4 sm:flex-row sm:items-center sm:gap-3">
-							<div class="flex items-center justify-between sm:contents">
-								<span class="w-12 shrink-0 text-sm font-medium text-muted-foreground"
-									>{day.label}</span
-								>
-								<label class="flex items-center gap-1.5 text-sm text-muted-foreground">
-									<Checkbox
-										name="{day.key}_closed"
-										checked={closedDays[day.key] ?? false}
-										onCheckedChange={(v) => {
-											closedDays[day.key] = v === true;
-										}}
-									/>
-									Closed
-								</label>
-							</div>
-							<div
-								class="flex min-w-0 flex-1 items-center gap-2 transition-opacity {closedDays[
-									day.key
-								]
-									? 'pointer-events-none opacity-40'
-									: ''}"
-							>
-								<Input
-									type="time"
-									name="{day.key}_open"
-									value={h?.open ?? '09:00'}
-									class="min-w-0 flex-1"
-								/>
-								<span class="shrink-0 text-xs text-muted-foreground">to</span>
-								<Input
-									type="time"
-									name="{day.key}_close"
-									value={h?.close ?? '21:00'}
-									class="min-w-0 flex-1"
-								/>
-							</div>
-						</div>
-					{/each}
-				</div>
-			</CardContent>
-			<CardFooter>
-				<Button type="submit" variant="default">Save hours</Button>
-			</CardFooter>
-		</Card>
-	</form>
 </div>

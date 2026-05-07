@@ -76,32 +76,6 @@ export const actions: Actions = {
 		return { success: true };
 	},
 
-	saveHours: async ({ request, locals }) => {
-		const vendorId = locals.vendorId!;
-		const formData = await request.formData();
-
-		const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
-		const hours: Record<string, { open: string; close: string; closed?: boolean }> = {};
-		for (const day of days) {
-			const closed = formData.get(`${day}_closed`) === 'on';
-			const open = formData.get(`${day}_open`)?.toString() ?? '09:00';
-			const close = formData.get(`${day}_close`)?.toString() ?? '17:00';
-			hours[day] = closed ? { open, close, closed: true } : { open, close };
-		}
-
-		const record = await db.query.vendor.findFirst({
-			where: eq(vendor.id, vendorId),
-			columns: { settings: true }
-		});
-		const current = (record?.settings ?? {}) as Record<string, unknown>;
-		await db
-			.update(vendor)
-			.set({ settings: { ...current, hours }, updatedAt: new Date() })
-			.where(eq(vendor.id, vendorId));
-
-		return { hoursSuccess: true };
-	},
-
 	saveCheckout: async ({ request, locals }) => {
 		const vendorId = locals.vendorId!;
 		const formData = await request.formData();

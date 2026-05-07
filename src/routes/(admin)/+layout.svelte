@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { LayoutData } from './$types';
 	import { page } from '$app/state';
+	import { afterNavigate } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { signOut } from '$lib/auth-client';
 	import Icon from '@iconify/svelte';
@@ -11,6 +12,12 @@
 	let { data, children }: { data: LayoutData; children: import('svelte').Snippet } = $props();
 
 	let sidebarOpen = $state(false);
+	let mainEl: HTMLElement | undefined = $state();
+
+	afterNavigate(() => {
+		sidebarOpen = false;
+		mainEl?.scrollTo(0, 0);
+	});
 
 	const navItems = [
 		{ href: '/admin', label: 'Overview', icon: 'mdi:view-dashboard-outline' },
@@ -98,7 +105,7 @@
 		{@render sidebarContent()}
 	</aside>
 
-	<main class="flex flex-1 flex-col overflow-y-auto">
+	<main bind:this={mainEl} class="flex flex-1 flex-col overflow-y-auto">
 		<!-- Mobile top bar -->
 		<header
 			class="sticky top-0 z-30 flex items-center gap-3 border-b bg-gray-900 px-4 py-3 md:static md:z-auto md:hidden"

@@ -12,7 +12,6 @@
 	import { Calendar } from '$lib/components/ui/calendar';
 	import { parseDate, type CalendarDate } from '@internationalized/date';
 	import OrdersTabs from '$lib/components/OrdersTabs.svelte';
-	import OrdersSummaryBar from '$lib/components/OrdersSummaryBar.svelte';
 	import OrdersFilterTabs from '$lib/components/OrdersFilterTabs.svelte';
 	import { SvelteURLSearchParams } from 'svelte/reactivity';
 	import { Alert } from '$lib/components/ui/alert';
@@ -144,26 +143,6 @@
 	{#if form?.error}
 		<Alert severity="error" class="mb-4">{form.error}</Alert>
 	{/if}
-
-	<!-- Summary bar -->
-	<OrdersSummaryBar
-		compact
-		stats={[
-			{ label: 'Total orders', value: Number(data.summary.total) },
-			{ label: 'Fulfilled', value: Number(data.summary.fulfilled) },
-			{
-				label: 'Cancelled',
-				value: Number(data.summary.cancelled),
-				urgent: Number(data.summary.cancelled) > 0
-			},
-			{
-				label: 'Revenue',
-				value: `$${(Number(data.summary.revenue) / 100).toFixed(2)}`,
-				positive: true
-			},
-			{ label: 'Refunded', value: Number(data.summary.refunded) }
-		]}
-	/>
 
 	<!-- Row 1: Search -->
 	<form method="GET" class="mb-3">
