@@ -38,12 +38,12 @@
 	function statusClass(t: { isActive: boolean; deletedAt: Date | null }) {
 		if (t.deletedAt) return 'bg-destructive/10 text-red-600';
 		if (!t.isActive) return 'bg-yellow-100 text-yellow-700';
-		return 'bg-green-100 text-primary/90';
+		return 'bg-success/10 text-success';
 	}
 </script>
 
 <div class="max-w-5xl">
-	<div class="mb-6 flex items-center justify-between">
+	<div class="mb-6 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
 		<div>
 			<h1 class="text-2xl font-bold text-foreground">Vendors</h1>
 			<p class="mt-0.5 text-sm text-muted-foreground">
@@ -52,7 +52,7 @@
 		</div>
 
 		{#if data.vendors.length > 6}
-			<div class="relative w-64">
+			<div class="relative w-full md:w-64">
 				<Icon
 					icon="mdi:magnify"
 					class="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground"
@@ -124,7 +124,9 @@
 									</Badge>
 								</TableCell>
 								<TableCell class="px-4 py-3">
-									<div class="flex items-center justify-end gap-1">
+									<div
+										class="flex flex-col items-stretch gap-1 md:flex-row md:items-center md:justify-end"
+									>
 										{#if t.deletedAt || !t.isActive}
 											<!-- Restore -->
 											<form method="post" action="?/restore" use:enhance>
@@ -137,6 +139,7 @@
 														if (await confirmDialog('Restore this vendor?')) form?.requestSubmit();
 													}}
 													variant="outline"
+													class="w-full md:w-auto"
 												>
 													Restore
 												</Button>
@@ -158,7 +161,7 @@
 															form?.requestSubmit();
 													}}
 													variant="ghost"
-													class="text-muted-foreground hover:text-foreground"
+													class="w-full text-muted-foreground hover:text-foreground md:w-auto"
 												>
 													Archive
 												</Button>
@@ -182,7 +185,7 @@
 															form?.requestSubmit();
 													}}
 													variant="ghost"
-													class="text-red-600 hover:bg-destructive/10 hover:text-red-500"
+													class="w-full text-red-600 hover:bg-destructive/10 hover:text-red-500 md:w-auto"
 												>
 													Delete
 												</Button>

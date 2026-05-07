@@ -327,7 +327,7 @@
 	<div
 		class="fixed right-5 bottom-5 z-300 flex items-start gap-3 rounded-xl border border-primary/20 bg-background px-4 py-3.5 shadow-xl"
 	>
-		<div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-green-100">
+		<div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-success/10">
 			<Icon icon="mdi:bell-ring-outline" class="h-5 w-5 text-primary" />
 		</div>
 		<div class="min-w-0">

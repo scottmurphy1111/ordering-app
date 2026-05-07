@@ -61,7 +61,7 @@
 				</div>
 				<div class="shrink-0">
 					{#if data.hasStripeKey}
-						<Badge class="bg-green-100 text-primary/90">
+						<Badge class="bg-success/10 text-success">
 							<span class="h-1.5 w-1.5 rounded-full bg-primary"></span>
 							Connected
 						</Badge>
@@ -199,7 +199,7 @@
 						</div>
 						<div class="ml-4 shrink-0">
 							{#if data.hasWebhookEndpoint}
-								<Badge class="bg-green-100 text-primary/90">
+								<Badge class="bg-success/10 text-success">
 									<span class="h-1.5 w-1.5 rounded-full bg-primary"></span>
 									Auto-configured
 								</Badge>

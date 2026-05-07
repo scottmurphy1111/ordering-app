@@ -71,7 +71,7 @@
 		<input
 			type="text"
 			placeholder="Search by name or slug…"
-			class="h-8 w-64 rounded-lg border border-gray-200 bg-white px-3 text-sm placeholder:text-gray-400 focus:border-transparent focus:ring-2 focus:ring-green-500 focus:outline-none"
+			class="h-8 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm placeholder:text-gray-400 focus:border-transparent focus:ring-2 focus:ring-green-500 focus:outline-none md:w-64"
 			value={data.search}
 			oninput={(e) => navigate({ search: (e.target as HTMLInputElement).value })}
 		/>
@@ -96,7 +96,7 @@
 									<div class="flex flex-wrap items-center gap-2">
 										<p class="font-medium text-foreground">{v.name}</p>
 										<span class="font-mono text-xs text-muted-foreground">/{v.slug}</span>
-										<Badge class="bg-muted capitalize text-muted-foreground">
+										<Badge class="bg-muted text-muted-foreground capitalize">
 											{v.subscriptionTier ?? 'starter'}
 										</Badge>
 										{#if v.subscriptionPausedAt}

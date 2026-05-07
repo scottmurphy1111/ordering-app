@@ -171,7 +171,7 @@
 					<p class="mt-1 text-3xl font-bold text-foreground">{data.stats.items}</p>
 					<a
 						href={resolve('/dashboard/catalog/items')}
-						class="mt-2 inline-flex items-center gap-0.5 text-xs font-medium text-primary transition-colors hover:text-green-700"
+						class="mt-2 inline-flex items-center gap-0.5 text-xs font-medium text-primary transition-colors hover:text-primary/80"
 					>
 						Manage <Icon icon="mdi:chevron-right" class="h-3 w-3" />
 					</a>
@@ -184,7 +184,7 @@
 					<p class="mt-1 text-3xl font-bold text-foreground">{data.stats.categories}</p>
 					<a
 						href={resolve('/dashboard/catalog/categories')}
-						class="mt-2 inline-flex items-center gap-0.5 text-xs font-medium text-primary transition-colors hover:text-green-700"
+						class="mt-2 inline-flex items-center gap-0.5 text-xs font-medium text-primary transition-colors hover:text-primary/80"
 					>
 						Manage <Icon icon="mdi:chevron-right" class="h-3 w-3" />
 					</a>
@@ -207,7 +207,7 @@
 						{:else}
 							<a
 								href={resolve('/dashboard/orders')}
-								class="inline-flex items-center gap-0.5 text-xs font-medium text-primary transition-colors hover:text-green-700"
+								class="inline-flex items-center gap-0.5 text-xs font-medium text-primary transition-colors hover:text-primary/80"
 							>
 								View <Icon icon="mdi:chevron-right" class="h-3 w-3" />
 							</a>

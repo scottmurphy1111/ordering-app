@@ -161,7 +161,7 @@
 									</span>
 								{:else if job.lastStatus === 'ok'}
 									<span
-										class="shrink-0 rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700"
+										class="shrink-0 rounded-full bg-success/10 px-2 py-0.5 text-xs font-medium text-success"
 									>
 										OK
 									</span>

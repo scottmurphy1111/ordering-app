@@ -145,6 +145,14 @@
 					{@const height =
 						day.count === 0 ? 2 : Math.max(4, Math.round((day.count / maxDaily) * 144))}
 					<div class="group relative flex flex-1 flex-col items-center justify-end">
+						{#if day.count > 0}
+							<!-- Always-visible mobile label; hidden on desktop where the hover tooltip works. -->
+							<span
+								class="absolute -top-3.5 text-[9px] leading-none font-medium text-muted-foreground md:hidden"
+							>
+								{day.count}
+							</span>
+						{/if}
 						<div
 							class="w-full rounded-sm bg-primary transition-colors group-hover:bg-primary/80"
 							style="height: {height}px;"

@@ -279,7 +279,7 @@
 							<span class="text-xs text-muted-foreground">{cat.itemCount} items</span>
 							<Badge
 								class={cat.isActive
-									? 'bg-green-100 text-green-700'
+									? 'bg-success/10 text-success'
 									: 'bg-muted text-muted-foreground'}
 							>
 								{cat.isActive ? 'Active' : 'Hidden'}

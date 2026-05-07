@@ -61,7 +61,7 @@
 		confirmed: 'bg-indigo-100 text-indigo-700',
 		preparing: 'bg-amber-100 text-amber-700',
 		ready: 'bg-purple-100 text-purple-700',
-		fulfilled: 'bg-green-100 text-green-700',
+		fulfilled: 'bg-success/10 text-success',
 		cancelled: 'bg-red-100 text-red-700'
 	};
 
@@ -246,7 +246,7 @@
 					<div class="mt-3 border-t border-gray-100 pt-3">
 						<a
 							href={resolve('/dashboard/catalog/items')}
-							class="text-sm text-green-600 hover:underline"
+							class="text-sm text-success hover:underline"
 						>
 							View all catalog items →
 						</a>
@@ -472,7 +472,7 @@
 										</div>
 										<div class="h-1.5 w-full rounded-full bg-muted">
 											<div
-												class="h-1.5 rounded-full bg-green-500 transition-all"
+												class="h-1.5 rounded-full bg-success transition-all"
 												style="width: {customerRetention.returnRate}%"
 											></div>
 										</div>

@@ -16,7 +16,7 @@
 	let { data }: { data: PageData } = $props();
 
 	const invoiceStatusStyles: Record<string, string> = {
-		paid: 'bg-green-100 text-green-700',
+		paid: 'bg-success/10 text-success',
 		open: 'bg-amber-100 text-amber-700',
 		uncollectible: 'bg-red-100 text-red-700',
 		void: 'bg-gray-100 text-gray-400',

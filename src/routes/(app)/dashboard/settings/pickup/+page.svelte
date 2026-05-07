@@ -635,7 +635,7 @@
 								</TableCell>
 								<TableCell>
 									{#if loc.isActive}
-										<Badge class="bg-green-100 text-primary/90">Active</Badge>
+										<Badge class="bg-success/10 text-success">Active</Badge>
 									{:else}
 										<Badge class="bg-gray-100 text-muted-foreground">Inactive</Badge>
 									{/if}

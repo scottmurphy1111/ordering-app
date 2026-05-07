@@ -272,7 +272,7 @@
 				<CardAction>
 					<span
 						class="rounded-full px-2.5 py-0.5 text-xs font-medium {data.branding.logoUrl
-							? 'bg-green-100 text-primary/90'
+							? 'bg-success/10 text-success'
 							: 'bg-muted text-muted-foreground'}"
 					>
 						{data.branding.logoUrl ? 'Active' : 'Not set'}
@@ -341,7 +341,7 @@
 				<CardAction>
 					<span
 						class="rounded-full px-2.5 py-0.5 text-xs font-medium {data.branding.bannerUrl
-							? 'bg-green-100 text-primary/90'
+							? 'bg-success/10 text-success'
 							: 'bg-muted text-muted-foreground'}"
 					>
 						{data.branding.bannerUrl ? 'Active' : 'Not set'}
@@ -407,7 +407,7 @@
 				<CardAction>
 					<span
 						class="rounded-full px-2.5 py-0.5 text-xs font-medium {data.branding.backgroundImageUrl
-							? 'bg-green-100 text-primary/90'
+							? 'bg-success/10 text-success'
 							: 'bg-muted text-muted-foreground'}"
 					>
 						{data.branding.backgroundImageUrl ? 'Active' : 'Not set'}

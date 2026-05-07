@@ -6,7 +6,7 @@
 	export const SEVERITY_CONFIG: Record<AlertSeverity, SeverityConfig> = {
 		success: {
 			icon: 'mdi:check-circle-outline',
-			classes: 'border-green-200 bg-green-50 text-green-700',
+			classes: 'border-success/20 bg-success/10 text-success',
 			duration: 5000
 		},
 		warning: {

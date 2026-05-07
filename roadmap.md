@@ -137,36 +137,48 @@ Brand green is hardcoded as Tailwind utility classes (`bg-green-600`, `text-gree
 
 ### Pickup window date bounds (start date, end date)
 
-**Status:** Resolved (2026-05-07) — shipped schema bounds, form pickers, expand/materialize plumbing, summary-line display, and season-ended empty state.
+**Status:** Resolved (2026-05-07) — shipped schema bounds, form pickers, expand/materialize plumbing, summary-line display, and season-ended empty state. Behavioral spot-checks passed; thorough sweep deferred to pre-launch verification.
 
 **What shipped:**
-- Schema: added `recurrence_start_date` and `recurrence_end_date` (nullable TIMESTAMPTZ) to `pickup_window_templates`. Both stored as start-of-day UTC in the vendor's IANA timezone via the `startOfDayInTZ` offset-correction helper. Migration: `drizzle/0005_past_wraith.sql` (generated, not yet applied at commit time — run `bun run db:migrate`).
-- `expand.ts`: `startOfDayInTZ(yyyyMmDd, ianaTimezone)` exported helper converts YYYY-MM-DD to start-of-day UTC. `ExpandTemplateInput` extended with `recurrenceStart?: Date | null` and `recurrenceEnd?: Date | null`. Loop skips occurrences before `recurrenceStart` and stops past `recurrenceEnd`.
-- `materialize.ts`: passes `recurrenceStartDate` and `recurrenceEndDate` from the template row to `expandTemplate`. Existing "orderful occurrences preserved" policy applies: occurrences past the new end date with attached orders survive; orderless ones are deleted on next materialize call.
-- Form: "Starts on" and "Ends on" date pickers added to both the create and edit panels in `/dashboard/settings/pickup`. Server validates: if both set, end ≥ start; if end-only, end must be today or later.
-- Templates list: summary line appends date range when present (e.g., `· May 1 – Oct 31`, `· From May 1`, `· Until Oct 31`).
-- Season-ended empty state: when `recurrenceEndDate` is in the past and there are no upcoming occurrences, renders "Season ended [date]." instead of the generic "No upcoming occurrences."
-- Live preview: `computePreview` respects both bounds client-side, capping occurrences at end date.
+- Two new nullable columns on `pickup_window_templates`: `recurrence_start_date` and `recurrence_end_date`, both `TIMESTAMPTZ` interpreted as start-of-day in the vendor's timezone. Migration `0005_past_wraith.sql`.
+- New `startOfDayInTZ(yyyyMmDd, ianaTimezone) → Date` helper in `src/lib/server/pickup/expand.ts`, mirrored client-side in the pickup settings page. Centralizes the TZ math at the form/server boundary so neither expand nor materialize need timezone-conversion logic of their own.
+- `expandTemplate()` honors both bounds in its loop: occurrences before `recurrenceStart` are skipped; the loop breaks once `startsAt > recurrenceEnd`. RRule's chronological yield order makes the `break` safe.
+- `materializeTemplate()` passes both fields through. The existing future-only / order-safe / customization-preserving policy applies unchanged — orderful AND customized rows past a newly-set end date are preserved; only orderless+uncustomized rows are deleted on next materialize. Resolves the "Decision needed" question from the original scope.
+- Two form additions (create + edit) under a new "Date bounds (optional)" section: `<input type="date">` pickers for "Starts on" and "Ends on," both blank by default (NULL stored). Edit form prefills from stored bounds via a `toDateInputValue()` helper that round-trips a TIMESTAMPTZ Date back to `YYYY-MM-DD` in the vendor's TZ.
+- Validation extends `validateTemplateFields`: end-on-or-after-start when both set; end-only date must be today or later (past-only end date is almost always a mistake).
+- Templates list summary line appends a date range when bounds are set: `· May 1 – Oct 31` (both), `· From May 1` (start-only), `· Until Oct 31` (end-only). Sibling parity across both located-templates and unassigned-templates callsites.
+- Upcoming-occurrences empty state replaces "No upcoming occurrences." with "Season ended {date}." when the template's end date has passed. Same treatment in both list callsites. No new UI elements introduced — the season-ended note replaces the existing empty-state copy in place to keep the (already busy) pickup settings page quiet.
+- Live preview is truthful: occurrences are capped at the end date and skipped before the start date, mirroring server-side expand semantics. No extra "season ends" line in the preview block.
 
 **Files involved:**
-- `src/lib/server/db/pickup.ts` — two new columns on `pickupWindowTemplates`
-- `src/lib/server/pickup/expand.ts` — `startOfDayInTZ` helper, `ExpandTemplateInput` extension, loop bounds
-- `src/lib/server/pickup/materialize.ts` — passes bounds to `expandTemplate`
-- `src/routes/(app)/dashboard/settings/pickup/+page.server.ts` — validation, fresh TZ query, `startOfDayInTZ` resolution, persist to DB
-- `src/routes/(app)/dashboard/settings/pickup/+page.svelte` — form pickers, `toDateInputValue` round-trip, `formatDateRange`, `isSeasonEnded`, preview integration
-- `drizzle/0005_past_wraith.sql` — migration file (generated)
+- `src/lib/server/db/pickup.ts` — two new columns
+- `src/lib/server/pickup/expand.ts` — `startOfDayInTZ` helper, `ExpandTemplateInput` extension, loop bound checks
+- `src/lib/server/pickup/materialize.ts` — bounds passed through to expand
+- `src/routes/(app)/dashboard/settings/pickup/+page.server.ts` — `vendor` import, `startOfDayInTZ` import, `validateTemplateFields` extension, `createTemplate` and `updateTemplate` parsing/resolution/persistence
+- `src/routes/(app)/dashboard/settings/pickup/+page.svelte` — preview state, client-side `startOfDayInTZ` mirror, `toDateInputValue` helper, `formatDateRange` and `isSeasonEnded` helpers, `computePreview` bound logic, two form blocks, two summary-line callsites, two empty-state callsites, seven preview-state reset callsites, two edit-mode prefill callsites
+- Migration: `drizzle/0005_past_wraith.sql`
 
-**Out of scope (deferred):**
-- Non-weekly recurrence patterns — separate Tier 2 entry. Date bounds compose cleanly when that work lands.
-- "Skip these specific dates" — per-occurrence cancellation handles one-off skips.
-- Auto-renewal year-over-year — vendors set new dates each season for v1.
+**Out of scope of this entry (still applies):**
+- Non-weekly recurrence patterns (every other week, monthly on the Nth weekday, custom intervals). Tracked separately as Tier 2 "Pickup window non-weekly recurrence patterns." The bounds added in this entry compose cleanly with future recurrence kinds.
+- "Skip these specific dates" (holiday exceptions). Per-occurrence cancellation already handles one-off skips; bulk-skip is a separate feature.
+- Auto-renewal of seasonal windows year-over-year. Vendors set new dates each season for v1.
+- Customer-facing storefront seasonal messaging ("Season ended" / "Returning May 1"). Storefront's slot picker reads from `pickup_windows` (concrete materialized rows), so it already respects the bounds via materialize. Any storefront-side seasonal copy is a separate prompt.
+- Cross-reference with the Tier 3 "Pause for the season" item still stands: that one toggles the entire shop on/off; this one bounds individual templates. Both can coexist.
+- The `isSeasonEnded` UI heuristic uses `endDate + 24h < now` for the empty-state affordance. This is a tight approximation that handles DST acceptably for UI purposes — no orders are at risk because materialize uses the strict `>` comparator on the resolved-TZ instant. If a vendor reports off-by-a-few-hours behavior on the empty-state copy, the fix is one line.
 
 **Resolved questions:**
-- Materialization behavior when new end date precedes existing orderful occurrences: orderful rows preserved, orderless rows deleted on next materialize call. Matches existing future-occurrence preservation policy.
-- Storage format for date bounds: TIMESTAMPTZ at start-of-day in vendor TZ (not a bare DATE column). Consistent with all other timestamp columns in the schema; avoids ambiguity at timezone boundaries.
+- End-date-with-orderful-occurrences-past-it: orderful AND customized rows are preserved by the existing materialize policy; only orderless+uncustomized rows past the new end date are deleted. ✓
+- Date column type: `TIMESTAMPTZ` interpreted as start-of-day in vendor TZ (matches surrounding code style). ✓
+- Live preview when end date limits occurrences: truthful — show only what will materialize, no extra "season ends" line in the preview. ✓
+- Season-ended empty state location: per-template, in place of the existing "No upcoming occurrences." copy. Least-busy choice for an already-busy page. ✓
 
-> **Original analysis (preserved for history):**
-> Seasonal vendors are central to the wedge audience — farmers markets running May–October, holiday bakers active only in November–December, CSA seasons with defined start and end dates, summer-only farm stands. Today, pickup window templates have no way to express "starts on X" or "ends on Y" — recurrence is open-ended in both directions, with the cron extending occurrences on a rolling 12-week horizon indefinitely. Seasonal vendors are forced to either deactivate windows manually at season's end (and remember to reactivate next year), delete and recreate templates each season (losing history), or accept that occurrences keep generating during their off-season. None of those reflect a 10-minute setup story for a seasonal maker.
+> **Original analysis (preserved for context):**
+>
+> **Why it matters:** Seasonal vendors are central to the wedge audience — farmers markets running May–October, holiday bakers active only in November–December, CSA seasons with defined start and end dates, summer-only farm stands. Today, pickup window templates have no way to express "starts on X" or "ends on Y" — recurrence is open-ended in both directions, with the cron extending occurrences on a rolling 12-week horizon indefinitely. Seasonal vendors are forced to either deactivate windows manually at season's end (and remember to reactivate next year), delete and recreate templates each season (losing history), or accept that occurrences keep generating during their off-season. None of those reflect a 10-minute setup story for a seasonal maker.
+>
+> The current form (Name, Location, Days, Start time, End time, Cutoff hours, Max orders, Active) reads as "every selected day, forever" — which is wrong for the seasonal half of the audience.
+>
+> **Trigger:** Before any vendor outreach that targets seasonal makers (farmers markets, CSAs, holiday bakers). The wedge audience profile names these explicitly, so this gates outreach to those segments.
 
 ---
 

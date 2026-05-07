@@ -617,7 +617,7 @@
 							type="button"
 							class="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium capitalize transition-colors hover:opacity-80 {item.status ===
 							'available'
-								? 'bg-green-100 text-green-700'
+								? 'bg-success/10 text-success'
 								: item.status === 'sold_out'
 									? 'bg-amber-100 text-amber-700'
 									: item.status === 'hidden'
@@ -650,7 +650,7 @@
 								>
 									<span
 										class="h-2 w-2 rounded-full {val === 'available'
-											? 'bg-green-500'
+											? 'bg-success'
 											: val === 'sold_out'
 												? 'bg-amber-400'
 												: 'bg-gray-300'}"
@@ -849,7 +849,7 @@
 											<span class="text-xs text-gray-400 line-through"
 												>${(item.price / 100).toFixed(2)}</span
 											>
-											<span class="text-sm font-semibold text-green-600"
+											<span class="text-sm font-semibold text-success"
 												>${(item.discountedPrice / 100).toFixed(2)}</span
 											>
 										</div>

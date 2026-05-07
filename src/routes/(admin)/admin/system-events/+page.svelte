@@ -44,7 +44,7 @@
 	<div class="mb-4 flex flex-wrap items-center gap-3">
 		<input
 			type="text"
-			class="h-8 w-64 rounded-lg border border-gray-200 bg-white px-3 text-sm placeholder:text-gray-400 focus:border-transparent focus:ring-2 focus:ring-green-500 focus:outline-none"
+			class="h-8 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm placeholder:text-gray-400 focus:border-transparent focus:ring-2 focus:ring-green-500 focus:outline-none md:w-64"
 			placeholder="Filter by type (e.g. cron, webhook)"
 			value={data.typeFilter}
 			oninput={(e) => navigate({ type: (e.target as HTMLInputElement).value })}
@@ -74,8 +74,7 @@
 			</button>
 			<button
 				type="button"
-				class="h-8 rounded-lg border px-3 text-xs transition-colors {data.statusFilter ===
-				'error'
+				class="h-8 rounded-lg border px-3 text-xs transition-colors {data.statusFilter === 'error'
 					? 'border-red-300 bg-red-50 text-red-700'
 					: 'border-gray-200 text-gray-600 hover:bg-gray-50'}"
 				onclick={() => navigate({ status: 'error' })}
@@ -96,28 +95,25 @@
 	</div>
 
 	<!-- Table -->
-	<div class="overflow-hidden rounded-xl border border-gray-200 bg-white">
+	<div class="overflow-x-auto rounded-xl border border-gray-200 bg-white">
 		<table class="w-full">
 			<thead class="border-b border-gray-200 bg-gray-50">
 				<tr>
-					<th
-						class="px-4 py-3 text-left text-xs font-medium tracking-wide text-gray-500 uppercase"
+					<th class="px-4 py-3 text-left text-xs font-medium tracking-wide text-gray-500 uppercase"
 						>Time</th
 					>
-					<th
-						class="px-4 py-3 text-left text-xs font-medium tracking-wide text-gray-500 uppercase"
+					<th class="px-4 py-3 text-left text-xs font-medium tracking-wide text-gray-500 uppercase"
 						>Event type</th
 					>
-					<th
-						class="px-4 py-3 text-left text-xs font-medium tracking-wide text-gray-500 uppercase"
+					<th class="px-4 py-3 text-left text-xs font-medium tracking-wide text-gray-500 uppercase"
 						>Status</th
 					>
 					<th
-						class="px-4 py-3 text-left text-xs font-medium tracking-wide text-gray-500 uppercase"
+						class="hidden px-4 py-3 text-left text-xs font-medium tracking-wide text-gray-500 uppercase md:table-cell"
 						>Vendor</th
 					>
 					<th
-						class="px-4 py-3 text-left text-xs font-medium tracking-wide text-gray-500 uppercase"
+						class="hidden px-4 py-3 text-left text-xs font-medium tracking-wide text-gray-500 uppercase md:table-cell"
 						>Metadata</th
 					>
 				</tr>
@@ -134,7 +130,7 @@
 				{:else}
 					{#each data.events as event (event.id)}
 						<tr class="hover:bg-gray-50">
-							<td class="whitespace-nowrap px-4 py-3 font-mono text-xs text-gray-400">
+							<td class="px-4 py-3 font-mono text-xs whitespace-nowrap text-gray-400">
 								{fmtDateTime(event.createdAt)}
 							</td>
 							<td class="px-4 py-3 font-mono text-sm text-gray-900">{event.eventType}</td>
@@ -147,20 +143,22 @@
 									</span>
 								{:else}
 									<span
-										class="inline-flex rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700"
+										class="inline-flex rounded-full bg-success/10 px-2 py-0.5 text-xs font-medium text-success"
 									>
 										OK
 									</span>
 								{/if}
 							</td>
-							<td class="px-4 py-3 text-sm text-gray-500">
+							<td class="hidden px-4 py-3 text-sm text-gray-500 md:table-cell">
 								{#if event.vendorId}
 									{event.vendorName ?? `#${event.vendorId}`}
 								{:else}
 									<span class="text-gray-400">—</span>
 								{/if}
 							</td>
-							<td class="max-w-xs truncate px-4 py-3 font-mono text-xs text-gray-400">
+							<td
+								class="hidden max-w-xs truncate px-4 py-3 font-mono text-xs text-gray-400 md:table-cell"
+							>
 								{event.metadata ? JSON.stringify(event.metadata) : '—'}
 							</td>
 						</tr>

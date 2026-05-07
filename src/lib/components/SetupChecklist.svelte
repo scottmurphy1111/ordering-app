@@ -37,8 +37,8 @@
 				<div class="flex items-start gap-3 py-3 first:pt-0 last:pb-0">
 					<div class="mt-0.5 shrink-0">
 						{#if step.complete}
-							<div class="flex h-5 w-5 items-center justify-center rounded-full bg-green-100">
-								<Icon icon="mdi:check" class="h-3 w-3 text-green-600" />
+							<div class="flex h-5 w-5 items-center justify-center rounded-full bg-success/10">
+								<Icon icon="mdi:check" class="h-3 w-3 text-success" />
 							</div>
 						{:else}
 							<div class="h-5 w-5 rounded-full border-2 border-gray-300"></div>
@@ -55,7 +55,7 @@
 					{#if !step.complete}
 						<a
 							href={resolve(step.href as `/${string}`)}
-							class="shrink-0 text-xs font-medium text-green-600 hover:text-green-700"
+							class="shrink-0 text-xs font-medium text-success hover:text-success/80"
 						>
 							Set up →
 						</a>

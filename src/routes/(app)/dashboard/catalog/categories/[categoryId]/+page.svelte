@@ -100,9 +100,7 @@
 							}}
 						/>
 						<span
-							class="w-14 text-sm font-medium {isActive
-								? 'text-green-600'
-								: 'text-muted-foreground'}"
+							class="w-14 text-sm font-medium {isActive ? 'text-success' : 'text-muted-foreground'}"
 						>
 							{isActive ? 'Active' : 'Inactive'}
 						</span>
