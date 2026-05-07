@@ -111,6 +111,41 @@ Work through these on the production-equivalent dev environment (or staging). Ch
 
 ---
 
+## Support Email & Autoresponder
+
+The product surfaces two contact addresses (see CLAUDE.md "Support and hello email addresses" for the convention). Both must be live and monitored before vendor outreach.
+
+**Inbox setup:**
+
+- [ ] `hello@getorderlocal.com` forwarding configured at the domain registrar (or via Resend / Google Workspace / equivalent) — destination: founder inbox.
+- [ ] `support@getorderlocal.com` forwarding configured — destination: founder inbox (same as `hello@` for v1).
+- [ ] Send a test email to `hello@` from an external account → arrives in founder inbox within 1 minute.
+- [ ] Send a test email to `support@` from an external account → arrives in founder inbox within 1 minute.
+- [ ] Reply from founder inbox to one of the test emails → reply lands at the external sender (i.e., the From: address on outbound replies isn't a no-reply / forwarder-default).
+
+**Autoresponder:**
+
+- [ ] Autoresponder configured on `support@` (the higher-anxiety channel — vendor is reaching out because they're stuck). Suggested copy: "Thanks for reaching out — we've got your message. We'll reply within 24 hours. For urgent payment or account issues, [phone or text alternative]."
+- [ ] Autoresponder copy avoids over-promising response times. "Within 24 hours" is the floor, not the target.
+- [ ] Autoresponder fires once per sender per 24h window (not on every reply in a thread — most providers handle this default; verify).
+- [ ] Decide whether `hello@` gets an autoresponder. Recommendation for v1: no — `hello@` traffic is mostly prospect inquiries that warrant a human reply, and an autoresponder on the warm channel reads like the founder isn't actually answering. Revisit if `hello@` volume becomes uncomfortable.
+
+**Internal SLA (founder commitment, not customer-facing):**
+
+- [ ] 24h response time for non-urgent vendor inquiries.
+- [ ] 48h resolution target for non-payment issues.
+- [ ] Real-time escalation for payment issues (failed charges, refund disputes, Stripe Connect onboarding stuck states). "Real-time" here = same-day, not literally instant.
+- [ ] Support inbox check cadence written down somewhere founder will actually look (calendar reminder, daily morning routine, etc.). An SLA that depends on remembering to check the inbox is not an SLA.
+
+**Surface coverage check (one-time pre-launch sweep):**
+
+- [ ] Resources page — does it mention support? If yes, address is correct per the split. If no, add it.  ← Resources page audit is its own roadmap item; this item is just "check whether the support address is mentioned correctly there."
+- [ ] ToS / Privacy Policy — when these documents land, the contact address used in them should be `support@` (these are formal documents; help-channel treatment is right).
+- [ ] Welcome email to new vendors — currently uses `hello@` per the email template. Confirm this is still right; vendors signing up are warm-channel.
+- [ ] Stripe failed-payment email — currently uses `hello@`. This is borderline (vendor receiving the email is in a problem state) but the existing template has it as `hello@`. Decision: leave as `hello@` for v1 since the email itself is friendly-toned. Revisit if it reads wrong with real vendor traffic.
+
+---
+
 ## Admin Panel
 
 - [ ] `/admin` shows all vendors

@@ -97,7 +97,9 @@ export async function materializeTemplate(templateId: number): Promise<Materiali
 		windowEnd: template.windowEnd,
 		cutoffHours: template.cutoffHours,
 		vendorTimezone: vendorRecord.timezone,
-		count: HORIZON_WEEKS * 7
+		count: HORIZON_WEEKS * 7,
+		recurrenceStart: template.recurrenceStartDate,
+		recurrenceEnd: template.recurrenceEndDate
 	}).filter((occ) => occ.startsAt <= horizon);
 
 	let generated = 0;

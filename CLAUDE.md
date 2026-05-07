@@ -124,6 +124,7 @@ One-line summaries and links to the detailed sections of this document. Scan thi
 - **eslint-disable: block-form** — use `<!-- eslint-disable RULE -->` / `<!-- eslint-enable RULE -->` blocks, not `eslint-disable-next-line`. → [eslint-disable: block-form over next-line](#eslint-disable-block-form-over-next-line)
 - **Verification protocol** — `[STATIC]` tags for code-inspection checks, `[BEHAVIORAL]` for runtime exercise. Never claim PASS on `[BEHAVIORAL]` from inspection. → [Verification protocol](#verification-protocol)
 - **Print pattern** — `print:hidden` to opt-out chrome from printing; `hidden print:block` for print-only headers; `<style>` body reset. Apply to future printable views. → [Print pattern](#print-pattern)
+- **Support / hello email split** — `hello@` for marketing pages, outbound vendor emails, and neutral "Contact" links; `support@` for in-app problem-state pages (error, banned, vendor-archived). Don't drift either direction. → [Support and hello email addresses](#support-and-hello-email-addresses)
 
 ---
 
@@ -926,12 +927,12 @@ Variants and sizes compose freely:
 
 The variant system (default/outline/ghost/destructive/link) handles **shape**. For buttons that need a color tint beyond their variant — to communicate state or intent — pick one of these four categories. Pick the category first; copy the exact classes. Do not improvise color treatments per callsite.
 
-| Category                          | Treatment                                                                               | Use when                                                                                                     | Example callsite                                      |
-| --------------------------------- | --------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------- |
-| **Critical alert**                | `border-amber-400 bg-amber-50 text-amber-700 hover:bg-amber-100`                        | The system surfaced a problem; vendor must act to resolve. Eye-catching.                                     | Past-due "Update payment method" on the billing page  |
-| **State-recovery (affirmative)**  | `border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100 hover:text-amber-900`  | Vendor entered a non-default state intentionally and is reversing it. Lighter amber than critical alert.     | "Don't cancel — keep [Plan]," "Resume now"            |
-| **Promotional upsell**            | `border-primary/20 bg-primary/5 text-primary hover:bg-primary/10 hover:text-primary`   | Vendor saves money or unlocks something by clicking. Pulls the eye toward the offer.                         | "Switch to annual — save $X"                          |
-| **Vendor-initiated change**       | plain `variant="outline"` (no color tint)                                               | Vendor changes something without recovering from a problem and without being upsold.                         | "Switch to monthly," "Pause billing"                  |
+| Category                         | Treatment                                                                             | Use when                                                                                                 | Example callsite                                     |
+| -------------------------------- | ------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- | ---------------------------------------------------- |
+| **Critical alert**               | `border-amber-400 bg-amber-50 text-amber-700 hover:bg-amber-100`                      | The system surfaced a problem; vendor must act to resolve. Eye-catching.                                 | Past-due "Update payment method" on the billing page |
+| **State-recovery (affirmative)** | `border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100 hover:text-amber-900` | Vendor entered a non-default state intentionally and is reversing it. Lighter amber than critical alert. | "Don't cancel — keep [Plan]," "Resume now"           |
+| **Promotional upsell**           | `border-primary/20 bg-primary/5 text-primary hover:bg-primary/10 hover:text-primary`  | Vendor saves money or unlocks something by clicking. Pulls the eye toward the offer.                     | "Switch to annual — save $X"                         |
+| **Vendor-initiated change**      | plain `variant="outline"` (no color tint)                                             | Vendor changes something without recovering from a problem and without being upsold.                     | "Switch to monthly," "Pause billing"                 |
 
 **Sibling parity is non-negotiable.** Two buttons that fall in the same category share the exact same classes — verify with `grep` before merging. If two siblings disagree on classes, one of them is wrong; figure out which before adding a new one.
 
@@ -1390,6 +1391,40 @@ The canonical reference implementations are `src/routes/(app)/dashboard/orders/+
 - Border above (`border-t border-gray-100`)
 - Padding `px-4 py-2`
 - Affordances are quiet text links, not buttons. See [Documented raw `<button>` exceptions](#documented-raw-button-exceptions) entry #1.
+
+#### Card footer auto-strip mechanism
+
+`<Card>` bakes in `py-4` via its base CSS. When a `<CardFooter>` is the last child, `has-data-[slot=card-footer]:pb-0` on the card root cancels the bottom padding so the footer's own padding handles the gap — no double-spacing. `<CardFooter>` sets `data-slot="card-footer"` automatically.
+
+Hand-rolled action strips (a plain `<div>` rather than `<CardFooter>`) must opt in manually:
+
+```svelte
+<div
+	data-slot="card-footer"
+	class="flex items-center justify-end gap-3 border-t border-gray-100 px-4 py-2"
+>
+	<!-- actions -->
+</div>
+```
+
+Without the attribute, the card renders with orphan padding below the strip (`py-4` bottom + strip's own padding = double gap).
+
+When the strip is inside a `<CardContent class="p-0">` wrapper (required so the strip's `border-t` extends edge-to-edge), move `data-slot="card-footer"` to the strip `<div>`, not `<CardContent>`. The CSS selector targets the nearest child with that slot; `<CardContent>` is the intermediate container, not the strip.
+
+```svelte
+<!-- Correct: p-0 on CardContent, inner div owns the slot and padding -->
+<CardContent class="p-0">
+	<div class="px-6 pb-6">
+		<!-- card body content -->
+	</div>
+	<div
+		data-slot="card-footer"
+		class="flex items-center justify-end gap-3 border-t border-gray-100 px-4 py-2"
+	>
+		<!-- actions -->
+	</div>
+</CardContent>
+```
 
 #### Order card typography hierarchy
 
@@ -1968,6 +2003,38 @@ This neutralizes any vendor-themed or dark page background so print output is cl
 **Print trigger** is `window.print()` from a button click. No PDF generation, no new dependencies.
 
 Apply this pattern to any future printable view (order receipts, invoices, end-of-day summaries, etc.).
+
+---
+
+## Support and hello email addresses
+
+Order Local uses two contact addresses with a deliberate split. Don't merge them; don't flip them.
+
+**`hello@getorderlocal.com`** — warm channel.
+
+- All marketing pages (`/`, `/for-bakeries`, `/for-farmers-markets`) "get in touch" / "questions?" CTAs.
+- All outbound email template footers ("Questions? Reply to this email or reach us at hello@…"). The reply-to address on transactional emails routes here.
+- The dashboard layout footer "Contact" link. The label is neutral; the address treats it as warm-channel.
+
+**`support@getorderlocal.com`** — help channel.
+
+- The global error page (`/+error.svelte`).
+- Account-state pages: banned (`(auth)/banned`), vendor-archived (`(auth)/vendor-archived`).
+- Future in-app help surfaces where the vendor is stuck and explicitly needs help.
+
+**Decision rule when adding a new contact-address callsite:**
+
+- Is the user happy / curious / a prospect? → `hello@`
+- Is the user blocked / confused / receiving an error? → `support@`
+- Ambiguous (a footer "Contact" link in a non-error context)? → `hello@`
+
+**What if a vendor emails the wrong address?** The forwarding setup routes both to the same inbox in practice, so cross-traffic is harmless. The split exists for consistency in the UI, not for technical routing.
+
+**Anti-patterns to flag:**
+
+- Adding a new error page that uses `hello@`. Switch to `support@`.
+- Adding a new email template footer that uses `support@`. Switch to `hello@`.
+- Introducing a third address (e.g., `billing@`, `hi@`, `info@`). The split is two; expanding requires deliberate review.
 
 ---
 
@@ -2612,6 +2679,16 @@ The block-form applies to everything between the open and close comments regardl
 Use `eslint-disable-next-line` only when the target line is guaranteed to remain a single line after reformatting (short, no inner attributes that could push it over the line-length threshold). When in doubt, use block-form. The cost is two extra comment lines; the benefit is correctness across every future reformat.
 
 This applies to every Svelte and TypeScript file in this project — Prettier touches all of them.
+
+---
+
+## Operational documents
+
+Living documents that complement this file. These are not auto-generated — they must be kept up to date manually alongside code changes.
+
+- **`prelaunch-testing.md`** — Hands-on browser and database tests required before Order Local opens to paying vendors. Organized by surface (auth, vendor setup, catalog, storefront, orders, billing, email, admin, mobile). Run through in full on a production-equivalent environment before any public launch. Check off items only after observing the expected outcome — not from code inspection alone.
+
+- **`roadmap.md`** — Feature backlog, resolved items, and in-flight decisions. Organized by tier (Resolved, Tier 1 active, Tier 2 deferred, etc.). Each resolved entry includes a "What shipped" block and files involved so future contributors understand the history. Update the `Last updated` date and flip entries to Resolved when features land.
 
 ---
 

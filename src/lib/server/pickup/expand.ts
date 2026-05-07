@@ -31,6 +31,11 @@ export type ExpandTemplateInput = {
 	vendorTimezone: string; // IANA identifier, e.g. "America/New_York"
 	count: number; // how many upcoming occurrences to return
 	fromDate?: Date; // defaults to now(); occurrences at or before this are skipped
+	// Date bounds (already-resolved UTC instants from the template row).
+	// recurrenceStart: when set, occurrences before this are skipped (in addition to fromDate).
+	// recurrenceEnd:   when set, the loop stops once startsAt > recurrenceEnd.
+	recurrenceStart?: Date | null;
+	recurrenceEnd?: Date | null;
 };
 
 export type ExpandedOccurrence = {
@@ -48,6 +53,37 @@ const BYDAY_MAP: Record<string, Weekday> = {
 	SA: RRule.SA,
 	SU: RRule.SU
 };
+
+/**
+ * Converts a YYYY-MM-DD calendar date to a UTC Date representing
+ * 00:00:00 on that date in the given IANA timezone.
+ *
+ * Used for date-bound persistence: `recurrence_start_date` and
+ * `recurrence_end_date` are stored as TIMESTAMPTZ at start-of-day
+ * in the vendor's timezone.
+ *
+ * Mirrors the offset-correction trick in `wallClockToUtc` — no
+ * date-fns-tz dependency.
+ */
+export function startOfDayInTZ(yyyyMmDd: string, ianaTimezone: string): Date {
+	const [year, month, day] = yyyyMmDd.split('-').map(Number);
+	const approxUtc = new Date(Date.UTC(year, month - 1, day, 0, 0, 0));
+
+	const parts = new Intl.DateTimeFormat('en', {
+		timeZone: ianaTimezone,
+		hour: '2-digit',
+		minute: '2-digit',
+		hour12: false
+	}).formatToParts(approxUtc);
+
+	const localH = parseInt(parts.find((p) => p.type === 'hour')!.value);
+	const localM = parseInt(parts.find((p) => p.type === 'minute')!.value);
+	const normH = localH === 24 ? 0 : localH;
+
+	// Shift approxUtc by the difference between target (00:00) and actual local time
+	const diffMs = (-normH * 60 - localM) * 60_000;
+	return new Date(approxUtc.getTime() + diffMs);
+}
 
 /**
  * Converts a wall-clock time on an RRule occurrence date to a UTC Date.
@@ -109,6 +145,9 @@ export function expandTemplate(input: ExpandTemplateInput): ExpandedOccurrence[]
 	for (const occ of rule.all()) {
 		const startsAt = wallClockToUtc(occ, input.windowStart, input.vendorTimezone);
 		if (startsAt <= fromDate) continue;
+		// Date bounds: skip occurrences before recurrenceStart; stop once past recurrenceEnd.
+		if (input.recurrenceStart && startsAt < input.recurrenceStart) continue;
+		if (input.recurrenceEnd && startsAt > input.recurrenceEnd) break;
 
 		const endsAt = wallClockToUtc(occ, input.windowEnd, input.vendorTimezone);
 		const cutoffAt = new Date(startsAt.getTime() - input.cutoffHours * 3_600_000);

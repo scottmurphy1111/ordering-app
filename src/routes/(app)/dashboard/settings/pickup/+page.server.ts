@@ -3,7 +3,9 @@ import { fail } from '@sveltejs/kit';
 import { db } from '$lib/server/db';
 import { eq, and, asc, gt, sql } from 'drizzle-orm';
 import { pickupLocations, pickupWindowTemplates, pickupWindows } from '$lib/server/db/pickup';
+import { vendor } from '$lib/server/db/vendor';
 import { materializeTemplate } from '$lib/server/pickup/materialize';
+import { startOfDayInTZ } from '$lib/server/pickup/expand';
 
 export const load: PageServerLoad = async ({ locals }) => {
 	const vendorId = locals.vendorId!;
@@ -97,7 +99,9 @@ function validateTemplateFields(
 	windowStart: string | null,
 	windowEnd: string | null,
 	cutoffHours: number,
-	maxOrders: number | null
+	maxOrders: number | null,
+	recurrenceStartDateRaw: string | null,
+	recurrenceEndDateRaw: string | null
 ): string | null {
 	if (!name) return 'Name is required.';
 	if (name.length > 100) return 'Name must be 100 characters or fewer.';
@@ -107,6 +111,19 @@ function validateTemplateFields(
 	if (windowEnd <= windowStart) return 'End time must be after start time.';
 	if (isNaN(cutoffHours) || cutoffHours < 1) return 'Order cutoff must be at least 1 hour.';
 	if (maxOrders !== null && maxOrders < 1) return 'Max orders must be at least 1.';
+	// Date-bound validation. String comparison on YYYY-MM-DD is safe for ordering.
+	if (recurrenceStartDateRaw && recurrenceEndDateRaw) {
+		if (recurrenceEndDateRaw < recurrenceStartDateRaw) {
+			return 'End date must be on or after start date.';
+		}
+	}
+	if (recurrenceEndDateRaw && !recurrenceStartDateRaw) {
+		// End-only: must be today or later (past-only end date is almost always a mistake).
+		const today = new Date().toISOString().slice(0, 10);
+		if (recurrenceEndDateRaw < today) {
+			return 'End date must be today or later.';
+		}
+	}
 	return null;
 }
 
@@ -204,6 +221,8 @@ export const actions: Actions = {
 		const windowEnd = formData.get('windowEnd')?.toString() || null;
 		const cutoffHours = parseInt(formData.get('cutoffHours')?.toString() ?? '48');
 		const maxOrdersRaw = formData.get('maxOrders')?.toString().trim() || '';
+		const recurrenceStartDateRaw = formData.get('recurrenceStartDate')?.toString().trim() || null;
+		const recurrenceEndDateRaw = formData.get('recurrenceEndDate')?.toString().trim() || null;
 		const isActive = formData.get('isActive') === 'on';
 
 		const maxOrders = maxOrdersRaw ? parseInt(maxOrdersRaw) : null;
@@ -213,7 +232,9 @@ export const actions: Actions = {
 			windowStart,
 			windowEnd,
 			cutoffHours,
-			maxOrders
+			maxOrders,
+			recurrenceStartDateRaw,
+			recurrenceEndDateRaw
 		);
 		if (error) return fail(400, { templateError: error });
 
@@ -227,6 +248,21 @@ export const actions: Actions = {
 			if (!loc) return fail(403, { templateError: 'Location not found.' });
 		}
 
+		// Resolve raw date strings to TIMESTAMPTZ at start-of-day in vendor TZ.
+		// Query timezone fresh (don't trust locals.vendor — derivation-fresh convention).
+		const vendorRecord = await db.query.vendor.findFirst({
+			where: eq(vendor.id, vendorId),
+			columns: { timezone: true }
+		});
+		if (!vendorRecord) return fail(500, { templateError: 'Vendor record missing.' });
+
+		const recurrenceStartDate = recurrenceStartDateRaw
+			? startOfDayInTZ(recurrenceStartDateRaw, vendorRecord.timezone)
+			: null;
+		const recurrenceEndDate = recurrenceEndDateRaw
+			? startOfDayInTZ(recurrenceEndDateRaw, vendorRecord.timezone)
+			: null;
+
 		const [{ id: newTemplateId }] = await db
 			.insert(pickupWindowTemplates)
 			.values({
@@ -238,7 +274,9 @@ export const actions: Actions = {
 				windowEnd: windowEnd!,
 				cutoffHours,
 				maxOrders,
-				isActive
+				isActive,
+				recurrenceStartDate,
+				recurrenceEndDate
 			})
 			.returning({ id: pickupWindowTemplates.id });
 
@@ -262,6 +300,8 @@ export const actions: Actions = {
 		const cutoffHours = parseInt(formData.get('cutoffHours')?.toString() ?? '48');
 		const maxOrdersRaw = formData.get('maxOrders')?.toString().trim() || '';
 		const maxOrders = maxOrdersRaw ? parseInt(maxOrdersRaw) : null;
+		const recurrenceStartDateRaw = formData.get('recurrenceStartDate')?.toString().trim() || null;
+		const recurrenceEndDateRaw = formData.get('recurrenceEndDate')?.toString().trim() || null;
 
 		const error = validateTemplateFields(
 			name,
@@ -269,7 +309,9 @@ export const actions: Actions = {
 			windowStart,
 			windowEnd,
 			cutoffHours,
-			maxOrders
+			maxOrders,
+			recurrenceStartDateRaw,
+			recurrenceEndDateRaw
 		);
 		if (error) return fail(400, { templateError: error });
 
@@ -289,6 +331,21 @@ export const actions: Actions = {
 			if (!loc) return fail(403, { templateError: 'Location not found.' });
 		}
 
+		// Resolve raw date strings to TIMESTAMPTZ at start-of-day in vendor TZ.
+		// Query timezone fresh (don't trust locals.vendor — derivation-fresh convention).
+		const vendorRecord = await db.query.vendor.findFirst({
+			where: eq(vendor.id, vendorId),
+			columns: { timezone: true }
+		});
+		if (!vendorRecord) return fail(500, { templateError: 'Vendor record missing.' });
+
+		const recurrenceStartDate = recurrenceStartDateRaw
+			? startOfDayInTZ(recurrenceStartDateRaw, vendorRecord.timezone)
+			: null;
+		const recurrenceEndDate = recurrenceEndDateRaw
+			? startOfDayInTZ(recurrenceEndDateRaw, vendorRecord.timezone)
+			: null;
+
 		await db
 			.update(pickupWindowTemplates)
 			.set({
@@ -298,7 +355,9 @@ export const actions: Actions = {
 				windowStart: windowStart!,
 				windowEnd: windowEnd!,
 				cutoffHours,
-				maxOrders
+				maxOrders,
+				recurrenceStartDate,
+				recurrenceEndDate
 			})
 			.where(and(eq(pickupWindowTemplates.id, id), eq(pickupWindowTemplates.vendorId, vendorId)));
 

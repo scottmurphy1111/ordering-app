@@ -109,6 +109,10 @@
 	let previewStartTime = $state('');
 	let previewEndTime = $state('');
 	let previewCutoffHours = $state(48);
+	// Date bounds preview state. Strings ('YYYY-MM-DD' or '') so the date inputs
+	// round-trip cleanly without timezone conversion in the form layer.
+	let previewRecurrenceStartDate = $state('');
+	let previewRecurrenceEndDate = $state('');
 
 	const editingTemplate = $derived(
 		editingTemplateId !== null
@@ -146,7 +150,60 @@
 		return 'Every ' + ordered.map((d) => DAY_LABELS[d]).join(' + ');
 	}
 
+	function formatDateRange(
+		startDate: Date | null,
+		endDate: Date | null,
+		tz: string
+	): string | null {
+		if (!startDate && !endDate) return null;
+		const fmt = (d: Date) =>
+			new Intl.DateTimeFormat('en-US', { timeZone: tz, month: 'short', day: 'numeric' }).format(d);
+		if (startDate && endDate) return `${fmt(startDate)} – ${fmt(endDate)}`;
+		if (startDate) return `From ${fmt(startDate)}`;
+		return `Until ${fmt(endDate!)}`;
+	}
+
+	function isSeasonEnded(endDate: Date | null): boolean {
+		if (!endDate) return false;
+		// End date is start-of-day-in-TZ. Season is ended once the end-of-that-day has passed.
+		// Adding 24h is a tight but sufficient approximation (handles DST edge cases acceptably
+		// for this UI affordance — no orders are at risk).
+		return endDate.getTime() + 24 * 3_600_000 < Date.now();
+	}
+
+	// Inverse of startOfDayInTZ: converts a TIMESTAMPTZ Date to a 'YYYY-MM-DD' string
+	// representing the calendar date in the given IANA timezone. Used to populate the
+	// edit form's date inputs from stored bounds.
+	function toDateInputValue(d: Date, ianaTimezone: string): string {
+		const parts = new Intl.DateTimeFormat('en-CA', {
+			timeZone: ianaTimezone,
+			year: 'numeric',
+			month: '2-digit',
+			day: '2-digit'
+		}).formatToParts(d);
+		const y = parts.find((p) => p.type === 'year')!.value;
+		const m = parts.find((p) => p.type === 'month')!.value;
+		const day = parts.find((p) => p.type === 'day')!.value;
+		return `${y}-${m}-${day}`;
+	}
+
 	// Mirrors expand.ts — runs client-side so the preview needs no server round-trip
+	function startOfDayInTZ(yyyyMmDd: string, ianaTimezone: string): Date {
+		const [year, month, day] = yyyyMmDd.split('-').map(Number);
+		const approxUtc = new Date(Date.UTC(year, month - 1, day, 0, 0, 0));
+		const parts = new Intl.DateTimeFormat('en', {
+			timeZone: ianaTimezone,
+			hour: '2-digit',
+			minute: '2-digit',
+			hour12: false
+		}).formatToParts(approxUtc);
+		const localH = parseInt(parts.find((p) => p.type === 'hour')!.value);
+		const localM = parseInt(parts.find((p) => p.type === 'minute')!.value);
+		const normH = localH === 24 ? 0 : localH;
+		const diffMs = (-normH * 60 - localM) * 60_000;
+		return new Date(approxUtc.getTime() + diffMs);
+	}
+
 	function wallClockToUtc(rruleDate: Date, timeHHMM: string, ianaTimezone: string): Date {
 		const year = rruleDate.getUTCFullYear();
 		const month = rruleDate.getUTCMonth() + 1;
@@ -173,7 +230,9 @@
 		start: string,
 		end: string,
 		cutoffHrs: number,
-		tz: string
+		tz: string,
+		recurrenceStartDate: string,
+		recurrenceEndDate: string
 	): OccurrencePreview[] {
 		if (days.length === 0 || !start || !end) return [];
 		const BYDAY: Record<string, typeof RRule.MO> = {
@@ -195,10 +254,16 @@
 			dtstart,
 			count: 14
 		});
+		// Resolve bound strings to UTC instants in the vendor's timezone.
+		// Mirrors the server's startOfDayInTZ resolution so client preview matches what materializes.
+		const recStart = recurrenceStartDate ? startOfDayInTZ(recurrenceStartDate, tz) : null;
+		const recEnd = recurrenceEndDate ? startOfDayInTZ(recurrenceEndDate, tz) : null;
 		const results: OccurrencePreview[] = [];
 		for (const occ of rule.all()) {
 			const startsAt = wallClockToUtc(occ, start, tz);
 			if (startsAt <= now) continue;
+			if (recStart && startsAt < recStart) continue;
+			if (recEnd && startsAt > recEnd) break;
 			const endsAt = wallClockToUtc(occ, end, tz);
 			const cutoffAt = new Date(startsAt.getTime() - cutoffHrs * 3_600_000);
 			results.push({ startsAt, endsAt, cutoffAt });
@@ -208,7 +273,15 @@
 	}
 
 	const occurrencePreview = $derived(
-		computePreview(previewDays, previewStartTime, previewEndTime, previewCutoffHours, data.timezone)
+		computePreview(
+			previewDays,
+			previewStartTime,
+			previewEndTime,
+			previewCutoffHours,
+			data.timezone,
+			previewRecurrenceStartDate,
+			previewRecurrenceEndDate
+		)
 	);
 
 	function formatPreviewDate(date: Date, tz: string): string {
@@ -266,6 +339,8 @@
 			previewDays = [];
 			previewStartTime = '';
 			previewEndTime = '';
+			previewRecurrenceStartDate = '';
+			previewRecurrenceEndDate = '';
 			await update({ reset: true });
 		};
 	}
@@ -288,6 +363,8 @@
 			previewDays = [];
 			previewStartTime = '';
 			previewEndTime = '';
+			previewRecurrenceStartDate = '';
+			previewRecurrenceEndDate = '';
 			await update({ reset: false });
 		};
 	}
@@ -616,6 +693,8 @@
 						previewStartTime = '';
 						previewEndTime = '';
 						previewCutoffHours = 48;
+						previewRecurrenceStartDate = '';
+						previewRecurrenceEndDate = '';
 						addTemplateForLocationId = null;
 						showAddTemplateForm = true;
 					}}
@@ -787,6 +866,42 @@
 								/>
 							</div>
 						</div>
+						<!-- Date bounds (optional) -->
+						<div class="grid grid-cols-2 gap-4">
+							<div>
+								<label
+									class="mb-1 block text-sm font-medium text-muted-foreground"
+									for="etmpl-rec-start"
+								>
+									Starts on
+								</label>
+								<Input
+									id="etmpl-rec-start"
+									name="recurrenceStartDate"
+									type="date"
+									value={previewRecurrenceStartDate}
+									oninput={(e) =>
+										(previewRecurrenceStartDate = (e.target as HTMLInputElement).value)}
+								/>
+								<p class="mt-1 text-xs text-muted-foreground">Leave blank for no start date.</p>
+							</div>
+							<div>
+								<label
+									class="mb-1 block text-sm font-medium text-muted-foreground"
+									for="etmpl-rec-end"
+								>
+									Ends on
+								</label>
+								<Input
+									id="etmpl-rec-end"
+									name="recurrenceEndDate"
+									type="date"
+									value={previewRecurrenceEndDate}
+									oninput={(e) => (previewRecurrenceEndDate = (e.target as HTMLInputElement).value)}
+								/>
+								<p class="mt-1 text-xs text-muted-foreground">Leave blank for no end date.</p>
+							</div>
+						</div>
 						<!-- Live preview -->
 						{@render occurrencePreviewBlock()}
 					</CardContent>
@@ -800,6 +915,8 @@
 								previewDays = [];
 								previewStartTime = '';
 								previewEndTime = '';
+								previewRecurrenceStartDate = '';
+								previewRecurrenceEndDate = '';
 							}}
 							variant="outline"
 						>
@@ -959,6 +1076,42 @@
 								/>
 							</div>
 						</div>
+						<!-- Date bounds (optional) -->
+						<div class="grid grid-cols-2 gap-4">
+							<div>
+								<label
+									class="mb-1 block text-sm font-medium text-muted-foreground"
+									for="tmpl-rec-start"
+								>
+									Starts on
+								</label>
+								<Input
+									id="tmpl-rec-start"
+									name="recurrenceStartDate"
+									type="date"
+									value={previewRecurrenceStartDate}
+									oninput={(e) =>
+										(previewRecurrenceStartDate = (e.target as HTMLInputElement).value)}
+								/>
+								<p class="mt-1 text-xs text-muted-foreground">Leave blank for no start date.</p>
+							</div>
+							<div>
+								<label
+									class="mb-1 block text-sm font-medium text-muted-foreground"
+									for="tmpl-rec-end"
+								>
+									Ends on
+								</label>
+								<Input
+									id="tmpl-rec-end"
+									name="recurrenceEndDate"
+									type="date"
+									value={previewRecurrenceEndDate}
+									oninput={(e) => (previewRecurrenceEndDate = (e.target as HTMLInputElement).value)}
+								/>
+								<p class="mt-1 text-xs text-muted-foreground">Leave blank for no end date.</p>
+							</div>
+						</div>
 						<!-- Active -->
 						<label class="flex cursor-pointer items-center gap-2 text-sm text-muted-foreground">
 							<Checkbox name="isActive" checked={true} />
@@ -978,6 +1131,8 @@
 								previewDays = [];
 								previewStartTime = '';
 								previewEndTime = '';
+								previewRecurrenceStartDate = '';
+								previewRecurrenceEndDate = '';
 							}}
 							variant="outline"
 						>
@@ -1002,6 +1157,8 @@
 						previewStartTime = '';
 						previewEndTime = '';
 						previewCutoffHours = 48;
+						previewRecurrenceStartDate = '';
+						previewRecurrenceEndDate = '';
 						addTemplateForLocationId = null;
 						showAddTemplateForm = true;
 					}}
@@ -1025,6 +1182,11 @@
 					{:else}
 						<div class="mb-2 overflow-hidden rounded-xl border bg-background">
 							{#each locTemplates as tmpl, i (tmpl.id)}
+								{@const tmplDateRange = formatDateRange(
+									tmpl.recurrenceStartDate,
+									tmpl.recurrenceEndDate,
+									data.timezone
+								)}
 								<div class={i > 0 ? 'border-t' : ''}>
 									<div class="flex items-center justify-between px-4 py-3">
 										<span class="text-sm text-foreground">
@@ -1032,9 +1194,9 @@
 											· {formatRecurrence(tmpl.recurrence)}
 											· Cutoff {tmpl.cutoffHours}h · {tmpl.maxOrders
 												? `Max ${tmpl.maxOrders}`
-												: 'No cap'}
+												: 'No cap'}{tmplDateRange ? ` · ${tmplDateRange}` : ''}
 										</span>
-										<div class="flex shrink-0 items-center gap-3 pl-4">
+										<div class="flex shrink-0 items-baseline gap-3 pl-4">
 											<Button
 												type="button"
 												onclick={() => {
@@ -1045,6 +1207,12 @@
 													previewStartTime = tmpl.windowStart;
 													previewEndTime = tmpl.windowEnd;
 													previewCutoffHours = tmpl.cutoffHours;
+													previewRecurrenceStartDate = tmpl.recurrenceStartDate
+														? toDateInputValue(tmpl.recurrenceStartDate, data.timezone)
+														: '';
+													previewRecurrenceEndDate = tmpl.recurrenceEndDate
+														? toDateInputValue(tmpl.recurrenceEndDate, data.timezone)
+														: '';
 												}}
 												variant="ghost"
 												class="h-auto p-0 text-xs text-muted-foreground hover:text-foreground"
@@ -1085,7 +1253,17 @@
 									</div>
 									<div class="border-t border-dashed px-4 pt-2 pb-3">
 										{#if (data.upcomingByTemplate[tmpl.id] ?? []).length === 0}
-											<p class="text-xs text-muted-foreground italic">No upcoming occurrences.</p>
+											{#if isSeasonEnded(tmpl.recurrenceEndDate)}
+												<p class="text-xs text-muted-foreground italic">
+													Season ended {new Intl.DateTimeFormat('en-US', {
+														timeZone: data.timezone,
+														month: 'short',
+														day: 'numeric'
+													}).format(tmpl.recurrenceEndDate!)}.
+												</p>
+											{:else}
+												<p class="text-xs text-muted-foreground italic">No upcoming occurrences.</p>
+											{/if}
 										{:else}
 											<div class="space-y-2">
 												{#each data.upcomingByTemplate[tmpl.id] as occ (occ.id)}
@@ -1106,6 +1284,8 @@
 								previewStartTime = '';
 								previewEndTime = '';
 								previewCutoffHours = 48;
+								previewRecurrenceStartDate = '';
+								previewRecurrenceEndDate = '';
 								addTemplateForLocationId = loc.id;
 								showAddTemplateForm = true;
 							}}
@@ -1124,6 +1304,11 @@
 					<h3 class="mb-2 text-sm font-medium text-muted-foreground italic">Unassigned</h3>
 					<div class="overflow-hidden rounded-xl border bg-background">
 						{#each unassigned as tmpl, i (tmpl.id)}
+							{@const tmplDateRange = formatDateRange(
+								tmpl.recurrenceStartDate,
+								tmpl.recurrenceEndDate,
+								data.timezone
+							)}
 							<div class={i > 0 ? 'border-t' : ''}>
 								<div class="flex items-center justify-between px-4 py-3">
 									<span class="text-sm text-foreground">
@@ -1131,7 +1316,7 @@
 										· {formatRecurrence(tmpl.recurrence)}
 										· Cutoff {tmpl.cutoffHours}h · {tmpl.maxOrders
 											? `Max ${tmpl.maxOrders}`
-											: 'No cap'}
+											: 'No cap'}{tmplDateRange ? ` · ${tmplDateRange}` : ''}
 									</span>
 									<div class="flex shrink-0 items-center gap-3 pl-4">
 										<Button
@@ -1144,6 +1329,12 @@
 												previewStartTime = tmpl.windowStart;
 												previewEndTime = tmpl.windowEnd;
 												previewCutoffHours = tmpl.cutoffHours;
+												previewRecurrenceStartDate = tmpl.recurrenceStartDate
+													? toDateInputValue(tmpl.recurrenceStartDate, data.timezone)
+													: '';
+												previewRecurrenceEndDate = tmpl.recurrenceEndDate
+													? toDateInputValue(tmpl.recurrenceEndDate, data.timezone)
+													: '';
 											}}
 											variant="ghost"
 											class="h-auto p-0 text-xs text-muted-foreground hover:text-foreground"
@@ -1184,7 +1375,17 @@
 								</div>
 								<div class="border-t border-dashed px-4 pt-2 pb-3">
 									{#if (data.upcomingByTemplate[tmpl.id] ?? []).length === 0}
-										<p class="text-xs text-muted-foreground italic">No upcoming occurrences.</p>
+										{#if isSeasonEnded(tmpl.recurrenceEndDate)}
+											<p class="text-xs text-muted-foreground italic">
+												Season ended {new Intl.DateTimeFormat('en-US', {
+													timeZone: data.timezone,
+													month: 'short',
+													day: 'numeric'
+												}).format(tmpl.recurrenceEndDate!)}.
+											</p>
+										{:else}
+											<p class="text-xs text-muted-foreground italic">No upcoming occurrences.</p>
+										{/if}
 									{:else}
 										<div class="space-y-2">
 											{#each data.upcomingByTemplate[tmpl.id] as occ (occ.id)}

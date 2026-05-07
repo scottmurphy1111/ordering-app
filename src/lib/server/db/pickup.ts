@@ -56,6 +56,12 @@ export const pickupWindowTemplates = pgTable(
 		cutoffHours: integer('cutoff_hours').notNull().default(48),
 		maxOrders: integer('max_orders'),
 		isActive: boolean('is_active').notNull().default(true),
+		// Date bounds for seasonal templates. Both nullable.
+		// Stored as TIMESTAMPTZ at start-of-day in the vendor's timezone.
+		// recurrenceStartDate: NULL = "no explicit start; use now()" at materialize time.
+		// recurrenceEndDate:   NULL = indefinite. When set, expand truncates at this instant.
+		recurrenceStartDate: timestamp('recurrence_start_date', { withTimezone: true }),
+		recurrenceEndDate: timestamp('recurrence_end_date', { withTimezone: true }),
 		createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow()
 	},
 	(t) => [

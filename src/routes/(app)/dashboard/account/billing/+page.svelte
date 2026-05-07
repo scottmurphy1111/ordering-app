@@ -16,7 +16,7 @@
 	import { resolve } from '$app/paths';
 	import { Button } from '$lib/components/ui/button';
 	import { Badge } from '$lib/components/ui/badge';
-	import { Card, CardHeader, CardTitle, CardContent } from '$lib/components/ui/card';
+	import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '$lib/components/ui/card';
 	import { Alert } from '$lib/components/ui/alert';
 	import {
 		Dialog,
@@ -408,7 +408,7 @@
 
 				<!-- Action strip: 5 mutually exclusive states. -->
 				{#if isPaused}
-					<div data-slot="card-footer" class="flex items-center border-t border-gray-100 px-4 py-2">
+					<CardFooter class="gap-2">
 						<form
 							method="post"
 							action="?/resumeSubscription"
@@ -430,9 +430,9 @@
 								Resume now
 							</Button>
 						</form>
-					</div>
+					</CardFooter>
 				{:else if isCancelScheduled && data.hasStripeSubscription && !data.subscriptionRefundedAt}
-					<div data-slot="card-footer" class="flex items-center border-t border-gray-100 px-4 py-2">
+					<CardFooter class="gap-2">
 						<form
 							method="post"
 							action="?/reactivate"
@@ -454,21 +454,18 @@
 								Don't cancel — keep {tierInfo.name}
 							</Button>
 						</form>
-					</div>
+					</CardFooter>
 				{:else if data.subscriptionStatus === 'past_due'}
-					<div data-slot="card-footer" class="flex items-center border-t border-gray-100 px-4 py-2">
+					<CardFooter class="gap-2">
 						<Button
 							href={resolve('/dashboard/account/billing/payment-methods')}
 							class="gap-1.5 border-amber-400 bg-amber-50 text-amber-700 hover:bg-amber-100"
 						>
 							<Icon icon="mdi:alert-outline" class="h-3.5 w-3.5" /> Update payment method
 						</Button>
-					</div>
+					</CardFooter>
 				{:else if isPaidPlan && data.hasStripeSubscription}
-					<div
-						data-slot="card-footer"
-						class="flex flex-wrap items-center gap-3 border-t border-gray-100 px-4 py-2"
-					>
+					<CardFooter class="gap-2">
 						{#if data.billingInterval === 'monthly'}
 							<Button
 								type="button"
@@ -499,7 +496,7 @@
 							<Icon icon="mdi:pause-circle-outline" class="h-3.5 w-3.5" />
 							Pause billing
 						</Button>
-					</div>
+					</CardFooter>
 				{/if}
 			</CardContent>
 		</Card>
@@ -588,10 +585,7 @@
 				{/if}
 
 				<!-- Action strip links -->
-				<div
-					data-slot="card-footer"
-					class="flex items-center gap-4 border-t border-gray-100 px-4 py-2"
-				>
+				<CardFooter class="gap-2">
 					<Button
 						type="button"
 						variant="outline"
@@ -610,7 +604,7 @@
 						<Icon icon="mdi:file-document-outline" class="h-3.5 w-3.5" />
 						All invoices
 					</Button>
-				</div>
+				</CardFooter>
 			</CardContent>
 		</Card>
 	</div>
@@ -645,7 +639,7 @@
 								     vertical height matches the paid cards. -->
 								{#if tier.price === 0}
 									<p class="mt-1 text-2xl font-bold text-foreground">Free</p>
-									<p class="mt-0.5 text-xs text-muted-foreground">Free to use, forever</p>
+									<p class="mt-0.5 text-xs text-muted-foreground">Get started for free</p>
 									<p class="invisible mt-0.5 text-xs">spacer line b</p>
 								{:else}
 									{@const annualTotal =
@@ -776,7 +770,7 @@
 			</p>
 		{/if}
 
-		<div class="grid gap-4 sm:grid-cols-2">
+		<div class="grid gap-4 md:grid-cols-2">
 			{#each ADDONS as addon (addon.key)}
 				{@const isActive = hasAddon(activeAddons, addon.key)}
 				{@const canToggle = isPaidPlan && data.hasStripeSubscription && !isPaused}
@@ -800,26 +794,29 @@
 							{/if}
 						</div>
 						<p class="mb-3 text-sm text-muted-foreground">{addon.description}</p>
-						{#if canActivate && !isActive}
+					</div>
+					{#if canActivate && !isActive}
+						<div class="flex items-center justify-start gap-3 border-t border-gray-100 px-4 py-2">
 							<Button
 								type="button"
 								onclick={() => openModal(addon, 'activate')}
 								variant="default"
-								class="w-full"
+								class=""
 							>
 								Activate
 							</Button>
-						{/if}
-					</div>
+						</div>
+					{/if}
 					{#if canToggle && isActive}
 						<div class="flex items-center justify-end gap-3 border-t border-gray-100 px-4 py-2">
-							<button
+							<Button
 								type="button"
+								variant="ghost"
 								onclick={() => openModal(addon, 'deactivate')}
 								class="text-sm font-medium text-red-500 transition-colors hover:text-red-600"
 							>
 								Deactivate
-							</button>
+							</Button>
 						</div>
 					{/if}
 				</div>

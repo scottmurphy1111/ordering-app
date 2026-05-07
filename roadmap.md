@@ -85,15 +85,16 @@ Tier 1 is split into two sub-tiers based on which outreach wave they gate:
 
 ### Remove delivery feature entirely
 
-The delivery option is being cut from Order Local. Sweep three layers:
+**Status:** Resolved (2026-05-07) — verified by audit. Delivery is fully removed across all three target layers.
 
-1. **UI:** Remove the delivery card from settings/general.
-2. **Cart/checkout:** Remove delivery as a fulfillment option from the customer order flow.
-3. **Schema:** Identify and remove any delivery-related fields, enums, or tables (likely fulfillment_type enum entries, delivery_address fields, delivery fee logic, etc.).
+**What's gone:**
 
-**Status:** ready-to-execute
+- **Schema:** no `fulfillment_type` enum, no `delivery_*` columns, no `'delivery'` literals in `src/` or `drizzle/`.
+- **UI:** no delivery card in `src/routes/(app)/dashboard/settings/general/+page.svelte`.
+- **Customer flow:** no delivery branching in cart or checkout routes.
+- **Business logic:** no `fulfillment` type branching anywhere in `src/`.
 
-**Scope:** Substantial — touches schema migrations, order flow, settings UI, and any business logic that branches on fulfillment type. Verify nothing breaks in the order pipeline post-removal. Existing orders with delivery fulfillment (if any in dev/test data) need a migration path or cleanup.
+**Audit notes:** Two `deliver`-stem grep hits in `src/` are unrelated false positives — a "webhook deliveries" comment in `system-events.ts` and "rewards are delivered" copy in the promos-and-loyalty settings page. Neither is the cut feature.
 
 ---
 
@@ -136,31 +137,36 @@ Brand green is hardcoded as Tailwind utility classes (`bg-green-600`, `text-gree
 
 ### Pickup window date bounds (start date, end date)
 
-**Status:** Pending — needs-design for UI, scope clear for schema/expand.
+**Status:** Resolved (2026-05-07) — shipped schema bounds, form pickers, expand/materialize plumbing, summary-line display, and season-ended empty state.
 
-**Why it matters:** Seasonal vendors are central to the wedge audience — farmers markets running May–October, holiday bakers active only in November–December, CSA seasons with defined start and end dates, summer-only farm stands. Today, pickup window templates have no way to express "starts on X" or "ends on Y" — recurrence is open-ended in both directions, with the cron extending occurrences on a rolling 12-week horizon indefinitely. Seasonal vendors are forced to either deactivate windows manually at season's end (and remember to reactivate next year), delete and recreate templates each season (losing history), or accept that occurrences keep generating during their off-season. None of those reflect a 10-minute setup story for a seasonal maker.
+**What shipped:**
+- Schema: added `recurrence_start_date` and `recurrence_end_date` (nullable TIMESTAMPTZ) to `pickup_window_templates`. Both stored as start-of-day UTC in the vendor's IANA timezone via the `startOfDayInTZ` offset-correction helper. Migration: `drizzle/0005_past_wraith.sql` (generated, not yet applied at commit time — run `bun run db:migrate`).
+- `expand.ts`: `startOfDayInTZ(yyyyMmDd, ianaTimezone)` exported helper converts YYYY-MM-DD to start-of-day UTC. `ExpandTemplateInput` extended with `recurrenceStart?: Date | null` and `recurrenceEnd?: Date | null`. Loop skips occurrences before `recurrenceStart` and stops past `recurrenceEnd`.
+- `materialize.ts`: passes `recurrenceStartDate` and `recurrenceEndDate` from the template row to `expandTemplate`. Existing "orderful occurrences preserved" policy applies: occurrences past the new end date with attached orders survive; orderless ones are deleted on next materialize call.
+- Form: "Starts on" and "Ends on" date pickers added to both the create and edit panels in `/dashboard/settings/pickup`. Server validates: if both set, end ≥ start; if end-only, end must be today or later.
+- Templates list: summary line appends date range when present (e.g., `· May 1 – Oct 31`, `· From May 1`, `· Until Oct 31`).
+- Season-ended empty state: when `recurrenceEndDate` is in the past and there are no upcoming occurrences, renders "Season ended [date]." instead of the generic "No upcoming occurrences."
+- Live preview: `computePreview` respects both bounds client-side, capping occurrences at end date.
 
-The current form (Name, Location, Days, Start time, End time, Cutoff hours, Max orders, Active) reads as "every selected day, forever" — which is wrong for the seasonal half of the audience.
+**Files involved:**
+- `src/lib/server/db/pickup.ts` — two new columns on `pickupWindowTemplates`
+- `src/lib/server/pickup/expand.ts` — `startOfDayInTZ` helper, `ExpandTemplateInput` extension, loop bounds
+- `src/lib/server/pickup/materialize.ts` — passes bounds to `expandTemplate`
+- `src/routes/(app)/dashboard/settings/pickup/+page.server.ts` — validation, fresh TZ query, `startOfDayInTZ` resolution, persist to DB
+- `src/routes/(app)/dashboard/settings/pickup/+page.svelte` — form pickers, `toDateInputValue` round-trip, `formatDateRange`, `isSeasonEnded`, preview integration
+- `drizzle/0005_past_wraith.sql` — migration file (generated)
 
-**Scope:**
+**Out of scope (deferred):**
+- Non-weekly recurrence patterns — separate Tier 2 entry. Date bounds compose cleanly when that work lands.
+- "Skip these specific dates" — per-occurrence cancellation handles one-off skips.
+- Auto-renewal year-over-year — vendors set new dates each season for v1.
 
-- Add two fields to `pickup_window_templates`: `recurrence_start_date` (nullable, defaults to template creation date) and `recurrence_end_date` (nullable, null = indefinite).
-- Form additions: "Starts on" date picker (defaults to today), "Ends on" date picker with a clear "indefinite" / "no end date" option (default).
-- `expandTemplate()` in `src/lib/server/pickup/expand.ts` honors both bounds. Pass `dtstart` from `recurrence_start_date` and `until` from `recurrence_end_date` to the RRULE expansion. Materialization continues to generate the 12-week rolling window but truncates at `recurrence_end_date` when set.
-- Display in the templates list: include date bounds in the summary line when present (e.g., "9am–12pm · Every Sat · May 1–Oct 31 · Cutoff 48h"). When unbounded, omit — current "Every Sat" reads correctly for indefinite.
-- Empty-bounds-list state: when a template's end date has passed and there are no future occurrences, the upcoming-windows section should communicate "season ended [date]" rather than render empty.
-- Decision needed: when a vendor sets an end date that falls before existing future occurrences with attached orders, how does materialization behave? Recommended: orderful occurrences past the new end date are preserved (matches existing "future occurrences with orders are preserved" policy); orderless occurrences past the new end date are deleted on next materialize call. Document this in the materialize.ts policy comment.
-- Cross-reference with the Tier 3 "Pause for the season" item: that one toggles the entire shop on/off. This one bounds individual templates. They serve different needs — a year-round bakery with a seasonal market booth wants per-window date bounds, not whole-shop pause. Both can coexist; not redundant.
+**Resolved questions:**
+- Materialization behavior when new end date precedes existing orderful occurrences: orderful rows preserved, orderless rows deleted on next materialize call. Matches existing future-occurrence preservation policy.
+- Storage format for date bounds: TIMESTAMPTZ at start-of-day in vendor TZ (not a bare DATE column). Consistent with all other timestamp columns in the schema; avoids ambiguity at timezone boundaries.
 
-**Out of scope (defer to Tier 2):**
-
-- Non-weekly recurrence patterns (every other week, monthly on the Nth weekday, specific day of month, custom intervals). Tracked as a separate Tier 2 entry: "Pickup window non-weekly recurrence patterns." The two items compose cleanly — `dtstart` and `until` from this item apply identically across all recurrence kinds when the Tier 2 work lands.
-- "Skip these specific dates" (holiday exceptions to a recurring pattern). Per-occurrence cancellation already handles one-off skips; bulk-skip is a separate feature.
-- Auto-renewal of seasonal windows year-over-year ("repeat this May–Oct schedule next year"). Solvable later; for v1, vendors set new dates each season.
-
-**Estimated effort:** 1–2 days. Schema migration is small (two nullable columns). `expandTemplate` change is narrow — add `dtstart` and `until` to the RRULE options. UI is two date pickers in an existing form. Materialization policy update for past-end-date occurrences is the most subtle piece; the rest is mechanical.
-
-**Trigger:** Before any vendor outreach that targets seasonal makers (farmers markets, CSAs, holiday bakers). The wedge audience profile names these explicitly, so this gates outreach to those segments.
+> **Original analysis (preserved for history):**
+> Seasonal vendors are central to the wedge audience — farmers markets running May–October, holiday bakers active only in November–December, CSA seasons with defined start and end dates, summer-only farm stands. Today, pickup window templates have no way to express "starts on X" or "ends on Y" — recurrence is open-ended in both directions, with the cron extending occurrences on a rolling 12-week horizon indefinitely. Seasonal vendors are forced to either deactivate windows manually at season's end (and remember to reactivate next year), delete and recreate templates each season (losing history), or accept that occurrences keep generating during their off-season. None of those reflect a 10-minute setup story for a seasonal maker.
 
 ---
 
@@ -322,6 +328,7 @@ Navigating from cart to checkout briefly shows an empty cart page (visual flash)
 4. **Throttling** — once per minute per user. BetterAuth may handle this internally; verify.
 
 **Affected callsites:**
+
 - `src/lib/server/auth.ts` — new `emailVerification` config block
 - `src/lib/server/email/...` — possibly a new verification email template variant
 - `src/routes/(app)/dashboard/account/profile/+page.server.ts` — new `resendVerification` action
@@ -364,6 +371,7 @@ Navigating from cart to checkout briefly shows an empty cart page (visual flash)
 **Status:** Resolved (2026-05-06) — shipped Path C, Stripe Elements custom UI.
 
 **What shipped:**
+
 - New route `/dashboard/account/billing/checkout` with embedded Stripe Elements payment form, Order Local branding (green primary, system fonts, dashboard typography).
 - `upgrade` action in `src/routes/(app)/dashboard/account/billing/+page.server.ts` creates a Stripe subscription with `payment_behavior: 'default_incomplete'` instead of a Checkout Session. Redirects to the embedded checkout page, passing the subscription ID.
 - Embedded checkout reads `clientSecret` from the latest invoice's `confirmation_secret.client_secret` (Stripe v22 surface), mounts a Payment Element, confirms via `stripe.confirmPayment` with a return URL of `/dashboard/account/billing?upgraded=1`.
@@ -372,12 +380,14 @@ Navigating from cart to checkout briefly shows an empty cart page (visual flash)
 - Anchored billing on the 15th of the month for all vendors. Prorated bridge from signup date to next 15th at the cycle's per-month rate (annual-monthly rate for annual, monthly for monthly). Add-ons inherit the anchor.
 
 **Files involved:**
+
 - `src/routes/(app)/dashboard/account/billing/checkout/+page.server.ts` (new)
 - `src/routes/(app)/dashboard/account/billing/checkout/+page.svelte` (new)
 - `src/routes/(app)/dashboard/account/billing/+page.server.ts` — `upgrade` action rewrite
 - `src/routes/api/billing/webhook/+server.ts` — welcome email transition handler
 
 **Out of scope of this entry (still applies):**
+
 - Founding rate $19/mo Market subscription wiring (separate roadmap entry, still pending).
 - Customer-side checkout changes (already branded; unchanged).
 - Stripe Customer Portal styling (separate Stripe surface).
@@ -405,6 +415,7 @@ Navigating from cart to checkout briefly shows an empty cart page (visual flash)
 **Why it matters:** Stat tiles and charts appear on `/dashboard` (overview KPIs), `/dashboard/analytics` (revenue chart, top-items, fulfillment), `/admin` (overview tiles + cron status), `/admin/metrics` (richer stat tiles + signups chart), and admin activity surfaces. Every callsite is hand-rolled — `<Card>` + inline flex layouts for tiles, `<div>` bars with inline `style="height: ..."` for charts. The visual treatment drifts: tile padding varies, icon sizing varies, chart bar widths vary. Centralizing into a `<StatTile>` and a small chart primitive (likely `<BarChart>` for now) would reduce drift and make future styling tweaks one-touch.
 
 **Current state:**
+
 - `/dashboard/analytics/+page.svelte` has the canonical hand-rolled chart pattern (`<div class="flex h-36 items-end gap-px">` with per-bar `style="height: {height}px"`).
 - `/dashboard/+page.svelte` overview KPI tiles use `<Card>` + inline flex.
 - `/admin/+page.svelte` and `/admin/metrics/+page.svelte` follow the same pattern.
@@ -416,6 +427,7 @@ Navigating from cart to checkout briefly shows an empty cart page (visual flash)
 - **Path C — Adopt a chart library** (LayerChart, Chart.js, Recharts). Migrates all chart callsites to the library's idioms. Effort: 2–3 days plus visual review for parity.
 
 **Decision rule:**
+
 - If the next data display is also hand-rolled → A is enough.
 - If a third or fourth chart appears (e.g., admin metrics adds a churn chart, analytics adds a category breakdown) → B becomes worth it.
 - If a complex chart is ever needed (multi-series, stacked, area) → C is the right answer; hand-rolled won't scale.
@@ -423,6 +435,7 @@ Navigating from cart to checkout briefly shows an empty cart page (visual flash)
 **Trigger:** When the third chart callsite is added, OR when a styling tweak to existing chart bars feels frustrating (i.e., having to update three files to change the bar color).
 
 **Out of scope of this entry:**
+
 - Customer-facing chart treatments (storefront has none today).
 - Replacing the analytics page's KPI summary bar with a tile primitive (it's a horizontal strip, different shape).
 
@@ -534,12 +547,14 @@ Navigating from cart to checkout briefly shows an empty cart page (visual flash)
 **Decision rule:** any UI section that renders data from a server load (or future client fetch) should have a skeleton state. Static layout chrome (sidebar, header, fixed-text headings) and form fields don't need skeletons. The decision is "would there be a visible empty state during load if I removed the data?" If yes → skeleton.
 
 **Skeleton-coverage standard:**
+
 - Use the existing `Skeleton` primitive from `$lib/components/ui/skeleton`
 - Gate visibility behind `let mounted = $state(false); onMount(() => { mounted = true; });` (the existing pattern on Overview)
 - Skeleton placeholder heights MUST match the hydrated content heights so layout doesn't shift on mount. For fixed-height containers (`h-X`), use the same height in the skeleton container.
 - Skeleton placeholder counts approximately match expected content density (e.g., 5 rows for a list that typically shows ~5 items; 3 rows for a denser list)
 
 **Audit targets** (surfaces likely missing skeleton coverage; verify each):
+
 - `/dashboard/orders` — orders list cards (live view)
 - `/dashboard/orders` — orders list cards (production view)
 - `/dashboard/orders/history` — history table
@@ -559,6 +574,7 @@ Navigating from cart to checkout briefly shows an empty cart page (visual flash)
 **Reference implementation:** the 3-day horizon grid in `src/routes/(app)/dashboard/+page.svelte`. Each card section has a skeleton container at the same fixed height as the hydrated content (`h-16` / `h-40` / `h-32`), with skeleton rows approximating the post-hydration density.
 
 **Out of scope:**
+
 - Skeleton states on form inputs (the inputs themselves are static; only their surrounding data-driven layout might need skeletons)
 - Customer-facing checkout/cart surfaces (deferred — customer flows have different perceived-latency tolerances and the audit can run separately)
 - Custom skeleton animations or shimmer effects (use the project's existing `Skeleton` primitive as-is)
@@ -619,12 +635,14 @@ Current status pills (received, confirmed, in production, ready, fulfilled, canc
 **Why it matters:** Status pill color logic is repeated across multiple surfaces — catalog item rows (`available` / `sold_out` / `hidden`), order rows (`received` / `confirmed` / `preparing` / `ready` / `fulfilled` / `cancelled`), and likely others. Each callsite recomputes the color mapping inline (e.g., `bg-green-100 text-green-700` for available, `bg-amber-100 text-amber-700` for sold_out). When the status pill design changes (e.g., the Tier 2 "Status pills: replace with icons + semantic-color labels" item lands), every callsite needs identical updates. DRY: extract a single `<StatusBadge status={...} />` component that owns the mapping.
 
 **Scope:**
+
 - New component: `src/lib/components/StatusBadge.svelte`. Accepts `status` (string) and optionally `domain` (`'item' | 'order'` to scope which status enum is being rendered).
 - Internal mapping: status → color class + label. Single source of truth.
 - Sweep callsites: catalog items list (mobile + desktop), catalog item slideout, orders list, order detail, order history. Replace inline color logic with `<StatusBadge>` usage.
 - Composable with the future "Status pills: replace with icons" item — when that lands, the mapping changes inside `StatusBadge` only; callsites unchanged.
 
 **Out of scope:**
+
 - Status pill REDESIGN (separate Tier 2 entry — "Status pills: replace with icons + semantic-color labels"). This entry is just the extraction.
 - Adding new status types or changing the existing enum.
 
@@ -665,6 +683,7 @@ Currently pickup locations can only be deactivated, not deleted entirely. Vendor
 **Why it matters:** A vendor with 50+ items wants to mark 10 as "sold out" simultaneously, archive a seasonal batch, or apply a category change in one operation. Single-row actions force 50 individual clicks. Bulk actions are table stakes at scale; their absence becomes a daily friction point as catalogs grow.
 
 **Scope:**
+
 - Checkbox column on the catalog items list (mobile cards + desktop table). Header checkbox toggles "select all on this page."
 - Selection state persists across pagination within a session; each page selects independently.
 - Bulk action bar appears when ≥1 selected, fixed to bottom of viewport on mobile, top of table area on desktop. Bar shows: count selected, action buttons (Mark available / Mark sold out / Mark hidden / Delete), Cancel.
@@ -674,6 +693,7 @@ Currently pickup locations can only be deactivated, not deleted entirely. Vendor
 - Empty selection clears the action bar; selecting items repopulates it.
 
 **Out of scope:**
+
 - Bulk category re-assignment (separate, more complex — needs a category picker mini-flow). Defer.
 - Bulk price changes (similar — needs a percent-or-amount mini-form). Defer.
 - Bulk tag add/remove (similar). Defer.
@@ -692,6 +712,7 @@ Currently pickup locations can only be deactivated, not deleted entirely. Vendor
 **Why it matters:** Vendors with variant products ("Sourdough Loaf" → "Sourdough Loaf — Whole Wheat", "Standard Soap" → "Soap with extra essential oils") need to clone-and-edit. Today they manually re-enter every field. Duplicate is a common SaaS pattern; its absence is a daily friction point for vendors with parallel product variants.
 
 **Scope:**
+
 - New action on each item row: "Duplicate" button or menu item (placement TBD — could be in row actions or in the slideout edit form).
 - Server action: `?/duplicate` accepts an item ID, copies all fields except `id`, `name` (suffix with " (copy)"), `sortOrder` (placed at end), and modifier groups (clone the group structure with empty options OR full clone — design decision).
 - Modifier groups: design decision — clone the modifier groups structure (group names + isRequired + maxSelections, options array) so the duplicated item has the same modifier setup. This is the more useful default; a soap variant typically has the same modifier groups (Scent, Size) as the original.
@@ -699,6 +720,7 @@ Currently pickup locations can only be deactivated, not deleted entirely. Vendor
 - After duplicate, navigate to the new item's edit page (or open it in the slideout) so vendor can edit the copy.
 
 **Open question for design:**
+
 - "Duplicate" placement: row-level action button vs in the slideout's footer? Row-level is more discoverable but adds another action button to already-busy rows. Slideout footer is less discoverable but doesn't crowd the list.
 
 **Estimated effort:** Half a day. Server action is small; design decision on placement is the time investment.
@@ -714,6 +736,7 @@ Currently pickup locations can only be deactivated, not deleted entirely. Vendor
 **Why it matters:** Tags are currently rendered as a single comma-separated text input. A user typing tags has no visual confirmation that the comma has split the value, no way to remove a single tag without re-typing, no autocomplete from existing tags. The input feels like a database field, not a curated list. Token-style chip inputs (each tag is a removable pill, type-and-press-comma adds a new chip, tags from other items autocomplete) are the standard SaaS UX for this pattern.
 
 **Scope:**
+
 - New component: `src/lib/components/TagInput.svelte`. Renders existing tags as removable chips, an input field for new tag entry, autocomplete dropdown sourced from all tags across the vendor's catalog.
 - Replace the current `<Input name="tags">` in `CatalogItemForm.svelte` with `<TagInput bind:tags />`.
 - Form submit: serialize chips as comma-separated string for the existing server action (which already splits on comma).
@@ -721,6 +744,7 @@ Currently pickup locations can only be deactivated, not deleted entirely. Vendor
 - Round-trip preserves array structure correctly (existing concern resolved by the chip model — no fragile string parsing).
 
 **Out of scope:**
+
 - Tag taxonomy / tag management page (managing tags as first-class entities). Tags stay as freeform per-item arrays.
 - Cross-vendor tag suggestions (privacy concern, no value).
 - Tag colors or icons.
@@ -740,10 +764,12 @@ Currently pickup locations can only be deactivated, not deleted entirely. Vendor
 **Why this is captured:** The current two-tier structure (Starter $0, Pro $79) doesn't have an obvious middle tier. If a Market tier lands (target persona: market vendors with 20–50 items who've outgrown Starter's 10-item cap but don't need full Pro feature set), CSV import is a candidate feature for that tier — bulk import is most useful for vendors with mid-scale catalogs, which is exactly the Market profile.
 
 **Decision rule when Market lands:**
+
 - If Market includes CSV import: update `canImportCsv` to `tier === 'market' || tier === 'pro' || isInternal`. Update server-side check in `src/routes/api/import-catalog-items/+server.ts`. Update billing-page bullets on both Market and Pro tier cards. Update upsell modal copy if Starter still sees it.
 - If Market does NOT include CSV import: leave gating as-is; Market becomes another tier shown the upsell modal.
 
 **Affected callsites when revisiting:**
+
 - `src/routes/(app)/dashboard/catalog/items/+page.server.ts` — `canImportCsv` derivation
 - `src/routes/api/import-catalog-items/+server.ts` — server-side 403 check
 - `src/routes/(app)/dashboard/catalog/items/+page.svelte` — upsell modal copy
@@ -755,6 +781,7 @@ Currently pickup locations can only be deactivated, not deleted entirely. Vendor
 **Trigger:** When designing the Market tier's feature set. Don't make this change in isolation — it should be part of the overall Market tier launch.
 
 **Out of scope:**
+
 - Designing the Market tier itself (separate strategic decision)
 - Removing the Pro paywall on CSV (current decision is to keep it Pro-only until the tier structure has a meaningful middle option)
 
@@ -767,12 +794,14 @@ Currently pickup locations can only be deactivated, not deleted entirely. Vendor
 **Why it matters:** Vendors editing items frequently lose track: "did I update this yesterday or last week?" The schema has `updatedAt` for every item, but it's not surfaced in the list view. Adding a small "Updated 2 days ago" line provides at-a-glance orientation without crowding the row.
 
 **Scope:**
+
 - Add `updatedAt` to the items query column projection (`+page.server.ts`).
 - Render a small `text-xs text-muted-foreground` timestamp on each row, formatted with a relative-time helper ("just now" / "2 hours ago" / "3 days ago" / "2 weeks ago"). Existing relative-time helpers may exist in the project; if not, a small `formatRelative(date)` helper.
 - Mobile cards: timestamp on its own line below the category/price line.
 - Desktop table: new column or an additional line in the existing name cell.
 
 **Out of scope:**
+
 - "Updated by" attribution (would need user tracking on item updates).
 - Filterable / sortable by updated date.
 
@@ -789,11 +818,13 @@ Currently pickup locations can only be deactivated, not deleted entirely. Vendor
 **Why it matters:** Sort state on `/dashboard/catalog/items` (sort by name / category / price / status, ascending or descending) is component-local Svelte state. Refreshing the page or sharing the URL loses the sort selection. Vendors who prefer "always sort by recent updates" or "always sort by price descending" lose their preference on every page reload. Search and filter state already persist via URL params (`?search=...`, `?categoryId=...`); sort should match.
 
 **Scope:**
+
 - Server load: accept `sortBy` (`name` | `category` | `price` | `status`) and `sortDir` (`asc` | `desc`) query params. Default `sortBy=sortOrder` (the drag-sort order) when neither is set.
 - Client: replace the component-local `sortCol` and `sortDir` $state with URL-derived state. Clicking column headers updates the URL (uses `goto` with `replaceState: true`, matching the existing search/filter pattern).
 - Default behavior: when no sort param, fall back to vendor-set sort order (sortOrder column) — preserves the drag-sort UX.
 
 **Out of scope:**
+
 - Multi-column sort.
 - Sort persistence on other catalog surfaces (categories list).
 
@@ -849,12 +880,14 @@ Solvable today only by per-occurrence cancellation against a denser weekly templ
 **Why it matters:** The modifier system supports drag-sort within a group (reorder options inside Size: Small/Medium/Large) but not across groups. A vendor who initially put "Vegan" under Add-ons but later realizes it should be under Dietary has to delete-and-recreate. Cross-group drag is a SaaS-grade polish that the current single-group sort doesn't quite reach.
 
 **Scope:**
+
 - Update the SortableJS configuration in `ModifierGroupsManager.svelte` to enable cross-group drag (likely `group: { name: 'modifier-options', pull: true, put: true }`).
 - Server endpoint: `/api/move-modifier-option` accepting `optionId`, `targetModifierId`, `newSortOrder`. Validates that the option's current modifier and target modifier belong to the same vendor.
 - Optimistic UI: option moves immediately on drop; error rolls back and shows "Reload to revert" alert (consistent with current reorder failure pattern).
 - Visual cue during drag: dragged option shows a "moving to {targetGroup}" hint.
 
 **Out of scope:**
+
 - Cross-item drag (moving an option from one item's modifier group to another item's modifier group). Items don't share modifier groups directly — they share via the junction table — so this is a fundamentally different operation.
 - Bulk move (selecting multiple options and moving them together).
 
@@ -871,12 +904,14 @@ Solvable today only by per-occurrence cancellation against a denser weekly templ
 **Why it matters:** Currently, the drag-sort reorder endpoints (`/api/reorder-modifiers` and `/api/reorder-modifier-options`) handle failures by displaying "Reload to revert" alert text. Vendor must manually refresh to undo a failed reorder — annoying and confusing ("did my change save or not?"). Optimistic UI with proper rollback on failure is the standard pattern: optimistically update UI, on failure restore the prior order automatically.
 
 **Scope:**
+
 - Capture the original sort order before issuing the reorder request.
 - On success, the optimistic update stands; no action.
 - On failure (network error, 500 response, validation failure), restore the captured order and show a toast or alert ("Reorder failed — order restored").
 - Apply the pattern to all reorder surfaces: `/api/reorder-categories`, `/api/reorder-items`, `/api/reorder-modifiers`, `/api/reorder-modifier-options`. Sibling-parity check.
 
 **Out of scope:**
+
 - Reorder undo via toast action button. Restore-on-failure only.
 - Conflict resolution if two vendors edit simultaneously (uses last-write-wins).
 
@@ -893,6 +928,7 @@ Solvable today only by per-occurrence cancellation against a denser weekly templ
 **Why it matters:** The modifier system landed with two distinct drag-handle icons by deliberate convention: `mdi:drag` (6-dot grid) for "block-level" sortables (modifier groups, where a group is a block), `mdi:drag-vertical` (2-column dots) for "row-level" sortables (modifier options within a group). The convention is documented in CLAUDE.md and reinforced visually with `hover:bg-muted/30` on the group container. The convention is NOT yet applied on other sortable surfaces: catalog items list, catalog categories list. Both currently use a mix of icons that predate the modifier-system convention.
 
 **Scope:**
+
 - Audit catalog items list (`/dashboard/catalog/items`) sort-mode UI. The list is row-level sortable → should use `mdi:drag-vertical`.
 - Audit catalog categories list (`/dashboard/catalog/categories`). Categories are block-level (each category contains multiple items) → should use `mdi:drag` (6-dot).
 - Update the icon usages to match the convention.
@@ -900,6 +936,7 @@ Solvable today only by per-occurrence cancellation against a denser weekly templ
 - Cross-reference with CLAUDE.md to ensure the convention is captured there.
 
 **Out of scope:**
+
 - Other sortable surfaces (pickup window day-order, etc.). The convention is documented; future sortables follow it without explicit sweep.
 
 **Estimated effort:** 1–2 hours. Icon swaps + hover-tint addition.
@@ -925,12 +962,14 @@ Currently unclear when production items (the items shown on the production view 
 **Why it matters:** The 3-day horizon grid on `/dashboard` includes "+N more" links when a day's orders exceed the 5-row cap. Today, the link goes to `/dashboard/orders` (unfiltered) — a vendor expecting to see "tomorrow's orders" sees the full list and has to mentally filter. Adding a `?windowId=N` query param to the orders page, plus updating the "+N more" link to include it, closes this navigation loop.
 
 **Scope:**
+
 - Server load (`/dashboard/orders/+page.server.ts`): accept `windowId` query param. When present, filter orders to those attached to the named pickup window. Existing filters (`status`, `cancelled`, etc.) compose normally.
 - UI affordance: when filtered, render a removable filter chip near the page header ("Filtered: Saturday Farmers Market 9–11am · clear ×").
 - Update the "+N more" link in the 3-day horizon grid to pass `?windowId={w.id}` for the relevant window.
 - The window's display name (time + location) is what the chip shows; resolved server-side from the windowId.
 
 **Out of scope:**
+
 - Multi-window filtering (`?windowId=1,2,3`). Single-window filter only.
 - Date-range filtering on the orders page. Separate concern.
 
@@ -947,11 +986,13 @@ Currently unclear when production items (the items shown on the production view 
 **Why it matters:** Production view aggregations (on `/dashboard/orders?view=production` and the 3-day horizon grid's Production sections) show item names with quantities — "Sourdough Loaf · Small × 12" — but the item name is not linked. A vendor seeing an unexpected quantity ("why 12 when I usually make 4?") wants to inspect the catalog item: check price, modifier setup, recent edits. Today they have to navigate manually.
 
 **Scope:**
+
 - In production view rows: wrap the item name in `<a href="/dashboard/catalog/items/{itemId}">`. Subtle hover treatment (color shift, no underline at rest) — affordance is "this is clickable for context" not "this is a primary action."
 - In 3-day horizon grid Production sections: same treatment.
 - Server load: production aggregation queries already group by `orderItems.name`, but the rows don't include the catalog item ID. Add an aggregation that resolves the catalog item ID (join through `orderItems.catalogItemId` if that column exists, or look up by name as a fallback). Edge case: items deleted from catalog but still in historical orders — render as plain text without a link.
 
 **Out of scope:**
+
 - Linking modifier values to modifier configuration. The aggregation key includes modifiers, but linking modifier names to the modifier group's edit page is a separate, narrower feature.
 - Surfacing an inline edit form in the production view. Just navigation.
 
@@ -1071,6 +1112,7 @@ Decide on the canonical placement (page-level vs CardFooter) and sweep all four 
 **Status:** Resolved (2026-05-07) — single-admin internal tooling shipped end-to-end.
 
 **What shipped:**
+
 - **Impersonation reuse of `/vendors`.** When `users.is_internal === true`, the existing vendor switcher at `/vendors` shows all non-deleted vendors instead of just the user's memberships. Heading reads "All vendors — Admin view · N vendors." Owned vendors keep their actual role label; unowned vendors render with a synthetic `'admin'` role. Selecting any vendor uses the existing cookie + middleware mechanism — no new auth surface needed.
 - **Persistent impersonation banner** in `(app)/+layout.svelte` chrome. Amber bar reading "Acting as **[Vendor]** as admin · Switch back" appears whenever an internal user is acting as a vendor they don't own. Banner does NOT appear on `/[vendorSlug]/*` storefronts (so admins can verify customer-facing UX as the vendor sees it).
 - **`/admin` overview index page** with four stat tiles (active vendors, paid subscriptions, signups in 7 days, signups in 30 days) plus a Scheduled jobs status card showing each cron job's last-run timestamp + OK/Error pill + 7-day error count.
@@ -1082,6 +1124,7 @@ Decide on the canonical placement (page-level vs CardFooter) and sweep all four 
 - **Auth gate via existing `users.is_internal` boolean.** `(admin)/+layout.server.ts` redirects non-internal users to `/vendors`. All `requireOwner` / `requireAdmin` / `requireStaff` helpers short-circuit when `isInternal === true`, so impersonation gives the admin full vendor capabilities automatically.
 
 **Files involved:**
+
 - `src/lib/server/db/system-events.ts` — schema
 - `src/routes/(app)/vendors/+page.{server.ts,svelte}` — two-mode vendor switcher
 - `src/routes/(app)/+layout.{server.ts,svelte}` — impersonation banner + `isImpersonating` flag
@@ -1096,6 +1139,7 @@ Decide on the canonical placement (page-level vs CardFooter) and sweep all four 
 - Migrations: `drizzle/0003_slow_praxagora.sql` (system_events table), follow-up status-column migration
 
 **Out of scope of this entry (still applies):**
+
 - Multi-admin RBAC. Single admin (Scott) only. `is_internal` is the gate.
 - Action logging during impersonation. Skipped — single-admin scale, good-faith assumption.
 - Vendor self-service activity log. Admin-only. Vendors don't see system events.
@@ -1110,6 +1154,7 @@ Decide on the canonical placement (page-level vs CardFooter) and sweep all four 
 **Status:** Resolved (2026-05-07) — shipped Stripe-native pause + storefront gating + auto-resume cron + reminder emails.
 
 **What shipped:**
+
 - New `pauseSubscription` and `resumeSubscription` actions in `src/routes/(app)/dashboard/account/billing/+page.server.ts`. Pause uses `stripe.subscriptions.update(id, { pause_collection: { behavior: 'mark_uncollectible' } })`; resume clears the pause field.
 - Two new vendor schema columns: `subscription_paused_at: timestamp` and `pause_until: timestamp`. Migration `0002_steady_skin.sql`.
 - Pause modal on the billing page with three duration presets (1 month / 3 months / 6 months) and a Custom date picker. Maximum pause duration is 6 months. Selected duration computed via `setMonth(getMonth() + n)` for calendar-month semantics.
@@ -1122,6 +1167,7 @@ Decide on the canonical placement (page-level vs CardFooter) and sweep all four 
 - System events table records each cron run + each webhook event for observability.
 
 **Files involved:**
+
 - `src/lib/server/db/vendor.ts` — pause columns
 - `src/lib/server/db/system-events.ts` — observability table (added in admin foundation work)
 - `src/lib/billing.ts` — `pauseUntilTimestamp` helper (date + IANA timezone → end-of-day UTC)
@@ -1135,11 +1181,13 @@ Decide on the canonical placement (page-level vs CardFooter) and sweep all four 
 - Migrations: `drizzle/0002_steady_skin.sql`
 
 **Out of scope of this entry (still applies):**
+
 - Item limit enforcement during pause: not implemented; paused vendors retain their tier's item limit.
 - Per-vendor pause analytics (how often each vendor pauses) — not built.
 - Pause for storefront-only without billing pause — separate Tier 3 "Pause for the season" entry.
 
 **Resolved questions:**
+
 - Vendor keeps access to paid features during pause (data safe, dashboard accessible). ✓
 - Add-ons stay attached but are not billed during pause. ✓
 - Maximum pause duration: 6 months. ✓ (originally undecided; settled this session.)
@@ -1156,6 +1204,7 @@ Decide on the canonical placement (page-level vs CardFooter) and sweep all four 
 **Why it matters:** `/for-farmers-markets` page promotes a founding rate: "Lock in Market at $19/mo — for life. We're signing up our first 25 market vendor partners at a founding rate." The promise is live on the marketing site. No code path exists for this rate. Currently handled manually — the coordinator onboarding founding vendors has to handle their Stripe subscriptions directly.
 
 **Approach options:**
+
 - **Separate Stripe price ID** (`STRIPE_PRICE_MARKET_FOUNDING=price_...`). Code references it explicitly. Vendors with a "founding" flag get the founding price; everyone else gets standard Market. Adds a `isFoundingMember: boolean` column to the vendor row. Cleanest and most auditable.
 - **Stripe coupon** applied to `STRIPE_PRICE_MARKET`. Coupon discounts $10/mo permanently. Simpler — no new env var, no schema change. Coupon code distributed manually to founding vendors. Risk: coupon code leak if it spreads beyond the curated cohort.
 - **Manual handling indefinitely.** First 25 vendors hand-onboarded; coordinator handles their Stripe subscriptions directly. Acceptable for the founding cohort but doesn't scale and leaves no DB record of who has the founding rate.
@@ -1163,6 +1212,7 @@ Decide on the canonical placement (page-level vs CardFooter) and sweep all four 
 **Decision rule:** Separate price ID is most robust. Coupon is acceptable if leak risk is tolerable (founding cohort is curated). Manual handling is the current fallback.
 
 **Affected callsites when implementing (separate price ID path):**
+
 - New env var: `STRIPE_PRICE_MARKET_FOUNDING` (and annual variant if applicable)
 - `src/lib/server/stripe-billing.ts` — new branch in `getPlanPriceId` or separate helper
 - `src/lib/server/db/vendor.ts` — new column `isFoundingMember: boolean` (default false)
@@ -1171,6 +1221,7 @@ Decide on the canonical placement (page-level vs CardFooter) and sweep all four 
 - Optional: founding badge on Current plan card in billing UI
 
 **Open questions:**
+
 - 25 spots — when do we close the offer and how does the landing page know?
 - Annual variant of the founding rate?
 - If a founding vendor cancels and re-subscribes, do they keep the founding rate? ("for life" suggests yes — price ID approach handles this naturally.)

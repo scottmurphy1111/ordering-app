@@ -166,7 +166,7 @@
 					</div>
 				</form>
 			</CardContent>
-			<CardFooter class="gap-3">
+			<CardFooter class="gap-2">
 				<Button type="submit" form="colors-form" variant="default">Save colors</Button>
 				<Button type="button" variant="outline" onclick={() => (previewOpen = true)}>
 					<Icon icon="mdi:eye-outline" class="h-4 w-4" />
