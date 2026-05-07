@@ -144,26 +144,56 @@
 									<p class="font-mono text-xs text-gray-400">{job.eventType}</p>
 								</div>
 							</div>
-							<div class="text-right">
-								<p class="text-xs text-gray-500">{fmtDateTime(job.lastRun)}</p>
-								{#if job.lastMeta}
-									<p class="text-xs text-gray-400">
-										{job.lastMeta.processed} processed
-										{#if job.lastMeta.errors.length > 0}
-											· <span class="text-red-500">{job.lastMeta.errors.length} error{job.lastMeta.errors.length === 1 ? '' : 's'}</span>
-										{/if}
-									</p>
+							<div class="flex items-center gap-3">
+								<div class="text-right">
+									<p class="text-xs text-gray-500">{fmtDateTime(job.lastRun)}</p>
+									{#if job.lastMeta}
+										<p class="text-xs text-gray-400">
+											{job.lastMeta.processed} processed
+										</p>
+									{/if}
+								</div>
+								{#if job.lastStatus === 'error'}
+									<span
+										class="shrink-0 rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700"
+									>
+										Error
+									</span>
+								{:else if job.lastStatus === 'ok'}
+									<span
+										class="shrink-0 rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700"
+									>
+										OK
+									</span>
+								{:else}
+									<span
+										class="shrink-0 rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-500"
+									>
+										Pending
+									</span>
 								{/if}
 							</div>
 						</div>
 					{/each}
 				</div>
-				<a
-					href={resolve('/admin/system-events?type=cron')}
-					class="mt-3 block text-xs font-medium text-primary hover:underline"
-				>
-					View all cron events →
-				</a>
+				<div class="mt-3 flex items-center justify-between border-t border-gray-100 pt-3">
+					<a
+						href={resolve('/admin/system-events?type=cron')}
+						class="text-xs font-medium text-primary hover:underline"
+					>
+						View all cron events →
+					</a>
+					{#if data.cronErrorsLast7 > 0}
+						<a
+							href={resolve('/admin/system-events?type=cron&status=error')}
+							class="text-xs font-medium text-red-700 hover:underline"
+						>
+							{data.cronErrorsLast7} error{data.cronErrorsLast7 === 1 ? '' : 's'} · last 7 days
+						</a>
+					{:else}
+						<span class="text-xs text-success">No errors · last 7 days</span>
+					{/if}
+				</div>
 			</CardContent>
 		</Card>
 	</div>

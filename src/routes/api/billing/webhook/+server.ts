@@ -13,11 +13,14 @@ import { paymentFailedEmail } from '$lib/server/email/templates/paymentFailed';
 
 async function recordSystemEvent(
 	eventType: string,
+	status: 'ok' | 'error',
 	vendorId: number | null,
 	metadata?: Record<string, unknown>
 ) {
 	try {
-		await db.insert(systemEvents).values({ eventType, vendorId, metadata: metadata ?? null });
+		await db
+			.insert(systemEvents)
+			.values({ eventType, status, vendorId, metadata: metadata ?? null });
 	} catch (e) {
 		console.error('[system-events] failed to record:', eventType, e);
 	}
@@ -100,7 +103,7 @@ export const POST: RequestHandler = async ({ request }) => {
 						})
 					}).catch(console.error);
 				}
-				await recordSystemEvent('webhook.checkout_completed', vendorId, {
+				await recordSystemEvent('webhook.checkout_completed', 'ok', vendorId, {
 					stripeEventId: event.id,
 					planKey,
 					subscriptionId: subscriptionId ?? null
@@ -211,7 +214,7 @@ export const POST: RequestHandler = async ({ request }) => {
 						})
 					}).catch(console.error);
 				}
-				await recordSystemEvent('webhook.subscription_updated', vendorRecord.id, {
+				await recordSystemEvent('webhook.subscription_updated', 'ok', vendorRecord.id, {
 					stripeEventId: event.id,
 					status,
 					tierKey: tierKey ?? null
@@ -246,7 +249,7 @@ export const POST: RequestHandler = async ({ request }) => {
 						updatedAt: new Date()
 					})
 					.where(eq(vendor.id, vendorRecord.id));
-				await recordSystemEvent('webhook.subscription_deleted', vendorRecord.id, {
+				await recordSystemEvent('webhook.subscription_deleted', 'ok', vendorRecord.id, {
 					stripeEventId: event.id
 				});
 				break;
@@ -288,7 +291,7 @@ export const POST: RequestHandler = async ({ request }) => {
 						})
 					}).catch(console.error);
 				}
-				await recordSystemEvent('webhook.payment_failed', vendorRecord.id, {
+				await recordSystemEvent('webhook.payment_failed', 'ok', vendorRecord.id, {
 					stripeEventId: event.id,
 					amountDue: invoice.amount_due ?? 0
 				});
@@ -297,6 +300,11 @@ export const POST: RequestHandler = async ({ request }) => {
 		}
 	} catch (err) {
 		console.error('Billing webhook error:', err);
+		await recordSystemEvent('webhook.error', 'error', null, {
+			stripeEventId: event.id,
+			eventType: event.type,
+			error: err instanceof Error ? err.message : String(err)
+		});
 		throw error(500, 'Webhook processing failed');
 	}
 

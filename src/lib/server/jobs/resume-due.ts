@@ -63,9 +63,12 @@ export async function runResumeDue(): Promise<{ processed: number; errors: strin
 	if (processed > 0) console.log(`[resume-due] resumed ${processed} subscriptions`);
 
 	try {
-		await db
-			.insert(systemEvents)
-			.values({ eventType: 'cron.resume_due', vendorId: null, metadata: { processed, errors } });
+		await db.insert(systemEvents).values({
+			eventType: 'cron.resume_due',
+			status: errors.length > 0 ? 'error' : 'ok',
+			vendorId: null,
+			metadata: { processed, errors }
+		});
 	} catch (e) {
 		console.error('[resume-due] failed to record system event:', e);
 	}

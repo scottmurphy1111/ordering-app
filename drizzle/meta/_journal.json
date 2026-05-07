@@ -29,6 +29,13 @@
       "when": 1778113589214,
       "tag": "0003_slow_praxagora",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1778114268151,
+      "tag": "0004_simple_joseph",
+      "breakpoints": true
     }
   ]
 }

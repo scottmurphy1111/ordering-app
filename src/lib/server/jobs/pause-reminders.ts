@@ -67,9 +67,12 @@ export async function runPauseReminders(): Promise<{ processed: number; errors: 
 	if (processed > 0) console.log(`[pause-reminders] sent ${processed} reminder emails`);
 
 	try {
-		await db
-			.insert(systemEvents)
-			.values({ eventType: 'cron.pause_reminders', vendorId: null, metadata: { processed, errors } });
+		await db.insert(systemEvents).values({
+			eventType: 'cron.pause_reminders',
+			status: errors.length > 0 ? 'error' : 'ok',
+			vendorId: null,
+			metadata: { processed, errors }
+		});
 	} catch (e) {
 		console.error('[pause-reminders] failed to record system event:', e);
 	}

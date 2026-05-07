@@ -40,8 +40,8 @@
 		</div>
 	</div>
 
-	<!-- Filter -->
-	<div class="mb-4 flex items-center gap-3">
+	<!-- Filters -->
+	<div class="mb-4 flex flex-wrap items-center gap-3">
 		<input
 			type="text"
 			class="h-8 w-64 rounded-lg border border-gray-200 bg-white px-3 text-sm placeholder:text-gray-400 focus:border-transparent focus:ring-2 focus:ring-green-500 focus:outline-none"
@@ -49,13 +49,48 @@
 			value={data.typeFilter}
 			oninput={(e) => navigate({ type: (e.target as HTMLInputElement).value })}
 		/>
-		{#if data.typeFilter}
+
+		<div class="flex items-center gap-1">
+			<span class="mr-1 text-xs font-medium tracking-wide text-muted-foreground uppercase">
+				Status
+			</span>
+			<button
+				type="button"
+				class="h-8 rounded-lg border px-3 text-xs transition-colors {!data.statusFilter
+					? 'border-primary bg-primary/5 text-primary'
+					: 'border-gray-200 text-gray-600 hover:bg-gray-50'}"
+				onclick={() => navigate({ status: '' })}
+			>
+				All
+			</button>
+			<button
+				type="button"
+				class="h-8 rounded-lg border px-3 text-xs transition-colors {data.statusFilter === 'ok'
+					? 'border-primary bg-primary/5 text-primary'
+					: 'border-gray-200 text-gray-600 hover:bg-gray-50'}"
+				onclick={() => navigate({ status: 'ok' })}
+			>
+				OK
+			</button>
+			<button
+				type="button"
+				class="h-8 rounded-lg border px-3 text-xs transition-colors {data.statusFilter ===
+				'error'
+					? 'border-red-300 bg-red-50 text-red-700'
+					: 'border-gray-200 text-gray-600 hover:bg-gray-50'}"
+				onclick={() => navigate({ status: 'error' })}
+			>
+				Error
+			</button>
+		</div>
+
+		{#if data.typeFilter || data.statusFilter}
 			<button
 				type="button"
 				class="text-sm text-muted-foreground transition-colors hover:text-foreground"
-				onclick={() => navigate({ type: '' })}
+				onclick={() => navigate({ type: '', status: '' })}
 			>
-				Clear
+				Clear all
 			</button>
 		{/if}
 	</div>
@@ -75,6 +110,10 @@
 					>
 					<th
 						class="px-4 py-3 text-left text-xs font-medium tracking-wide text-gray-500 uppercase"
+						>Status</th
+					>
+					<th
+						class="px-4 py-3 text-left text-xs font-medium tracking-wide text-gray-500 uppercase"
 						>Vendor</th
 					>
 					<th
@@ -86,9 +125,9 @@
 			<tbody class="divide-y divide-gray-100">
 				{#if data.events.length === 0}
 					<tr>
-						<td colspan="4" class="px-4 py-12 text-center text-sm text-gray-500">
-							{data.typeFilter
-								? `No events matching "${data.typeFilter}".`
+						<td colspan="5" class="px-4 py-12 text-center text-sm text-gray-500">
+							{data.typeFilter || data.statusFilter
+								? 'No events match these filters.'
 								: 'No events recorded yet.'}
 						</td>
 					</tr>
@@ -99,6 +138,21 @@
 								{fmtDateTime(event.createdAt)}
 							</td>
 							<td class="px-4 py-3 font-mono text-sm text-gray-900">{event.eventType}</td>
+							<td class="px-4 py-3">
+								{#if event.status === 'error'}
+									<span
+										class="inline-flex rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700"
+									>
+										Error
+									</span>
+								{:else}
+									<span
+										class="inline-flex rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700"
+									>
+										OK
+									</span>
+								{/if}
+							</td>
 							<td class="px-4 py-3 text-sm text-gray-500">
 								{#if event.vendorId}
 									{event.vendorName ?? `#${event.vendorId}`}

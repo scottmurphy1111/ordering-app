@@ -1,7 +1,7 @@
 import type { PageServerLoad } from './$types';
 import { db } from '$lib/server/db';
 import { systemEvents } from '$lib/server/db/system-events';
-import { eq, isNull, and, gte, count, desc } from 'drizzle-orm';
+import { eq, isNull, and, gte, count, desc, like } from 'drizzle-orm';
 import { vendor } from '$lib/server/db/schema';
 
 export const load: PageServerLoad = async () => {
@@ -11,43 +11,68 @@ export const load: PageServerLoad = async () => {
 	const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
 	const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
 
-	const [activeCount, paidCount, recent30, recent7, lastResumeDue, lastPauseReminders] =
-		await Promise.all([
-			db
-				.select({ value: count() })
-				.from(vendor)
-				.where(and(isNull(vendor.deletedAt), eq(vendor.isActive, true))),
-			db
-				.select({ value: count() })
-				.from(vendor)
-				.where(
-					and(
-						isNull(vendor.deletedAt),
-						eq(vendor.isActive, true),
-						eq(vendor.subscriptionStatus, 'active')
-					)
-				),
-			db
-				.select({ value: count() })
-				.from(vendor)
-				.where(and(isNull(vendor.deletedAt), gte(vendor.createdAt, thirtyDaysAgo))),
-			db
-				.select({ value: count() })
-				.from(vendor)
-				.where(and(isNull(vendor.deletedAt), gte(vendor.createdAt, sevenDaysAgo))),
-			db
-				.select({ createdAt: systemEvents.createdAt, metadata: systemEvents.metadata })
-				.from(systemEvents)
-				.where(eq(systemEvents.eventType, 'cron.resume_due'))
-				.orderBy(desc(systemEvents.createdAt))
-				.limit(1),
-			db
-				.select({ createdAt: systemEvents.createdAt, metadata: systemEvents.metadata })
-				.from(systemEvents)
-				.where(eq(systemEvents.eventType, 'cron.pause_reminders'))
-				.orderBy(desc(systemEvents.createdAt))
-				.limit(1)
-		]);
+	const [
+		activeCount,
+		paidCount,
+		recent30,
+		recent7,
+		lastResumeDue,
+		lastPauseReminders,
+		cronErrorsLast7
+	] = await Promise.all([
+		db
+			.select({ value: count() })
+			.from(vendor)
+			.where(and(isNull(vendor.deletedAt), eq(vendor.isActive, true))),
+		db
+			.select({ value: count() })
+			.from(vendor)
+			.where(
+				and(
+					isNull(vendor.deletedAt),
+					eq(vendor.isActive, true),
+					eq(vendor.subscriptionStatus, 'active')
+				)
+			),
+		db
+			.select({ value: count() })
+			.from(vendor)
+			.where(and(isNull(vendor.deletedAt), gte(vendor.createdAt, thirtyDaysAgo))),
+		db
+			.select({ value: count() })
+			.from(vendor)
+			.where(and(isNull(vendor.deletedAt), gte(vendor.createdAt, sevenDaysAgo))),
+		db
+			.select({
+				createdAt: systemEvents.createdAt,
+				status: systemEvents.status,
+				metadata: systemEvents.metadata
+			})
+			.from(systemEvents)
+			.where(eq(systemEvents.eventType, 'cron.resume_due'))
+			.orderBy(desc(systemEvents.createdAt))
+			.limit(1),
+		db
+			.select({
+				createdAt: systemEvents.createdAt,
+				status: systemEvents.status,
+				metadata: systemEvents.metadata
+			})
+			.from(systemEvents)
+			.where(eq(systemEvents.eventType, 'cron.pause_reminders'))
+			.orderBy(desc(systemEvents.createdAt))
+			.limit(1),
+		db
+			.select({ value: count() })
+			.from(systemEvents)
+			.where(
+				and(
+					like(systemEvents.eventType, 'cron.%'),
+					eq(systemEvents.status, 'error'),
+					gte(systemEvents.createdAt, sevenDaysAgo)
+				)
+			)
+	]);
 
 	return {
 		stats: {
@@ -61,6 +86,7 @@ export const load: PageServerLoad = async () => {
 				name: 'Resume due',
 				eventType: 'cron.resume_due',
 				lastRun: lastResumeDue[0]?.createdAt ?? null,
+				lastStatus: lastResumeDue[0]?.status ?? null,
 				lastMeta: (lastResumeDue[0]?.metadata ?? null) as {
 					processed: number;
 					errors: string[];
@@ -70,11 +96,13 @@ export const load: PageServerLoad = async () => {
 				name: 'Pause reminders',
 				eventType: 'cron.pause_reminders',
 				lastRun: lastPauseReminders[0]?.createdAt ?? null,
+				lastStatus: lastPauseReminders[0]?.status ?? null,
 				lastMeta: (lastPauseReminders[0]?.metadata ?? null) as {
 					processed: number;
 					errors: string[];
 				} | null
 			}
-		]
+		],
+		cronErrorsLast7: cronErrorsLast7[0]?.value ?? 0
 	};
 };
