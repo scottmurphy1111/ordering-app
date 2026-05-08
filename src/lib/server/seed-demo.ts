@@ -1,4 +1,6 @@
+import { eq } from 'drizzle-orm';
 import { db } from '$lib/server/db';
+import { vendor } from '$lib/server/db/vendor';
 import { catalogCategories, catalogItems } from '$lib/server/db/catalog';
 import { orders, orderItems } from '$lib/server/db/orders';
 
@@ -72,12 +74,10 @@ export async function seedDemoVendor(vendorId: number) {
 
 	const byName = Object.fromEntries(seededItems.map((i) => [i.name, i]));
 
-	const suffix = String(vendorId).padStart(3, '0');
-
 	const demoOrders = [
 		{
 			vendorId,
-			orderNumber: `DEMO-${suffix}-1001`,
+			orderNumber: '#1',
 			customerName: 'Maya Hoffman',
 			customerEmail: 'maya@example.com',
 			type: 'pickup',
@@ -93,7 +93,7 @@ export async function seedDemoVendor(vendorId: number) {
 		},
 		{
 			vendorId,
-			orderNumber: `DEMO-${suffix}-1002`,
+			orderNumber: '#2',
 			customerName: 'Tomás Rivera',
 			customerEmail: 'tomas@example.com',
 			type: 'pickup',
@@ -110,7 +110,7 @@ export async function seedDemoVendor(vendorId: number) {
 		},
 		{
 			vendorId,
-			orderNumber: `DEMO-${suffix}-1003`,
+			orderNumber: '#3',
 			customerName: 'Cleo Okafor',
 			customerEmail: 'cleo@example.com',
 			type: 'pickup',
@@ -127,7 +127,7 @@ export async function seedDemoVendor(vendorId: number) {
 		},
 		{
 			vendorId,
-			orderNumber: `DEMO-${suffix}-1004`,
+			orderNumber: '#4',
 			customerName: 'James Sutton',
 			customerEmail: 'james@example.com',
 			type: 'pickup',
@@ -162,4 +162,7 @@ export async function seedDemoVendor(vendorId: number) {
 			}))
 		);
 	}
+
+	// Set counter so the next real order continues from #5
+	await db.update(vendor).set({ lastOrderNumber: 4 }).where(eq(vendor.id, vendorId));
 }

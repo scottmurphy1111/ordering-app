@@ -5,6 +5,7 @@
 	import { resolve } from '$app/paths';
 	import Icon from '@iconify/svelte';
 	import { Card, CardContent, CardHeader, CardTitle } from '$lib/components/ui/card';
+	import OrderStatusStepper from '$lib/components/OrderStatusStepper.svelte';
 
 	let { data }: { data: PageData } = $props();
 
@@ -14,15 +15,12 @@
 	const isFulfilled = $derived(order.status === 'fulfilled');
 	const isDone = $derived(isFulfilled || isCancelled);
 
-	// Status stepper — only shown for paid orders
-	const STEPS = [
-		{ key: 'received', label: 'Received', icon: 'mdi:receipt-text-outline' },
-		{ key: 'confirmed', label: 'Confirmed', icon: 'mdi:check-circle-outline' },
-		{ key: 'preparing', label: 'In production', icon: 'mdi:package-variant-closed' },
-		{ key: 'ready', label: 'Ready!', icon: 'mdi:bell-ring-outline' },
-		{ key: 'fulfilled', label: 'Done', icon: 'mdi:flag-checkered' }
-	];
-	const stepIndex = $derived(STEPS.findIndex((s) => s.key === order.status));
+	// Customer-friendly label overrides for the status stepper
+	const customerLabels = {
+		preparing: 'In production',
+		ready: 'Ready!',
+		fulfilled: 'Done'
+	};
 
 	const scheduledFor = $derived(order.scheduledFor ? new Date(order.scheduledFor) : null);
 	const scheduledLabel = $derived(
@@ -157,45 +155,12 @@
 						{/if}
 					</div>
 
-					<div class="relative flex items-start justify-between">
-						<!-- connector line behind steps -->
-						<div class="absolute top-5 right-0 left-0 h-0.5 bg-muted" aria-hidden="true">
-							<div
-								class="h-full transition-all duration-500"
-								style="background-color: var(--background-color); width: {stepIndex >= 0
-									? `${(stepIndex / (STEPS.length - 1)) * 100}%`
-									: '0%'};"
-							></div>
-						</div>
-
-						{#each STEPS as step, i (step.key)}
-							{@const done = i < stepIndex}
-							{@const active = i === stepIndex}
-							<div
-								class="relative z-10 flex flex-col items-center gap-1.5"
-								style="width: {100 / STEPS.length}%;"
-							>
-								<div
-									class="flex h-10 w-10 items-center justify-center rounded-full border-2 transition-colors"
-									style={done || active
-										? `background-color: var(--background-color); border-color: var(--background-color); color: var(--foreground-color);`
-										: 'background-color: white; border-color: #e5e7eb; color: #9ca3af;'}
-								>
-									<Icon icon={step.icon} class="h-5 w-5" />
-								</div>
-								<span
-									class="text-center text-xs leading-tight"
-									style={active
-										? 'color: var(--background-color); font-weight: 600;'
-										: done
-											? 'color: #374151; font-weight: 500;'
-											: 'color: #9ca3af;'}
-								>
-									{step.label}
-								</span>
-							</div>
-						{/each}
-					</div>
+					<OrderStatusStepper
+						status={order.status}
+						variant="full"
+						colorScheme="branding"
+						labelOverrides={customerLabels}
+					/>
 
 					{#if order.status === 'ready'}
 						<div

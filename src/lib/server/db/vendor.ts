@@ -107,6 +107,9 @@ export const vendor = pgTable(
 		// Active add-ons with their Stripe subscription item IDs
 		addons: jsonb('addons').default([]).$type<import('$lib/billing').AddonItem[]>(),
 
+		// Per-vendor sequential order counter — incremented atomically at order creation
+		lastOrderNumber: integer('last_order_number').notNull().default(0),
+
 		// Timestamps
 		createdAt: timestamp('created_at').defaultNow().notNull(),
 		updatedAt: timestamp('updated_at').defaultNow().notNull(),

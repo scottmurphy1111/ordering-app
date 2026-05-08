@@ -12,6 +12,7 @@ import { orderRefundedEmail } from '$lib/server/email/templates/orderRefunded';
 import { sendSms } from '$lib/server/sms';
 import { env } from '$env/dynamic/private';
 import type { PickupWindowSnapshot } from '$lib/server/pickup/checkout';
+import { generateOrderNumber } from '$lib/server/order-number';
 
 export const POST: RequestHandler = async ({ request, params }) => {
 	const numericId = parseInt(params.vendorId);
@@ -74,12 +75,6 @@ type VendorCtx = {
 	slug: string;
 	timezone: string;
 };
-
-function generateOrderNumber(): string {
-	const ts = Date.now().toString(36).toUpperCase();
-	const rand = Math.random().toString(36).slice(2, 5).toUpperCase();
-	return `#${ts}-${rand}`;
-}
 
 function orderUrl(vendorSlug: string, orderId: number) {
 	return `${env.ORIGIN}/${vendorSlug}/orders/${orderId}`;
@@ -279,7 +274,7 @@ async function handleEvent(event: Stripe.Event, ctx: VendorCtx) {
 				break;
 			}
 
-			const orderNumber = generateOrderNumber();
+			const orderNumber = await generateOrderNumber(ctx.id, db);
 			const [recurring] = await db
 				.insert(orders)
 				.values({

@@ -8,7 +8,8 @@
 	import { Card, CardHeader, CardTitle, CardContent } from '$lib/components/ui/card';
 	import { Alert } from '$lib/components/ui/alert';
 	import type { PageData, ActionData } from './$types';
-	import { lifecycleStages, actionConfig } from '$lib/utils/order-lifecycle';
+	import { actionConfig } from '$lib/utils/order-lifecycle';
+	import OrderStatusStepper from '$lib/components/OrderStatusStepper.svelte';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
@@ -49,10 +50,10 @@
 	{/if}
 
 	<!-- Header -->
-	<div class="mb-6 flex items-start justify-between">
-		<div>
+	<div class="mb-4 flex items-start justify-between gap-4">
+		<div class="flex min-w-0 flex-col gap-1.5">
+			<h1 class="font-mono text-2xl font-bold text-gray-900">{order.orderNumber}</h1>
 			<div class="flex flex-wrap items-center gap-2">
-				<h1 class="font-mono text-2xl font-bold text-gray-900">{order.orderNumber}</h1>
 				<Badge class="bg-gray-100 text-gray-500 capitalize">{order.type}</Badge>
 				{#if order.paymentStatus === 'paid'}
 					<Badge class="bg-emerald-100 text-emerald-700">paid</Badge>
@@ -79,49 +80,21 @@
 					})}
 				</p>
 			{/if}
-			<!-- Lifecycle stepper -->
-			{#if order.status === 'cancelled'}
-				<div class="mt-4 flex items-center gap-2">
-					<Icon icon="mdi:close-circle" class="h-5 w-5 text-red-500" />
-					<span class="text-base font-medium text-gray-900">Cancelled</span>
-				</div>
-			{:else}
-				<div class="mt-4 flex items-center">
-					{#each lifecycleStages as stage, i (stage.value)}
-						{@const stageIndex = lifecycleStages.findIndex((s) => s.value === stage.value)}
-						{@const currentIndex = lifecycleStages.findIndex((s) => s.value === order.status)}
-						{@const isCompleted = stageIndex < currentIndex}
-						{@const isCurrent = stageIndex === currentIndex}
-						<div class="flex flex-col items-center">
-							{#if isCurrent}
-								<span
-									class="inline-flex items-center justify-center rounded-full bg-primary/10 p-1.5"
-								>
-									<Icon icon={stage.icon} class="h-5 w-5 text-primary" />
-								</span>
-								<span class="mt-1 text-xs font-semibold text-gray-900">{stage.label}</span>
-							{:else if isCompleted}
-								<span class="inline-flex items-center justify-center p-1.5">
-									<Icon icon={stage.icon} class="h-5 w-5 text-primary" />
-								</span>
-								<span class="mt-1 text-xs font-medium text-gray-900">{stage.label}</span>
-							{:else}
-								<span class="inline-flex items-center justify-center p-1.5">
-									<Icon icon={stage.icon} class="h-5 w-5 text-gray-300" />
-								</span>
-								<span class="mt-1 text-xs text-gray-400">{stage.label}</span>
-							{/if}
-						</div>
-						{#if i < lifecycleStages.length - 1}
-							{@const lineCompleted = stageIndex < currentIndex}
-							<div class="mx-2 h-px flex-1 {lineCompleted ? 'bg-primary' : 'bg-gray-200'}"></div>
-						{/if}
-					{/each}
-				</div>
-			{/if}
 		</div>
 		<p class="text-xl font-semibold text-gray-900">{formatCents(order.total)}</p>
 	</div>
+
+	<!-- Lifecycle stepper -->
+	{#if order.status === 'cancelled'}
+		<div class="mb-6 flex items-center gap-2">
+			<Icon icon="mdi:close-circle" class="h-5 w-5 text-red-500" />
+			<span class="text-base font-medium text-gray-900">Cancelled</span>
+		</div>
+	{:else}
+		<div class="mb-6">
+			<OrderStatusStepper status={order.status} variant="full" colorScheme="themed" />
+		</div>
+	{/if}
 
 	<!-- Customer info -->
 	<Card class="mb-4">

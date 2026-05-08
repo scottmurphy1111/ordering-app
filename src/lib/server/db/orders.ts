@@ -6,7 +6,8 @@ import {
 	text,
 	timestamp,
 	jsonb,
-	index
+	index,
+	uniqueIndex
 } from 'drizzle-orm/pg-core';
 import { vendor } from './vendor';
 import { catalogItems } from './catalog';
@@ -21,7 +22,7 @@ export const orders = pgTable(
 			.notNull()
 			.references(() => vendor.id, { onDelete: 'cascade' }),
 
-		orderNumber: varchar('order_number', { length: 50 }).unique().notNull(),
+		orderNumber: varchar('order_number', { length: 50 }).notNull(),
 
 		customerName: varchar('customer_name', { length: 255 }),
 		customerEmail: varchar('customer_email', { length: 255 }),
@@ -65,7 +66,8 @@ export const orders = pgTable(
 	(table) => [
 		index('orders_vendor_idx').on(table.vendorId),
 		index('orders_status_idx').on(table.vendorId, table.status),
-		index('orders_created_idx').on(table.vendorId, table.createdAt)
+		index('orders_created_idx').on(table.vendorId, table.createdAt),
+		uniqueIndex('orders_vendor_id_order_number_unique').on(table.vendorId, table.orderNumber)
 	]
 );
 

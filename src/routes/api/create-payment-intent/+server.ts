@@ -15,12 +15,7 @@ import {
 } from '$lib/server/pickup/checkout';
 import { HORIZON_DAYS } from '$lib/server/pickup/lifecycle';
 import { validateCartItems } from '$lib/server/cart/validate';
-
-function generateOrderNumber(): string {
-	const ts = Date.now().toString(36).toUpperCase();
-	const rand = Math.random().toString(36).slice(2, 5).toUpperCase();
-	return `#${ts}-${rand}`;
-}
+import { generateOrderNumber } from '$lib/server/order-number';
 
 function itemUnitPrice(item: CartItem): number {
 	return item.basePrice + item.selectedModifiers.reduce((s, m) => s + m.priceAdjustment, 0);
@@ -134,7 +129,7 @@ export const POST: RequestHandler = async ({ request }) => {
 		if (result.window.startsAt > horizonCutoff) initialStatus = 'scheduled';
 	}
 
-	const orderNumber = generateOrderNumber();
+	const orderNumber = await generateOrderNumber(vendorRecord.id, db);
 
 	const [newOrder] = await db
 		.insert(orders)

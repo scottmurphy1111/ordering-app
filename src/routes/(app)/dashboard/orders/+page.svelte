@@ -18,7 +18,7 @@
 	import OrdersFilterTabs from '$lib/components/OrdersFilterTabs.svelte';
 	import { SvelteURLSearchParams, SvelteMap } from 'svelte/reactivity';
 	import { Alert } from '$lib/components/ui/alert';
-	import { lifecycleStages } from '$lib/utils/order-lifecycle';
+	import OrderStatusStepper from '$lib/components/OrderStatusStepper.svelte';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 	let mounted = $state(false);
@@ -117,7 +117,7 @@
 		scheduled: 'Scheduled',
 		received: 'Received',
 		confirmed: 'Confirmed',
-		preparing: 'In production',
+		preparing: 'Preparing',
 		ready: 'Ready',
 		fulfilled: 'Fulfilled',
 		cancelled: 'Cancelled'
@@ -683,33 +683,15 @@
 								<span class="text-xs text-gray-500">Cancelled</span>
 							</span>
 						{:else}
-							<span class="inline-flex items-center">
-								<span class="inline-flex items-center gap-1">
-									{#each lifecycleStages as stage (stage.value)}
-										{@const stageIndex = lifecycleStages.findIndex((s) => s.value === stage.value)}
-										{@const currentIndex = lifecycleStages.findIndex(
-											(s) => s.value === order.status
-										)}
-										{@const isCompleted = stageIndex < currentIndex}
-										{@const isCurrent = stageIndex === currentIndex}
-										{#if isCurrent}
-											<span
-												class="inline-flex items-center justify-center rounded-full bg-primary/10 p-0.5"
-											>
-												<Icon icon={stage.icon} class="h-3.5 w-3.5 text-primary" />
-											</span>
-										{:else if isCompleted}
-											<span class="inline-flex items-center justify-center p-0.5">
-												<Icon icon={stage.icon} class="h-3.5 w-3.5 text-primary" />
-											</span>
-										{:else}
-											<span class="inline-flex items-center justify-center p-0.5">
-												<Icon icon={stage.icon} class="h-3.5 w-3.5 text-gray-300" />
-											</span>
-										{/if}
-									{/each}
+							<span class="inline-flex items-center gap-2">
+								<span class="w-32">
+									<OrderStatusStepper
+										status={order.status}
+										variant="mini"
+										colorScheme="themed"
+									/>
 								</span>
-								<span class="ml-2 text-xs text-gray-500">
+								<span class="text-xs text-gray-500">
 									{statusLabels[order.status] ?? order.status}
 								</span>
 							</span>
