@@ -91,6 +91,11 @@ export async function materializeTemplate(templateId: number): Promise<Materiali
 	// count = HORIZON_WEEKS * 7 is a generous upper bound that covers any day combination
 	// (e.g. a daily template would produce up to 84 occurrences; weekly produces ~12).
 	// Post-filter to horizon so we never insert beyond 12 weeks out.
+	const exdates = ((template.exdates as string[] | null) ?? []).map((iso) => {
+		const [y, m, d] = iso.split('-').map(Number);
+		return new Date(Date.UTC(y, m - 1, d, 12, 0, 0));
+	});
+
 	const occurrences = expandTemplate({
 		recurrence: template.recurrence,
 		windowStart: template.windowStart, // "HH:MM:SS" from DB — wallClockToUtc handles it
@@ -99,7 +104,8 @@ export async function materializeTemplate(templateId: number): Promise<Materiali
 		vendorTimezone: vendorRecord.timezone,
 		count: HORIZON_WEEKS * 7,
 		recurrenceStart: template.recurrenceStartDate,
-		recurrenceEnd: template.recurrenceEndDate
+		recurrenceEnd: template.recurrenceEndDate,
+		exdates
 	}).filter((occ) => occ.startsAt <= horizon);
 
 	let generated = 0;

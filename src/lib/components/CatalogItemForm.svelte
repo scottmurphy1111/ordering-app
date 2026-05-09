@@ -19,6 +19,8 @@
 
 	type ImageEntry = { url: string; isPrimary?: boolean };
 
+	type PickupType = 'windowed' | 'custom_date';
+
 	interface ItemData {
 		name: string;
 		description: string | null;
@@ -31,6 +33,8 @@
 		status: 'available' | 'sold_out' | 'hidden' | 'draft';
 		isSubscription?: boolean | null;
 		billingInterval?: string | null;
+		pickupType?: PickupType | null;
+		customDateLeadDays?: number | null;
 	}
 
 	interface Props {
@@ -77,6 +81,10 @@
 	// Subscription
 	let isSubscription = $state(untrack(() => item?.isSubscription ?? false));
 	let billingInterval = $state(untrack(() => item?.billingInterval ?? 'monthly'));
+
+	// Pickup type
+	let pickupType = $state<PickupType>(untrack(() => (item?.pickupType as PickupType | null | undefined) ?? 'windowed'));
+	let customDateLeadDays = $state(untrack(() => item?.customDateLeadDays ?? 14));
 
 	// Internal feedback
 	let internalError = $state<string | null>(null);
@@ -319,6 +327,53 @@
 	</div>
 {/snippet}
 
+{#snippet fieldPickupType()}
+	<div class="space-y-3 rounded-lg border p-4">
+		<p class="text-sm font-medium text-muted-foreground">Pickup type</p>
+		<Tabs
+			value={pickupType}
+			onValueChange={(v) => (pickupType = v as PickupType)}
+			aria-label="Choose pickup type"
+		>
+			<TabsList>
+				<TabsTrigger value="windowed">Windowed</TabsTrigger>
+				<TabsTrigger value="custom_date">
+					<Icon icon="mdi:calendar-edit" class="h-3.5 w-3.5" />
+					Custom date
+				</TabsTrigger>
+			</TabsList>
+		</Tabs>
+		<input type="hidden" name="pickupType" value={pickupType} />
+		<p class="text-xs text-gray-500">
+			{#if pickupType === 'windowed'}
+				Customer picks a pickup window at checkout. Use this for items you sell at scheduled pickup
+				times — including today's inventory if you have a daily window configured.
+			{:else}
+				Customer picks a future date. You review and approve each order before payment is charged.
+				Use this for wedding cakes, custom catering, and special-order goods.
+			{/if}
+		</p>
+		{#if pickupType === 'custom_date'}
+			<div>
+				<label class="mb-1.5 block text-sm font-medium text-muted-foreground" for="customDateLeadDays">
+					Lead time (days)
+				</label>
+				<Input
+					id="customDateLeadDays"
+					name="customDateLeadDays"
+					type="number"
+					min={1}
+					max={365}
+					required
+					value={customDateLeadDays}
+					oninput={(e) => (customDateLeadDays = parseInt((e.target as HTMLInputElement).value) || 14)}
+				/>
+				<p class="mt-1.5 text-xs text-gray-400">Minimum days between order and fulfillment.</p>
+			</div>
+		{/if}
+	</div>
+{/snippet}
+
 {#snippet fieldStatus()}
 	{@const STATUS_OPTIONS = [
 		['available', 'Available'],
@@ -391,6 +446,7 @@
 				{@render fieldStatus()}
 			{/if}
 			{@render fieldTags()}
+			{@render fieldPickupType()}
 			{#if hasSubscriptionsAddon}{@render fieldSubscription()}{/if}
 		</div>
 	{:else}
@@ -402,6 +458,7 @@
 			{#if categories.length > 0}{@render fieldCategory()}{/if}
 			{@render fieldTags()}
 			{@render fieldStatus()}
+			{@render fieldPickupType()}
 			{#if hasSubscriptionsAddon}{@render fieldSubscription()}{/if}
 		</div>
 	{/if}

@@ -31,6 +31,13 @@ function parseItemFormData(formData: FormData) {
 	const billingInterval = isSubscription
 		? formData.get('billingInterval')?.toString() || 'monthly'
 		: null;
+	const pickupType = (formData.get('pickupType')?.toString() || 'windowed') as
+		| 'windowed'
+		| 'custom_date';
+	const customDateLeadDays =
+		pickupType === 'custom_date'
+			? parseInt(formData.get('customDateLeadDays')?.toString() ?? '14') || 14
+			: null;
 
 	if (!name) throw new CatalogItemError(400, 'Name is required');
 	if (!priceStr || isNaN(parseFloat(priceStr)))
@@ -60,7 +67,9 @@ function parseItemFormData(formData: FormData) {
 		images,
 		sortOrder,
 		isSubscription,
-		billingInterval
+		billingInterval,
+		pickupType,
+		customDateLeadDays
 	};
 }
 
@@ -111,7 +120,9 @@ export async function updateCatalogItem(
 		images,
 		sortOrder,
 		isSubscription,
-		billingInterval
+		billingInterval,
+		pickupType,
+		customDateLeadDays
 	} = parseItemFormData(formData);
 
 	await db
@@ -128,6 +139,8 @@ export async function updateCatalogItem(
 			sortOrder,
 			isSubscription,
 			billingInterval,
+			pickupType,
+			customDateLeadDays,
 			updatedAt: new Date()
 		})
 		.where(and(eq(catalogItems.id, itemId), eq(catalogItems.vendorId, vendorId)));

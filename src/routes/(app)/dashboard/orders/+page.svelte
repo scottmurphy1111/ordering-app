@@ -117,7 +117,7 @@
 		scheduled: 'Scheduled',
 		received: 'Received',
 		confirmed: 'Confirmed',
-		preparing: 'Preparing',
+		preparing: 'In production',
 		ready: 'Ready',
 		fulfilled: 'Fulfilled',
 		cancelled: 'Cancelled'

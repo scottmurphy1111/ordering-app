@@ -62,6 +62,8 @@ export const pickupWindowTemplates = pgTable(
 		// recurrenceEndDate:   NULL = indefinite. When set, expand truncates at this instant.
 		recurrenceStartDate: timestamp('recurrence_start_date', { withTimezone: true }),
 		recurrenceEndDate: timestamp('recurrence_end_date', { withTimezone: true }),
+		// YYYY-MM-DD ISO date strings in the vendor's local calendar to skip during materialization.
+		exdates: jsonb('exdates').default([]),
 		createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow()
 	},
 	(t) => [

@@ -11,7 +11,7 @@ import {
 } from 'drizzle-orm/pg-core';
 import { vendor } from './vendor';
 import { catalogItems } from './catalog';
-import { orderStatusEnum, paymentStatusEnum } from './types';
+import { orderStatusEnum, paymentStatusEnum, pickupTypeEnum } from './types';
 import { pickupWindows, pickupLocations } from './pickup';
 
 export const orders = pgTable(
@@ -31,6 +31,7 @@ export const orders = pgTable(
 		type: varchar('type', { length: 20 }).notNull(),
 		status: orderStatusEnum('status').default('received').notNull(),
 		paymentStatus: paymentStatusEnum('payment_status').default('pending').notNull(),
+		pickupType: pickupTypeEnum('pickup_type').default('windowed').notNull(),
 
 		subtotal: integer('subtotal').notNull(),
 		tax: integer('tax').notNull(),
@@ -58,6 +59,9 @@ export const orders = pgTable(
 		pickupWindowSnapshot: jsonb('pickup_window_snapshot'),
 
 		stripePaymentIntentId: varchar('stripe_payment_intent_id', { length: 255 }),
+		stripeSetupIntentId: varchar('stripe_setup_intent_id', { length: 255 }),
+		stripeCustomerId: varchar('stripe_customer_id', { length: 255 }),
+		stripePaymentMethodId: varchar('stripe_payment_method_id', { length: 255 }),
 		metadata: jsonb('metadata').default({}),
 
 		createdAt: timestamp('created_at').defaultNow().notNull(),

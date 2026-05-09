@@ -1516,6 +1516,7 @@ const statusStyles = {
   sold_out:  "bg-amber-100 text-amber-700",
   hidden:    "bg-gray-100 text-gray-400",
   draft:     "bg-gray-100 text-gray-500",
+  custom_date: "bg-slate-100 text-slate-700",
   // Sale
   sale:      "bg-red-100 text-red-600",
 };

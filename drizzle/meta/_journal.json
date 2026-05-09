@@ -50,6 +50,20 @@
       "when": 1778243090919,
       "tag": "0006_bumpy_black_widow",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1778326110917,
+      "tag": "0007_vengeful_johnny_storm",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1778329618706,
+      "tag": "0008_thin_hannibal_king",
+      "breakpoints": true
     }
   ]
 }

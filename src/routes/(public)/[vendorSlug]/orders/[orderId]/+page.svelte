@@ -17,7 +17,6 @@
 
 	// Customer-friendly label overrides for the status stepper
 	const customerLabels = {
-		preparing: 'In production',
 		ready: 'Ready!',
 		fulfilled: 'Done'
 	};

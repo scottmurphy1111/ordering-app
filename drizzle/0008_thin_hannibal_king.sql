@@ -1,0 +1,1 @@
+ALTER TABLE "pickup_window_templates" ADD COLUMN "exdates" jsonb DEFAULT '[]'::jsonb;

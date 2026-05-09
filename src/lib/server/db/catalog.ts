@@ -12,6 +12,7 @@ import {
 	primaryKey
 } from 'drizzle-orm/pg-core';
 import { vendor } from './vendor';
+import { pickupTypeEnum } from './types';
 
 export const itemStatusEnum = pgEnum('item_status', ['draft', 'available', 'sold_out', 'hidden']);
 
@@ -60,6 +61,9 @@ export const catalogItems = pgTable(
 
 		isSubscription: boolean('is_subscription').default(false),
 		billingInterval: varchar('billing_interval', { length: 20 }),
+
+		pickupType: pickupTypeEnum('pickup_type').default('windowed').notNull(),
+		customDateLeadDays: integer('custom_date_lead_days').default(14),
 
 		status: itemStatusEnum('status').default('available').notNull(),
 		sortOrder: integer('sort_order').default(0),

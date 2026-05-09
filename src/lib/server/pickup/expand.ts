@@ -21,10 +21,10 @@
  * job should call it with fromDate = last materialized occurrence date, then insert
  * the returned rows into pickup_windows. Only call for templates where is_active = true.
  */
-import { RRule, type Weekday } from 'rrule';
+import { rrulestr, RRule, RRuleSet } from 'rrule';
 
 export type ExpandTemplateInput = {
-	recurrence: string; // RRULE fragment, e.g. "FREQ=WEEKLY;BYDAY=SA,TH"
+	recurrence: string; // RRULE fragment, e.g. "FREQ=WEEKLY;BYDAY=SA,TH" or "FREQ=DAILY"
 	windowStart: string; // "HH:MM" wall-clock in vendor TZ (from DB time column)
 	windowEnd: string; // "HH:MM" wall-clock in vendor TZ
 	cutoffHours: number;
@@ -36,22 +36,15 @@ export type ExpandTemplateInput = {
 	// recurrenceEnd:   when set, the loop stops once startsAt > recurrenceEnd.
 	recurrenceStart?: Date | null;
 	recurrenceEnd?: Date | null;
+	// Optional exclusion dates as noon-UTC-anchored Date instances (matching dtstart convention).
+	// When non-empty, an RRuleSet is used to skip the given occurrences.
+	exdates?: Date[];
 };
 
 export type ExpandedOccurrence = {
 	startsAt: Date; // UTC, ready for TIMESTAMPTZ storage
 	endsAt: Date; // UTC
 	cutoffAt: Date; // UTC = startsAt − cutoffHours
-};
-
-const BYDAY_MAP: Record<string, Weekday> = {
-	MO: RRule.MO,
-	TU: RRule.TU,
-	WE: RRule.WE,
-	TH: RRule.TH,
-	FR: RRule.FR,
-	SA: RRule.SA,
-	SU: RRule.SU
 };
 
 /**
@@ -121,28 +114,32 @@ function wallClockToUtc(rruleDate: Date, timeHHMM: string, ianaTimezone: string)
 export function expandTemplate(input: ExpandTemplateInput): ExpandedOccurrence[] {
 	const fromDate = input.fromDate ?? new Date();
 
-	const bydayMatch = input.recurrence.match(/BYDAY=([A-Z,]+)/);
-	const byday = bydayMatch
-		? bydayMatch[1]
-				.split(',')
-				.map((d) => BYDAY_MAP[d])
-				.filter(Boolean)
-		: [];
-
-	if (byday.length === 0) return [];
-
 	// Anchor dtstart at noon UTC so the UTC calendar date always equals the
 	// intended local calendar day regardless of the vendor's timezone offset.
 	const dtstart = new Date(
 		Date.UTC(fromDate.getUTCFullYear(), fromDate.getUTCMonth(), fromDate.getUTCDate(), 12, 0, 0)
 	);
 
-	// Overfetch slightly — a few occurrences on fromDate itself may be in the past
-	const rule = new RRule({ freq: RRule.WEEKLY, byweekday: byday, dtstart, count: input.count + 5 });
+	const hasExdates = (input.exdates?.length ?? 0) > 0;
+
+	// Build iterable: plain RRule for the common case, RRuleSet when exclusions exist.
+	// Manually construct RRuleSet (rather than forceset: true) so dtstart threads correctly
+	// into the inner RRule regardless of whether the recurrence string has a RRULE: prefix.
+	let iterable: RRule | RRuleSet;
+	if (hasExdates) {
+		const rule = rrulestr(input.recurrence, { dtstart }) as RRule;
+		const set = new RRuleSet();
+		set.rrule(rule);
+		for (const d of input.exdates!) set.exdate(d);
+		iterable = set;
+	} else {
+		iterable = rrulestr(input.recurrence, { dtstart }) as RRule;
+	}
 
 	const results: ExpandedOccurrence[] = [];
 
-	for (const occ of rule.all()) {
+	// Overfetch slightly — a few occurrences on or before fromDate may need discarding.
+	for (const occ of iterable.all((_, len) => len < input.count + 5)) {
 		const startsAt = wallClockToUtc(occ, input.windowStart, input.vendorTimezone);
 		if (startsAt <= fromDate) continue;
 		// Date bounds: skip occurrences before recurrenceStart; stop once past recurrenceEnd.

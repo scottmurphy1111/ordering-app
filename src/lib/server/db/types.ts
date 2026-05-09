@@ -8,7 +8,9 @@ export const orderStatusEnum = pgEnum('order_status', [
 	'ready',
 	'fulfilled',
 	'cancelled',
-	'scheduled'
+	'scheduled',
+	'pending_approval',
+	'payment_failed'
 ]);
 
 export const paymentStatusEnum = pgEnum('payment_status', [
@@ -17,3 +19,5 @@ export const paymentStatusEnum = pgEnum('payment_status', [
 	'failed',
 	'refunded'
 ]);
+
+export const pickupTypeEnum = pgEnum('pickup_type', ['windowed', 'custom_date']);

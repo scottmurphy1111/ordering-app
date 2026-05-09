@@ -708,7 +708,12 @@
 									</div>
 								{/if}
 								<div class="min-w-0 flex-1">
-									<p class="truncate text-sm font-medium text-gray-900">{item.name}</p>
+									<div class="flex items-center gap-1.5">
+										<p class="truncate text-sm font-medium text-gray-900">{item.name}</p>
+										{#if item.pickupType === 'custom_date'}
+											<span class="shrink-0 rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium capitalize text-slate-700">Custom date</span>
+										{/if}
+									</div>
 									<p class="truncate text-xs text-gray-500">
 										{item.category?.name ?? 'Uncategorized'} · ${item.discountedPrice
 											? (item.discountedPrice / 100).toFixed(2)
@@ -836,12 +841,17 @@
 								</TableCell>
 								<TableCell class="max-w-0 px-4 py-3 whitespace-normal">
 									<div class="min-w-0">
-										<a
-											href={resolve(`/dashboard/catalog/items/${item.id}`)}
-											class="block truncate text-sm font-medium text-gray-900 hover:text-gray-700"
-										>
-											{item.name}
-										</a>
+										<div class="flex items-center gap-1.5">
+											<a
+												href={resolve(`/dashboard/catalog/items/${item.id}`)}
+												class="truncate text-sm font-medium text-gray-900 hover:text-gray-700"
+											>
+												{item.name}
+											</a>
+											{#if item.pickupType === 'custom_date'}
+												<span class="shrink-0 rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium capitalize text-slate-700">Custom date</span>
+											{/if}
+										</div>
 										{#if item.description}
 											<p class="block truncate text-xs text-gray-500">{item.description}</p>
 										{/if}

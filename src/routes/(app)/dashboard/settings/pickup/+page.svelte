@@ -27,6 +27,7 @@
 		TableRow
 	} from '$lib/components/ui/table';
 	import { Alert } from '$lib/components/ui/alert';
+	import { Tabs, TabsList, TabsTrigger } from '$lib/components/ui/tabs';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
@@ -113,6 +114,12 @@
 	// round-trip cleanly without timezone conversion in the form layer.
 	let previewRecurrenceStartDate = $state('');
 	let previewRecurrenceEndDate = $state('');
+	// Template kind — 'weekly' (day-of-week checkboxes) or 'daily' (every day).
+	// Shared between add and edit forms since only one is open at a time.
+	let previewTemplateKind = $state<'weekly' | 'daily'>('weekly');
+	// Skip dates state (edit form only — seeded from server data when edit opens).
+	let editExdates = $state<string[]>([]);
+	let addExdateInput = $state('');
 
 	const editingTemplate = $derived(
 		editingTemplateId !== null
@@ -145,9 +152,23 @@
 	}
 
 	function formatRecurrence(recurrence: string): string {
+		if (recurrence.startsWith('FREQ=DAILY')) return 'Every day';
 		const days = getRruleDays(recurrence);
 		const ordered = DAY_ORDER.filter((d) => days.includes(d));
 		return 'Every ' + ordered.map((d) => DAY_LABELS[d]).join(' + ');
+	}
+
+	function getTemplateKind(recurrence: string): 'weekly' | 'daily' {
+		return recurrence.startsWith('FREQ=DAILY') ? 'daily' : 'weekly';
+	}
+
+	function formatExdate(iso: string): string {
+		const [y, m, d] = iso.split('-').map(Number);
+		return new Intl.DateTimeFormat('en-US', {
+			month: 'short',
+			day: 'numeric',
+			year: 'numeric'
+		}).format(new Date(y, m - 1, d));
 	}
 
 	function formatDateRange(
@@ -226,6 +247,7 @@
 	type OccurrencePreview = { startsAt: Date; endsAt: Date; cutoffAt: Date };
 
 	function computePreview(
+		kind: 'weekly' | 'daily',
 		days: string[],
 		start: string,
 		end: string,
@@ -234,7 +256,8 @@
 		recurrenceStartDate: string,
 		recurrenceEndDate: string
 	): OccurrencePreview[] {
-		if (days.length === 0 || !start || !end) return [];
+		if (!start || !end) return [];
+		if (kind === 'weekly' && days.length === 0) return [];
 		const BYDAY: Record<string, typeof RRule.MO> = {
 			MO: RRule.MO,
 			TU: RRule.TU,
@@ -248,12 +271,15 @@
 		const dtstart = new Date(
 			Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 12, 0, 0)
 		);
-		const rule = new RRule({
-			freq: RRule.WEEKLY,
-			byweekday: days.map((d) => BYDAY[d]).filter(Boolean),
-			dtstart,
-			count: 14
-		});
+		const rule =
+			kind === 'daily'
+				? new RRule({ freq: RRule.DAILY, dtstart, count: 14 })
+				: new RRule({
+						freq: RRule.WEEKLY,
+						byweekday: days.map((d) => BYDAY[d]).filter(Boolean),
+						dtstart,
+						count: 14
+					});
 		// Resolve bound strings to UTC instants in the vendor's timezone.
 		// Mirrors the server's startOfDayInTZ resolution so client preview matches what materializes.
 		const recStart = recurrenceStartDate ? startOfDayInTZ(recurrenceStartDate, tz) : null;
@@ -274,6 +300,7 @@
 
 	const occurrencePreview = $derived(
 		computePreview(
+			previewTemplateKind,
 			previewDays,
 			previewStartTime,
 			previewEndTime,
@@ -341,6 +368,7 @@
 			previewEndTime = '';
 			previewRecurrenceStartDate = '';
 			previewRecurrenceEndDate = '';
+			previewTemplateKind = 'weekly';
 			await update({ reset: true });
 		};
 	}
@@ -365,6 +393,9 @@
 			previewEndTime = '';
 			previewRecurrenceStartDate = '';
 			previewRecurrenceEndDate = '';
+			previewTemplateKind = 'weekly';
+			editExdates = [];
+			addExdateInput = '';
 			await update({ reset: false });
 		};
 	}
@@ -641,7 +672,9 @@
 									{/if}
 								</TableCell>
 								<TableCell class="text-right">
-									<div class="flex flex-col items-stretch gap-1 md:flex-row md:items-center md:justify-end md:gap-3">
+									<div
+										class="flex flex-col items-stretch gap-1 md:flex-row md:items-center md:justify-end md:gap-3"
+									>
 										<Button
 											type="button"
 											onclick={() => {
@@ -727,6 +760,8 @@
 						<CardTitle>Edit pickup window</CardTitle>
 					</CardHeader>
 					<CardContent class="space-y-4">
+						<!-- Hidden field carries templateKind to the form action -->
+						<input type="hidden" name="templateKind" value={previewTemplateKind} />
 						<!-- Name -->
 						<div>
 							<label class="mb-1 block text-sm font-medium text-muted-foreground" for="etmpl-name">
@@ -768,33 +803,60 @@
 								</SelectContent>
 							</Select>
 						</div>
-						<!-- Days -->
+						<!-- Template kind toggle -->
 						<div>
-							<p class="mb-2 text-sm font-medium text-muted-foreground">Days *</p>
-							<div class="flex flex-wrap gap-2">
-								{#each DAY_ORDER as day (day)}
-									<label
-										class="flex cursor-pointer items-center gap-1.5 rounded-md border px-3 py-1.5 text-sm transition-colors {previewDays.includes(
-											day
-										)
-											? 'border-ring bg-primary/5 text-foreground'
-											: 'border-input bg-background text-muted-foreground hover:bg-muted/50'}"
-									>
-										<Checkbox
-											name="days"
-											value={day}
-											checked={previewDays.includes(day)}
-											onCheckedChange={(v) => {
-												if (v) previewDays = [...previewDays, day];
-												else previewDays = previewDays.filter((d) => d !== day);
-											}}
-											class="sr-only"
-										/>
-										{DAY_LABELS[day]}
-									</label>
-								{/each}
-							</div>
+							<p class="mb-2 text-sm font-medium text-muted-foreground">Repeats</p>
+							<Tabs
+								value={previewTemplateKind}
+								onValueChange={(v) => (previewTemplateKind = v as 'weekly' | 'daily')}
+								aria-label="Choose recurrence type"
+							>
+								<TabsList class="w-full md:w-auto">
+									<TabsTrigger value="weekly">
+										<Icon icon="mdi:calendar-week" class="h-3.5 w-3.5" />
+										Weekly
+									</TabsTrigger>
+									<TabsTrigger value="daily">
+										<Icon icon="mdi:calendar-today" class="h-3.5 w-3.5" />
+										Daily
+									</TabsTrigger>
+								</TabsList>
+							</Tabs>
 						</div>
+						<!-- Days (weekly only) -->
+						{#if previewTemplateKind === 'weekly'}
+							<div>
+								<p class="mb-2 text-sm font-medium text-muted-foreground">Days *</p>
+								<div class="flex flex-wrap gap-2">
+									{#each DAY_ORDER as day (day)}
+										<label
+											class="flex cursor-pointer items-center gap-1.5 rounded-md border px-3 py-1.5 text-sm transition-colors {previewDays.includes(
+												day
+											)
+												? 'border-ring bg-primary/5 text-foreground'
+												: 'border-input bg-background text-muted-foreground hover:bg-muted/50'}"
+										>
+											<Checkbox
+												name="days"
+												value={day}
+												checked={previewDays.includes(day)}
+												onCheckedChange={(v) => {
+													if (v) previewDays = [...previewDays, day];
+													else previewDays = previewDays.filter((d) => d !== day);
+												}}
+												class="sr-only"
+											/>
+											{DAY_LABELS[day]}
+										</label>
+									{/each}
+								</div>
+							</div>
+						{:else}
+							<p class="text-xs text-muted-foreground">
+								Window opens every day. Set a low cutoff (e.g., 0 hours) so customers can order
+								until the window closes.
+							</p>
+						{/if}
 						<!-- Times -->
 						<div class="grid grid-cols-2 gap-4">
 							<div>
@@ -902,6 +964,54 @@
 								<p class="mt-1 text-xs text-muted-foreground">Leave blank for no end date.</p>
 							</div>
 						</div>
+						<!-- Skip dates (edit form only) -->
+						<div class="space-y-3 rounded-lg border p-4">
+							<p class="text-sm font-medium text-muted-foreground">Skip dates</p>
+							<!-- Hidden field carries exdates JSON to the form action -->
+							<input type="hidden" name="exdates" value={JSON.stringify(editExdates)} />
+							{#if editExdates.length > 0}
+								<div class="flex flex-wrap gap-1.5">
+									{#each editExdates as iso (iso)}
+										<span
+											class="flex items-center gap-1 rounded-full bg-gray-100 px-2.5 py-0.5 text-xs"
+										>
+											{formatExdate(iso)}
+											<button
+												type="button"
+												class="flex items-center text-muted-foreground hover:text-foreground"
+												aria-label="Remove {formatExdate(iso)}"
+												onclick={() => (editExdates = editExdates.filter((d) => d !== iso))}
+											>
+												<Icon icon="mdi:close" class="h-3 w-3" />
+											</button>
+										</span>
+									{/each}
+								</div>
+							{/if}
+							<div class="flex items-center gap-2">
+								<Input type="date" name="addExdate" bind:value={addExdateInput} class="w-40" />
+								<Button
+									type="button"
+									variant="outline"
+									onclick={() => {
+										if (
+											addExdateInput &&
+											/^\d{4}-\d{2}-\d{2}$/.test(addExdateInput) &&
+											!editExdates.includes(addExdateInput)
+										) {
+											editExdates = [...editExdates, addExdateInput].sort();
+											addExdateInput = '';
+										}
+									}}
+								>
+									Add
+								</Button>
+							</div>
+							<p class="text-xs text-muted-foreground">
+								Dates when this window does not open (e.g. holidays). No occurrences are generated
+								for skipped dates.
+							</p>
+						</div>
 						<!-- Live preview -->
 						{@render occurrencePreviewBlock()}
 					</CardContent>
@@ -917,6 +1027,9 @@
 								previewEndTime = '';
 								previewRecurrenceStartDate = '';
 								previewRecurrenceEndDate = '';
+								previewTemplateKind = 'weekly';
+								editExdates = [];
+								addExdateInput = '';
 							}}
 							variant="outline"
 						>
@@ -979,33 +1092,62 @@
 								</SelectContent>
 							</Select>
 						</div>
-						<!-- Days -->
+						<!-- Hidden field carries templateKind to the form action -->
+						<input type="hidden" name="templateKind" value={previewTemplateKind} />
+						<!-- Template kind toggle -->
 						<div>
-							<p class="mb-2 text-sm font-medium text-muted-foreground">Days *</p>
-							<div class="flex flex-wrap gap-2">
-								{#each DAY_ORDER as day (day)}
-									<label
-										class="flex cursor-pointer items-center gap-1.5 rounded-md border px-3 py-1.5 text-sm transition-colors {previewDays.includes(
-											day
-										)
-											? 'border-ring bg-primary/5 text-foreground'
-											: 'border-input bg-background text-muted-foreground hover:bg-muted/50'}"
-									>
-										<Checkbox
-											name="days"
-											value={day}
-											checked={previewDays.includes(day)}
-											onCheckedChange={(v) => {
-												if (v) previewDays = [...previewDays, day];
-												else previewDays = previewDays.filter((d) => d !== day);
-											}}
-											class="sr-only"
-										/>
-										{DAY_LABELS[day]}
-									</label>
-								{/each}
-							</div>
+							<p class="mb-2 text-sm font-medium text-muted-foreground">Repeats</p>
+							<Tabs
+								value={previewTemplateKind}
+								onValueChange={(v) => (previewTemplateKind = v as 'weekly' | 'daily')}
+								aria-label="Choose recurrence type"
+							>
+								<TabsList class="w-full md:w-auto">
+									<TabsTrigger value="weekly">
+										<Icon icon="mdi:calendar-week" class="h-3.5 w-3.5" />
+										Weekly
+									</TabsTrigger>
+									<TabsTrigger value="daily">
+										<Icon icon="mdi:calendar-today" class="h-3.5 w-3.5" />
+										Daily
+									</TabsTrigger>
+								</TabsList>
+							</Tabs>
 						</div>
+						<!-- Days (weekly only) -->
+						{#if previewTemplateKind === 'weekly'}
+							<div>
+								<p class="mb-2 text-sm font-medium text-muted-foreground">Days *</p>
+								<div class="flex flex-wrap gap-2">
+									{#each DAY_ORDER as day (day)}
+										<label
+											class="flex cursor-pointer items-center gap-1.5 rounded-md border px-3 py-1.5 text-sm transition-colors {previewDays.includes(
+												day
+											)
+												? 'border-ring bg-primary/5 text-foreground'
+												: 'border-input bg-background text-muted-foreground hover:bg-muted/50'}"
+										>
+											<Checkbox
+												name="days"
+												value={day}
+												checked={previewDays.includes(day)}
+												onCheckedChange={(v) => {
+													if (v) previewDays = [...previewDays, day];
+													else previewDays = previewDays.filter((d) => d !== day);
+												}}
+												class="sr-only"
+											/>
+											{DAY_LABELS[day]}
+										</label>
+									{/each}
+								</div>
+							</div>
+						{:else}
+							<p class="text-xs text-muted-foreground">
+								Window opens every day. Set a low cutoff (e.g., 0 hours) so customers can order
+								until the window closes.
+							</p>
+						{/if}
 						<!-- Times -->
 						<div class="grid grid-cols-2 gap-4">
 							<div>
@@ -1133,6 +1275,7 @@
 								previewEndTime = '';
 								previewRecurrenceStartDate = '';
 								previewRecurrenceEndDate = '';
+								previewTemplateKind = 'weekly';
 							}}
 							variant="outline"
 						>
@@ -1188,7 +1331,9 @@
 									data.timezone
 								)}
 								<div class={i > 0 ? 'border-t' : ''}>
-									<div class="flex flex-col gap-2 px-4 py-3 md:flex-row md:items-center md:justify-between">
+									<div
+										class="flex flex-col gap-2 px-4 py-3 md:flex-row md:items-center md:justify-between"
+									>
 										<span class="text-sm text-foreground">
 											{formatTime(tmpl.windowStart)}–{formatTime(tmpl.windowEnd)}
 											· {formatRecurrence(tmpl.recurrence)}
@@ -1203,6 +1348,7 @@
 													editingTemplateId = tmpl.id;
 													showAddTemplateForm = false;
 													editTemplateError = null;
+													previewTemplateKind = getTemplateKind(tmpl.recurrence);
 													previewDays = getRruleDays(tmpl.recurrence);
 													previewStartTime = tmpl.windowStart;
 													previewEndTime = tmpl.windowEnd;
@@ -1213,6 +1359,8 @@
 													previewRecurrenceEndDate = tmpl.recurrenceEndDate
 														? toDateInputValue(tmpl.recurrenceEndDate, data.timezone)
 														: '';
+													editExdates = (tmpl.exdates as string[] | null) ?? [];
+													addExdateInput = '';
 												}}
 												variant="ghost"
 												class="h-auto p-0 text-xs text-muted-foreground hover:text-foreground"
@@ -1310,7 +1458,9 @@
 								data.timezone
 							)}
 							<div class={i > 0 ? 'border-t' : ''}>
-								<div class="flex flex-col gap-2 px-4 py-3 md:flex-row md:items-center md:justify-between">
+								<div
+									class="flex flex-col gap-2 px-4 py-3 md:flex-row md:items-center md:justify-between"
+								>
 									<span class="text-sm text-foreground">
 										{formatTime(tmpl.windowStart)}–{formatTime(tmpl.windowEnd)}
 										· {formatRecurrence(tmpl.recurrence)}
@@ -1325,6 +1475,7 @@
 												editingTemplateId = tmpl.id;
 												showAddTemplateForm = false;
 												editTemplateError = null;
+												previewTemplateKind = getTemplateKind(tmpl.recurrence);
 												previewDays = getRruleDays(tmpl.recurrence);
 												previewStartTime = tmpl.windowStart;
 												previewEndTime = tmpl.windowEnd;
@@ -1335,6 +1486,8 @@
 												previewRecurrenceEndDate = tmpl.recurrenceEndDate
 													? toDateInputValue(tmpl.recurrenceEndDate, data.timezone)
 													: '';
+												editExdates = (tmpl.exdates as string[] | null) ?? [];
+												addExdateInput = '';
 											}}
 											variant="ghost"
 											class="h-auto p-0 text-xs text-muted-foreground hover:text-foreground"
@@ -1559,7 +1712,7 @@
 		<p class="mb-2 text-xs font-medium tracking-wide text-muted-foreground uppercase">
 			Upcoming windows — next 6
 		</p>
-		{#if previewDays.length === 0}
+		{#if previewTemplateKind === 'weekly' && previewDays.length === 0}
 			<p class="text-xs text-muted-foreground">
 				Select at least one day to see upcoming occurrences.
 			</p>

@@ -93,8 +93,13 @@ function buildRrule(days: string[]): string {
 	return `FREQ=WEEKLY;BYDAY=${ordered.join(',')}`;
 }
 
+function buildDailyRrule(): string {
+	return 'FREQ=DAILY';
+}
+
 function validateTemplateFields(
 	name: string | null,
+	templateKind: string,
 	days: string[],
 	windowStart: string | null,
 	windowEnd: string | null,
@@ -105,7 +110,7 @@ function validateTemplateFields(
 ): string | null {
 	if (!name) return 'Name is required.';
 	if (name.length > 100) return 'Name must be 100 characters or fewer.';
-	if (days.length === 0) return 'Select at least one day.';
+	if (templateKind === 'weekly' && days.length === 0) return 'Select at least one day.';
 	if (!windowStart) return 'Start time is required.';
 	if (!windowEnd) return 'End time is required.';
 	if (windowEnd <= windowStart) return 'End time must be after start time.';
@@ -216,6 +221,7 @@ export const actions: Actions = {
 
 		const name = formData.get('name')?.toString().trim() || null;
 		const locationIdRaw = formData.get('locationId')?.toString() || '';
+		const templateKind = formData.get('templateKind')?.toString() || 'weekly';
 		const days = formData.getAll('days').map(String);
 		const windowStart = formData.get('windowStart')?.toString() || null;
 		const windowEnd = formData.get('windowEnd')?.toString() || null;
@@ -228,6 +234,7 @@ export const actions: Actions = {
 		const maxOrders = maxOrdersRaw ? parseInt(maxOrdersRaw) : null;
 		const error = validateTemplateFields(
 			name,
+			templateKind,
 			days,
 			windowStart,
 			windowEnd,
@@ -263,20 +270,23 @@ export const actions: Actions = {
 			? startOfDayInTZ(recurrenceEndDateRaw, vendorRecord.timezone)
 			: null;
 
+		const recurrence = templateKind === 'daily' ? buildDailyRrule() : buildRrule(days);
+
 		const [{ id: newTemplateId }] = await db
 			.insert(pickupWindowTemplates)
 			.values({
 				vendorId,
 				locationId,
 				name: name!,
-				recurrence: buildRrule(days),
+				recurrence,
 				windowStart: windowStart!,
 				windowEnd: windowEnd!,
 				cutoffHours,
 				maxOrders,
 				isActive,
 				recurrenceStartDate,
-				recurrenceEndDate
+				recurrenceEndDate,
+				exdates: []
 			})
 			.returning({ id: pickupWindowTemplates.id });
 
@@ -294,6 +304,7 @@ export const actions: Actions = {
 
 		const name = formData.get('name')?.toString().trim() || null;
 		const locationIdRaw = formData.get('locationId')?.toString() || '';
+		const templateKind = formData.get('templateKind')?.toString() || 'weekly';
 		const days = formData.getAll('days').map(String);
 		const windowStart = formData.get('windowStart')?.toString() || null;
 		const windowEnd = formData.get('windowEnd')?.toString() || null;
@@ -302,9 +313,23 @@ export const actions: Actions = {
 		const maxOrders = maxOrdersRaw ? parseInt(maxOrdersRaw) : null;
 		const recurrenceStartDateRaw = formData.get('recurrenceStartDate')?.toString().trim() || null;
 		const recurrenceEndDateRaw = formData.get('recurrenceEndDate')?.toString().trim() || null;
+		const exdatesRaw = formData.get('exdates')?.toString() || '[]';
+		let exdates: string[] = [];
+		try {
+			const parsed = JSON.parse(exdatesRaw);
+			if (
+				Array.isArray(parsed) &&
+				parsed.every((v) => typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v))
+			) {
+				exdates = parsed;
+			}
+		} catch {
+			// malformed JSON — treat as empty
+		}
 
 		const error = validateTemplateFields(
 			name,
+			templateKind,
 			days,
 			windowStart,
 			windowEnd,
@@ -346,18 +371,21 @@ export const actions: Actions = {
 			? startOfDayInTZ(recurrenceEndDateRaw, vendorRecord.timezone)
 			: null;
 
+		const recurrence = templateKind === 'daily' ? buildDailyRrule() : buildRrule(days);
+
 		await db
 			.update(pickupWindowTemplates)
 			.set({
 				locationId,
 				name: name!,
-				recurrence: buildRrule(days),
+				recurrence,
 				windowStart: windowStart!,
 				windowEnd: windowEnd!,
 				cutoffHours,
 				maxOrders,
 				recurrenceStartDate,
-				recurrenceEndDate
+				recurrenceEndDate,
+				exdates
 			})
 			.where(and(eq(pickupWindowTemplates.id, id), eq(pickupWindowTemplates.vendorId, vendorId)));
 

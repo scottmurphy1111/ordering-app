@@ -54,7 +54,8 @@ export const load: PageServerLoad = async (event) => {
 			createdAt: true,
 			tags: true,
 			isSubscription: true,
-			billingInterval: true
+			billingInterval: true,
+			pickupType: true
 		},
 		with: { category: { columns: { id: true, name: true } } },
 		orderBy: [catalogItems.sortOrder, desc(catalogItems.createdAt)],
@@ -112,7 +113,9 @@ export const load: PageServerLoad = async (event) => {
 					sortOrder: true,
 					tags: true,
 					isSubscription: true,
-					billingInterval: true
+					billingInterval: true,
+					pickupType: true,
+					customDateLeadDays: true
 				},
 				with: {
 					category: { columns: { id: true, name: true } },
