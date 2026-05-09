@@ -15,32 +15,18 @@
 	} = $props();
 
 	const stepIndex = $derived(lifecycleStages.findIndex((s) => s.value === status));
-	const totalSteps = lifecycleStages.length;
-
-	const fillWidth = $derived(stepIndex >= 0 ? `${(stepIndex / (totalSteps - 1)) * 100}%` : '0%');
 </script>
 
 {#if variant === 'full'}
-	<div class="relative flex items-start justify-between">
-		<!-- connector line behind steps -->
-		<div class="absolute top-5 right-0 left-0 h-0.5 bg-muted" aria-hidden="true">
-			<div
-				class="h-full transition-all duration-500 {colorScheme === 'themed' ? 'bg-primary' : ''}"
-				style={colorScheme === 'branding'
-					? `background-color: var(--background-color); width: ${fillWidth};`
-					: `width: ${fillWidth};`}
-			></div>
-		</div>
-
+	<!-- pb-7 reserves vertical space for absolutely positioned labels below circles -->
+	<div class="flex w-full max-w-100 items-center px-4 pb-7">
 		{#each lifecycleStages as step, i (step.value)}
 			{@const done = i < stepIndex}
 			{@const active = i === stepIndex}
 			{@const achieved = done || active}
 			{@const label = labelOverrides[step.value] ?? step.label}
-			<div
-				class="relative z-10 flex flex-col items-center gap-1.5"
-				style="width: {100 / totalSteps}%;"
-			>
+			<!-- circle wrapper: fixed-width to circle size; label absolutely below so it doesn't push siblings -->
+			<div class="relative w-10 shrink-0">
 				{#if colorScheme === 'branding'}
 					<div
 						class="flex h-10 w-10 items-center justify-center rounded-full border-2 transition-colors"
@@ -51,7 +37,7 @@
 						<Icon icon={step.icon} class="h-5 w-5" />
 					</div>
 					<span
-						class="text-center text-xs leading-tight"
+						class="absolute top-full left-1/2 mt-1.5 -translate-x-1/2 text-center text-xs leading-tight whitespace-nowrap"
 						style={active
 							? 'color: var(--background-color); font-weight: 600;'
 							: done
@@ -69,7 +55,7 @@
 						<Icon icon={step.icon} class="h-5 w-5" />
 					</div>
 					<span
-						class="text-center text-xs leading-tight {active
+						class="absolute top-full left-1/2 mt-1.5 -translate-x-1/2 text-center text-xs leading-tight whitespace-nowrap {active
 							? 'font-semibold text-primary'
 							: done
 								? 'font-medium text-gray-700'
@@ -79,25 +65,33 @@
 					</span>
 				{/if}
 			</div>
+			{#if i < lifecycleStages.length - 1}
+				<!-- connector segment: flex-1 fills gap between this circle and next -->
+				{@const filled = i < stepIndex}
+				<div
+					class="h-0.5 flex-1 transition-colors {colorScheme === 'themed'
+						? filled
+							? 'bg-primary'
+							: 'bg-muted'
+						: ''}"
+					style={colorScheme === 'branding' && filled
+						? 'background-color: var(--background-color);'
+						: colorScheme === 'branding'
+							? 'background-color: #e5e7eb;'
+							: ''}
+					aria-hidden="true"
+				></div>
+			{/if}
 		{/each}
 	</div>
 {:else}
-	<!-- mini variant: no labels, smaller circles -->
-	<div class="relative flex items-center justify-between">
-		<div class="absolute top-3 right-0 left-0 h-0.5 bg-muted" aria-hidden="true">
-			<div
-				class="h-full transition-all duration-500 {colorScheme === 'themed' ? 'bg-primary' : ''}"
-				style={colorScheme === 'branding'
-					? `background-color: var(--background-color); width: ${fillWidth};`
-					: `width: ${fillWidth};`}
-			></div>
-		</div>
-
+	<!-- mini variant: no labels -->
+	<div class="flex items-center">
 		{#each lifecycleStages as step, i (step.value)}
 			{@const done = i < stepIndex}
 			{@const active = i === stepIndex}
 			{@const achieved = done || active}
-			<div class="relative z-10 flex justify-center" style="width: {100 / totalSteps}%;">
+			<div class="w-6 shrink-0">
 				{#if colorScheme === 'branding'}
 					<div
 						class="flex h-6 w-6 items-center justify-center rounded-full border transition-colors"
@@ -117,6 +111,22 @@
 					</div>
 				{/if}
 			</div>
+			{#if i < lifecycleStages.length - 1}
+				{@const filled = i < stepIndex}
+				<div
+					class="h-0.5 flex-1 transition-colors {colorScheme === 'themed'
+						? filled
+							? 'bg-primary'
+							: 'bg-muted'
+						: ''}"
+					style={colorScheme === 'branding' && filled
+						? 'background-color: var(--background-color);'
+						: colorScheme === 'branding'
+							? 'background-color: #e5e7eb;'
+							: ''}
+					aria-hidden="true"
+				></div>
+			{/if}
 		{/each}
 	</div>
 {/if}

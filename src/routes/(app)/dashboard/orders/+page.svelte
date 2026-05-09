@@ -684,7 +684,7 @@
 							</span>
 						{:else}
 							<span class="inline-flex items-center gap-2">
-								<span class="w-32">
+								<span class="inline-block w-40 shrink-0">
 									<OrderStatusStepper
 										status={order.status}
 										variant="mini"
