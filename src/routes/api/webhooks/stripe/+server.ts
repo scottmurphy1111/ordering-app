@@ -317,7 +317,7 @@ async function issueRewardCode({
 		to: email,
 		subject: `You've earned a reward at ${vendorName}!`,
 		html: loyaltyRewardEmail({
-			tenantName: vendorName,
+			vendorName: vendorName,
 			primaryColor,
 			customerName,
 			promoCode: code,

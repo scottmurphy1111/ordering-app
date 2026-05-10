@@ -1,7 +1,7 @@
 import { emailWrapper, formatCents } from '../base';
 
 export function loyaltyRewardEmail({
-	tenantName,
+	vendorName,
 	primaryColor,
 	customerName,
 	promoCode,
@@ -9,7 +9,7 @@ export function loyaltyRewardEmail({
 	rewardDescription,
 	redeemValue
 }: {
-	tenantName: string;
+	vendorName: string;
 	primaryColor?: string;
 	customerName: string;
 	promoCode: string;
@@ -27,7 +27,7 @@ export function loyaltyRewardEmail({
 	const content = `
     <h1 style="margin:0 0 4px;font-size:24px;font-weight:700;color:#111827;">You've earned a reward!</h1>
     <p style="margin:0 0 24px;font-size:15px;color:#6b7280;">
-      Great news, ${customerName}! You've reached a loyalty milestone at ${tenantName}.
+      Great news, ${customerName}! You've reached a loyalty milestone at ${vendorName}.
     </p>
 
     <div style="background:#f9fafb;border-radius:8px;padding:20px;margin-bottom:24px;text-align:center;">
@@ -43,10 +43,10 @@ export function loyaltyRewardEmail({
   `;
 
 	return emailWrapper({
-		title: `You've earned a reward at ${tenantName}!`,
+		title: `You've earned a reward at ${vendorName}!`,
 		previewText: `Your loyalty reward is ready — use code ${promoCode} at checkout.`,
 		content,
-		tenantName,
+		displayName: vendorName,
 		primaryColor
 	});
 }

@@ -1,13 +1,13 @@
 import { emailWrapper } from '../base';
 
 export function inviteEmail({
-	tenantName,
+	vendorName,
 	primaryColor,
 	invitedByName,
 	role,
 	inviteUrl
 }: {
-	tenantName: string;
+	vendorName: string;
 	primaryColor?: string;
 	invitedByName: string;
 	role: string;
@@ -15,7 +15,7 @@ export function inviteEmail({
 }) {
 	const content = `
     <h1 style="margin:0 0 4px;font-size:24px;font-weight:700;color:#111827;">You're invited!</h1>
-    <p style="margin:0 0 24px;font-size:15px;color:#6b7280;">${invitedByName} has invited you to join <strong>${tenantName}</strong> as a <strong>${role}</strong>.</p>
+    <p style="margin:0 0 24px;font-size:15px;color:#6b7280;">${invitedByName} has invited you to join <strong>${vendorName}</strong> as a <strong>${role}</strong>.</p>
 
     <div style="text-align:center;margin:32px 0;">
       <a href="${inviteUrl}"
@@ -31,10 +31,10 @@ export function inviteEmail({
   `;
 
 	return emailWrapper({
-		title: `You're invited to join ${tenantName}`,
-		previewText: `${invitedByName} invited you to join ${tenantName} on Order Local.`,
+		title: `You're invited to join ${vendorName}`,
+		previewText: `${invitedByName} invited you to join ${vendorName} on Order Local.`,
 		content,
-		tenantName,
+		displayName: vendorName,
 		primaryColor
 	});
 }

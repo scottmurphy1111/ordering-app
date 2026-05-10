@@ -97,7 +97,7 @@ export const POST: RequestHandler = async ({ request }) => {
 						to: vendorRecord.email,
 						subject: `You're on Order Local ${planKey.charAt(0).toUpperCase() + planKey.slice(1)}`,
 						html: subscriptionConfirmedEmail({
-							tenantName: vendorRecord.name,
+							senderName: vendorRecord.name,
 							planName: planKey.charAt(0).toUpperCase() + planKey.slice(1),
 							amount: formatAmount(amount)
 						})
@@ -208,7 +208,7 @@ export const POST: RequestHandler = async ({ request }) => {
 						to: vendorRecord.email,
 						subject: `You're on Order Local ${tierForEmail.charAt(0).toUpperCase() + tierForEmail.slice(1)}`,
 						html: subscriptionConfirmedEmail({
-							tenantName: vendorRecord.name,
+							senderName: vendorRecord.name,
 							planName: tierForEmail.charAt(0).toUpperCase() + tierForEmail.slice(1),
 							amount: formatAmount(amount)
 						})
@@ -284,7 +284,7 @@ export const POST: RequestHandler = async ({ request }) => {
 						to: vendorRecord.email,
 						subject: 'Order Local — payment failed',
 						html: paymentFailedEmail({
-							tenantName: vendorRecord.name,
+							senderName: vendorRecord.name,
 							planName,
 							amount: formatAmount(amount),
 							nextRetryDate: nextRetry ? formatDate(nextRetry) : undefined

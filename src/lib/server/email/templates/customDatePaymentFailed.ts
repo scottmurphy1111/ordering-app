@@ -1,14 +1,14 @@
 import { emailWrapper, formatCents } from '../base';
 
 export function customDatePaymentFailedEmail({
-	tenantName,
+	vendorName,
 	primaryColor,
 	orderNumber,
 	customerName,
 	total,
 	recoveryUrl
 }: {
-	tenantName: string;
+	vendorName: string;
 	primaryColor?: string;
 	orderNumber: string;
 	customerName: string;
@@ -29,15 +29,15 @@ export function customDatePaymentFailedEmail({
     </div>
 
     <p style="margin:0;font-size:13px;color:#9ca3af;text-align:center;">
-      If you have questions, contact ${tenantName} directly.
+      If you have questions, contact ${vendorName} directly.
     </p>
   `;
 
 	return emailWrapper({
-		title: `Payment issue — order ${orderNumber} — ${tenantName}`,
+		title: `Payment issue — order ${orderNumber} — ${vendorName}`,
 		previewText: `Action needed: update your payment method for order ${orderNumber}.`,
 		content,
-		tenantName,
+		displayName: vendorName,
 		primaryColor
 	});
 }

@@ -1,18 +1,18 @@
 import { emailWrapper } from '../base';
 
 export function paymentFailedEmail({
-	tenantName,
+	senderName,
 	planName,
 	amount,
 	nextRetryDate
 }: {
-	tenantName: string;
+	senderName: string;
 	planName: string;
 	amount: string;
 	nextRetryDate?: string;
 }) {
 	const content = `
-    <p style="margin:0 0 16px;font-size:16px;color:#111827;">Hi ${tenantName},</p>
+    <p style="margin:0 0 16px;font-size:16px;color:#111827;">Hi ${senderName},</p>
     <p style="margin:0 0 16px;font-size:14px;color:#374151;line-height:1.6;">
       We weren't able to process your payment of <strong>${amount}</strong> for your Order Local ${planName} subscription.
     </p>
@@ -32,7 +32,7 @@ export function paymentFailedEmail({
 		title: 'Payment failed — action required',
 		previewText: `Your Order Local payment of ${amount} could not be processed`,
 		content,
-		tenantName: 'Order Local',
+		displayName: 'Order Local',
 		primaryColor: '#dc2626'
 	});
 }

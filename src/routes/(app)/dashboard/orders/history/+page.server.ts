@@ -152,7 +152,7 @@ export const actions: Actions = {
 				to: refundedOrder.customerEmail,
 				subject: `Refund processed for order ${refundedOrder.orderNumber} — ${vendorRecord.name}`,
 				html: orderRefundedEmail({
-					tenantName: vendorRecord.name,
+					vendorName: vendorRecord.name,
 					primaryColor: vendorRecord.backgroundColor ?? undefined,
 					orderNumber: refundedOrder.orderNumber,
 					customerName: refundedOrder.customerName ?? 'there',

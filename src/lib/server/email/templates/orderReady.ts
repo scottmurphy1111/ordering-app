@@ -1,14 +1,14 @@
 import { emailWrapper, formatCents } from '../base';
 
 export function orderReadyEmail({
-	tenantName,
+	vendorName,
 	primaryColor,
 	orderNumber,
 	customerName,
 	total,
 	orderType
 }: {
-	tenantName: string;
+	vendorName: string;
 	primaryColor?: string;
 	orderNumber: string;
 	customerName: string;
@@ -33,10 +33,10 @@ export function orderReadyEmail({
   `;
 
 	return emailWrapper({
-		title: `Order ${orderNumber} is ready — ${tenantName}`,
+		title: `Order ${orderNumber} is ready — ${vendorName}`,
 		previewText: `Your order ${orderNumber} is ready${isPickup ? ' for pickup' : ''}!`,
 		content,
-		tenantName,
+		displayName: vendorName,
 		primaryColor
 	});
 }

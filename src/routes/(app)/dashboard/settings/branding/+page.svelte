@@ -192,7 +192,7 @@
 								MR
 							</div>
 							<div>
-								<p class="text-sm font-bold" style="color: {foregroundColor};">My Restaurant</p>
+								<p class="text-sm font-bold" style="color: {foregroundColor};">My Shop</p>
 								<p class="text-xs opacity-70" style="color: {foregroundColor};">
 									Order ahead · pickup
 								</p>

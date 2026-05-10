@@ -163,7 +163,7 @@
 			price: '$12/mo',
 			annualPrice: '$10/mo billed annually',
 			annualSavings: 'save $24/yr',
-			desc: 'Use your own URL — like menu.yourcafe.com — instead of the default ordering link.'
+			desc: 'Use your own URL — like shop.yourcafe.com — instead of the default ordering link.'
 		},
 		{
 			icon: 'mdi:chart-line',
@@ -207,7 +207,7 @@
 			a: 'Yes — this is exactly what we built it for. Set your pickup window for Saturday morning at the market, set an order cutoff for Thursday night, and customers can reserve their items in advance. Bring the printed orders to your booth.'
 		},
 		{
-			q: 'My products change every week. Can I update the menu easily?',
+			q: 'My products change every week. Can I update the catalog easily?',
 			a: 'Yes. Add, hide, or edit items in seconds from your dashboard. Set inventory limits per item so you stop selling once you hit your weekly cap.'
 		},
 		{
@@ -493,7 +493,7 @@
 								Overview
 							</div>
 							<div class="px-2 py-1.5 text-[10px] text-gray-400">Orders</div>
-							<div class="px-2 py-1.5 text-[10px] text-gray-400">Menu</div>
+							<div class="px-2 py-1.5 text-[10px] text-gray-400">Catalog</div>
 							<div class="px-2 py-1.5 text-[10px] text-gray-400">Analytics</div>
 							<div class="px-2 py-1.5 text-[10px] text-gray-400">Settings</div>
 						</div>
@@ -537,7 +537,7 @@
 				</div>
 			</div>
 
-			<!-- Floating customer menu mock -->
+			<!-- Floating customer catalog mock -->
 			<div
 				class="absolute right-0 -bottom-2 z-10 w-44 overflow-hidden rounded-2xl border bg-background shadow-2xl ring-1 ring-black/5"
 			>

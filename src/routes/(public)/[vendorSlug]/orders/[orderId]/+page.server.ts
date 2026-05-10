@@ -150,7 +150,7 @@ export const actions: Actions = {
 						to: cancelled.customerEmail,
 						subject: `Order ${cancelled.orderNumber} cancelled — ${vendorRecord.name}`,
 						html: orderCancelledEmail({
-							tenantName: vendorRecord.name,
+							vendorName: vendorRecord.name,
 							primaryColor: vendorRecord.backgroundColor ?? undefined,
 							orderNumber: cancelled.orderNumber,
 							customerName: cancelled.customerName ?? 'there',

@@ -1,13 +1,13 @@
 import { emailWrapper, formatCents } from '../base';
 
 export function orderRefundedEmail({
-	tenantName,
+	vendorName,
 	primaryColor,
 	orderNumber,
 	customerName,
 	total
 }: {
-	tenantName: string;
+	vendorName: string;
 	primaryColor?: string;
 	orderNumber: string;
 	customerName: string;
@@ -26,10 +26,10 @@ export function orderRefundedEmail({
   `;
 
 	return emailWrapper({
-		title: `Refund processed for order ${orderNumber} — ${tenantName}`,
+		title: `Refund processed for order ${orderNumber} — ${vendorName}`,
 		previewText: `Your refund of ${formatCents(total)} for order ${orderNumber} has been processed.`,
 		content,
-		tenantName,
+		displayName: vendorName,
 		primaryColor
 	});
 }

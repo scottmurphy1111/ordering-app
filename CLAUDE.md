@@ -57,6 +57,7 @@ One-line summaries and links to the detailed sections of this document. Scan thi
 - **Label vs value rendering** — DB enum values are canonical; never render raw values where labels belong. Use `.find()` against canonical lists. → [Label vs Value Rendering](#label-vs-value-rendering)
 - **Confirmation dialog** — required for any destructive/irreversible action. Confirm button names the action ("Delete", not "OK"). → [Confirmation Dialogs](#confirmation-dialogs)
 - **Async confirm-then-submit** — capture form ref BEFORE the await; `e.currentTarget` is null after `await confirmDialog(...)`. Bit 19 callsites once. → [Form-ref before `await` in async event handlers](#form-ref-before-await-in-async-event-handlers)
+- **Form kind toggles compile to canonical fields** — UI controls whose values are computed into a single canonical column on save. The toggle field itself is form-state-only, never persisted. Example: `templateKind: 'weekly' | 'daily'` → `recurrence: 'FREQ=WEEKLY;BYDAY=...' | 'FREQ=DAILY'`. → [Form kind toggles compile to canonical fields](#form-kind-toggles-compile-to-canonical-fields)
 
 ### Buttons
 
@@ -89,6 +90,13 @@ One-line summaries and links to the detailed sections of this document. Scan thi
 - **Outlined-destructive buttons** — Cancel order, Refund payment on the detail page. `<Button variant="outline">` with red classes. Filled red is never used in this codebase. → [Destructive actions](#destructive-actions-cancel-refund)
 - **Card action strip** — list-card actions sit in a right-aligned `border-t border-gray-100 px-4 py-2` strip below the body, separated by a divider. Strip is conditionally rendered (no empty strip when there are no actions). On list cards (`/dashboard/orders`, `/dashboard/orders/history`), Cancel and Refund are quiet text links, not buttons. → [Data / list card](#data--list-card-order-cards)
 
+### Payments / Stripe
+
+- **Status reconciliation on read** — `reconcilePaymentStatus()` checks Stripe at page-load time for `payment_failed` orders. Silently transitions to `received + paid` if the PI succeeded. Best-effort; swallows errors; never sends notifications. → [Status reconciliation on read](#status-reconciliation-on-read)
+- **SCA recovery via fresh PaymentIntent** — when an off-session PI fails, create a NEW on-session PI with `customer + payment_method` reuse. Never attempt to confirm the failed intent. Add `setup_future_usage: 'off_session'` so a newly-entered card is also saved. → [SCA recovery via fresh PaymentIntent](#sca-recovery-via-fresh-paymentintent)
+- **State-aware webhook guards** — fetch pre-transition order state before every webhook update. Guard on `paymentStatus === 'paid'` to prevent double-application; guard on `status === 'payment_failed'` to prevent recovery attempts from cancelling the order. → [State-aware webhook guards](#state-aware-webhook-guards)
+- **Stripe customer reuse by email** — search before create: `stripe.customers.search({ query: "email:'X' AND metadata['vendorId']:'Y'" })`. Vendor-scoped so same email at two vendors creates separate Stripe customers. Falls back to create on no-result. → [Stripe customer reuse by email](#stripe-customer-reuse-by-email)
+
 ### Navigation and routing
 
 - **Internal links** — always `resolve()` from `$app/paths`. Never bare strings. Applies to `href`, `goto()`, redirects. → [SvelteKit Conventions](#sveltekit-conventions)
@@ -111,6 +119,8 @@ One-line summaries and links to the detailed sections of this document. Scan thi
 - **Modifier-aware aggregation** — always include `selectedModifiers` in GROUP BY for production queries. Different modifier sets = separate rows. Render as `Item Name — mod1, mod2` with mods in `text-gray-500`. → [Modifier-aware item aggregation](#modifier-aware-item-aggregation)
 - **"Today's calendar day" live filter** — live/production views filter out past-window orders. `gte(pickupWindows.endsAt, todayStart)` for window-bound; `gte(scheduledFor, todayStart)` for scheduled. Free-form orders bypass this filter (open design question). → [Database & Server](#database--server)
 - **Stale-order auto-resolve** — `resolveStaleOrders(vendorId)` runs lazily on each live-orders page load. 7-day grace past `pickupWindow.endsAt`. Paid → fulfilled, unpaid → cancelled, refunded untouched. Best-effort; never blocks the page. → [Database & Server](#database--server)
+- **EXDATE storage convention** — `pickupWindowTemplates.exdates` stores `string[]` of `YYYY-MM-DD` dates. At materialize-time, anchored noon-UTC and compared against recurrence-generated occurrences. Bare YYYY-MM-DD avoids timezone drift; noon-UTC anchor matches `scheduledFor` convention. → [Database & Server](#database--server)
+- **Propose-alternate substate** — `pending_approval + proposedAt IS NOT NULL` is a substate with hard invariants: vendor cannot approve/decline, customer can accept/decline, vendor can withdraw. Three columns track the proposal (`proposedDate`, `proposedReason`, `proposedAt`). → [Propose-alternate substate](#propose-alternate-substate)
 
 ### Design tokens and color
 
@@ -1684,6 +1694,57 @@ per-callsite classes — these will eventually be migrated to shadcn primitives 
 - Error messages appear below the input in red, never as alerts or toasts for
   inline validation.
 
+### Form kind toggles compile to canonical fields
+
+Forms sometimes have UI controls — toggles, segmented controls, radio groups — whose value is **not** the canonical storage shape. Instead, the toggle's value is computed into a different column on save.
+
+The pickup-template form has `templateKind: 'weekly' | 'daily'` as a UI toggle. On save, this becomes:
+
+```ts
+const recurrence = templateKind === 'weekly'
+  ? `FREQ=WEEKLY;BYDAY=${days.join(',')}`
+  : 'FREQ=DAILY';
+
+await db.insert(pickupWindowTemplates).values({
+  // ...
+  recurrence  // ← canonical column; templateKind is not stored
+});
+```
+
+**Rules:**
+
+- The toggle field is **form-state only**. It does not appear as a column in the DB schema.
+- The canonical column (here, `recurrence`) is the single source of truth at read time. The form re-derives the toggle value from the canonical column when editing an existing record.
+- **Do not add a second column "for parity"** with the form field. Two-source-of-truth bugs (form-side toggle drifts from canonical column) are the exact failure mode this pattern prevents.
+
+**When to use:** any time a UI affordance is more concise than the underlying canonical shape. Common case: a discriminator (kind, type, mode) that selects between two or more canonical shapes. Less common: a derived shorthand (slider position 1–5 mapped to specific cents amounts).
+
+**When NOT to use:** if the canonical shape and the form field are the same thing, just store the form field. This pattern adds complexity; only apply when the canonical shape is genuinely a separate concern (e.g., a recurrence string the calendar engine consumes vs. a UI-friendly toggle).
+
+### Labels — primitive vs raw
+
+The codebase has 7 files importing the shadcn `<Label>` primitive (settings/general, settings/promos-and-loyalty, settings/integrations, catalog/categories, catalog/categories/[categoryId], account/profile, auth/login) and ~75 files using raw `<label>` with manually-applied classes. The primitive is the migration target; raw `<label>` is the pre-migration default.
+
+**Pre-migration raw `<label>` pattern:**
+
+```html
+<label for="email" class="mb-1 block text-sm font-medium text-muted-foreground">
+  Email
+</label>
+```
+
+**Post-migration shadcn `<Label>` pattern:**
+
+```svelte
+<Label for="email" class="mb-1 block">Email</Label>
+```
+
+The `class="mb-1 block"` override is required on the primitive — its base classes default to `flex items-center gap-2`, which is not what form labels in this codebase want. The override resets to the same `block`-stack layout as the raw pattern.
+
+The primitive's only meaningful added value over a raw `<label>` is bits-ui's disabled-group pass-through (peer-disabled / group-data-[disabled=true] handling). For most forms this is unused; the migration is mostly cosmetic.
+
+**Rule:** do not mix patterns within a single page. If a page already uses the primitive, new labels in that page also use the primitive. If a page uses raw labels, new labels match. The full migration is covered by the Tier 2 "Forms & UI shadcn-svelte audit" roadmap item.
+
 ---
 
 ## Label vs Value Rendering
@@ -2170,6 +2231,237 @@ Skeleton count matches expected result count.
 
   **Trigger choice — lazy on read.** The helper runs once per live-orders page load. An alternative would be running it in the existing daily cron (see `transitionScheduledOrders` invoked via `/api/cron/materialize`). Lazy on read was chosen because (a) the live orders page is the most-loaded admin surface for active vendors, (b) the cost is bounded — usually zero rows updated per call, and (c) no new cron schedule is needed. If per-page-load cost ever becomes a concern, moving to the existing daily cron is a clean refactor: same helper, just called from the cron endpoint instead.
 
+- **EXDATE storage convention.** `pickupWindowTemplates.exdates` is a `jsonb` column storing `string[]` of `YYYY-MM-DD` calendar dates. The convention has three rules:
+
+  1. **Format is bare YYYY-MM-DD, not full ISO timestamps.** A vendor skipping "December 25" should always mean the calendar day December 25 in the vendor's timezone — not "the moment 2026-12-25T00:00:00Z" which can shift to a different calendar day depending on the vendor's UTC offset.
+
+  2. **Anchored noon-UTC at materialize-time.** When `expand.ts` filters out skipped dates, the EXDATE strings are converted to `Date` objects at noon UTC (`new Date(\`${exdate}T12:00:00Z\`)`). The recurrence-generated occurrences are also noon-UTC anchored. The comparison is straight-up date equality.
+
+  3. **Why noon UTC.** Picking midnight UTC would make the comparison fragile across timezone boundaries — a vendor in `America/Los_Angeles` setting an EXDATE for December 25 would have a midnight-UTC anchor that's still December 24 at 4pm local. Noon UTC sits comfortably in the middle of every IANA timezone's calendar day, so the UTC date and the local date always agree.
+
+  This is the same anchor convention used for `scheduledFor` on custom-date orders. See "Noon-UTC anchor convention" below.
+
+- **Noon-UTC anchor convention.** Calendar dates that need to round-trip through UTC storage and IANA timezone display are stored as timestamps anchored at noon UTC of the target date. Three places use this convention:
+
+  - `orders.scheduledFor` — set in `create-setup-intent` when a customer picks a custom-date pickup. Construction: `new Date(\`${dateStr}T12:00:00Z\`)`.
+  - `orders.proposedDate` — set in the `proposeAlternate` vendor action. Same construction.
+  - `pickupWindowTemplates.exdates` materialization — see EXDATE storage convention above.
+
+  The rule: any `timestamp` column in the schema that semantically represents a calendar day (not a moment in time) uses noon UTC. New code adding a similar column applies the same convention. Display formatting then uses `Intl.DateTimeFormat` with the vendor timezone to recover the original calendar day correctly.
+
+---
+
+## Payments / Stripe
+
+Stripe-specific conventions for this codebase. These patterns cluster together because they share a common failure mode: the gap between Stripe's async webhook delivery and synchronous user-facing state.
+
+---
+
+### Status reconciliation on read
+
+**Where it lives:** `src/lib/server/orders/reconcilePaymentStatus.ts`
+
+Called from both the vendor detail page load and the customer order-status page load:
+
+```ts
+order = await reconcilePaymentStatus(order, vendorId);
+```
+
+**Pattern:**
+
+```ts
+export async function reconcilePaymentStatus(order: OrderRow, vendorId: number): Promise<OrderRow> {
+  if (order.status !== 'payment_failed' || !order.stripePaymentIntentId) return order;
+
+  try {
+    const vendorRecord = await db.query.vendor.findFirst({ ... });
+    if (!vendorRecord?.stripeSecretKey) return order;
+
+    const stripe = new Stripe(vendorRecord.stripeSecretKey);
+    const pi = await stripe.paymentIntents.retrieve(order.stripePaymentIntentId);
+
+    if (pi.status === 'succeeded') {
+      const [updated] = await db
+        .update(orders)
+        .set({ status: 'received', paymentStatus: 'paid', updatedAt: new Date() })
+        .where(eq(orders.id, order.id))
+        .returning();
+      return updated ?? order;
+    }
+  } catch {
+    // best-effort; never blocks the page
+  }
+
+  return order;
+}
+```
+
+**What this protects against:**
+
+Stripe's webhook delivery is authoritative but asynchronous. After a customer completes 3DS authentication and is redirected back, the order-status page loads before the webhook fires. Without reconciliation, the customer sees stale `payment_failed` state for seconds or longer.
+
+Reconciliation runs lazily on page-load, costs one Stripe API call only when `status === 'payment_failed'`, and either transitions the order silently or no-ops.
+
+**Rules:**
+
+- Errors are swallowed, never re-thrown. The page renders with stored state if Stripe is unreachable — it will reconcile on the next load.
+- **Never send email or SMS from this path.** The webhook owns notifications. Reconciliation is a read-path fallback, not a second notification path.
+- Only handles `payment_failed → received`. Never transitions any other status from here.
+- Add new reconciliation cases only if there's a real race between page-load and webhook arrival for that status. Do not generalize this into a "sync all statuses" function.
+
+---
+
+### SCA recovery via fresh PaymentIntent
+
+**Where it lives:** `src/routes/(public)/[vendorSlug]/orders/[orderId]/+page.server.ts` — `recoverPayment` action.
+
+**Pattern:**
+
+When an off-session PaymentIntent fails because SCA is required (or the card is declined and the customer needs to re-authenticate), do NOT attempt to re-confirm the failed intent. Create a NEW on-session PaymentIntent that pre-fills the saved customer and payment method:
+
+```ts
+const pi = await stripe.paymentIntents.create({
+  amount: order.total,
+  currency: 'usd',
+  customer: order.stripeCustomerId,
+  ...(order.stripePaymentMethodId
+    ? { payment_method: order.stripePaymentMethodId }
+    : {}),
+  setup_future_usage: 'off_session',   // save any newly-entered card too
+  ...(order.customerEmail
+    ? { receipt_email: order.customerEmail }
+    : {}),
+  metadata: {
+    orderId: String(order.id),
+    vendorSlug: params.vendorSlug,
+    orderNumber: order.orderNumber
+  }
+});
+
+// Store the new PI id, clear the old setup intent reference
+await db.update(orders).set({
+  stripePaymentIntentId: pi.id,
+  stripeSetupIntentId: null,
+  updatedAt: new Date()
+}).where(...);
+
+// Redirect to the normal checkout page (handles 3DS challenge on-session)
+throw redirect(303, `/${params.vendorSlug}/checkout?orderId=${id}`);
+```
+
+**Why a new PaymentIntent, not a retry:**
+
+A failed off-session PaymentIntent lands in `requires_payment_method` state. Stripe does not allow re-confirming it on-session directly. A new intent with `payment_method` pre-filled gives the customer the 3DS challenge without re-entering card details. The new intent routes through the normal checkout page, which already handles the SCA flow.
+
+`setup_future_usage: 'off_session'` on the recovery intent ensures that if the customer enters a new card during recovery (because their original card is permanently declined), the new card is saved for future off-session charges on this vendor's Stripe customer record.
+
+**Preconditions enforced by the action before creating the new PI:**
+
+- `order.status === 'payment_failed'`
+- `order.stripeCustomerId` is not null (customer record exists from the original setup intent)
+
+**Coupling note:** the redirect target `checkout?orderId=${id}` assumes the windowed checkout page handles the payment completion flow for custom-date recovery orders too. If the two flows ever diverge (separate checkout pages), the redirect target will need updating.
+
+**What this protects against:**
+
+Without this pattern, a failed off-session charge leaves the order permanently stuck in `payment_failed` with no customer-visible recovery path. The alternative — cancelling and requiring a fresh order — is a poor experience for custom-date orders where the vendor has already reviewed and approved the request.
+
+---
+
+### State-aware webhook guards
+
+**Where it lives:** `src/routes/api/webhooks/stripe/[vendorId]/+server.ts`
+
+Stripe webhooks can arrive out-of-order, duplicate, or after a synchronous state transition has already applied the same change. Every state-modifying `switch` case fetches the order's **pre-transition state** and branches on it before updating.
+
+**Current guards in `payment_intent.succeeded`:**
+
+```ts
+const existing = await db.query.orders.findFirst({
+  where: eq(orders.stripePaymentIntentId, intent.id),
+  columns: { status: true, paymentStatus: true }
+});
+
+if (!existing) break;
+
+// Guard 1: already reconciled (approve action or reconcilePaymentStatus).
+// Prevents 'received → confirmed' overwrite on custom-date orders.
+if (existing.paymentStatus === 'paid') break;
+
+// Guard 2: branch on pre-transition state.
+// Recovery (payment_failed → received) vs. windowed checkout (→ confirmed).
+const isRecovery = existing.status === 'payment_failed';
+const targetStatus = isRecovery ? 'received' : 'confirmed';
+```
+
+**Guard in `payment_intent.payment_failed` / `payment_intent.canceled`:**
+
+```ts
+const existingFailed = await db.query.orders.findFirst({
+  where: eq(orders.stripePaymentIntentId, intent.id),
+  columns: { status: true }
+});
+
+if (!existingFailed) break;
+
+// Guard: recovery PaymentIntent that fails should NOT cancel the order.
+// The customer can retry from the recovery banner.
+if (existingFailed.status === 'payment_failed') break;
+```
+
+**Why each guard exists:**
+
+| Guard | Without it | With it |
+|---|---|---|
+| `paymentStatus === 'paid'` break | Webhook arriving after approve action rewrites `received → confirmed`, skipping the `pending_approval → received` lifecycle entry | No-op; order stays `received` |
+| `isRecovery` branch | Recovery payments send `orderConfirmedEmail` (wrong copy, wrong template) | Recovery payments send `customDateOrderRecoveredEmail` |
+| `status === 'payment_failed'` break on failure | First failed recovery attempt transitions order to `cancelled` — customer loses all retry opportunities | No-op; order stays `payment_failed` |
+
+**Rule:** always look up pre-transition state before deciding what to write. Never rely solely on the Stripe event payload — it describes the Stripe-side event, not the order's current DB state. The order may have been updated synchronously between when the charge was attempted and when the webhook fires.
+
+---
+
+### Stripe customer reuse by email
+
+**Where it lives:** `src/routes/api/create-setup-intent/+server.ts`
+
+Before creating a new Stripe Customer, search for an existing one by email scoped to the current vendor:
+
+```ts
+let stripeCustomer: Stripe.Customer;
+if (customer.email) {
+  const found = await stripe.customers.search({
+    query: `email:'${customer.email}' AND metadata['vendorId']:'${String(vendorRecord.id)}'`,
+    limit: 1
+  });
+  stripeCustomer = found.data[0] ?? await stripe.customers.create({
+    name: customer.name,
+    email: customer.email,
+    phone: customer.phone || undefined,
+    metadata: { vendorSlug, vendorId: String(vendorRecord.id) }
+  });
+} else {
+  // No email: search is impossible; always create
+  stripeCustomer = await stripe.customers.create({
+    name: customer.name,
+    phone: customer.phone || undefined,
+    metadata: { vendorSlug, vendorId: String(vendorRecord.id) }
+  });
+}
+```
+
+**Why vendor-scoped metadata:**
+
+Each vendor has its own Stripe secret key and its own customer namespace. The same email address at two different vendors should produce separate Stripe Customer records — different payment method vaults. The `metadata['vendorId']` scope ensures search results are isolated per vendor. Without it, a future multi-vendor architecture could leak customers across accounts.
+
+**Eventual consistency caveat:**
+
+Stripe search is eventually consistent. A customer created within the last few seconds may not appear in search results. For custom-date orders this is an acceptable trade-off (first order ever from a customer will always create; subsequent orders in the same session won't benefit from reuse, but won't fail either — they'll create a second customer). If strict reuse is required in a future flow, use a DB-side cache of `stripeCustomerId` keyed by `(vendorId, email)`.
+
+**Known caveat — Phase 7 sweep:**
+
+The current implementation lacks a try/catch around `stripe.customers.search`. A network error or Stripe 5xx surfaces as an unhandled 502 to the customer. The hardened version wraps the search in try/catch and falls through to create on any error — flag for the Phase 7 resilience sweep.
+
 ---
 
 ## Build & dev gotchas
@@ -2370,21 +2662,85 @@ When building or reviewing a component:
 
 ## Order lifecycle (current)
 
-Schema enum values: `received`, `confirmed`, `preparing`, `ready`, `fulfilled`,
-`cancelled`.
+Schema enum values (full list): `received`, `confirmed`, `preparing`, `ready`, `fulfilled`, `cancelled`, `scheduled`, `pending_approval`, `payment_failed`.
 
-Display labels: Received, Confirmed, **In production**, Ready, Fulfilled,
-Cancelled.
+The five lifecycle-stepper stages (`received` → `confirmed` → `preparing` → `ready` → `fulfilled`) are the visible stages in the OrderStatusStepper component on the order detail page. Display labels: Received, Confirmed, **In production**, Ready, Fulfilled. Note the display rename: `preparing` → "In production" everywhere a vendor sees it. The schema value is unchanged.
 
-Note the display rename: `preparing` → "In production" everywhere a vendor sees
-it. The schema value is unchanged.
+Four additional statuses don't appear in the stepper, rendered instead as colored status pills:
 
-The lifecycle is currently restaurant-shaped and assumes orders are in active
-production within minutes of being received. This is wrong for makers/bakers/growers
-(a Thanksgiving pie order placed November 15 sits idle until November 25). The
-lifecycle will be properly reshaped as part of the Pickup Windows feature; until
-then, vendors live with the workaround of leaving holiday orders in `confirmed`
-until they begin actual production.
+- `cancelled` — terminal, off-flow. Pill: "Cancelled".
+- `scheduled` — pre-stepper. Used for **windowed** orders whose pickup window is more than 3 days out. Auto-transitions to `received` via the `transitionScheduledOrders` cron job (see `src/lib/server/pickup/lifecycle.ts`) when the window enters the 3-day horizon. Pill: "Scheduled".
+- `pending_approval` — pre-stepper. Used for **custom-date** orders awaiting vendor review. The vendor explicitly approves (off-session charge fires) or declines. See `## Propose-alternate substate` for the proposal sub-state invariants. Pill: "Pending approval".
+- `payment_failed` — pre-stepper. Used for **custom-date** orders whose off-session charge failed (typically SCA required). The customer recovers via the order page's "Update payment method" affordance. See `## Payments / Stripe` for recovery mechanics. Pill: "Payment failed".
+
+The lifecycle was originally restaurant-shaped, assuming active production begins within minutes of order receipt. The Pickup Windows feature partially addressed this for far-future windowed orders by adding `scheduled` as a deferred-production state with cron-based promotion to `received` when the window approaches. Custom-date orders take a different shape entirely (`pending_approval → received → ...`), with no equivalent "deferred production" state — vendors approve only when they're ready to commit production resources.
+
+A unified far-future-deferral state spanning both flows (extending `scheduled` into the custom-date lifecycle, or introducing a parallel state) remains a deferred roadmap item.
+
+---
+
+## Propose-alternate substate
+
+`pending_approval` orders can enter a sub-state when the vendor proposes an alternative pickup date. This sub-state is tracked by three columns on `orders`:
+
+| Column | Type | Purpose |
+|---|---|---|
+| `proposedDate` | `timestamp \| null` | The vendor's proposed replacement date |
+| `proposedReason` | `text \| null` | Optional explanation for the date change |
+| `proposedAt` | `timestamp \| null` | When the proposal was made; `null` = no active proposal |
+
+**The invariant:** `proposedAt IS NOT NULL` iff a proposal is currently awaiting the customer's response. `proposedAt IS NULL` means the order is in normal `pending_approval` state.
+
+### State machine
+
+```
+pending_approval (proposedAt IS NULL)
+    ↓ vendor proposeAlternate
+pending_approval (proposedAt IS NOT NULL)  ←——→  vendor withdrawProposal
+    ↓ customer acceptAlternate                      ↓ customer declineAlternate
+pending_approval (proposedAt IS NULL,           cancelled
+                  scheduledFor = proposedDate)
+    ↓ vendor approve (normal flow resumes)
+received
+```
+
+### Action preconditions
+
+**Vendor `approve` and `decline` actions** check `orderRow.proposedAt !== null` and return `fail(400)` if a proposal is pending. This prevents the vendor from approving or declining while the customer is reviewing a date change:
+
+```ts
+if (orderRow.proposedAt !== null)
+  return fail(400, { error: 'A date proposal is pending — withdraw it or wait for the customer to respond' });
+```
+
+**Customer `acceptAlternate`** copies `proposedDate → scheduledFor` and clears all three proposal columns. Status stays `pending_approval` — the vendor must still approve:
+
+```ts
+await db.update(orders).set({
+  scheduledFor: order.proposedDate,
+  proposedDate: null,
+  proposedReason: null,
+  proposedAt: null,
+  updatedAt: new Date()
+}).where(...);
+```
+
+**Customer `declineAlternate`** transitions the order to `cancelled` and clears proposal columns. Sends `orderCancelledEmail` + SMS.
+
+**Vendor `withdrawProposal`** clears proposal columns, status unchanged. No customer notification (the proposal was vendor-initiated; withdrawal is also vendor-initiated).
+
+### What this protects against
+
+Without the precondition guards, a vendor could approve an order the moment a date proposal was sent — before the customer has responded. The customer would receive an approval email for a date they haven't agreed to, and their `acceptAlternate` / `declineAlternate` actions would fire against an order that's now in `received` state, producing confusing `fail(400)` errors.
+
+### Vendor UI signal
+
+The vendor detail page splits the `pending_approval` branch on `hasProposal = order.proposedAt !== null`:
+
+- `hasProposal = false`: amber banner — Approve / Propose alternate date / Decline
+- `hasProposal = true`: blue banner — "Proposal sent, awaiting response" + Withdraw
+
+The customer order-status page inserts `isPendingApproval && hasProposedAlternate` as a branch **before** the generic `isPendingApproval` branch — the more specific case is checked first.
 
 ---
 

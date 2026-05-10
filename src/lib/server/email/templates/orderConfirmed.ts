@@ -76,7 +76,7 @@ function renderPickupSection(
 }
 
 export function orderConfirmedEmail({
-	tenantName,
+	vendorName,
 	primaryColor,
 	orderNumber,
 	customerName,
@@ -91,7 +91,7 @@ export function orderConfirmedEmail({
 	scheduledFor,
 	vendorTimezone = 'America/New_York'
 }: {
-	tenantName: string;
+	vendorName: string;
 	primaryColor?: string;
 	orderNumber: string;
 	customerName: string;
@@ -157,10 +157,10 @@ export function orderConfirmedEmail({
   `;
 
 	return emailWrapper({
-		title: `Order ${orderNumber} confirmed — ${tenantName}`,
+		title: `Order ${orderNumber} confirmed — ${vendorName}`,
 		previewText: `Your order ${orderNumber} is confirmed. Total: ${formatCents(total)}`,
 		content,
-		tenantName,
+		displayName: vendorName,
 		primaryColor
 	});
 }

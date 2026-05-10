@@ -100,7 +100,7 @@
 			icon: 'mdi:clipboard-list-outline',
 			tour: 'orders'
 		},
-		{ href: '/dashboard/catalog', label: 'Catalog', icon: 'mdi:corn', tour: 'menu' },
+		{ href: '/dashboard/catalog', label: 'Catalog', icon: 'mdi:corn', tour: 'catalog' },
 		{ href: '/dashboard/analytics', label: 'Analytics', icon: 'mdi:chart-bar', tour: 'analytics' },
 		{ href: '/dashboard/settings', label: 'Settings', icon: 'mdi:cog-outline', tour: 'settings' }
 	];

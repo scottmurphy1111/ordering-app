@@ -49,7 +49,7 @@ export async function runPauseReminders(): Promise<{ processed: number; errors: 
 				to: v.email,
 				subject: `Your Order Local subscription resumes in ${daysOut} ${daysOut === 1 ? 'day' : 'days'}`,
 				html: pauseReminderEmail({
-					tenantName: v.name,
+					senderName: v.name,
 					planName,
 					pauseUntil: pauseUntilStr,
 					daysRemaining: daysOut as 7 | 3 | 1

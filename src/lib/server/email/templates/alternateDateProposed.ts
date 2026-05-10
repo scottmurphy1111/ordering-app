@@ -12,7 +12,7 @@ function fmtDate(date: Date | string, tz: string): string {
 }
 
 export function alternateDateProposedEmail({
-	tenantName,
+	vendorName,
 	primaryColor,
 	orderNumber,
 	customerName,
@@ -23,7 +23,7 @@ export function alternateDateProposedEmail({
 	vendorTimezone = 'America/New_York',
 	orderStatusUrl
 }: {
-	tenantName: string;
+	vendorName: string;
 	primaryColor?: string;
 	orderNumber: string;
 	customerName: string;
@@ -44,7 +44,7 @@ export function alternateDateProposedEmail({
 
 	const content = `
     <h1 style="margin:0 0 4px;font-size:24px;font-weight:700;color:#111827;">Date change proposed</h1>
-    <p style="margin:0 0 24px;font-size:15px;color:#6b7280;">Hey ${customerName}, ${tenantName} has proposed a new pickup date for order ${orderNumber}.</p>
+    <p style="margin:0 0 24px;font-size:15px;color:#6b7280;">Hey ${customerName}, ${vendorName} has proposed a new pickup date for order ${orderNumber}.</p>
 
     <div style="background:#fff7ed;border-radius:8px;border-left:4px solid #f59e0b;padding:16px;margin-bottom:24px;">
       <p style="margin:0 0 8px;font-size:12px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:0.05em;">Proposed date</p>
@@ -70,10 +70,10 @@ export function alternateDateProposedEmail({
   `;
 
 	return emailWrapper({
-		title: `Date change proposed for order ${orderNumber} — ${tenantName}`,
-		previewText: `${tenantName} has proposed a new pickup date for order ${orderNumber}. Tap to accept or decline.`,
+		title: `Date change proposed for order ${orderNumber} — ${vendorName}`,
+		previewText: `${vendorName} has proposed a new pickup date for order ${orderNumber}. Tap to accept or decline.`,
 		content,
-		tenantName,
+		displayName: vendorName,
 		primaryColor
 	});
 }

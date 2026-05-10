@@ -144,7 +144,7 @@ export const actions: Actions = {
 				to: email,
 				subject: `You're invited to join ${vendorRecord.name}`,
 				html: inviteEmail({
-					tenantName: vendorRecord.name,
+					vendorName: vendorRecord.name,
 					primaryColor: vendorRecord.backgroundColor ?? undefined,
 					invitedByName: inviterName,
 					role,

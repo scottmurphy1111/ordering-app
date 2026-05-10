@@ -28,7 +28,7 @@
 		{
 			icon: 'mdi:account-heart-outline',
 			title: 'Capture the customer',
-			desc: "Every order includes a name and email. Follow up with your newsletter, announce next week's menu, and build a list of people who already bought from you once."
+			desc: "Every order includes a name and email. Follow up with your newsletter, announce next week's catalog, and build a list of people who already bought from you once."
 		}
 	];
 

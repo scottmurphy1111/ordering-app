@@ -1,14 +1,14 @@
 import { emailWrapper, formatCents } from '../base';
 
 export function orderCancelledEmail({
-	tenantName,
+	vendorName,
 	primaryColor,
 	orderNumber,
 	customerName,
 	total,
 	reason
 }: {
-	tenantName: string;
+	vendorName: string;
 	primaryColor?: string;
 	orderNumber: string;
 	customerName: string;
@@ -28,14 +28,14 @@ export function orderCancelledEmail({
 		}
 
     <p style="margin:0 0 8px;font-size:14px;color:#6b7280;">If you were charged, a full refund of <strong>${formatCents(total)}</strong> will be returned to your original payment method within 5–10 business days.</p>
-    <p style="margin:0;font-size:14px;color:#6b7280;">If you have any questions, please contact ${tenantName} directly.</p>
+    <p style="margin:0;font-size:14px;color:#6b7280;">If you have any questions, please contact ${vendorName} directly.</p>
   `;
 
 	return emailWrapper({
-		title: `Order ${orderNumber} cancelled — ${tenantName}`,
-		previewText: `Your order ${orderNumber} from ${tenantName} has been cancelled.`,
+		title: `Order ${orderNumber} cancelled — ${vendorName}`,
+		previewText: `Your order ${orderNumber} from ${vendorName} has been cancelled.`,
 		content,
-		tenantName,
+		displayName: vendorName,
 		primaryColor
 	});
 }

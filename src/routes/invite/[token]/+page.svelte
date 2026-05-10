@@ -84,7 +84,7 @@
 				<div class="mb-6 text-center">
 					<h2 class="text-lg font-semibold text-foreground">You've been invited</h2>
 					<p class="mt-1 text-sm text-muted-foreground">
-						Join <strong>{data.tenantName}</strong> as
+						Join <strong>{data.vendorName}</strong> as
 						<span class="font-medium text-muted-foreground"
 							>{roleLabels[data.invite.role] ?? data.invite.role}</span
 						>

@@ -10,7 +10,7 @@
 	const vendor = $derived(page.data.vendor);
 	const catalogUrl = $derived(vendor?.slug ? `${page.url.origin}/${vendor.slug}/catalog` : '');
 
-	// ── Menu QR ──────────────────────────────────────────────────────────────
+	// ── Catalog QR ───────────────────────────────────────────────────────────
 	const qrDataUrl = $derived(
 		catalogUrl
 			? QRCode.toDataURL(catalogUrl, {
@@ -113,7 +113,7 @@
 			}
 		}
 
-		// Restaurant name
+		// Vendor name
 		ctx.fillStyle = fgColor;
 		ctx.textAlign = 'center';
 		ctx.font = `bold 88px system-ui, sans-serif`;
@@ -196,7 +196,7 @@
 			}
 		}
 
-		// Restaurant name
+		// Vendor name
 		ctx.fillStyle = fgColor;
 		ctx.textAlign = 'left';
 		ctx.font = `bold 76px system-ui, sans-serif`;

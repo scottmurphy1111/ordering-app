@@ -288,7 +288,7 @@ export const actions: Actions = {
 					to: order.customerEmail,
 					subject: `Your order is ready — ${vendorRecord.name}`,
 					html: orderReadyEmail({
-						tenantName: vendorRecord.name,
+						vendorName: vendorRecord.name,
 						primaryColor: vendorRecord.backgroundColor ?? undefined,
 						orderNumber: order.orderNumber,
 						customerName: order.customerName ?? 'there',
@@ -324,7 +324,7 @@ export const actions: Actions = {
 					to: order.customerEmail,
 					subject: `Order ${order.orderNumber} cancelled — ${vendorRecord.name}`,
 					html: orderCancelledEmail({
-						tenantName: vendorRecord.name,
+						vendorName: vendorRecord.name,
 						primaryColor: vendorRecord.backgroundColor ?? undefined,
 						orderNumber: order.orderNumber,
 						customerName: order.customerName ?? 'there',
@@ -398,7 +398,7 @@ export const actions: Actions = {
 				to: refundedOrder.customerEmail,
 				subject: `Refund processed for order ${refundedOrder.orderNumber} — ${vendorRecord.name}`,
 				html: orderRefundedEmail({
-					tenantName: vendorRecord.name,
+					vendorName: vendorRecord.name,
 					primaryColor: vendorRecord.backgroundColor ?? undefined,
 					orderNumber: refundedOrder.orderNumber,
 					customerName: refundedOrder.customerName ?? 'there',

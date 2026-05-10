@@ -48,7 +48,7 @@ export async function runResumeDue(): Promise<{ processed: number; errors: strin
 				await sendEmail({
 					to: v.email,
 					subject: 'Your Order Local subscription has resumed',
-					html: pauseResumedEmail({ tenantName: v.name, planName })
+					html: pauseResumedEmail({ senderName: v.name, planName })
 				}).catch((err) => console.error(`[resume-due] email failed vendor ${v.id}:`, err));
 			}
 

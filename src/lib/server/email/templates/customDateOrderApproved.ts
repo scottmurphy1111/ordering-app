@@ -12,7 +12,7 @@ function fmtDate(date: Date | string, tz: string): string {
 }
 
 export function customDateOrderApprovedEmail({
-	tenantName,
+	vendorName,
 	primaryColor,
 	orderNumber,
 	customerName,
@@ -25,7 +25,7 @@ export function customDateOrderApprovedEmail({
 	vendorTimezone = 'America/New_York',
 	orderStatusUrl
 }: {
-	tenantName: string;
+	vendorName: string;
 	primaryColor?: string;
 	orderNumber: string;
 	customerName: string;
@@ -96,10 +96,10 @@ export function customDateOrderApprovedEmail({
   `;
 
 	return emailWrapper({
-		title: `Order ${orderNumber} approved — ${tenantName}`,
+		title: `Order ${orderNumber} approved — ${vendorName}`,
 		previewText: `Your custom date order ${orderNumber} is approved. Total charged: ${formatCents(total)}`,
 		content,
-		tenantName,
+		displayName: vendorName,
 		primaryColor
 	});
 }

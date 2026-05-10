@@ -51,7 +51,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		if (locals.user.email.toLowerCase() !== invite.email.toLowerCase()) {
 			return {
 				invite: { email: invite.email, role: invite.role, expiresAt: invite.expiresAt },
-				tenantName: vendorRecord?.name ?? '',
+				vendorName: vendorRecord?.name ?? '',
 				wrongEmail: locals.user.email
 			};
 		}
@@ -63,7 +63,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 
 	return {
 		invite: { email: invite.email, role: invite.role, expiresAt: invite.expiresAt },
-		tenantName: vendorRecord?.name ?? ''
+		vendorName: vendorRecord?.name ?? ''
 	};
 };
 

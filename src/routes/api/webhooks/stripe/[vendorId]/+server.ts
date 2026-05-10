@@ -113,7 +113,7 @@ async function handleEvent(event: Stripe.Event, ctx: VendorCtx) {
 						to: order.customerEmail,
 						subject: `Payment confirmed for order ${order.orderNumber} — ${ctx.name}`,
 						html: customDateOrderRecoveredEmail({
-							tenantName: ctx.name,
+							vendorName: ctx.name,
 							primaryColor: ctx.primaryColor,
 							orderNumber: order.orderNumber,
 							customerName: order.customerName ?? 'there',
@@ -133,7 +133,7 @@ async function handleEvent(event: Stripe.Event, ctx: VendorCtx) {
 						to: order.customerEmail,
 						subject: `Order ${order.orderNumber} confirmed — ${ctx.name}`,
 						html: orderConfirmedEmail({
-							tenantName: ctx.name,
+							vendorName: ctx.name,
 							primaryColor: ctx.primaryColor,
 							orderNumber: order.orderNumber,
 							customerName: order.customerName ?? 'there',
@@ -192,7 +192,7 @@ async function handleEvent(event: Stripe.Event, ctx: VendorCtx) {
 					to: order.customerEmail,
 					subject: `Order ${order.orderNumber} cancelled — ${ctx.name}`,
 					html: orderCancelledEmail({
-						tenantName: ctx.name,
+						vendorName: ctx.name,
 						primaryColor: ctx.primaryColor,
 						orderNumber: order.orderNumber,
 						customerName: order.customerName ?? 'there',
@@ -226,7 +226,7 @@ async function handleEvent(event: Stripe.Event, ctx: VendorCtx) {
 					to: order.customerEmail,
 					subject: `Refund processed for order ${order.orderNumber} — ${ctx.name}`,
 					html: orderRefundedEmail({
-						tenantName: ctx.name,
+						vendorName: ctx.name,
 						primaryColor: ctx.primaryColor,
 						orderNumber: order.orderNumber,
 						customerName: order.customerName ?? 'there',
@@ -285,7 +285,7 @@ async function handleEvent(event: Stripe.Event, ctx: VendorCtx) {
 					to: order.customerEmail,
 					subject: `Order ${order.orderNumber} confirmed — ${ctx.name}`,
 					html: orderConfirmedEmail({
-						tenantName: ctx.name,
+						vendorName: ctx.name,
 						primaryColor: ctx.primaryColor,
 						orderNumber: order.orderNumber,
 						customerName: order.customerName ?? 'there',
@@ -360,7 +360,7 @@ async function handleEvent(event: Stripe.Event, ctx: VendorCtx) {
 					to: recurring.customerEmail,
 					subject: `Subscription renewed — ${ctx.name}`,
 					html: orderConfirmedEmail({
-						tenantName: ctx.name,
+						vendorName: ctx.name,
 						primaryColor: ctx.primaryColor,
 						orderNumber: recurring.orderNumber,
 						customerName: recurring.customerName ?? 'there',

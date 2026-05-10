@@ -60,7 +60,7 @@ export const auth = betterAuth({
 				const html = emailWrapper({
 					title: 'Sign in to Order Local',
 					previewText: 'Your sign-in link for Order Local',
-					tenantName: 'Order Local',
+					displayName: 'Order Local',
 					content: `
 						<p style="margin:0 0 16px;font-size:16px;color:#111827;">Click the button below to sign in to your Order Local account. This link expires in 15 minutes.</p>
 						<a href="${intermediateUrl.toString()}" style="display:inline-block;background:#111827;color:#ffffff;padding:12px 24px;border-radius:8px;font-size:14px;font-weight:600;text-decoration:none;">Sign in</a>

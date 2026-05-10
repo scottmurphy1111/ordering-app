@@ -67,7 +67,7 @@ export const ADDONS = [
 		name: 'Custom Domain',
 		price: 12,
 		icon: 'mdi:web',
-		description: 'Use your own domain (e.g. menu.yourbusiness.com) for your ordering page.'
+		description: 'Use your own domain (e.g. shop.yourbusiness.com) for your ordering page.'
 	},
 	{
 		key: 'analytics',

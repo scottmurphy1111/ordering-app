@@ -1,14 +1,14 @@
 import { emailWrapper } from '../base';
 
 export function pauseResumedEmail({
-	tenantName,
+	senderName,
 	planName
 }: {
-	tenantName: string;
+	senderName: string;
 	planName: string;
 }) {
 	const content = `
-    <p style="margin:0 0 16px;font-size:16px;color:#111827;">Hi ${tenantName},</p>
+    <p style="margin:0 0 16px;font-size:16px;color:#111827;">Hi ${senderName},</p>
     <p style="margin:0 0 24px;font-size:14px;color:#374151;line-height:1.6;">
       Your <strong>Order Local ${planName}</strong> subscription has resumed. Billing is active again and your next invoice will fall on your regular billing date.
     </p>
@@ -24,7 +24,7 @@ export function pauseResumedEmail({
 		title: 'Subscription resumed',
 		previewText: `Your Order Local ${planName} subscription is active again`,
 		content,
-		tenantName: 'Order Local',
+		displayName: 'Order Local',
 		primaryColor: '#16a34a'
 	});
 }

@@ -12,7 +12,7 @@ function fmtDate(date: Date | string, tz: string): string {
 }
 
 export function customDateOrderRecoveredEmail({
-	tenantName,
+	vendorName,
 	primaryColor,
 	orderNumber,
 	customerName,
@@ -26,7 +26,7 @@ export function customDateOrderRecoveredEmail({
 	notes,
 	orderStatusUrl
 }: {
-	tenantName: string;
+	vendorName: string;
 	primaryColor?: string;
 	orderNumber: string;
 	customerName: string;
@@ -104,10 +104,10 @@ export function customDateOrderRecoveredEmail({
   `;
 
 	return emailWrapper({
-		title: `Payment confirmed for order ${orderNumber} — ${tenantName}`,
+		title: `Payment confirmed for order ${orderNumber} — ${vendorName}`,
 		previewText: `Payment confirmed for order ${orderNumber}. Total charged: ${formatCents(total)}`,
 		content,
-		tenantName,
+		displayName: vendorName,
 		primaryColor
 	});
 }

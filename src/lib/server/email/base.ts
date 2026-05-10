@@ -2,13 +2,13 @@ export function emailWrapper({
 	title,
 	previewText,
 	content,
-	tenantName,
+	displayName,
 	primaryColor = '#000000'
 }: {
 	title: string;
 	previewText: string;
 	content: string;
-	tenantName: string;
+	displayName: string;
 	primaryColor?: string;
 }) {
 	return `<!DOCTYPE html>
@@ -28,7 +28,7 @@ export function emailWrapper({
           <!-- Header -->
           <tr>
             <td style="background:${primaryColor};padding:24px 32px;border-radius:12px 12px 0 0;">
-              <p style="margin:0;color:#ffffff;font-size:18px;font-weight:700;">${tenantName}</p>
+              <p style="margin:0;color:#ffffff;font-size:18px;font-weight:700;">${displayName}</p>
             </td>
           </tr>
 
