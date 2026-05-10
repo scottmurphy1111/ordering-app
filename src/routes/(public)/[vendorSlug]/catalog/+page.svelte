@@ -1,7 +1,13 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import type { PageData } from './$types';
-	import { cart } from '$lib/cart.svelte';
+	import {
+		cart,
+		CartTypeMismatchError,
+		type PickupType,
+		type CartModifier
+	} from '$lib/cart.svelte';
+	import { confirmDialog } from '$lib/confirm.svelte';
 	import { resolve } from '$app/paths';
 	import Icon from '@iconify/svelte';
 
@@ -63,22 +69,47 @@
 	let pulsingId = $state<number | null>(null);
 	let addedTimer: ReturnType<typeof setTimeout> | null = null;
 
-	function addSimple(item: {
+	async function addSimple(item: {
 		id: number;
 		name: number | string;
 		price: number;
 		discountedPrice: number | null;
 		images: unknown;
+		pickupType: PickupType;
+		customDateLeadDays?: number | null;
 	}) {
 		const images = item.images as { url: string; isPrimary?: boolean }[] | null;
 		const imageUrl = images?.find((i) => i.isPrimary)?.url ?? images?.[0]?.url;
-		cart.add({
+		const addArgs = {
 			itemId: item.id,
 			name: String(item.name),
 			basePrice: effectivePrice(item as { price: number; discountedPrice: number | null }),
-			selectedModifiers: [],
-			imageUrl
-		});
+			selectedModifiers: [] as CartModifier[],
+			imageUrl,
+			pickupType: item.pickupType,
+			customDateLeadDays: item.customDateLeadDays ?? undefined
+		};
+
+		try {
+			cart.add(addArgs);
+		} catch (e) {
+			if (e instanceof CartTypeMismatchError) {
+				const confirmed = await confirmDialog(
+					'Wedding cakes and other custom orders are placed separately — they have their own checkout and approval. Start a new cart for this item?',
+					{
+						title: 'Start a new cart?',
+						confirmLabel: 'Start new cart',
+						cancelLabel: 'Cancel',
+						danger: true
+					}
+				);
+				if (!confirmed) return;
+				cart.clear();
+				cart.add(addArgs);
+			} else {
+				throw e;
+			}
+		}
 
 		pulsingId = item.id;
 		setTimeout(() => {

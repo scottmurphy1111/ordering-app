@@ -9,6 +9,7 @@ import { sendEmail } from '$lib/server/email';
 import { orderConfirmedEmail } from '$lib/server/email/templates/orderConfirmed';
 import { orderCancelledEmail } from '$lib/server/email/templates/orderCancelled';
 import { orderRefundedEmail } from '$lib/server/email/templates/orderRefunded';
+import { customDateOrderRecoveredEmail } from '$lib/server/email/templates/customDateOrderRecovered';
 import { sendSms } from '$lib/server/sms';
 import { env } from '$env/dynamic/private';
 import type { PickupWindowSnapshot } from '$lib/server/pickup/checkout';
@@ -84,38 +85,84 @@ async function handleEvent(event: Stripe.Event, ctx: VendorCtx) {
 	switch (event.type) {
 		case 'payment_intent.succeeded': {
 			const intent = event.data.object as Stripe.PaymentIntent;
+
+			const existing = await db.query.orders.findFirst({
+				where: eq(orders.stripePaymentIntentId, intent.id),
+				columns: { status: true, paymentStatus: true }
+			});
+
+			if (!existing) break;
+
+			// Already reconciled synchronously (approve action or page-load reconciliation).
+			// Prevents silent 'received → confirmed' overwrite for custom-date orders.
+			if (existing.paymentStatus === 'paid') break;
+
+			// Recovery: customer retried a failed payment on an existing order.
+			// Windowed flow: fresh checkout completing normally.
+			const isRecovery = existing.status === 'payment_failed';
+			const targetStatus = isRecovery ? 'received' : 'confirmed';
+
 			const [order] = await db
 				.update(orders)
-				.set({ paymentStatus: 'paid', status: 'confirmed', updatedAt: new Date() })
+				.set({ paymentStatus: 'paid', status: targetStatus, updatedAt: new Date() })
 				.where(eq(orders.stripePaymentIntentId, intent.id))
 				.returning();
 			if (order?.customerEmail) {
-				await sendEmail({
-					to: order.customerEmail,
-					subject: `Order ${order.orderNumber} confirmed — ${ctx.name}`,
-					html: orderConfirmedEmail({
-						tenantName: ctx.name,
-						primaryColor: ctx.primaryColor,
-						orderNumber: order.orderNumber,
-						customerName: order.customerName ?? 'there',
-						items: order.items as Parameters<typeof orderConfirmedEmail>[0]['items'],
-						subtotal: order.subtotal,
-						tax: order.tax,
-						tip: order.tip ?? 0,
-						total: order.total,
-						orderType: order.type,
-						notes: order.notes,
-						pickupWindowSnapshot: order.pickupWindowSnapshot as PickupWindowSnapshot | null,
-						scheduledFor: order.scheduledFor,
-						vendorTimezone: ctx.timezone
-					})
-				}).catch(console.error);
+				if (isRecovery) {
+					await sendEmail({
+						to: order.customerEmail,
+						subject: `Payment confirmed for order ${order.orderNumber} — ${ctx.name}`,
+						html: customDateOrderRecoveredEmail({
+							tenantName: ctx.name,
+							primaryColor: ctx.primaryColor,
+							orderNumber: order.orderNumber,
+							customerName: order.customerName ?? 'there',
+							items: order.items as Parameters<typeof customDateOrderRecoveredEmail>[0]['items'],
+							subtotal: order.subtotal,
+							tax: order.tax,
+							tip: order.tip ?? 0,
+							total: order.total,
+							scheduledFor: order.scheduledFor!,
+							vendorTimezone: ctx.timezone,
+							notes: order.notes,
+							orderStatusUrl: orderUrl(ctx.slug, order.id)
+						})
+					}).catch(console.error);
+				} else {
+					await sendEmail({
+						to: order.customerEmail,
+						subject: `Order ${order.orderNumber} confirmed — ${ctx.name}`,
+						html: orderConfirmedEmail({
+							tenantName: ctx.name,
+							primaryColor: ctx.primaryColor,
+							orderNumber: order.orderNumber,
+							customerName: order.customerName ?? 'there',
+							items: order.items as Parameters<typeof orderConfirmedEmail>[0]['items'],
+							subtotal: order.subtotal,
+							tax: order.tax,
+							tip: order.tip ?? 0,
+							total: order.total,
+							orderType: order.type,
+							notes: order.notes,
+							pickupWindowSnapshot: order.pickupWindowSnapshot as PickupWindowSnapshot | null,
+							scheduledFor: order.scheduledFor,
+							vendorTimezone: ctx.timezone
+						})
+					}).catch(console.error);
+				}
 			}
 			if (order?.customerPhone) {
-				await sendSms(
-					order.customerPhone,
-					`${ctx.name}: Order ${order.orderNumber} confirmed! We'll text you when it's ready. Track: ${orderUrl(ctx.slug, order.id)}`
-				).catch(console.error);
+				if (isRecovery) {
+					await sendSms(
+						order.customerPhone,
+						`${ctx.name}: Payment confirmed for order ${order.orderNumber}. We'll see you on your requested date. Track: ${orderUrl(ctx.slug, order.id)}`
+					).catch(console.error);
+				} else {
+					await sendSms(
+						order.customerPhone,
+						`${ctx.name}: Order ${order.orderNumber} confirmed! We'll text you when it's ready. Track: ${orderUrl(ctx.slug, order.id)}`
+					).catch(console.error);
+				}
 			}
 			break;
 		}
@@ -123,6 +170,18 @@ async function handleEvent(event: Stripe.Event, ctx: VendorCtx) {
 		case 'payment_intent.payment_failed':
 		case 'payment_intent.canceled': {
 			const intent = event.data.object as Stripe.PaymentIntent;
+
+			const existingFailed = await db.query.orders.findFirst({
+				where: eq(orders.stripePaymentIntentId, intent.id),
+				columns: { status: true }
+			});
+
+			if (!existingFailed) break;
+
+			// A recovery PaymentIntent that fails should NOT cancel the order — the customer
+			// can retry from the recovery banner. Leave the order in payment_failed.
+			if (existingFailed.status === 'payment_failed') break;
+
 			const [order] = await db
 				.update(orders)
 				.set({ paymentStatus: 'failed', status: 'cancelled', updatedAt: new Date() })

@@ -319,6 +319,16 @@
 											<Icon icon="mdi:flag-checkered" class="h-3.5 w-3.5 text-primary" />
 											<span class="text-xs text-gray-500">Fulfilled</span>
 										</span>
+									{:else if order.status === 'pending_approval'}
+										<span class="inline-flex items-center gap-1.5">
+											<Icon icon="mdi:calendar-clock" class="h-3.5 w-3.5 text-amber-600" />
+											<span class="text-xs text-gray-500">Pending approval</span>
+										</span>
+									{:else if order.status === 'payment_failed'}
+										<span class="inline-flex items-center gap-1.5">
+											<Icon icon="mdi:alert-circle-outline" class="h-3.5 w-3.5 text-red-500" />
+											<span class="text-xs text-gray-500">Payment failed</span>
+										</span>
 									{:else}
 										<span class="text-xs text-gray-500">
 											{order.status}

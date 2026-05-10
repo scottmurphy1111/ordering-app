@@ -45,6 +45,9 @@ export const orders = pgTable(
 
 		notes: text('notes'),
 		scheduledFor: timestamp('scheduled_for'),
+		proposedDate: timestamp('proposed_date'),
+		proposedReason: text('proposed_reason'),
+		proposedAt: timestamp('proposed_at'),
 		estimatedReadyTime: timestamp('estimated_ready_time'),
 
 		// Pickup Windows (Phase 1 — columns dormant until Phase 5 checkout integration)

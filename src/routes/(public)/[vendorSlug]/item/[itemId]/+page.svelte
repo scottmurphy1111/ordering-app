@@ -2,7 +2,8 @@
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import type { PageData } from './$types';
-	import { cart, type CartModifier } from '$lib/cart.svelte';
+	import { cart, CartTypeMismatchError, type CartModifier } from '$lib/cart.svelte';
+	import { confirmDialog } from '$lib/confirm.svelte';
 	import { resolve } from '$app/paths';
 	import Icon from '@iconify/svelte';
 
@@ -58,15 +59,39 @@
 		modifierGroups.every((g) => !g.required || (selections[g.id] ?? []).length > 0)
 	);
 
-	function addToCart() {
+	async function addToCart() {
 		if (!canAdd) return;
-		cart.add({
+		const addArgs = {
 			itemId: data.item.id,
 			name: data.item.name,
 			basePrice,
 			selectedModifiers,
-			imageUrl: primaryImage?.url
-		});
+			imageUrl: primaryImage?.url,
+			pickupType: data.item.pickupType,
+			customDateLeadDays: data.item.customDateLeadDays ?? undefined
+		};
+
+		try {
+			cart.add(addArgs);
+		} catch (e) {
+			if (e instanceof CartTypeMismatchError) {
+				const confirmed = await confirmDialog(
+					'Wedding cakes and other custom orders are placed separately — they have their own checkout and approval. Start a new cart for this item?',
+					{
+						title: 'Start a new cart?',
+						confirmLabel: 'Start new cart',
+						cancelLabel: 'Cancel',
+						danger: true
+					}
+				);
+				if (!confirmed) return;
+				cart.clear();
+				cart.add(addArgs);
+			} else {
+				throw e;
+			}
+		}
+
 		goto(resolve(`/${data.vendorSlug}/catalog`));
 	}
 </script>

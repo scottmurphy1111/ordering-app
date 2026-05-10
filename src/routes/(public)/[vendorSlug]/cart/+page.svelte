@@ -58,6 +58,7 @@
 	let pickupTiming = $state<'asap' | 'scheduled'>('asap');
 	let pickupDate = $state('');
 	let pickupTimeValue = $state('');
+	let customDateValue = $state('');
 	let loading = $state(false);
 	let checkoutError = $state<string | null>(null);
 	let unavailableItems = $state<{ itemId: number; name: string }[]>([]);
@@ -88,6 +89,19 @@
 			hour: 'numeric',
 			minute: '2-digit'
 		});
+	});
+
+	const customDateLabel = $derived.by(() => {
+		if (!customDateValue) return null;
+		const [y, m, d] = customDateValue.split('-').map(Number);
+		const date = new Date(Date.UTC(y, m - 1, d, 12, 0, 0));
+		return new Intl.DateTimeFormat('en-US', {
+			timeZone: data.vendor.timezone,
+			weekday: 'short',
+			month: 'short',
+			day: 'numeric',
+			year: 'numeric'
+		}).format(date);
 	});
 
 	const settings = $derived(
@@ -178,6 +192,30 @@
 		promoError = null;
 	}
 
+	// Custom-date cart detection
+	const isCustomDateCart = $derived(cart.pickupType === 'custom_date');
+
+	// Lead-days for custom-date min date (max across all items, default 14)
+	const maxLeadDays = $derived(
+		cart.items.length > 0 ? Math.max(...cart.items.map((i) => i.customDateLeadDays ?? 14)) : 14
+	);
+
+	// Min/max dates for the custom-date picker, in the vendor's local calendar
+	const customDateMin = $derived.by(() => {
+		const vendorTodayStr = new Intl.DateTimeFormat('en-CA', {
+			timeZone: data.vendor.timezone
+		}).format(new Date());
+		const [y, m, d] = vendorTodayStr.split('-').map(Number);
+		return new Date(Date.UTC(y, m - 1, d + maxLeadDays)).toISOString().slice(0, 10);
+	});
+	const customDateMax = $derived.by(() => {
+		const vendorTodayStr = new Intl.DateTimeFormat('en-CA', {
+			timeZone: data.vendor.timezone
+		}).format(new Date());
+		const [y, m, d] = vendorTodayStr.split('-').map(Number);
+		return new Date(Date.UTC(y, m - 1, d + 365)).toISOString().slice(0, 10);
+	});
+
 	// Subscription detection
 	const isSubscriptionCart = $derived(
 		cart.items.length > 0 && cart.items.every((i) => i.isSubscription)
@@ -217,48 +255,37 @@
 			checkoutError = 'Please enter your name.';
 			return;
 		}
-		if (!isSubscriptionCart && data.availableWindows.length > 0 && !selectedWindowId) {
+		if (isCustomDateCart) {
+			if (!customDateValue) {
+				checkoutError = 'Please select a pickup date.';
+				return;
+			}
+			if (customDateValue < customDateMin) {
+				checkoutError = `Please select a date at least ${maxLeadDays} days from today.`;
+				return;
+			}
+		} else if (!isSubscriptionCart && data.availableWindows.length > 0 && !selectedWindowId) {
 			checkoutError = 'Please select a pickup window.';
 			return;
 		}
 		checkoutError = null;
 		loading = true;
 
-		const hasWindows = data.availableWindows.length > 0;
-
 		try {
-			const commonPayload = {
-				vendorSlug: data.vendorSlug,
-				items: cart.items,
-				customer: { name: customerName, email, phone },
-				notes: notes || null,
-				orderType: isSubscriptionCart ? 'subscription' : 'pickup',
-				scheduledFor:
-					!isSubscriptionCart &&
-					!hasWindows &&
-					pickupTiming === 'scheduled' &&
-					pickupDate &&
-					pickupTimeValue
-						? new Date(`${pickupDate}T${pickupTimeValue}`).toISOString()
-						: null,
-				pickupWindowId: !isSubscriptionCart ? (selectedWindowId ?? null) : null,
-				subtotal,
-				tax,
-				tip: tipCents,
-				discount: discountCents,
-				promoCode: promoApplied?.code ?? null,
-				total
-			};
-
-			if (isSubscriptionCart) {
-				// Subscriptions use Stripe Checkout (hosted page)
-				const res = await fetch('/api/create-checkout', {
+			if (isCustomDateCart) {
+				// Custom-date orders use SetupIntent (no charge until vendor approves)
+				const res = await fetch('/api/create-setup-intent', {
 					method: 'POST',
 					headers: { 'Content-Type': 'application/json' },
 					body: JSON.stringify({
-						...commonPayload,
-						isSubscription: true,
-						billingInterval: subscriptionInterval
+						vendorSlug: data.vendorSlug,
+						items: cart.items,
+						customer: { name: customerName, email, phone },
+						notes: notes || null,
+						scheduledDate: customDateValue,
+						subtotal,
+						tax,
+						total
 					})
 				});
 				const result = await res.json();
@@ -278,34 +305,94 @@
 					loading = false;
 					return;
 				}
-				window.location.href = result.url;
+				await goto(
+					resolve(`/${data.vendorSlug}/checkout?orderId=${result.orderId}` as `/${string}`)
+				);
 				cart.clear();
 			} else {
-				// One-time orders use custom Payment Element checkout
-				const res = await fetch('/api/create-payment-intent', {
-					method: 'POST',
-					headers: { 'Content-Type': 'application/json' },
-					body: JSON.stringify(commonPayload)
-				});
-				const result = await res.json();
-				if (!res.ok) {
-					if (result.type === 'cart_validation_failed' && result.unavailable?.length) {
-						const unavailableIds = new Set(
-							result.unavailable.map((u: { itemId: number }) => u.itemId)
-						);
-						for (let i = cart.items.length - 1; i >= 0; i--) {
-							if (unavailableIds.has(cart.items[i].itemId)) cart.remove(i);
+				const hasWindows = data.availableWindows.length > 0;
+				const commonPayload = {
+					vendorSlug: data.vendorSlug,
+					items: cart.items,
+					customer: { name: customerName, email, phone },
+					notes: notes || null,
+					orderType: isSubscriptionCart ? 'subscription' : 'pickup',
+					scheduledFor:
+						!isSubscriptionCart &&
+						!hasWindows &&
+						pickupTiming === 'scheduled' &&
+						pickupDate &&
+						pickupTimeValue
+							? new Date(`${pickupDate}T${pickupTimeValue}`).toISOString()
+							: null,
+					pickupWindowId: !isSubscriptionCart ? (selectedWindowId ?? null) : null,
+					subtotal,
+					tax,
+					tip: tipCents,
+					discount: discountCents,
+					promoCode: promoApplied?.code ?? null,
+					total
+				};
+
+				if (isSubscriptionCart) {
+					// Subscriptions use Stripe Checkout (hosted page)
+					const res = await fetch('/api/create-checkout', {
+						method: 'POST',
+						headers: { 'Content-Type': 'application/json' },
+						body: JSON.stringify({
+							...commonPayload,
+							isSubscription: true,
+							billingInterval: subscriptionInterval
+						})
+					});
+					const result = await res.json();
+					if (!res.ok) {
+						if (result.type === 'cart_validation_failed' && result.unavailable?.length) {
+							const unavailableIds = new Set(
+								result.unavailable.map((u: { itemId: number }) => u.itemId)
+							);
+							for (let i = cart.items.length - 1; i >= 0; i--) {
+								if (unavailableIds.has(cart.items[i].itemId)) cart.remove(i);
+							}
+							unavailableItems = result.unavailable;
+							checkoutError = null;
+						} else {
+							checkoutError = result.message ?? 'Something went wrong.';
 						}
-						unavailableItems = result.unavailable;
-						checkoutError = null;
-					} else {
-						checkoutError = result.message ?? 'Something went wrong.';
+						loading = false;
+						return;
 					}
-					loading = false;
-					return;
+					window.location.href = result.url;
+					cart.clear();
+				} else {
+					// Windowed one-time orders use Payment Element checkout
+					const res = await fetch('/api/create-payment-intent', {
+						method: 'POST',
+						headers: { 'Content-Type': 'application/json' },
+						body: JSON.stringify(commonPayload)
+					});
+					const result = await res.json();
+					if (!res.ok) {
+						if (result.type === 'cart_validation_failed' && result.unavailable?.length) {
+							const unavailableIds = new Set(
+								result.unavailable.map((u: { itemId: number }) => u.itemId)
+							);
+							for (let i = cart.items.length - 1; i >= 0; i--) {
+								if (unavailableIds.has(cart.items[i].itemId)) cart.remove(i);
+							}
+							unavailableItems = result.unavailable;
+							checkoutError = null;
+						} else {
+							checkoutError = result.message ?? 'Something went wrong.';
+						}
+						loading = false;
+						return;
+					}
+					await goto(
+						resolve(`/${data.vendorSlug}/checkout?orderId=${result.orderId}` as `/${string}`)
+					);
+					cart.clear();
 				}
-				await goto(resolve(`/${data.vendorSlug}/checkout?orderId=${result.orderId}` as `/${string}`));
-				cart.clear();
 			}
 		} catch {
 			checkoutError = 'Network error. Please try again.';
@@ -521,147 +608,176 @@
 				</CardContent>
 			</Card>
 
-			<!-- Pickup timing -->
+			<!-- Pickup timing / date selection -->
 			{#if !isSubscriptionCart}
-				<Card class="shadow-sm">
-					<CardContent class="p-4">
-						<p class="mb-2 text-sm font-semibold text-foreground">Pickup time</p>
-
-						{#if data.availableWindows.length > 0}
-							<!-- Slot selector -->
-							<div class="space-y-2">
-								{#each data.availableWindows as win (win.id)}
-									{@const isFull = win.remainingCapacity !== null && win.remainingCapacity <= 0}
-									{@const isLow =
-										win.remainingCapacity !== null &&
-										win.remainingCapacity > 0 &&
-										win.remainingCapacity <= 5}
-									{@const isSelected = selectedWindowId === win.id}
-									<label
-										class="flex cursor-pointer items-start gap-3 rounded-lg border p-3 transition-colors {isFull
-											? 'cursor-not-allowed opacity-50'
-											: ''}"
-										style={isSelected
-											? 'background-color: color-mix(in srgb, var(--background-color) 8%, transparent); border-color: var(--background-color);'
-											: ''}
-									>
-										<input
-											type="radio"
-											name="pickupWindow"
-											value={win.id}
-											disabled={isFull}
-											checked={isSelected}
-											onchange={() => {
-												selectedWindowId = win.id;
-											}}
-											class="sr-only"
-										/>
-										<div
-											class="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full border-2 transition-colors"
-											style={isSelected
-												? 'border-color: var(--background-color); background-color: var(--background-color);'
-												: 'border-color: #d1d5db;'}
-										>
-											{#if isSelected}
-												<div class="h-1.5 w-1.5 rounded-full bg-white"></div>
-											{/if}
-										</div>
-										<div class="min-w-0 flex-1">
-											<p class="text-sm font-medium text-foreground">
-												{fmtWindowDate(win.startsAt)} · {fmtWindowTime(
-													win.startsAt
-												)}–{fmtWindowTime(win.endsAt)}
-											</p>
-											{#if win.location?.name}
-												<p class="mt-0.5 text-xs text-muted-foreground">{win.location.name}</p>
-											{/if}
-											{#if win.notes}
-												<p class="mt-0.5 text-xs text-muted-foreground">{win.notes}</p>
-											{/if}
-										</div>
-										{#if isFull}
-											<span
-												class="shrink-0 rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-500"
-												>Full</span
-											>
-										{:else if isLow}
-											<span
-												class="shrink-0 rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-600"
-											>
-												{win.remainingCapacity} left
-											</span>
-										{/if}
-									</label>
-								{/each}
+				{#if isCustomDateCart}
+					<Card class="shadow-sm">
+						<CardContent class="p-4">
+							<p class="mb-2 text-sm font-semibold text-foreground">Pickup date</p>
+							<p class="mb-3 text-sm text-muted-foreground">
+								Pick a date for your order. We'll review your request and confirm before charging your
+								card.
+							</p>
+							<div>
+								<label
+									class="mb-1 block text-xs font-medium text-muted-foreground"
+									for="custom-date">Date *</label
+								>
+								<input
+									id="custom-date"
+									type="date"
+									bind:value={customDateValue}
+									min={customDateMin}
+									max={customDateMax}
+									class="branded-input w-full rounded-lg border px-3 py-2 text-sm transition-colors outline-none"
+								/>
+								<p class="mt-1.5 text-xs text-muted-foreground">
+									Available {maxLeadDays}+ days from today.
+								</p>
 							</div>
-						{:else}
-							<!-- Free-form picker (fallback when no windows are configured) -->
-							{#if asapPickupEnabled}
-								<div class="mb-3 flex gap-3">
-									{#each [{ value: 'asap', label: 'ASAP', icon: 'mdi:lightning-bolt' }, { value: 'scheduled', label: 'Schedule', icon: 'mdi:calendar-clock' }] as opt (opt.value)}
+						</CardContent>
+					</Card>
+				{:else}
+					<Card class="shadow-sm">
+						<CardContent class="p-4">
+							<p class="mb-2 text-sm font-semibold text-foreground">Pickup time</p>
+
+							{#if data.availableWindows.length > 0}
+								<!-- Slot selector -->
+								<div class="space-y-2">
+									{#each data.availableWindows as win (win.id)}
+										{@const isFull = win.remainingCapacity !== null && win.remainingCapacity <= 0}
+										{@const isLow =
+											win.remainingCapacity !== null &&
+											win.remainingCapacity > 0 &&
+											win.remainingCapacity <= 5}
+										{@const isSelected = selectedWindowId === win.id}
 										<label
-											style={pickupTiming === opt.value
-												? 'background-color: var(--background-color); color: var(--foreground-color); border-color: var(--background-color);'
+											class="flex cursor-pointer items-start gap-3 rounded-lg border p-3 transition-colors {isFull
+												? 'cursor-not-allowed opacity-50'
+												: ''}"
+											style={isSelected
+												? 'background-color: color-mix(in srgb, var(--background-color) 8%, transparent); border-color: var(--background-color);'
 												: ''}
-											class="flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-lg border py-2.5 text-sm font-medium transition-colors
-										{pickupTiming === opt.value ? '' : ' text-muted-foreground hover:bg-muted/50'}"
 										>
 											<input
 												type="radio"
-												name="pickupTiming"
-												value={opt.value}
-												bind:group={pickupTiming}
+												name="pickupWindow"
+												value={win.id}
+												disabled={isFull}
+												checked={isSelected}
 												onchange={() => {
-													if (opt.value === 'scheduled') onScheduledSelect();
+													selectedWindowId = win.id;
 												}}
 												class="sr-only"
 											/>
-											<Icon icon={opt.icon} class="h-4 w-4" />
-											{opt.label}
+											<div
+												class="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full border-2 transition-colors"
+												style={isSelected
+													? 'border-color: var(--background-color); background-color: var(--background-color);'
+													: 'border-color: #d1d5db;'}
+											>
+												{#if isSelected}
+													<div class="h-1.5 w-1.5 rounded-full bg-white"></div>
+												{/if}
+											</div>
+											<div class="min-w-0 flex-1">
+												<p class="text-sm font-medium text-foreground">
+													{fmtWindowDate(win.startsAt)} · {fmtWindowTime(
+														win.startsAt
+													)}–{fmtWindowTime(win.endsAt)}
+												</p>
+												{#if win.location?.name}
+													<p class="mt-0.5 text-xs text-muted-foreground">{win.location.name}</p>
+												{/if}
+												{#if win.notes}
+													<p class="mt-0.5 text-xs text-muted-foreground">{win.notes}</p>
+												{/if}
+											</div>
+											{#if isFull}
+												<span
+													class="shrink-0 rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-500"
+													>Full</span
+												>
+											{:else if isLow}
+												<span
+													class="shrink-0 rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-600"
+												>
+													{win.remainingCapacity} left
+												</span>
+											{/if}
 										</label>
 									{/each}
 								</div>
-							{/if}
+							{:else}
+								<!-- Free-form picker (fallback when no windows are configured) -->
+								{#if asapPickupEnabled}
+									<div class="mb-3 flex gap-3">
+										{#each [{ value: 'asap', label: 'ASAP', icon: 'mdi:lightning-bolt' }, { value: 'scheduled', label: 'Schedule', icon: 'mdi:calendar-clock' }] as opt (opt.value)}
+											<label
+												style={pickupTiming === opt.value
+													? 'background-color: var(--background-color); color: var(--foreground-color); border-color: var(--background-color);'
+													: ''}
+												class="flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-lg border py-2.5 text-sm font-medium transition-colors
+											{pickupTiming === opt.value ? '' : ' text-muted-foreground hover:bg-muted/50'}"
+											>
+												<input
+													type="radio"
+													name="pickupTiming"
+													value={opt.value}
+													bind:group={pickupTiming}
+													onchange={() => {
+														if (opt.value === 'scheduled') onScheduledSelect();
+													}}
+													class="sr-only"
+												/>
+												<Icon icon={opt.icon} class="h-4 w-4" />
+												{opt.label}
+											</label>
+										{/each}
+									</div>
+								{/if}
 
-							{#if pickupTiming === 'scheduled'}
-								<div class="flex gap-2">
-									<div class="flex-1">
-										<label
-											class="mb-1 block text-xs font-medium text-muted-foreground"
-											for="pickup-date">Date</label
-										>
-										<input
-											id="pickup-date"
-											type="date"
-											bind:value={pickupDate}
-											min={today}
-											class="branded-input w-full rounded-lg border px-3 py-2 text-sm transition-colors outline-none"
-										/>
+								{#if pickupTiming === 'scheduled'}
+									<div class="flex gap-2">
+										<div class="flex-1">
+											<label
+												class="mb-1 block text-xs font-medium text-muted-foreground"
+												for="pickup-date">Date</label
+											>
+											<input
+												id="pickup-date"
+												type="date"
+												bind:value={pickupDate}
+												min={today}
+												class="branded-input w-full rounded-lg border px-3 py-2 text-sm transition-colors outline-none"
+											/>
+										</div>
+										<div class="flex-1">
+											<label
+												class="mb-1 block text-xs font-medium text-muted-foreground"
+												for="pickup-time">Time</label
+											>
+											<input
+												id="pickup-time"
+												type="time"
+												bind:value={pickupTimeValue}
+												step="900"
+												class="branded-input w-full rounded-lg border px-3 py-2 text-sm transition-colors outline-none"
+											/>
+										</div>
 									</div>
-									<div class="flex-1">
-										<label
-											class="mb-1 block text-xs font-medium text-muted-foreground"
-											for="pickup-time">Time</label
-										>
-										<input
-											id="pickup-time"
-											type="time"
-											bind:value={pickupTimeValue}
-											step="900"
-											class="branded-input w-full rounded-lg border px-3 py-2 text-sm transition-colors outline-none"
-										/>
-									</div>
-								</div>
-								{#if scheduledLabel}
-									<p class="mt-2 flex items-center gap-1.5 text-xs text-muted-foreground">
-										<Icon icon="mdi:clock-check-outline" class="h-3.5 w-3.5 shrink-0" />
-										Scheduled for {scheduledLabel}
-									</p>
+									{#if scheduledLabel}
+										<p class="mt-2 flex items-center gap-1.5 text-xs text-muted-foreground">
+											<Icon icon="mdi:clock-check-outline" class="h-3.5 w-3.5 shrink-0" />
+											Scheduled for {scheduledLabel}
+										</p>
+									{/if}
 								{/if}
 							{/if}
-						{/if}
-					</CardContent>
-				</Card>
+						</CardContent>
+					</Card>
+				{/if}
 			{/if}
 
 			<!-- Customer info -->
@@ -721,7 +837,7 @@
 			</Card>
 
 			<!-- Promo code -->
-			{#if !isSubscriptionCart}
+			{#if !isSubscriptionCart && !isCustomDateCart}
 				<Card class="shadow-sm">
 					<CardContent class="p-4">
 						<p class="mb-2 text-sm font-semibold text-foreground">Promo code</p>
@@ -775,7 +891,7 @@
 			{/if}
 
 			<!-- Tip selector -->
-			{#if tipsEnabled && !isSubscriptionCart}
+			{#if tipsEnabled && !isSubscriptionCart && !isCustomDateCart}
 				<Card class="shadow-sm">
 					<CardContent class="p-4">
 						<p class="mb-2 text-sm font-semibold text-foreground">Add a tip</p>
@@ -851,6 +967,15 @@
 								Recurring subscription — billed {subscriptionInterval}
 							</p>
 						</div>
+					{:else if isCustomDateCart}
+						<div
+							class="mb-0.5 flex items-center justify-between border-b pb-1.5 text-muted-foreground"
+						>
+							<span class="flex items-center gap-1.5">
+								<Icon icon="mdi:calendar-clock" class="h-3.5 w-3.5" /> Requested date
+							</span>
+							<span class="font-medium">{customDateLabel || '—'}</span>
+						</div>
 					{:else}
 						<div
 							class="mb-0.5 flex items-center justify-between border-b pb-1.5 text-muted-foreground"
@@ -904,19 +1029,31 @@
 						class="mt-1.5 flex justify-between border-t pt-1.5 font-semibold"
 						style="color: var(--background-color);"
 					>
-						<span
-							>{isSubscriptionCart
+						<span>
+							{isSubscriptionCart
 								? `Total / ${subscriptionInterval === 'yearly' ? 'yr' : 'mo'}`
-								: 'Total'}</span
-						>
+								: isCustomDateCart
+									? 'Estimated total'
+									: 'Total'}
+						</span>
 						<span>${(total / 100).toFixed(2)}</span>
 					</div>
+					{#if isCustomDateCart}
+						<p class="mt-1 text-xs text-muted-foreground">
+							We'll charge this amount only after we approve your request.
+						</p>
+					{/if}
 				</CardContent>
 			</Card>
 
 			<p class="text-xs text-muted-foreground">
-				Please double-check your order before paying — changes can't be made once payment is
-				submitted.
+				{#if isCustomDateCart}
+					Please double-check your request. Your payment method will be saved but not charged until
+					we approve.
+				{:else}
+					Please double-check your order before paying — changes can't be made once payment is
+					submitted.
+				{/if}
 			</p>
 
 			<button
@@ -926,11 +1063,15 @@
 				style="background-color: var(--background-color); color: var(--foreground-color);"
 				class="w-full rounded-xl px-6 py-4 text-base font-semibold shadow-sm transition-opacity hover:opacity-90 disabled:opacity-50"
 			>
-				{loading
-					? 'Redirecting to payment…'
-					: isSubscriptionCart
-						? `Subscribe — $${(total / 100).toFixed(2)}/${subscriptionInterval === 'yearly' ? 'yr' : 'mo'}`
-						: `Pay $${(total / 100).toFixed(2)}`}
+				{#if loading}
+					{isCustomDateCart ? 'Setting up payment…' : 'Redirecting to payment…'}
+				{:else if isSubscriptionCart}
+					Subscribe — ${(total / 100).toFixed(2)}/{subscriptionInterval === 'yearly' ? 'yr' : 'mo'}
+				{:else if isCustomDateCart}
+					Continue to payment setup
+				{:else}
+					Pay ${(total / 100).toFixed(2)}
+				{/if}
 			</button>
 		{/if}
 	</main>

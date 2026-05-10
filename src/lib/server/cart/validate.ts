@@ -1,7 +1,7 @@
 import { db } from '$lib/server/db';
 import { catalogItems } from '$lib/server/db/catalog';
 import { and, eq, inArray } from 'drizzle-orm';
-import type { CartItem } from '$lib/cart.svelte';
+import type { CartItem, PickupType } from '$lib/cart.svelte';
 
 export type UnavailableItem = {
 	itemId: number;
@@ -17,7 +17,12 @@ export type PriceChange = {
 
 export type CartValidationResult =
 	| { valid: true; validatedItems: CartItem[]; priceChanges: PriceChange[] }
-	| { valid: false; unavailable: UnavailableItem[]; priceChanges: PriceChange[] };
+	| {
+			valid: false;
+			unavailable: UnavailableItem[];
+			priceChanges: PriceChange[];
+			pickupTypeMismatch?: { firstType: PickupType; conflictingType: PickupType };
+	  };
 
 /**
  * Validates cart items against live catalog state for a vendor.
@@ -37,7 +42,9 @@ export async function validateCartItems(
 			id: catalogItems.id,
 			name: catalogItems.name,
 			price: catalogItems.price,
-			status: catalogItems.status
+			status: catalogItems.status,
+			pickupType: catalogItems.pickupType,
+			customDateLeadDays: catalogItems.customDateLeadDays
 		})
 		.from(catalogItems)
 		.where(and(inArray(catalogItems.id, itemIds), eq(catalogItems.vendorId, vendorId)));
@@ -64,11 +71,29 @@ export async function validateCartItems(
 			});
 			seenPriceChangeIds.add(item.itemId);
 		}
-		validatedItems.push({ ...item, basePrice: row.price });
+		validatedItems.push({ ...item, basePrice: row.price, customDateLeadDays: row.customDateLeadDays ?? undefined });
 	}
 
 	if (unavailable.length > 0) {
 		return { valid: false, unavailable, priceChanges };
 	}
+
+	// Pickup-type consistency check. Client-side cart already prevents mixing via CartTypeMismatchError;
+	// this catches tampered carts (devtools, replayed requests, stale localStorage).
+	if (validatedItems.length > 0) {
+		const expectedType = lookup.get(validatedItems[0].itemId)!.pickupType;
+		for (const item of validatedItems) {
+			const row = lookup.get(item.itemId)!;
+			if (row.pickupType !== expectedType) {
+				return {
+					valid: false,
+					unavailable: [],
+					priceChanges,
+					pickupTypeMismatch: { firstType: expectedType, conflictingType: row.pickupType }
+				};
+			}
+		}
+	}
+
 	return { valid: true, validatedItems, priceChanges };
 }

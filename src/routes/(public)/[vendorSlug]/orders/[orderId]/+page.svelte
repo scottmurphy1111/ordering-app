@@ -1,19 +1,24 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { invalidate } from '$app/navigation';
-	import type { PageData } from './$types';
+	import { enhance } from '$app/forms';
+	import type { PageData, ActionData } from './$types';
 	import { resolve } from '$app/paths';
 	import Icon from '@iconify/svelte';
 	import { Card, CardContent, CardHeader, CardTitle } from '$lib/components/ui/card';
+	import { Button } from '$lib/components/ui/button';
 	import OrderStatusStepper from '$lib/components/OrderStatusStepper.svelte';
+	import { confirmDialog } from '$lib/confirm.svelte';
 
-	let { data }: { data: PageData } = $props();
+	let { data, form }: { data: PageData; form: ActionData } = $props();
 
 	const order = $derived(data.order);
 	const isPaid = $derived(order.paymentStatus === 'paid');
 	const isCancelled = $derived(order.status === 'cancelled');
 	const isFulfilled = $derived(order.status === 'fulfilled');
 	const isDone = $derived(isFulfilled || isCancelled);
+	const isPendingApproval = $derived(order.status === 'pending_approval');
+	const isPaymentFailed = $derived(order.status === 'payment_failed');
 
 	// Customer-friendly label overrides for the status stepper
 	const customerLabels = {
@@ -33,6 +38,48 @@
 				})
 			: null
 	);
+
+	let recoverPending = $state(false);
+
+	function recoverEnhance() {
+		recoverPending = true;
+		return async ({ update }: { update: (opts?: { reset?: boolean }) => Promise<void> }) => {
+			await update({ reset: false });
+			recoverPending = false;
+		};
+	}
+
+	const hasProposedAlternate = $derived(order.proposedAt !== null && order.proposedDate !== null);
+	const proposedDateLabel = $derived(
+		order.proposedDate
+			? new Date(order.proposedDate).toLocaleDateString(undefined, {
+					weekday: 'short',
+					month: 'short',
+					day: 'numeric',
+					year: 'numeric'
+				})
+			: null
+	);
+
+	let acceptAltPending = $state(false);
+	let declineAltPending = $state(false);
+	let declineAltForm: HTMLFormElement | undefined = $state();
+
+	function acceptAltEnhance() {
+		acceptAltPending = true;
+		return async ({ update }: { update: (opts?: { reset?: boolean }) => Promise<void> }) => {
+			await update({ reset: false });
+			acceptAltPending = false;
+		};
+	}
+
+	function declineAltEnhance() {
+		declineAltPending = true;
+		return async ({ update }: { update: (opts?: { reset?: boolean }) => Promise<void> }) => {
+			await update({ reset: false });
+			declineAltPending = false;
+		};
+	}
 
 	// ── Live polling ─────────────────────────────────────────────────────────
 	onMount(() => {
@@ -100,6 +147,18 @@
 					<p class="mt-1 text-sm text-muted-foreground">
 						This order has been cancelled. Contact the vendor with any questions.
 					</p>
+				{:else if isPendingApproval}
+					<div class="mb-3 flex justify-center">
+						<div class="flex h-14 w-14 items-center justify-center rounded-full bg-amber-50">
+							<Icon icon="mdi:calendar-clock" class="h-8 w-8 text-amber-500" />
+						</div>
+					</div>
+					<h1 class="text-xl font-bold text-foreground">Request received!</h1>
+					<p class="mt-1 text-sm text-muted-foreground">
+						Your payment method is saved.
+						{order.customerName ? ` Thanks, ${order.customerName}.` : ''} We'll review your order and
+						reach out within 48 hours.
+					</p>
 				{:else if order.paymentStatus === 'pending'}
 					<div class="mb-3 flex justify-center">
 						<div class="flex h-14 w-14 items-center justify-center rounded-full bg-amber-50">
@@ -109,6 +168,18 @@
 					<h1 class="text-xl font-bold text-foreground">Awaiting payment</h1>
 					<p class="mt-1 text-sm text-muted-foreground">
 						We'll update this page once your payment is confirmed.
+					</p>
+				{:else if isPaymentFailed}
+					<div class="mb-3 flex justify-center">
+						<div class="flex h-14 w-14 items-center justify-center rounded-full bg-destructive/10">
+							<Icon icon="mdi:credit-card-off-outline" class="h-8 w-8 text-red-400" />
+						</div>
+					</div>
+					<h1 class="text-xl font-bold text-foreground">Payment needs attention</h1>
+					<p class="mt-1 text-sm text-muted-foreground">
+						We weren't able to charge your saved card for this order.{order.customerName
+							? ` Thanks for your patience, ${order.customerName}.`
+							: ''}
 					</p>
 				{:else}
 					<div class="mb-3 flex justify-center">
@@ -180,6 +251,153 @@
 					{/if}
 				</CardContent>
 			</Card>
+		{:else if isPendingApproval && hasProposedAlternate}
+			<!-- Proposal banner -->
+			<Card class="shadow-sm" style="border-color: #93c5fd;">
+				<CardContent class="p-5">
+					<div class="flex items-start gap-3">
+						<div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-blue-50">
+							<Icon icon="mdi:calendar-arrow-right" class="h-5 w-5 text-blue-500" />
+						</div>
+						<div class="flex-1">
+							<h2 class="text-sm font-semibold text-foreground">New date proposed</h2>
+							<p class="mt-1 text-xs text-muted-foreground">
+								{data.vendor.name} has proposed a different pickup date for your order.
+							</p>
+							{#if proposedDateLabel}
+								<p class="mt-2 text-xs font-medium text-blue-700">
+									<Icon icon="mdi:calendar-arrow-right" class="mr-0.5 inline h-3 w-3" />
+									Proposed: {proposedDateLabel}
+								</p>
+							{/if}
+							{#if order.proposedReason}
+								<p class="mt-1 text-xs italic text-muted-foreground">"{order.proposedReason}"</p>
+							{/if}
+							{#if form?.error}
+								<p class="mt-2 text-xs font-medium text-destructive">{form.error}</p>
+							{/if}
+							<div class="mt-4 flex flex-wrap gap-2">
+								<form
+									method="post"
+									action="?/acceptAlternate"
+									use:enhance={acceptAltEnhance}
+									autocomplete="off"
+								>
+									<input type="hidden" name="id" value={order.id} />
+									<Button
+										type="submit"
+										disabled={acceptAltPending}
+										style="background-color: var(--background-color); color: var(--foreground-color);"
+									>
+										{#if acceptAltPending}
+											<Icon icon="mdi:loading" class="h-3.5 w-3.5 animate-spin" />
+											Accepting…
+										{:else}
+											<Icon icon="mdi:check" class="h-3.5 w-3.5" />
+											Accept new date
+										{/if}
+									</Button>
+								</form>
+								<form
+									method="post"
+									action="?/declineAlternate"
+									use:enhance={declineAltEnhance}
+									autocomplete="off"
+									bind:this={declineAltForm}
+								>
+									<input type="hidden" name="id" value={order.id} />
+									<Button
+										type="submit"
+										variant="outline"
+										disabled={declineAltPending}
+										onclick={async (e) => {
+											e.preventDefault();
+											const f = declineAltForm!;
+											if (
+												await confirmDialog(
+													'Decline this date and cancel your order? This cannot be undone.',
+													{ confirmLabel: 'Cancel order', danger: true }
+												)
+											)
+												f.requestSubmit();
+										}}
+									>
+										{#if declineAltPending}
+											<Icon icon="mdi:loading" class="h-3.5 w-3.5 animate-spin" />
+											Cancelling…
+										{:else}
+											Decline &amp; cancel
+										{/if}
+									</Button>
+								</form>
+							</div>
+						</div>
+					</div>
+				</CardContent>
+			</Card>
+		{:else if isPendingApproval}
+			<Card class="shadow-sm" style="border-color: #fde68a;">
+				<CardContent class="p-5">
+					<div class="flex items-start gap-3">
+						<div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-amber-50">
+							<Icon icon="mdi:calendar-clock" class="h-5 w-5 text-amber-500" />
+						</div>
+						<div>
+							<h2 class="text-sm font-semibold text-foreground">Awaiting vendor approval</h2>
+							<p class="mt-1 text-xs text-muted-foreground">
+								Your payment method is securely saved. Once the vendor approves this order your card
+								will be charged and you'll receive a confirmation.
+							</p>
+							{#if scheduledLabel}
+								<p class="mt-2 text-xs font-medium text-amber-700">
+									<Icon icon="mdi:calendar" class="mr-0.5 inline h-3 w-3" />
+									Requested for {scheduledLabel}
+								</p>
+							{/if}
+						</div>
+					</div>
+				</CardContent>
+			</Card>
+		{:else if isPaymentFailed}
+			<Card class="shadow-sm" style="border-color: #fca5a5;">
+				<CardContent class="p-5">
+					<div class="flex items-start gap-3">
+						<div
+							class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-destructive/10"
+						>
+							<Icon icon="mdi:credit-card-off-outline" class="h-5 w-5 text-red-400" />
+						</div>
+						<div class="flex-1">
+							<h2 class="text-sm font-semibold text-foreground">Payment couldn't be processed</h2>
+							<p class="mt-1 text-xs text-muted-foreground">
+								Your saved card was declined. Please update your payment method to complete your
+								order.
+							</p>
+							{#if form?.error}
+								<p class="mt-2 text-xs font-medium text-destructive">{form.error}</p>
+							{/if}
+							<form
+								method="post"
+								action="?/recoverPayment"
+								use:enhance={recoverEnhance}
+								autocomplete="off"
+								class="mt-4"
+							>
+								<input type="hidden" name="id" value={order.id} />
+								<Button type="submit" disabled={recoverPending} class="w-full sm:w-auto">
+									{#if recoverPending}
+										<Icon icon="mdi:loading" class="h-3.5 w-3.5 animate-spin" />
+										Processing…
+									{:else}
+										<Icon icon="mdi:credit-card-refresh-outline" class="h-3.5 w-3.5" />
+										Update payment method
+									{/if}
+								</Button>
+							</form>
+						</div>
+					</div>
+				</CardContent>
+			</Card>
 		{/if}
 
 		<!-- Items -->
@@ -239,9 +457,14 @@
 					class="mt-1.5 flex justify-between border-t pt-1.5 font-semibold"
 					style="color: var(--background-color);"
 				>
-					<span>Total</span>
+					<span>{isPendingApproval ? 'Estimated total' : 'Total'}</span>
 					<span>${(order.total / 100).toFixed(2)}</span>
 				</div>
+				{#if isPendingApproval}
+					<p class="mt-1 text-xs text-muted-foreground">
+						Your card will only be charged after the vendor approves your order.
+					</p>
+				{/if}
 			</CardContent>
 		</Card>
 

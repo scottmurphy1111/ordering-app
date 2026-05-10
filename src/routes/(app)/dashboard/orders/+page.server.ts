@@ -200,6 +200,7 @@ export const load: PageServerLoad = async ({ locals, url, depends }) => {
 			status: true,
 			paymentStatus: true,
 			type: true,
+			pickupType: true,
 			createdAt: true,
 			notes: true,
 			scheduledFor: true,

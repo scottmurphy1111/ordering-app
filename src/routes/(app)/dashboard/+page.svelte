@@ -500,6 +500,16 @@
 												<Icon icon="mdi:calendar-clock" class="h-3.5 w-3.5 text-amber-600" />
 												<span class="text-xs font-medium text-gray-700">Scheduled</span>
 											</span>
+										{:else if order.status === 'pending_approval'}
+											<span class="inline-flex items-center gap-1.5">
+												<Icon icon="mdi:calendar-clock" class="h-3.5 w-3.5 text-amber-600" />
+												<span class="text-xs font-medium text-gray-700">Pending approval</span>
+											</span>
+										{:else if order.status === 'payment_failed'}
+											<span class="inline-flex items-center gap-1.5">
+												<Icon icon="mdi:alert-circle-outline" class="h-3.5 w-3.5 text-red-500" />
+												<span class="text-xs font-medium text-gray-700">Payment failed</span>
+											</span>
 										{:else}
 											<span class="inline-flex items-center gap-1.5">
 												<Icon icon="mdi:help-circle-outline" class="h-3.5 w-3.5 text-gray-400" />

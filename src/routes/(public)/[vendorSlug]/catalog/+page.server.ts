@@ -28,7 +28,9 @@ export const load: PageServerLoad = async ({ locals, params }) => {
 				categoryId: true,
 				isSubscription: true,
 				billingInterval: true,
-				status: true
+				status: true,
+				pickupType: true,
+				customDateLeadDays: true
 			},
 			with: {
 				modifiers: { columns: { modifierId: true } }

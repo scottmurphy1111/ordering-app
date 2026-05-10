@@ -39,6 +39,10 @@ function parseItemFormData(formData: FormData) {
 			? parseInt(formData.get('customDateLeadDays')?.toString() ?? '14') || 14
 			: null;
 
+	if (customDateLeadDays !== null && (customDateLeadDays < 1 || customDateLeadDays > 365)) {
+		throw new CatalogItemError(400, 'Lead time must be between 1 and 365 days.');
+	}
+
 	if (!name) throw new CatalogItemError(400, 'Name is required');
 	if (!priceStr || isNaN(parseFloat(priceStr)))
 		throw new CatalogItemError(400, 'Valid price is required');

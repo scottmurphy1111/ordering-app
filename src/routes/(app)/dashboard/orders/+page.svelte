@@ -105,6 +105,7 @@
 	const statuses = [
 		'',
 		'scheduled',
+		'pending_approval',
 		'received',
 		'confirmed',
 		'preparing',
@@ -120,11 +121,14 @@
 		preparing: 'In production',
 		ready: 'Ready',
 		fulfilled: 'Fulfilled',
-		cancelled: 'Cancelled'
+		cancelled: 'Cancelled',
+		pending_approval: 'Pending approval',
+		payment_failed: 'Payment failed'
 	};
 	const filterIcons: Record<string, string> = {
 		'': '',
 		scheduled: 'mdi:calendar-clock',
+		pending_approval: 'mdi:gavel',
 		received: 'mdi:inbox-arrow-down',
 		confirmed: 'mdi:check-circle-outline',
 		preparing: 'mdi:progress-wrench',
@@ -160,7 +164,7 @@
 		return s === '' ? totalActiveCount : (data.statusCounts[s] ?? 0);
 	}
 
-	const urgentStatuses = new Set(['received', 'ready']);
+	const urgentStatuses = new Set(['received', 'ready', 'pending_approval']);
 
 	// ── Vendor timezone ─────────────────────────────────────────────────────────
 	const vendorTimezone = $derived(data.vendor?.timezone ?? 'America/New_York');
@@ -261,7 +265,7 @@
 
 <div>
 	<!-- Header -->
-	<div class="mb-5 flex flex-col gap-3 print:hidden md:flex-row md:items-center md:justify-between">
+	<div class="mb-5 flex flex-col gap-3 md:flex-row md:items-center md:justify-between print:hidden">
 		<h1 class="text-2xl font-bold text-gray-900">Orders</h1>
 		<div class="flex items-center gap-2">
 			<Button
@@ -284,7 +288,7 @@
 	{/if}
 
 	<!-- Orders / Production view toggle -->
-	<div class="mb-4 flex flex-col gap-3 print:hidden md:flex-row md:items-center md:justify-between">
+	<div class="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between print:hidden">
 		<Tabs
 			value={data.view === 'production' ? 'production' : 'orders'}
 			onValueChange={(v) =>
@@ -640,6 +644,7 @@
 	status: string;
 	paymentStatus: string;
 	type: string;
+	pickupType: string | null;
 	createdAt: Date;
 	notes: string | null;
 	scheduledFor: Date | null;
@@ -685,11 +690,7 @@
 						{:else}
 							<span class="inline-flex items-center gap-2">
 								<span class="inline-block w-40 shrink-0">
-									<OrderStatusStepper
-										status={order.status}
-										variant="mini"
-										colorScheme="themed"
-									/>
+									<OrderStatusStepper status={order.status} variant="mini" colorScheme="themed" />
 								</span>
 								<span class="text-xs text-gray-500">
 									{statusLabels[order.status] ?? order.status}
@@ -702,6 +703,9 @@
 							<Badge class="bg-orange-100 text-orange-700">refunded</Badge>
 						{:else if order.paymentStatus === 'failed'}
 							<Badge class="bg-red-100 text-red-600">payment failed</Badge>
+						{/if}
+						{#if order.pickupType === 'custom_date'}
+							<Badge class="bg-slate-100 text-slate-700">Custom date</Badge>
 						{/if}
 					</div>
 					<!-- Customer -->

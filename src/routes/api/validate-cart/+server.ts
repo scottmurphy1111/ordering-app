@@ -22,6 +22,7 @@ export const POST: RequestHandler = async ({ request }) => {
 
 	return json({
 		unavailable: result.valid ? [] : result.unavailable,
-		priceChanges: result.priceChanges
+		priceChanges: result.priceChanges,
+		pickupTypeMismatch: result.valid ? undefined : (result.pickupTypeMismatch ?? undefined)
 	});
 };

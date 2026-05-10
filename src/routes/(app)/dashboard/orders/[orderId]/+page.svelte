@@ -7,9 +7,17 @@
 	import { Badge } from '$lib/components/ui/badge';
 	import { Card, CardHeader, CardTitle, CardContent } from '$lib/components/ui/card';
 	import { Alert } from '$lib/components/ui/alert';
+	import {
+		Dialog,
+		DialogContent,
+		DialogHeader,
+		DialogTitle,
+		DialogFooter
+	} from '$lib/components/ui/dialog';
 	import type { PageData, ActionData } from './$types';
 	import { actionConfig } from '$lib/utils/order-lifecycle';
 	import OrderStatusStepper from '$lib/components/OrderStatusStepper.svelte';
+	import { SvelteDate } from 'svelte/reactivity';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
@@ -34,6 +42,63 @@
 			selectedModifiers: Array<{ name: string; priceAdjustment: number }>;
 		}>
 	);
+
+	let approvePending = $state(false);
+
+	function approveEnhance() {
+		approvePending = true;
+		return async ({ update }: { update: (opts?: { reset?: boolean }) => Promise<void> }) => {
+			await update({ reset: false });
+			approvePending = false;
+		};
+	}
+
+	const hasProposal = $derived(order.proposedAt !== null);
+	const proposedDateLabel = $derived(
+		order.proposedDate
+			? new Date(order.proposedDate).toLocaleDateString([], {
+					weekday: 'short',
+					month: 'short',
+					day: 'numeric',
+					year: 'numeric'
+				})
+			: null
+	);
+
+	let proposeOpen = $state(false);
+	let proposedDateInput = $state('');
+	let proposeReasonInput = $state('');
+	let proposePending = $state(false);
+	let withdrawPending = $state(false);
+
+	function proposeEnhance() {
+		proposePending = true;
+		return async ({ update }: { update: (opts?: { reset?: boolean }) => Promise<void> }) => {
+			await update({ reset: false });
+			proposePending = false;
+			proposeOpen = false;
+		};
+	}
+
+	function withdrawEnhance() {
+		withdrawPending = true;
+		return async ({ update }: { update: (opts?: { reset?: boolean }) => Promise<void> }) => {
+			await update({ reset: false });
+			withdrawPending = false;
+		};
+	}
+
+	function chipDate(daysOffset: number) {
+		const d = new SvelteDate();
+		d.setDate(d.getDate() + daysOffset);
+		return d.toISOString().split('T')[0];
+	}
+
+	function chipLabel(daysOffset: number) {
+		const d = new SvelteDate();
+		d.setDate(d.getDate() + daysOffset);
+		return d.toLocaleDateString([], { month: 'short', day: 'numeric' });
+	}
 </script>
 
 <div class="max-w-2xl">
@@ -90,6 +155,135 @@
 			<Icon icon="mdi:close-circle" class="h-5 w-5 text-red-500" />
 			<span class="text-base font-medium text-gray-900">Cancelled</span>
 		</div>
+	{:else if order.status === 'pending_approval'}
+		{#if hasProposal}
+			<!-- Proposal-pending banner -->
+			<div class="mb-6 rounded-xl border border-blue-200 bg-blue-50 p-4">
+				<div class="flex items-start gap-3">
+					<div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-blue-100">
+						<Icon icon="mdi:calendar-clock" class="h-5 w-5 text-blue-700" />
+					</div>
+					<div class="flex-1">
+						<h2 class="text-sm font-semibold text-blue-900">Alternate date proposed</h2>
+						<p class="mt-0.5 text-xs text-blue-700">
+							Waiting for the customer to accept or decline.
+						</p>
+						{#if proposedDateLabel}
+							<p class="mt-1.5 text-xs font-medium text-blue-800">
+								<Icon icon="mdi:calendar-arrow-right" class="mr-0.5 inline h-3 w-3" />
+								Proposed: {proposedDateLabel}
+							</p>
+						{/if}
+						{#if order.proposedReason}
+							<p class="mt-1 text-xs italic text-blue-700">"{order.proposedReason}"</p>
+						{/if}
+					</div>
+				</div>
+				<div class="mt-4 flex flex-wrap gap-2">
+					<form
+						method="post"
+						action="?/withdrawProposal"
+						use:enhance={withdrawEnhance}
+						autocomplete="off"
+					>
+						<input type="hidden" name="id" value={order.id} />
+						<Button
+							type="submit"
+							variant="outline"
+							disabled={withdrawPending}
+							class="border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100 hover:text-amber-900"
+							onclick={async (e) => {
+								e.preventDefault();
+								const f = (e.currentTarget as HTMLButtonElement).form!;
+								if (
+									await confirmDialog('Withdraw this date proposal? The customer will see the original pending state again.', {
+										confirmLabel: 'Withdraw',
+										danger: false
+									})
+								)
+									f.requestSubmit();
+							}}
+						>
+							{#if withdrawPending}
+								<Icon icon="mdi:loading" class="h-3.5 w-3.5 animate-spin" />
+								Withdrawing…
+							{:else}
+								<Icon icon="mdi:undo" class="h-3.5 w-3.5" />
+								Withdraw proposal
+							{/if}
+						</Button>
+					</form>
+				</div>
+			</div>
+		{:else}
+			<!-- Normal approval banner -->
+			<div class="mb-6 rounded-xl border border-amber-200 bg-amber-50 p-4">
+				<div class="flex items-start gap-3">
+					<div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-amber-100">
+						<Icon icon="mdi:gavel" class="h-5 w-5 text-amber-700" />
+					</div>
+					<div class="flex-1">
+						<h2 class="text-sm font-semibold text-amber-900">
+							Custom date request — pending approval
+						</h2>
+						<p class="mt-0.5 text-xs text-amber-700">
+							The customer's payment method is saved. Approving will charge them immediately.
+						</p>
+						{#if order.scheduledFor}
+							<p class="mt-1.5 text-xs font-medium text-amber-800">
+								<Icon icon="mdi:calendar" class="mr-0.5 inline h-3 w-3" />
+								Requested for {new Date(order.scheduledFor).toLocaleDateString([], {
+									weekday: 'short',
+									month: 'short',
+									day: 'numeric',
+									year: 'numeric'
+								})}
+							</p>
+						{/if}
+					</div>
+				</div>
+				<div class="mt-4 flex flex-wrap gap-2">
+					<form method="post" action="?/approve" use:enhance={approveEnhance} autocomplete="off">
+						<input type="hidden" name="id" value={order.id} />
+						<Button type="submit" disabled={approvePending}>
+							{#if approvePending}
+								<Icon icon="mdi:loading" class="h-3.5 w-3.5 animate-spin" />
+								Charging…
+							{:else}
+								<Icon icon="mdi:check" class="h-3.5 w-3.5" />
+								Approve &amp; charge
+							{/if}
+						</Button>
+					</form>
+					<Button variant="outline" onclick={() => (proposeOpen = true)}>
+						<Icon icon="mdi:calendar-edit" class="h-3.5 w-3.5" />
+						Propose alternate date
+					</Button>
+					<form method="post" action="?/decline" use:enhance autocomplete="off">
+						<input type="hidden" name="id" value={order.id} />
+						<Button
+							type="submit"
+							variant="outline"
+							class="border-red-200 text-red-500 hover:bg-red-50"
+							onclick={async (e) => {
+								e.preventDefault();
+								const f = (e.currentTarget as HTMLButtonElement).form!;
+								if (
+									await confirmDialog(
+										'Decline this order request? The customer will be notified.',
+										{ confirmLabel: 'Decline', danger: true }
+									)
+								)
+									f.requestSubmit();
+							}}
+						>
+							<Icon icon="mdi:close" class="h-3.5 w-3.5" />
+							Decline
+						</Button>
+					</form>
+				</div>
+			</div>
+		{/if}
 	{:else}
 		<div class="mb-6">
 			<OrderStatusStepper status={order.status} variant="full" colorScheme="themed" />
@@ -204,8 +398,88 @@
 		</Card>
 	{/if}
 
+	<!-- Propose alternate date dialog -->
+	<Dialog bind:open={proposeOpen}>
+		<DialogContent class="max-w-sm">
+			<DialogHeader>
+				<DialogTitle>Propose an alternate date</DialogTitle>
+			</DialogHeader>
+			<form
+				method="post"
+				action="?/proposeAlternate"
+				use:enhance={proposeEnhance}
+				autocomplete="off"
+				id="propose-form"
+			>
+				<input type="hidden" name="id" value={order.id} />
+				<div class="space-y-4 py-2">
+					<div>
+						<label for="propose-date" class="mb-1.5 block text-sm font-medium text-gray-700"
+							>New date</label
+						>
+						<input
+							type="date"
+							id="propose-date"
+							name="date"
+							bind:value={proposedDateInput}
+							required
+							class="h-8 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm outline-none focus:border-transparent focus:ring-2 focus:ring-green-500"
+						/>
+						<div class="mt-2 flex flex-wrap gap-1.5">
+							<button
+								type="button"
+								onclick={() => (proposedDateInput = chipDate(7))}
+								class="rounded-full border border-gray-200 bg-gray-100 px-2.5 py-1 text-xs text-gray-600 hover:bg-gray-200"
+							>
+								+1 week ({chipLabel(7)})
+							</button>
+							<button
+								type="button"
+								onclick={() => (proposedDateInput = chipDate(14))}
+								class="rounded-full border border-gray-200 bg-gray-100 px-2.5 py-1 text-xs text-gray-600 hover:bg-gray-200"
+							>
+								+2 weeks ({chipLabel(14)})
+							</button>
+							<button
+								type="button"
+								onclick={() => (proposedDateInput = chipDate(30))}
+								class="rounded-full border border-gray-200 bg-gray-100 px-2.5 py-1 text-xs text-gray-600 hover:bg-gray-200"
+							>
+								+1 month ({chipLabel(30)})
+							</button>
+						</div>
+					</div>
+					<div>
+						<label for="propose-reason" class="mb-1.5 block text-sm font-medium text-gray-700">
+							Reason <span class="font-normal text-gray-400">(optional)</span>
+						</label>
+						<textarea
+							id="propose-reason"
+							name="reason"
+							bind:value={proposeReasonInput}
+							rows="3"
+							placeholder="e.g. We're fully booked on your requested date."
+							class="w-full resize-none rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm outline-none focus:border-transparent focus:ring-2 focus:ring-green-500"
+						></textarea>
+					</div>
+				</div>
+			</form>
+			<DialogFooter>
+				<Button variant="outline" onclick={() => (proposeOpen = false)}>Cancel</Button>
+				<Button type="submit" form="propose-form" disabled={proposePending || !proposedDateInput}>
+					{#if proposePending}
+						<Icon icon="mdi:loading" class="h-3.5 w-3.5 animate-spin" />
+						Sending…
+					{:else}
+						Propose date
+					{/if}
+				</Button>
+			</DialogFooter>
+		</DialogContent>
+	</Dialog>
+
 	<!-- Actions -->
-	{#if nextStatus[order.status] || !['fulfilled', 'cancelled'].includes(order.status) || (order.status === 'cancelled' && order.paymentStatus === 'paid')}
+	{#if nextStatus[order.status] || !['fulfilled', 'cancelled', 'pending_approval'].includes(order.status) || (order.status === 'cancelled' && order.paymentStatus === 'paid')}
 		<Card>
 			<CardHeader>
 				<CardTitle class="text-xs font-semibold tracking-wide text-muted-foreground uppercase"

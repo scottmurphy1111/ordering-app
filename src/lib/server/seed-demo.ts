@@ -3,13 +3,15 @@ import { db } from '$lib/server/db';
 import { vendor } from '$lib/server/db/vendor';
 import { catalogCategories, catalogItems } from '$lib/server/db/catalog';
 import { orders, orderItems } from '$lib/server/db/orders';
+import { pickupWindowTemplates } from '$lib/server/db/pickup';
 
 export async function seedDemoVendor(vendorId: number) {
-	const [breads, pastries] = await db
+	const [breads, pastries, customOrders] = await db
 		.insert(catalogCategories)
 		.values([
 			{ vendorId, name: 'Breads', sortOrder: 1 },
-			{ vendorId, name: 'Pastries', sortOrder: 2 }
+			{ vendorId, name: 'Pastries', sortOrder: 2 },
+			{ vendorId, name: 'Custom orders', sortOrder: 3 }
 		])
 		.returning({ id: catalogCategories.id });
 
@@ -68,11 +70,55 @@ export async function seedDemoVendor(vendorId: number) {
 				description: 'Laminated with European-style butter for a shattery, flaky exterior. 2-pack.',
 				price: 700,
 				sortOrder: 3
+			},
+			{
+				vendorId,
+				categoryId: customOrders.id,
+				name: 'Custom Wedding Cake',
+				description:
+					'Multi-tier wedding cake built to your specs. Contact us to discuss flavors, fillings, and design. Requires minimum 6 weeks notice.',
+				price: 35000,
+				sortOrder: 1,
+				pickupType: 'custom_date' as const,
+				customDateLeadDays: 42
+			},
+			{
+				vendorId,
+				categoryId: customOrders.id,
+				name: 'Custom Birthday Cake',
+				description:
+					'Personalized birthday cake — your flavor, your design. Minimum 2 weeks advance order.',
+				price: 8500,
+				sortOrder: 2,
+				pickupType: 'custom_date' as const,
+				customDateLeadDays: 14
+			},
+			{
+				vendorId,
+				categoryId: customOrders.id,
+				name: 'Holiday Gift Box',
+				description:
+					'Curated seasonal box: 2 croissants, 1 sourdough loaf, and a seasonal pastry. Schedule your pickup date.',
+				price: 6500,
+				sortOrder: 3,
+				pickupType: 'custom_date' as const,
+				customDateLeadDays: 7
 			}
 		])
 		.returning({ id: catalogItems.id, name: catalogItems.name, price: catalogItems.price });
 
 	const byName = Object.fromEntries(seededItems.map((i) => [i.name, i]));
+
+	// Daily window template for custom-order fulfillment days; skips major holidays
+	await db.insert(pickupWindowTemplates).values({
+		vendorId,
+		name: 'Daily Custom Order Pickup',
+		recurrence: 'FREQ=DAILY',
+		windowStart: '07:00:00',
+		windowEnd: '10:00:00',
+		isActive: true,
+		exdates: ['2026-12-25', '2026-12-26']
+	});
 
 	const demoOrders = [
 		{
@@ -142,6 +188,46 @@ export async function seedDemoVendor(vendorId: number) {
 				{ name: 'Cinnamon Rolls', quantity: 1, basePrice: 750, selectedModifiers: [] },
 				{ name: 'Honey-Lavender Focaccia', quantity: 1, basePrice: 900, selectedModifiers: [] }
 			]
+		},
+		{
+			vendorId,
+			orderNumber: '#5',
+			customerName: 'Riley Park',
+			customerEmail: 'riley@example.com',
+			type: 'pickup',
+			status: 'pending_approval' as const,
+			paymentStatus: 'pending' as const,
+			pickupType: 'custom_date' as const,
+			subtotal: 35000,
+			tax: 2888,
+			total: 37888,
+			scheduledFor: new Date('2026-09-15T12:00:00Z'),
+			stripeCustomerId: 'cus_demo_riley',
+			stripeSetupIntentId: 'seti_demo_riley',
+			notes: 'Three-tier cake — vanilla, lemon, and chocolate. Garden party theme, blush and sage colors.',
+			items: [
+				{ name: 'Custom Wedding Cake', quantity: 1, basePrice: 35000, selectedModifiers: [] }
+			]
+		},
+		{
+			vendorId,
+			orderNumber: '#6',
+			customerName: 'Avery Chen',
+			customerEmail: 'avery@example.com',
+			type: 'pickup',
+			status: 'payment_failed' as const,
+			paymentStatus: 'failed' as const,
+			pickupType: 'custom_date' as const,
+			subtotal: 8500,
+			tax: 701,
+			total: 9201,
+			scheduledFor: new Date('2026-07-20T12:00:00Z'),
+			stripeCustomerId: 'cus_demo_avery',
+			stripePaymentIntentId: 'pi_demo_avery',
+			notes: 'Chocolate cake, rainbow sprinkles, "Happy 10th Birthday Sofia!" in blue frosting.',
+			items: [
+				{ name: 'Custom Birthday Cake', quantity: 1, basePrice: 8500, selectedModifiers: [] }
+			]
 		}
 	];
 
@@ -163,6 +249,6 @@ export async function seedDemoVendor(vendorId: number) {
 		);
 	}
 
-	// Set counter so the next real order continues from #5
-	await db.update(vendor).set({ lastOrderNumber: 4 }).where(eq(vendor.id, vendorId));
+	// Set counter so the next real order continues from #7
+	await db.update(vendor).set({ lastOrderNumber: 6 }).where(eq(vendor.id, vendorId));
 }

@@ -6,6 +6,8 @@ export type CartModifier = {
 	priceAdjustment: number; // cents
 };
 
+export type PickupType = 'windowed' | 'custom_date';
+
 export type CartItem = {
 	itemId: number;
 	name: string;
@@ -15,7 +17,19 @@ export type CartItem = {
 	imageUrl?: string;
 	isSubscription?: boolean;
 	billingInterval?: string; // 'monthly' | 'yearly'
+	pickupType: PickupType;
+	customDateLeadDays?: number;
 };
+
+export class CartTypeMismatchError extends Error {
+	constructor(
+		public readonly currentType: PickupType,
+		public readonly attemptedType: PickupType
+	) {
+		super(`Cart contains ${currentType} items; cannot add ${attemptedType} item without clearing.`);
+		this.name = 'CartTypeMismatchError';
+	}
+}
 
 /** Unit price for one of this item (base + all modifiers) */
 export function itemUnitPrice(item: CartItem): number {
@@ -30,7 +44,10 @@ function loadItems(slug: string): CartItem[] {
 	if (!browser) return [];
 	try {
 		const raw = localStorage.getItem(storageKey(slug));
-		return raw ? (JSON.parse(raw) as CartItem[]) : [];
+		if (!raw) return [];
+		const parsed = JSON.parse(raw) as CartItem[];
+		// Backward compat: pre-Phase-3 items lack pickupType; default to 'windowed'.
+		return parsed.map((item) => ({ ...item, pickupType: item.pickupType ?? 'windowed' }));
 	} catch {
 		return [];
 	}
@@ -65,7 +82,14 @@ export const cart = {
 		return _items.reduce((s, i) => s + itemUnitPrice(i) * i.quantity, 0);
 	},
 
+	get pickupType(): PickupType | null {
+		return _items.length > 0 ? _items[0].pickupType : null;
+	},
+
 	add(item: Omit<CartItem, 'quantity'>) {
+		if (_items.length > 0 && _items[0].pickupType !== item.pickupType) {
+			throw new CartTypeMismatchError(_items[0].pickupType, item.pickupType);
+		}
 		const modKey = JSON.stringify(item.selectedModifiers);
 		const existing = _items.find(
 			(i) => i.itemId === item.itemId && JSON.stringify(i.selectedModifiers) === modKey

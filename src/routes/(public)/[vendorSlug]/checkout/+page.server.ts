@@ -22,12 +22,26 @@ export const load: PageServerLoad = async ({ url, locals }) => {
 	});
 	if (!order) throw error(404, 'Order not found');
 
-	if (!order.stripePaymentIntentId) throw error(400, 'Payment not initialized for this order');
-
 	const stripe = new Stripe(vendorRecord.stripeSecretKey);
-	const paymentIntent = await stripe.paymentIntents.retrieve(order.stripePaymentIntentId);
 
-	if (!paymentIntent.client_secret) throw error(500, 'Could not retrieve payment details');
+	let clientSecret: string;
+	let intentType: 'payment' | 'setup';
+
+	if (order.stripeSetupIntentId) {
+		// Custom-date order: retrieve the SetupIntent
+		const setupIntent = await stripe.setupIntents.retrieve(order.stripeSetupIntentId);
+		if (!setupIntent.client_secret) throw error(500, 'Could not retrieve payment setup details');
+		clientSecret = setupIntent.client_secret;
+		intentType = 'setup';
+	} else if (order.stripePaymentIntentId) {
+		// Windowed one-time order: retrieve the PaymentIntent
+		const paymentIntent = await stripe.paymentIntents.retrieve(order.stripePaymentIntentId);
+		if (!paymentIntent.client_secret) throw error(500, 'Could not retrieve payment details');
+		clientSecret = paymentIntent.client_secret;
+		intentType = 'payment';
+	} else {
+		throw error(400, 'Payment not initialized for this order');
+	}
 
 	return {
 		order: {
@@ -45,7 +59,8 @@ export const load: PageServerLoad = async ({ url, locals }) => {
 			notes: order.notes,
 			paymentStatus: order.paymentStatus
 		},
-		clientSecret: paymentIntent.client_secret,
+		clientSecret,
+		intentType,
 		publishableKey: vendorRecord.stripePublishableKey
 	};
 };

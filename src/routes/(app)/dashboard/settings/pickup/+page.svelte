@@ -347,8 +347,46 @@
 		return map;
 	});
 
-	function handleAddTemplateEnhance() {
+	function validateTemplateClient(
+		windowStart: string,
+		windowEnd: string,
+		recurrenceStart: string,
+		recurrenceEnd: string
+	): string | null {
+		if (windowStart && windowEnd && windowEnd <= windowStart) {
+			return 'End time must be after start time.';
+		}
+		if (recurrenceStart && recurrenceEnd && recurrenceEnd < recurrenceStart) {
+			return 'End date must be on or after start date.';
+		}
+		if (recurrenceEnd && !recurrenceStart) {
+			const today = new Date().toISOString().slice(0, 10);
+			if (recurrenceEnd < today) {
+				return 'End date must be today or later.';
+			}
+		}
+		return null;
+	}
+
+	function handleAddTemplateEnhance({
+		formData,
+		cancel
+	}: {
+		formData: FormData;
+		cancel: () => void;
+	}) {
 		addTemplateError = null;
+		const clientErr = validateTemplateClient(
+			formData.get('windowStart')?.toString() ?? '',
+			formData.get('windowEnd')?.toString() ?? '',
+			formData.get('recurrenceStartDate')?.toString() ?? '',
+			formData.get('recurrenceEndDate')?.toString() ?? ''
+		);
+		if (clientErr) {
+			addTemplateError = clientErr;
+			cancel();
+			return;
+		}
 		return async ({
 			result,
 			update
@@ -373,8 +411,25 @@
 		};
 	}
 
-	function handleEditTemplateEnhance() {
+	function handleEditTemplateEnhance({
+		formData,
+		cancel
+	}: {
+		formData: FormData;
+		cancel: () => void;
+	}) {
 		editTemplateError = null;
+		const clientErr = validateTemplateClient(
+			formData.get('windowStart')?.toString() ?? '',
+			formData.get('windowEnd')?.toString() ?? '',
+			formData.get('recurrenceStartDate')?.toString() ?? '',
+			formData.get('recurrenceEndDate')?.toString() ?? ''
+		);
+		if (clientErr) {
+			editTemplateError = clientErr;
+			cancel();
+			return;
+		}
 		return async ({
 			result,
 			update
@@ -988,24 +1043,38 @@
 									{/each}
 								</div>
 							{/if}
-							<div class="flex items-center gap-2">
-								<Input type="date" name="addExdate" bind:value={addExdateInput} class="w-40" />
-								<Button
-									type="button"
-									variant="outline"
-									onclick={() => {
-										if (
-											addExdateInput &&
-											/^\d{4}-\d{2}-\d{2}$/.test(addExdateInput) &&
-											!editExdates.includes(addExdateInput)
-										) {
-											editExdates = [...editExdates, addExdateInput].sort();
-											addExdateInput = '';
-										}
-									}}
+							<div class="space-y-1">
+								<label
+									class="mb-1 block text-sm font-medium text-muted-foreground"
+									for="etmpl-add-exdate"
 								>
-									Add
-								</Button>
+									Add date to skip
+								</label>
+								<div class="flex items-center gap-2">
+									<Input
+										id="etmpl-add-exdate"
+										type="date"
+										name="addExdate"
+										bind:value={addExdateInput}
+										class="w-40"
+									/>
+									<Button
+										type="button"
+										variant="outline"
+										onclick={() => {
+											if (
+												addExdateInput &&
+												/^\d{4}-\d{2}-\d{2}$/.test(addExdateInput) &&
+												!editExdates.includes(addExdateInput)
+											) {
+												editExdates = [...editExdates, addExdateInput].sort();
+												addExdateInput = '';
+											}
+										}}
+									>
+										Add
+									</Button>
+								</div>
 							</div>
 							<p class="text-xs text-muted-foreground">
 								Dates when this window does not open (e.g. holidays). No occurrences are generated

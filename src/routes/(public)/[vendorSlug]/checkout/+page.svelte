@@ -83,12 +83,23 @@
 		submitting = true;
 		paymentError = '';
 
-		const { error: stripeError } = await stripe.confirmPayment({
-			elements,
-			confirmParams: {
-				return_url: `${window.location.origin}/${data.vendor.slug}/orders/${data.order.id}`
-			}
-		});
+		const returnUrl = `${window.location.origin}/${data.vendor.slug}/orders/${data.order.id}`;
+
+		let stripeError: import('@stripe/stripe-js').StripeError | undefined;
+
+		if (data.intentType === 'setup') {
+			const result = await stripe.confirmSetup({
+				elements,
+				confirmParams: { return_url: returnUrl }
+			});
+			stripeError = result.error;
+		} else {
+			const result = await stripe.confirmPayment({
+				elements,
+				confirmParams: { return_url: returnUrl }
+			});
+			stripeError = result.error;
+		}
 
 		if (stripeError) {
 			paymentError = stripeError.message ?? 'Payment failed. Please try again.';
@@ -158,6 +169,9 @@
 									{#if submitting}
 										<Icon icon="mdi:loading" class="h-4 w-4 animate-spin" />
 										Processing...
+									{:else if data.intentType === 'setup'}
+										<Icon icon="mdi:lock" class="h-4 w-4" />
+										Save payment method
 									{:else}
 										<Icon icon="mdi:lock" class="h-4 w-4" />
 										Pay {fmt(data.order.total)}
@@ -247,9 +261,14 @@
 							<div
 								class="flex justify-between border-t pt-2 text-base font-semibold text-foreground"
 							>
-								<span>Total</span>
+								<span>{data.intentType === 'setup' ? 'Estimated total' : 'Total'}</span>
 								<span>{fmt(data.order.total)}</span>
 							</div>
+							{#if data.intentType === 'setup'}
+								<p class="mt-1 text-xs text-muted-foreground">
+									We'll charge this amount only after we approve your order.
+								</p>
+							{/if}
 						</div>
 
 						<!-- Customer info -->

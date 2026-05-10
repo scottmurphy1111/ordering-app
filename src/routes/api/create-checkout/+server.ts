@@ -78,7 +78,11 @@ export const POST: RequestHandler = async ({ request }) => {
 	const cartResult = await validateCartItems(items, vendorRecord.id);
 	if (!cartResult.valid) {
 		return json(
-			{ type: 'cart_validation_failed', unavailable: cartResult.unavailable },
+			{
+				type: 'cart_validation_failed',
+				unavailable: cartResult.unavailable,
+				pickupTypeMismatch: cartResult.pickupTypeMismatch
+			},
 			{ status: 400 }
 		);
 	}
