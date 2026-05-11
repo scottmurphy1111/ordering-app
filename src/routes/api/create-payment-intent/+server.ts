@@ -131,6 +131,10 @@ export const POST: RequestHandler = async ({ request }) => {
 		resolvedScheduledFor = result.window.startsAt;
 		const horizonCutoff = new Date(Date.now() + HORIZON_DAYS * 24 * 60 * 60 * 1000);
 		if (result.window.startsAt > horizonCutoff) initialStatus = 'scheduled';
+	} else if (resolvedScheduledFor) {
+		// Free-form scheduledFor (no pickup window). Apply the same horizon rule.
+		const horizonCutoff = new Date(Date.now() + HORIZON_DAYS * 24 * 60 * 60 * 1000);
+		if (resolvedScheduledFor > horizonCutoff) initialStatus = 'scheduled';
 	}
 
 	const orderNumber = await generateOrderNumber(vendorRecord.id, db);

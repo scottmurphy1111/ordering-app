@@ -13,6 +13,7 @@ import { customDateOrderRecoveredEmail } from '$lib/server/email/templates/custo
 import { sendSms } from '$lib/server/sms';
 import { env } from '$env/dynamic/private';
 import type { PickupWindowSnapshot } from '$lib/server/pickup/checkout';
+import { HORIZON_DAYS } from '$lib/server/pickup/lifecycle';
 import { generateOrderNumber } from '$lib/server/order-number';
 
 export const POST: RequestHandler = async ({ request, params }) => {
@@ -88,7 +89,7 @@ async function handleEvent(event: Stripe.Event, ctx: VendorCtx) {
 
 			const existing = await db.query.orders.findFirst({
 				where: eq(orders.stripePaymentIntentId, intent.id),
-				columns: { status: true, paymentStatus: true }
+				columns: { status: true, paymentStatus: true, pickupWindowSnapshot: true, scheduledFor: true }
 			});
 
 			if (!existing) break;
@@ -100,7 +101,22 @@ async function handleEvent(event: Stripe.Event, ctx: VendorCtx) {
 			// Recovery: customer retried a failed payment on an existing order.
 			// Windowed flow: fresh checkout completing normally.
 			const isRecovery = existing.status === 'payment_failed';
-			const targetStatus = isRecovery ? 'received' : 'confirmed';
+
+			let targetStatus: 'received' | 'confirmed' | 'scheduled';
+			if (isRecovery) {
+				targetStatus = 'received';
+			} else {
+				// Far-future windowed orders stay 'scheduled' until the cron promotes them.
+				// Mirrors the same horizon logic in create-payment-intent at order creation.
+				const snapshot = existing.pickupWindowSnapshot as PickupWindowSnapshot | null;
+				const startsAt = snapshot?.startsAt
+					? new Date(snapshot.startsAt)
+					: existing.scheduledFor
+						? new Date(existing.scheduledFor)
+						: null;
+				const horizonCutoff = new Date(Date.now() + HORIZON_DAYS * 24 * 60 * 60 * 1000);
+				targetStatus = startsAt && startsAt > horizonCutoff ? 'scheduled' : 'confirmed';
+			}
 
 			const [order] = await db
 				.update(orders)
