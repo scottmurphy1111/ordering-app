@@ -14,9 +14,11 @@
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
-	let editing = $state(untrack(() => !data.hasStripeKey));
+	let editingPublishable = $state(false);
+	let editingSecret = $state(untrack(() => !data.hasStripeKey));
 	let showPk = $state(false);
-	let showKey = $state(false);
+	let showSk = $state(false);
+	let lastSubmitted: 'pk' | 'sk' | null = $state(null);
 </script>
 
 <div>
@@ -29,7 +31,7 @@
 
 	<Card class="shadow-sm">
 		<CardContent>
-			<!-- Stripe -->
+			<!-- Stripe header -->
 			<div class="flex items-start justify-between gap-4">
 				<div class="flex items-center gap-3">
 					<!-- Stripe logo mark -->
@@ -71,122 +73,205 @@
 				</div>
 			</div>
 
-			{#if form?.error}
-				<Alert severity="error" class="mt-3">{form.error}</Alert>
-			{/if}
-			{#if form?.success}
-				<Alert severity="success" class="mt-3">Stripe connected successfully.</Alert>
-			{/if}
 			{#if form?.cleared}
-				<Alert severity="success" class="mt-3">Stripe key removed.</Alert>
+				<Alert severity="success" class="mt-3">Stripe keys removed.</Alert>
 			{/if}
 
-			<div class="mt-4 space-y-2">
+			<div class="mt-4 space-y-4">
+				<!-- Publishable key row -->
 				<form
-					id="save-stripe-form"
+					id="save-pk-form"
 					method="post"
-					action="?/saveStripeKey"
-					use:enhance={() =>
-						({ result, update }) => {
+					action="?/saveStripePublishableKey"
+					use:enhance={() => {
+						lastSubmitted = 'pk';
+						return ({ result, update }) => {
 							if (result.type === 'success') {
-								editing = false;
-								showKey = false;
+								editingPublishable = false;
 								showPk = false;
 							}
 							update({ reset: false });
-						}}
+						};
+					}}
 				>
-					<!-- Publishable key -->
-					<div class="mb-1">
-						<Label for="publishable-key-input" class="mb-1 block text-xs">Publishable key</Label>
-					</div>
-					<div class="relative mb-3">
-						<Input
-							id="publishable-key-input"
-							name="stripePublishableKey"
-							type={showPk ? 'text' : 'password'}
-							readonly={!editing}
-							value={editing ? '' : (data.stripePublishableKeyMasked ?? '')}
-							placeholder={editing ? 'pk_test_...' : ''}
-							autocomplete="off"
-							class="pr-16 font-mono {editing
-								? ''
-								: 'cursor-default bg-muted/50 text-muted-foreground select-none'}"
-						/>
-						<Button
-							type="button"
-							onclick={() => (showPk = !showPk)}
-							variant="ghost"
-							size="icon-xs"
-							class="absolute top-1/2 right-2 -translate-y-1/2 text-muted-foreground hover:text-muted-foreground"
-						>
-							<Icon icon={showPk ? 'mdi:eye-off-outline' : 'mdi:eye-outline'} class="h-3.5 w-3.5" />
-						</Button>
-					</div>
-
-					<!-- Secret key -->
-					<div class="mb-1">
-						<Label for="secret-key-input" class="mb-1 block text-xs">Secret key</Label>
-					</div>
-					<div class="relative mb-2">
-						<Input
-							id="secret-key-input"
-							name="stripeSecretKey"
-							type={showKey ? 'text' : 'password'}
-							readonly={!editing}
-							required={editing && !data.hasStripeKey}
-							value={editing ? '' : (data.stripeKeyMasked ?? '')}
-							placeholder={editing
-								? data.hasStripeKey
-									? 'Leave blank to keep existing key'
-									: 'sk_test_...'
-								: ''}
-							autocomplete="off"
-							class="pr-16 font-mono {editing
-								? ''
-								: 'cursor-default bg-muted/50 text-muted-foreground select-none'}"
-						/>
-						<Button
-							type="button"
-							onclick={() => (showKey = !showKey)}
-							variant="ghost"
-							size="icon-xs"
-							class="absolute top-1/2 right-2 -translate-y-1/2 text-muted-foreground hover:text-muted-foreground"
-						>
-							<Icon
-								icon={showKey ? 'mdi:eye-off-outline' : 'mdi:eye-outline'}
-								class="h-3.5 w-3.5"
+					<Label for="publishable-key-input" class="mb-1 block text-xs">Publishable key</Label>
+					<div class="flex items-start gap-2">
+						<div class="relative flex-1">
+							<Input
+								id="publishable-key-input"
+								name="stripePublishableKey"
+								type={showPk ? 'text' : 'password'}
+								readonly={!editingPublishable}
+								value={editingPublishable ? '' : (data.stripePublishableKeyMasked ?? '')}
+								placeholder={editingPublishable ? 'pk_test_...' : ''}
+								autocomplete="off"
+								required={editingPublishable}
+								class="pr-10 font-mono {editingPublishable
+									? ''
+									: 'cursor-default bg-muted/50 text-muted-foreground select-none'}"
 							/>
-						</Button>
-					</div>
-					{#if editing}
-						<p class="mb-2 text-xs text-muted-foreground">
-							Find both keys at
-							<a
-								href="https://dashboard.stripe.com/apikeys"
-								target="_blank"
-								rel="noopener noreferrer"
-								class="underline hover:text-muted-foreground"
+							<Button
+								type="button"
+								onclick={() => (showPk = !showPk)}
+								variant="ghost"
+								size="icon-xs"
+								class="absolute top-1/2 right-2 -translate-y-1/2 text-muted-foreground hover:text-muted-foreground"
 							>
-								dashboard.stripe.com/apikeys
-							</a>.
-						</p>
+								<Icon
+									icon={showPk ? 'mdi:eye-off-outline' : 'mdi:eye-outline'}
+									class="h-3.5 w-3.5"
+								/>
+							</Button>
+						</div>
+						{#if editingPublishable}
+							<Button type="submit" variant="default">Save</Button>
+							<Button
+								type="button"
+								variant="outline"
+								onclick={() => {
+									editingPublishable = false;
+									showPk = false;
+								}}
+							>
+								Cancel
+							</Button>
+						{:else if data.hasStripePublishableKey}
+							<Button
+								type="button"
+								variant="outline"
+								onclick={() => {
+									editingPublishable = true;
+									showPk = false;
+								}}
+							>
+								Replace
+							</Button>
+						{:else}
+							<Button type="button" variant="outline" onclick={() => (editingPublishable = true)}>
+								Add
+							</Button>
+						{/if}
+					</div>
+					{#if form?.error && lastSubmitted === 'pk'}
+						<Alert severity="error" class="mt-2">{form.error}</Alert>
+					{/if}
+					{#if form?.publishableSuccess}
+						<Alert severity="success" class="mt-2">Publishable key saved.</Alert>
 					{/if}
 				</form>
 
+				<!-- Secret key row -->
 				<form
-					id="disconnect-stripe-form"
+					id="save-sk-form"
 					method="post"
-					action="?/clearStripeKey"
-					use:enhance={() =>
-						({ update }) => {
-							editing = true;
-							showKey = false;
+					action="?/saveStripeSecretKey"
+					use:enhance={() => {
+						lastSubmitted = 'sk';
+						return ({ result, update }) => {
+							if (result.type === 'success') {
+								editingSecret = false;
+								showSk = false;
+							}
 							update({ reset: false });
-						}}
-				></form>
+						};
+					}}
+				>
+					<Label for="secret-key-input" class="mb-1 block text-xs">Secret key</Label>
+					<div class="flex items-start gap-2">
+						<div class="relative flex-1">
+							<Input
+								id="secret-key-input"
+								name="stripeSecretKey"
+								type={showSk ? 'text' : 'password'}
+								readonly={!editingSecret}
+								value={editingSecret ? '' : (data.stripeKeyMasked ?? '')}
+								placeholder={editingSecret ? 'sk_test_...' : ''}
+								autocomplete="off"
+								required={editingSecret}
+								class="pr-10 font-mono {editingSecret
+									? ''
+									: 'cursor-default bg-muted/50 text-muted-foreground select-none'}"
+							/>
+							<Button
+								type="button"
+								onclick={() => (showSk = !showSk)}
+								variant="ghost"
+								size="icon-xs"
+								class="absolute top-1/2 right-2 -translate-y-1/2 text-muted-foreground hover:text-muted-foreground"
+							>
+								<Icon
+									icon={showSk ? 'mdi:eye-off-outline' : 'mdi:eye-outline'}
+									class="h-3.5 w-3.5"
+								/>
+							</Button>
+						</div>
+						{#if editingSecret}
+							<Button type="submit" variant="default">
+								{data.hasStripeKey ? 'Save & verify' : 'Connect Stripe'}
+							</Button>
+							{#if data.hasStripeKey}
+								<Button
+									type="button"
+									variant="outline"
+									onclick={() => {
+										editingSecret = false;
+										showSk = false;
+									}}
+								>
+									Cancel
+								</Button>
+							{/if}
+						{:else}
+							<Button
+								type="button"
+								variant="outline"
+								onclick={() => {
+									editingSecret = true;
+									showSk = false;
+								}}
+							>
+								Replace
+							</Button>
+						{/if}
+					</div>
+					{#if form?.error && lastSubmitted === 'sk'}
+						<Alert severity="error" class="mt-2">{form.error}</Alert>
+					{/if}
+					{#if form?.secretSuccess}
+						<Alert severity="success" class="mt-2">Secret key saved and verified.</Alert>
+					{/if}
+				</form>
+
+				{#if editingPublishable || editingSecret}
+					<p class="text-xs text-muted-foreground">
+						Find both keys at
+						<a
+							href="https://dashboard.stripe.com/apikeys"
+							target="_blank"
+							rel="noopener noreferrer"
+							class="underline hover:text-muted-foreground"
+						>
+							dashboard.stripe.com/apikeys
+						</a>.
+					</p>
+				{/if}
 			</div>
-			<!-- Webhook status (auto-configured) -->
+
+			<form
+				id="disconnect-stripe-form"
+				method="post"
+				action="?/clearStripeKey"
+				use:enhance={() =>
+					({ update }) => {
+						editingSecret = true;
+						editingPublishable = false;
+						showSk = false;
+						showPk = false;
+						update({ reset: false });
+					}}
+			></form>
+
+			<!-- Webhook status -->
 			{#if data.hasStripeKey}
 				<div class="mt-5 border-t pt-4">
 					<div class="flex items-center justify-between">
@@ -212,39 +297,17 @@
 			{/if}
 		</CardContent>
 		<CardFooter class="gap-2">
-			{#if editing}
-				<Button type="submit" form="save-stripe-form" variant="default">
-					{data.hasStripeKey ? 'Save & verify' : 'Connect Stripe'}
-				</Button>
-				{#if data.hasStripeKey}
-					<Button
-						type="button"
-						onclick={() => {
-							editing = false;
-							showKey = false;
-						}}
-						variant="outline"
-					>
-						Cancel
-					</Button>
-				{/if}
-			{:else}
-				<Button
-					type="button"
-					onclick={() => {
-						editing = true;
-						showKey = false;
-					}}
-					variant="outline"
-				>
-					Replace key
-				</Button>
+			{#if data.hasStripeKey}
 				<Button
 					type="submit"
 					form="disconnect-stripe-form"
 					onclick={async (e) => {
 						e.preventDefault();
-						if (await confirmDialog('Remove Stripe connection?'))
+						if (
+							await confirmDialog(
+								'Remove Stripe connection? This will clear both keys and disable payments.'
+							)
+						)
 							(
 								document.getElementById('disconnect-stripe-form') as HTMLFormElement
 							)?.requestSubmit();

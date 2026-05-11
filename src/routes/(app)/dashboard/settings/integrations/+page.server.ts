@@ -46,57 +46,66 @@ export const load: PageServerLoad = async ({ locals }) => {
 };
 
 export const actions: Actions = {
-	saveStripeKey: async ({ request, locals }) => {
+	saveStripePublishableKey: async ({ request, locals }) => {
+		requireOwner(locals);
+		const vendorId = locals.vendorId!;
+		const formData = await request.formData();
+		const newKey = formData.get('stripePublishableKey')?.toString().trim() || null;
+
+		if (!newKey) return fail(400, { error: 'Publishable key is required' });
+		if (!newKey.startsWith('pk_'))
+			return fail(400, { error: 'Publishable key must start with pk_' });
+
+		await db
+			.update(vendor)
+			.set({ stripePublishableKey: newKey })
+			.where(eq(vendor.id, vendorId));
+
+		return { publishableSuccess: true };
+	},
+
+	saveStripeSecretKey: async ({ request, locals }) => {
 		requireOwner(locals);
 		const vendorId = locals.vendorId!;
 		const formData = await request.formData();
 		const newKey = formData.get('stripeSecretKey')?.toString().trim() || null;
-		const publishableKey = formData.get('stripePublishableKey')?.toString().trim() || null;
 
-		if (newKey && !newKey.startsWith('sk_'))
+		if (!newKey) return fail(400, { error: 'Secret key is required' });
+		if (!newKey.startsWith('sk_'))
 			return fail(400, { error: 'Must be a Stripe secret key (starts with sk_)' });
-		if (publishableKey && !publishableKey.startsWith('pk_'))
-			return fail(400, { error: 'Publishable key must start with pk_' });
 
 		const existing = await db.query.vendor.findFirst({
 			where: eq(vendor.id, vendorId),
 			columns: {
 				stripeSecretKey: true,
-				stripePublishableKey: true,
 				stripeWebhookSecret: true,
 				stripeWebhookEndpointId: true,
 				slug: true
 			}
 		});
 
-		const effectiveKey = newKey ?? existing?.stripeSecretKey ?? null;
-		if (!effectiveKey) return fail(400, { error: 'Secret key is required' });
+		const keyChanged = newKey !== existing?.stripeSecretKey;
 
-		const effectivePublishableKey = publishableKey ?? existing?.stripePublishableKey ?? null;
-
-		const keyChanged = newKey !== null && newKey !== existing?.stripeSecretKey;
-		const isPublicUrl = env.ORIGIN?.startsWith('https://');
-
-		if (keyChanged) {
-			try {
-				const stripe = new Stripe(newKey!);
-				await stripe.products.list({ limit: 1 });
-			} catch {
-				return fail(400, {
-					error: 'Could not connect to Stripe with that key. Please check it and try again.'
-				});
-			}
-			if (existing?.stripeWebhookEndpointId && existing.stripeSecretKey) {
-				const oldStripe = new Stripe(existing.stripeSecretKey);
-				await oldStripe.webhookEndpoints.del(existing.stripeWebhookEndpointId).catch(() => {});
-			}
+		try {
+			const stripe = new Stripe(newKey);
+			await stripe.products.list({ limit: 1 });
+		} catch {
+			return fail(400, {
+				error: 'Could not connect to Stripe with that key. Please check it and try again.'
+			});
 		}
 
+		if (existing?.stripeWebhookEndpointId && existing.stripeSecretKey && keyChanged) {
+			const oldStripe = new Stripe(existing.stripeSecretKey);
+			await oldStripe.webhookEndpoints.del(existing.stripeWebhookEndpointId).catch(() => {});
+		}
+
+		const isPublicUrl = env.ORIGIN?.startsWith('https://');
 		let webhookSecret: string | null = existing?.stripeWebhookSecret ?? null;
 		let webhookEndpointId: string | null = existing?.stripeWebhookEndpointId ?? null;
 
 		if (isPublicUrl && (keyChanged || !webhookEndpointId)) {
-			const stripe = new Stripe(effectiveKey);
+			const stripe = new Stripe(newKey);
 			const webhookUrl = `${env.ORIGIN}/api/webhooks/stripe/${existing!.slug}`;
 			const endpoint = await stripe.webhookEndpoints.create({
 				url: webhookUrl,
@@ -112,14 +121,13 @@ export const actions: Actions = {
 		await db
 			.update(vendor)
 			.set({
-				stripeSecretKey: effectiveKey,
-				stripePublishableKey: effectivePublishableKey,
+				stripeSecretKey: newKey,
 				stripeWebhookSecret: webhookSecret,
 				stripeWebhookEndpointId: webhookEndpointId
 			})
 			.where(eq(vendor.id, vendorId));
 
-		return { success: true };
+		return { secretSuccess: true };
 	},
 
 	clearStripeKey: async ({ locals }) => {
