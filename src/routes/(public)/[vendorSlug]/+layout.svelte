@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { LayoutData } from './$types';
+	import ConfirmModal from '$lib/components/ConfirmModal.svelte';
 
 	let { data, children }: { data: LayoutData; children: import('svelte').Snippet } = $props();
 
@@ -64,4 +65,6 @@
 			</p>
 		</div>
 	</footer>
+
+	<ConfirmModal />
 </div>
