@@ -129,6 +129,7 @@
 		paid: { cls: 'bg-emerald-100 text-emerald-700', label: 'Paid' },
 		refunded: { cls: 'bg-orange-100 text-orange-700', label: 'Refunded' },
 		failed: { cls: 'bg-red-100 text-red-600', label: 'Failed' },
+		void: { cls: 'bg-gray-100 text-gray-600', label: 'Void' },
 		unpaid: { cls: 'bg-gray-100 text-gray-500', label: 'Unpaid' }
 	};
 </script>

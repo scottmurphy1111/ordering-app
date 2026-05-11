@@ -308,9 +308,17 @@ export const actions: Actions = {
 		const id = parseInt(formData.get('id')?.toString() ?? '');
 		if (isNaN(id)) return fail(400, { error: 'Invalid' });
 
+		const existing = await db.query.orders.findFirst({
+			where: and(eq(orders.id, id), eq(orders.vendorId, vendorId)),
+			columns: { paymentStatus: true }
+		});
+		if (!existing) return fail(404, { error: 'Order not found' });
+
+		const nextPaymentStatus = existing.paymentStatus === 'pending' ? 'void' : existing.paymentStatus;
+
 		const [order] = await db
 			.update(orders)
-			.set({ status: 'cancelled', updatedAt: new Date() })
+			.set({ status: 'cancelled', paymentStatus: nextPaymentStatus, updatedAt: new Date() })
 			.where(and(eq(orders.id, id), eq(orders.vendorId, vendorId)))
 			.returning();
 

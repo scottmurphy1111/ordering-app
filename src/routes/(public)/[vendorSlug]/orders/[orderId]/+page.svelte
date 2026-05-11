@@ -117,7 +117,9 @@
 				? 'border-color: var(--background-color);'
 				: order.paymentStatus === 'pending'
 					? 'border-color: #fde68a;'
-					: 'border-color: #fca5a5;'}
+					: order.paymentStatus === 'void' || order.paymentStatus === 'refunded'
+						? 'border-color: #e5e7eb;'
+						: 'border-color: #fca5a5;'}
 		>
 			<CardContent class="p-6">
 				{#if isPaid && !isCancelled}

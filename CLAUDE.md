@@ -2818,6 +2818,26 @@ display as `$NaN`**. This is a pre-existing bug; do not work around it by
 changing the snapshot shape — fix the email helper to read `basePrice` or
 compute the effective price.
 
+**Cancellation, refund, and void semantics.** Five non-webhook paths cancel orders:
+`declineAlternate` (customer), `decline` (vendor), `cancel` (vendor single/bulk),
+and `resolveStaleOrders` (cron). The rule for `paymentStatus` on cancel:
+
+- If the order was never paid (`paymentStatus = 'pending'`) → set to `'void'`
+  (transaction closed, no money was taken and none is expected).
+- If the order was paid (`paymentStatus = 'paid'`) → keep `'paid'`. The UI
+  surfaces a separate "Refund payment" button that triggers the `refund` action,
+  which calls the Stripe refunds API and sets `'refunded'`. This two-step is
+  deliberate: vendor and customer may negotiate whether to refund.
+- If a charge failed (`paymentStatus = 'failed'`) → keep `'failed'` to preserve
+  history.
+
+`'refunded'` requires a real Stripe refund API call. `'void'` requires no Stripe
+call. Setting `paymentStatus: 'refunded'` on a never-charged order is a bug;
+use `'void'` instead. Until the `cancel` actions add a `paymentStatus === 'paid'`
+precheck that forces the refund path, vendors can cancel a paid order and leave
+the customer charged. Real-usage workaround: train vendors to use the Refund
+button for paid orders; treat Cancel as a pre-payment action.
+
 ### Rules
 
 - Any code path that writes to `orders.items` must include at minimum

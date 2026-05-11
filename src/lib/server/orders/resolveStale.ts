@@ -45,8 +45,23 @@ export async function resolveStaleOrders(vendorId: number): Promise<number> {
 			)
 			.returning({ id: orders.id });
 
-		// Branch 2: unpaid stale orders → cancelled.
-		const cancelledRows = await db
+		// Branch 2a: pending stale orders → cancelled + void (never charged).
+		const cancelledPendingRows = await db
+			.update(orders)
+			.set({ status: 'cancelled', paymentStatus: 'void', updatedAt: new Date() })
+			.where(
+				and(
+					eq(orders.vendorId, vendorId),
+					isNotNull(orders.pickupWindowId),
+					inArray(orders.pickupWindowId, staleWindowIds),
+					inArray(orders.status, NON_TERMINAL_STATUSES),
+					eq(orders.paymentStatus, 'pending')
+				)
+			)
+			.returning({ id: orders.id });
+
+		// Branch 2b: failed stale orders → cancelled (paymentStatus stays 'failed' to preserve history).
+		const cancelledFailedRows = await db
 			.update(orders)
 			.set({ status: 'cancelled', updatedAt: new Date() })
 			.where(
@@ -55,10 +70,12 @@ export async function resolveStaleOrders(vendorId: number): Promise<number> {
 					isNotNull(orders.pickupWindowId),
 					inArray(orders.pickupWindowId, staleWindowIds),
 					inArray(orders.status, NON_TERMINAL_STATUSES),
-					inArray(orders.paymentStatus, ['pending', 'failed'] as const)
+					eq(orders.paymentStatus, 'failed')
 				)
 			)
 			.returning({ id: orders.id });
+
+		const cancelledRows = [...cancelledPendingRows, ...cancelledFailedRows];
 
 		const total = fulfilledRows.length + cancelledRows.length;
 		if (total > 0) {

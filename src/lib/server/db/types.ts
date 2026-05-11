@@ -17,7 +17,8 @@ export const paymentStatusEnum = pgEnum('payment_status', [
 	'pending',
 	'paid',
 	'failed',
-	'refunded'
+	'refunded',
+	'void'
 ]);
 
 export const pickupTypeEnum = pgEnum('pickup_type', ['windowed', 'custom_date']);

@@ -131,6 +131,7 @@ export const actions: Actions = {
 			.update(orders)
 			.set({
 				status: 'cancelled',
+				paymentStatus: 'void',
 				proposedDate: null,
 				proposedReason: null,
 				proposedAt: null,

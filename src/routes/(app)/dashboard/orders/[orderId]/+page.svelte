@@ -134,6 +134,8 @@
 					<Badge class="bg-orange-100 text-orange-700">refunded</Badge>
 				{:else if order.paymentStatus === 'failed'}
 					<Badge class="bg-red-100 text-red-600">payment failed</Badge>
+				{:else if order.paymentStatus === 'void'}
+					<Badge class="bg-gray-100 text-gray-600">void</Badge>
 				{:else}
 					<Badge class="bg-amber-50 text-amber-700">pending payment</Badge>
 				{/if}
