@@ -1,18 +1,18 @@
 import { emailWrapper } from '../base';
 
 export function paymentFailedEmail({
-	senderName,
+	recipientName,
 	planName,
 	amount,
 	nextRetryDate
 }: {
-	senderName: string;
+	recipientName: string;
 	planName: string;
 	amount: string;
 	nextRetryDate?: string;
 }) {
 	const content = `
-    <p style="margin:0 0 16px;font-size:16px;color:#111827;">Hi ${senderName},</p>
+    <p style="margin:0 0 16px;font-size:16px;color:#111827;">Hi ${recipientName},</p>
     <p style="margin:0 0 16px;font-size:14px;color:#374151;line-height:1.6;">
       We weren't able to process your payment of <strong>${amount}</strong> for your Order Local ${planName} subscription.
     </p>

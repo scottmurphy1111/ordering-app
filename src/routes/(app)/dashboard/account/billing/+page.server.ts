@@ -655,7 +655,7 @@ export const actions: Actions = {
 			await sendEmail({
 				to: record.email,
 				subject: 'Your Order Local subscription has been paused',
-				html: pauseConfirmedEmail({ senderName: record.name, planName, pauseUntil: pauseUntilStr })
+				html: pauseConfirmedEmail({ recipientName: record.name, planName, pauseUntil: pauseUntilStr })
 			}).catch(console.error);
 		}
 
@@ -698,7 +698,7 @@ export const actions: Actions = {
 			await sendEmail({
 				to: record.email,
 				subject: 'Your Order Local subscription has resumed',
-				html: pauseResumedEmail({ senderName: record.name, planName })
+				html: pauseResumedEmail({ recipientName: record.name, planName })
 			}).catch(console.error);
 		}
 

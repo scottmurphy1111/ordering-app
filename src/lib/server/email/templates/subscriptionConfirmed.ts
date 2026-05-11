@@ -1,18 +1,18 @@
 import { emailWrapper } from '../base';
 
 export function subscriptionConfirmedEmail({
-	senderName,
+	recipientName,
 	planName,
 	amount,
 	nextBillingDate
 }: {
-	senderName: string;
+	recipientName: string;
 	planName: string;
 	amount: string;
 	nextBillingDate?: string;
 }) {
 	const content = `
-    <p style="margin:0 0 16px;font-size:16px;color:#111827;">Hi ${senderName},</p>
+    <p style="margin:0 0 16px;font-size:16px;color:#111827;">Hi ${recipientName},</p>
     <p style="margin:0 0 24px;font-size:14px;color:#374151;line-height:1.6;">
       Your subscription to <strong>Order Local ${planName}</strong> is now active. Here's a summary:
     </p>

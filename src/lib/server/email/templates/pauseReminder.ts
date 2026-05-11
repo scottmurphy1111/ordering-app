@@ -1,19 +1,19 @@
 import { emailWrapper } from '../base';
 
 export function pauseReminderEmail({
-	senderName,
+	recipientName,
 	planName,
 	pauseUntil,
 	daysRemaining
 }: {
-	senderName: string;
+	recipientName: string;
 	planName: string;
 	pauseUntil: string;
 	daysRemaining: 7 | 3 | 1;
 }) {
 	const dayWord = daysRemaining === 1 ? 'day' : 'days';
 	const content = `
-    <p style="margin:0 0 16px;font-size:16px;color:#111827;">Hi ${senderName},</p>
+    <p style="margin:0 0 16px;font-size:16px;color:#111827;">Hi ${recipientName},</p>
     <p style="margin:0 0 24px;font-size:14px;color:#374151;line-height:1.6;">
       Your <strong>Order Local ${planName}</strong> subscription is paused and will automatically resume in <strong>${daysRemaining} ${dayWord}</strong> on <strong>${pauseUntil}</strong>.
     </p>

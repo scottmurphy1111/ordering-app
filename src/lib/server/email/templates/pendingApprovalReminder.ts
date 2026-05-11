@@ -1,12 +1,12 @@
 import { emailWrapper } from '../base';
 
 export function pendingApprovalReminderEmail({
-	senderName,
+	recipientName,
 	pendingOrders,
 	dashboardUrl,
 	daysOpen
 }: {
-	senderName: string;
+	recipientName: string;
 	pendingOrders: Array<{ orderNumber: string; customerName: string; scheduledFor?: string }>;
 	dashboardUrl: string;
 	daysOpen: 1 | 3 | 7;
@@ -41,7 +41,7 @@ export function pendingApprovalReminderEmail({
 		.join('');
 
 	const content = `
-    <p style="margin:0 0 16px;font-size:16px;color:#111827;">Hi ${senderName},</p>
+    <p style="margin:0 0 16px;font-size:16px;color:#111827;">Hi ${recipientName},</p>
     <p style="margin:0 0 24px;font-size:14px;color:#374151;line-height:1.6;">${urgencyLine}</p>
 
     <table style="width:100%;border-collapse:collapse;margin-bottom:24px;border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;">

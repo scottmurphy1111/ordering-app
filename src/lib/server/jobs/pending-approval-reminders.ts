@@ -93,7 +93,7 @@ export async function runPendingApprovalReminders(): Promise<{
 						? `Custom-date order ${orderList[0].orderNumber} is waiting for your approval`
 						: `${orderList.length} custom-date orders are waiting for your approval`,
 				html: pendingApprovalReminderEmail({
-					senderName: v.name,
+					recipientName: v.name,
 					pendingOrders: orderList,
 					dashboardUrl,
 					daysOpen: maxDaysOpen
