@@ -121,25 +121,25 @@ export const POST: RequestHandler = async ({ request }) => {
 	// Reuse an existing Stripe Customer if one exists for this email + vendor combination.
 	// Scoped by vendorId metadata so the same customer email at two different shops
 	// creates separate Stripe Customer records (payment methods don't cross shops).
-	let stripeCustomer: Stripe.Customer;
+	let stripeCustomer: Stripe.Customer | null = null;
 	if (customer.email) {
-		const found = await stripe.customers.search({
-			query: `email:'${customer.email}' AND metadata['vendorId']:'${String(vendorRecord.id)}'`,
-			limit: 1
-		});
-		if (found.data.length > 0) {
-			stripeCustomer = found.data[0];
-		} else {
-			stripeCustomer = await stripe.customers.create({
-				name: customer.name,
-				email: customer.email,
-				phone: customer.phone || undefined,
-				metadata: { vendorSlug, vendorId: String(vendorRecord.id) }
+		// Escape single quotes to prevent Stripe query injection (e.g. O'Brien).
+		const escapedEmail = customer.email.replace(/'/g, "\\'");
+		try {
+			const found = await stripe.customers.search({
+				query: `email:'${escapedEmail}' AND metadata['vendorId']:'${String(vendorRecord.id)}'`,
+				limit: 1
 			});
+			stripeCustomer = found.data[0] ?? null;
+		} catch (err) {
+			// Search is eventually consistent and can fail transiently — fall through to create.
+			console.error('[create-setup-intent] stripe.customers.search failed, will create:', err);
 		}
-	} else {
+	}
+	if (!stripeCustomer) {
 		stripeCustomer = await stripe.customers.create({
 			name: customer.name,
+			...(customer.email ? { email: customer.email } : {}),
 			phone: customer.phone || undefined,
 			metadata: { vendorSlug, vendorId: String(vendorRecord.id) }
 		});

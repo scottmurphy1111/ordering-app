@@ -6,7 +6,7 @@ import { orders, orderItems } from '$lib/server/db/orders';
 import { vendor } from '$lib/server/db/vendor';
 import Stripe from 'stripe';
 import { sendEmail } from '$lib/server/email';
-import { orderCancelledEmail } from '$lib/server/email/templates/orderCancelled';
+import { alternateDeclinedEmail } from '$lib/server/email/templates/alternateDeclined';
 import { reconcilePaymentStatus } from '$lib/server/orders/reconcilePaymentStatus';
 import { sendSms } from '$lib/server/sms';
 
@@ -148,8 +148,8 @@ export const actions: Actions = {
 				if (cancelled.customerEmail) {
 					await sendEmail({
 						to: cancelled.customerEmail,
-						subject: `Order ${cancelled.orderNumber} cancelled — ${vendorRecord.name}`,
-						html: orderCancelledEmail({
+						subject: `Order ${cancelled.orderNumber} cancelled — couldn't find a pickup date`,
+						html: alternateDeclinedEmail({
 							vendorName: vendorRecord.name,
 							primaryColor: vendorRecord.backgroundColor ?? undefined,
 							orderNumber: cancelled.orderNumber,
