@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 80" width="240" height="80">
+  <!-- Wheat icon -->
+  <g transform="translate(20, 40)" stroke="#8b6f47" stroke-width="2" stroke-linecap="round" fill="none">
+    <line x1="0" y1="20" x2="0" y2="-22" />
+    <g fill="#c9a86a" stroke="#8b6f47" stroke-width="1.2">
+      <ellipse cx="-6" cy="-18" rx="3.5" ry="6" transform="rotate(-25 -6 -18)" />
+      <ellipse cx="6" cy="-18" rx="3.5" ry="6" transform="rotate(25 6 -18)" />
+      <ellipse cx="-7" cy="-9" rx="3.5" ry="6" transform="rotate(-25 -7 -9)" />
+      <ellipse cx="7" cy="-9" rx="3.5" ry="6" transform="rotate(25 7 -9)" />
+      <ellipse cx="-7" cy="0" rx="3.5" ry="6" transform="rotate(-25 -7 0)" />
+      <ellipse cx="7" cy="0" rx="3.5" ry="6" transform="rotate(25 7 0)" />
+      <ellipse cx="-6" cy="9" rx="3" ry="5" transform="rotate(-25 -6 9)" />
+      <ellipse cx="6" cy="9" rx="3" ry="5" transform="rotate(25 6 9)" />
+    </g>
+  </g>
+  <text x="60" y="46" font-family="Georgia, 'Times New Roman', serif" font-size="22" font-weight="700" fill="#3d2817" letter-spacing="-0.5">Hearth &amp; Crumb</text>
+  <text x="60" y="62" font-family="Georgia, 'Times New Roman', serif" font-size="9" font-weight="400" font-style="italic" fill="#8b6f47" letter-spacing="2">ARTISAN BAKERY</text>
+</svg>

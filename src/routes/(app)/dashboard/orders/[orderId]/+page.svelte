@@ -88,14 +88,22 @@
 		};
 	}
 
+	function chipBaseline(): SvelteDate {
+		// Use the customer's originally-requested pickup date as the offset baseline.
+		// Falls back to today only as a defensive measure — pending_approval orders
+		// always have scheduledFor set.
+		if (order.scheduledFor) return new SvelteDate(order.scheduledFor);
+		return new SvelteDate();
+	}
+
 	function chipDate(daysOffset: number) {
-		const d = new SvelteDate();
+		const d = chipBaseline();
 		d.setDate(d.getDate() + daysOffset);
 		return d.toISOString().split('T')[0];
 	}
 
 	function chipLabel(daysOffset: number) {
-		const d = new SvelteDate();
+		const d = chipBaseline();
 		d.setDate(d.getDate() + daysOffset);
 		return d.toLocaleDateString([], { month: 'short', day: 'numeric' });
 	}

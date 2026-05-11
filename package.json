@@ -17,9 +17,10 @@
 		"test:unit": "vitest",
 		"test": "npm run test:unit -- --run && npm run test:e2e",
 		"test:e2e": "playwright test",
-		"db:push": "drizzle-kit push",
 		"db:generate": "drizzle-kit generate",
 		"db:migrate": "drizzle-kit migrate",
+		"db:push": "drizzle-kit push",
+		"db:reseed": "bun scripts/reseed-dev-vendor.ts",
 		"db:studio": "drizzle-kit studio",
 		"cron:materialize": "bun -e \"const r=await fetch('http://localhost:5173/api/cron/materialize',{headers:{Authorization:'Bearer '+process.env.CRON_SECRET}});console.log(JSON.stringify(await r.json(),null,2))\"",
 		"auth:schema": "better-auth generate --config src/lib/server/auth.ts --output src/lib/server/db/auth.schema.ts --yes"
