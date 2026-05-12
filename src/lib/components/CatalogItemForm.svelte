@@ -219,7 +219,7 @@
 						type="button"
 						onclick={clearImage}
 						variant="ghost"
-						class="text-xs text-destructive hover:text-destructive/80"
+						class="text-xs text-red-500 hover:bg-red-50 hover:text-red-600"
 					>
 						Remove image
 					</Button>

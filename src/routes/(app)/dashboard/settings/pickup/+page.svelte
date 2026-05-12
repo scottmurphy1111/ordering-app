@@ -1443,7 +1443,8 @@
 												<Button
 													type="submit"
 													variant="ghost"
-													class="h-auto p-0 text-xs text-muted-foreground hover:text-destructive"
+													size="xs"
+													class="text-xs text-muted-foreground hover:text-destructive"
 												>
 													Deactivate
 												</Button>
@@ -1453,7 +1454,8 @@
 												<Button
 													type="button"
 													variant="ghost"
-													class="h-auto p-0 text-xs text-muted-foreground hover:text-destructive"
+													size="xs"
+													class="text-xs text-muted-foreground hover:text-destructive"
 													onclick={async (e) => {
 														const form = (e.currentTarget as HTMLButtonElement).form;
 														if (
@@ -1571,7 +1573,8 @@
 											<Button
 												type="submit"
 												variant="ghost"
-												class="h-auto p-0 text-xs text-muted-foreground hover:text-destructive"
+												size="xs"
+												class="text-xs text-muted-foreground hover:text-destructive"
 											>
 												Deactivate
 											</Button>
@@ -1581,7 +1584,8 @@
 											<Button
 												type="button"
 												variant="ghost"
-												class="h-auto p-0 text-xs text-muted-foreground hover:text-destructive"
+												size="xs"
+												class="text-xs text-muted-foreground hover:text-destructive"
 												onclick={async (e) => {
 													const form = (e.currentTarget as HTMLButtonElement).form;
 													if (

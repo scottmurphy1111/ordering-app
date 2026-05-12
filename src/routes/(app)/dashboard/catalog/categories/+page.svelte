@@ -324,7 +324,7 @@
 									type="submit"
 									size="icon"
 									variant="ghost"
-									class="text-red-400 hover:text-red-600"
+									class="text-red-500 hover:bg-red-50 hover:text-red-600"
 									onclick={async (e) => {
 										e.preventDefault();
 										const form = (e.currentTarget as HTMLButtonElement).form;
@@ -412,7 +412,7 @@
 											type="submit"
 											size="icon"
 											variant="ghost"
-											class="text-red-400 hover:text-red-600"
+											class="text-red-400 hover:bg-red-50 hover:text-red-600"
 											onclick={async (e) => {
 												e.preventDefault();
 												const form = (e.currentTarget as HTMLButtonElement).form;

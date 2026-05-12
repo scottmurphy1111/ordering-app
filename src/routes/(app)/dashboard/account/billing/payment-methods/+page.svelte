@@ -143,7 +143,7 @@
 										type="submit"
 										variant="ghost"
 										size="icon"
-										class="text-red-400 hover:text-red-600"
+										class="text-red-500 hover:bg-red-50 hover:text-red-600"
 										onclick={async (e) => {
 											e.preventDefault();
 											const formEl = (e.currentTarget as HTMLButtonElement).closest(

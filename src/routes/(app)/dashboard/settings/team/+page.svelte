@@ -326,7 +326,7 @@
 																form?.requestSubmit();
 														}}
 														variant="ghost"
-														class="w-full text-destructive hover:text-destructive/80 md:w-auto"
+														class="w-full text-red-500 hover:bg-red-50 hover:text-red-600 md:w-auto"
 													>
 														Remove
 													</Button>
@@ -401,7 +401,7 @@
 																	form?.requestSubmit();
 															}}
 															variant="ghost"
-															class="w-full text-destructive hover:text-destructive/80 md:w-auto"
+															class="w-full text-red-500 hover:bg-red-50 hover:text-red-600 md:w-auto"
 														>
 															Cancel
 														</Button>
@@ -475,7 +475,7 @@
 																form?.requestSubmit();
 														}}
 														variant="ghost"
-														class="text-destructive hover:text-destructive/80"
+														class="text-red-500 hover:bg-red-50 hover:text-red-600"
 													>
 														Revoke internal
 													</Button>

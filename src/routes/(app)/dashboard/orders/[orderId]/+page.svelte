@@ -185,7 +185,7 @@
 							</p>
 						{/if}
 						{#if order.proposedReason}
-							<p class="mt-1 text-xs italic text-blue-700">"{order.proposedReason}"</p>
+							<p class="mt-1 text-xs text-blue-700 italic">"{order.proposedReason}"</p>
 						{/if}
 					</div>
 				</div>
@@ -206,10 +206,13 @@
 								e.preventDefault();
 								const f = (e.currentTarget as HTMLButtonElement).form!;
 								if (
-									await confirmDialog('Withdraw this date proposal? The customer will see the original pending state again.', {
-										confirmLabel: 'Withdraw',
-										danger: false
-									})
+									await confirmDialog(
+										'Withdraw this date proposal? The customer will see the original pending state again.',
+										{
+											confirmLabel: 'Withdraw',
+											danger: false
+										}
+									)
 								)
 									f.requestSubmit();
 							}}
@@ -273,8 +276,8 @@
 						<input type="hidden" name="id" value={order.id} />
 						<Button
 							type="submit"
-							variant="outline"
-							class="border-red-200 text-red-500 hover:bg-red-50"
+							variant="ghost"
+							class="text-red-500 hover:bg-red-50 hover:text-red-600"
 							onclick={async (e) => {
 								e.preventDefault();
 								const f = (e.currentTarget as HTMLButtonElement).form!;
@@ -513,8 +516,8 @@
 						<input type="hidden" name="id" value={order.id} />
 						<Button
 							type="submit"
-							variant="outline"
-							class="border-red-200 text-red-500 hover:bg-red-50"
+							variant="ghost"
+							class="text-red-500 hover:bg-red-50 hover:text-red-600"
 							onclick={async (e) => {
 								e.preventDefault();
 								const form = (e.currentTarget as HTMLButtonElement).form;
@@ -536,8 +539,8 @@
 								if (await confirmDialog('Issue a full refund for this order?'))
 									form?.requestSubmit();
 							}}
-							variant="outline"
-							class="border-red-200 text-red-500 hover:bg-red-50"
+							variant="ghost"
+							class="text-red-500 hover:bg-red-50 hover:text-red-600"
 						>
 							Refund payment
 						</Button>

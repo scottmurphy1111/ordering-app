@@ -276,7 +276,7 @@
 											form?.requestSubmit();
 									}}
 									variant="ghost"
-									class="h-auto p-0 text-xs text-red-400 hover:text-red-600"
+									class="text-xs text-red-500 hover:bg-red-50 hover:text-red-600"
 								>
 									Delete
 								</Button>
@@ -398,7 +398,7 @@
 											}}
 											variant="ghost"
 											size="icon"
-											class="text-red-400 hover:text-red-600"
+											class="text-red-400 hover:bg-red-50 hover:text-red-600"
 										>
 											<Icon icon="mdi:trash-can-outline" class="h-3.5 w-3.5" />
 										</Button>

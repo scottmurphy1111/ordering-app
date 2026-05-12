@@ -185,7 +185,7 @@
 															form?.requestSubmit();
 													}}
 													variant="ghost"
-													class="w-full text-red-600 hover:bg-destructive/10 hover:text-red-500 md:w-auto"
+													class="w-full text-red-500 hover:bg-red-50 hover:text-red-600 md:w-auto"
 												>
 													Delete
 												</Button>

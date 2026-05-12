@@ -754,9 +754,10 @@
 				{#if showCancel}
 					<form method="post" action="?/cancel" use:enhance autocomplete="off" class="flex">
 						<input type="hidden" name="id" value={order.id} />
-						<button
+						<Button
 							type="submit"
-							class="text-sm font-medium text-red-500 transition-colors hover:text-red-600"
+							variant="ghost"
+							class="text-red-500 hover:bg-red-50 hover:text-red-600"
 							onclick={async (e) => {
 								e.preventDefault();
 								const form = (e.currentTarget as HTMLButtonElement).form;
@@ -764,15 +765,16 @@
 							}}
 						>
 							Cancel
-						</button>
+						</Button>
 					</form>
 				{/if}
 				{#if showRefund}
 					<form method="post" action="?/refund" use:enhance autocomplete="off" class="flex">
 						<input type="hidden" name="id" value={order.id} />
-						<button
+						<Button
 							type="submit"
-							class="text-sm font-medium text-red-500 transition-colors hover:text-red-600"
+							variant="ghost"
+							class="text-red-500 hover:bg-red-50 hover:text-red-600"
 							onclick={async (e) => {
 								e.preventDefault();
 								const form = (e.currentTarget as HTMLButtonElement).form;
@@ -781,7 +783,7 @@
 							}}
 						>
 							Refund
-						</button>
+						</Button>
 					</form>
 				{/if}
 			</div>

@@ -258,7 +258,7 @@
 												type="submit"
 												class="rounded-full px-2.5 py-0.5 text-xs font-medium transition-colors {promo.isActive &&
 												!expired
-													? 'bg-primary/10 text-primary hover:bg-destructive/10 hover:text-red-600'
+													? 'bg-primary/10 text-primary hover:bg-red-50 hover:text-red-600'
 													: 'bg-muted text-muted-foreground hover:bg-primary/5 hover:text-primary'}"
 											>
 												{expired ? 'Expired' : promo.isActive ? 'Active' : 'Inactive'}
@@ -276,7 +276,7 @@
 													if (await confirmDialog('Delete this code?')) form?.requestSubmit();
 												}}
 												variant="ghost"
-												class="text-destructive hover:text-destructive/80">Delete</Button
+												class="text-red-500 hover:bg-red-50 hover:text-red-600">Delete</Button
 											>
 										</form>
 									</TableCell>
@@ -457,8 +457,8 @@
 							<form method="POST" action="?/disableLoyalty" use:enhance>
 								<Button
 									type="submit"
-									variant="outline"
-									class="text-destructive hover:text-destructive">Disable loyalty</Button
+									variant="ghost"
+									class="text-red-500 hover:bg-red-50 hover:text-red-600">Disable loyalty</Button
 								>
 							</form>
 						{/if}
@@ -537,8 +537,8 @@
 							<form method="POST" action="?/disableLoyalty" use:enhance>
 								<Button
 									type="submit"
-									variant="outline"
-									class="text-destructive hover:text-destructive">Disable loyalty</Button
+									variant="ghost"
+									class="text-red-500 hover:bg-red-50 hover:text-red-600">Disable loyalty</Button
 								>
 							</form>
 						{/if}

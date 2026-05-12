@@ -813,7 +813,7 @@
 								type="button"
 								variant="ghost"
 								onclick={() => openModal(addon, 'deactivate')}
-								class="text-sm font-medium text-red-500 transition-colors hover:text-red-600"
+								class="text-red-500 hover:bg-red-50 hover:text-red-600"
 							>
 								Deactivate
 							</Button>

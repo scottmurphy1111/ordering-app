@@ -320,7 +320,7 @@
 							<Button
 								type="submit"
 								variant="ghost"
-								class="text-red-600 hover:bg-destructive/10 hover:text-red-500">Remove</Button
+								class="text-red-500 hover:bg-red-50 hover:text-red-600">Remove</Button
 							>
 						</form>
 					{/if}
@@ -385,7 +385,7 @@
 							<Button
 								type="submit"
 								variant="ghost"
-								class="text-red-600 hover:bg-destructive/10 hover:text-red-500">Remove</Button
+								class="text-red-500 hover:bg-red-50 hover:text-red-600">Remove</Button
 							>
 						</form>
 					{/if}
@@ -455,7 +455,7 @@
 							<Button
 								type="submit"
 								variant="ghost"
-								class="text-red-600 hover:bg-destructive/10 hover:text-red-500">Remove</Button
+								class="text-red-500 hover:bg-red-50 hover:text-red-600">Remove</Button
 							>
 						</form>
 					{/if}
