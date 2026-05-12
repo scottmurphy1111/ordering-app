@@ -1518,8 +1518,10 @@ const statusStyles = {
   fulfilled: "bg-green-100 text-green-700",
   cancelled: "bg-red-100 text-red-700",
   // Payment
-  paid:      "bg-green-100 text-green-700",
-  refunded:  "bg-amber-100 text-amber-700",
+  paid:      "bg-emerald-100 text-emerald-700",
+  refunded:  "bg-orange-100 text-orange-700",
+  failed:    "bg-red-100 text-red-600",
+  void:      "bg-gray-100 text-gray-600",
   unpaid:    "bg-gray-100 text-gray-500",
   // Catalog item availability
   available: "bg-green-100 text-green-700",
@@ -2458,10 +2460,6 @@ Each vendor has its own Stripe secret key and its own customer namespace. The sa
 
 Stripe search is eventually consistent. A customer created within the last few seconds may not appear in search results. For custom-date orders this is an acceptable trade-off (first order ever from a customer will always create; subsequent orders in the same session won't benefit from reuse, but won't fail either — they'll create a second customer). If strict reuse is required in a future flow, use a DB-side cache of `stripeCustomerId` keyed by `(vendorId, email)`.
 
-**Known caveat — Phase 7 sweep:**
-
-The current implementation lacks a try/catch around `stripe.customers.search`. A network error or Stripe 5xx surfaces as an unhandled 502 to the customer. The hardened version wraps the search in try/catch and falls through to create on any error — flag for the Phase 7 resilience sweep.
-
 ---
 
 ## Build & dev gotchas
@@ -2829,48 +2827,6 @@ use `'void'` instead. Until the `cancel` actions add a `paymentStatus === 'paid'
 precheck that forces the refund path, vendors can cancel a paid order and leave
 the customer charged. Real-usage workaround: train vendors to use the Refund
 button for paid orders; treat Cancel as a pre-payment action.
-
-**Recovery flow doesn't pre-fill the saved card.** When a custom-date order
-goes to `payment_failed` (off-session charge fails — typically SCA-required),
-the customer recovers via the "Update payment method" banner. `recoverPayment`
-correctly creates a new PaymentIntent with `customer: stripeCustomerId` and
-`payment_method: stripePaymentMethodId` set, then redirects to
-`/${vendorSlug}/checkout?orderId=X`. The checkout page retrieves the PI's
-client_secret and mounts Stripe Elements — but Elements does NOT surface the
-saved card. The customer sees the empty card form and has to re-enter
-details. The fix likely involves either (a) explicitly attaching the
-PaymentMethod to the Stripe Customer (via `stripe.paymentMethods.attach`) so
-saved-methods UI appears automatically, or (b) configuring the PaymentElement
-with `defaultValues` / `paymentMethodOrder` to surface the saved PM. To
-diagnose: place a custom-date order with test card `4000 0027 6000 3184`
-(SCA-required off-session), vendor approves to force failure, customer opens
-recovery banner. Before completing the recovery payment, inspect the
-PaymentIntent in the Stripe dashboard — verify whether `payment_method` and
-`customer` are set as expected, and whether the customer's PaymentMethods
-collection has any attached methods. Also check Stripe Elements docs for
-"saved payment methods" config.
-
-**Recovery flow doesn't fire `customDateOrderRecovered` email.** After a
-customer successfully recovers a `payment_failed` order, the order's DB
-state correctly transitions to `received + paid` (verified behaviorally).
-But the customer never receives `customDateOrderRecoveredEmail`. The webhook
-handler in `(api/webhooks/stripe/[vendorId]/+server.ts)`'s
-`payment_intent.succeeded` branch has the right logic — `isRecovery =
-existing.status === 'payment_failed'` and the `if (isRecovery)` branch
-calls `sendEmail` with the recovery template. The bug is somewhere in this
-chain. Possibilities: (a) the `payment_intent.succeeded` event isn't firing
-on recovery (maybe Stripe sends a different event type for the second PI),
-(b) the webhook fires but `existing.status` was already updated to
-`'received'` by an earlier path (reconciliation on page load?) before
-the webhook arrives, so `isRecovery` is false and the windowed
-`orderConfirmedEmail` fires instead — verify by checking which email
-(if any) Resend logged, (c) `customerEmail` is somehow null at webhook time.
-To diagnose: capture the order's full DB state immediately after recovery
-completes, then check Resend logs for ANY email sent at that timestamp.
-If a windowed `orderConfirmedEmail` fired instead of recovery — that's
-hypothesis (b) and the fix is to make the reconciliation path (in
-`src/lib/server/orders/reconcilePaymentStatus.ts`) also fire the recovery
-email when it does the `payment_failed → received` transition.
 
 ### Rules
 

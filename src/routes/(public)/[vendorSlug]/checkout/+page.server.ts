@@ -43,6 +43,31 @@ export const load: PageServerLoad = async ({ url, locals }) => {
 		throw error(400, 'Payment not initialized for this order');
 	}
 
+	// Create a Customer Session so the PaymentElement can redisplay saved cards.
+	// Required for PMs in any allow_redisplay state — including 'unspecified' (legacy
+	// PMs created before Customer Sessions were wired up). Failure is non-blocking:
+	// Elements works without it, just won't show saved-card options.
+	let customerSessionClientSecret: string | null = null;
+	if (order.stripeCustomerId) {
+		try {
+			const session = await stripe.customerSessions.create({
+				customer: order.stripeCustomerId,
+				components: {
+					payment_element: {
+						enabled: true,
+						features: {
+							payment_method_redisplay: 'enabled',
+							payment_method_allow_redisplay_filters: ['always', 'limited', 'unspecified']
+						}
+					}
+				}
+			});
+			customerSessionClientSecret = session.client_secret;
+		} catch (err) {
+			console.error('[checkout] customer session create failed:', err);
+		}
+	}
+
 	return {
 		order: {
 			id: order.id,
@@ -61,6 +86,7 @@ export const load: PageServerLoad = async ({ url, locals }) => {
 		},
 		clientSecret,
 		intentType,
-		publishableKey: vendorRecord.stripePublishableKey
+		publishableKey: vendorRecord.stripePublishableKey,
+		customerSessionClientSecret
 	};
 };

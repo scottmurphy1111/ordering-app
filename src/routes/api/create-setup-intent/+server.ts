@@ -8,6 +8,7 @@ import { orders, orderItems } from '$lib/server/db/orders';
 import type { CartItem } from '$lib/cart.svelte';
 import { validateCartItems } from '$lib/server/cart/validate';
 import { generateOrderNumber } from '$lib/server/order-number';
+import { computeMaxLeadDays } from '$lib/utils/lead-days';
 
 function itemUnitPrice(item: CartItem): number {
 	return item.basePrice + item.selectedModifiers.reduce((s, m) => s + m.priceAdjustment, 0);
@@ -88,10 +89,7 @@ export const POST: RequestHandler = async ({ request }) => {
 		throw error(400, 'Invalid date.');
 	}
 
-	const maxLeadDays = validatedItems.reduce(
-		(max, item) => Math.max(max, item.customDateLeadDays ?? 14),
-		14
-	);
+	const maxLeadDays = computeMaxLeadDays(validatedItems);
 
 	const todayStr = new Date().toISOString().slice(0, 10);
 	const [ty, tm, td] = todayStr.split('-').map(Number);

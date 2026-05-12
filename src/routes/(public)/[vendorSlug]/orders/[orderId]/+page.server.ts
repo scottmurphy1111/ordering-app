@@ -55,11 +55,15 @@ export const actions: Actions = {
 		const stripe = new Stripe(vendorRecord.stripeSecretKey);
 
 		try {
+			// We deliberately do NOT pass `payment_method` here. The vendor's Stripe account
+			// has automatic_payment_methods enabled via its payment_method_configuration, which
+			// causes Stripe to ignore any payment_method parameter at PI creation. The saved PM
+			// is surfaced to the customer via a Customer Session created in the checkout page
+			// load — see (public)/[vendorSlug]/checkout/+page.server.ts.
 			const pi = await stripe.paymentIntents.create({
 				amount: order.total,
 				currency: 'usd',
 				customer: order.stripeCustomerId,
-				...(order.stripePaymentMethodId ? { payment_method: order.stripePaymentMethodId } : {}),
 				setup_future_usage: 'off_session',
 				...(order.customerEmail ? { receipt_email: order.customerEmail } : {}),
 				metadata: {

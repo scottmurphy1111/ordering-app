@@ -7,6 +7,7 @@
 	import { resolve } from '$app/paths';
 	import Icon from '@iconify/svelte';
 	import { Card, CardContent } from '$lib/components/ui/card';
+	import { computeMaxLeadDays } from '$lib/utils/lead-days';
 
 	let { data }: { data: PageData } = $props();
 
@@ -196,9 +197,7 @@
 	const isCustomDateCart = $derived(cart.pickupType === 'custom_date');
 
 	// Lead-days for custom-date min date (max across all items, default 14)
-	const maxLeadDays = $derived(
-		cart.items.length > 0 ? Math.max(...cart.items.map((i) => i.customDateLeadDays ?? 14)) : 14
-	);
+	const maxLeadDays = $derived(computeMaxLeadDays(cart.items));
 
 	// Min/max dates for the custom-date picker, in the vendor's local calendar
 	const customDateMin = $derived.by(() => {
@@ -215,6 +214,11 @@
 		const [y, m, d] = vendorTodayStr.split('-').map(Number);
 		return new Date(Date.UTC(y, m - 1, d + 365)).toISOString().slice(0, 10);
 	});
+
+	const customDateInvalid = $derived(
+		customDateValue !== '' &&
+			(customDateValue < customDateMin || customDateValue > customDateMax)
+	);
 
 	// Subscription detection
 	const isSubscriptionCart = $derived(
@@ -262,6 +266,10 @@
 			}
 			if (customDateValue < customDateMin) {
 				checkoutError = `Please select a date at least ${maxLeadDays} days from today.`;
+				return;
+			}
+			if (customDateValue > customDateMax) {
+				checkoutError = 'Please select a date within the next year.';
 				return;
 			}
 		} else if (!isSubscriptionCart && data.availableWindows.length > 0 && !selectedWindowId) {
@@ -629,11 +637,25 @@
 									bind:value={customDateValue}
 									min={customDateMin}
 									max={customDateMax}
-									class="branded-input w-full rounded-lg border px-3 py-2 text-sm transition-colors outline-none"
+									class="branded-input w-full rounded-lg border px-3 py-2 text-sm transition-colors outline-none {customDateInvalid
+										? 'border-destructive'
+										: ''}"
 								/>
-								<p class="mt-1.5 text-xs text-muted-foreground">
-									Available {maxLeadDays}+ days from today.
-								</p>
+								{#if customDateInvalid}
+									{#if customDateValue < customDateMin}
+										<p class="mt-1.5 text-xs text-destructive">
+											Please pick a date at least {maxLeadDays} days from today.
+										</p>
+									{:else}
+										<p class="mt-1.5 text-xs text-destructive">
+											Please pick a date within the next year.
+										</p>
+									{/if}
+								{:else}
+									<p class="mt-1.5 text-xs text-muted-foreground">
+										Available {maxLeadDays}+ days from today.
+									</p>
+								{/if}
 							</div>
 						</CardContent>
 					</Card>

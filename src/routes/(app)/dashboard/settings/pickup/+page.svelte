@@ -1453,14 +1453,14 @@
 													variant="ghost"
 													class="h-auto p-0 text-xs text-muted-foreground hover:text-destructive"
 													onclick={async (e) => {
-														const btn = e.currentTarget as HTMLButtonElement;
+														const form = (e.currentTarget as HTMLButtonElement).form;
 														if (
 															await confirmDialog(
 																`Delete "${tmpl.name}"? This will stop generating future occurrences for this template.`,
 																{ title: 'Delete template', confirmLabel: 'Delete' }
 															)
 														)
-															btn.form?.requestSubmit();
+															form?.requestSubmit();
 													}}
 												>
 													Delete
@@ -1580,14 +1580,14 @@
 												variant="ghost"
 												class="h-auto p-0 text-xs text-muted-foreground hover:text-destructive"
 												onclick={async (e) => {
-													const btn = e.currentTarget as HTMLButtonElement;
+													const form = (e.currentTarget as HTMLButtonElement).form;
 													if (
 														await confirmDialog(
 															`Delete "${tmpl.name}"? This will stop generating future occurrences for this template.`,
 															{ title: 'Delete template', confirmLabel: 'Delete' }
 														)
 													)
-														btn.form?.requestSubmit();
+														form?.requestSubmit();
 												}}
 											>
 												Delete

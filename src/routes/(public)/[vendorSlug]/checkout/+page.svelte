@@ -30,6 +30,9 @@
 
 		elements = stripeInstance.elements({
 			clientSecret: data.clientSecret,
+			...(data.customerSessionClientSecret
+				? { customerSessionClientSecret: data.customerSessionClientSecret }
+				: {}),
 			appearance: {
 				theme: 'stripe',
 				variables: {

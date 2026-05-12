@@ -517,8 +517,8 @@
 							class="border-red-200 text-red-500 hover:bg-red-50"
 							onclick={async (e) => {
 								e.preventDefault();
-								const btn = e.currentTarget as HTMLButtonElement;
-								if (await confirmDialog('Cancel this order?')) btn.form?.requestSubmit();
+								const form = (e.currentTarget as HTMLButtonElement).form;
+								if (await confirmDialog('Cancel this order?')) form?.requestSubmit();
 							}}
 						>
 							Cancel order
@@ -532,9 +532,9 @@
 							type="submit"
 							onclick={async (e) => {
 								e.preventDefault();
-								const btn = e.currentTarget as HTMLButtonElement;
+								const form = (e.currentTarget as HTMLButtonElement).form;
 								if (await confirmDialog('Issue a full refund for this order?'))
-									btn.form?.requestSubmit();
+									form?.requestSubmit();
 							}}
 							variant="outline"
 							class="border-red-200 text-red-500 hover:bg-red-50"

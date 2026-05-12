@@ -759,8 +759,8 @@
 							class="text-sm font-medium text-red-500 transition-colors hover:text-red-600"
 							onclick={async (e) => {
 								e.preventDefault();
-								const btn = e.currentTarget as HTMLButtonElement;
-								if (await confirmDialog('Cancel this order?')) btn.form?.requestSubmit();
+								const form = (e.currentTarget as HTMLButtonElement).form;
+								if (await confirmDialog('Cancel this order?')) form?.requestSubmit();
 							}}
 						>
 							Cancel
@@ -775,9 +775,9 @@
 							class="text-sm font-medium text-red-500 transition-colors hover:text-red-600"
 							onclick={async (e) => {
 								e.preventDefault();
-								const btn = e.currentTarget as HTMLButtonElement;
+								const form = (e.currentTarget as HTMLButtonElement).form;
 								if (await confirmDialog('Issue a full refund for this order?'))
-									btn.form?.requestSubmit();
+									form?.requestSubmit();
 							}}
 						>
 							Refund
