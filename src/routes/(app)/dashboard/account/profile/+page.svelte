@@ -203,8 +203,8 @@
 					</div>
 					<Button
 						type="button"
-						variant="outline"
-						class="text-red-600 hover:bg-red-50 hover:text-red-700"
+						variant="ghost"
+						class="text-red-500 hover:bg-red-50 hover:text-red-600"
 						onclick={handleSignOut}
 					>
 						<Icon icon="mdi:logout" class="h-4 w-4" />

@@ -87,8 +87,8 @@ One-line summaries and links to the detailed sections of this document. Scan thi
 - **Status badges** — color-coded pills with documented `statusStyles` map. Always `capitalize`. Never show when all items share one status. → [Badges & Status Pills](#badges--status-pills)
 - **Order lifecycle progress** — icon row from `order-lifecycle.ts` showing completed/current/pending stages. Three forms: compact icon strip on list cards, full labeled stepper on detail page, single icon + label in narrow table cells. Never use colored `<Badge>` for lifecycle status. → [Order lifecycle progress](#order-lifecycle-progress)
 - **Order state-transition buttons** — appear ONLY on the detail page Actions card, never on list cards. Default `<Button>` (brand green) with an icon matching the destination stage from `actionConfig`. → [Order state-transition buttons](#order-state-transition-buttons)
-- **Outlined-destructive buttons** — Cancel order, Refund payment on the detail page. `<Button variant="outline">` with red classes. Filled red is never used in this codebase. → [Destructive actions](#destructive-actions-cancel-refund)
-- **Card action strip** — list-card actions sit in a right-aligned `border-t border-gray-100 px-4 py-2` strip below the body, separated by a divider. Strip is conditionally rendered (no empty strip when there are no actions). On list cards (`/dashboard/orders`, `/dashboard/orders/history`), Cancel and Refund are quiet text links, not buttons. → [Data / list card](#data--list-card-order-cards)
+- **Destructive actions** — canonical `<Button variant="ghost" class="text-red-500 hover:bg-red-50 hover:text-red-600">` with four documented variations (icon-only, heavier-weight, subtle-row, dark-surface). Filled red and outlined red are retired. → [Destructive actions](#destructive-actions)
+- **Card action strip** — list-card actions sit in a right-aligned `border-t border-gray-100 px-4 py-2` strip below the body, separated by a divider. Strip is conditionally rendered (no empty strip when there are no actions). Cancel and Refund in action strips use the canonical ghost destructive button. → [Data / list card](#data--list-card-order-cards)
 
 ### Payments / Stripe
 
@@ -962,23 +962,19 @@ The variant system (default/outline/ghost/destructive/link) handles **shape**. F
 
 Use `<Button>` for all button affordances unless the callsite matches one of these documented exceptions. Each exception is flagged for the Tier 2 shadcn audit.
 
-1. **Quiet text-link actions in card action strips**: list-card action strips (`/dashboard/orders`, `/dashboard/orders/history`) place Cancel and Refund as quiet text affordances rather than buttons. The shadcn `<Button>` primitive's padding and min-width assumptions force a button shape that conflicts with the text-link aesthetic. Use raw `<button>` with classes `text-sm font-medium text-red-500 transition-colors hover:text-red-600`. The wrapping `<form>` carries the `?/cancel` or `?/refund` action; the button is just the rendered affordance.
+1. **Dark-surface hamburger** (mobile nav header): `<Button variant="ghost">` hover uses `hover:bg-accent`, which conflicts with explicit dark-surface hover overrides. Use `hover:bg-gray-800` to match sidebar nav link convention. See Mobile header section.
 
-2. **Outlined-destructive** (Cancel order, Refund payment) on the detail page: `<Button variant="destructive">` applies filled red. Outlined red is the documented quieter treatment. Use `<Button variant="outline" class="border-red-200 text-red-500 hover:bg-red-50">`. NOTE: this is now implemented via the `<Button>` primitive (variant + class override), not via raw `<button>`. The exception remains documented because the class-override pattern is non-default behavior worth noting; converting to a `destructive-outline` Button variant is a Tier 2 shadcn audit candidate.
+2. **Sortable table column headers**: column headers that toggle sort direction use a raw `<button>` because `<th>` is the semantic container and Button's padding/shape assumptions don't fit cleanly inside a header cell.
 
-3. **Dark-surface hamburger** (mobile nav header): `<Button variant="ghost">` hover uses `hover:bg-accent`, which conflicts with explicit dark-surface hover overrides. Use `hover:bg-gray-800` to match sidebar nav link convention. See Mobile header section.
+3. **Accordion toggles**: when a custom expand/collapse UI overrides the shadcn Accordion primitive (e.g., full-row clickable headers inside a list), the toggle is a raw `<button>` wrapping the row content. Button's height constraints would require explicit overrides on every callsite.
 
-4. **Sortable table column headers**: column headers that toggle sort direction use a raw `<button>` because `<th>` is the semantic container and Button's padding/shape assumptions don't fit cleanly inside a header cell.
+4. **Status filter pills**: the `FilterPills` / status tabs pattern (see Filter Pills section) uses raw `<button>` elements because the pill shape (`rounded-full px-3 py-1.5`) and the green/gray active/inactive color system don't map to any Button size or variant. Migrating would require a new `pill` variant.
 
-5. **Accordion toggles**: when a custom expand/collapse UI overrides the shadcn Accordion primitive (e.g., full-row clickable headers inside a list), the toggle is a raw `<button>` wrapping the row content. Button's height constraints would require explicit overrides on every callsite.
+5. **`DropdownMenuItem` as form submit**: bits-ui's `DropdownMenuItem` renders its own interactive element. When a menu item must submit a form (e.g., a status change via `method="post"`), use a raw `<button type="submit">` inside the item — nesting a `<Button>` creates an invalid nested interactive element.
 
-6. **Status filter pills**: the `FilterPills` / status tabs pattern (see Filter Pills section) uses raw `<button>` elements because the pill shape (`rounded-full px-3 py-1.5`) and the green/gray active/inactive color system don't map to any Button size or variant. Migrating would require a new `pill` variant.
+6. **Popover triggers with custom interior**: bits-ui's `PopoverTrigger` renders its own `<button>` internally. Do not nest a `<Button>` inside `PopoverTrigger`. Apply trigger classes directly via the `class` prop on `PopoverTrigger`.
 
-7. **`DropdownMenuItem` as form submit**: bits-ui's `DropdownMenuItem` renders its own interactive element. When a menu item must submit a form (e.g., a status change via `method="post"`), use a raw `<button type="submit">` inside the item — nesting a `<Button>` creates an invalid nested interactive element.
-
-8. **Popover triggers with custom interior**: bits-ui's `PopoverTrigger` renders its own `<button>` internally. Do not nest a `<Button>` inside `PopoverTrigger`. Apply trigger classes directly via the `class` prop on `PopoverTrigger`.
-
-9. **Absolutely-positioned input field decorations** (clear, eye toggle): buttons positioned `absolute` inside an input container conflict with `<Button>`'s internal padding and min-width. Use a raw `<button>` with explicit sizing (e.g., `size-6 rounded flex items-center justify-center`) and position classes. Exception: if the decoration sits outside the input's padding area, `size="icon-xs"` may fit.
+7. **Absolutely-positioned input field decorations** (clear, eye toggle): buttons positioned `absolute` inside an input container conflict with `<Button>`'s internal padding and min-width. Use a raw `<button>` with explicit sizing (e.g., `size-6 rounded flex items-center justify-center`) and position classes. Exception: if the decoration sits outside the input's padding area, `size="icon-xs"` may fit.
 
 ### Rules
 
@@ -1926,15 +1922,95 @@ Implemented via the default `<Button>` primitive (brand green). Each button incl
 
 The detail page is the only state-transition surface. Brand green is the canonical primary-CTA treatment for that surface — there is no longer a competing per-card button to displace it. The earlier convention of `bg-blue-600 hover:bg-blue-700 text-white` on raw `<button>` elements was never implemented; the convention before this rewrite was a class override (`bg-gray-900 text-white hover:bg-gray-800`) that briefly applied during a transitional state. Both are retired.
 
-### Destructive actions (Cancel, Refund)
+### Destructive actions
 
-Destructive actions take two forms in this codebase, depending on surface context:
+The canonical destructive button is a uniform standard across the dashboard. Use it for Cancel, Refund, Delete, Remove, Disable, Demote, Archive, Ban, Deactivate, and similar single-affordance destructive actions.
 
-**On the detail page (`/dashboard/orders/[orderId]`):** "Cancel order" and "Refund payment" use `<Button variant="outline">` with class override `border-red-200 text-red-500 hover:bg-red-50`. The filled `variant="destructive"` is never used — outlined red is the canonical quieter treatment. The detail page sits these buttons next to the brand-green state-transition button, so the quieter treatment prevents the destructive action from competing with the primary CTA.
+**Canonical:**
 
-**On list cards (`/dashboard/orders`, `/dashboard/orders/history`):** Cancel and Refund are quiet text affordances in the card action strip below the body, NOT outlined buttons. Raw `<button>` element with classes `text-sm font-medium text-red-500 transition-colors hover:text-red-600`. The strip itself signals "these are actions"; the affordances inside don't need button shape to read as actionable. See "Card action strip" pattern under [Data / list card](#data--list-card-order-cards).
+```svelte
+<Button variant="ghost" class="text-red-500 hover:bg-red-50 hover:text-red-600">
+  Cancel order
+</Button>
+```
 
-The mobile hamburger uses a plain `<button>` instead of `<Button variant="ghost">` due to dark-surface hover conflict — flagged for Tier 2 shadcn audit alongside a potential `dark-surface` variant. The outlined-destructive treatment on detail page is also flagged for the same audit (a `destructive-outline` variant would eliminate the class override).
+Behavior: red-500 text at rest, no background. On hover: red-50 background tint, text deepens to red-600. The explicit `hover:bg-red-50` and `hover:text-red-600` overrides are required — they suppress ghost variant's default `hover:bg-muted` (gray paint) and `hover:text-foreground` (text goes dark). Omitting either override surfaces the ghost residue and reintroduces the "text turns dark on hover" drift.
+
+### Variations
+
+Four documented deviations from the canonical, each with a specific surface rationale:
+
+**1. Icon-only buttons** — table-row delete icons, modifier option remove, payment-method delete. Smaller starting weight (red-400 not red-500) because icons need less visual presence at rest.
+
+```svelte
+<Button variant="ghost" size="icon" class="text-red-400 hover:bg-red-50 hover:text-red-600">
+  <Icon icon="mdi:delete" />
+</Button>
+```
+
+**2. Heavier-weight irreversible actions** — Delete account, Archive vendor's last shop, similar high-consequence flows. Deeper rest and hover colors signal extra weight.
+
+```svelte
+<Button variant="ghost" class="text-red-600 hover:bg-red-50 hover:text-red-700">
+  Delete account
+</Button>
+```
+
+**3. Subtle row affordance** — destructive actions in dense lists where the row already has other tappable elements. Starts muted, escalates to destructive on hover. No bg tint by design — the color jump is the affordance. Used at pickup template delete buttons.
+
+```svelte
+<Button variant="ghost" size="xs" class="text-xs text-muted-foreground hover:text-destructive">
+  Delete
+</Button>
+```
+
+`size="xs"` is required — `h-auto p-0` strips ghost's natural padding and produces a bare-text-run look. Don't use `h-auto p-0` on destructive buttons.
+
+**4. Dark-surface destructive** — admin sidebar Sign out. On dark backgrounds, `bg-red-50` is invisibly bright; the dark-surface variation uses a `background/10` tint that adapts to the dark theme.
+
+```svelte
+<Button variant="ghost" class="text-xs text-muted-foreground hover:bg-background/10 hover:text-red-400">
+  Sign out
+</Button>
+```
+
+### Anomaly: Sign out (account/profile)
+
+`/dashboard/account/profile` Sign out button uses `<Button variant="outline" class="text-red-600 hover:bg-red-50 hover:text-red-700">` — the only surviving `variant="outline"` red Button in the codebase. The outline shape is intentional: Sign out is more deliberate than Remove avatar (which sits on the same page) but less destructive than Delete account. The outline reads as "deliberate but not irreversible." Sibling enumeration: this is the only callsite using this treatment; if a second one appears, revisit whether it should be a documented variation #5 or whether Sign out should be aligned to canonical ghost.
+
+### Customer-facing storefront
+
+The customer cart's item-remove icon at `(public)/[vendorSlug]/cart/+page.svelte` uses raw `<button class="text-red-400 hover:text-red-600">` — text-only hover, no bg tint, no `<Button>` primitive. The storefront has different design rules (CSS variables for vendor branding, softer transactional voice), and destructive affordances there are quieter by design. This is **not** a dashboard pattern — never use this shape inside `/dashboard`.
+
+### What this replaces
+
+This section retires two previously-documented patterns:
+
+- ~~"Raw `<button>` exception #1 — quiet text-link in card action strips"~~ — orders list cards, history card, billing card strip, etc. all now use the canonical `<Button variant="ghost">`. The exception no longer applies; only the customer-facing cart icon remains as a raw destructive `<button>`, and that's a different surface covered above.
+- ~~"Outlined-destructive — `<Button variant="outline" class="border-red-200 text-red-500 hover:bg-red-50">`"~~ — detail-page Cancel/Refund/Decline now use canonical ghost. Outline-red is retired everywhere except the Sign out anomaly.
+
+### Static drift checks
+
+Run these to catch future drift:
+
+```sh
+# Should return zero — pattern of "text fades on hover"
+grep -rEn 'hover:text-destructive/80' src/ --include='*.svelte'
+
+# Should return zero on destructive buttons — old "muted gray paint on hover"
+grep -rEn 'hover:bg-destructive/10' src/ --include='*.svelte'
+
+# Should return zero — literal no-op pattern
+grep -rEn 'text-destructive hover:text-destructive([^/]|$)' src/ --include='*.svelte'
+
+# Should return only the four pickup subtle-row (variation #3) callsites
+grep -rEn 'hover:text-destructive([^/]|$)' src/ --include='*.svelte'
+
+# Should return zero outside `/admin/+layout.svelte` (admin sidebar) and `(public)/[vendorSlug]/cart/+page.svelte` (cart icon)
+grep -rEn 'text-red-[0-9]+.*hover:' src/ --include='*.svelte' | grep -v 'hover:bg-red-50'
+```
+
+The mobile hamburger uses a plain `<button>` instead of `<Button variant="ghost">` due to dark-surface hover conflict — flagged for Tier 2 shadcn audit alongside a potential `dark-surface` variant.
 
 ### Mobile header
 
