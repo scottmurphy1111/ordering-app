@@ -739,7 +739,8 @@
 												editError = null;
 											}}
 											variant="ghost"
-											class="h-auto w-full p-0 text-xs text-muted-foreground hover:text-foreground md:w-auto"
+											class="text-xs text-muted-foreground hover:text-foreground"
+											size="xs"
 										>
 											Edit
 										</Button>
@@ -748,9 +749,10 @@
 											<Button
 												type="submit"
 												variant="ghost"
-												class="h-auto w-full p-0 text-xs md:w-auto {loc.isActive
+												class="text-xs {loc.isActive
 													? 'text-muted-foreground hover:text-destructive'
 													: 'text-muted-foreground hover:text-primary'}"
+												size="xs"
 											>
 												{loc.isActive ? 'Deactivate' : 'Activate'}
 											</Button>
@@ -840,11 +842,7 @@
 							>
 								Location
 							</label>
-							<Select
-								type="single"
-								name="locationId"
-								bind:value={editLocationValue}
-							>
+							<Select type="single" name="locationId" bind:value={editLocationValue}>
 								<SelectTrigger id="etmpl-location" class="w-full">
 									<SelectValue>
 										{data.locations.find((l) => String(l.id) === editLocationValue)?.name ??
@@ -1143,11 +1141,7 @@
 							>
 								Location
 							</label>
-							<Select
-								type="single"
-								name="locationId"
-								bind:value={addLocationValue}
-							>
+							<Select type="single" name="locationId" bind:value={addLocationValue}>
 								<SelectTrigger id="tmpl-location" class="w-full">
 									<SelectValue>
 										{data.locations.find((l) => String(l.id) === addLocationValue)?.name ??
@@ -1433,8 +1427,9 @@
 													editExdates = (tmpl.exdates as string[] | null) ?? [];
 													addExdateInput = '';
 												}}
+												size="xs"
 												variant="ghost"
-												class="h-auto p-0 text-xs text-muted-foreground hover:text-foreground"
+												class="text-xs text-muted-foreground hover:text-foreground"
 											>
 												Edit
 											</Button>
@@ -1541,7 +1536,7 @@
 											? `Max ${tmpl.maxOrders}`
 											: 'No cap'}{tmplDateRange ? ` · ${tmplDateRange}` : ''}
 									</span>
-									<div class="flex shrink-0 items-center gap-3 md:pl-4">
+									<div class="flex shrink-0 items-baseline gap-3 md:pl-4">
 										<Button
 											type="button"
 											onclick={() => {
@@ -1564,7 +1559,8 @@
 												addExdateInput = '';
 											}}
 											variant="ghost"
-											class="h-auto p-0 text-xs text-muted-foreground hover:text-foreground"
+											class="text-xs text-muted-foreground hover:text-foreground"
+											size="xs"
 										>
 											Edit
 										</Button>
