@@ -17,6 +17,7 @@
 	import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '$lib/components/ui/card';
 	import { Checkbox } from '$lib/components/ui/checkbox';
 	import { BUSINESS_TYPES } from '$lib/utils/business-type-labels';
+	import { FULFILLMENT_MODELS, fulfillmentModelLabel } from '$lib/utils/fulfillment-model-labels';
 	import { US_TIMEZONES, getAllTimezones, getTimezoneLabel } from '$lib/utils/timezones';
 	import { Alert } from '$lib/components/ui/alert';
 
@@ -54,8 +55,6 @@
 			} | null
 		)?.settings ?? {}
 	);
-
-
 </script>
 
 <div class="max-w-2xl">
@@ -109,7 +108,10 @@
 						<Label class="mb-1 block" for="type">Business type</Label>
 						<Select type="single" name="type" bind:value={typeValue}>
 							<SelectTrigger id="type" class="w-full">
-								<SelectValue>{BUSINESS_TYPES.find((bt) => bt.value === typeValue)?.label ?? 'Select type'}</SelectValue>
+								<SelectValue
+									>{BUSINESS_TYPES.find((bt) => bt.value === typeValue)?.label ??
+										'Select type'}</SelectValue
+								>
 							</SelectTrigger>
 							<SelectContent>
 								{#each businessTypes as bt (bt.value)}
@@ -117,6 +119,26 @@
 								{/each}
 							</SelectContent>
 						</Select>
+					</div>
+					<div class="sm:w-1/2">
+						<Label class="mb-1 block" for="fulfillmentModel">Fulfillment model</Label>
+						<div
+							id="fulfillmentModel"
+							class="flex items-center justify-between rounded-md border bg-muted/30 px-3 py-2 text-sm"
+						>
+							<span class="text-foreground"
+								>{fulfillmentModelLabel(data.info?.fulfillmentModel)}</span
+							>
+							<span class="text-xs text-muted-foreground">Changeable in a future update</span>
+						</div>
+						{#if data.info?.fulfillmentModel}
+							{@const current = FULFILLMENT_MODELS.find(
+								(m) => m.value === data.info?.fulfillmentModel
+							)}
+							{#if current}
+								<p class="mt-1.5 text-xs text-muted-foreground">{current.description}</p>
+							{/if}
+						{/if}
 					</div>
 				</div>
 
@@ -288,5 +310,4 @@
 			</CardFooter>
 		</Card>
 	</form>
-
 </div>

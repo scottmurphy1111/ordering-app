@@ -1,6 +1,6 @@
 {
-  "id": "c2a91e5f-8b3d-4e77-a6f1-3d8e5b2c7f94",
-  "prevId": "b0afd503-3bbb-4784-b65e-6d0136dbf6da",
+  "id": "789373fc-400e-4195-9e1c-ff2fd9a6a266",
+  "prevId": "c2a91e5f-8b3d-4e77-a6f1-3d8e5b2c7f94",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -407,6 +407,13 @@
           "primaryKey": false,
           "notNull": false,
           "default": "'bakery'"
+        },
+        "fulfillment_model": {
+          "name": "fulfillment_model",
+          "type": "fulfillment_model",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
         },
         "address": {
           "name": "address",
@@ -2672,6 +2679,15 @@
       "values": [
         "windowed",
         "custom_date"
+      ]
+    },
+    "public.fulfillment_model": {
+      "name": "fulfillment_model",
+      "schema": "public",
+      "values": [
+        "storefront",
+        "pickup_only",
+        "hybrid"
       ]
     },
     "public.vendor_type": {

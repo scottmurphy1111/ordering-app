@@ -26,6 +26,12 @@ export const vendorTypeEnum = pgEnum('vendor_type', [
 	'other'
 ]);
 
+export const fulfillmentModelEnum = pgEnum('fulfillment_model', [
+	'storefront',
+	'pickup_only',
+	'hybrid'
+]);
+
 export const vendor = pgTable(
 	'vendors',
 	{
@@ -36,6 +42,7 @@ export const vendor = pgTable(
 		slug: varchar('slug', { length: 100 }).unique().notNull(),
 		legalName: varchar('legal_name', { length: 255 }),
 		type: vendorTypeEnum('type').default('bakery'),
+		fulfillmentModel: fulfillmentModelEnum('fulfillment_model').notNull(),
 
 		// Contact & location
 		address: jsonb('address').default({}),

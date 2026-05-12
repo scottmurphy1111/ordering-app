@@ -62,19 +62,20 @@ const client = neon(process.env.DATABASE_URL);
 const db = drizzle(client);
 
 // Vendor lookup
-let targetVendor: { id: number; name: string; slug: string } | null = null;
+let targetVendor: { id: number; name: string; slug: string; fulfillment_model: string } | null =
+	null;
 
 if (vendorArg) {
 	const asNumber = Number(vendorArg);
 	if (!isNaN(asNumber)) {
 		const result = await db.execute(
-			sql`SELECT id, name, slug FROM vendors WHERE id = ${asNumber} LIMIT 1`
+			sql`SELECT id, name, slug, fulfillment_model FROM vendors WHERE id = ${asNumber} LIMIT 1`
 		);
 		targetVendor = (result.rows[0] as unknown as typeof targetVendor) ?? null;
 	}
 	if (!targetVendor) {
 		const result = await db.execute(
-			sql`SELECT id, name, slug FROM vendors WHERE slug = ${vendorArg} LIMIT 1`
+			sql`SELECT id, name, slug, fulfillment_model FROM vendors WHERE slug = ${vendorArg} LIMIT 1`
 		);
 		targetVendor = (result.rows[0] as unknown as typeof targetVendor) ?? null;
 	}
@@ -83,15 +84,22 @@ if (vendorArg) {
 		process.exit(1);
 	}
 } else {
-	const result = await db.execute(sql`SELECT id, name, slug FROM vendors ORDER BY id ASC`);
-	const vendors = result.rows as Array<{ id: number; name: string; slug: string }>;
+	const result = await db.execute(
+		sql`SELECT id, name, slug, fulfillment_model FROM vendors ORDER BY id ASC`
+	);
+	const vendors = result.rows as Array<{
+		id: number;
+		name: string;
+		slug: string;
+		fulfillment_model: string;
+	}>;
 	if (vendors.length === 0) {
 		console.error('✗ No vendors found in this database.');
 		process.exit(1);
 	}
 	console.log('Available vendors:');
 	for (const v of vendors) {
-		console.log(`  ${v.id}\t${v.slug}\t${v.name}`);
+		console.log(`  ${v.id}\t${v.slug}\t[${v.fulfillment_model}]\t${v.name}`);
 	}
 	console.log('');
 	const rl = createInterface({ input: process.stdin, output: process.stdout });
@@ -114,9 +122,10 @@ console.log(`  Host: ${host}`);
 console.log(`  Database: ${dbName}`);
 console.log('');
 console.log('Target vendor:');
-console.log(`  ID:   ${targetVendor.id}`);
-console.log(`  Slug: ${targetVendor.slug}`);
-console.log(`  Name: ${targetVendor.name}`);
+console.log(`  ID:               ${targetVendor.id}`);
+console.log(`  Slug:             ${targetVendor.slug}`);
+console.log(`  Name:             ${targetVendor.name}`);
+console.log(`  Fulfillment model: ${targetVendor.fulfillment_model}`);
 console.log('');
 console.log("This will DELETE all of this vendor's:");
 console.log('  - orders (and order_items)');
@@ -129,11 +138,13 @@ console.log('  - system_events scoped to this vendor');
 console.log('  - demo team invitations (by email address) — other invitations preserved');
 console.log('');
 console.log('This will PRESERVE:');
-console.log('  - The vendor row itself (Stripe keys, name, slug, timezone, subscription)');
+console.log(
+	'  - The vendor row itself (Stripe keys, name, slug, timezone, fulfillment_model, subscription)'
+);
 console.log("  - All other vendors' data");
 console.log('  - Auth (users, sessions, accounts, verifications)');
 console.log('  - vendor_users (team membership)');
-console.log("  - vendor_invitations (except demo addresses above)");
+console.log('  - vendor_invitations (except demo addresses above)');
 console.log('');
 console.log('This will OVERWRITE on the vendor row:');
 console.log('  - Branding (logo, banner, favicon, background) + colors + tagline');
@@ -151,9 +162,7 @@ console.log('');
 
 if (!YES) {
 	const rl = createInterface({ input: process.stdin, output: process.stdout });
-	const input = (
-		await rl.question('Type "reseed" to confirm (or pass --yes to skip): ')
-	).trim();
+	const input = (await rl.question('Type "reseed" to confirm (or pass --yes to skip): ')).trim();
 	rl.close();
 	if (input !== 'reseed') {
 		console.error('✗ Confirmation not received. Aborting.');
@@ -330,8 +339,7 @@ try {
 				name: li.name,
 				quantity: li.quantity,
 				unitPrice:
-					li.basePrice +
-					li.selectedModifiers.reduce((acc, m) => acc + m.priceAdjustment, 0),
+					li.basePrice + li.selectedModifiers.reduce((acc, m) => acc + m.priceAdjustment, 0),
 				selectedModifiers: li.selectedModifiers
 			}))
 		);
@@ -404,15 +412,19 @@ try {
 console.log('');
 console.log(`✓ Wiped vendor ${targetVendor.slug} (id=${targetVendor.id}) data`);
 console.log('✓ Seeded demo data:');
-console.log(`  - ${demoCategories.length} categories, ${demoItems.length} catalog items, ${demoModifiers.length} modifier groups (10 options total)`);
+console.log(
+	`  - ${demoCategories.length} categories, ${demoItems.length} catalog items, ${demoModifiers.length} modifier groups (10 options total)`
+);
 console.log('  - 1 pickup location, 1 daily pickup template');
 console.log('  - Branding (logo, banner, favicon, background) + colors + settings + tagline');
 console.log(`  - ${demoPromoCodes.length} promo codes (WELCOME10, BREAD5)`);
 console.log(`  - ${demoInvitations.length} pending team invitation`);
-console.log(`  - ${demoOrders.length} demo orders (2 windowed paid, 1 modifier-rich, 1 promo-applied, 1 pending_approval, 1 payment_failed)`);
+console.log(
+	`  - ${demoOrders.length} demo orders (2 windowed paid, 1 modifier-rich, 1 promo-applied, 1 pending_approval, 1 payment_failed)`
+);
 console.log('');
 console.log(`Vendor "${targetVendor.name}" is now in a fresh demo state.`);
-console.log('Stripe keys, name, slug, and team memberships were preserved.');
+console.log('Stripe keys, name, slug, fulfillment_model, and team memberships were preserved.');
 console.log('');
 console.log('Suggested next steps:');
 console.log('  curl -H "Authorization: Bearer $CRON_SECRET" $ORIGIN/api/cron/materialize');

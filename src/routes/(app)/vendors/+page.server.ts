@@ -119,6 +119,7 @@ export const actions: Actions = {
 				| 'other') ?? 'bakery';
 
 		const timezone = formData.get('timezone')?.toString().trim() || 'America/New_York';
+		const fulfillmentModel = formData.get('fulfillmentModel')?.toString();
 
 		if (!name) return fail(400, { error: 'Name is required' });
 		if (!slug) return fail(400, { error: 'Slug is required' });
@@ -131,6 +132,14 @@ export const actions: Actions = {
 			return fail(400, { error: 'Invalid timezone.' });
 		}
 
+		if (
+			fulfillmentModel !== 'storefront' &&
+			fulfillmentModel !== 'pickup_only' &&
+			fulfillmentModel !== 'hybrid'
+		) {
+			return fail(400, { error: 'Please select a fulfillment model.' });
+		}
+
 		// Check slug uniqueness
 		const existing = await db.query.vendor.findFirst({ where: eq(vendor.slug, slug) });
 		if (existing) return fail(400, { error: 'That slug is already taken' });
@@ -138,7 +147,14 @@ export const actions: Actions = {
 		// Create vendor + assign owner in one transaction
 		const [newVendor] = await db
 			.insert(vendor)
-			.values({ name, slug, type, address: {}, timezone })
+			.values({
+				name,
+				slug,
+				type,
+				fulfillmentModel: fulfillmentModel as 'storefront' | 'pickup_only' | 'hybrid',
+				address: {},
+				timezone
+			})
 			.returning({ id: vendor.id });
 
 		await db.insert(vendorUsers).values({

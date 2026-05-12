@@ -5,6 +5,75 @@ making changes. Follow it exactly.
 
 ---
 
+## Standing instructions
+
+### Zero real users until further notice
+
+Order Local has no production users and won't until Scott explicitly says
+otherwise. Schema changes, column drops, data wipes, enum reshapes, and
+restructures are freely available with no migration ceremony. Default action
+when a model needs to change: drop the column, recreate the schema, reseed.
+Do not write data migrations, backfill steps, or "preserve historical rows"
+fallbacks unless explicitly asked. This standing instruction is in effect
+until Scott updates this section to say otherwise.
+
+### Production domains and addressing
+
+- **Marketing site (apex)**: `getorderlocal.com` — currently the production
+  ORIGIN in `netlify.toml`. Will become a marketing presence; future
+  customer storefront entry point.
+- **Vendor dashboard (subdomain)**: `app.getorderlocal.com` — code references
+  this as the canonical app origin (e.g. `env.ORIGIN` fallback in
+  `src/lib/server/jobs/pending-approval-reminders.ts:78`), but DNS for this
+  subdomain is not yet configured. Phase Ops-1 task.
+- **Customer storefronts (wildcard subdomain)**: `{vendorSlug}.getorderlocal.com`
+  — each vendor's customer storefront lives at their own subdomain (e.g.
+  `sallysbakery.getorderlocal.com`). Requires wildcard DNS + wildcard TLS
+  certificate. Phase Ops-1 task.
+- **Email "from"**: `orders@getorderlocal.com`, support replies to
+  `hello@getorderlocal.com` — requires Resend domain verification.
+- **Preview deploys**: `order-local.netlify.app` — trusted by auth.
+- **Custom vendor domains** (future feature, not yet supported): vendors who
+  want their own branded URL would point their domain at the app. The host
+  detection in `src/lib/server/vendor.ts:getCurrentVendor` already anticipates
+  this (subdomain mode for non-`getorderlocal.com` hosts).
+
+Canonical origin via `env.ORIGIN`. Do not hardcode the domain in app code.
+
+**Phase Ops-1 task list (gates real-user launch):**
+- Configure DNS for `app.getorderlocal.com` (vendor dashboard subdomain)
+- Configure wildcard DNS for `*.getorderlocal.com` (customer storefront subdomains)
+- Provision wildcard TLS cert via Netlify (Let's Encrypt DNS challenge)
+- Verify Resend domain ownership for email sending
+- Update `netlify.toml` production ORIGIN to `https://app.getorderlocal.com`
+- Update the slug-prefix UI text in `src/routes/(app)/vendors/+page.svelte`
+  (around line 175) from `getorderlocal.com/` to `{slug}.getorderlocal.com`
+- Refine `src/lib/server/vendor.ts:getCurrentVendor` so the subdomain branch
+  wins for `*.getorderlocal.com` hosts (currently treats `*.getorderlocal.com`
+  as path-based, which won't be right once vendor subdomains are live)
+- Verify all email templates and Stripe Connect return URLs resolve under
+  the real origin
+
+### Seed archetypes are the canonical examples (in effect after Phase A.5)
+
+Each vendor archetype in `src/lib/server/seed/archetypes/` is the canonical
+example of its fulfillment model's feature usage. When adding a feature that
+touches fulfillment-model-specific behavior, add or update an archetype to
+demonstrate it. The archetype is the answer to "what does a storefront /
+pickup-only / hybrid vendor look like with this feature?"
+
+Note: until Phase A.5 lands, the codebase still uses a single
+`seedDemoVendor` fixture and the archetype pattern doesn't exist yet.
+
+### Vendor-scoped tables must be added to reseed (in effect after Phase A.5)
+
+Any new vendor-scoped table introduced by a feature must be added to the
+FK-safe wipe order in `scripts/reseed-dev-vendor.ts` in the same change.
+The wipe order matters: child tables before parents, cascade-source tables
+before targets. A reseed that leaves orphan rows behind is a broken reseed.
+
+---
+
 ## Workflow rule — patterns first, code second
 
 **Before writing any new component, page section, form, table, banner, dialog, list view, filter UI, or any other piece of UI or behavior:**

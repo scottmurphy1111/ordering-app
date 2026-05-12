@@ -12,6 +12,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 			name: true,
 			legalName: true,
 			type: true,
+			fulfillmentModel: true,
 			phone: true,
 			email: true,
 			website: true,
