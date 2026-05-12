@@ -29,6 +29,8 @@
 	let tab = $state<'members' | 'internal'>('members');
 	let showAddForm = $state(false);
 	let showInviteForm = $state(false);
+	let addRoleValue = $state('');
+	let inviteRoleValue = $state('');
 	let copiedToken = $state<string | null>(null);
 
 	const inviteUrl = $derived((form as { inviteUrl?: string } | null)?.inviteUrl ?? null);
@@ -139,9 +141,9 @@
 										placeholder="user@example.com"
 										class="min-w-48 flex-1"
 									/>
-									<Select type="single" name="role">
+									<Select type="single" name="role" bind:value={addRoleValue}>
 										<SelectTrigger class="w-auto">
-											<SelectValue placeholder="Role" />
+											<SelectValue>{roleLabels[addRoleValue] ?? 'Role'}</SelectValue>
 										</SelectTrigger>
 										<SelectContent>
 											{#each data.roles as role (role)}
@@ -188,9 +190,9 @@
 										placeholder="user@example.com"
 										class="min-w-48 flex-1"
 									/>
-									<Select type="single" name="role">
+									<Select type="single" name="role" bind:value={inviteRoleValue}>
 										<SelectTrigger class="w-auto">
-											<SelectValue placeholder="Role" />
+											<SelectValue>{roleLabels[inviteRoleValue] ?? 'Role'}</SelectValue>
 										</SelectTrigger>
 										<SelectContent>
 											{#each data.roles as role (role)}

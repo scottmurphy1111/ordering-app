@@ -100,8 +100,9 @@
 	// ── Phase 3: template state ───────────────────────────────────────────────
 
 	let showAddTemplateForm = $state(false);
-	let addTemplateForLocationId = $state<number | null>(null);
 	let editingTemplateId = $state<number | null>(null);
+	let editLocationValue = $state('');
+	let addLocationValue = $state('');
 	let addTemplateError = $state<string | null>(null);
 	let editTemplateError = $state<string | null>(null);
 
@@ -399,7 +400,7 @@
 				return;
 			}
 			showAddTemplateForm = false;
-			addTemplateForLocationId = null;
+			addLocationValue = '';
 			addTemplateError = null;
 			previewDays = [];
 			previewStartTime = '';
@@ -783,7 +784,7 @@
 						previewCutoffHours = 48;
 						previewRecurrenceStartDate = '';
 						previewRecurrenceEndDate = '';
-						addTemplateForLocationId = null;
+						addLocationValue = '';
 						showAddTemplateForm = true;
 					}}
 					variant="outline"
@@ -842,11 +843,11 @@
 							<Select
 								type="single"
 								name="locationId"
-								value={String(editingTemplate.locationId ?? '')}
+								bind:value={editLocationValue}
 							>
 								<SelectTrigger id="etmpl-location" class="w-full">
 									<SelectValue>
-										{data.locations.find((l) => l.id === editingTemplate.locationId)?.name ??
+										{data.locations.find((l) => String(l.id) === editLocationValue)?.name ??
 											'(no location)'}
 									</SelectValue>
 								</SelectTrigger>
@@ -1145,11 +1146,11 @@
 							<Select
 								type="single"
 								name="locationId"
-								value={String(addTemplateForLocationId ?? '')}
+								bind:value={addLocationValue}
 							>
 								<SelectTrigger id="tmpl-location" class="w-full">
 									<SelectValue>
-										{data.locations.find((l) => l.id === addTemplateForLocationId)?.name ??
+										{data.locations.find((l) => String(l.id) === addLocationValue)?.name ??
 											'(no location)'}
 									</SelectValue>
 								</SelectTrigger>
@@ -1337,7 +1338,7 @@
 							type="button"
 							onclick={() => {
 								showAddTemplateForm = false;
-								addTemplateForLocationId = null;
+								addLocationValue = '';
 								addTemplateError = null;
 								previewDays = [];
 								previewStartTime = '';
@@ -1371,7 +1372,7 @@
 						previewCutoffHours = 48;
 						previewRecurrenceStartDate = '';
 						previewRecurrenceEndDate = '';
-						addTemplateForLocationId = null;
+						addLocationValue = '';
 						showAddTemplateForm = true;
 					}}
 					variant="default"
@@ -1415,6 +1416,7 @@
 												type="button"
 												onclick={() => {
 													editingTemplateId = tmpl.id;
+													editLocationValue = String(tmpl.locationId ?? '');
 													showAddTemplateForm = false;
 													editTemplateError = null;
 													previewTemplateKind = getTemplateKind(tmpl.recurrence);
@@ -1503,7 +1505,7 @@
 								previewCutoffHours = 48;
 								previewRecurrenceStartDate = '';
 								previewRecurrenceEndDate = '';
-								addTemplateForLocationId = loc.id;
+								addLocationValue = String(loc.id);
 								showAddTemplateForm = true;
 							}}
 							class="h-auto p-0 text-xs text-muted-foreground hover:bg-transparent hover:text-foreground"
@@ -1542,6 +1544,7 @@
 											type="button"
 											onclick={() => {
 												editingTemplateId = tmpl.id;
+												editLocationValue = String(tmpl.locationId ?? '');
 												showAddTemplateForm = false;
 												editTemplateError = null;
 												previewTemplateKind = getTemplateKind(tmpl.recurrence);

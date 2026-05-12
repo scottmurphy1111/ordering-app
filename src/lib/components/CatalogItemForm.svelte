@@ -90,6 +90,10 @@
 	let internalError = $state<string | null>(null);
 	let internalSuccess = $state(false);
 
+	// Controlled select mirrors — must be $state so bind:value propagates user selections
+	let categoryValue = $state(untrack(() => String(item?.category?.id ?? '')));
+	let statusValue = $state(untrack(() => (mode === 'edit' ? (item?.status ?? 'available') : 'available')));
+
 	async function onImageChange(e: Event) {
 		const input = e.target as HTMLInputElement;
 		const file = input.files?.[0];
@@ -294,10 +298,10 @@
 		<label class="mb-1 block text-sm font-medium text-muted-foreground" for="categoryId"
 			>Category</label
 		>
-		<Select type="single" name="categoryId" value={String(item?.category?.id ?? '')}>
+		<Select type="single" name="categoryId" bind:value={categoryValue}>
 			<SelectTrigger id="categoryId" class="w-full">
 				<SelectValue>
-					{categories.find((c) => c.id === item?.category?.id)?.name ?? 'No category'}
+					{categories.find((c) => String(c.id) === categoryValue)?.name ?? 'No category'}
 				</SelectValue>
 			</SelectTrigger>
 			<SelectContent>
@@ -381,10 +385,9 @@
 		['hidden', 'Hidden'],
 		['draft', 'Draft']
 	] as const}
-	{@const statusValue = mode === 'edit' ? (item?.status ?? 'available') : 'available'}
 	<div>
 		<label class="mb-1 block text-sm font-medium text-muted-foreground" for="status">Status</label>
-		<Select type="single" name="status" value={statusValue}>
+		<Select type="single" name="status" bind:value={statusValue}>
 			<SelectTrigger id="status" class="w-full">
 				<SelectValue>
 					{STATUS_OPTIONS.find(([v]) => v === statusValue)?.[1] ?? 'Available'}

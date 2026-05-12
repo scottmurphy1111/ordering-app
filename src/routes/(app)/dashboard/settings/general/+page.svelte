@@ -38,6 +38,10 @@
 	const US_TZ_SET = new Set(US_TIMEZONES.map((t) => t.value));
 	const otherTimezones = getAllTimezones().filter((tz) => !US_TZ_SET.has(tz));
 
+	let typeValue = $state('');
+	$effect(() => {
+		typeValue = data.info?.type ?? '';
+	});
 	let timezoneValue = $state('America/New_York');
 	$effect(() => {
 		timezoneValue = data.info?.timezone ?? 'America/New_York';
@@ -103,9 +107,9 @@
 					</div>
 					<div class="sm:w-1/2">
 						<Label class="mb-1 block" for="type">Business type</Label>
-						<Select type="single" name="type" value={data.info?.type ?? ''}>
+						<Select type="single" name="type" bind:value={typeValue}>
 							<SelectTrigger id="type" class="w-full">
-								<SelectValue placeholder="Select type" />
+								<SelectValue>{BUSINESS_TYPES.find((bt) => bt.value === typeValue)?.label ?? 'Select type'}</SelectValue>
 							</SelectTrigger>
 							<SelectContent>
 								{#each businessTypes as bt (bt.value)}
