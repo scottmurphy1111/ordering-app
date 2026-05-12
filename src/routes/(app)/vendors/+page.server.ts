@@ -3,7 +3,8 @@ import { fail, redirect } from '@sveltejs/kit';
 import { db } from '$lib/server/db';
 import { eq, isNull } from 'drizzle-orm';
 import { vendor, vendorUsers } from '$lib/server/db/schema';
-import { seedDemoVendor } from '$lib/server/seed-demo';
+import { seedVendorWithArchetype } from '$lib/server/seed/seed';
+import { ARCHETYPES } from '$lib/server/seed/archetypes/index';
 
 function canCreateVendor(isInternal: boolean, userVendors: Array<{ role: string }>) {
 	if (isInternal) return true;
@@ -82,7 +83,13 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 	}
 
 	const canCreate = canCreateVendor(isInternal, vendors);
-	return { vendors, isInternal, canCreate };
+	const archetypesList = Object.values(ARCHETYPES).map((a) => ({
+		key: a.key,
+		label: a.label,
+		description: a.description,
+		allowedFulfillmentModels: a.allowedFulfillmentModels
+	}));
+	return { vendors, isInternal, canCreate, archetypesList };
 };
 
 export const actions: Actions = {
@@ -102,7 +109,7 @@ export const actions: Actions = {
 
 		const formData = await request.formData();
 
-		const seedDemo = formData.get('seedDemo') === '1';
+		const archetypeKey = formData.get('archetypeKey')?.toString() || '';
 		const name = formData.get('name')?.toString().trim();
 		const slug = formData.get('slug')?.toString().trim().toLowerCase().replace(/\s+/g, '-');
 		const type =
@@ -163,7 +170,9 @@ export const actions: Actions = {
 			role: 'owner'
 		});
 
-		if (seedDemo) await seedDemoVendor(newVendor.id);
+		if (archetypeKey && ARCHETYPES[archetypeKey]) {
+			await seedVendorWithArchetype(newVendor.id, archetypeKey);
+		}
 
 		cookies.set('selected-vendor-id', String(newVendor.id), {
 			path: '/',

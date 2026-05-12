@@ -54,7 +54,7 @@ Canonical origin via `env.ORIGIN`. Do not hardcode the domain in app code.
 - Verify all email templates and Stripe Connect return URLs resolve under
   the real origin
 
-### Seed archetypes are the canonical examples (in effect after Phase A.5)
+### Seed archetypes are the canonical examples
 
 Each vendor archetype in `src/lib/server/seed/archetypes/` is the canonical
 example of its fulfillment model's feature usage. When adding a feature that
@@ -62,15 +62,98 @@ touches fulfillment-model-specific behavior, add or update an archetype to
 demonstrate it. The archetype is the answer to "what does a storefront /
 pickup-only / hybrid vendor look like with this feature?"
 
-Note: until Phase A.5 lands, the codebase still uses a single
-`seedDemoVendor` fixture and the archetype pattern doesn't exist yet.
-
-### Vendor-scoped tables must be added to reseed (in effect after Phase A.5)
+### Vendor-scoped tables must be added to reseed
 
 Any new vendor-scoped table introduced by a feature must be added to the
 FK-safe wipe order in `scripts/reseed-dev-vendor.ts` in the same change.
 The wipe order matters: child tables before parents, cascade-source tables
 before targets. A reseed that leaves orphan rows behind is a broken reseed.
+
+### ASAP pickup defaults per fulfillment model
+
+The `vendor.settings.asapPickupEnabled` flag controls whether customers see the
+"ASAP" pickup pill at checkout. The flag means different things to different
+fulfillment models, with different sensible defaults:
+
+- **`storefront`**: defaults ON. Walk-in / same-day pickup is the dominant
+  order mode for storefront vendors (a customer ordering a croissant at 8am
+  expects to grab it on their way to work at 8:30). The ASAP option is what
+  customers actually want; "Schedule" is the secondary option for future-time
+  pickup within operating hours.
+- **`pickup_only`**: defaults OFF. All orders are handed off at scheduled
+  pickup events (Saturday market, Wednesday CSA pickup). ASAP is meaningless
+  — the vendor isn't anywhere to hand the order off at an arbitrary time.
+- **`hybrid`**: defaults ON. The storefront half of a hybrid vendor's
+  business supports ASAP for in-store pickup; pickup events remain scheduled.
+
+These defaults are set per-archetype in the fixture's `settings.asapPickupEnabled`
+field. Phase A.5's three archetypes (csa-weekly, farmers-market-booth,
+hybrid-bakery-with-market) all set this to `false` because the hybrid bakery's
+storefront half isn't fully operational until Phase C delivers operating-hours
+infrastructure. When Phase C lands, the hybrid archetype updates to
+`asapPickupEnabled: true`, and storefront archetypes (storefront-bakery,
+storefront-florist) ship with `asapPickupEnabled: true` by default.
+
+The ASAP toggle's UI copy in `/dashboard/settings/general` should adapt to the
+vendor's fulfillment model once Phase D ships storefront-aware ordering:
+
+- For storefront / hybrid vendors: "Most storefront vendors leave this on
+  — it's how customers order for same-day pickup."
+- For pickup_only vendors: "Most pickup-only vendors leave this off — orders
+  are handed off at scheduled pickup events."
+
+Don't change the copy in Phase A.5 / A.6 — wait for Phase D, when same-day
+storefront ordering is the dominant path for storefront vendors. Until then,
+the current "Off for most makers" copy is acceptable because pickup_only and
+hybrid are the only live fulfillment models.
+
+### Capability addons are independent of fulfillment model
+
+Some vendor capabilities are gated by paid addons rather than fulfillment model:
+
+- `subscriptions` — sell recurring items billed monthly/yearly
+- `sms_notifications` — text customers on order status changes
+- `custom_domain` — vendor's own domain for their storefront
+- `analytics` — revenue charts, top items, peak hours
+- `loyalty` — stamp cards and points
+- `promo_codes` — discount codes
+
+These addons are billed via Stripe subscription items on the vendor's account
+(see `src/lib/billing.ts`). They can be enabled on **any** vendor regardless
+of fulfillment model. They're orthogonal to fulfillment.
+
+**Archetype seeding must NOT pre-enable paid addons.** The seeding system
+inserts a vendor's catalog, locations, branding, and settings — but does not
+modify `vendor.addons`. A vendor seeded with a CSA archetype starts with an
+empty addons array, even though CSAs are the textbook use case for the
+Subscriptions addon. The vendor opts in (and agrees to the charge) themselves
+from `/dashboard/account/billing`.
+
+**Archetypes signal addon recommendations via their `description` field**
+(prose, not structured data). When an archetype's pattern is most naturally
+served by an addon, mention it in the description so the vendor sees it
+during creation:
+
+- **csa-weekly**: "Most useful with the Subscriptions addon — members pay
+  monthly for weekly shares."
+- **farmers-market-booth**: "Pair with SMS Notifications to text customers
+  Saturday morning when their preorder is ready."
+- **hybrid-bakery-with-market**: "Loyalty Program and Promo Codes addons fit
+  this pattern well — reward repeat customers and run holiday promotions."
+
+**Archetypes MAY include sample data that uses addon-gated features** even
+though the addon isn't enabled. The CSA archetype could include a catalog
+item marked `isSubscription: true` (e.g., "Monthly CSA Membership"); the item
+exists in the catalog but won't actually function as a subscription until the
+vendor enables the Subscriptions addon. The vendor sees an inline hint when
+viewing the item without the addon active (this hint mechanism is built into
+the existing catalog UI — see `hasSubscriptionsAddon` references in
+`src/routes/(app)/dashboard/catalog/items/`).
+
+This pattern — seeded sample, deferred functionality, addon hint — applies to
+all addon-gated features. Future archetypes following this convention should
+not require new gating infrastructure; the existing `hasAddon` check in
+`src/lib/billing.ts` already handles it.
 
 ---
 

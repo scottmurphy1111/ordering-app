@@ -14,8 +14,20 @@
 		TableRow,
 		TableCell
 	} from '$lib/components/ui/table';
+	import {
+		DropdownMenu,
+		DropdownMenuTrigger,
+		DropdownMenuContent,
+		DropdownMenuItem
+	} from '$lib/components/ui/dropdown-menu';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
+
+	function compatibleArchetypes(fulfillmentModel: string) {
+		return data.archetypesList.filter((a) =>
+			(a.allowedFulfillmentModels as string[]).includes(fulfillmentModel)
+		);
+	}
 
 	let search = $state('');
 
@@ -87,6 +99,9 @@
 						<TableRow class="hover:bg-transparent">
 							<TableHead class="px-4 py-2.5 text-muted-foreground">Vendor</TableHead>
 							<TableHead class="px-4 py-2.5 text-muted-foreground">Type</TableHead>
+							<TableHead class="hidden px-4 py-2.5 text-muted-foreground lg:table-cell"
+								>Model</TableHead
+							>
 							<TableHead class="hidden px-4 py-2.5 text-muted-foreground sm:table-cell"
 								>Plan</TableHead
 							>
@@ -106,6 +121,9 @@
 								</TableCell>
 								<TableCell class="px-4 py-3 text-sm text-muted-foreground capitalize">
 									{t.type?.replace('_', ' ') ?? '—'}
+								</TableCell>
+								<TableCell class="hidden px-4 py-3 text-xs text-muted-foreground lg:table-cell">
+									{t.fulfillmentModel?.replace('_', ' ') ?? '—'}
 								</TableCell>
 								<TableCell
 									class="hidden px-4 py-3 text-sm text-muted-foreground capitalize sm:table-cell"
@@ -127,6 +145,54 @@
 									<div
 										class="flex flex-col items-stretch gap-1 md:flex-row md:items-center md:justify-end"
 									>
+										{#if !t.deletedAt && compatibleArchetypes(t.fulfillmentModel ?? '').length > 0}
+											<!-- Reseed -->
+											<DropdownMenu>
+												<DropdownMenuTrigger>
+													{#snippet child({ props })}
+														<Button
+															{...props}
+															variant="ghost"
+															size="xs"
+															class="w-full text-muted-foreground md:w-auto"
+														>
+															Reseed…
+														</Button>
+													{/snippet}
+												</DropdownMenuTrigger>
+												<DropdownMenuContent align="end">
+													{#each compatibleArchetypes(t.fulfillmentModel ?? '') as archetype (archetype.key)}
+														<DropdownMenuItem>
+															<form
+																method="post"
+																action="?/reseed"
+																use:enhance
+																class="w-full"
+																onsubmit={async (e) => {
+																	e.preventDefault();
+																	const form = e.currentTarget as HTMLFormElement;
+																	if (
+																		await confirmDialog(
+																			`Reseed "${t.name}" as "${archetype.label}"? This wipes all current vendor data.`
+																		)
+																	)
+																		form.requestSubmit();
+																}}
+															>
+																<input type="hidden" name="id" value={t.id} />
+																<input type="hidden" name="archetypeKey" value={archetype.key} />
+																<button
+																	type="submit"
+																	class="w-full cursor-pointer text-left text-sm"
+																>
+																	{archetype.label}
+																</button>
+															</form>
+														</DropdownMenuItem>
+													{/each}
+												</DropdownMenuContent>
+											</DropdownMenu>
+										{/if}
 										{#if t.deletedAt || !t.isActive}
 											<!-- Restore -->
 											<form method="post" action="?/restore" use:enhance>

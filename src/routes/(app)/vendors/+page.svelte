@@ -16,7 +16,6 @@
 		SelectGroupHeading,
 		SelectSeparator
 	} from '$lib/components/ui/select';
-	import { Checkbox } from '$lib/components/ui/checkbox';
 	import { BUSINESS_TYPES, businessTypeLabel } from '$lib/utils/business-type-labels';
 	import { FULFILLMENT_MODELS } from '$lib/utils/fulfillment-model-labels';
 	import { US_TIMEZONES, getAllTimezones, getTimezoneLabel } from '$lib/utils/timezones';
@@ -42,7 +41,14 @@
 
 	let showCreate = $state(false);
 	let slugValue = $state('');
+	let archetypeValue = $state('');
 	let search = $state('');
+
+	const compatibleArchetypes = $derived(
+		data.archetypesList.filter((a) =>
+			(a.allowedFulfillmentModels as string[]).includes(fulfillmentModelValue)
+		)
+	);
 
 	const filteredVendors = $derived(
 		search.trim()
@@ -258,17 +264,61 @@
 						</Select>
 					</div>
 
-					<label
-						class="flex cursor-pointer items-center gap-2 rounded-lg border bg-muted/40 px-3 py-2.5"
-					>
-						<Checkbox name="seedDemo" value="1" checked={true} />
-						<div>
-							<p class="text-sm font-medium text-foreground">Add example catalog items</p>
+					<div>
+						<p class="mb-1.5 block text-sm font-medium text-muted-foreground">
+							Example data
+						</p>
+						{#if compatibleArchetypes.length === 0}
 							<p class="text-xs text-muted-foreground">
-								Pre-fill with demo categories and items you can edit or delete.
+								No example catalog available for this fulfillment model yet. Your shop will
+								start blank.
 							</p>
-						</div>
-					</label>
+							<input type="hidden" name="archetypeKey" value="" />
+						{:else}
+							<div class="space-y-2">
+								<label
+									class="flex cursor-pointer items-start gap-3 rounded-lg border bg-background p-3 transition-colors hover:bg-muted/40 {archetypeValue ===
+									''
+										? 'border-primary ring-1 ring-primary'
+										: 'border-border'}"
+								>
+									<input
+										type="radio"
+										name="archetypeKey"
+										value=""
+										bind:group={archetypeValue}
+										class="mt-0.5"
+									/>
+									<div class="flex-1">
+										<p class="text-sm font-medium text-foreground">Start blank</p>
+										<p class="mt-0.5 text-xs text-muted-foreground">
+											No example catalog, orders, or settings pre-filled.
+										</p>
+									</div>
+								</label>
+								{#each compatibleArchetypes as archetype (archetype.key)}
+									<label
+										class="flex cursor-pointer items-start gap-3 rounded-lg border bg-background p-3 transition-colors hover:bg-muted/40 {archetypeValue ===
+										archetype.key
+											? 'border-primary ring-1 ring-primary'
+											: 'border-border'}"
+									>
+										<input
+											type="radio"
+											name="archetypeKey"
+											value={archetype.key}
+											bind:group={archetypeValue}
+											class="mt-0.5"
+										/>
+										<div class="flex-1">
+											<p class="text-sm font-medium text-foreground">{archetype.label}</p>
+											<p class="mt-0.5 text-xs text-muted-foreground">{archetype.description}</p>
+										</div>
+									</label>
+								{/each}
+							</div>
+						{/if}
+					</div>
 
 					<div class="flex gap-2 pt-1">
 						<Button type="submit" variant="default" class="flex-1">Create & go to dashboard</Button>
