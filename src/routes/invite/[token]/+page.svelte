@@ -12,8 +12,7 @@
 
 	const roleLabels: Record<string, string> = {
 		owner: 'Owner',
-		manager: 'Manager',
-		kitchen: 'Kitchen',
+		admin: 'Admin',
 		staff: 'Staff',
 		viewer: 'Viewer'
 	};

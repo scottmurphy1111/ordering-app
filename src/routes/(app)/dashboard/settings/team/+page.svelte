@@ -44,15 +44,13 @@
 
 	const roleLabels: Record<string, string> = {
 		owner: 'Owner',
-		manager: 'Manager',
-		kitchen: 'Kitchen',
+		admin: 'Admin',
 		staff: 'Staff',
 		viewer: 'Viewer'
 	};
 	const roleColors: Record<string, string> = {
 		owner: 'bg-purple-100 text-purple-700',
-		manager: 'bg-blue-100 text-blue-700',
-		kitchen: 'bg-orange-100 text-orange-700',
+		admin: 'bg-blue-100 text-blue-700',
 		staff: 'bg-muted text-muted-foreground',
 		viewer: 'bg-muted text-muted-foreground'
 	};
@@ -94,7 +92,7 @@
 				<Alert severity="error" class="mb-4">{form.inviteError}</Alert>
 			{/if}
 
-			{#if data.currentRole === 'owner' || data.currentRole === 'manager'}
+			{#if data.currentRole === 'owner' || data.currentRole === 'admin'}
 				<div class="mb-5 flex gap-2">
 					{#if !showAddForm}
 						<Button
@@ -258,7 +256,7 @@
 										<p class="text-xs text-muted-foreground">{member.email}</p>
 									</TableCell>
 									<TableCell class="px-4 py-3">
-										{#if (data.currentRole === 'owner' || data.currentRole === 'manager') && member.userId !== data.currentUserId}
+										{#if (data.currentRole === 'owner' || data.currentRole === 'admin') && member.userId !== data.currentUserId}
 											<form method="post" action="?/changeRole" use:enhance>
 												<input type="hidden" name="userId" value={member.userId} />
 												<select
@@ -289,7 +287,7 @@
 										})}
 									</TableCell>
 									<TableCell class="px-4 py-3 text-right">
-										{#if member.userId !== data.currentUserId && (data.currentRole === 'owner' || data.currentRole === 'manager')}
+										{#if member.userId !== data.currentUserId && (data.currentRole === 'owner' || data.currentRole === 'admin')}
 											<div class="flex flex-col items-stretch gap-1 md:flex-row md:items-center md:justify-end md:gap-3">
 												{#if data.canManageInternal && !member.isInternal}
 													<form method="post" action="?/toggleInternal" use:enhance>

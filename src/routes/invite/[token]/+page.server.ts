@@ -1,6 +1,7 @@
 import type { PageServerLoad, Actions } from './$types';
 import { fail, redirect } from '@sveltejs/kit';
 import { db } from '$lib/server/db';
+import type { VendorRole } from '$lib/server/roles';
 import { eq, and } from 'drizzle-orm';
 import { vendorUsers, vendorInvitations, vendor } from '$lib/server/db/vendor';
 import { user } from '$lib/server/db/auth.schema';
@@ -20,7 +21,7 @@ async function acceptInvite(token: string, userId: string) {
 		await db.insert(vendorUsers).values({
 			vendorId: invite.vendorId,
 			userId,
-			role: invite.role as 'owner' | 'manager' | 'kitchen' | 'staff' | 'viewer'
+			role: invite.role as VendorRole
 		});
 	}
 

@@ -1,6 +1,7 @@
 // Pure demo data — no database connection imports. Schema type imports are fine.
 // Safe to import from Bun scripts (no $env/dynamic/private chain).
 import type { LoyaltyConfig } from './db/loyalty';
+import type { VendorRole } from './roles';
 
 export interface DemoCategory {
 	name: string;
@@ -123,7 +124,7 @@ export interface DemoPromoCode {
 
 export interface DemoInvitation {
 	email: string;
-	role: 'staff' | 'manager';
+	role: VendorRole;
 	expiresInDays: number;
 }
 
