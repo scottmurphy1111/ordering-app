@@ -85,7 +85,7 @@
 				</div>
 				<input type="hidden" name="sortOrder" value={data.category.sortOrder ?? 0} />
 
-				<!-- Active / Inactive toggle -->
+				<!-- Active / Hidden toggle -->
 				<div class="flex items-center justify-between rounded-lg border px-4 py-3">
 					<div>
 						<p class="text-sm font-medium text-muted-foreground">Status</p>
@@ -102,7 +102,7 @@
 						<span
 							class="w-14 text-sm font-medium {isActive ? 'text-success' : 'text-muted-foreground'}"
 						>
-							{isActive ? 'Active' : 'Inactive'}
+							{isActive ? 'Active' : 'Hidden'}
 						</span>
 					</label>
 				</div>

@@ -96,16 +96,16 @@ export const actions: Actions = {
 		return { success: true };
 	},
 
-	toggleActive: async ({ request, locals }) => {
+	setStatus: async ({ request, locals }) => {
 		const vendorId = locals.vendorId!;
 		const formData = await request.formData();
 		const id = parseInt(formData.get('id')?.toString() ?? '');
-		const current = formData.get('isActive') === 'true';
+		const isActive = formData.get('isActive') === 'true';
 		if (isNaN(id)) return fail(400, { error: 'Invalid ID' });
 
 		await db
 			.update(catalogCategories)
-			.set({ isActive: !current })
+			.set({ isActive })
 			.where(and(eq(catalogCategories.id, id), eq(catalogCategories.vendorId, vendorId)));
 		return { success: true };
 	}

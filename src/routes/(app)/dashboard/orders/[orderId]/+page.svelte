@@ -113,7 +113,7 @@
 	<!-- Back link -->
 	<a
 		href={resolve('/dashboard/orders')}
-		class="mb-4 inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700"
+		class="mb-4 inline-flex items-center gap-1 text-sm text-muted-foreground transition-colors hover:text-foreground"
 	>
 		<Icon icon="mdi:chevron-left" class="h-4 w-4" /> Orders
 	</a>

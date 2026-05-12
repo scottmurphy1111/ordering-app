@@ -31,6 +31,7 @@ One-line summaries and links to the detailed sections of this document. Scan thi
 ### Layout and structure
 
 - **Page header** — title left, mode toggle + primary CTA right. Single canonical structure across all dashboard pages. → [Page Header Pattern](#page-header-pattern)
+- **Entity-detail page header** — back-link breadcrumb with `mdi:chevron-left` and slash separator. Two canonical shapes (existing-entity, new-entity) + one dense-header stacked deviation for orders. → [Entity-detail page header](#entity-detail-page-header)
 - **Inner navigation** — sidebar (desktop) / select (mobile) for pages with sub-pages. Use `InnerNavLayout` component. → [Inner navigation (Account, Settings)](#inner-navigation-account-settings)
 - **Mobile-first card two-column** — column on mobile, row on desktop. Never use `shrink-0` on right column without `md:` modifier. → [Card two-column pattern](#card-two-column-pattern)
 - **Search + filter toolbar** — search row above; filter pills (left) + date range (right) below. Two-row layout, not one. → [Search + Filter Toolbar Pattern](#search--filter-toolbar-pattern)
@@ -889,6 +890,76 @@ Every dashboard page follows this exact header structure:
 - Mode toggles sit immediately left of the CTA.
 - Do not put breadcrumbs inside the main content area.
 - Do not stack a separate `<p>` subtitle unless it adds real context.
+
+---
+
+## Entity-detail page header
+
+Pages that show a single entity in a focused editor — `dashboard/orders/[orderId]`, `dashboard/catalog/items/[itemId]`, `dashboard/catalog/items/new`, `dashboard/catalog/categories/[categoryId]` — use a back-link header. Two canonical shapes and one documented deviation.
+
+**Canonical — existing-entity editors (entity-name as title):**
+
+```svelte
+<div class="mb-6 flex items-center gap-3">
+  <a
+    href={resolve('/dashboard/parent-list')}
+    class="inline-flex items-center gap-1 text-sm text-muted-foreground transition-colors hover:text-foreground"
+  >
+    <Icon icon="mdi:chevron-left" class="h-4 w-4" /> Parent
+  </a>
+  <span class="text-muted-foreground/40">/</span>
+  <h1 class="text-2xl font-bold text-foreground">{entity.name}</h1>
+</div>
+```
+
+Used at `catalog/items/[itemId]` and `catalog/categories/[categoryId]`.
+
+**Canonical — "new entity" variant (static title):**
+
+```svelte
+<div class="mb-6 flex items-center gap-3">
+  <a
+    href={resolve('/dashboard/parent-list')}
+    class="inline-flex items-center gap-1 text-sm text-muted-foreground transition-colors hover:text-foreground"
+  >
+    <Icon icon="mdi:chevron-left" class="h-4 w-4" /> Parent
+  </a>
+  <span class="text-muted-foreground/40">/</span>
+  <h1 class="text-2xl font-bold text-foreground">New entity</h1>
+</div>
+```
+
+Used at `catalog/items/new`. Identical structure to the existing-entity canonical; only the `<h1>` text content differs (static phrase instead of `{entity.name}`).
+
+Not every entity has a dedicated "new" route. Categories use a slide-in drawer (`Sheet` panel) on the list page rather than a `categories/new` route, because the new-category form is short enough to fit in a drawer. When choosing between a `new/` route and a drawer for a new-entity flow, the form's complexity (multi-section, image uploads, related sub-entities like modifier groups) is the deciding factor.
+
+**Deviation — dense-header entity pages (stacked layout):**
+
+When the entity's header data is too dense for an inline breadcrumb (entity title plus multiple status badges plus metadata lines plus a primary monetary value), use the stacked layout: back-link on its own line with `mb-4`, header block below.
+
+```svelte
+<a
+  href={resolve('/dashboard/parent-list')}
+  class="mb-4 inline-flex items-center gap-1 text-sm text-muted-foreground transition-colors hover:text-foreground"
+>
+  <Icon icon="mdi:chevron-left" class="h-4 w-4" /> Parent
+</a>
+
+<!-- Dense header block below -->
+<div class="mb-4 flex items-start justify-between gap-4">
+  <div class="flex min-w-0 flex-col gap-1.5">
+    <h1 class="text-2xl font-bold text-foreground">{entity.identifier}</h1>
+    <!-- Status badges, metadata paragraphs, etc. -->
+  </div>
+  <p class="text-xl font-semibold text-foreground">{primary monetary value}</p>
+</div>
+```
+
+Used at `dashboard/orders/[orderId]`. The back-link uses the same icon and hover tokens as the inline canonical — only the layout structure differs. The order detail's `<h1>` keeps a `font-mono` class because order numbers are identifiers; that's an entity-specific styling choice, not part of the pattern.
+
+Apply the dense-header deviation only when an inline breadcrumb would force wrapping or visibly crowd the header at typical widths (e.g., 640–768px). The canonical inline shape is preferred when it fits.
+
+**Not covered here:** the `/dashboard/settings/*` and `/dashboard/account/*` sub-pages, which intentionally have no back-links — the inner sidebar/select handles navigation per the "Inner navigation" section.
 
 ---
 
@@ -1974,10 +2045,6 @@ Four documented deviations from the canonical, each with a specific surface rati
 </Button>
 ```
 
-### Anomaly: Sign out (account/profile)
-
-`/dashboard/account/profile` Sign out button uses `<Button variant="outline" class="text-red-600 hover:bg-red-50 hover:text-red-700">` — the only surviving `variant="outline"` red Button in the codebase. The outline shape is intentional: Sign out is more deliberate than Remove avatar (which sits on the same page) but less destructive than Delete account. The outline reads as "deliberate but not irreversible." Sibling enumeration: this is the only callsite using this treatment; if a second one appears, revisit whether it should be a documented variation #5 or whether Sign out should be aligned to canonical ghost.
-
 ### Customer-facing storefront
 
 The customer cart's item-remove icon at `(public)/[vendorSlug]/cart/+page.svelte` uses raw `<button class="text-red-400 hover:text-red-600">` — text-only hover, no bg tint, no `<Button>` primitive. The storefront has different design rules (CSS variables for vendor branding, softer transactional voice), and destructive affordances there are quieter by design. This is **not** a dashboard pattern — never use this shape inside `/dashboard`.
@@ -1987,7 +2054,7 @@ The customer cart's item-remove icon at `(public)/[vendorSlug]/cart/+page.svelte
 This section retires two previously-documented patterns:
 
 - ~~"Raw `<button>` exception #1 — quiet text-link in card action strips"~~ — orders list cards, history card, billing card strip, etc. all now use the canonical `<Button variant="ghost">`. The exception no longer applies; only the customer-facing cart icon remains as a raw destructive `<button>`, and that's a different surface covered above.
-- ~~"Outlined-destructive — `<Button variant="outline" class="border-red-200 text-red-500 hover:bg-red-50">`"~~ — detail-page Cancel/Refund/Decline now use canonical ghost. Outline-red is retired everywhere except the Sign out anomaly.
+- ~~"Outlined-destructive — `<Button variant="outline" class="border-red-200 text-red-500 hover:bg-red-50">`"~~ — detail-page Cancel/Refund/Decline now use canonical ghost. Outline-red is fully retired across the dashboard.
 
 ### Static drift checks
 

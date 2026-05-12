@@ -11,9 +11,11 @@
 	<div class="mb-6 flex items-center gap-3">
 		<a
 			href={resolve('/dashboard/catalog/items')}
-			class="inline-flex items-center gap-1 text-sm text-muted-foreground transition-colors hover:text-muted-foreground"
-			><Icon icon="mdi:arrow-left" class="h-4 w-4" /> Items</a
+			class="inline-flex items-center gap-1 text-sm text-muted-foreground transition-colors hover:text-foreground"
 		>
+			<Icon icon="mdi:chevron-left" class="h-4 w-4" /> Items
+		</a>
+		<span class="text-muted-foreground/40">/</span>
 		<h1 class="text-2xl font-bold text-foreground">New item</h1>
 	</div>
 

@@ -2,6 +2,7 @@
 	import { enhance } from '$app/forms';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
+	import { onMount } from 'svelte';
 	import { confirmDialog } from '$lib/confirm.svelte';
 	import type { PageData, ActionData } from './$types';
 	import Icon from '@iconify/svelte';
@@ -20,6 +21,7 @@
 	import { Label } from '$lib/components/ui/label';
 	import { Card, CardContent } from '$lib/components/ui/card';
 	import { Alert } from '$lib/components/ui/alert';
+	import { Skeleton } from '$lib/components/ui/skeleton';
 	import {
 		Table,
 		TableHeader,
@@ -121,6 +123,12 @@
 			}
 		};
 	}
+
+	// ── Mounted / skeleton ────────────────────────────────────────
+	let mounted = $state(false);
+	onMount(() => {
+		mounted = true;
+	});
 
 	// ── Sort mode ─────────────────────────────────────────────────
 	let sortMode = $state(false);
@@ -290,64 +298,129 @@
 			</CardContent>
 		</Card>
 	{:else}
+		{#snippet statusDropdown(cat: (typeof sortedCategories)[number])}
+			<DropdownMenu>
+				<DropdownMenuTrigger>
+					{#snippet child({ props })}
+						<button
+							{...props}
+							type="button"
+							class="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium capitalize transition-colors hover:opacity-80 {cat.isActive
+								? 'bg-success/10 text-success'
+								: 'bg-gray-100 text-gray-400'}"
+						>
+							{cat.isActive ? 'Active' : 'Hidden'}
+							<Icon icon="mdi:chevron-down" class="h-3 w-3" />
+						</button>
+					{/snippet}
+				</DropdownMenuTrigger>
+				<DropdownMenuContent align="start">
+					{#each [['true', 'Active'], ['false', 'Hidden']] as const as [val, label] (val)}
+						<DropdownMenuItem>
+							<form
+								method="post"
+								action="?/setStatus"
+								use:enhance={() =>
+									({ update }) =>
+										update({ reset: false })}
+								class="w-full"
+							>
+								<input type="hidden" name="id" value={cat.id} />
+								<input type="hidden" name="isActive" value={val} />
+								<button
+									type="submit"
+									class="flex w-full items-center gap-2 text-sm {String(cat.isActive) === val
+										? 'font-semibold'
+										: ''}"
+								>
+									<span class="h-2 w-2 rounded-full {val === 'true' ? 'bg-success' : 'bg-gray-300'}"
+									></span>
+									{label}
+								</button>
+							</form>
+						</DropdownMenuItem>
+					{/each}
+				</DropdownMenuContent>
+			</DropdownMenu>
+		{/snippet}
+
 		<!-- ── Mobile card list ────────────────────────────────────── -->
 		<div class="block space-y-2 md:hidden">
-			{#each sortedCategories as cat (cat.id)}
-				{@const toggleRef = { el: null as HTMLFormElement | null }}
-				<div class="rounded-xl border bg-background shadow-sm">
-					<div class="px-4 pt-3 pb-2">
-						<p class="text-sm font-medium text-foreground">{cat.name}</p>
-						{#if cat.description}
-							<p class="mt-0.5 text-xs text-muted-foreground">{cat.description}</p>
-						{/if}
-						<a
-							href={resolve(`/dashboard/catalog/items?categoryId=${cat.id}` as `/${string}`)}
-							class="mt-1 inline-block text-xs text-muted-foreground transition-colors hover:text-primary hover:underline"
-							>{cat.itemCount} {Number(cat.itemCount) === 1 ? 'item' : 'items'}</a
-						>
-					</div>
-					<div class="flex items-center justify-between border-t border-gray-100 px-4 py-2">
-						<form method="post" action="?/toggleActive" use:enhance bind:this={toggleRef.el}>
-							<input type="hidden" name="id" value={cat.id} />
-							<input type="hidden" name="isActive" value={String(cat.isActive)} />
-							<Switch
-								checked={cat.isActive ?? false}
-								onCheckedChange={() => toggleRef.el?.requestSubmit()}
-								title={cat.isActive ? 'Active — click to hide' : 'Hidden — click to show'}
-							/>
-						</form>
-						<div class="flex items-center gap-1">
-							<Button variant="outline" onclick={() => openEditDrawer(cat)}>Edit</Button>
-							<form method="post" action="?/delete" use:enhance>
-								<input type="hidden" name="id" value={cat.id} />
-								<Button
-									type="submit"
-									size="icon"
-									variant="ghost"
-									class="text-red-500 hover:bg-red-50 hover:text-red-600"
-									onclick={async (e) => {
-										e.preventDefault();
-										const form = (e.currentTarget as HTMLButtonElement).form;
-										const itemCount = Number(cat.itemCount);
-										const msg =
-											itemCount > 0
-												? `Delete '${cat.name}'? This category contains ${itemCount} ${itemCount === 1 ? 'item' : 'items'}. They will become uncategorized.`
-												: `Delete '${cat.name}'?`;
-										if (await confirmDialog(msg)) form?.requestSubmit();
-									}}
-									aria-label="Delete category"
-								>
-									<Icon icon="mdi:trash-can-outline" class="h-3.5 w-3.5" />
-								</Button>
-							</form>
+			{#if !mounted}
+				{#each [0, 1, 2, 3, 4] as i (i)}
+					<div class="overflow-hidden rounded-xl border border-gray-200 bg-white">
+						<div class="px-4 pt-3 pb-2">
+							<Skeleton class="h-4 w-2/3 rounded" />
+							<Skeleton class="mt-1.5 h-3 w-1/2 rounded" />
+							<Skeleton class="mt-1 h-3 w-20 rounded" />
+						</div>
+						<div class="flex items-center justify-between gap-2 border-t border-gray-100 px-4 py-2">
+							<Skeleton class="h-6 w-20 rounded-full" />
+							<div class="flex items-center gap-1">
+								<Skeleton class="h-8 w-8 rounded-md" />
+								<Skeleton class="h-8 w-8 rounded-md" />
+							</div>
 						</div>
 					</div>
-				</div>
-			{/each}
+				{/each}
+			{:else}
+				{#each sortedCategories as cat (cat.id)}
+					<div class="overflow-hidden rounded-xl border border-gray-200 bg-white">
+						<div class="px-4 pt-3 pb-2">
+							<p class="text-sm font-medium text-foreground">{cat.name}</p>
+							{#if cat.description}
+								<p class="mt-0.5 text-xs text-muted-foreground">{cat.description}</p>
+							{/if}
+							<a
+								href={resolve(`/dashboard/catalog/items?categoryId=${cat.id}` as `/${string}`)}
+								class="mt-1 inline-block text-xs text-muted-foreground transition-colors hover:text-primary hover:underline"
+								>{cat.itemCount} {Number(cat.itemCount) === 1 ? 'item' : 'items'}</a
+							>
+						</div>
+						<div class="flex items-center justify-between border-t border-gray-100 px-4 py-2">
+							{@render statusDropdown(cat)}
+							<div class="flex items-center gap-1">
+								<Button
+									variant="ghost"
+									size="icon"
+									onclick={() => openEditDrawer(cat)}
+									aria-label="Edit category"
+								>
+									<Icon icon="mdi:pencil-outline" class="h-3.5 w-3.5" />
+								</Button>
+								<form method="post" action="?/delete" use:enhance>
+									<input type="hidden" name="id" value={cat.id} />
+									<Button
+										type="submit"
+										size="icon"
+										variant="ghost"
+										class="text-red-500 hover:bg-red-50 hover:text-red-600"
+										onclick={async (e) => {
+											e.preventDefault();
+											const form = (e.currentTarget as HTMLButtonElement).form;
+											const itemCount = Number(cat.itemCount);
+											const msg =
+												itemCount > 0
+													? `Delete '${cat.name}'? This category contains ${itemCount} ${itemCount === 1 ? 'item' : 'items'}. They will become uncategorized.`
+													: `Delete '${cat.name}'?`;
+											if (await confirmDialog(msg)) form?.requestSubmit();
+										}}
+										aria-label="Delete category"
+									>
+										<Icon icon="mdi:trash-can-outline" class="h-3.5 w-3.5" />
+									</Button>
+								</form>
+							</div>
+						</div>
+					</div>
+				{/each}
+			{/if}
 		</div>
 
 		<!-- ── Desktop table ───────────────────────────────────────── -->
-		<div class="hidden overflow-hidden rounded-xl border shadow-sm md:block">
+		<div
+			class="hidden overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm md:block"
+		>
 			<Table>
 				<TableHeader>
 					<TableRow class="hover:bg-transparent">
@@ -376,62 +449,89 @@
 					</TableRow>
 				</TableHeader>
 				<TableBody>
-					{#each sortedCategories as cat (cat.id)}
-						{@const toggleRef = { el: null as HTMLFormElement | null }}
-						<TableRow class="hover:bg-gray-50">
-							<TableCell class="px-4 py-3">
-								<p class="font-medium text-foreground">{cat.name}</p>
-								{#if cat.description}
-									<p class="mt-0.5 text-xs text-muted-foreground">{cat.description}</p>
-								{/if}
-							</TableCell>
-							<TableCell class="px-4 py-3">
-								<a
-									href={resolve(`/dashboard/catalog/items?categoryId=${cat.id}` as `/${string}`)}
-									class="text-sm text-muted-foreground transition-colors hover:text-primary hover:underline"
-									>{cat.itemCount} {Number(cat.itemCount) === 1 ? 'item' : 'items'}</a
-								>
-							</TableCell>
-							<TableCell class="px-4 py-3">
-								<form method="post" action="?/toggleActive" use:enhance bind:this={toggleRef.el}>
-									<input type="hidden" name="id" value={cat.id} />
-									<input type="hidden" name="isActive" value={String(cat.isActive)} />
-									<Switch
-										checked={cat.isActive ?? false}
-										onCheckedChange={() => toggleRef.el?.requestSubmit()}
-										title={cat.isActive ? 'Active — click to hide' : 'Hidden — click to show'}
-									/>
-								</form>
-							</TableCell>
-							<TableCell class="px-4 py-3">
-								<div class="flex items-center gap-2">
-									<Button variant="outline" onclick={() => openEditDrawer(cat)}>Edit</Button>
-									<form method="post" action="?/delete" use:enhance>
-										<input type="hidden" name="id" value={cat.id} />
+					{#if !mounted}
+						{#each [0, 1, 2, 3, 4] as i (i)}
+							<TableRow class="hover:bg-transparent">
+								<TableCell class="px-4 py-3">
+									<div class="space-y-1.5">
+										<Skeleton class="h-4 w-2/3 rounded" />
+										<Skeleton class="h-3 w-1/2 rounded" />
+									</div>
+								</TableCell>
+								<TableCell class="px-4 py-3">
+									<Skeleton class="h-4 w-16 rounded" />
+								</TableCell>
+								<TableCell class="w-28 px-4 py-3">
+									<Skeleton class="h-6 w-20 rounded-full" />
+								</TableCell>
+								<TableCell class="w-20 px-4 py-3">
+									<div class="flex items-center justify-end gap-1">
+										<Skeleton class="h-8 w-8 rounded-md" />
+										<Skeleton class="h-8 w-8 rounded-md" />
+									</div>
+								</TableCell>
+							</TableRow>
+						{/each}
+					{:else}
+						{#each sortedCategories as cat (cat.id)}
+							<TableRow class="hover:bg-gray-50">
+								<TableCell class="px-4 py-3">
+									<a
+										href={resolve(`/dashboard/catalog/categories/${cat.id}`)}
+										class="truncate text-sm font-medium text-gray-900 hover:text-gray-700"
+										>{cat.name}</a
+									>
+									{#if cat.description}
+										<p class="mt-0.5 text-xs text-muted-foreground">{cat.description}</p>
+									{/if}
+								</TableCell>
+								<TableCell class="px-4 py-3">
+									<a
+										href={resolve(`/dashboard/catalog/items?categoryId=${cat.id}` as `/${string}`)}
+										class="text-sm text-muted-foreground transition-colors hover:text-primary hover:underline"
+										>{cat.itemCount} {Number(cat.itemCount) === 1 ? 'item' : 'items'}</a
+									>
+								</TableCell>
+								<TableCell class="w-28 px-4 py-3">
+									{@render statusDropdown(cat)}
+								</TableCell>
+								<TableCell class="w-20 px-4 py-3 text-right">
+									<div class="flex items-center justify-end gap-1">
 										<Button
-											type="submit"
-											size="icon"
 											variant="ghost"
-											class="text-red-400 hover:bg-red-50 hover:text-red-600"
-											onclick={async (e) => {
-												e.preventDefault();
-												const form = (e.currentTarget as HTMLButtonElement).form;
-												const itemCount = Number(cat.itemCount);
-												const msg =
-													itemCount > 0
-														? `Delete '${cat.name}'? This category contains ${itemCount} ${itemCount === 1 ? 'item' : 'items'}. They will become uncategorized.`
-														: `Delete '${cat.name}'?`;
-												if (await confirmDialog(msg)) form?.requestSubmit();
-											}}
-											aria-label="Delete category"
+											size="icon"
+											onclick={() => openEditDrawer(cat)}
+											aria-label="Edit category"
 										>
-											<Icon icon="mdi:trash-can-outline" class="h-3.5 w-3.5" />
+											<Icon icon="mdi:pencil-outline" class="h-3.5 w-3.5" />
 										</Button>
-									</form>
-								</div>
-							</TableCell>
-						</TableRow>
-					{/each}
+										<form method="post" action="?/delete" use:enhance>
+											<input type="hidden" name="id" value={cat.id} />
+											<Button
+												type="submit"
+												size="icon"
+												variant="ghost"
+												class="text-red-400 hover:bg-red-50 hover:text-red-600"
+												onclick={async (e) => {
+													e.preventDefault();
+													const form = (e.currentTarget as HTMLButtonElement).form;
+													const itemCount = Number(cat.itemCount);
+													const msg =
+														itemCount > 0
+															? `Delete '${cat.name}'? This category contains ${itemCount} ${itemCount === 1 ? 'item' : 'items'}. They will become uncategorized.`
+															: `Delete '${cat.name}'?`;
+													if (await confirmDialog(msg)) form?.requestSubmit();
+												}}
+												aria-label="Delete category"
+											>
+												<Icon icon="mdi:trash-can-outline" class="h-3.5 w-3.5" />
+											</Button>
+										</form>
+									</div>
+								</TableCell>
+							</TableRow>
+						{/each}
+					{/if}
 				</TableBody>
 			</Table>
 		</div>
