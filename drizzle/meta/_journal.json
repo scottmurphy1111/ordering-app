@@ -113,6 +113,13 @@
       "when": 1778642341780,
       "tag": "0015_lean_warbound",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1778680981846,
+      "tag": "0016_stormy_red_wolf",
+      "breakpoints": true
     }
   ]
 }

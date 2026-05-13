@@ -588,6 +588,33 @@
 		{/if}
 	</main>
 
+	<!-- ── Custom order CTA ─────────────────────────────────────────────── -->
+	{#if !isPaused}
+		<div class="mx-auto max-w-2xl px-4 pb-8">
+			<div
+				class="rounded-xl border p-5 text-center"
+				style="border-color: color-mix(in srgb, var(--foreground-color) 15%, transparent); background-color: color-mix(in srgb, var(--accent-color) 8%, var(--background-color));"
+			>
+				<p class="text-sm font-semibold text-foreground" style="color: var(--foreground-color);">
+					Looking for something custom?
+				</p>
+				<p
+					class="mt-1 text-xs"
+					style="color: color-mix(in srgb, var(--foreground-color) 60%, transparent);"
+				>
+					Send a request and {vendor.name} will get back to you.
+				</p>
+				<a
+					href={resolve(`/${data.vendorSlug}/request` as `/${string}`)}
+					class="mt-3 inline-block rounded-lg px-4 py-2 text-xs font-medium transition-opacity hover:opacity-85"
+					style="background-color: var(--background-color); color: var(--foreground-color); border: 1px solid color-mix(in srgb, var(--foreground-color) 25%, transparent);"
+				>
+					Make a custom request →
+				</a>
+			</div>
+		</div>
+	{/if}
+
 	<!-- ── Sticky cart bar ────────────────────────────────────────────────── -->
 	{#if cart.count > 0 && !isPaused}
 		<div class="sticky bottom-0 flex justify-center p-4">

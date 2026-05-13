@@ -35,3 +35,11 @@ export const availabilityModeEnum = pgEnum('availability_mode', [
 	'events_only',
 	'special_order'
 ]);
+
+export const specialOrderRequestStateEnum = pgEnum('special_order_request_state', [
+	'pending',
+	'quoted',
+	'declined',
+	'accepted',
+	'expired'
+]);
