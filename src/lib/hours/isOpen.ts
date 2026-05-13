@@ -14,9 +14,7 @@ export interface ExceptionRow {
 	closeTime: string | null; // 'HH:MM:SS', null when isClosed=true
 }
 
-export type OpenState =
-	| { isOpen: true; closesAt: Date }
-	| { isOpen: false; opensAt: Date | null }; // opensAt null = no more hours today
+export type OpenState = { isOpen: true; closesAt: Date } | { isOpen: false; opensAt: Date | null }; // opensAt null = no upcoming hours within 7 days
 
 /**
  * Converts a wall-clock HH:MM time on a given YYYY-MM-DD calendar day to a UTC Date.
@@ -47,8 +45,59 @@ function wallClockToUtc(dateStr: string, timeHHMM: string, ianaTimezone: string)
 }
 
 /**
+ * Scans forward from fromDateStr + 1 day through 7 days, returning the first open moment found.
+ * Called whenever today has no further shift — closed exception, no-hours day, past-all-shifts.
+ */
+function forwardScan(
+	hours: HoursRow[],
+	exceptions: ExceptionRow[],
+	vendorTimezone: string,
+	fromDateStr: string
+): { isOpen: false; opensAt: Date | null } {
+	const fromUtcMs = new Date(fromDateStr + 'T00:00:00Z').getTime();
+	const ONE_DAY = 24 * 60 * 60 * 1000;
+
+	for (let dayOffset = 1; dayOffset <= 7; dayOffset++) {
+		const checkDate = new Date(fromUtcMs + dayOffset * ONE_DAY);
+		const checkDateStr = checkDate.toISOString().slice(0, 10);
+
+		// Check for a future exception on this date
+		const futureException = exceptions.find((e) => e.date === checkDateStr);
+		if (futureException) {
+			if (futureException.isClosed) continue;
+			if (futureException.openTime) {
+				const openHHMM = futureException.openTime.substring(0, 5);
+				const opensAt = wallClockToUtc(checkDateStr, openHHMM, vendorTimezone);
+				return { isOpen: false, opensAt };
+			}
+		}
+
+		// No exception — use regular weekly hours for that calendar day
+		const weekday = new Intl.DateTimeFormat('en', {
+			timeZone: 'UTC',
+			weekday: 'long'
+		})
+			.format(checkDate)
+			.toLowerCase();
+
+		const dayRows = hours
+			.filter((h) => h.dayOfWeek === weekday)
+			.sort((a, b) => a.openTime.localeCompare(b.openTime));
+
+		if (dayRows.length > 0) {
+			const openHHMM = dayRows[0].openTime.substring(0, 5);
+			const opensAt = wallClockToUtc(checkDateStr, openHHMM, vendorTimezone);
+			return { isOpen: false, opensAt };
+		}
+	}
+
+	// No open hours within the next 7 days
+	return { isOpen: false, opensAt: null };
+}
+
+/**
  * Returns whether the vendor is currently open, when they close (if open),
- * or when they next open today (if closed and a later shift exists).
+ * or when they next open — today if a later shift exists, otherwise within 7 days.
  *
  * Pass DB-fetched rows directly — time columns arrive as 'HH:MM:SS' strings,
  * date columns as 'YYYY-MM-DD' strings.
@@ -79,7 +128,8 @@ export function isVendorOpen(
 	// Check for an exception on today's date
 	const exception = exceptions.find((e) => e.date === localDateStr);
 	if (exception) {
-		if (exception.isClosed) return { isOpen: false, opensAt: null };
+		// Today is closed — scan forward for the next open day
+		if (exception.isClosed) return forwardScan(hours, exceptions, vendorTimezone, localDateStr);
 
 		// Exception provides custom hours — evaluate against those instead
 		if (exception.openTime && exception.closeTime) {
@@ -90,7 +140,8 @@ export function isVendorOpen(
 
 			if (at >= opensAt && at < closesAt) return { isOpen: true, closesAt };
 			if (at < opensAt) return { isOpen: false, opensAt };
-			return { isOpen: false, opensAt: null };
+			// Past today's exception hours — scan forward
+			return forwardScan(hours, exceptions, vendorTimezone, localDateStr);
 		}
 	}
 
@@ -99,7 +150,8 @@ export function isVendorOpen(
 		.filter((h) => h.dayOfWeek === localWeekday)
 		.sort((a, b) => a.openTime.localeCompare(b.openTime));
 
-	if (todayRows.length === 0) return { isOpen: false, opensAt: null };
+	// No hours configured for today — scan forward for the next open day
+	if (todayRows.length === 0) return forwardScan(hours, exceptions, vendorTimezone, localDateStr);
 
 	for (const row of todayRows) {
 		const openHHMM = row.openTime.substring(0, 5);
@@ -113,5 +165,6 @@ export function isVendorOpen(
 		// Past this shift's close — continue to the next shift
 	}
 
-	return { isOpen: false, opensAt: null };
+	// Past all of today's shifts — scan forward for the next open day
+	return forwardScan(hours, exceptions, vendorTimezone, localDateStr);
 }

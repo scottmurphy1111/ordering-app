@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import { resolve } from '$app/paths';
 	import type { PageData, ActionData } from './$types';
 	import { Button } from '$lib/components/ui/button';
 	import { Input } from '$lib/components/ui/input';
@@ -65,6 +66,9 @@
 		</p>
 	</div>
 
+	{#if data.fulfillmentChanged}
+		<Alert severity="success" class="mb-4">Fulfillment model updated.</Alert>
+	{/if}
 	{#if form?.error}
 		<Alert severity="error" class="mb-4">{form.error}</Alert>
 	{/if}
@@ -129,7 +133,10 @@
 							<span class="text-foreground"
 								>{fulfillmentModelLabel(data.info?.fulfillmentModel)}</span
 							>
-							<span class="text-xs text-muted-foreground">Changeable in a future update</span>
+							<a
+								href={resolve('/dashboard/settings/fulfillment-model/change')}
+								class="text-xs text-primary hover:underline">Change…</a
+							>
 						</div>
 						{#if data.info?.fulfillmentModel}
 							{@const current = FULFILLMENT_MODELS.find(

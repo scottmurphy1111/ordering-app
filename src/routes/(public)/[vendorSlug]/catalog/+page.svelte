@@ -12,6 +12,8 @@
 	import { resolve } from '$app/paths';
 	import Icon from '@iconify/svelte';
 	import { Badge } from '$lib/components/ui/badge';
+	import StorefrontOpenStatus from '$lib/components/storefront/StorefrontOpenStatus.svelte';
+	import UpcomingPickupEvents from '$lib/components/storefront/UpcomingPickupEvents.svelte';
 
 	let { data }: { data: PageData } = $props();
 
@@ -19,6 +21,13 @@
 
 	const vendor = $derived(data.vendor);
 	const isPaused = $derived(!!data.vendor.subscriptionPausedAt);
+	const fulfillmentModel = $derived(data.vendor.fulfillmentModel);
+	const showOpenStatus = $derived(
+		fulfillmentModel === 'storefront' || fulfillmentModel === 'hybrid'
+	);
+	const showUpcomingEvents = $derived(
+		fulfillmentModel === 'pickup_only' || fulfillmentModel === 'hybrid'
+	);
 
 	// ── Category/item data ───────────────────────────────────────────────────
 	const categorized = $derived(
@@ -336,6 +345,26 @@
 					</div>
 				{/if}
 			</div>
+		</div>
+	{/if}
+
+	<!-- ── Storefront sections: model-specific ───────────────────────────── -->
+	{#if showOpenStatus || showUpcomingEvents}
+		<div class="mx-auto max-w-2xl space-y-4 px-6 py-5">
+			{#if showOpenStatus}
+				<StorefrontOpenStatus
+					hours={data.hours}
+					exceptions={data.exceptions}
+					vendorTimezone={data.vendor.timezone}
+				/>
+			{/if}
+			{#if showUpcomingEvents}
+				<UpcomingPickupEvents
+					windows={data.upcomingWindows}
+					vendorSlug={data.vendorSlug}
+					vendorTimezone={data.vendor.timezone}
+				/>
+			{/if}
 		</div>
 	{/if}
 

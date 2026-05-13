@@ -4,7 +4,7 @@ import { db } from '$lib/server/db';
 import { eq } from 'drizzle-orm';
 import { vendor } from '$lib/server/db/vendor';
 
-export const load: PageServerLoad = async ({ locals }) => {
+export const load: PageServerLoad = async ({ locals, url }) => {
 	const vendorId = locals.vendorId!;
 	const record = await db.query.vendor.findFirst({
 		where: eq(vendor.id, vendorId),
@@ -22,7 +22,10 @@ export const load: PageServerLoad = async ({ locals }) => {
 		}
 	});
 
-	return { info: record ?? null };
+	return {
+		info: record ?? null,
+		fulfillmentChanged: url.searchParams.get('fulfillmentChanged') === '1'
+	};
 };
 
 export const actions: Actions = {

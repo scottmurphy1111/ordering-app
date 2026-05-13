@@ -2,7 +2,12 @@
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import type { PageData } from './$types';
-	import { cart, CartTypeMismatchError, type CartModifier, type AvailabilityMode } from '$lib/cart.svelte';
+	import {
+		cart,
+		CartTypeMismatchError,
+		type CartModifier,
+		type AvailabilityMode
+	} from '$lib/cart.svelte';
 	import { confirmDialog } from '$lib/confirm.svelte';
 	import { resolve } from '$app/paths';
 	import Icon from '@iconify/svelte';
