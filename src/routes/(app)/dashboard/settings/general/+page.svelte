@@ -298,10 +298,17 @@
 					/>
 					<div>
 						<span class="text-sm font-medium text-muted-foreground">Allow ASAP pickup</span>
-						<p class="mt-0.5 text-xs text-muted-foreground/70">
-							Show "order now" as an option at checkout. Off for most makers — items aren't ready
-							instantly.
-						</p>
+						{#if data.info?.fulfillmentModel === 'pickup_only'}
+							<p class="mt-0.5 text-xs text-muted-foreground/70">
+								Most pickup-only vendors leave this off — orders are handed off at scheduled pickup
+								events.
+							</p>
+						{:else}
+							<p class="mt-0.5 text-xs text-muted-foreground/70">
+								Most storefront vendors leave this on — it's how customers order for same-day
+								pickup.
+							</p>
+						{/if}
 					</div>
 				</label>
 			</CardContent>

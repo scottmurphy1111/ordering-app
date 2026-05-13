@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { validateStorefrontPickup, STOREFRONT_VALIDATION_REASON } from './storefrontValidation';
-import type { HoursRow, ExceptionRow } from '../hours/isOpen';
+import type { HoursRow, ExceptionRow } from '../../hours/isOpen';
 
 // All tests use America/New_York in EDT (UTC-4, May 2026).
 // 2026-05-04 = Monday. Bakery hours: 7am–6pm Mon–Fri.

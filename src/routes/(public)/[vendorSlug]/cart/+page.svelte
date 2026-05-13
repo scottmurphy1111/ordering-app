@@ -8,6 +8,7 @@
 	import Icon from '@iconify/svelte';
 	import { Card, CardContent } from '$lib/components/ui/card';
 	import { computeMaxLeadDays } from '$lib/utils/lead-days';
+	import { isVendorOpen } from '$lib/hours/isOpen';
 
 	let { data }: { data: PageData } = $props();
 
@@ -56,9 +57,12 @@
 	let email = $state('');
 	let phone = $state('');
 	let notes = $state('');
-	let pickupTiming = $state<'asap' | 'scheduled'>('asap');
-	let pickupDate = $state('');
-	let pickupTimeValue = $state('');
+	type PickupChoice =
+		| { kind: 'asap' }
+		| { kind: 'scheduled'; date: string; time: string }
+		| { kind: 'event'; windowId: number };
+
+	let pickupChoice = $state<PickupChoice | null>(null);
 	let customDateValue = $state('');
 	let loading = $state(false);
 	let checkoutError = $state<string | null>(null);
@@ -74,23 +78,6 @@
 		d.setMinutes(Math.ceil((d.getMinutes() + 30) / 15) * 15, 0, 0);
 		return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
 	}
-
-	function onScheduledSelect() {
-		if (!pickupDate) pickupDate = today;
-		if (!pickupTimeValue) pickupTimeValue = defaultScheduledTime();
-	}
-
-	const scheduledLabel = $derived.by(() => {
-		if (pickupTiming !== 'scheduled' || !pickupDate || !pickupTimeValue) return null;
-		const d = new Date(`${pickupDate}T${pickupTimeValue}`);
-		return d.toLocaleString(undefined, {
-			weekday: 'short',
-			month: 'short',
-			day: 'numeric',
-			hour: 'numeric',
-			minute: '2-digit'
-		});
-	});
 
 	const customDateLabel = $derived.by(() => {
 		if (!customDateValue) return null;
@@ -118,18 +105,107 @@
 	const tipsEnabled = $derived(settings?.enableTips === true);
 	const asapPickupEnabled = $derived(settings?.asapPickupEnabled === true);
 
+	// Live "is vendor open" — refreshes every 60s so ASAP hides after close
+	let now = $state(new Date());
 	$effect(() => {
-		if (!asapPickupEnabled) {
-			pickupTiming = 'scheduled';
-			onScheduledSelect();
-		}
+		const interval = setInterval(() => {
+			now = new Date();
+		}, 60_000);
+		return () => clearInterval(interval);
 	});
 
-	// Pickup window selection (when vendor has materialized windows)
-	let selectedWindowId = $state<number | null>(null);
-	const selectedWindow = $derived(
-		data.availableWindows.find((w) => w.id === selectedWindowId) ?? null
+	const fulfillmentModel = $derived(data.vendor.fulfillmentModel);
+	const vendorTimezone = $derived(data.vendor.timezone ?? 'America/New_York');
+
+	const vendorOpenState = $derived(
+		fulfillmentModel === 'pickup_only'
+			? null
+			: isVendorOpen(data.hours, data.exceptions, vendorTimezone, now)
 	);
+	const asapAvailable = $derived(
+		asapPickupEnabled && vendorOpenState?.isOpen === true
+	);
+
+	type PickerOption =
+		| { id: string; kind: 'asap'; label: string; sublabel: string }
+		| { id: string; kind: 'scheduled'; label: string; sublabel: string }
+		| { id: string; kind: 'event'; label: string; sublabel: string; windowId: number };
+
+	const storefrontPickerOptions = $derived.by<PickerOption[]>(() => {
+		if (fulfillmentModel !== 'storefront' && fulfillmentModel !== 'hybrid') return [];
+		const out: PickerOption[] = [];
+		if (asapAvailable) {
+			out.push({
+				id: 'asap',
+				kind: 'asap',
+				label: 'ASAP',
+				sublabel: 'Order now — pick up during open hours'
+			});
+		}
+		out.push({
+			id: 'scheduled',
+			kind: 'scheduled',
+			label: 'Schedule for later',
+			sublabel: 'Pick a time during open hours'
+		});
+		return out;
+	});
+
+	const eventPickerOptions = $derived.by<PickerOption[]>(() => {
+		if (fulfillmentModel !== 'pickup_only' && fulfillmentModel !== 'hybrid') return [];
+		const out: PickerOption[] = [];
+		for (const win of data.availableWindows) {
+			const start = new Date(win.startsAt);
+			const dateLabel = start.toLocaleDateString('en-US', {
+				timeZone: vendorTimezone,
+				weekday: 'short',
+				month: 'short',
+				day: 'numeric'
+			});
+			const timeLabel = start.toLocaleTimeString('en-US', {
+				timeZone: vendorTimezone,
+				hour: 'numeric',
+				minute: '2-digit'
+			});
+			out.push({
+				id: `event-${win.id}`,
+				kind: 'event',
+				label: `${dateLabel} · ${timeLabel}`,
+				sublabel: win.location?.name ?? win.name,
+				windowId: win.id
+			});
+		}
+		return out;
+	});
+
+	const pickerOptions = $derived([...storefrontPickerOptions, ...eventPickerOptions]);
+
+	const showGroupHeaders = $derived(
+		storefrontPickerOptions.length > 0 && eventPickerOptions.length > 0
+	);
+
+	function isOptionSelected(option: PickerOption, choice: PickupChoice | null): boolean {
+		if (!choice) return false;
+		if (choice.kind !== option.kind) return false;
+		if (option.kind === 'event' && choice.kind === 'event') {
+			return option.windowId === choice.windowId;
+		}
+		return true;
+	}
+
+	function selectOption(option: PickerOption) {
+		if (option.kind === 'asap') {
+			pickupChoice = { kind: 'asap' };
+		} else if (option.kind === 'scheduled') {
+			pickupChoice = {
+				kind: 'scheduled',
+				date: today,
+				time: defaultScheduledTime()
+			};
+		} else if (option.kind === 'event') {
+			pickupChoice = { kind: 'event', windowId: option.windowId };
+		}
+	}
 
 	function fmtWindowDate(d: Date): string {
 		return new Intl.DateTimeFormat('en-US', {
@@ -272,8 +348,15 @@
 				checkoutError = 'Please select a date within the next year.';
 				return;
 			}
-		} else if (!isSubscriptionCart && data.availableWindows.length > 0 && !selectedWindowId) {
-			checkoutError = 'Please select a pickup window.';
+		} else if (!isSubscriptionCart && pickerOptions.length > 0 && !pickupChoice) {
+			checkoutError = 'Please select a pickup time.';
+			return;
+		} else if (
+			!isSubscriptionCart &&
+			pickupChoice?.kind === 'scheduled' &&
+			(!pickupChoice.date || !pickupChoice.time)
+		) {
+			checkoutError = 'Please select a pickup date and time.';
 			return;
 		}
 		checkoutError = null;
@@ -318,22 +401,28 @@
 				);
 				cart.clear();
 			} else {
-				const hasWindows = data.availableWindows.length > 0;
 				const commonPayload = {
 					vendorSlug: data.vendorSlug,
 					items: cart.items,
 					customer: { name: customerName, email, phone },
 					notes: notes || null,
 					orderType: isSubscriptionCart ? 'subscription' : 'pickup',
+					pickupMode: isSubscriptionCart
+						? 'pickup_event'
+						: pickupChoice?.kind === 'asap' || pickupChoice?.kind === 'scheduled'
+							? 'storefront_hours'
+							: 'pickup_event',
 					scheduledFor:
 						!isSubscriptionCart &&
-						!hasWindows &&
-						pickupTiming === 'scheduled' &&
-						pickupDate &&
-						pickupTimeValue
-							? new Date(`${pickupDate}T${pickupTimeValue}`).toISOString()
+						pickupChoice?.kind === 'scheduled' &&
+						pickupChoice.date &&
+						pickupChoice.time
+							? new Date(`${pickupChoice.date}T${pickupChoice.time}`).toISOString()
 							: null,
-					pickupWindowId: !isSubscriptionCart ? (selectedWindowId ?? null) : null,
+					pickupWindowId:
+						!isSubscriptionCart && pickupChoice?.kind === 'event'
+							? pickupChoice.windowId
+							: null,
 					subtotal,
 					tax,
 					tip: tipCents,
@@ -660,142 +749,136 @@
 						</CardContent>
 					</Card>
 				{:else}
+{#snippet pickerOptionRow(option: PickerOption)}
+						{@const isSelected = isOptionSelected(option, pickupChoice)}
+						<label
+							class="flex cursor-pointer items-start gap-3 rounded-lg border p-3 transition-colors {isSelected
+								? ''
+								: 'hover:bg-muted/30'}"
+							style={isSelected
+								? 'background-color: color-mix(in srgb, var(--background-color) 8%, transparent); border-color: var(--background-color);'
+								: ''}
+						>
+							<input
+								type="radio"
+								name="pickupChoice"
+								checked={isSelected}
+								onchange={() => selectOption(option)}
+								class="sr-only"
+							/>
+							<div
+								class="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full border-2 transition-colors"
+								style={isSelected
+									? 'border-color: var(--background-color); background-color: var(--background-color);'
+									: 'border-color: #d1d5db;'}
+							>
+								{#if isSelected}
+									<div class="h-1.5 w-1.5 rounded-full bg-white"></div>
+								{/if}
+							</div>
+							<div class="min-w-0 flex-1">
+								<p class="flex items-center gap-1.5 text-sm font-medium text-foreground">
+									{#if option.kind === 'asap'}
+										<Icon icon="mdi:lightning-bolt" class="h-3.5 w-3.5 shrink-0 text-amber-500" />
+									{:else if option.kind === 'scheduled'}
+										<Icon icon="mdi:calendar-clock" class="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+									{/if}
+									{option.label}
+								</p>
+								<p class="mt-0.5 text-xs text-muted-foreground">{option.sublabel}</p>
+							</div>
+						</label>
+						{#if option.kind === 'scheduled' && pickupChoice?.kind === 'scheduled'}
+							<div class="ml-7 flex gap-2 pb-1">
+								<div class="flex-1">
+									<label
+										class="mb-1 block text-xs font-medium text-muted-foreground"
+										for="pickup-date">Date</label
+									>
+									<input
+										id="pickup-date"
+										type="date"
+										bind:value={pickupChoice.date}
+										min={today}
+										class="branded-input w-full rounded-lg border px-3 py-2 text-sm transition-colors outline-none"
+									/>
+								</div>
+								<div class="flex-1">
+									<label
+										class="mb-1 block text-xs font-medium text-muted-foreground"
+										for="pickup-time">Time</label
+									>
+									<input
+										id="pickup-time"
+										type="time"
+										bind:value={pickupChoice.time}
+										step="900"
+										class="branded-input w-full rounded-lg border px-3 py-2 text-sm transition-colors outline-none"
+									/>
+								</div>
+							</div>
+						{:else if option.kind === 'event'}
+							{@const win = data.availableWindows.find((w) => w.id === option.windowId)}
+							{#if win}
+								{@const isFull =
+									win.remainingCapacity !== null && win.remainingCapacity <= 0}
+								{@const isLow =
+									win.remainingCapacity !== null &&
+									win.remainingCapacity > 0 &&
+									win.remainingCapacity <= 5}
+								{#if win.notes}
+									<p class="ml-7 text-xs text-muted-foreground">{win.notes}</p>
+								{/if}
+								{#if isFull}
+									<span
+										class="ml-7 inline-block rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-500"
+										>Full</span
+									>
+								{:else if isLow}
+									<span
+										class="ml-7 inline-block rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-600"
+										>{win.remainingCapacity} left</span
+									>
+								{/if}
+							{/if}
+						{/if}
+					{/snippet}
+
 					<Card class="shadow-sm">
 						<CardContent class="p-4">
 							<p class="mb-2 text-sm font-semibold text-foreground">Pickup time</p>
 
-							{#if data.availableWindows.length > 0}
-								<!-- Slot selector -->
-								<div class="space-y-2">
-									{#each data.availableWindows as win (win.id)}
-										{@const isFull = win.remainingCapacity !== null && win.remainingCapacity <= 0}
-										{@const isLow =
-											win.remainingCapacity !== null &&
-											win.remainingCapacity > 0 &&
-											win.remainingCapacity <= 5}
-										{@const isSelected = selectedWindowId === win.id}
-										<label
-											class="flex cursor-pointer items-start gap-3 rounded-lg border p-3 transition-colors {isFull
-												? 'cursor-not-allowed opacity-50'
-												: ''}"
-											style={isSelected
-												? 'background-color: color-mix(in srgb, var(--background-color) 8%, transparent); border-color: var(--background-color);'
-												: ''}
-										>
-											<input
-												type="radio"
-												name="pickupWindow"
-												value={win.id}
-												disabled={isFull}
-												checked={isSelected}
-												onchange={() => {
-													selectedWindowId = win.id;
-												}}
-												class="sr-only"
-											/>
-											<div
-												class="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full border-2 transition-colors"
-												style={isSelected
-													? 'border-color: var(--background-color); background-color: var(--background-color);'
-													: 'border-color: #d1d5db;'}
-											>
-												{#if isSelected}
-													<div class="h-1.5 w-1.5 rounded-full bg-white"></div>
-												{/if}
-											</div>
-											<div class="min-w-0 flex-1">
-												<p class="text-sm font-medium text-foreground">
-													{fmtWindowDate(win.startsAt)} · {fmtWindowTime(
-														win.startsAt
-													)}–{fmtWindowTime(win.endsAt)}
-												</p>
-												{#if win.location?.name}
-													<p class="mt-0.5 text-xs text-muted-foreground">{win.location.name}</p>
-												{/if}
-												{#if win.notes}
-													<p class="mt-0.5 text-xs text-muted-foreground">{win.notes}</p>
-												{/if}
-											</div>
-											{#if isFull}
-												<span
-													class="shrink-0 rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-500"
-													>Full</span
-												>
-											{:else if isLow}
-												<span
-													class="shrink-0 rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-600"
-												>
-													{win.remainingCapacity} left
-												</span>
-											{/if}
-										</label>
-									{/each}
-								</div>
+														{#if pickerOptions.length === 0}
+								<p class="text-sm text-muted-foreground">
+									No pickup options are currently available. Check back soon.
+								</p>
 							{:else}
-								<!-- Free-form picker (fallback when no windows are configured) -->
-								{#if asapPickupEnabled}
-									<div class="mb-3 flex gap-3">
-										{#each [{ value: 'asap', label: 'ASAP', icon: 'mdi:lightning-bolt' }, { value: 'scheduled', label: 'Schedule', icon: 'mdi:calendar-clock' }] as opt (opt.value)}
-											<label
-												style={pickupTiming === opt.value
-													? 'background-color: var(--background-color); color: var(--foreground-color); border-color: var(--background-color);'
-													: ''}
-												class="flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-lg border py-2.5 text-sm font-medium transition-colors
-											{pickupTiming === opt.value ? '' : ' text-muted-foreground hover:bg-muted/50'}"
-											>
-												<input
-													type="radio"
-													name="pickupTiming"
-													value={opt.value}
-													bind:group={pickupTiming}
-													onchange={() => {
-														if (opt.value === 'scheduled') onScheduledSelect();
-													}}
-													class="sr-only"
-												/>
-												<Icon icon={opt.icon} class="h-4 w-4" />
-												{opt.label}
-											</label>
-										{/each}
-									</div>
-								{/if}
-
-								{#if pickupTiming === 'scheduled'}
-									<div class="flex gap-2">
-										<div class="flex-1">
-											<label
-												class="mb-1 block text-xs font-medium text-muted-foreground"
-												for="pickup-date">Date</label
-											>
-											<input
-												id="pickup-date"
-												type="date"
-												bind:value={pickupDate}
-												min={today}
-												class="branded-input w-full rounded-lg border px-3 py-2 text-sm transition-colors outline-none"
-											/>
+								<div class="space-y-4">
+									{#if storefrontPickerOptions.length > 0}
+										<div class="space-y-2">
+											{#if showGroupHeaders}
+												<p class="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+													Pick up at the storefront
+												</p>
+											{/if}
+											{#each storefrontPickerOptions as option (option.id)}
+												{@render pickerOptionRow(option)}
+											{/each}
 										</div>
-										<div class="flex-1">
-											<label
-												class="mb-1 block text-xs font-medium text-muted-foreground"
-												for="pickup-time">Time</label
-											>
-											<input
-												id="pickup-time"
-												type="time"
-												bind:value={pickupTimeValue}
-												step="900"
-												class="branded-input w-full rounded-lg border px-3 py-2 text-sm transition-colors outline-none"
-											/>
-										</div>
-									</div>
-									{#if scheduledLabel}
-										<p class="mt-2 flex items-center gap-1.5 text-xs text-muted-foreground">
-											<Icon icon="mdi:clock-check-outline" class="h-3.5 w-3.5 shrink-0" />
-											Scheduled for {scheduledLabel}
-										</p>
 									{/if}
-								{/if}
+									{#if eventPickerOptions.length > 0}
+										<div class="space-y-2">
+											{#if showGroupHeaders}
+												<p class="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+													Pick up at an event
+												</p>
+											{/if}
+											{#each eventPickerOptions as option (option.id)}
+												{@render pickerOptionRow(option)}
+											{/each}
+										</div>
+									{/if}
+								</div>
 							{/if}
 						</CardContent>
 					</Card>
@@ -1006,12 +1089,19 @@
 								><Icon icon="mdi:clock-outline" class="h-3.5 w-3.5" /> Pickup</span
 							>
 							<span class="font-medium">
-								{#if selectedWindow}
-									{fmtWindowDate(selectedWindow.startsAt)} · {fmtWindowTime(
-										selectedWindow.startsAt
-									)}
+								{#if pickupChoice?.kind === 'event'}
+									{@const win = data.availableWindows.find((w) => w.id === (pickupChoice as { kind: "event"; windowId: number }).windowId)}
+									{#if win}{fmtWindowDate(win.startsAt)} · {fmtWindowTime(win.startsAt)}{/if}
+								{:else if pickupChoice?.kind === 'scheduled' && pickupChoice.date && pickupChoice.time}
+									{new Date(`${pickupChoice.date}T${pickupChoice.time}`).toLocaleString(undefined, {
+										weekday: 'short',
+										month: 'short',
+										day: 'numeric',
+										hour: 'numeric',
+										minute: '2-digit'
+									})}
 								{:else}
-									{scheduledLabel ?? 'ASAP'}
+									ASAP
 								{/if}
 							</span>
 						</div>

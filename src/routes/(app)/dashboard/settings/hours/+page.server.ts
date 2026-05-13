@@ -4,7 +4,7 @@ import { db } from '$lib/server/db';
 import { eq, asc, and } from 'drizzle-orm';
 import { vendor } from '$lib/server/db/vendor';
 import { vendorHours, vendorHoursExceptions } from '$lib/server/db/vendor-hours';
-import { isVendorOpen } from '$lib/server/hours/isOpen';
+import { isVendorOpen } from '$lib/hours/isOpen';
 
 const DAYS_OF_WEEK = [
 	'monday',

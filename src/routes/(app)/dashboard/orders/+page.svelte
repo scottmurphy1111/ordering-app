@@ -645,6 +645,7 @@
 	paymentStatus: string;
 	type: string;
 	pickupType: string | null;
+	pickupMode: string | null;
 	createdAt: Date;
 	notes: string | null;
 	scheduledFor: Date | null;
@@ -706,6 +707,13 @@
 						{/if}
 						{#if order.pickupType === 'custom_date'}
 							<Badge class="bg-slate-100 text-slate-700">Custom date</Badge>
+						{/if}
+						{#if order.pickupMode === 'storefront_hours' && !order.scheduledFor}
+							<Icon
+								icon="mdi:lightning-bolt"
+								class="h-3.5 w-3.5 text-amber-500"
+								aria-label="ASAP pickup"
+							/>
 						{/if}
 					</div>
 					<!-- Customer -->

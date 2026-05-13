@@ -143,7 +143,25 @@
 			<p class="mt-1 text-sm text-gray-500">
 				{new Date(order.createdAt).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}
 			</p>
-			{#if order.scheduledFor}
+			{#if order.pickupMode === 'storefront_hours'}
+				{#if order.scheduledFor}
+					<p class="mt-1.5 flex items-center gap-1.5 text-sm font-medium text-foreground">
+						<Icon icon="mdi:storefront-outline" class="h-4 w-4 shrink-0" />
+						Storefront pickup — scheduled for {new Date(order.scheduledFor).toLocaleString([], {
+							weekday: 'short',
+							month: 'short',
+							day: 'numeric',
+							hour: 'numeric',
+							minute: '2-digit'
+						})}
+					</p>
+				{:else}
+					<p class="mt-1.5 flex items-center gap-1.5 text-sm font-medium text-amber-600">
+						<Icon icon="mdi:lightning-bolt" class="h-4 w-4 shrink-0" />
+						ASAP pickup — customer arriving during open hours
+					</p>
+				{/if}
+			{:else if order.scheduledFor}
 				<p class="mt-1.5 flex items-center gap-1.5 text-sm font-medium text-amber-600">
 					<Icon icon="mdi:calendar-clock" class="h-4 w-4 shrink-0" />
 					Scheduled for {new Date(order.scheduledFor).toLocaleString([], {

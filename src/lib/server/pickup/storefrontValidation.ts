@@ -1,4 +1,4 @@
-import { isVendorOpen, type HoursRow, type ExceptionRow } from '../hours/isOpen';
+import { isVendorOpen, type HoursRow, type ExceptionRow } from '../../hours/isOpen';
 
 export const STOREFRONT_VALIDATION_REASON = {
 	vendorClosed: 'vendor_closed',

@@ -29,6 +29,8 @@ export async function getCurrentVendor(event: RequestEvent) {
 			id: true,
 			name: true,
 			slug: true,
+			fulfillmentModel: true,
+			timezone: true,
 			logoUrl: true,
 			bannerUrl: true,
 			backgroundImageUrl: true,
