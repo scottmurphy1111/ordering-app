@@ -38,6 +38,12 @@ function parseItemFormData(formData: FormData) {
 		pickupType === 'custom_date'
 			? parseInt(formData.get('customDateLeadDays')?.toString() ?? '14') || 14
 			: null;
+	const rawAvailabilityMode = formData.get('availabilityMode')?.toString();
+	const availabilityMode = (
+		pickupType === 'custom_date' || !rawAvailabilityMode
+			? 'special_order'
+			: rawAvailabilityMode
+	) as 'always' | 'storefront_only' | 'events_only' | 'special_order';
 
 	if (customDateLeadDays !== null && (customDateLeadDays < 1 || customDateLeadDays > 365)) {
 		throw new CatalogItemError(400, 'Lead time must be between 1 and 365 days.');
@@ -73,7 +79,8 @@ function parseItemFormData(formData: FormData) {
 		isSubscription,
 		billingInterval,
 		pickupType,
-		customDateLeadDays
+		customDateLeadDays,
+		availabilityMode
 	};
 }
 
@@ -126,7 +133,8 @@ export async function updateCatalogItem(
 		isSubscription,
 		billingInterval,
 		pickupType,
-		customDateLeadDays
+		customDateLeadDays,
+		availabilityMode
 	} = parseItemFormData(formData);
 
 	await db
@@ -145,6 +153,7 @@ export async function updateCatalogItem(
 			billingInterval,
 			pickupType,
 			customDateLeadDays,
+			availabilityMode,
 			updatedAt: new Date()
 		})
 		.where(and(eq(catalogItems.id, itemId), eq(catalogItems.vendorId, vendorId)));

@@ -20,6 +20,7 @@
 	type ImageEntry = { url: string; isPrimary?: boolean };
 
 	type PickupType = 'windowed' | 'custom_date';
+	type AvailabilityMode = 'always' | 'storefront_only' | 'events_only' | 'special_order';
 
 	interface ItemData {
 		name: string;
@@ -35,6 +36,7 @@
 		billingInterval?: string | null;
 		pickupType?: PickupType | null;
 		customDateLeadDays?: number | null;
+		availabilityMode?: AvailabilityMode | null;
 	}
 
 	interface Props {
@@ -85,6 +87,9 @@
 	// Pickup type
 	let pickupType = $state<PickupType>(untrack(() => (item?.pickupType as PickupType | null | undefined) ?? 'windowed'));
 	let customDateLeadDays = $state(untrack(() => item?.customDateLeadDays ?? 14));
+
+	// Availability mode
+	let availabilityMode = $state<AvailabilityMode>(untrack(() => (item?.availabilityMode as AvailabilityMode | null | undefined) ?? 'always'));
 
 	// Internal feedback
 	let internalError = $state<string | null>(null);
@@ -378,6 +383,38 @@
 	</div>
 {/snippet}
 
+{#snippet fieldAvailabilityMode()}
+	{@const AVAILABILITY_OPTIONS = [
+		['always', 'Always available', 'Show to all customers regardless of how they are ordering.'],
+		['storefront_only', 'Storefront only', 'Only shown when ordering for storefront / ASAP pickup.'],
+		['events_only', 'Events only', 'Only shown when ordering for a scheduled pickup event.'],
+		['special_order', 'Special order', 'Hidden from the catalog — must be ordered directly.']
+	] as const}
+	<div class="space-y-2 rounded-lg border p-4">
+		<p class="text-sm font-medium text-muted-foreground">Availability</p>
+		<Select
+			type="single"
+			name="availabilityMode"
+			value={availabilityMode}
+			onValueChange={(v) => (availabilityMode = v as AvailabilityMode)}
+		>
+			<SelectTrigger class="w-full">
+				<SelectValue>
+					{AVAILABILITY_OPTIONS.find(([v]) => v === availabilityMode)?.[1] ?? 'Always available'}
+				</SelectValue>
+			</SelectTrigger>
+			<SelectContent>
+				{#each AVAILABILITY_OPTIONS as [val, label] (val)}
+					<SelectItem value={val}>{label}</SelectItem>
+				{/each}
+			</SelectContent>
+		</Select>
+		<p class="text-xs text-muted-foreground">
+			{AVAILABILITY_OPTIONS.find(([v]) => v === availabilityMode)?.[2] ?? ''}
+		</p>
+	</div>
+{/snippet}
+
 {#snippet fieldStatus()}
 	{@const STATUS_OPTIONS = [
 		['available', 'Available'],
@@ -450,6 +487,7 @@
 			{/if}
 			{@render fieldTags()}
 			{@render fieldPickupType()}
+			{#if !isSubscription && pickupType !== 'custom_date'}{@render fieldAvailabilityMode()}{/if}
 			{#if hasSubscriptionsAddon}{@render fieldSubscription()}{/if}
 		</div>
 	{:else}
@@ -462,6 +500,7 @@
 			{@render fieldTags()}
 			{@render fieldStatus()}
 			{@render fieldPickupType()}
+			{#if !isSubscription && pickupType !== 'custom_date'}{@render fieldAvailabilityMode()}{/if}
 			{#if hasSubscriptionsAddon}{@render fieldSubscription()}{/if}
 		</div>
 	{/if}

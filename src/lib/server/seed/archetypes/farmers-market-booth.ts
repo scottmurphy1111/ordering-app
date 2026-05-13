@@ -24,7 +24,8 @@ export const farmersMarketBooth: ArchetypeFixture = {
 			description:
 				'8 oz jar. Bright, tart, and not too sweet. Made with local strawberries and garden rhubarb.',
 			price: 1200,
-			sortOrder: 1
+			sortOrder: 1,
+			availabilityMode: 'events_only'
 		},
 		{
 			categoryKey: 'jams',
@@ -32,7 +33,8 @@ export const farmersMarketBooth: ArchetypeFixture = {
 			description:
 				'8 oz jar. Wild blueberries with a hint of culinary lavender. Pairs well with goat cheese.',
 			price: 1300,
-			sortOrder: 2
+			sortOrder: 2,
+			availabilityMode: 'events_only'
 		},
 		{
 			categoryKey: 'jams',
@@ -40,7 +42,8 @@ export const farmersMarketBooth: ArchetypeFixture = {
 			description:
 				'8 oz jar. Late-summer peaches with fresh ginger. Chunky style, not too sweet.',
 			price: 1200,
-			sortOrder: 3
+			sortOrder: 3,
+			availabilityMode: 'events_only'
 		},
 		{
 			categoryKey: 'pickles',
@@ -48,7 +51,8 @@ export const farmersMarketBooth: ArchetypeFixture = {
 			description:
 				'16 oz jar. Classic dill brine with roasted garlic and black pepper. Crunchy.',
 			price: 1100,
-			sortOrder: 1
+			sortOrder: 1,
+			availabilityMode: 'events_only'
 		},
 		{
 			categoryKey: 'pickles',
@@ -56,7 +60,8 @@ export const farmersMarketBooth: ArchetypeFixture = {
 			description:
 				'16 oz jar. Sweet-tangy sliced cucumbers. The classic on a burger or grilled cheese.',
 			price: 1000,
-			sortOrder: 2
+			sortOrder: 2,
+			availabilityMode: 'events_only'
 		},
 		{
 			categoryKey: 'pickles',
@@ -64,7 +69,8 @@ export const farmersMarketBooth: ArchetypeFixture = {
 			description:
 				'16 oz jar. Traditional lacto-fermented cabbage. No vinegar — just salt and time.',
 			price: 1100,
-			sortOrder: 3
+			sortOrder: 3,
+			availabilityMode: 'events_only'
 		},
 		{
 			categoryKey: 'honey',
@@ -72,7 +78,8 @@ export const farmersMarketBooth: ArchetypeFixture = {
 			description:
 				'12 oz jar. Raw, unfiltered wildflower honey from local hives. Rich amber color.',
 			price: 1500,
-			sortOrder: 1
+			sortOrder: 1,
+			availabilityMode: 'events_only'
 		},
 		{
 			categoryKey: 'honey',
@@ -80,7 +87,8 @@ export const farmersMarketBooth: ArchetypeFixture = {
 			description:
 				'8 oz jar. Wildflower honey infused with dried chili. Drizzle on pizza, fried chicken, or cheese boards.',
 			price: 1200,
-			sortOrder: 2
+			sortOrder: 2,
+			availabilityMode: 'events_only'
 		},
 		{
 			categoryKey: 'honey',
@@ -88,7 +96,8 @@ export const farmersMarketBooth: ArchetypeFixture = {
 			description:
 				'8 oz jar. Stone-ground from roasted sunflower seeds. No added sugar or oils.',
 			price: 1000,
-			sortOrder: 3
+			sortOrder: 3,
+			availabilityMode: 'events_only'
 		}
 	],
 

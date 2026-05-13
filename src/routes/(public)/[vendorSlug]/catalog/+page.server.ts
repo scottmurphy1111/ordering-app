@@ -30,7 +30,8 @@ export const load: PageServerLoad = async ({ locals, params }) => {
 				billingInterval: true,
 				status: true,
 				pickupType: true,
-				customDateLeadDays: true
+				customDateLeadDays: true,
+				availabilityMode: true
 			},
 			with: {
 				modifiers: { columns: { modifierId: true } }

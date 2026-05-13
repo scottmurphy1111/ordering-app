@@ -2,6 +2,7 @@ import { db } from '$lib/server/db';
 import { catalogItems } from '$lib/server/db/catalog';
 import { and, eq, inArray } from 'drizzle-orm';
 import type { CartItem, PickupType } from '$lib/cart.svelte';
+import { isCompatible, type AvailabilityMode } from './compat';
 
 export type UnavailableItem = {
 	itemId: number;
@@ -15,6 +16,12 @@ export type PriceChange = {
 	currentPrice: number;
 };
 
+export type AvailabilityMismatch = {
+	itemId: number;
+	name: string;
+	mode: AvailabilityMode;
+};
+
 export type CartValidationResult =
 	| { valid: true; validatedItems: CartItem[]; priceChanges: PriceChange[] }
 	| {
@@ -22,18 +29,22 @@ export type CartValidationResult =
 			unavailable: UnavailableItem[];
 			priceChanges: PriceChange[];
 			pickupTypeMismatch?: { firstType: PickupType; conflictingType: PickupType };
+			availabilityMismatch?: AvailabilityMismatch[];
 	  };
+
 
 /**
  * Validates cart items against live catalog state for a vendor.
  * Items with status != 'available' or missing from DB go into `unavailable`.
  * Items with stale basePrice go into `priceChanges`; validatedItems always carry current prices.
- * Returns valid:false if any item is unavailable.
+ * Items incompatible with the chosen pickupMode go into `availabilityMismatch`.
+ * Returns valid:false if any item is unavailable or mismatched.
  * IDOR-safe: queries filter by both id and vendorId.
  */
 export async function validateCartItems(
 	items: CartItem[],
-	vendorId: number
+	vendorId: number,
+	pickupMode?: 'pickup_event' | 'storefront_hours' | 'custom_date'
 ): Promise<CartValidationResult> {
 	const itemIds = [...new Set(items.map((i) => i.itemId))];
 
@@ -44,7 +55,8 @@ export async function validateCartItems(
 			price: catalogItems.price,
 			status: catalogItems.status,
 			pickupType: catalogItems.pickupType,
-			customDateLeadDays: catalogItems.customDateLeadDays
+			customDateLeadDays: catalogItems.customDateLeadDays,
+			availabilityMode: catalogItems.availabilityMode
 		})
 		.from(catalogItems)
 		.where(and(inArray(catalogItems.id, itemIds), eq(catalogItems.vendorId, vendorId)));
@@ -54,7 +66,9 @@ export async function validateCartItems(
 	const unavailable: UnavailableItem[] = [];
 	const priceChanges: PriceChange[] = [];
 	const validatedItems: CartItem[] = [];
+	const availabilityMismatch: AvailabilityMismatch[] = [];
 	const seenPriceChangeIds = new Set<number>();
+	const seenMismatchIds = new Set<number>();
 
 	for (const item of items) {
 		const row = lookup.get(item.itemId);
@@ -71,11 +85,24 @@ export async function validateCartItems(
 			});
 			seenPriceChangeIds.add(item.itemId);
 		}
-		validatedItems.push({ ...item, basePrice: row.price, customDateLeadDays: row.customDateLeadDays ?? undefined });
+		if (!isCompatible(row.availabilityMode, pickupMode) && !seenMismatchIds.has(item.itemId)) {
+			availabilityMismatch.push({ itemId: item.itemId, name: item.name, mode: row.availabilityMode });
+			seenMismatchIds.add(item.itemId);
+		}
+		validatedItems.push({
+			...item,
+			basePrice: row.price,
+			customDateLeadDays: row.customDateLeadDays ?? undefined,
+			availabilityMode: row.availabilityMode
+		});
 	}
 
 	if (unavailable.length > 0) {
 		return { valid: false, unavailable, priceChanges };
+	}
+
+	if (availabilityMismatch.length > 0) {
+		return { valid: false, unavailable: [], priceChanges, availabilityMismatch };
 	}
 
 	// Pickup-type consistency check. Client-side cart already prevents mixing via CartTypeMismatchError;

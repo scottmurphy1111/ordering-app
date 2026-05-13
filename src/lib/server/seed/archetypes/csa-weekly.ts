@@ -23,7 +23,8 @@ export const csaWeekly: ArchetypeFixture = {
 			description:
 				'Full seasonal produce box — 12 or more items including a mix of vegetables, greens, and herbs. Feeds 3–4 people for the week.',
 			price: 2800,
-			sortOrder: 1
+			sortOrder: 1,
+			availabilityMode: 'events_only'
 		},
 		{
 			categoryKey: 'weekly',
@@ -31,7 +32,8 @@ export const csaWeekly: ArchetypeFixture = {
 			description:
 				'Half share — 6–8 seasonal items. Great for 1–2 people or those new to CSA.',
 			price: 1600,
-			sortOrder: 2
+			sortOrder: 2,
+			availabilityMode: 'events_only'
 		},
 		{
 			categoryKey: 'weekly',
@@ -39,7 +41,8 @@ export const csaWeekly: ArchetypeFixture = {
 			description:
 				'Seasonal stone fruit and berries from partner orchards. Availability varies by week.',
 			price: 1200,
-			sortOrder: 3
+			sortOrder: 3,
+			availabilityMode: 'events_only'
 		},
 		{
 			categoryKey: 'addons',
@@ -47,7 +50,8 @@ export const csaWeekly: ArchetypeFixture = {
 			description:
 				'Pasture-raised eggs from our own flock. Brown and blue shells; yolks are deep orange.',
 			price: 750,
-			sortOrder: 1
+			sortOrder: 1,
+			availabilityMode: 'events_only'
 		},
 		{
 			categoryKey: 'addons',
@@ -55,7 +59,8 @@ export const csaWeekly: ArchetypeFixture = {
 			description:
 				'8 oz jar of unfiltered wildflower honey. Harvested from on-farm hives.',
 			price: 1400,
-			sortOrder: 2
+			sortOrder: 2,
+			availabilityMode: 'events_only'
 		}
 	],
 

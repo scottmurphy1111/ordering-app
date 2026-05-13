@@ -1,8 +1,5 @@
 // Seed and reseed functions for archetype-based demo data.
-// Uses process.env.DATABASE_URL directly so this file is importable from both
-// SvelteKit server code and Bun CLI scripts (which can't use $env/dynamic/private).
-import { drizzle } from 'drizzle-orm/neon-http';
-import { neon } from '@neondatabase/serverless';
+import { db } from '$lib/server/db';
 import { sql } from 'drizzle-orm';
 import {
 	catalogCategories,
@@ -19,12 +16,6 @@ import { vendor, vendorInvitations } from '../db/vendor';
 import { ARCHETYPES } from './archetypes/index';
 import type { ArchetypeFixture } from './types';
 import { wipeVendorData } from './wipe';
-
-function createDb() {
-	const url = process.env.DATABASE_URL;
-	if (!url) throw new Error('DATABASE_URL not set');
-	return drizzle(neon(url));
-}
 
 /** Seed a brand-new vendor from an archetype (no wipe). */
 export async function seedVendorWithArchetype(
@@ -45,8 +36,6 @@ export async function reseedVendor(vendorId: number, archetypeKey: string): Prom
 }
 
 async function _seed(vendorId: number, fixture: ArchetypeFixture): Promise<void> {
-	const db = createDb();
-
 	// ── Categories ──────────────────────────────────────────────────────────────
 	const insertedCategories = await db
 		.insert(catalogCategories)
@@ -71,7 +60,10 @@ async function _seed(vendorId: number, fixture: ArchetypeFixture): Promise<void>
 				...(item.pickupType ? { pickupType: item.pickupType } : {}),
 				...(item.customDateLeadDays !== undefined
 					? { customDateLeadDays: item.customDateLeadDays }
-					: {})
+					: {}),
+				availabilityMode:
+					item.availabilityMode ??
+					(item.pickupType === 'custom_date' ? 'special_order' : 'always')
 			}))
 		)
 		.returning({ id: catalogItems.id, name: catalogItems.name });

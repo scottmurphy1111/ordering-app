@@ -1,16 +1,7 @@
 // Wipes all vendor-scoped data for a given vendor.
-// Uses process.env.DATABASE_URL directly so this file is importable from both
-// SvelteKit server code and Bun CLI scripts (which can't use $env/dynamic/private).
-import { drizzle } from 'drizzle-orm/neon-http';
-import { neon } from '@neondatabase/serverless';
+import { db } from '$lib/server/db';
 import { sql } from 'drizzle-orm';
 import { DEMO_INVITATION_EMAILS } from './demo-emails';
-
-function createDb() {
-	const url = process.env.DATABASE_URL;
-	if (!url) throw new Error('DATABASE_URL not set');
-	return drizzle(neon(url));
-}
 
 // FK-safe deletion order:
 //   1. orders          (order_items cascade via FK)
@@ -28,8 +19,6 @@ function createDb() {
 //  13. demo vendor_invitations (by address — real team invitations preserved)
 //  14. reset last_order_number
 export async function wipeVendorData(vendorId: number): Promise<void> {
-	const db = createDb();
-
 	await db.execute(sql`DELETE FROM orders WHERE vendor_id = ${vendorId}`);
 	await db.execute(sql`DELETE FROM pickup_windows WHERE vendor_id = ${vendorId}`);
 	await db.execute(sql`DELETE FROM pickup_window_templates WHERE vendor_id = ${vendorId}`);

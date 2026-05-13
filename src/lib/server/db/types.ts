@@ -28,3 +28,10 @@ export const pickupModeEnum = pgEnum('pickup_mode', [
 	'storefront_hours',
 	'custom_date'
 ]);
+
+export const availabilityModeEnum = pgEnum('availability_mode', [
+	'always',
+	'storefront_only',
+	'events_only',
+	'special_order'
+]);

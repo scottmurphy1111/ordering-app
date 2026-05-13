@@ -79,13 +79,14 @@ export const POST: RequestHandler = async ({ request }) => {
 
 	// Cart item validation — runs before Stripe so we never charge for unavailable items.
 	// Subscriptions never send pickupWindowId and this block is naturally skipped for them.
-	const cartResult = await validateCartItems(items, vendorRecord.id);
+	const cartResult = await validateCartItems(items, vendorRecord.id, pickupMode);
 	if (!cartResult.valid) {
 		return json(
 			{
 				type: 'cart_validation_failed',
 				unavailable: cartResult.unavailable,
-				pickupTypeMismatch: cartResult.pickupTypeMismatch
+				pickupTypeMismatch: cartResult.pickupTypeMismatch,
+				availabilityMismatch: cartResult.availabilityMismatch
 			},
 			{ status: 400 }
 		);

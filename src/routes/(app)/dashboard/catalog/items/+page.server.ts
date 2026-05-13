@@ -115,7 +115,8 @@ export const load: PageServerLoad = async (event) => {
 					isSubscription: true,
 					billingInterval: true,
 					pickupType: true,
-					customDateLeadDays: true
+					customDateLeadDays: true,
+					availabilityMode: true
 				},
 				with: {
 					category: { columns: { id: true, name: true } },

@@ -5,11 +5,13 @@
 		cart,
 		CartTypeMismatchError,
 		type PickupType,
-		type CartModifier
+		type CartModifier,
+		type AvailabilityMode
 	} from '$lib/cart.svelte';
 	import { confirmDialog } from '$lib/confirm.svelte';
 	import { resolve } from '$app/paths';
 	import Icon from '@iconify/svelte';
+	import { Badge } from '$lib/components/ui/badge';
 
 	let { data }: { data: PageData } = $props();
 
@@ -76,6 +78,7 @@
 		images: unknown;
 		pickupType: PickupType;
 		customDateLeadDays?: number | null;
+		availabilityMode?: AvailabilityMode | null;
 	}) {
 		const images = item.images as { url: string; isPrimary?: boolean }[] | null;
 		const imageUrl = images?.find((i) => i.isPrimary)?.url ?? images?.[0]?.url;
@@ -86,7 +89,8 @@
 			selectedModifiers: [] as CartModifier[],
 			imageUrl,
 			pickupType: item.pickupType,
-			customDateLeadDays: item.customDateLeadDays ?? undefined
+			customDateLeadDays: item.customDateLeadDays ?? undefined,
+			availabilityMode: item.availabilityMode ?? undefined
 		};
 
 		try {
@@ -410,6 +414,13 @@
 										{:else}
 											<p class="font-semibold text-foreground">${(item.price / 100).toFixed(2)}</p>
 										{/if}
+										{#if item.availabilityMode === 'storefront_only'}
+											<Badge class="mt-1 bg-amber-50 text-xs text-amber-700">Storefront only</Badge>
+										{:else if item.availabilityMode === 'events_only'}
+											<Badge class="mt-1 bg-sky-50 text-xs text-sky-700">Events only</Badge>
+										{:else if item.availabilityMode === 'special_order'}
+											<Badge class="mt-1 bg-purple-50 text-xs text-purple-700">Special order</Badge>
+										{/if}
 									</div>
 									{#if item.status === 'sold_out'}
 										<span
@@ -500,6 +511,13 @@
 											</p>
 										{:else}
 											<p class="font-semibold text-foreground">${(item.price / 100).toFixed(2)}</p>
+										{/if}
+										{#if item.availabilityMode === 'storefront_only'}
+											<Badge class="mt-1 bg-amber-50 text-xs text-amber-700">Storefront only</Badge>
+										{:else if item.availabilityMode === 'events_only'}
+											<Badge class="mt-1 bg-sky-50 text-xs text-sky-700">Events only</Badge>
+										{:else if item.availabilityMode === 'special_order'}
+											<Badge class="mt-1 bg-purple-50 text-xs text-purple-700">Special order</Badge>
 										{/if}
 									</div>
 									{#if item.status === 'sold_out'}

@@ -22,7 +22,8 @@ export const hybridBakeryWithMarket: ArchetypeFixture = {
 			description:
 				'Country-style sourdough with a crackling crust and open crumb. Baked fresh each morning.',
 			price: 1200,
-			sortOrder: 1
+			sortOrder: 1,
+			availabilityMode: 'always'
 		},
 		{
 			categoryKey: 'breads',
@@ -30,7 +31,8 @@ export const hybridBakeryWithMarket: ArchetypeFixture = {
 			description:
 				'Traditional French baguette — crisp outside, pillowy inside. Best enjoyed same day.',
 			price: 550,
-			sortOrder: 2
+			sortOrder: 2,
+			availabilityMode: 'always'
 		},
 		{
 			categoryKey: 'breads',
@@ -38,7 +40,8 @@ export const hybridBakeryWithMarket: ArchetypeFixture = {
 			description:
 				'Thick, pillowy focaccia drizzled with local honey and studded with dried lavender buds.',
 			price: 900,
-			sortOrder: 3
+			sortOrder: 3,
+			availabilityMode: 'always'
 		},
 		{
 			categoryKey: 'pastries',
@@ -47,6 +50,7 @@ export const hybridBakeryWithMarket: ArchetypeFixture = {
 				'Soft brioche dough, cinnamon-brown sugar filling, finished with cream cheese glaze. 2-pack.',
 			price: 750,
 			sortOrder: 1,
+			availabilityMode: 'storefront_only',
 			modifierKeys: ['glaze', 'add-ons']
 		},
 		{
@@ -56,6 +60,7 @@ export const hybridBakeryWithMarket: ArchetypeFixture = {
 				'Buttermilk scones loaded with wild blueberries and a lemon-sugar glaze. 2-pack.',
 			price: 650,
 			sortOrder: 2,
+			availabilityMode: 'storefront_only',
 			modifierKeys: ['add-ons']
 		},
 		{
@@ -64,6 +69,7 @@ export const hybridBakeryWithMarket: ArchetypeFixture = {
 			description: 'Laminated with European-style butter for a shattery, flaky exterior. 2-pack.',
 			price: 700,
 			sortOrder: 3,
+			availabilityMode: 'storefront_only',
 			modifierKeys: ['add-ons']
 		},
 		{

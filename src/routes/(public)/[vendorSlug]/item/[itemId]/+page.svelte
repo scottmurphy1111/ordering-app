@@ -2,10 +2,11 @@
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import type { PageData } from './$types';
-	import { cart, CartTypeMismatchError, type CartModifier } from '$lib/cart.svelte';
+	import { cart, CartTypeMismatchError, type CartModifier, type AvailabilityMode } from '$lib/cart.svelte';
 	import { confirmDialog } from '$lib/confirm.svelte';
 	import { resolve } from '$app/paths';
 	import Icon from '@iconify/svelte';
+	import { Badge } from '$lib/components/ui/badge';
 
 	let { data }: { data: PageData } = $props();
 
@@ -68,7 +69,8 @@
 			selectedModifiers,
 			imageUrl: primaryImage?.url,
 			pickupType: data.item.pickupType,
-			customDateLeadDays: data.item.customDateLeadDays ?? undefined
+			customDateLeadDays: data.item.customDateLeadDays ?? undefined,
+			availabilityMode: (data.item.availabilityMode as AvailabilityMode | null) ?? undefined
 		};
 
 		try {
@@ -141,6 +143,13 @@
 					</p>
 				{:else}
 					<p class="text-xl font-bold text-foreground">${(data.item.price / 100).toFixed(2)}</p>
+				{/if}
+				{#if data.item.availabilityMode === 'storefront_only'}
+					<Badge class="bg-amber-50 text-xs text-amber-700">Storefront only</Badge>
+				{:else if data.item.availabilityMode === 'events_only'}
+					<Badge class="bg-sky-50 text-xs text-sky-700">Events only</Badge>
+				{:else if data.item.availabilityMode === 'special_order'}
+					<Badge class="bg-purple-50 text-xs text-purple-700">Special order</Badge>
 				{/if}
 			</div>
 			{#if Array.isArray(data.item.tags) && data.item.tags.length > 0}

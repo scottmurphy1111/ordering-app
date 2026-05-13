@@ -8,6 +8,9 @@ export type CartModifier = {
 
 export type PickupType = 'windowed' | 'custom_date';
 
+import type { AvailabilityMode as _AvailabilityMode } from '$lib/server/cart/compat';
+export type AvailabilityMode = _AvailabilityMode;
+
 export type CartItem = {
 	itemId: number;
 	name: string;
@@ -19,6 +22,7 @@ export type CartItem = {
 	billingInterval?: string; // 'monthly' | 'yearly'
 	pickupType: PickupType;
 	customDateLeadDays?: number;
+	availabilityMode?: AvailabilityMode;
 };
 
 export class CartTypeMismatchError extends Error {

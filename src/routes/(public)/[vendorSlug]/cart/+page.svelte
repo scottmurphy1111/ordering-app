@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { SvelteDate } from 'svelte/reactivity';
+	import { SvelteDate, SvelteSet } from 'svelte/reactivity';
 	import type { PageData } from './$types';
 	import { cart, itemUnitPrice } from '$lib/cart.svelte';
 	import { goto } from '$app/navigation';
@@ -183,6 +183,29 @@
 	const showGroupHeaders = $derived(
 		storefrontPickerOptions.length > 0 && eventPickerOptions.length > 0
 	);
+
+	const currentPickupMode = $derived<'pickup_event' | 'storefront_hours' | 'custom_date' | null>(
+		pickupChoice?.kind === 'event'
+			? 'pickup_event'
+			: pickupChoice?.kind === 'asap' || pickupChoice?.kind === 'scheduled'
+				? 'storefront_hours'
+				: null
+	);
+
+	const incompatibleItemIds = $derived.by<SvelteSet<number>>(() => {
+		const mode = currentPickupMode;
+		if (!mode) return new SvelteSet();
+		const out = new SvelteSet<number>();
+		for (const item of cart.items) {
+			const am = item.availabilityMode;
+			if (!am || am === 'always' || am === 'special_order') continue;
+			if (am === 'storefront_only' && mode === 'pickup_event') out.add(item.itemId);
+			if (am === 'events_only' && mode === 'storefront_hours') out.add(item.itemId);
+		}
+		return out;
+	});
+
+	const hasIncompatibleItems = $derived(incompatibleItemIds.size > 0);
 
 	function isOptionSelected(option: PickerOption, choice: PickupChoice | null): boolean {
 		if (!choice) return false;
@@ -601,6 +624,13 @@
 			</div>
 		{/if}
 
+		{#if hasIncompatibleItems}
+			<div class="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700">
+				Some items in your cart aren't available for the selected pickup method. Remove them or choose
+				a different pickup option to continue.
+			</div>
+		{/if}
+
 		{#if checkoutError}
 			<div
 				class="rounded-lg border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive"
@@ -678,6 +708,13 @@
 										? `/${item.billingInterval === 'yearly' ? 'yr' : 'mo'}`
 										: ' each'}
 								</p>
+								{#if incompatibleItemIds.has(item.itemId)}
+									<p class="mt-1 text-xs font-medium text-amber-600">
+										{item.availabilityMode === 'storefront_only'
+											? 'Storefront pickup only — not available at events'
+											: 'Event pickup only — not available for storefront orders'}
+									</p>
+								{/if}
 							</div>
 							<div class="flex shrink-0 items-center gap-2">
 								<button
@@ -1171,7 +1208,7 @@
 			<button
 				type="button"
 				onclick={checkout}
-				disabled={loading || cart.items.length === 0 || isPaused}
+				disabled={loading || cart.items.length === 0 || isPaused || hasIncompatibleItems}
 				style="background-color: var(--background-color); color: var(--foreground-color);"
 				class="w-full rounded-xl px-6 py-4 text-base font-semibold shadow-sm transition-opacity hover:opacity-90 disabled:opacity-50"
 			>

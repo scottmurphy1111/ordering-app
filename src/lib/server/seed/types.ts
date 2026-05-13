@@ -47,6 +47,7 @@ export interface SeedItem {
 	pickupType?: 'custom_date';
 	customDateLeadDays?: number;
 	modifierKeys?: string[];
+	availabilityMode?: 'always' | 'storefront_only' | 'events_only' | 'special_order';
 }
 
 export interface SeedTemplate {
