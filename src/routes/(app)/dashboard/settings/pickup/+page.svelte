@@ -345,6 +345,16 @@
 			if (!map.has(key)) map.set(key, []);
 			map.get(key)!.push(tmpl);
 		}
+		// Active templates first, then deactivated; alphabetical within each group.
+		for (const [key, tmpls] of map) {
+			map.set(
+				key,
+				[...tmpls].sort((a, b) => {
+					if (a.isActive !== b.isActive) return a.isActive ? -1 : 1;
+					return a.name.localeCompare(b.name);
+				})
+			);
+		}
 		return map;
 	});
 
@@ -1398,13 +1408,18 @@
 									<div
 										class="flex flex-col gap-2 px-4 py-3 md:flex-row md:items-center md:justify-between"
 									>
-										<span class="text-sm text-foreground">
-											{formatTime(tmpl.windowStart)}–{formatTime(tmpl.windowEnd)}
-											· {formatRecurrence(tmpl.recurrence)}
-											· Cutoff {tmpl.cutoffHours}h · {tmpl.maxOrders
-												? `Max ${tmpl.maxOrders}`
-												: 'No cap'}{tmplDateRange ? ` · ${tmplDateRange}` : ''}
-										</span>
+										<div class="flex items-center gap-2">
+											<span class="text-sm text-foreground">
+												{formatTime(tmpl.windowStart)}–{formatTime(tmpl.windowEnd)}
+												· {formatRecurrence(tmpl.recurrence)}
+												· Cutoff {tmpl.cutoffHours}h · {tmpl.maxOrders
+													? `Max ${tmpl.maxOrders}`
+													: 'No cap'}{tmplDateRange ? ` · ${tmplDateRange}` : ''}
+											</span>
+											{#if !tmpl.isActive}
+												<Badge class="bg-gray-100 text-xs text-gray-500">Deactivated</Badge>
+											{/if}
+										</div>
 										<div class="flex shrink-0 items-baseline gap-3 md:pl-4">
 											<Button
 												type="button"
@@ -1439,9 +1454,11 @@
 													type="submit"
 													variant="ghost"
 													size="xs"
-													class="text-xs text-muted-foreground hover:text-destructive"
+													class={tmpl.isActive
+														? 'text-xs text-muted-foreground hover:text-destructive'
+														: 'text-xs text-muted-foreground hover:text-foreground'}
 												>
-													Deactivate
+													{tmpl.isActive ? 'Deactivate' : 'Activate'}
 												</Button>
 											</form>
 											<form method="post" action="?/deleteTemplate" use:enhance>
@@ -1451,11 +1468,15 @@
 													variant="ghost"
 													size="xs"
 													class="text-xs text-muted-foreground hover:text-destructive"
+													disabled={!tmpl.canDelete}
+													title={!tmpl.canDelete
+														? 'Cannot delete — active orders reference this template'
+														: undefined}
 													onclick={async (e) => {
 														const form = (e.currentTarget as HTMLButtonElement).form;
 														if (
 															await confirmDialog(
-																`Delete "${tmpl.name}"? This will stop generating future occurrences for this template.`,
+																`Delete this template? Future occurrences with no orders will be removed. This cannot be undone.`,
 																{ title: 'Delete template', confirmLabel: 'Delete' }
 															)
 														)
@@ -1529,13 +1550,18 @@
 								<div
 									class="flex flex-col gap-2 px-4 py-3 md:flex-row md:items-center md:justify-between"
 								>
-									<span class="text-sm text-foreground">
-										{formatTime(tmpl.windowStart)}–{formatTime(tmpl.windowEnd)}
-										· {formatRecurrence(tmpl.recurrence)}
-										· Cutoff {tmpl.cutoffHours}h · {tmpl.maxOrders
-											? `Max ${tmpl.maxOrders}`
-											: 'No cap'}{tmplDateRange ? ` · ${tmplDateRange}` : ''}
-									</span>
+									<div class="flex items-center gap-2">
+										<span class="text-sm text-foreground">
+											{formatTime(tmpl.windowStart)}–{formatTime(tmpl.windowEnd)}
+											· {formatRecurrence(tmpl.recurrence)}
+											· Cutoff {tmpl.cutoffHours}h · {tmpl.maxOrders
+												? `Max ${tmpl.maxOrders}`
+												: 'No cap'}{tmplDateRange ? ` · ${tmplDateRange}` : ''}
+										</span>
+										{#if !tmpl.isActive}
+											<Badge class="bg-gray-100 text-xs text-gray-500">Deactivated</Badge>
+										{/if}
+									</div>
 									<div class="flex shrink-0 items-baseline gap-3 md:pl-4">
 										<Button
 											type="button"
@@ -1570,9 +1596,11 @@
 												type="submit"
 												variant="ghost"
 												size="xs"
-												class="text-xs text-muted-foreground hover:text-destructive"
+												class={tmpl.isActive
+													? 'text-xs text-muted-foreground hover:text-destructive'
+													: 'text-xs text-muted-foreground hover:text-foreground'}
 											>
-												Deactivate
+												{tmpl.isActive ? 'Deactivate' : 'Activate'}
 											</Button>
 										</form>
 										<form method="post" action="?/deleteTemplate" use:enhance>
@@ -1582,11 +1610,15 @@
 												variant="ghost"
 												size="xs"
 												class="text-xs text-muted-foreground hover:text-destructive"
+												disabled={!tmpl.canDelete}
+												title={!tmpl.canDelete
+													? 'Cannot delete — active orders reference this template'
+													: undefined}
 												onclick={async (e) => {
 													const form = (e.currentTarget as HTMLButtonElement).form;
 													if (
 														await confirmDialog(
-															`Delete "${tmpl.name}"? This will stop generating future occurrences for this template.`,
+															`Delete this template? Future occurrences with no orders will be removed. This cannot be undone.`,
 															{ title: 'Delete template', confirmLabel: 'Delete' }
 														)
 													)

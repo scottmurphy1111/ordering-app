@@ -1,9 +1,10 @@
 import type { PageServerLoad, Actions } from './$types';
 import { fail } from '@sveltejs/kit';
 import { db } from '$lib/server/db';
-import { eq, and, asc, gt, sql } from 'drizzle-orm';
+import { eq, and, asc, gt, inArray, isNull, ne, sql } from 'drizzle-orm';
 import { pickupLocations, pickupWindowTemplates, pickupWindows } from '$lib/server/db/pickup';
 import { vendor } from '$lib/server/db/vendor';
+import { orders } from '$lib/server/db/orders';
 import { materializeTemplate } from '$lib/server/pickup/materialize';
 import { startOfDayInTZ } from '$lib/server/pickup/expand';
 
@@ -19,10 +20,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 			orderBy: [asc(pickupLocations.sortOrder), asc(pickupLocations.name)]
 		}),
 		db.query.pickupWindowTemplates.findMany({
-			where: and(
-				eq(pickupWindowTemplates.vendorId, vendorId),
-				eq(pickupWindowTemplates.isActive, true)
-			),
+			where: eq(pickupWindowTemplates.vendorId, vendorId),
 			orderBy: [asc(pickupWindowTemplates.name)]
 		}),
 		db
@@ -56,7 +54,54 @@ export const load: PageServerLoad = async ({ locals }) => {
 		}
 	}
 
-	return { locations, templates, timezone, upcomingByTemplate };
+		// Per-template "can delete" check: deletable only when no future non-cancelled orders
+	// reference any of its occurrences. Drives the UI's Delete button enabled/disabled state.
+	const templateIds = templates.map((t) => t.id);
+	const futureCommitments: Record<number, number> = {};
+	if (templateIds.length > 0) {
+		const futureWindowsForTemplates = await db
+			.select({ id: pickupWindows.id, templateId: pickupWindows.templateId })
+			.from(pickupWindows)
+			.where(
+				and(
+					inArray(pickupWindows.templateId, templateIds),
+					gt(pickupWindows.endsAt, now)
+				)
+			);
+
+		const windowToTemplate = new Map<number, number>();
+		for (const w of futureWindowsForTemplates) {
+			if (w.templateId !== null) windowToTemplate.set(w.id, w.templateId);
+		}
+
+		if (windowToTemplate.size > 0) {
+			const windowIds = Array.from(windowToTemplate.keys());
+			const orderRows = await db
+				.select({ pickupWindowId: orders.pickupWindowId })
+				.from(orders)
+				.where(
+					and(
+						inArray(orders.pickupWindowId, windowIds),
+						ne(orders.status, 'cancelled')
+					)
+				);
+
+			for (const o of orderRows) {
+				if (o.pickupWindowId === null) continue;
+				const tmplId = windowToTemplate.get(o.pickupWindowId);
+				if (tmplId === undefined) continue;
+				futureCommitments[tmplId] = (futureCommitments[tmplId] ?? 0) + 1;
+			}
+		}
+	}
+
+	const templatesWithMeta = templates.map((t) => ({
+		...t,
+		canDelete: (futureCommitments[t.id] ?? 0) === 0,
+		futureCommitmentCount: futureCommitments[t.id] ?? 0
+	}));
+
+	return { locations, templates: templatesWithMeta, timezone, upcomingByTemplate };
 };
 
 // ─── Location helpers (Phase 2) ──────────────────────────────────────────────
@@ -130,6 +175,84 @@ function validateTemplateFields(
 		}
 	}
 	return null;
+}
+
+// ─── Template cascade helpers ─────────────────────────────────────────────────
+
+async function cascadeCancelOnDeactivate(
+	templateId: number,
+	vendorId: number,
+	now: Date
+): Promise<void> {
+	// Find future occurrences eligible to cancel: not already cancelled, not customized
+	// (no notes, no maxOrders override), no non-cancelled orders attached.
+	const futureWindows = await db
+		.select({ id: pickupWindows.id })
+		.from(pickupWindows)
+		.where(
+			and(
+				eq(pickupWindows.templateId, templateId),
+				eq(pickupWindows.vendorId, vendorId),
+				gt(pickupWindows.endsAt, now),
+				eq(pickupWindows.isCancelled, false),
+				isNull(pickupWindows.notes),
+				isNull(pickupWindows.maxOrders)
+			)
+		);
+
+	if (futureWindows.length === 0) return;
+
+	const candidateIds = futureWindows.map((w) => w.id);
+
+	// Filter out windows that have non-cancelled orders attached.
+	const orderfulRows = await db
+		.selectDistinct({ windowId: orders.pickupWindowId })
+		.from(orders)
+		.where(
+			and(
+				inArray(orders.pickupWindowId, candidateIds),
+				ne(orders.status, 'cancelled')
+			)
+		);
+	const orderfulIds = new Set(
+		orderfulRows.map((r) => r.windowId).filter((v): v is number => v !== null)
+	);
+
+	const toCancelIds = candidateIds.filter((id) => !orderfulIds.has(id));
+	if (toCancelIds.length === 0) return;
+
+	await db
+		.update(pickupWindows)
+		.set({ isCancelled: true })
+		.where(
+			and(
+				inArray(pickupWindows.id, toCancelIds),
+				eq(pickupWindows.vendorId, vendorId)
+			)
+		);
+}
+
+async function cascadeUncancelOnActivate(
+	templateId: number,
+	vendorId: number,
+	now: Date
+): Promise<void> {
+	// Reverse the deactivate cascade. Un-cancel future rows matching the heuristic for
+	// "cascade-cancelled, never customized": isCancelled = true AND no notes AND no maxOrders.
+	// Rows the vendor deliberately cancelled (often have notes) stay cancelled.
+	await db
+		.update(pickupWindows)
+		.set({ isCancelled: false })
+		.where(
+			and(
+				eq(pickupWindows.templateId, templateId),
+				eq(pickupWindows.vendorId, vendorId),
+				gt(pickupWindows.endsAt, now),
+				eq(pickupWindows.isCancelled, true),
+				isNull(pickupWindows.notes),
+				isNull(pickupWindows.maxOrders)
+			)
+		);
 }
 
 // ─── Actions ─────────────────────────────────────────────────────────────────
@@ -406,10 +529,19 @@ export const actions: Actions = {
 		});
 		if (!existing) return fail(403, { templateError: 'Template not found.' });
 
+		const now = new Date();
+		const newIsActive = !existing.isActive;
+
 		await db
 			.update(pickupWindowTemplates)
-			.set({ isActive: !existing.isActive })
+			.set({ isActive: newIsActive })
 			.where(and(eq(pickupWindowTemplates.id, id), eq(pickupWindowTemplates.vendorId, vendorId)));
+
+		if (newIsActive === false) {
+			await cascadeCancelOnDeactivate(id, vendorId, now);
+		} else {
+			await cascadeUncancelOnActivate(id, vendorId, now);
+		}
 
 		await materializeTemplate(id);
 
@@ -467,10 +599,10 @@ export const actions: Actions = {
 		return { updateOccurrenceSuccess: true };
 	},
 
-	// Soft delete: sets is_active = false. The template is hidden from the UI immediately.
-	// Phase 4 note: when materializing occurrences, skip templates where is_active = false.
-	// Existing materialized pickup_windows rows from this template are NOT touched — they
-	// continue on their own schedule until they pass naturally.
+	// Hard delete: only allowed when the template has no future non-cancelled orders attached
+	// to any of its occurrences. If commitments exist, returns a 400 error explaining why.
+	// On success: deletes future un-orderful windows, then deletes the template row.
+	// Past pickup_windows get templateId set to NULL via ON DELETE SET NULL (schema default).
 	deleteTemplate: async ({ request, locals }) => {
 		const vendorId = locals.vendorId!;
 		const formData = await request.formData();
@@ -483,9 +615,55 @@ export const actions: Actions = {
 		});
 		if (!existing) return fail(403, { templateError: 'Template not found.' });
 
+		const now = new Date();
+
+		// Check for future commitments before deleting.
+		const futureWindowIds = await db
+			.select({ id: pickupWindows.id })
+			.from(pickupWindows)
+			.where(
+				and(
+					eq(pickupWindows.templateId, id),
+					eq(pickupWindows.vendorId, vendorId),
+					gt(pickupWindows.endsAt, now)
+				)
+			);
+
+		if (futureWindowIds.length > 0) {
+			const windowIds = futureWindowIds.map((w) => w.id);
+			const commitments = await db
+				.select({ id: orders.id })
+				.from(orders)
+				.where(
+					and(
+						inArray(orders.pickupWindowId, windowIds),
+						ne(orders.status, 'cancelled')
+					)
+				)
+				.limit(1);
+
+			if (commitments.length > 0) {
+				return fail(400, {
+					templateError:
+						"Cannot delete: this template has future orders attached. Deactivate it instead — orders will be honored, but customers won't see new pickup dates from this template."
+				});
+			}
+
+			// No commitments — safe to delete the future un-orderful windows.
+			await db
+				.delete(pickupWindows)
+				.where(
+					and(
+						inArray(pickupWindows.id, windowIds),
+						eq(pickupWindows.vendorId, vendorId)
+					)
+				);
+		}
+
+		// Delete the template row. Past pickup_windows with templateId = id get their
+		// templateId set to NULL via the schema's ON DELETE SET NULL.
 		await db
-			.update(pickupWindowTemplates)
-			.set({ isActive: false })
+			.delete(pickupWindowTemplates)
 			.where(and(eq(pickupWindowTemplates.id, id), eq(pickupWindowTemplates.vendorId, vendorId)));
 
 		return { deleteTemplateSuccess: true };

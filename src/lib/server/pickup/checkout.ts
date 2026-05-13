@@ -1,7 +1,7 @@
 import { db } from '$lib/server/db';
-import { pickupWindows, pickupLocations } from '$lib/server/db/pickup';
+import { pickupWindows, pickupLocations, pickupWindowTemplates } from '$lib/server/db/pickup';
 import { orders } from '$lib/server/db/orders';
-import { and, asc, count, eq, gt, inArray, ne } from 'drizzle-orm';
+import { and, asc, count, eq, gt, inArray, isNull, ne, or } from 'drizzle-orm';
 
 export type AvailableWindow = {
 	id: number;
@@ -63,12 +63,16 @@ export async function getAvailableWindows(
 		})
 		.from(pickupWindows)
 		.leftJoin(pickupLocations, eq(pickupWindows.locationId, pickupLocations.id))
+		.leftJoin(pickupWindowTemplates, eq(pickupWindows.templateId, pickupWindowTemplates.id))
 		.where(
 			and(
 				eq(pickupWindows.vendorId, vendorId),
 				gt(pickupWindows.startsAt, now),
 				gt(pickupWindows.cutoffAt, now),
-				eq(pickupWindows.isCancelled, false)
+				eq(pickupWindows.isCancelled, false),
+				// Defensive: exclude windows whose template is inactive.
+				// NULL templateId (ad-hoc windows) passes through.
+				or(isNull(pickupWindows.templateId), eq(pickupWindowTemplates.isActive, true))
 			)
 		)
 		.orderBy(asc(pickupWindows.startsAt))
@@ -125,6 +129,19 @@ export async function validateWindowForCheckout(
 
 	if (!win) return { valid: false, reason: VALIDATION_REASON.notFound };
 	if (win.isCancelled) return { valid: false, reason: VALIDATION_REASON.cancelled };
+
+	// Defensive: reject windows whose template has been deactivated.
+	// NULL templateId (ad-hoc windows) passes through.
+	if (win.templateId !== null) {
+		const tmpl = await db.query.pickupWindowTemplates.findFirst({
+			where: eq(pickupWindowTemplates.id, win.templateId),
+			columns: { isActive: true }
+		});
+		if (!tmpl || !tmpl.isActive) {
+			return { valid: false, reason: VALIDATION_REASON.cancelled };
+		}
+	}
+
 	if (win.cutoffAt <= now) return { valid: false, reason: VALIDATION_REASON.cutoffPassed };
 
 	if (win.maxOrders !== null) {
