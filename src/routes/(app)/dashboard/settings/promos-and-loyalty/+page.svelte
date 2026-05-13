@@ -319,10 +319,10 @@
 					<button
 						type="button"
 						onclick={() => (programType = 'stamps')}
-						class="flex flex-col items-start gap-2 rounded-xl border p-4 text-left transition-colors {programType ===
+						class="flex flex-col items-start gap-2 rounded-lg border bg-background p-4 text-left transition-colors hover:bg-muted/40 {programType ===
 						'stamps'
-							? 'border-primary bg-primary/5'
-							: 'border-border bg-background hover:border-muted-foreground/40'}"
+							? 'border-primary ring-1 ring-primary'
+							: 'border-border'}"
 					>
 						<div
 							class="flex h-9 w-9 items-center justify-center rounded-full {programType === 'stamps'
@@ -346,10 +346,10 @@
 					<button
 						type="button"
 						onclick={() => (programType = 'points')}
-						class="flex flex-col items-start gap-2 rounded-xl border p-4 text-left transition-colors {programType ===
+						class="flex flex-col items-start gap-2 rounded-lg border bg-background p-4 text-left transition-colors hover:bg-muted/40 {programType ===
 						'points'
-							? 'border-primary bg-primary/5'
-							: 'border-border bg-background hover:border-muted-foreground/40'}"
+							? 'border-primary ring-1 ring-primary'
+							: 'border-border'}"
 					>
 						<div
 							class="flex h-9 w-9 items-center justify-center rounded-full {programType === 'points'

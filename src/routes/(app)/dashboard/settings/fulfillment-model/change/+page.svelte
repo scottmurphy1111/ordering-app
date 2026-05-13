@@ -40,11 +40,13 @@
 		<form method="get" class="space-y-3">
 			{#each targetModels as model (model.value)}
 				<label
-					class="block cursor-pointer rounded-xl border bg-background px-5 py-4 transition-all hover:border-primary/50 hover:shadow-sm has-[:checked]:border-primary has-[:checked]:bg-primary/5"
+					class="flex cursor-pointer items-start gap-3 rounded-lg border bg-background p-4 transition-colors hover:bg-muted/40 has-checked:border-primary has-checked:ring-1 has-checked:ring-primary"
 				>
-					<input type="radio" name="to" value={model.value} class="sr-only" />
-					<p class="text-sm font-semibold text-foreground">{model.label}</p>
-					<p class="mt-1 text-xs text-muted-foreground">{model.description}</p>
+					<input type="radio" name="to" value={model.value} class="mt-0.5" />
+					<div class="flex-1">
+						<p class="text-sm font-semibold text-foreground">{model.label}</p>
+						<p class="mt-1 text-xs text-muted-foreground">{model.description}</p>
+					</div>
 				</label>
 			{/each}
 

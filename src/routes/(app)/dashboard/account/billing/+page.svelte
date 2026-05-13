@@ -951,30 +951,20 @@
 			<div class="flex flex-col gap-3">
 				<!-- Option 1: cancel at period end (no refund) -->
 				<label
-					class="flex cursor-pointer gap-3 rounded-xl border p-4 transition-colors {cancelChoice ===
+					class="flex cursor-pointer items-start gap-3 rounded-lg border bg-background p-4 transition-colors hover:bg-muted/40 {cancelChoice ===
 					'period_end'
-						? 'border-primary bg-primary/5'
-						: 'border-gray-200 hover:border-gray-300'}"
+						? 'border-primary ring-1 ring-primary'
+						: 'border-border'}"
 				>
 					<input
 						type="radio"
 						name="cancelChoice"
 						value="period_end"
-						class="sr-only"
+						class="mt-0.5"
 						checked={cancelChoice === 'period_end'}
 						onchange={() => (cancelChoice = 'period_end')}
 					/>
-					<div
-						class="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full border-2 {cancelChoice ===
-						'period_end'
-							? 'border-primary'
-							: 'border-muted-foreground/50'}"
-					>
-						{#if cancelChoice === 'period_end'}
-							<div class="h-2 w-2 rounded-full bg-primary"></div>
-						{/if}
-					</div>
-					<div>
+					<div class="flex-1">
 						<p class="text-sm font-medium text-foreground">Cancel at period end</p>
 						<p class="mt-0.5 text-xs text-muted-foreground">
 							Keep access until {data.subscriptionEndsAt
@@ -995,30 +985,20 @@
 				<!-- Option 2: cancel immediately + prorated refund (only when refund > 0) -->
 				{#if cancelPreview && cancelPreview.unusedMonths > 0}
 					<label
-						class="flex cursor-pointer gap-3 rounded-xl border p-4 transition-colors {cancelChoice ===
+						class="flex cursor-pointer items-start gap-3 rounded-lg border bg-background p-4 transition-colors hover:bg-muted/40 {cancelChoice ===
 						'immediate_refund'
-							? 'border-primary bg-primary/5'
-							: 'border-gray-200 hover:border-gray-300'}"
+							? 'border-primary ring-1 ring-primary'
+							: 'border-border'}"
 					>
 						<input
 							type="radio"
 							name="cancelChoice"
 							value="immediate_refund"
-							class="sr-only"
+							class="mt-0.5"
 							checked={cancelChoice === 'immediate_refund'}
 							onchange={() => (cancelChoice = 'immediate_refund')}
 						/>
-						<div
-							class="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full border-2 {cancelChoice ===
-							'immediate_refund'
-								? 'border-primary'
-								: 'border-muted-foreground/50'}"
-						>
-							{#if cancelChoice === 'immediate_refund'}
-								<div class="h-2 w-2 rounded-full bg-primary"></div>
-							{/if}
-						</div>
-						<div>
+						<div class="flex-1">
 							<p class="text-sm font-medium text-foreground">Cancel now — get a refund</p>
 							<p class="mt-0.5 text-xs text-muted-foreground">
 								Cancel immediately and receive a prorated refund of
@@ -1225,8 +1205,8 @@
 							}}
 							class="rounded-lg border px-3 py-2 text-sm transition-colors {pauseDuration ===
 							opt.value
-								? 'border-primary bg-primary/5 font-medium text-primary'
-								: 'border-gray-200 text-muted-foreground hover:border-gray-300'}"
+								? 'border-primary bg-background font-medium text-primary ring-1 ring-primary '
+								: 'border-gray-200 text-muted-foreground hover:border-gray-300 hover:bg-muted/40'}"
 						>
 							{opt.label}
 						</button>
@@ -1238,8 +1218,8 @@
 						pauseDuration = 'custom';
 					}}
 					class="rounded-lg border px-3 py-2 text-sm transition-colors {pauseDuration === 'custom'
-						? 'border-primary bg-primary/5 font-medium text-primary'
-						: 'border-gray-200 text-muted-foreground hover:border-gray-300'}"
+						? 'border-primary bg-background font-medium text-primary ring-1 ring-primary '
+						: 'border-gray-200 text-muted-foreground hover:border-gray-300 hover:bg-muted/40'}"
 				>
 					Custom date
 				</button>
@@ -1369,10 +1349,10 @@
 							onclick={() => {
 								if (pendingPlanChange) pendingPlanChange.selectedInterval = 'monthly';
 							}}
-							class="flex flex-col gap-0.5 rounded-xl border px-3 py-2.5 text-left transition-colors {pendingPlanChange.selectedInterval ===
+							class="flex flex-col gap-0.5 rounded-lg border bg-background px-3 py-2.5 text-left transition-colors hover:bg-muted/40 {pendingPlanChange.selectedInterval ===
 							'monthly'
-								? 'border-primary bg-primary/5'
-								: 'border-gray-200 hover:border-gray-300'}"
+								? 'border-primary ring-1 ring-primary'
+								: 'border-border'}"
 						>
 							<span class="text-xs font-medium tracking-wide text-muted-foreground uppercase">
 								Monthly
@@ -1386,10 +1366,10 @@
 							onclick={() => {
 								if (pendingPlanChange) pendingPlanChange.selectedInterval = 'annual';
 							}}
-							class="flex flex-col gap-0.5 rounded-xl border px-3 py-2.5 text-left transition-colors {pendingPlanChange.selectedInterval ===
+							class="flex flex-col gap-0.5 rounded-lg border bg-background px-3 py-2.5 text-left transition-colors hover:bg-muted/40 {pendingPlanChange.selectedInterval ===
 							'annual'
-								? 'border-primary bg-primary/5'
-								: 'border-gray-200 hover:border-gray-300'}"
+								? 'border-primary ring-1 ring-primary'
+								: 'border-border'}"
 						>
 							<div class="flex items-center justify-between">
 								<span class="text-xs font-medium tracking-wide text-muted-foreground uppercase">
@@ -1498,8 +1478,10 @@
 					<input type="hidden" name="interval" value={pendingPlanChange.selectedInterval} />
 					<Button
 						type="submit"
-						variant={isUpgrade ? 'default' : 'outline'}
-						class="w-full {isUpgrade ? '' : 'text-muted-foreground'}"
+						variant={isUpgrade ? 'default' : 'destructive'}
+						class="w-full {isUpgrade
+							? ''
+							: 'bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700'}"
 					>
 						{isUpgrade ? 'Confirm upgrade' : 'Confirm downgrade'}
 					</Button>

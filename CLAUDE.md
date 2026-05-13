@@ -218,6 +218,7 @@ One-line summaries and links to the detailed sections of this document. Scan thi
 - **Button color treatments by intent** — Critical alert (amber-400), state-recovery (amber-300), promotional upsell (primary-tinted), vendor-initiated change (plain outline). Pick a category before picking classes; reuse the category's exact treatment. → [Button color treatments](#button-color-treatments)
 - **Documented raw `<button>` exceptions** — nine specific cases where raw `<button>` is required instead of the primitive. → [Documented raw button exceptions](#documented-raw-button-exceptions)
 - **Disabled button with hover explanation** — wrap in `<Tooltip>` with a `<span class="inline-block">` between trigger and button; the span captures hover since disabled elements don't fire mouse events. Conditionally render `<TooltipContent>` only when the disable condition is active. `TooltipProvider delayDuration={300}` is mounted globally at `src/routes/+layout.svelte`. → [Disabled button with hover explanation](#disabled-button-with-hover-explanation)
+- **Selectable cards (radio cards)** — canonical `border-border` unselected / `border-primary ring-1 ring-primary` selected / `hover:bg-muted/40` / visible native `<input type="radio">` on the left. `has-checked:` variant for form-driven state. Customer-cart branded variant is a documented exception. → [Selectable cards (radio cards)](#selectable-cards-radio-cards)
 
 ### Tabs and segmented controls
 
@@ -1209,6 +1210,56 @@ Use `<Button>` for all button affordances unless the callsite matches one of the
 - The most important action on a page is always a solid green primary button. Secondary actions are outline. Tertiary are ghost or text.
 - Never have more than one solid primary button visible at the same time.
 - When there are 3+ secondary actions, group them under a `⋯ More` dropdown.
+
+---
+
+## Selectable cards (radio cards)
+
+For any UI where the user picks one option from a small list of meaningful choices — fulfillment-model picker, archetype picker, billing-cancellation choice picker, etc. — use this canonical radio-card shape:
+
+```svelte
+<label
+  class="flex cursor-pointer items-start gap-3 rounded-lg border bg-background p-3 transition-colors hover:bg-muted/40 {isSelected
+    ? 'border-primary ring-1 ring-primary'
+    : 'border-border'}"
+>
+  <input type="radio" name="..." value={...} bind:group={...} class="mt-0.5" />
+  <div class="flex-1">
+    <p class="text-sm font-medium text-foreground">{label}</p>
+    <p class="mt-0.5 text-xs text-muted-foreground">{description}</p>
+  </div>
+</label>
+```
+
+Reference: `src/routes/(app)/vendors/+page.svelte` — fulfillment-model picker, archetype picker, and "start blank" option.
+
+**Load-bearing pieces:**
+
+- Background stays `bg-background` in both selected and unselected states — never filled primary.
+- Selected: `border-primary ring-1 ring-primary` (color border + thin ring outline).
+- Unselected: `border-border`.
+- Hover: `hover:bg-muted/40` (light tint), applied in both states.
+- Radio input is the **visible native input** on the left — no `sr-only` + custom-drawn dot. The native input is the selection indicator.
+- The whole `<label>` is the click target; clicking anywhere on the card selects the radio.
+
+**The `has-checked:` selector variant** is equivalent and useful when the selected state is purely form-driven (no Svelte reactive state needed):
+
+```svelte
+<label
+  class="flex cursor-pointer items-start gap-3 rounded-lg border bg-background p-3 transition-colors hover:bg-muted/40 has-checked:border-primary has-checked:ring-1 has-checked:ring-primary"
+>
+  <input type="radio" name="..." value={...} class="mt-0.5" />
+  <div class="flex-1">...</div>
+</label>
+```
+
+Use `has-checked:` (Tailwind v4 canonical) — not `has-[:checked]:` (the older bracket form, which produces a warning in this project).
+
+Reference: `src/routes/(app)/dashboard/settings/fulfillment-model/change/+page.svelte`.
+
+**Nav-style cards** (clicking navigates rather than selects a radio): same base + hover classes, but always `border-border` (no persistent selected state). Add a right-side chevron icon to signal "drills into next view."
+
+**Customer-facing storefront variant** (`(public)/[vendorSlug]/cart`): uses vendor-branded coloring (`var(--background-color)`) for the selected state instead of `border-primary`. This is intentional — the customer storefront adopts the vendor's palette. Internal dashboard surfaces always use the canonical primary; only customer-facing branded surfaces use the variant. **Not a drift — documented exception.**
 
 ---
 
