@@ -3,6 +3,7 @@
 	import { page as pageState } from '$app/state';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
+	import { SvelteURLSearchParams } from 'svelte/reactivity';
 	import Icon from '@iconify/svelte';
 	import { Card, CardContent } from '$lib/components/ui/card';
 	import { Badge } from '$lib/components/ui/badge';
@@ -12,7 +13,7 @@
 	const totalPages = $derived(Math.max(1, Math.ceil(data.total / data.pageSize)));
 
 	function navigate(params: Record<string, string>) {
-		const p = new URLSearchParams(pageState.url.searchParams);
+		const p = new SvelteURLSearchParams(pageState.url.searchParams);
 		for (const [k, v] of Object.entries(params)) {
 			if (v) p.set(k, v);
 			else p.delete(k);

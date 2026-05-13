@@ -2,6 +2,11 @@ import { db } from '$lib/server/db';
 import { pickupWindows, pickupLocations, pickupWindowTemplates } from '$lib/server/db/pickup';
 import { orders } from '$lib/server/db/orders';
 import { and, asc, count, eq, gt, inArray, isNull, ne, or } from 'drizzle-orm';
+export {
+	validateStorefrontPickup,
+	STOREFRONT_VALIDATION_REASON,
+	type StorefrontValidationResult
+} from './storefrontValidation';
 
 export type AvailableWindow = {
 	id: number;

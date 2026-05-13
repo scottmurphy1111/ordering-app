@@ -22,3 +22,9 @@ export const paymentStatusEnum = pgEnum('payment_status', [
 ]);
 
 export const pickupTypeEnum = pgEnum('pickup_type', ['windowed', 'custom_date']);
+
+export const pickupModeEnum = pgEnum('pickup_mode', [
+	'pickup_event',
+	'storefront_hours',
+	'custom_date'
+]);

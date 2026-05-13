@@ -89,7 +89,12 @@ async function handleEvent(event: Stripe.Event, ctx: VendorCtx) {
 
 			const existing = await db.query.orders.findFirst({
 				where: eq(orders.stripePaymentIntentId, intent.id),
-				columns: { status: true, paymentStatus: true, pickupWindowSnapshot: true, scheduledFor: true }
+				columns: {
+					status: true,
+					paymentStatus: true,
+					pickupWindowSnapshot: true,
+					scheduledFor: true
+				}
 			});
 
 			if (!existing) break;
@@ -160,6 +165,7 @@ async function handleEvent(event: Stripe.Event, ctx: VendorCtx) {
 							total: order.total,
 							orderType: order.type,
 							notes: order.notes,
+							pickupMode: order.pickupMode,
 							pickupWindowSnapshot: order.pickupWindowSnapshot as PickupWindowSnapshot | null,
 							scheduledFor: order.scheduledFor,
 							vendorTimezone: ctx.timezone
@@ -312,6 +318,7 @@ async function handleEvent(event: Stripe.Event, ctx: VendorCtx) {
 						total: order.total,
 						orderType: order.type,
 						notes: order.notes,
+						pickupMode: order.pickupMode,
 						pickupWindowSnapshot: order.pickupWindowSnapshot as PickupWindowSnapshot | null,
 						scheduledFor: order.scheduledFor,
 						vendorTimezone: ctx.timezone

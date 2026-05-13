@@ -6,7 +6,6 @@
 	import { resolve } from '$app/paths';
 	import Icon from '@iconify/svelte';
 	import { formatDistanceToNow } from 'date-fns';
-	import { Button } from '$lib/components/ui/button';
 	import { Card, CardContent } from '$lib/components/ui/card';
 	import { Skeleton } from '$lib/components/ui/skeleton';
 	import SetupChecklist from '$lib/components/SetupChecklist.svelte';

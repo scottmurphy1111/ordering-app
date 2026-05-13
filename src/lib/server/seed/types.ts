@@ -79,6 +79,7 @@ export interface SeedOrder {
 		| 'payment_failed';
 	paymentStatus: 'paid' | 'pending' | 'failed';
 	pickupType?: 'custom_date';
+	pickupMode?: 'pickup_event' | 'storefront_hours' | 'custom_date';
 	subtotal: number;
 	discount?: number;
 	promoCode?: string;

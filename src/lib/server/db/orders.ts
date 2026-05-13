@@ -11,7 +11,7 @@ import {
 } from 'drizzle-orm/pg-core';
 import { vendor } from './vendor';
 import { catalogItems } from './catalog';
-import { orderStatusEnum, paymentStatusEnum, pickupTypeEnum } from './types';
+import { orderStatusEnum, paymentStatusEnum, pickupTypeEnum, pickupModeEnum } from './types';
 import { pickupWindows, pickupLocations } from './pickup';
 
 export const orders = pgTable(
@@ -32,6 +32,7 @@ export const orders = pgTable(
 		status: orderStatusEnum('status').default('received').notNull(),
 		paymentStatus: paymentStatusEnum('payment_status').default('pending').notNull(),
 		pickupType: pickupTypeEnum('pickup_type').default('windowed').notNull(),
+		pickupMode: pickupModeEnum('pickup_mode').notNull().default('pickup_event'),
 
 		subtotal: integer('subtotal').notNull(),
 		tax: integer('tax').notNull(),

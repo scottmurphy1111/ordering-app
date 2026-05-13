@@ -230,6 +230,7 @@ One-line summaries and links to the detailed sections of this document. Scan thi
 - **Date range picker** — two separate `Popover`-wrapped `Calendar` instances, NOT a single range-mode Calendar. Preserves "from only" / "up to X" semantics. → [Date range picker](#date-range-picker-calendar--popover)
 - **Time column handling** — Drizzle `time` columns return `"HH:MM:SS"` strings; always split on `:` and take first two parts. → [Database & Server](#database--server)
 - **Vendor timezone** — stored as IANA in `vendors.timezone`; UI helpers in `src/lib/utils/timezones.ts`. Always use these. → [Database & Server](#database--server)
+- **Operating hours open-state** — `isVendorOpen()` in `src/lib/server/hours/isOpen.ts` computes `OpenState` from `vendor_hours` + `vendor_hours_exceptions` rows using Intl offset-correction. Call at page-load; never reconstruct inline. → [Operating hours](#operating-hours)
 
 ### Feedback (Alerts)
 
@@ -275,6 +276,7 @@ One-line summaries and links to the detailed sections of this document. Scan thi
 - **Stale-order auto-resolve** — `resolveStaleOrders(vendorId)` runs lazily on each live-orders page load. 7-day grace past `pickupWindow.endsAt`. Paid → fulfilled, unpaid → cancelled, refunded untouched. Best-effort; never blocks the page. → [Database & Server](#database--server)
 - **EXDATE storage convention** — `pickupWindowTemplates.exdates` stores `string[]` of `YYYY-MM-DD` dates. At materialize-time, anchored noon-UTC and compared against recurrence-generated occurrences. Bare YYYY-MM-DD avoids timezone drift; noon-UTC anchor matches `scheduledFor` convention. → [Database & Server](#database--server)
 - **Propose-alternate substate** — `pending_approval + proposedAt IS NOT NULL` is a substate with hard invariants: vendor cannot approve/decline, customer can accept/decline, vendor can withdraw. Three columns track the proposal (`proposedDate`, `proposedReason`, `proposedAt`). → [Propose-alternate substate](#propose-alternate-substate)
+- **Operating hours tables** — `vendor_hours` (recurring weekly schedule, one row per day+shift) and `vendor_hours_exceptions` (date overrides). Exception wins over weekly schedule; `isClosed=true` marks a full-day closure. Never derive open-state inline — call `isVendorOpen()`. → [Operating hours](#operating-hours)
 
 ### Design tokens and color
 
@@ -3236,6 +3238,53 @@ Settings live in the `vendors.settings` JSONB column. Current keys:
 Add new settings to the General settings page (`/dashboard/settings/general`)
 with helper text explaining when a vendor would want to enable it. Default off
 for the wedge audience; vendors opt in.
+
+---
+
+## Operating hours
+
+### Tables
+
+Two tables store vendor operating hours:
+
+- **`vendor_hours`** — recurring weekly schedule. One row per `(vendorId, dayOfWeek, openTime, closeTime)`. Multiple rows per day are valid (split shifts). The `day_of_week` enum is `monday … sunday`.
+- **`vendor_hours_exceptions`** — date-specific overrides. One row per `(vendorId, date)` (unique constraint). `isClosed = true` marks a full-day closure; `isClosed = false` with `openTime`/`closeTime` replaces that day's regular schedule entirely.
+
+**Priority rule:** an exception row for today always wins over `vendor_hours` rows, regardless of `isClosed`. If no exception exists, `vendor_hours` rows for today's `dayOfWeek` apply.
+
+### `isVendorOpen()` utility
+
+Lives at `src/lib/server/hours/isOpen.ts`. Computes the vendor's open state from DB rows using Intl offset-correction (same technique as `wallClockToUtc` in `expand.ts`).
+
+```ts
+import { isVendorOpen } from '$lib/server/hours/isOpen';
+
+// Called in +page.server.ts load functions:
+const openState = isVendorOpen(hours, exceptions, vendorTimezone);
+// or with an explicit reference time (for tests):
+const openState = isVendorOpen(hours, exceptions, vendorTimezone, at);
+```
+
+**`OpenState` type:**
+
+```ts
+type OpenState =
+  | { isOpen: true; closesAt: Date }
+  | { isOpen: false; opensAt: Date | null };  // opensAt=null means closed for the rest of the day
+```
+
+**Rules:**
+
+- Never reconstruct open-state logic inline. Always call `isVendorOpen()`.
+- The function is pure — safe to call in load functions and server-side utilities alike.
+- Time columns arrive from Drizzle as `"HH:MM:SS"` strings; `isVendorOpen` normalizes them internally.
+- The 8-test spec at `src/lib/server/hours/isOpen.spec.ts` covers: within hours, before open, after close, no-entry day, closed exception, custom-hours exception, split shift gap, timezone cross-day.
+
+### `/dashboard/settings/hours` page
+
+Managed via `+page.server.ts` actions: `saveHours` (wipe + replace), `addException` (upsert on conflict), `removeException`. The wipe-replace approach is safe because Neon HTTP has no transactions — delete + insert is idempotent behind the unique index.
+
+When adding a new vendor-scoped feature that gates on operating hours, read `openState` from the load and pass it to the component as part of `data`.
 
 ---
 

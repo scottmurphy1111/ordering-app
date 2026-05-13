@@ -16,7 +16,6 @@
 	onMount(() => cart.init(data.vendorSlug));
 
 	const vendor = $derived(data.vendor);
-	const settings = $derived(vendor.settings as Record<string, unknown> | null);
 	const isPaused = $derived(!!data.vendor.subscriptionPausedAt);
 
 	// ── Category/item data ───────────────────────────────────────────────────

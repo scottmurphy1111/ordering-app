@@ -141,9 +141,12 @@ async function _seed(vendorId: number, fixture: ArchetypeFixture): Promise<void>
 	// ── Orders + order_items ────────────────────────────────────────────────────
 	for (const order of fixture.orders) {
 		const { items: lineItems, ...orderData } = order;
+		const pickupMode =
+			orderData.pickupMode ??
+			(orderData.pickupType === 'custom_date' ? 'custom_date' : 'pickup_event');
 		const [newOrder] = await db
 			.insert(orders)
-			.values({ ...orderData, vendorId, items: lineItems })
+			.values({ ...orderData, vendorId, items: lineItems, pickupMode })
 			.returning({ id: orders.id });
 
 		await db.insert(orderItems).values(

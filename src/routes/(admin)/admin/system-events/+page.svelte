@@ -3,6 +3,7 @@
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
+	import { SvelteURLSearchParams } from 'svelte/reactivity';
 
 	let { data }: { data: PageData } = $props();
 
@@ -18,7 +19,7 @@
 	}
 
 	function navigate(params: Record<string, string>) {
-		const p = new URLSearchParams(page.url.searchParams);
+		const p = new SvelteURLSearchParams(page.url.searchParams);
 		for (const [k, v] of Object.entries(params)) {
 			if (v) p.set(k, v);
 			else p.delete(k);

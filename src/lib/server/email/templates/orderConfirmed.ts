@@ -34,9 +34,11 @@ function fmtTime(iso: string, tz: string): string {
 }
 
 function renderPickupSection(
+	pickupMode: 'pickup_event' | 'storefront_hours' | 'custom_date',
 	snapshot: PickupWindowSnapshot | null | undefined,
 	scheduledFor: Date | string | null | undefined,
-	tz: string
+	tz: string,
+	vendorName: string
 ): string {
 	if (snapshot) {
 		const dateLine = fmtDate(snapshot.startsAt, tz);
@@ -51,6 +53,15 @@ function renderPickupSection(
       ${addr ? `<p style="margin:0 0 2px;font-size:13px;color:#6b7280;">${addr}</p>` : ''}
       ${snapshot.location?.notes ? `<p style="margin:0 0 2px;font-size:13px;color:#6b7280;font-style:italic;">${snapshot.location.notes}</p>` : ''}
       ${snapshot.notes ? `<p style="margin:0;font-size:13px;color:#6b7280;">${snapshot.notes}</p>` : ''}
+    </div>`;
+	}
+
+	if (pickupMode === 'storefront_hours' && !scheduledFor) {
+		return `
+    <div style="margin-top:24px;padding:16px;background:#f0fdf4;border-radius:8px;border-left:4px solid #22c55e;">
+      <p style="margin:0 0 6px;font-size:12px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:0.05em;">Pickup details</p>
+      <p style="margin:0 0 4px;font-size:14px;color:#111827;">Pick up at ${vendorName} during open hours.</p>
+      <p style="margin:0;font-size:13px;color:#6b7280;">We'll have your order ready shortly.</p>
     </div>`;
 	}
 
@@ -87,6 +98,7 @@ export function orderConfirmedEmail({
 	total,
 	orderType,
 	notes,
+	pickupMode = 'pickup_event',
 	pickupWindowSnapshot,
 	scheduledFor,
 	vendorTimezone = 'America/New_York'
@@ -107,6 +119,7 @@ export function orderConfirmedEmail({
 	total: number;
 	orderType: string;
 	notes?: string | null;
+	pickupMode?: 'pickup_event' | 'storefront_hours' | 'custom_date';
 	pickupWindowSnapshot?: PickupWindowSnapshot | null;
 	scheduledFor?: Date | string | null;
 	vendorTimezone?: string;
@@ -153,7 +166,7 @@ export function orderConfirmedEmail({
       </p>
     </div>
 
-    ${renderPickupSection(pickupWindowSnapshot, scheduledFor, vendorTimezone)}
+    ${renderPickupSection(pickupMode, pickupWindowSnapshot, scheduledFor, vendorTimezone, vendorName)}
   `;
 
 	return emailWrapper({

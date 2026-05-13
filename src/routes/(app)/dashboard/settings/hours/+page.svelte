@@ -6,6 +6,7 @@
 	import { Alert } from '$lib/components/ui/alert';
 	import Icon from '@iconify/svelte';
 	import { untrack } from 'svelte';
+	import { confirmDialog } from '$lib/confirm.svelte';
 
 	let { data, form: _form }: { data: PageData; form: ActionData } = $props();
 	const form = $derived(_form as ActionData | null);
@@ -68,14 +69,6 @@
 	let addClose = $state('17:00');
 	let addNote = $state('');
 
-	function resetAddForm() {
-		addIsClosed = true;
-		addDate = '';
-		addOpen = '09:00';
-		addClose = '17:00';
-		addNote = '';
-	}
-
 	function formatTime(date: Date) {
 		return new Intl.DateTimeFormat('en-US', {
 			timeZone: data.timezone,
@@ -92,12 +85,6 @@
 			day: 'numeric',
 			year: 'numeric'
 		});
-	}
-
-	async function confirmRemove(id: number, date: string): Promise<boolean> {
-		return window.confirm(
-			`Remove the exception for ${formatExceptionDate(date)}? This cannot be undone.`
-		);
 	}
 </script>
 
@@ -264,11 +251,18 @@
 										<form
 											method="post"
 											action="?/removeException"
-											use:enhance={({ cancel }) => {
-												confirmRemove(exc.id, exc.date).then((ok) => {
-													if (!ok) cancel();
-												});
-												return async ({ update }) => update();
+											use:enhance
+											onsubmit={async (e) => {
+												e.preventDefault();
+												const form = e.currentTarget as HTMLFormElement;
+												if (
+													await confirmDialog(
+														`Remove the exception for ${formatExceptionDate(exc.date)}? This cannot be undone.`,
+														{ title: 'Remove exception', confirmLabel: 'Remove' }
+													)
+												) {
+													form.requestSubmit();
+												}
 											}}
 										>
 											<input type="hidden" name="exceptionId" value={exc.id} />

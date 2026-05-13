@@ -10,12 +10,14 @@ import { calcDiscount } from '$lib/server/promo';
 import type { CartItem } from '$lib/cart.svelte';
 import {
 	validateWindowForCheckout,
+	validateStorefrontPickup,
 	buildSnapshotFromWindow,
 	type PickupWindowSnapshot
 } from '$lib/server/pickup/checkout';
 import { HORIZON_DAYS } from '$lib/server/pickup/lifecycle';
 import { validateCartItems } from '$lib/server/cart/validate';
 import { generateOrderNumber } from '$lib/server/order-number';
+import { vendorHours, vendorHoursExceptions } from '$lib/server/db/vendor-hours';
 
 function itemUnitPrice(item: CartItem): number {
 	return item.basePrice + item.selectedModifiers.reduce((s, m) => s + m.priceAdjustment, 0);
@@ -30,6 +32,7 @@ export const POST: RequestHandler = async ({ request }) => {
 		orderType: string;
 		scheduledFor?: string | null;
 		pickupWindowId?: number | null;
+		pickupMode?: 'pickup_event' | 'storefront_hours' | 'custom_date';
 		subtotal: number;
 		tax: number;
 		tip?: number;
@@ -49,6 +52,7 @@ export const POST: RequestHandler = async ({ request }) => {
 		tip,
 		promoCode
 	} = body;
+	const pickupMode = body.pickupMode ?? 'pickup_event';
 
 	if (!vendorSlug || !items?.length || !customer?.name) {
 		throw error(400, 'Missing required fields');
@@ -114,7 +118,7 @@ export const POST: RequestHandler = async ({ request }) => {
 
 	const verifiedTotal = Math.max(0, serverSubtotal + serverTax + (tip ?? 0) - verifiedDiscount);
 
-	// Pickup window validation — runs before Stripe so we never charge for an invalid slot
+	// Pickup validation — runs before Stripe so we never charge for an invalid slot.
 	let resolvedScheduledFor: Date | null = scheduledFor ? new Date(scheduledFor) : null;
 	let resolvedPickupWindowId: number | null = null;
 	let resolvedPickupLocationId: number | null = null;
@@ -122,20 +126,36 @@ export const POST: RequestHandler = async ({ request }) => {
 
 	let initialStatus: typeof orders.status._.data = 'received';
 
-	if (pickupWindowId) {
-		const result = await validateWindowForCheckout(pickupWindowId, vendorRecord.id);
+	if (pickupMode === 'pickup_event') {
+		if (pickupWindowId) {
+			const result = await validateWindowForCheckout(pickupWindowId, vendorRecord.id);
+			if (!result.valid) throw error(400, result.reason);
+			resolvedPickupWindowId = result.window.id;
+			resolvedPickupLocationId = result.window.locationId;
+			resolvedPickupWindowSnapshot = buildSnapshotFromWindow(result.window);
+			resolvedScheduledFor = result.window.startsAt;
+			const horizonCutoff = new Date(Date.now() + HORIZON_DAYS * 24 * 60 * 60 * 1000);
+			if (result.window.startsAt > horizonCutoff) initialStatus = 'scheduled';
+		} else if (resolvedScheduledFor) {
+			const horizonCutoff = new Date(Date.now() + HORIZON_DAYS * 24 * 60 * 60 * 1000);
+			if (resolvedScheduledFor > horizonCutoff) initialStatus = 'scheduled';
+		}
+	} else if (pickupMode === 'storefront_hours') {
+		const [hours, exceptions] = await Promise.all([
+			db.query.vendorHours.findMany({ where: eq(vendorHours.vendorId, vendorRecord.id) }),
+			db.query.vendorHoursExceptions.findMany({
+				where: eq(vendorHoursExceptions.vendorId, vendorRecord.id)
+			})
+		]);
+		const result = validateStorefrontPickup(
+			resolvedScheduledFor,
+			hours,
+			exceptions,
+			vendorRecord.timezone
+		);
 		if (!result.valid) throw error(400, result.reason);
-		resolvedPickupWindowId = result.window.id;
-		resolvedPickupLocationId = result.window.locationId;
-		resolvedPickupWindowSnapshot = buildSnapshotFromWindow(result.window);
-		resolvedScheduledFor = result.window.startsAt;
-		const horizonCutoff = new Date(Date.now() + HORIZON_DAYS * 24 * 60 * 60 * 1000);
-		if (result.window.startsAt > horizonCutoff) initialStatus = 'scheduled';
-	} else if (resolvedScheduledFor) {
-		// Free-form scheduledFor (no pickup window). Apply the same horizon rule.
-		const horizonCutoff = new Date(Date.now() + HORIZON_DAYS * 24 * 60 * 60 * 1000);
-		if (resolvedScheduledFor > horizonCutoff) initialStatus = 'scheduled';
 	}
+	// pickupMode === 'custom_date' — no extra validation; vendor coordinates via proposeAlternate.
 
 	const orderNumber = await generateOrderNumber(vendorRecord.id, db);
 
@@ -159,6 +179,7 @@ export const POST: RequestHandler = async ({ request }) => {
 			items: validatedItems,
 			notes: notes || null,
 			scheduledFor: resolvedScheduledFor,
+			pickupMode,
 			pickupWindowId: resolvedPickupWindowId,
 			pickupLocationId: resolvedPickupLocationId,
 			pickupWindowSnapshot: resolvedPickupWindowSnapshot
