@@ -141,9 +141,30 @@ export interface SeedSettings {
 	minimumOrderAmount: number;
 	estimatedPrepTimeMinutes: number;
 	asapPickupEnabled: boolean;
-	hours: Record<string, { open: string; close: string } | { closed: true }>;
-	specialHours: unknown[];
 	loyalty: LoyaltyConfig;
+}
+
+export type DayOfWeek =
+	| 'monday'
+	| 'tuesday'
+	| 'wednesday'
+	| 'thursday'
+	| 'friday'
+	| 'saturday'
+	| 'sunday';
+
+export interface ArchetypeHoursEntry {
+	dayOfWeek: DayOfWeek;
+	openTime: string; // HH:MM
+	closeTime: string; // HH:MM
+}
+
+export interface ArchetypeHoursException {
+	date: string; // YYYY-MM-DD
+	isClosed: boolean;
+	openTime?: string; // HH:MM
+	closeTime?: string; // HH:MM
+	note?: string;
 }
 
 export interface SeedPromoCode {
@@ -176,6 +197,8 @@ export interface ArchetypeFixture {
 	modifiers: SeedModifier[];
 	templates: SeedTemplate[];
 	locations: SeedPickupLocation[];
+	hours: ArchetypeHoursEntry[];
+	hoursExceptions: ArchetypeHoursException[];
 	branding: SeedBranding;
 	settings: SeedSettings;
 	promoCodes: SeedPromoCode[];

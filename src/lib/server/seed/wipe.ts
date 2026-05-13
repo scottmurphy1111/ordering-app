@@ -21,10 +21,12 @@ function createDb() {
 //   6. catalog_categories
 //   7. modifiers       (modifier_options cascade)
 //   8. loyalty_accounts
-//   9. promo_codes
-//  10. system_events
-//  11. demo vendor_invitations (by address — real team invitations preserved)
-//  12. reset last_order_number
+//   9. vendor_hours_exceptions
+//  10. vendor_hours
+//  11. promo_codes
+//  12. system_events
+//  13. demo vendor_invitations (by address — real team invitations preserved)
+//  14. reset last_order_number
 export async function wipeVendorData(vendorId: number): Promise<void> {
 	const db = createDb();
 
@@ -36,6 +38,8 @@ export async function wipeVendorData(vendorId: number): Promise<void> {
 	await db.execute(sql`DELETE FROM catalog_categories WHERE vendor_id = ${vendorId}`);
 	await db.execute(sql`DELETE FROM modifiers WHERE vendor_id = ${vendorId}`);
 	await db.execute(sql`DELETE FROM loyalty_accounts WHERE vendor_id = ${vendorId}`);
+	await db.execute(sql`DELETE FROM vendor_hours_exceptions WHERE vendor_id = ${vendorId}`);
+	await db.execute(sql`DELETE FROM vendor_hours WHERE vendor_id = ${vendorId}`);
 	await db.execute(sql`DELETE FROM promo_codes WHERE vendor_id = ${vendorId}`);
 	await db.execute(sql`DELETE FROM system_events WHERE vendor_id = ${vendorId}`);
 

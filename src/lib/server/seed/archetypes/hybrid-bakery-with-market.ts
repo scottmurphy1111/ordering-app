@@ -4,7 +4,7 @@ export const hybridBakeryWithMarket: ArchetypeFixture = {
 	key: 'hybrid-bakery-with-market',
 	label: 'Bakery with market booth',
 	description:
-		'Storefront bakery that also sells at the Saturday farmers market. Demonstrates both operating hours and recurring pickup events.',
+		'A bakery with a brick-and-mortar storefront plus a Saturday farmers market booth. Daily walk-in retail during operating hours, weekly Saturday market booth for preorder pickup.',
 	fulfillmentModel: 'hybrid',
 	allowedFulfillmentModels: ['hybrid'],
 	vendorType: 'bakery',
@@ -178,6 +178,15 @@ export const hybridBakeryWithMarket: ArchetypeFixture = {
 		}
 	],
 
+	hours: [
+		{ dayOfWeek: 'tuesday', openTime: '07:00', closeTime: '18:00' },
+		{ dayOfWeek: 'wednesday', openTime: '07:00', closeTime: '18:00' },
+		{ dayOfWeek: 'thursday', openTime: '07:00', closeTime: '18:00' },
+		{ dayOfWeek: 'friday', openTime: '07:00', closeTime: '19:00' },
+		{ dayOfWeek: 'saturday', openTime: '08:00', closeTime: '15:00' }
+	],
+	hoursExceptions: [],
+
 	branding: {
 		tagline: 'Baked fresh daily since 2018',
 		logoUrl: '/seed-assets/logo.svg',
@@ -197,17 +206,7 @@ export const hybridBakeryWithMarket: ArchetypeFixture = {
 		allowPickup: true,
 		minimumOrderAmount: 0,
 		estimatedPrepTimeMinutes: 20,
-		asapPickupEnabled: false,
-		hours: {
-			monday: { open: '07:00', close: '17:00' },
-			tuesday: { open: '07:00', close: '17:00' },
-			wednesday: { open: '07:00', close: '17:00' },
-			thursday: { open: '07:00', close: '17:00' },
-			friday: { open: '07:00', close: '19:00' },
-			saturday: { open: '08:00', close: '15:00' },
-			sunday: { closed: true }
-		},
-		specialHours: [],
+		asapPickupEnabled: true,
 		loyalty: {
 			enabled: true,
 			type: 'stamps',

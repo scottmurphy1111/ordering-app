@@ -13,6 +13,7 @@ import {
 } from '../db/catalog';
 import { orders, orderItems } from '../db/orders';
 import { pickupLocations, pickupWindowTemplates } from '../db/pickup';
+import { vendorHours, vendorHoursExceptions } from '../db/vendor-hours';
 import { promoCodes } from '../db/promos';
 import { vendor, vendorInvitations } from '../db/vendor';
 import { ARCHETYPES } from './archetypes/index';
@@ -154,6 +155,30 @@ async function _seed(vendorId: number, fixture: ArchetypeFixture): Promise<void>
 				unitPrice:
 					li.basePrice + li.selectedModifiers.reduce((acc, m) => acc + m.priceAdjustment, 0),
 				selectedModifiers: li.selectedModifiers
+			}))
+		);
+	}
+
+	// ── Operating hours ─────────────────────────────────────────────────────────
+	if (fixture.hours.length > 0) {
+		await db.insert(vendorHours).values(
+			fixture.hours.map((h) => ({
+				vendorId,
+				dayOfWeek: h.dayOfWeek,
+				openTime: h.openTime + ':00',
+				closeTime: h.closeTime + ':00'
+			}))
+		);
+	}
+	if (fixture.hoursExceptions.length > 0) {
+		await db.insert(vendorHoursExceptions).values(
+			fixture.hoursExceptions.map((e) => ({
+				vendorId,
+				date: e.date,
+				isClosed: e.isClosed,
+				openTime: e.openTime ? e.openTime + ':00' : null,
+				closeTime: e.closeTime ? e.closeTime + ':00' : null,
+				note: e.note ?? null
 			}))
 		);
 	}

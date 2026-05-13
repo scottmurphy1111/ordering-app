@@ -83,6 +83,9 @@ export const csaWeekly: ArchetypeFixture = {
 		}
 	],
 
+	hours: [],
+	hoursExceptions: [],
+
 	branding: {
 		tagline: 'Grown with care, picked with purpose',
 		logoUrl: '/seed-assets/logo.svg',
@@ -103,16 +106,6 @@ export const csaWeekly: ArchetypeFixture = {
 		minimumOrderAmount: 0,
 		estimatedPrepTimeMinutes: 0,
 		asapPickupEnabled: false,
-		hours: {
-			monday: { closed: true },
-			tuesday: { closed: true },
-			wednesday: { closed: true },
-			thursday: { closed: true },
-			friday: { closed: true },
-			saturday: { open: '09:00', close: '12:00' },
-			sunday: { closed: true }
-		},
-		specialHours: [],
 		loyalty: {
 			enabled: false,
 			type: 'stamps',

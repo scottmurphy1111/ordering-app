@@ -1,6 +1,7 @@
 export * from './types';
 export * from './auth.schema';
 export * from './vendor';
+export * from './vendor-hours';
 export * from './catalog';
 export * from './orders';
 export * from './pickup';

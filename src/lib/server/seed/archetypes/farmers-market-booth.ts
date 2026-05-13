@@ -116,6 +116,9 @@ export const farmersMarketBooth: ArchetypeFixture = {
 		}
 	],
 
+	hours: [],
+	hoursExceptions: [],
+
 	branding: {
 		tagline: 'Small batch. Big flavor.',
 		logoUrl: '/seed-assets/logo.svg',
@@ -136,16 +139,6 @@ export const farmersMarketBooth: ArchetypeFixture = {
 		minimumOrderAmount: 0,
 		estimatedPrepTimeMinutes: 0,
 		asapPickupEnabled: false,
-		hours: {
-			monday: { closed: true },
-			tuesday: { closed: true },
-			wednesday: { closed: true },
-			thursday: { closed: true },
-			friday: { closed: true },
-			saturday: { open: '08:00', close: '12:00' },
-			sunday: { closed: true }
-		},
-		specialHours: [],
 		loyalty: {
 			enabled: false,
 			type: 'stamps',

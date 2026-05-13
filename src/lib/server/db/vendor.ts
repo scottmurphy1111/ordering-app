@@ -72,9 +72,7 @@ export const vendor = pgTable(
 			allowPickup: true,
 			minimumOrderAmount: 0,
 			estimatedPrepTimeMinutes: 15,
-			asapPickupEnabled: false,
-			hours: {},
-			specialHours: []
+			asapPickupEnabled: false
 		}),
 
 		// Operational status

@@ -217,6 +217,7 @@ One-line summaries and links to the detailed sections of this document. Scan thi
 - **Button sizing** — size determines height (32px default / 24px xs); variant determines color. They compose. Never apply ad-hoc `h-*` to override. → [Buttons](#buttons)
 - **Button color treatments by intent** — Critical alert (amber-400), state-recovery (amber-300), promotional upsell (primary-tinted), vendor-initiated change (plain outline). Pick a category before picking classes; reuse the category's exact treatment. → [Button color treatments](#button-color-treatments)
 - **Documented raw `<button>` exceptions** — nine specific cases where raw `<button>` is required instead of the primitive. → [Documented raw button exceptions](#documented-raw-button-exceptions)
+- **Disabled button with hover explanation** — wrap in `<Tooltip>` with a `<span class="inline-block">` between trigger and button; the span captures hover since disabled elements don't fire mouse events. Conditionally render `<TooltipContent>` only when the disable condition is active. `TooltipProvider delayDuration={300}` is mounted globally at `src/routes/+layout.svelte`. → [Disabled button with hover explanation](#disabled-button-with-hover-explanation)
 
 ### Tabs and segmented controls
 
@@ -1206,6 +1207,58 @@ Use `<Button>` for all button affordances unless the callsite matches one of the
 - The most important action on a page is always a solid green primary button. Secondary actions are outline. Tertiary are ghost or text.
 - Never have more than one solid primary button visible at the same time.
 - When there are 3+ secondary actions, group them under a `⋯ More` dropdown.
+
+---
+
+## Disabled button with hover explanation
+
+When a button is disabled for a contextual reason the user can't see (e.g., delete blocked by attached orders), the native `title` attribute won't help — disabled elements don't fire mouse events, so the tooltip never appears.
+
+The canonical pattern wraps the disabled button in a `<Tooltip>` with a `<span class="inline-block">` as the actual hover target:
+
+```svelte
+<Tooltip>
+  <TooltipTrigger>
+    {#snippet child({ props })}
+      <span {...props} class="inline-block">
+        <Button
+          type="button"
+          variant="ghost"
+          size="xs"
+          class="text-xs text-muted-foreground hover:text-destructive"
+          disabled={!canDelete}
+          onclick={async (e) => {
+            const form = (e.currentTarget as HTMLButtonElement).form;
+            if (await confirmDialog(`Delete "${name}"? ...`))
+              form?.requestSubmit();
+          }}
+        >
+          Delete
+        </Button>
+      </span>
+    {/snippet}
+  </TooltipTrigger>
+  {#if !canDelete}
+    <TooltipContent>
+      Can't delete — {futureCommitmentCount} {futureCommitmentCount === 1
+        ? 'order is'
+        : 'orders are'} attached to upcoming pickups. Deactivate instead.
+    </TooltipContent>
+  {/if}
+</Tooltip>
+```
+
+**Three rules:**
+
+1. **`<span class="inline-block">` is required.** The span is the actual hover target. `inline-block` sizes it to its disabled-button child. Without it, bits-ui's Tooltip has nothing to listen to.
+2. **`{#snippet child({ props })}` pattern** — canonical bits-ui way to spread trigger props onto a custom element. Matches `DropdownMenuTrigger` usage elsewhere.
+3. **`{#if !canDelete}` around `<TooltipContent>`** — prevents the tooltip from appearing when the button is enabled. Without it, hovering an enabled button would still trigger (empty or wrong) content.
+
+**Global setup:** `<TooltipProvider delayDuration={300}>` is mounted once at `src/routes/+layout.svelte`, wrapping all routes. Individual callsites don't need their own provider. The 300ms delay filters out accidental hover-pass-throughs.
+
+**Reference callsite:** `dashboard/settings/pickup/+page.svelte` Delete template buttons (located + unassigned sections).
+
+**When NOT to use:** most existing `title` attributes are on enabled elements and work fine — don't migrate them. This pattern is specifically for disabled buttons where the disable reason isn't self-evident from context.
 
 ---
 

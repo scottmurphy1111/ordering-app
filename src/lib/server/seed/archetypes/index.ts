@@ -2,8 +2,12 @@ import type { ArchetypeFixture, FulfillmentModelValue } from '../types';
 import { hybridBakeryWithMarket } from './hybrid-bakery-with-market';
 import { csaWeekly } from './csa-weekly';
 import { farmersMarketBooth } from './farmers-market-booth';
+import { storefrontBakery } from './storefront-bakery';
+import { storefrontFlorist } from './storefront-florist';
 
 export const ARCHETYPES: Record<string, ArchetypeFixture> = {
+	'storefront-bakery': storefrontBakery,
+	'storefront-florist': storefrontFlorist,
 	'hybrid-bakery-with-market': hybridBakeryWithMarket,
 	'csa-weekly': csaWeekly,
 	'farmers-market-booth': farmersMarketBooth

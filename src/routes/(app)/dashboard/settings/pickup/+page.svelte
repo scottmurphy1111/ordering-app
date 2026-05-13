@@ -28,6 +28,7 @@
 	} from '$lib/components/ui/table';
 	import { Alert } from '$lib/components/ui/alert';
 	import { Tabs, TabsList, TabsTrigger } from '$lib/components/ui/tabs';
+	import { Tooltip, TooltipTrigger, TooltipContent } from '$lib/components/ui/tooltip';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
@@ -1463,28 +1464,40 @@
 											</form>
 											<form method="post" action="?/deleteTemplate" use:enhance>
 												<input type="hidden" name="id" value={tmpl.id} />
-												<Button
-													type="button"
-													variant="ghost"
-													size="xs"
-													class="text-xs text-muted-foreground hover:text-destructive"
-													disabled={!tmpl.canDelete}
-													title={!tmpl.canDelete
-														? 'Cannot delete — active orders reference this template'
-														: undefined}
-													onclick={async (e) => {
-														const form = (e.currentTarget as HTMLButtonElement).form;
-														if (
-															await confirmDialog(
-																`Delete this template? Future occurrences with no orders will be removed. This cannot be undone.`,
-																{ title: 'Delete template', confirmLabel: 'Delete' }
-															)
-														)
-															form?.requestSubmit();
-													}}
-												>
-													Delete
-												</Button>
+												<Tooltip>
+													<TooltipTrigger>
+														{#snippet child({ props })}
+															<span {...props} class="inline-block">
+																<Button
+																	type="button"
+																	variant="ghost"
+																	size="xs"
+																	class="text-xs text-muted-foreground hover:text-destructive"
+																	disabled={!tmpl.canDelete}
+																	onclick={async (e) => {
+																		const form = (e.currentTarget as HTMLButtonElement).form;
+																		if (
+																			await confirmDialog(
+																				`Delete "${tmpl.name}"? This template and its future un-booked occurrences will be removed permanently.`,
+																				{ title: 'Delete template', confirmLabel: 'Delete' }
+																			)
+																		)
+																			form?.requestSubmit();
+																	}}
+																>
+																	Delete
+																</Button>
+															</span>
+														{/snippet}
+													</TooltipTrigger>
+													{#if !tmpl.canDelete}
+														<TooltipContent>
+															Can't delete — {tmpl.futureCommitmentCount} {tmpl.futureCommitmentCount === 1
+																	? 'order is'
+																	: 'orders are'} attached to upcoming pickups. Deactivate instead.
+														</TooltipContent>
+													{/if}
+												</Tooltip>
 											</form>
 										</div>
 									</div>
@@ -1605,28 +1618,40 @@
 										</form>
 										<form method="post" action="?/deleteTemplate" use:enhance>
 											<input type="hidden" name="id" value={tmpl.id} />
-											<Button
-												type="button"
-												variant="ghost"
-												size="xs"
-												class="text-xs text-muted-foreground hover:text-destructive"
-												disabled={!tmpl.canDelete}
-												title={!tmpl.canDelete
-													? 'Cannot delete — active orders reference this template'
-													: undefined}
-												onclick={async (e) => {
-													const form = (e.currentTarget as HTMLButtonElement).form;
-													if (
-														await confirmDialog(
-															`Delete this template? Future occurrences with no orders will be removed. This cannot be undone.`,
-															{ title: 'Delete template', confirmLabel: 'Delete' }
-														)
-													)
-														form?.requestSubmit();
-												}}
-											>
-												Delete
-											</Button>
+											<Tooltip>
+												<TooltipTrigger>
+													{#snippet child({ props })}
+														<span {...props} class="inline-block">
+															<Button
+																type="button"
+																variant="ghost"
+																size="xs"
+																class="text-xs text-muted-foreground hover:text-destructive"
+																disabled={!tmpl.canDelete}
+																onclick={async (e) => {
+																	const form = (e.currentTarget as HTMLButtonElement).form;
+																	if (
+																		await confirmDialog(
+																			`Delete "${tmpl.name}"? This template and its future un-booked occurrences will be removed permanently.`,
+																			{ title: 'Delete template', confirmLabel: 'Delete' }
+																		)
+																	)
+																		form?.requestSubmit();
+																}}
+															>
+																Delete
+															</Button>
+														</span>
+													{/snippet}
+												</TooltipTrigger>
+												{#if !tmpl.canDelete}
+													<TooltipContent>
+														Can't delete — {tmpl.futureCommitmentCount} {tmpl.futureCommitmentCount === 1
+																? 'order is'
+																: 'orders are'} attached to upcoming pickups. Deactivate instead.
+													</TooltipContent>
+												{/if}
+											</Tooltip>
 										</form>
 									</div>
 								</div>

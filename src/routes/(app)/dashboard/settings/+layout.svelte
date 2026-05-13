@@ -6,6 +6,7 @@
 
 	const navItems: Array<{ href: `/${string}`; label: string; icon: string }> = [
 		{ href: '/dashboard/settings/general', label: 'General', icon: 'mdi:store-outline' },
+		{ href: '/dashboard/settings/hours', label: 'Hours', icon: 'mdi:clock-outline' },
 		{
 			href: '/dashboard/settings/pickup',
 			label: 'Pickup schedule',
