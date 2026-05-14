@@ -52,10 +52,8 @@ export function getTierKeyFromPriceId(priceId: string): string | null {
 export function getAddonPriceId(addonKey: string): string | undefined {
 	const map: Record<string, string | undefined> = {
 		sms_notifications: env.STRIPE_PRICE_ADDON_SMS,
-		custom_domain: env.STRIPE_PRICE_ADDON_CUSTOM_DOMAIN,
 		analytics: env.STRIPE_PRICE_ADDON_ANALYTICS,
 		loyalty: env.STRIPE_PRICE_ADDON_LOYALTY,
-		promo_codes: env.STRIPE_PRICE_ADDON_PROMO_CODES,
 		subscriptions: env.STRIPE_PRICE_ADDON_SUBSCRIPTIONS
 	};
 	return map[addonKey];

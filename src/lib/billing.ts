@@ -63,13 +63,6 @@ export const ADDONS = [
 		description: 'Text customers when their order is ready or its status changes.'
 	},
 	{
-		key: 'custom_domain',
-		name: 'Custom Domain',
-		price: 12,
-		icon: 'mdi:web',
-		description: 'Use your own domain (e.g. shop.yourbusiness.com) for your ordering page.'
-	},
-	{
 		key: 'analytics',
 		name: 'Advanced Analytics',
 		price: 19,
@@ -82,13 +75,6 @@ export const ADDONS = [
 		price: 29,
 		icon: 'mdi:star-circle-outline',
 		description: 'Stamp cards and points system to reward repeat customers.'
-	},
-	{
-		key: 'promo_codes',
-		name: 'Promo Codes',
-		price: 9,
-		icon: 'mdi:ticket-percent-outline',
-		description: 'Create discount codes for promotions, events, or loyal customers.'
 	},
 	{
 		key: 'subscriptions',

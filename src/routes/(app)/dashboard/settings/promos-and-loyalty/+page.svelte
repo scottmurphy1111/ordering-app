@@ -65,41 +65,19 @@
 	<!-- ── PROMO CODES ──────────────────────────────────────────────────────── -->
 	<div class="mb-4 flex items-center justify-between gap-4">
 		<h2 class="text-lg font-semibold text-foreground">Promo Codes</h2>
-		{#if data.hasPromos}
-			<Button
-				onclick={() => {
-					showForm = !showForm;
-				}}
-				variant="default"
-				class="gap-1.5"
-			>
-				<Icon icon={showForm ? 'mdi:close' : 'mdi:plus'} class="h-4 w-4" />
-				{showForm ? 'Cancel' : 'New code'}
-			</Button>
-		{/if}
+		<Button
+			onclick={() => {
+				showForm = !showForm;
+			}}
+			variant="default"
+			class="gap-1.5"
+		>
+			<Icon icon={showForm ? 'mdi:close' : 'mdi:plus'} class="h-4 w-4" />
+			{showForm ? 'Cancel' : 'New code'}
+		</Button>
 	</div>
 
-	{#if !data.hasPromos}
-		<Card class="mb-10 shadow-sm">
-			<CardContent class="py-10 text-center">
-				<div
-					class="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10"
-				>
-					<Icon icon="mdi:ticket-percent-outline" class="h-6 w-6 text-primary" />
-				</div>
-				<p class="text-sm font-medium text-foreground">Promo Codes — $9/mo add-on</p>
-				<p class="mx-auto mt-1 max-w-sm text-xs text-muted-foreground">
-					Create percent-off or flat-dollar discount codes for promotions, events, or loyal
-					customers.
-				</p>
-				<Button href={resolve('/dashboard/account/billing')} class="mt-4 gap-1.5">
-					<Icon icon="mdi:arrow-right" class="h-4 w-4" />
-					Activate add-on
-				</Button>
-			</CardContent>
-		</Card>
-	{:else}
-		{#if showForm}
+	{#if showForm}
 			<Card class="mb-6 shadow-sm">
 				<CardContent class="pt-6 pb-2">
 					<form
@@ -286,7 +264,6 @@
 					</Table>
 				</CardContent>
 			</Card>
-		{/if}
 	{/if}
 
 	<!-- ── LOYALTY PROGRAM ─────────────────────────────────────────────────── -->

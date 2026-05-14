@@ -15,17 +15,14 @@ export const load: PageServerLoad = async ({ locals }) => {
 		columns: { addons: true, settings: true }
 	});
 
-	const hasPromos = hasAddon(vendorRecord?.addons as string[] | null, 'promo_codes');
 	const hasLoyalty = hasAddon(vendorRecord?.addons as string[] | null, 'loyalty');
 	const settings = vendorRecord?.settings as Record<string, unknown> | null;
 	const loyalty: LoyaltyConfig = (settings?.loyalty as LoyaltyConfig) ?? DEFAULT_LOYALTY_CONFIG;
 
-	const codes = hasPromos
-		? await db.query.promoCodes.findMany({
-				where: eq(promoCodes.vendorId, vendorId),
-				orderBy: [desc(promoCodes.createdAt)]
-			})
-		: [];
+	const codes = await db.query.promoCodes.findMany({
+		where: eq(promoCodes.vendorId, vendorId),
+		orderBy: [desc(promoCodes.createdAt)]
+	});
 
 	const [memberCountRow] = hasLoyalty
 		? await db
@@ -41,19 +38,12 @@ export const load: PageServerLoad = async ({ locals }) => {
 			})
 		: [];
 
-	return { hasPromos, hasLoyalty, codes, loyalty, memberCount: memberCountRow.value, members };
+	return { hasLoyalty, codes, loyalty, memberCount: memberCountRow.value, members };
 };
 
 export const actions: Actions = {
 	create: async ({ request, locals }) => {
 		const vendorId = locals.vendorId!;
-		const vendorRecord = await db.query.vendor.findFirst({
-			where: eq(vendor.id, vendorId),
-			columns: { addons: true }
-		});
-		if (!hasAddon(vendorRecord?.addons as string[] | null, 'promo_codes')) {
-			return fail(403, { error: 'Promo codes add-on not active.' });
-		}
 
 		const fd = await request.formData();
 		const code = fd.get('code')?.toString().trim().toUpperCase();

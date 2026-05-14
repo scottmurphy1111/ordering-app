@@ -97,6 +97,7 @@
 			annualSavings: null as string | null,
 			features: [
 				'Up to 10 catalog items',
+				'Your own branded storefront link',
 				'Online ordering & payments',
 				'Order management',
 				'Customer email receipts',
@@ -154,16 +155,6 @@
 			annualPrice: '$16/mo billed annually',
 			annualSavings: 'save $36/yr',
 			desc: 'Text customers the moment their order is ready — fewer missed pickups, happier guests.'
-		},
-		{
-			icon: 'mdi:web',
-			name: 'Custom Domain',
-			monthlyPrice: 12,
-			annualMonthlyPrice: 10,
-			price: '$12/mo',
-			annualPrice: '$10/mo billed annually',
-			annualSavings: 'save $24/yr',
-			desc: 'Use your own URL — like shop.yourcafe.com — instead of the default ordering link.'
 		},
 		{
 			icon: 'mdi:chart-line',
@@ -228,7 +219,7 @@
 		},
 		{
 			q: 'Can I use my own branding?',
-			a: 'Yes. Add your logo, colors, and product photos. Pro customers can use their own custom domain (add-on).'
+			a: 'Yes. Add your logo, colors, and product photos — your storefront gets its own branded link at yourshop.getorderlocal.com.'
 		}
 	];
 
@@ -478,7 +469,7 @@
 					<div
 						class="ml-2 flex-1 rounded-md bg-background px-2 py-0.5 text-[10px] text-muted-foreground/70"
 					>
-						getorderlocal.com/dashboard
+						myshop.getorderlocal.com/dashboard
 					</div>
 				</div>
 				<!-- Dashboard layout -->
@@ -809,8 +800,7 @@
 				Add-ons billed separately. Activate or cancel anytime.
 			</p>
 			<p class="mt-1 text-xs text-muted-foreground">
-				Add-ons: SMS Notifications · Custom Domain · Advanced Analytics · Loyalty Program ·
-				Subscriptions
+				Add-ons: SMS Notifications · Advanced Analytics · Loyalty Program · Subscriptions
 			</p>
 		</div>
 	</div>
@@ -832,7 +822,7 @@
 				Available on Market and Pro plans. Activate or cancel from your dashboard.
 			</p>
 		</div>
-		<div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+		<div class="grid gap-5 sm:grid-cols-2">
 			{#each addons as addon (addon.name)}
 				<div class="flex flex-col gap-3 rounded-2xl border border-emerald-100 bg-background p-6">
 					<div class="flex items-start justify-between">
