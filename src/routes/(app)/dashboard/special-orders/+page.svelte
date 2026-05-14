@@ -35,7 +35,10 @@
 
 	const pills = $derived([
 		{ label: 'Pending', value: 'pending', count: data.pendingCount, dot: true },
+		{ label: 'Quoted', value: 'quoted', count: data.quotedCount },
+		{ label: 'Accepted', value: 'accepted', count: data.acceptedCount },
 		{ label: 'Declined', value: 'declined', count: data.declinedCount },
+		{ label: 'Expired', value: 'expired', count: data.expiredCount },
 		{ label: 'All', value: 'all', count: data.totalCount }
 	]);
 </script>
@@ -69,16 +72,28 @@
 			<h3 class="mb-1 text-base font-semibold text-gray-900">
 				{data.stateFilter === 'pending'
 					? 'No pending requests'
-					: data.stateFilter === 'declined'
-						? 'No declined requests'
-						: 'No requests yet'}
+					: data.stateFilter === 'quoted'
+						? 'No quoted requests'
+						: data.stateFilter === 'accepted'
+							? 'No accepted requests'
+							: data.stateFilter === 'declined'
+								? 'No declined requests'
+								: data.stateFilter === 'expired'
+									? 'No expired requests'
+									: 'No requests yet'}
 			</h3>
 			<p class="text-sm text-gray-500">
 				{data.stateFilter === 'pending'
 					? 'New customer requests will appear here.'
-					: data.stateFilter === 'declined'
-						? 'Declined requests will appear here.'
-						: 'Custom order requests from your storefront will appear here.'}
+					: data.stateFilter === 'quoted'
+						? 'Requests you have sent quotes for will appear here.'
+						: data.stateFilter === 'accepted'
+							? 'Requests where the customer accepted and paid will appear here.'
+							: data.stateFilter === 'declined'
+								? 'Declined requests will appear here.'
+								: data.stateFilter === 'expired'
+									? 'Requests whose quotes expired without a response will appear here.'
+									: 'Custom order requests from your storefront will appear here.'}
 			</p>
 		</div>
 	{:else}
@@ -87,10 +102,9 @@
 				{@const isExpanded = expandedId === req.id}
 				{@const isPending = req.state === 'pending'}
 				<div
-					class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm transition-shadow hover:shadow-md {req.state ===
-					'declined'
-						? 'opacity-60'
-						: ''}"
+					class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm transition-shadow {req.state === 'pending' || req.state === 'quoted'
+						? 'hover:shadow-md'
+						: 'opacity-60'}"
 				>
 					<!-- Card header — always visible, clickable to expand -->
 					<button
@@ -103,15 +117,30 @@
 								<div class="flex flex-wrap items-center gap-2">
 									<span class="text-sm font-medium text-gray-900">{req.customerName}</span>
 									<span class="text-xs text-gray-500">{req.customerEmail}</span>
-									{#if isPending}
+									{#if req.state === 'pending'}
 										<span
-											class="rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700 capitalize"
+											class="rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700"
 											>Pending</span
+										>
+									{:else if req.state === 'quoted'}
+										<span
+											class="rounded-full bg-indigo-100 px-2 py-0.5 text-xs font-medium text-indigo-700"
+											>Quoted</span
+										>
+									{:else if req.state === 'accepted'}
+										<span
+											class="rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700"
+											>Accepted</span
 										>
 									{:else if req.state === 'declined'}
 										<span
-											class="rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700 capitalize"
+											class="rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700"
 											>Declined</span
+										>
+									{:else if req.state === 'expired'}
+										<span
+											class="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-500"
+											>Expired</span
 										>
 									{/if}
 								</div>
@@ -251,10 +280,8 @@
 										</div>
 									</form>
 									<Button
-										type="button"
+										href={resolve(`/dashboard/special-orders/${req.id}`)}
 										variant="outline"
-										disabled
-										class="cursor-not-allowed opacity-50"
 									>
 										<Icon icon="mdi:send-outline" class="h-3.5 w-3.5" />
 										Send quote

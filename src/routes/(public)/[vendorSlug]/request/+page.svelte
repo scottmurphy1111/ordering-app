@@ -14,7 +14,21 @@
 
 	function handleFileChange(e: Event) {
 		const input = e.currentTarget as HTMLInputElement;
-		photoFiles = Array.from(input.files ?? []);
+		const incoming = Array.from(input.files ?? []);
+		if (incoming.length === 0) return;
+
+		const combined = [...photoFiles];
+		for (const f of incoming) {
+			const isDuplicate = photoFiles.some((p) => p.name === f.name && p.size === f.size);
+			if (!isDuplicate) combined.push(f);
+		}
+
+		const capped = combined.slice(0, 5);
+		photoFiles = capped;
+
+		const dt = new DataTransfer();
+		capped.forEach((f) => dt.items.add(f));
+		input.files = dt.files;
 	}
 
 	function removePhoto(index: number) {

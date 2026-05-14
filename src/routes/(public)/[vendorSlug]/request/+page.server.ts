@@ -3,7 +3,13 @@ import { fail, redirect } from '@sveltejs/kit';
 import { db } from '$lib/server/db';
 import { eq, gte, and, count } from 'drizzle-orm';
 import { specialOrderRequests } from '$lib/server/db/special-orders';
+import { vendor as vendorTable, vendorUsers } from '$lib/server/db/vendor';
+import { user } from '$lib/server/db/auth.schema';
 import { uploadToR2 } from '$lib/server/r2';
+import { sendEmail } from '$lib/server/email';
+import { specialOrderRequestReceivedVendorEmail } from '$lib/server/email/templates/specialOrderRequestReceivedVendor';
+import { specialOrderRequestReceivedCustomerEmail } from '$lib/server/email/templates/specialOrderRequestReceivedCustomer';
+import { env } from '$env/dynamic/private';
 
 const MAX_PHOTOS = 5;
 const MAX_PHOTO_SIZE_MB = 10;
@@ -62,16 +68,70 @@ export const actions: Actions = {
 			photoUrls.push(url);
 		}
 
-		await db.insert(specialOrderRequests).values({
-			vendorId: vendor.id,
-			customerName,
-			customerEmail,
-			customerPhone,
-			description,
-			targetDate,
-			photoUrls,
-			state: 'pending'
+		const [newRequest] = await db
+			.insert(specialOrderRequests)
+			.values({
+				vendorId: vendor.id,
+				customerName,
+				customerEmail,
+				customerPhone,
+				description,
+				targetDate,
+				photoUrls,
+				state: 'pending'
+			})
+			.returning({ id: specialOrderRequests.id });
+
+		// Resolve vendor notification email — vendor.email, fallback to owner's user.email
+		const vendorRow = await db.query.vendor.findFirst({
+			where: eq(vendorTable.id, vendor.id),
+			columns: { email: true, name: true, backgroundColor: true }
 		});
+
+		let notificationEmail = vendorRow?.email ?? null;
+		if (!notificationEmail) {
+			const owner = await db
+				.select({ email: user.email })
+				.from(vendorUsers)
+				.innerJoin(user, eq(user.id, vendorUsers.userId))
+				.where(and(eq(vendorUsers.vendorId, vendor.id), eq(vendorUsers.role, 'owner')))
+				.limit(1);
+			notificationEmail = owner[0]?.email ?? null;
+		}
+
+		const origin = env.ORIGIN ?? 'https://app.getorderlocal.com';
+
+		// Vendor notification — best-effort
+		if (notificationEmail && vendorRow) {
+			sendEmail({
+				to: notificationEmail,
+				subject: `New special-order request from ${customerName}`,
+				html: specialOrderRequestReceivedVendorEmail({
+					vendorName: vendorRow.name,
+					primaryColor: vendorRow.backgroundColor ?? undefined,
+					customerName,
+					customerEmail,
+					customerPhone,
+					description,
+					targetDate,
+					photoCount: photoUrls.length,
+					requestUrl: `${origin}/dashboard/special-orders/${newRequest.id}`
+				})
+			}).catch(console.error);
+		}
+
+		// Customer confirmation — best-effort
+		sendEmail({
+			to: customerEmail,
+			subject: `We got your request — ${vendor.name}`,
+			html: specialOrderRequestReceivedCustomerEmail({
+				vendorName: vendor.name,
+				primaryColor: vendor.backgroundColor ?? undefined,
+				customerName,
+				description,
+				targetDate
+			})
+		}).catch(console.error);
 
 		throw redirect(303, `/${params.vendorSlug}/request/sent`);
 	}

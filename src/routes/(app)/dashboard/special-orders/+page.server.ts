@@ -1,7 +1,7 @@
 import type { PageServerLoad, Actions } from './$types';
 import { fail } from '@sveltejs/kit';
 import { db } from '$lib/server/db';
-import { eq, and, desc } from 'drizzle-orm';
+import { eq, and, desc, count } from 'drizzle-orm';
 import { specialOrderRequests } from '$lib/server/db/special-orders';
 import { requireStaff } from '$lib/server/roles';
 
@@ -29,16 +29,33 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		.orderBy(desc(specialOrderRequests.createdAt))
 		.limit(100);
 
-	// Counts for filter pills
-	const allCounts = await db
-		.select()
-		.from(specialOrderRequests)
-		.where(eq(specialOrderRequests.vendorId, vendorId));
+	// Counts for filter pills — one query per state to avoid loading full rows
+	const [
+		[pendingRow],
+		[quotedRow],
+		[declinedRow],
+		[acceptedRow],
+		[expiredRow],
+		[totalRow]
+	] = await Promise.all([
+		db.select({ value: count() }).from(specialOrderRequests).where(and(eq(specialOrderRequests.vendorId, vendorId), eq(specialOrderRequests.state, 'pending'))),
+		db.select({ value: count() }).from(specialOrderRequests).where(and(eq(specialOrderRequests.vendorId, vendorId), eq(specialOrderRequests.state, 'quoted'))),
+		db.select({ value: count() }).from(specialOrderRequests).where(and(eq(specialOrderRequests.vendorId, vendorId), eq(specialOrderRequests.state, 'declined'))),
+		db.select({ value: count() }).from(specialOrderRequests).where(and(eq(specialOrderRequests.vendorId, vendorId), eq(specialOrderRequests.state, 'accepted'))),
+		db.select({ value: count() }).from(specialOrderRequests).where(and(eq(specialOrderRequests.vendorId, vendorId), eq(specialOrderRequests.state, 'expired'))),
+		db.select({ value: count() }).from(specialOrderRequests).where(eq(specialOrderRequests.vendorId, vendorId))
+	]);
 
-	const pendingCount = allCounts.filter((r) => r.state === 'pending').length;
-	const declinedCount = allCounts.filter((r) => r.state === 'declined').length;
-
-	return { requests, stateFilter, pendingCount, declinedCount, totalCount: allCounts.length };
+	return {
+		requests,
+		stateFilter,
+		pendingCount: pendingRow.value,
+		quotedCount: quotedRow.value,
+		declinedCount: declinedRow.value,
+		acceptedCount: acceptedRow.value,
+		expiredCount: expiredRow.value,
+		totalCount: totalRow.value
+	};
 };
 
 export const actions: Actions = {
@@ -66,6 +83,7 @@ export const actions: Actions = {
 			.set({
 				state: 'declined',
 				declinedReason: reason,
+				declinedBy: 'vendor',
 				declinedAt: new Date(),
 				updatedAt: new Date()
 			})

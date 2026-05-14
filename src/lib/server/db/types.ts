@@ -43,3 +43,5 @@ export const specialOrderRequestStateEnum = pgEnum('special_order_request_state'
 	'accepted',
 	'expired'
 ]);
+
+export const declinedByEnum = pgEnum('special_order_declined_by', ['vendor', 'customer']);

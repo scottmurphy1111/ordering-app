@@ -10,6 +10,8 @@ import { orderConfirmedEmail } from '$lib/server/email/templates/orderConfirmed'
 import { orderCancelledEmail } from '$lib/server/email/templates/orderCancelled';
 import { orderRefundedEmail } from '$lib/server/email/templates/orderRefunded';
 import { customDateOrderRecoveredEmail } from '$lib/server/email/templates/customDateOrderRecovered';
+import { specialOrderAcceptedEmail } from '$lib/server/email/templates/specialOrderAccepted';
+import { specialOrderAcceptedVendorEmail } from '$lib/server/email/templates/specialOrderAcceptedVendor';
 import { sendSms } from '$lib/server/sms';
 import { env } from '$env/dynamic/private';
 import type { PickupWindowSnapshot } from '$lib/server/pickup/checkout';
@@ -28,7 +30,8 @@ export const POST: RequestHandler = async ({ request, params }) => {
 			name: true,
 			backgroundColor: true,
 			slug: true,
-			timezone: true
+			timezone: true,
+			email: true
 		}
 	});
 
@@ -57,7 +60,8 @@ export const POST: RequestHandler = async ({ request, params }) => {
 		name: vendorRecord.name,
 		primaryColor: vendorRecord.backgroundColor ?? undefined,
 		slug: vendorRecord.slug,
-		timezone: vendorRecord.timezone ?? 'America/New_York'
+		timezone: vendorRecord.timezone ?? 'America/New_York',
+		email: vendorRecord.email ?? null
 	};
 
 	try {
@@ -76,6 +80,7 @@ type VendorCtx = {
 	primaryColor?: string;
 	slug: string;
 	timezone: string;
+	email: string | null;
 };
 
 function orderUrl(vendorSlug: string, orderId: number) {
@@ -149,6 +154,41 @@ async function handleEvent(event: Stripe.Event, ctx: VendorCtx) {
 							orderStatusUrl: orderUrl(ctx.slug, order.id)
 						})
 					}).catch(console.error);
+				} else if (order.specialOrderRequestId) {
+					await sendEmail({
+						to: order.customerEmail,
+						subject: `Order ${order.orderNumber} confirmed — ${ctx.name}`,
+						html: specialOrderAcceptedEmail({
+							vendorName: ctx.name,
+							primaryColor: ctx.primaryColor,
+							orderNumber: order.orderNumber,
+							customerName: order.customerName ?? 'there',
+							priceCents: order.total,
+							notes: order.notes,
+							scheduledFor: order.scheduledFor,
+							vendorTimezone: ctx.timezone,
+							orderStatusUrl: orderUrl(ctx.slug, order.id)
+						})
+					}).catch(console.error);
+					if (ctx.email) {
+						await sendEmail({
+							to: ctx.email,
+							subject: `New special order ${order.orderNumber} from ${order.customerName ?? 'a customer'}`,
+							html: specialOrderAcceptedVendorEmail({
+								vendorName: ctx.name,
+								primaryColor: ctx.primaryColor,
+								customerName: order.customerName ?? 'there',
+								customerEmail: order.customerEmail ?? '',
+								customerPhone: order.customerPhone ?? null,
+								orderNumber: order.orderNumber,
+								priceCents: order.total,
+								notes: order.notes,
+								scheduledFor: order.scheduledFor,
+								vendorTimezone: ctx.timezone,
+								orderStatusUrl: `${env.ORIGIN ?? 'https://app.getorderlocal.com'}/dashboard/orders/${order.id}`
+							})
+						}).catch(console.error);
+					}
 				} else {
 					await sendEmail({
 						to: order.customerEmail,

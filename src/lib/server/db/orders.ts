@@ -13,6 +13,7 @@ import { vendor } from './vendor';
 import { catalogItems } from './catalog';
 import { orderStatusEnum, paymentStatusEnum, pickupTypeEnum, pickupModeEnum } from './types';
 import { pickupWindows, pickupLocations } from './pickup';
+import { specialOrderRequests } from './special-orders';
 
 export const orders = pgTable(
 	'orders',
@@ -62,6 +63,11 @@ export const orders = pgTable(
 		// Source of truth for confirmation emails and customer receipts (Phase 5).
 		pickupWindowSnapshot: jsonb('pickup_window_snapshot'),
 
+		specialOrderRequestId: integer('special_order_request_id').references(
+			() => specialOrderRequests.id,
+			{ onDelete: 'set null' }
+		),
+
 		stripePaymentIntentId: varchar('stripe_payment_intent_id', { length: 255 }),
 		stripeSetupIntentId: varchar('stripe_setup_intent_id', { length: 255 }),
 		stripeCustomerId: varchar('stripe_customer_id', { length: 255 }),
@@ -75,7 +81,8 @@ export const orders = pgTable(
 		index('orders_vendor_idx').on(table.vendorId),
 		index('orders_status_idx').on(table.vendorId, table.status),
 		index('orders_created_idx').on(table.vendorId, table.createdAt),
-		uniqueIndex('orders_vendor_id_order_number_unique').on(table.vendorId, table.orderNumber)
+		uniqueIndex('orders_vendor_id_order_number_unique').on(table.vendorId, table.orderNumber),
+		index('orders_special_order_request_idx').on(table.specialOrderRequestId)
 	]
 );
 
