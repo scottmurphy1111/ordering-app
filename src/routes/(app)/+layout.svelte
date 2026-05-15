@@ -206,12 +206,12 @@
 			<DropdownMenuContent align="end" side="top">
 				<DropdownMenuItem onclick={() => goto(resolve('/dashboard/account/profile'))}>
 					<Icon icon="mdi:account-circle-outline" class="h-4 w-4" />
-					Account settings
+					My Account
 				</DropdownMenuItem>
 				{#if data.user.isInternal}
 					<DropdownMenuItem onclick={() => goto(resolve('/admin'))}>
 						<Icon icon="mdi:shield-crown-outline" class="h-4 w-4" />
-						Admin panel
+						Admin Panel
 					</DropdownMenuItem>
 				{/if}
 				<DropdownMenuSeparator />

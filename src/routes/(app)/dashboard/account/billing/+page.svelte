@@ -14,6 +14,7 @@
 	} from '$lib/billing';
 	import { SvelteDate } from 'svelte/reactivity';
 	import { resolve } from '$app/paths';
+	import { replaceState } from '$app/navigation';
 	import { Button } from '$lib/components/ui/button';
 	import { Badge } from '$lib/components/ui/badge';
 	import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '$lib/components/ui/card';
@@ -26,6 +27,7 @@
 		DialogDescription,
 		DialogFooter
 	} from '$lib/components/ui/dialog';
+	import { onMount, tick } from 'svelte';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
@@ -35,12 +37,45 @@
 	const activeAddons = $derived(data.addons ?? []);
 	const isPaidPlan = $derived(currentTierKey !== 'starter');
 	const isCancelScheduled = $derived(!!data.subscriptionEndsAt);
-	const isUpgraded = $derived(page.url.searchParams.get('upgraded') === '1');
-	const isDowngraded = $derived(page.url.searchParams.get('downgraded') === '1');
-	const isReactivated = $derived(page.url.searchParams.get('reactivated') === '1');
-	const isRefunded = $derived(page.url.searchParams.get('refunded') === '1');
-	const isPausedSuccess = $derived(page.url.searchParams.get('paused') === '1');
-	const isResumed = $derived(page.url.searchParams.get('resumed') === '1');
+	// Capture one-time notice flags at component init — NOT as live $derived off
+	// page.url, because the $effect below strips these params from the URL right
+	// after first render. Plain $state keeps alerts visible for this visit; on
+	// reload the params are gone so they init to false.
+	const initialParams = page.url.searchParams;
+	let isUpgraded = $state(initialParams.get('upgraded') === '1');
+	let isDowngraded = $state(initialParams.get('downgraded') === '1');
+	let isReactivated = $state(initialParams.get('reactivated') === '1');
+	let isRefunded = $state(initialParams.get('refunded') === '1');
+	let isPausedSuccess = $state(initialParams.get('paused') === '1');
+	let isResumed = $state(initialParams.get('resumed') === '1');
+	let isSwitched = $state(initialParams.get('switched') === '1');
+	let isSwitchedRefund = $state(initialParams.get('switched') === 'refund');
+
+	// Strip one-time success/notice params from the URL after the router is ready.
+	// onMount + tick defers until after hydration so replaceState never fires
+	// before the client router is initialized. Best-effort: a try/catch ensures
+	// a timing edge case can never crash the page — this is cosmetic cleanup only.
+	onMount(async () => {
+		await tick();
+		const noticeKeys = [
+			'upgraded',
+			'downgraded',
+			'reactivated',
+			'refunded',
+			'paused',
+			'resumed',
+			'switched'
+		];
+		if (!noticeKeys.some((k) => page.url.searchParams.has(k))) return;
+		try {
+			const cleaned = new URL(page.url.href);
+			for (const k of noticeKeys) cleaned.searchParams.delete(k);
+			replaceState(cleaned.toString(), page.state);
+		} catch (err) {
+			console.debug('[billing] skipped notice-param cleanup:', err);
+		}
+	});
+
 	const isPaused = $derived(!!data.subscriptionPausedAt);
 
 	const itemLimit = $derived(tierInfo.itemLimit);
@@ -106,13 +141,16 @@
 	}
 
 	let pendingIntervalSwitch = $state<'monthly' | 'annual' | null>(null);
+	let intervalSwitchChoice = $state<'credit' | 'refund'>('credit');
 
 	function openIntervalSwitchModal(target: 'monthly' | 'annual') {
+		intervalSwitchChoice = 'credit';
 		pendingIntervalSwitch = target;
 	}
 
 	function closeIntervalSwitchModal() {
 		pendingIntervalSwitch = null;
+		intervalSwitchChoice = 'credit';
 	}
 
 	// --- Pause modal ---
@@ -246,30 +284,45 @@
 	</div>
 
 	{#if isUpgraded}
-		<Alert severity="success" class="mb-4"
+		<Alert severity="success" dismissible={true} autofade={0} class="mb-4"
 			>Your plan has been upgraded. Welcome to {tierInfo.name}!</Alert
 		>
 	{/if}
 	{#if isReactivated}
-		<Alert severity="success" class="mb-4">
+		<Alert severity="success" dismissible={true} autofade={0} class="mb-4">
 			Cancellation reversed. Your {tierInfo.name} plan will continue.
 		</Alert>
 	{/if}
 	{#if isRefunded}
-		<Alert severity="success" class="mb-4">
+		<Alert severity="success" dismissible={true} autofade={0} class="mb-4">
 			Your annual subscription has been cancelled and a prorated refund has been issued. The refund
 			will appear on your original payment method within 5–10 business days.
 		</Alert>
 	{/if}
 	{#if isPausedSuccess}
-		<Alert severity="success" class="mb-4">
+		<Alert severity="success" dismissible={true} autofade={0} class="mb-4">
 			Your subscription has been paused. Billing will resume automatically on
 			{data.pauseUntil ? fmtDate(data.pauseUntil) : 'your chosen date'}.
 		</Alert>
 	{/if}
 	{#if isResumed}
-		<Alert severity="success" class="mb-4">
+		<Alert severity="success" dismissible={true} autofade={0} class="mb-4">
 			Your subscription has resumed. Normal billing is now active.
+		</Alert>
+	{/if}
+	{#if isSwitched}
+		<Alert severity="success" dismissible={true} autofade={0} class="mb-4">
+			{#if data.billingInterval === 'annual'}
+				You've switched to annual billing. The prorated charge has been billed to your card on file.
+			{:else}
+				You've switched to monthly billing. A prorated credit has been applied to your account — it'll offset your upcoming monthly invoices automatically.
+			{/if}
+		</Alert>
+	{/if}
+	{#if isSwitchedRefund}
+		<Alert severity="success" dismissible={true} autofade={0} class="mb-4">
+			You've switched to monthly billing and a prorated refund has been issued. It will appear on
+			your original payment method within 5–10 business days.
 		</Alert>
 	{/if}
 
@@ -299,7 +352,9 @@
 	{/if}
 
 	{#if isDowngraded && !isCancelScheduled}
-		<Alert severity="info" class="mb-4">Your plan has been changed to {tierInfo.name}.</Alert>
+		<Alert severity="info" class="mb-4" dismissible={true} autofade={0}
+			>Your plan has been changed to {tierInfo.name}.</Alert
+		>
 	{/if}
 	{#if form?.error}
 		<Alert severity="error" class="mb-4">{form.error}</Alert>
@@ -537,6 +592,30 @@
 					</div>
 				{/if}
 
+				<!-- Account credit -->
+				{#if data.accountCreditCents > 0}
+					<div class="border-t border-gray-100 px-4 pt-3 pb-3">
+						<p class="mb-2 text-xs font-medium tracking-wide text-muted-foreground uppercase">
+							Account credit
+						</p>
+						<div class="flex items-center gap-3">
+							<div
+								class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-success/10"
+							>
+								<Icon icon="mdi:cash-refund" class="h-4 w-4 text-success" />
+							</div>
+							<div>
+								<p class="text-sm font-medium text-success">
+									${(data.accountCreditCents / 100).toFixed(2)} credit
+								</p>
+								<p class="text-xs text-muted-foreground">
+									Applied automatically to upcoming invoices
+								</p>
+							</div>
+						</div>
+					</div>
+				{/if}
+
 				<!-- Recent invoices -->
 				{#if data.recentInvoices.length > 0}
 					<div class="border-t border-gray-100">
@@ -550,19 +629,36 @@
 								<li class="flex items-center justify-between px-4 py-2">
 									<div>
 										<p class="text-xs font-medium text-foreground">
-											{invoice.number ?? 'Invoice'}
+											{#if invoice.type === 'credit_note'}
+												Credit note
+											{:else if invoice.type === 'refund'}
+												Refund
+											{:else if invoice.total < 0}
+												Credit issued
+											{:else}
+												{invoice.number ?? 'Invoice'}
+											{/if}
 										</p>
 										<p class="text-xs text-muted-foreground">
 											{new Date(invoice.created * 1000).toLocaleDateString('en-US', {
 												month: 'short',
 												day: 'numeric',
 												year: 'numeric'
-											})}
+											})}{#if invoice.creditAppliedCents > 0}
+												<span class="ml-1 font-medium text-success"
+													>· ${(invoice.creditAppliedCents / 100).toFixed(2)} from credit</span
+												>
+											{/if}
 										</p>
 									</div>
 									<div class="flex items-center gap-2">
-										<span class="text-xs font-semibold text-foreground">
-											${(invoice.total / 100).toFixed(2)}
+										<span
+											class="text-xs font-semibold {invoice.type === 'credit_note' ||
+											invoice.type === 'refund'
+												? 'text-success'
+												: 'text-foreground'}"
+										>
+											{invoice.total < 0 ? '−' : ''}${(Math.abs(invoice.total) / 100).toFixed(2)}
 										</span>
 										{#if invoice.invoicePdf}
 											<!-- eslint-disable svelte/no-navigation-without-resolve -->
@@ -677,32 +773,14 @@
 									Current plan
 								</Button>
 							{:else if isUpgrade}
-								{#if isPaidPlan && data.hasStripeSubscription}
-									<Button
-										type="button"
-										variant="default"
-										class="w-full"
-										onclick={() => openPlanChangeModal(tier, 'upgrade')}
-									>
-										Upgrade to {tier.name}
-									</Button>
-								{:else}
-									<!-- Free → paid path: no current sub to mutate, so fire form
-									     directly with vendor's current interval (monthly default
-									     since they're on Starter). The vendor can switch interval
-									     on the embedded checkout page that follows. -->
-									<form method="post" action="?/upgrade" use:enhance>
-										<input type="hidden" name="planKey" value={tier.key} />
-										<input
-											type="hidden"
-											name="interval"
-											value={data.billingInterval ?? 'monthly'}
-										/>
-										<Button type="submit" variant="default" class="w-full">
-											Upgrade to {tier.name}
-										</Button>
-									</form>
-								{/if}
+								<Button
+									type="button"
+									variant="default"
+									class="w-full"
+									onclick={() => openPlanChangeModal(tier, 'upgrade')}
+								>
+									Upgrade to {tier.name}
+								</Button>
 							{:else if isPaused}
 								<Button
 									disabled
@@ -766,7 +844,8 @@
 			<Alert severity="warning" class="mb-4">Complete your plan upgrade to activate add-ons.</Alert>
 		{:else}
 			<p class="mb-4 text-sm text-muted-foreground">
-				Activate or deactivate features. Changes are prorated on your next invoice.
+				Activate or deactivate features. Changes are prorated and billed to your card on file
+				immediately.
 			</p>
 		{/if}
 
@@ -983,7 +1062,7 @@
 				</label>
 
 				<!-- Option 2: cancel immediately + prorated refund (only when refund > 0) -->
-				{#if cancelPreview && cancelPreview.unusedMonths > 0}
+				{#if cancelPreview && cancelPreview.refundCents > 0}
 					<label
 						class="flex cursor-pointer items-start gap-3 rounded-lg border bg-background p-4 transition-colors hover:bg-muted/40 {cancelChoice ===
 						'immediate_refund'
@@ -1005,8 +1084,8 @@
 								<strong class="font-semibold text-foreground"
 									>{fmtMoney(cancelPreview.refundCents / 100)}</strong
 								>
-								for {cancelPreview.unusedMonths}
-								unused {cancelPreview.unusedMonths === 1 ? 'month' : 'months'}. Access ends today.
+								for {cancelPreview.unusedDays}
+								unused {cancelPreview.unusedDays === 1 ? 'day' : 'days'}. Access ends today.
 							</p>
 							{#if activeAddons.length > 0}
 								<p class="mt-1.5 text-xs text-muted-foreground italic">
@@ -1132,16 +1211,60 @@
 				<!-- Proration / credit note -->
 				{#if switchingToAnnual}
 					<Alert severity="info" dismissible={false} autofade={0}>
-						You'll be charged <strong>~{fmtMoney(todayChargeEstimate)}</strong> today (annual price
-						minus credit for unused days in your current cycle). Your subscription renews next on {fmtDate(
-							new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString()
-						)}.
+						A prorated charge of <strong>~{fmtMoney(todayChargeEstimate)}</strong> will be billed to your
+						card on file today (annual price minus credit for unused days in your current cycle). Your
+						subscription then renews annually.
 					</Alert>
 				{:else}
-					<Alert severity="info" dismissible={false} autofade={0}>
-						You'll receive a prorated credit of <strong>~{fmtMoney(todayCreditEstimate)}</strong> on your
-						next invoice. Monthly billing starts on your next cycle.
-					</Alert>
+					<!-- annual → monthly: let the vendor choose credit or cash refund -->
+					<label
+						class="flex cursor-pointer items-start gap-3 rounded-lg border bg-background p-3 transition-colors hover:bg-muted/40 {intervalSwitchChoice ===
+						'credit'
+							? 'border-primary ring-1 ring-primary'
+							: 'border-border'}"
+					>
+						<input
+							type="radio"
+							name="intervalSwitchChoice"
+							value="credit"
+							class="mt-0.5"
+							checked={intervalSwitchChoice === 'credit'}
+							onchange={() => (intervalSwitchChoice = 'credit')}
+						/>
+						<div class="flex-1">
+							<p class="text-sm font-medium text-foreground">Credit to account</p>
+							<p class="mt-0.5 text-xs text-muted-foreground">
+								A prorated credit of <strong>~{fmtMoney(todayCreditEstimate)}</strong> is applied immediately,
+								and offsets your upcoming monthly invoices automatically.
+							</p>
+						</div>
+					</label>
+					{#if cancelPreview && cancelPreview.refundCents > 0}
+						<label
+							class="flex cursor-pointer items-start gap-3 rounded-lg border bg-background p-3 transition-colors hover:bg-muted/40 {intervalSwitchChoice ===
+							'refund'
+								? 'border-primary ring-1 ring-primary'
+								: 'border-border'}"
+						>
+							<input
+								type="radio"
+								name="intervalSwitchChoice"
+								value="refund"
+								class="mt-0.5"
+								checked={intervalSwitchChoice === 'refund'}
+								onchange={() => (intervalSwitchChoice = 'refund')}
+							/>
+							<div class="flex-1">
+								<p class="text-sm font-medium text-foreground">Refund to card</p>
+								<p class="mt-0.5 text-xs text-muted-foreground">
+									Get <strong>{fmtMoney(cancelPreview.refundCents / 100)}</strong> back for
+									{cancelPreview.unusedDays}
+									unused {cancelPreview.unusedDays === 1 ? 'day' : 'days'}. Refund appears within
+									5–10 business days.
+								</p>
+							</div>
+						</label>
+					{/if}
 				{/if}
 
 				<!-- Trust footer -->
@@ -1157,17 +1280,34 @@
 				<form
 					method="post"
 					action="?/switchInterval"
-					use:enhance={() =>
-						({ update }) => {
+					use:enhance={() => {
+						const wasSwitchingToAnnual = target === 'annual';
+						const choiceAtSubmit = intervalSwitchChoice;
+						return async ({ result, update }) => {
 							pendingIntervalSwitch = null;
-							update({ invalidateAll: true });
-						}}
+							intervalSwitchChoice = 'credit';
+							if (result.type === 'success') {
+								const flag =
+									!wasSwitchingToAnnual && choiceAtSubmit === 'refund'
+										? 'switched=refund'
+										: 'switched=1';
+								window.location.href = resolve('/dashboard/account/billing') + '?' + flag;
+							} else {
+								await update({ invalidateAll: true });
+							}
+						};
+					}}
 					class="flex-1"
 				>
 					<input type="hidden" name="interval" value={target} />
+					{#if !switchingToAnnual}
+						<input type="hidden" name="switchChoice" value={intervalSwitchChoice} />
+					{/if}
 					<Button type="submit" variant="default" class="w-full">
 						{#if switchingToAnnual}
-							Confirm — {fmtMoney(todayChargeEstimate)} today
+							Confirm annual billing
+						{:else if intervalSwitchChoice === 'refund' && cancelPreview && cancelPreview.refundCents > 0}
+							Confirm & refund {fmtMoney(cancelPreview.refundCents / 100)}
 						{:else}
 							Confirm switch
 						{/if}
@@ -1323,8 +1463,12 @@
 				</DialogTitle>
 				<DialogDescription class="text-sm text-muted-foreground">
 					{#if isUpgrade}
-						You'll get {pendingPlanChange.targetTierName} access right away. The prorated charge appears
-						on your next invoice.
+						{#if !data.hasStripeSubscription}
+							Choose a billing interval. You'll enter payment details at the next step.
+						{:else}
+							You'll get {pendingPlanChange.targetTierName} access right away, and the prorated charge
+							is billed to your card on file today.
+						{/if}
 					{:else if pendingPlanChange.targetTierKey === 'starter'}
 						Your subscription stays active until the next billing cycle, then moves to Starter.
 						{#if activeAddons.length > 0}
@@ -1332,8 +1476,8 @@
 							then end with your plan.
 						{/if}
 					{:else}
-						Your subscription moves to {pendingPlanChange.targetTierName} pricing on the next billing
-						cycle. Stripe credits the unused portion. Add-ons stay active.
+						Your subscription moves to {pendingPlanChange.targetTierName} pricing immediately. Stripe
+						credits the unused portion of your current plan to your account. Add-ons stay active.
 					{/if}
 				</DialogDescription>
 			</DialogHeader>
@@ -1424,10 +1568,22 @@
 					<div
 						class="flex items-center justify-between border-t pt-2 text-sm font-semibold text-foreground"
 					>
-						<span>{isUpgrade ? 'Added to next invoice' : 'Effective next invoice'}</span>
 						<span>
 							{#if isUpgrade}
-								~{fmtMoney(nextInvoiceEstimate)}
+								{data.hasStripeSubscription ? 'Charged today' : 'Due at checkout'}
+							{:else}
+								Effective immediately
+							{/if}
+						</span>
+						<span>
+							{#if isUpgrade}
+								{#if data.hasStripeSubscription}
+									~{fmtMoney(nextInvoiceEstimate)}
+								{:else}
+									{targetIsAnnual
+										? `$${pendingPlanChange.targetAnnualTotal}/yr`
+										: `$${pendingPlanChange.targetMonthlyPrice}/mo`}
+								{/if}
 							{:else}
 								{targetIsAnnual
 									? `$${pendingPlanChange.targetAnnualTotal}/yr`
@@ -1440,11 +1596,21 @@
 				<!-- Proration note -->
 				<Alert severity="info" dismissible={false} autofade={0}>
 					{#if isUpgrade}
-						Stripe credits the unused portion of your current plan and adds the new plan's prorated
-						cost to your next invoice. Access to {pendingPlanChange.targetTierName} starts immediately.
+						{#if !data.hasStripeSubscription}
+							Your card is charged when you complete the next step. You can choose a different
+							interval or go back at any time.
+						{:else}
+							Stripe credits the unused portion of your current plan and bills the new plan's
+							prorated cost to your card on file today. Access to {pendingPlanChange.targetTierName} starts
+							immediately.
+						{/if}
+					{:else if pendingPlanChange.targetTierKey === 'starter'}
+						Your current plan stays active until the end of your billing cycle. After that, you're
+						moved to Starter. No refund — you keep paid features for the time you've already paid
+						for.
 					{:else}
-						Your current plan stays active until the next billing cycle. After that, you're moved to
-						{pendingPlanChange.targetTierName}. Stripe credits the unused portion automatically.
+						Your subscription moves to {pendingPlanChange.targetTierName} pricing immediately. Stripe
+						credits the unused portion of your current plan to your account.
 					{/if}
 				</Alert>
 
@@ -1465,7 +1631,9 @@
 						async ({ result, update }) => {
 							const wasUpgrade = isUpgrade;
 							pendingPlanChange = null;
-							if (result.type === 'success') {
+							if (result.type === 'redirect') {
+								window.location.href = result.location;
+							} else if (result.type === 'success') {
 								const flag = wasUpgrade ? 'upgraded=1' : 'downgraded=1';
 								window.location.href = resolve('/dashboard/account/billing') + `?${flag}`;
 							} else {
@@ -1483,7 +1651,11 @@
 							? ''
 							: 'bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700'}"
 					>
-						{isUpgrade ? 'Confirm upgrade' : 'Confirm downgrade'}
+						{#if isUpgrade}
+							{data.hasStripeSubscription ? 'Confirm upgrade' : 'Continue to payment →'}
+						{:else}
+							Confirm downgrade
+						{/if}
 					</Button>
 				</form>
 			</DialogFooter>

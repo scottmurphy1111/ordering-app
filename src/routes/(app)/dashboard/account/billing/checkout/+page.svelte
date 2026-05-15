@@ -3,6 +3,8 @@
 	import { loadStripe } from '@stripe/stripe-js';
 	import type { Stripe, StripeElements } from '@stripe/stripe-js';
 	import { resolve } from '$app/paths';
+	import { deserialize } from '$app/forms';
+	import type { ActionResult } from '@sveltejs/kit';
 	import Icon from '@iconify/svelte';
 	import { Card, CardContent } from '$lib/components/ui/card';
 	import { Button } from '$lib/components/ui/button';
@@ -72,15 +74,79 @@
 		submitting = true;
 		paymentError = '';
 
-		const { error: stripeError } = await stripe.confirmPayment({
+		// confirmSetup saves the card without charging (the charge happens in
+		// finalizeSubscription when the subscription is created). redirect: 'if_required'
+		// keeps the vendor on this page for most cards; 3DS-required cards will
+		// redirect to return_url, but finalizeSubscription won't have run yet — the
+		// vendor would need to restart checkout. Acceptable: 3DS cards are rare in
+		// US test environments. Future enhancement: detect the SI return param in the
+		// billing-page load and complete finalization automatically.
+		const { error: stripeError, setupIntent } = await stripe.confirmSetup({
 			elements,
+			redirect: 'if_required',
 			confirmParams: {
 				return_url: `${window.location.origin}${resolve('/dashboard/account/billing')}?upgraded=1`
 			}
 		});
 
 		if (stripeError) {
-			paymentError = stripeError.message ?? 'Payment failed. Please try again.';
+			paymentError = stripeError.message ?? 'Could not save your card. Please try again.';
+			submitting = false;
+			return;
+		}
+
+		if (!setupIntent || setupIntent.status !== 'succeeded') {
+			paymentError = 'Could not confirm your card. Please try again.';
+			submitting = false;
+			return;
+		}
+
+		// Card saved. POST to finalizeSubscription to create the subscription and
+		// flip the vendor tier server-side.
+		const formData = new FormData();
+		formData.append('setupIntentId', data.setupIntentId);
+		formData.append('planKey', data.planKey);
+		formData.append('interval', data.interval);
+
+		try {
+			const response = await fetch('?/finalizeSubscription', {
+				method: 'POST',
+				body: formData,
+				headers: { 'x-sveltekit-action': 'true' }
+			});
+
+			// SvelteKit actions return a serialized ActionResult body (not a raw 3xx
+			// redirect) — deserialize() is the canonical parser for this format.
+			const result: ActionResult = deserialize(await response.text());
+
+			if (result.type === 'redirect') {
+				// Success — finalizeSubscription redirected to billing?upgraded=1.
+				window.location.href = result.location;
+				return;
+			}
+
+			if (result.type === 'failure') {
+				const err = (result.data as { error?: string } | undefined)?.error;
+				paymentError = err ?? 'Could not start your subscription. Please contact support.';
+				submitting = false;
+				return;
+			}
+
+			if (result.type === 'error') {
+				console.error('[checkout] finalizeSubscription server error:', result.error);
+				paymentError = 'Something went wrong on our end. Please try again or contact support.';
+				submitting = false;
+				return;
+			}
+
+			// type === 'success' shouldn't happen (this action always redirects on the
+			// happy path), but handle defensively.
+			if (result.type === 'success') {
+				window.location.href = `${window.location.origin}/dashboard/account/billing?upgraded=1`;
+			}
+		} catch (err) {
+			console.error('[checkout] finalizeSubscription POST failed:', err);
+			paymentError = 'Network error. Please try again.';
 			submitting = false;
 		}
 	}
@@ -143,7 +209,7 @@
 									Processing…
 								{:else}
 									<Icon icon="mdi:lock" class="h-4 w-4" />
-									Pay {fmtCents(data.bridgeAmountCents)} and start your {data.planName} plan
+									Pay {fmtCents(data.amountDueTodayCents)} and start your {data.planName} plan
 								{/if}
 							</Button>
 						{/if}
@@ -186,18 +252,12 @@
 					<div class="mb-4 border-t border-border pt-4">
 						<div class="flex items-center justify-between text-sm font-medium">
 							<span class="text-muted-foreground">Total due today</span>
-							<span class="text-foreground">{fmtCents(data.bridgeAmountCents)}</span>
+							<span class="text-foreground">{fmtCents(data.amountDueTodayCents)}</span>
 						</div>
 						<p class="mt-1 text-xs text-muted-foreground">
-							{#if data.isBridgeFree}
-								Renews {fmtCents(data.fullCycleAmountCents)}/{data.interval === 'annual'
-									? 'year'
-									: 'month'} on {fmtDate(data.nextChargeDate)}
-							{:else}
-								Then {fmtCents(data.fullCycleAmountCents)}/{data.interval === 'annual'
-									? 'year'
-									: 'month'} on {fmtDate(data.nextChargeDate)}
-							{/if}
+							Renews {fmtCents(data.fullCycleAmountCents)}/{data.interval === 'annual'
+								? 'year'
+								: 'month'}{data.nextChargeDate ? ` on ${fmtDate(data.nextChargeDate)}` : ''}
 						</p>
 					</div>
 

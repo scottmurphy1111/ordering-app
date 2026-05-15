@@ -9,8 +9,6 @@ import {
 	TIERS,
 	type AddonItem,
 	type BillingInterval,
-	nextBillingAnchor,
-	unixTimestamp,
 	cancelImmediateRefundPreview,
 	pauseUntilTimestamp
 } from '$lib/billing';
@@ -19,7 +17,12 @@ import { pauseConfirmedEmail } from '$lib/server/email/templates/pauseConfirmed'
 import { pauseResumedEmail } from '$lib/server/email/templates/pauseResumed';
 import { requireStaff } from '$lib/server/roles';
 import type Stripe from 'stripe';
-import { getOrderLocalStripe, getPlanPriceId, getAddonPriceId } from '$lib/server/stripe-billing';
+import {
+	getOrderLocalStripe,
+	getPlanPriceId,
+	getAddonPriceId,
+	issueSubscriptionRefund
+} from '$lib/server/stripe-billing';
 
 const VALID_ADDON_KEYS = new Set<string>(ADDONS.map((a) => a.key));
 const PAID_TIERS = new Set(['market', 'pro']);
@@ -61,47 +64,99 @@ export const load: PageServerLoad = async ({ locals }) => {
 		expYear: number;
 	} | null = null;
 	let totalPaymentMethods = 0;
+	let accountCreditCents = 0;
 	let recentInvoices: Array<{
 		id: string;
 		number: string | null;
 		created: number;
 		status: string;
 		total: number;
+		creditAppliedCents: number;
 		hostedInvoiceUrl: string | null;
 		invoicePdf: string | null;
+		type: 'invoice' | 'credit_note' | 'refund';
 	}> = [];
 
 	if (vendorRecord?.stripeSubscriptionId) {
-		try {
-			const stripe = getOrderLocalStripe();
-			const [subscription, preview, pmList, invoiceList, customer] = await Promise.all([
-				stripe.subscriptions.retrieve(vendorRecord.stripeSubscriptionId, { expand: ['items'] }),
-				stripe.invoices.createPreview({ subscription: vendorRecord.stripeSubscriptionId }),
-				stripe.paymentMethods.list({
-					customer: vendorRecord.stripeCustomerId!,
-					type: 'card'
-				}),
-				stripe.invoices.list({ customer: vendorRecord.stripeCustomerId!, limit: 3 }),
-				stripe.customers.retrieve(vendorRecord.stripeCustomerId!)
-			]);
+		const stripe = getOrderLocalStripe();
 
+		// 1. Subscription retrieve (critical — carries billingInterval).
+		// Rarely fails for a real subscription. If it does (deleted on Stripe),
+		// the page still renders with empty billing details.
+		let subscription: Stripe.Subscription | null = null;
+		try {
+			subscription = await stripe.subscriptions.retrieve(vendorRecord.stripeSubscriptionId, {
+				expand: ['items']
+			});
+		} catch (err) {
+			console.error('[billing load] subscription retrieve failed:', err);
+		}
+
+		if (subscription) {
 			const planItem =
 				subscription.items.data.find((i) => {
 					const meta = i.price.metadata?.type;
 					return meta === 'plan' || !meta;
 				}) ?? subscription.items.data[0];
+			// billingInterval from the subscription's own price — NOT gated behind createPreview.
+			// Must stay correct even when the preview call fails (e.g. cancel_at_period_end).
 			billingInterval = planItem?.price.recurring?.interval === 'year' ? 'annual' : 'monthly';
+		}
+
+		// 2. Invoice preview (fragile — throws for subscriptions with cancel_at_period_end
+		// because there's no upcoming invoice to preview). Its failure ONLY affects
+		// nextBillingDate / periodStart; nothing else is in this try block.
+		try {
+			const preview = await stripe.invoices.createPreview({
+				subscription: vendorRecord.stripeSubscriptionId
+			});
 			periodStart = new Date(preview.period_start * 1000).toISOString();
 			nextBillingDate = new Date(preview.period_end * 1000).toISOString();
+		} catch (err) {
+			// Expected when the subscription is scheduled to cancel — fall back to the
+			// subscription's own period bounds so the UI still has a date to show.
+			const item = subscription?.items.data[0];
+			if (item?.current_period_end) {
+				nextBillingDate = new Date(item.current_period_end * 1000).toISOString();
+			}
+			if (item?.current_period_start) {
+				periodStart = new Date(item.current_period_start * 1000).toISOString();
+			}
+			console.error(
+				'[billing load] invoice preview unavailable (expected for ending subscriptions):',
+				err
+			);
+		}
+
+		// 3. Payment methods + invoice history + customer — independent of the preview.
+		// A preview failure must not blank these out.
+		try {
+			const [pmList, invoiceList, customer, creditNoteList, chargeList] = await Promise.all([
+				stripe.paymentMethods.list({
+					customer: vendorRecord.stripeCustomerId!,
+					type: 'card'
+				}),
+				stripe.invoices.list({ customer: vendorRecord.stripeCustomerId!, limit: 3 }),
+				stripe.customers.retrieve(vendorRecord.stripeCustomerId!),
+				stripe.creditNotes.list({ customer: vendorRecord.stripeCustomerId!, limit: 3 }),
+				// Refunds: list charges for this customer, then extract refunds from each.
+				// refunds.list doesn't filter by customer directly, so charges.list is the
+				// only customer-scoped path to refund objects.
+				stripe.charges.list({
+					customer: vendorRecord.stripeCustomerId!,
+					limit: 10,
+					expand: ['data.refunds']
+				})
+			]);
 
 			totalPaymentMethods = pmList.data.length;
 
 			// Subscription's default payment method takes priority over customer-level
 			// default. Fall back to first card if neither is set explicitly.
 			const subDefaultId =
-				typeof subscription.default_payment_method === 'string'
+				typeof subscription?.default_payment_method === 'string'
 					? subscription.default_payment_method
-					: (subscription.default_payment_method?.id ?? null);
+					: (subscription?.default_payment_method?.id ?? null);
 			const customerDefaultId =
 				!customer.deleted && customer.invoice_settings.default_payment_method
 					? typeof customer.invoice_settings.default_payment_method === 'string'
@@ -113,6 +168,23 @@ export const load: PageServerLoad = async ({ locals }) => {
 				pmList.data.find((pm) => pm.id === customerDefaultId) ??
 				pmList.data[0];
 
+			// Self-heal: if the customer has no default payment method set but we
+			// resolved a usable card, promote it now. Backstop to the webhook
+			// promotions — guarantees the invariant holds by the time the vendor
+			// views this page. Idempotent: no-op once customerDefaultId is set.
+			if (!customerDefaultId && defaultPm?.id && vendorRecord.stripeCustomerId) {
+				try {
+					await stripe.customers.update(vendorRecord.stripeCustomerId, {
+						invoice_settings: { default_payment_method: defaultPm.id }
+					});
+				} catch (err) {
+					console.error(
+						'[billing load] failed to self-heal customer default payment method:',
+						err
+					);
+				}
+			}
+
 			if (defaultPm?.card) {
 				defaultPaymentMethod = {
 					brand: defaultPm.card.brand,
@@ -122,18 +194,65 @@ export const load: PageServerLoad = async ({ locals }) => {
 				};
 			}
 
-			recentInvoices = invoiceList.data.map((inv) => ({
-				id: inv.id ?? '',
-				number: inv.number,
-				created: inv.created,
-				status: inv.status ?? 'draft',
-				total: inv.total,
-				hostedInvoiceUrl: inv.hosted_invoice_url ?? null,
-				invoicePdf: inv.invoice_pdf ?? null
+			// customer.balance is negative when Stripe owes the customer money
+			// (credit from always_invoice negative invoices on downgrades).
+			if (!customer.deleted && (customer.balance ?? 0) < 0) {
+				accountCreditCents = Math.abs(customer.balance!);
+			}
+
+			const invoiceRows = invoiceList.data.map((inv) => {
+				// Stripe's balance fields: negative = credit owed to vendor. A less-negative
+				// ending_balance vs starting_balance means credit was applied to this invoice.
+				const startingBalance = inv.starting_balance ?? 0;
+				const endingBalance = inv.ending_balance ?? 0;
+				const creditAppliedCents = Math.max(0, endingBalance - startingBalance);
+
+				return {
+					id: inv.id ?? '',
+					number: inv.number,
+					created: inv.created,
+					status: inv.status ?? 'draft',
+					total: inv.total,
+					creditAppliedCents,
+					hostedInvoiceUrl: inv.hosted_invoice_url ?? null,
+					invoicePdf: inv.invoice_pdf ?? null,
+					type: 'invoice' as const
+				};
+			});
+			const creditNoteRows = creditNoteList.data.map((cn) => ({
+				id: cn.id,
+				number: cn.number ?? null,
+				created: cn.created,
+				status: cn.status,
+				total: -(cn.total ?? 0),
+				creditAppliedCents: 0,
+				hostedInvoiceUrl: null,
+				invoicePdf: cn.pdf ?? null,
+				type: 'credit_note' as const
 			}));
-		} catch {
-			// Stripe preview unavailable — billing dates stay null, account
-			// utilities stay empty. Card UI handles empty state gracefully.
+			const refundEntries = chargeList.data
+				.flatMap((charge) =>
+					(charge.refunds?.data ?? []).map((refund) => ({
+						id: refund.id,
+						number: null,
+						created: refund.created,
+						status: refund.status ?? 'succeeded',
+						total: -(refund.amount ?? 0),
+						creditAppliedCents: 0,
+						hostedInvoiceUrl: null,
+						invoicePdf: null,
+						type: 'refund' as const
+					}))
+				)
+				.sort((a, b) => b.created - a.created)
+				.slice(0, 5);
+			recentInvoices = [...invoiceRows, ...creditNoteRows, ...refundEntries]
+				.sort((a, b) => b.created - a.created)
+				.slice(0, 5);
+		} catch (err) {
+			console.error('[billing load] payment methods / invoices fetch failed:', err);
+			// defaultPaymentMethod / totalPaymentMethods / recentInvoices stay at their
+			// empty defaults — the account utilities card renders its empty state.
 		}
 	}
 
@@ -141,6 +260,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 		itemCount: countResult[0]?.count ?? 0,
 		defaultPaymentMethod,
 		totalPaymentMethods,
+		accountCreditCents,
 		recentInvoices,
 		subscriptionTier: vendorRecord?.subscriptionTier ?? 'starter',
 		subscriptionStatus: vendorRecord?.subscriptionStatus ?? 'active',
@@ -192,68 +312,72 @@ export const actions: Actions = {
 		const stripe = getOrderLocalStripe();
 
 		if (record?.stripeSubscriptionId) {
-			const subscription = await stripe.subscriptions.retrieve(record.stripeSubscriptionId, {
-				expand: ['items']
-			});
-			const planItem =
-				subscription.items.data.find((i) => {
-					const meta = i.price.metadata?.type;
-					return meta === 'plan' || !meta;
-				}) ?? subscription.items.data[0];
-			if (planItem) {
-				// Match downgrade/switchInterval: explicit create_prorations so the unused
-				// current-tier time is credited and the new tier's prorated cost lands on
-				// the next invoice (not charged immediately).
-				await stripe.subscriptionItems.update(planItem.id, {
-					price: priceId,
-					proration_behavior: 'create_prorations'
-				});
-				await db
-					.update(vendor)
-					.set({ subscriptionTier: planKey, updatedAt: new Date() })
-					.where(eq(vendor.id, vendorId));
-				return { success: true, upgraded: true };
+			let existingSubscription: Stripe.Subscription | null = null;
+			try {
+				existingSubscription = await stripe.subscriptions.retrieve(
+					record.stripeSubscriptionId,
+					{ expand: ['items'] }
+				);
+			} catch (err) {
+				// Subscription doesn't exist on Stripe (deleted, or wiped test env) — treat
+				// as no subscription and fall through to create a fresh one via checkout.
+				console.error('[upgrade] subscription retrieve failed, treating as no subscription:', err);
 			}
+
+			const isLive =
+				existingSubscription?.status === 'active' ||
+				existingSubscription?.status === 'trialing';
+
+			if (existingSubscription && isLive) {
+				const planItem =
+					existingSubscription.items.data.find((i) => {
+						const meta = i.price.metadata?.type;
+						return meta === 'plan' || !meta;
+					}) ?? existingSubscription.items.data[0];
+				if (planItem) {
+					// always_invoice generates the proration invoice immediately and auto-charges
+					// it against the customer's default PM (invariant maintained by webhook
+					// promotion + load self-heal). No checkout redirect needed for paid→paid.
+					await stripe.subscriptionItems.update(planItem.id, {
+						price: priceId,
+						proration_behavior: 'always_invoice'
+					});
+					await db
+						.update(vendor)
+						.set({ subscriptionTier: planKey, subscriptionEndsAt: null, updatedAt: new Date() })
+						.where(eq(vendor.id, vendorId));
+					return { success: true, upgraded: true };
+				}
+			}
+			// Not live, no plan item, or subscription doesn't exist — fall through.
 		}
 
-		let customerId = record?.stripeCustomerId;
-		if (!customerId) {
-			const customer = await stripe.customers.create({
-				name: record?.name ?? undefined,
-				email: record?.email ?? undefined,
-				metadata: { vendorId: String(vendorId) }
-			});
-			customerId = customer.id;
-			await db.update(vendor).set({ stripeCustomerId: customerId }).where(eq(vendor.id, vendorId));
-		}
-
-		const anchorDate = nextBillingAnchor();
-		const subscription = await stripe.subscriptions.create({
-			customer: customerId,
-			items: [{ price: priceId }],
-			payment_behavior: 'default_incomplete',
-			payment_settings: {
-				save_default_payment_method: 'on_subscription',
-				payment_method_types: ['card']
-			},
-			metadata: { vendorId: String(vendorId), planKey, interval },
-			// Anchor billing to the next 15th of the month.
-			// Stripe creates a prorated bridge invoice immediately for the partial period
-			// (today → anchor), then full-cycle invoices land on the 15th going forward.
-			// If anchorDate is today (vendor signed up on the 15th), no bridge —
-			// full cycle starts immediately.
-			billing_cycle_anchor: unixTimestamp(anchorDate),
-			proration_behavior: 'create_prorations'
+		// Fall-through: no live subscription. Create a SetupIntent — no Stripe customer
+		// or subscription yet. Those come into existence only when the vendor actually
+		// completes payment in the checkout page (finalizeSubscription action).
+		//
+		// Why SetupIntent and not PaymentIntent: SetupIntent saves the card without
+		// charging. The actual charge happens via the subscription's first invoice,
+		// which Stripe auto-charges against the saved card the moment the subscription
+		// is created. This is the standard Stripe pattern for "collect card now, bill
+		// recurring later."
+		const setupIntent = await stripe.setupIntents.create({
+			payment_method_types: ['card'],
+			usage: 'off_session',
+			metadata: { vendorId: String(vendorId), planKey, interval }
 		});
-		await db
-			.update(vendor)
-			.set({
-				stripeSubscriptionId: subscription.id,
-				subscriptionRefundedAt: null,
-				updatedAt: new Date()
-			})
-			.where(eq(vendor.id, vendorId));
-		redirect(303, `/dashboard/account/billing/checkout?subscriptionId=${subscription.id}`);
+
+		if (!setupIntent.client_secret) {
+			return fail(500, { error: 'Could not initialize checkout. Please try again.' });
+		}
+
+		const params = new URLSearchParams({
+			setupIntentClientSecret: setupIntent.client_secret,
+			setupIntentId: setupIntent.id,
+			planKey,
+			interval
+		});
+		redirect(303, `/dashboard/account/billing/checkout?${params.toString()}`);
 	},
 
 	downgrade: async ({ request, locals }) => {
@@ -283,14 +407,58 @@ export const actions: Actions = {
 			if (!record?.stripeSubscriptionId)
 				return fail(400, { error: 'No active subscription to cancel.' });
 
-			const subscription = await stripe.subscriptions.update(record.stripeSubscriptionId, {
-				cancel_at_period_end: true
-			});
+			// When the Stripe subscription is already dead the vendor effectively wants
+			// Starter and already has it — sync the DB and report success.
+			async function syncToStarter() {
+				await db
+					.update(vendor)
+					.set({
+						subscriptionTier: 'starter',
+						subscriptionEndsAt: null,
+						stripeSubscriptionId: null,
+						addons: [],
+						updatedAt: new Date()
+					})
+					.where(eq(vendor.id, vendorId));
+			}
+
+			let subscription: Stripe.Subscription;
+			try {
+				subscription = await stripe.subscriptions.retrieve(record.stripeSubscriptionId);
+			} catch (err) {
+				// Subscription not found on Stripe — DB is pointing at a ghost.
+				console.error('[downgrade] subscription retrieve failed:', err);
+				await syncToStarter();
+				return { success: true, downgraded: true, alreadyEnded: true };
+			}
+
+			if (
+				subscription.status === 'canceled' ||
+				subscription.status === 'incomplete_expired'
+			) {
+				await syncToStarter();
+				return { success: true, downgraded: true, alreadyEnded: true };
+			}
+
+			let updated: Stripe.Subscription;
+			try {
+				updated = await stripe.subscriptions.update(record.stripeSubscriptionId, {
+					cancel_at_period_end: true
+				});
+			} catch (err) {
+				const message = err instanceof Error ? err.message : '';
+				if (message.includes('canceled subscription')) {
+					await syncToStarter();
+					return { success: true, downgraded: true, alreadyEnded: true };
+				}
+				console.error('[downgrade] subscription update failed:', err);
+				return fail(500, { error: 'Could not schedule cancellation. Please try again.' });
+			}
 
 			// Mirror the scheduled-end state to DB so UI renders correctly without
 			// waiting for the webhook. Webhook will reconfirm.
 			// cancel_at is always populated by Stripe when cancel_at_period_end is set.
-			const endsAt = subscription.cancel_at ? new Date(subscription.cancel_at * 1000) : null;
+			const endsAt = updated.cancel_at ? new Date(updated.cancel_at * 1000) : null;
 
 			await db
 				.update(vendor)
@@ -313,6 +481,29 @@ export const actions: Actions = {
 		const subscription = await stripe.subscriptions.retrieve(record.stripeSubscriptionId, {
 			expand: ['items']
 		});
+
+		// A canceled subscription can't be moved to a different paid tier — sync DB to
+		// Starter so the UI stops showing a stale paid tier, then tell the vendor to re-subscribe.
+		if (
+			subscription.status === 'canceled' ||
+			subscription.status === 'incomplete_expired'
+		) {
+			await db
+				.update(vendor)
+				.set({
+					subscriptionTier: 'starter',
+					subscriptionEndsAt: null,
+					stripeSubscriptionId: null,
+					addons: [],
+					updatedAt: new Date()
+				})
+				.where(eq(vendor.id, vendorId));
+			return fail(400, {
+				error:
+					'Your previous subscription has ended. Please choose a plan to subscribe again.'
+			});
+		}
+
 		const planItem =
 			subscription.items.data.find((i) => {
 				const meta = i.price.metadata?.type;
@@ -320,10 +511,32 @@ export const actions: Actions = {
 			}) ?? subscription.items.data[0];
 		if (!planItem) return fail(500, { error: 'Could not find subscription item.' });
 
-		await stripe.subscriptionItems.update(planItem.id, {
-			price: priceId,
-			proration_behavior: 'create_prorations'
-		});
+		try {
+			await stripe.subscriptionItems.update(planItem.id, {
+				price: priceId,
+				proration_behavior: 'always_invoice'
+			});
+		} catch (err) {
+			const message = err instanceof Error ? err.message : '';
+			if (message.includes('canceled subscription')) {
+				await db
+					.update(vendor)
+					.set({
+						subscriptionTier: 'starter',
+						subscriptionEndsAt: null,
+						stripeSubscriptionId: null,
+						addons: [],
+						updatedAt: new Date()
+					})
+					.where(eq(vendor.id, vendorId));
+				return fail(400, {
+					error:
+						'Your previous subscription has ended. Please choose a plan to subscribe again.'
+				});
+			}
+			console.error('[downgrade] subscriptionItems update failed:', err);
+			return fail(500, { error: 'Could not change plan. Please try again.' });
+		}
 		await db
 			.update(vendor)
 			.set({ subscriptionTier: planKey, updatedAt: new Date() })
@@ -333,8 +546,6 @@ export const actions: Actions = {
 
 	switchInterval: async ({ request, locals }) => {
 		requireStaff(locals);
-		// Switching monthly ↔ annual preserves the existing billing_cycle_anchor (the 15th).
-		// Stripe handles proration of the unused portion of the current cycle automatically.
 		const vendorId = locals.vendorId!;
 		const formData = await request.formData();
 		const intervalRaw = formData.get('interval')?.toString();
@@ -342,7 +553,7 @@ export const actions: Actions = {
 
 		const record = await db.query.vendor.findFirst({
 			where: eq(vendor.id, vendorId),
-			columns: { stripeSubscriptionId: true, subscriptionTier: true }
+			columns: { stripeSubscriptionId: true, subscriptionTier: true, stripeCustomerId: true }
 		});
 		if (
 			!record?.subscriptionTier ||
@@ -355,8 +566,10 @@ export const actions: Actions = {
 		if (!priceId) return fail(500, { error: 'Price not configured. Contact support.' });
 
 		const stripe = getOrderLocalStripe();
+		// Expand payments here — needed for the refund path (annual → monthly + refund choice).
+		// The expand is harmless for the monthly → annual path.
 		const subscription = await stripe.subscriptions.retrieve(record.stripeSubscriptionId, {
-			expand: ['items']
+			expand: ['items', 'latest_invoice.payments.data.payment']
 		});
 		const planItem =
 			subscription.items.data.find((i) => {
@@ -364,11 +577,66 @@ export const actions: Actions = {
 				return meta === 'plan' || !meta;
 			}) ?? subscription.items.data[0];
 		if (!planItem) return fail(500, { error: 'Could not find subscription item.' });
-		await stripe.subscriptionItems.update(planItem.id, {
-			price: priceId,
-			proration_behavior: 'create_prorations'
-		});
-		return { success: true };
+
+		const currentInterval =
+			planItem.price.recurring?.interval === 'year' ? 'annual' : 'monthly';
+		if (currentInterval === interval) return fail(400, { error: `Already billing ${interval}.` });
+
+		if (interval === 'annual') {
+			// monthly → annual: always_invoice generates the proration invoice immediately
+			// and auto-charges against the customer's default PM. No checkout redirect.
+			await stripe.subscriptionItems.update(planItem.id, {
+				price: priceId,
+				proration_behavior: 'always_invoice'
+			});
+			return { success: true, switched: true };
+		} else {
+			// annual → monthly: vendor chooses credit (deferred on next invoice) or
+			// immediate cash refund for the unused annual portion.
+			const switchChoice = formData.get('switchChoice')?.toString();
+			const useRefund = switchChoice === 'refund';
+
+			if (useRefund) {
+				// Refund path: proration_behavior: 'none' prevents Stripe from issuing a
+				// credit memo alongside the cash refund — that would double-compensate.
+				const periodEndUnix = planItem.current_period_end;
+				if (!periodEndUnix) return fail(500, { error: 'Subscription period_end unavailable.' });
+
+				const tier = TIERS.find((t) => t.key === record.subscriptionTier);
+				const annualTotal = tier && 'annualTotal' in tier ? (tier.annualTotal as number) : 0;
+				if (!annualTotal) return fail(500, { error: 'Annual price not configured.' });
+
+				const { refundCents } = cancelImmediateRefundPreview({
+					periodEnd: new Date(periodEndUnix * 1000),
+					annualTotalCents: annualTotal * 100
+				});
+
+				await stripe.subscriptionItems.update(planItem.id, {
+					price: priceId,
+					proration_behavior: 'none'
+				});
+
+				if (refundCents > 0) {
+					await issueSubscriptionRefund(
+						stripe,
+						subscription,
+						record.stripeCustomerId,
+						refundCents,
+						`Order Local refund — annual to monthly switch (${refundCents} cents)`
+					);
+				}
+
+				return { success: true, switched: true, refunded: refundCents > 0 };
+			} else {
+				// Credit path: always_invoice generates a credit memo immediately for the
+				// unused annual time rather than parking it on next year's renewal.
+				await stripe.subscriptionItems.update(planItem.id, {
+					price: priceId,
+					proration_behavior: 'always_invoice'
+				});
+				return { success: true, switched: true };
+			}
+		}
 	},
 
 	reactivate: async ({ locals }) => {
@@ -414,9 +682,10 @@ export const actions: Actions = {
 
 		const stripe = getOrderLocalStripe();
 		const subscription = await stripe.subscriptions.retrieve(record.stripeSubscriptionId, {
-			// Stripe v22: payment_intent moved off Invoice. Expand payments list so we
-			// can navigate to the payment intent ID, then retrieve separately for charge.
-			expand: ['items', 'latest_invoice.payments.data.payment.payment_intent']
+			// Stripe v22: payment_intent moved off Invoice. Expand to 4 levels (Stripe's max).
+			// payment_intent comes back as a string ID at this depth, which is all we need —
+			// the code below retrieves the PI separately via paymentIntents.retrieve.
+			expand: ['items', 'latest_invoice.payments.data.payment']
 		});
 		const planItem =
 			subscription.items.data.find((i) => {
@@ -442,57 +711,17 @@ export const actions: Actions = {
 			annualTotalCents: annualTotal * 100
 		});
 
-		// Resolve charge for refund via Stripe v22 invoice payments path:
-		// Invoice.payments[0].payment_details.payment_intent → PaymentIntent.latest_charge
+		// Issue refund via shared helper (charge resolution + balance credit fallback).
 		let refundIssued = false;
 		if (refundCents > 0) {
-			const latestInvoice = subscription.latest_invoice as Stripe.Invoice | null;
-			const firstPayment = latestInvoice?.payments?.data?.[0];
-			const piRef = firstPayment?.payment?.payment_intent;
-			const paymentIntentId = typeof piRef === 'string' ? piRef : piRef?.id;
-
-			let chargeId: string | null = null;
-			if (paymentIntentId) {
-				try {
-					const pi = await stripe.paymentIntents.retrieve(paymentIntentId, {
-						expand: ['latest_charge']
-					});
-					chargeId =
-						typeof pi.latest_charge === 'string'
-							? pi.latest_charge
-							: ((pi.latest_charge as Stripe.Charge | null)?.id ?? null);
-				} catch {
-					// Can't retrieve PI — fall through to balance credit below
-				}
-			}
-
-			if (chargeId) {
-				try {
-					await stripe.refunds.create({ charge: chargeId, amount: refundCents });
-					refundIssued = true;
-				} catch (err) {
-					// Charge not refundable (disputed, expired, etc). Fall back to
-					// customer balance credit — applies to next invoice if vendor
-					// returns; otherwise sits on the customer record.
-					console.error('Refund to charge failed; falling back to balance credit:', err);
-					if (record.stripeCustomerId) {
-						await stripe.customers.createBalanceTransaction(record.stripeCustomerId, {
-							amount: -refundCents,
-							currency: 'usd',
-							description: `Order Local refund — immediate cancellation (${refundCents} cents)`
-						});
-						refundIssued = true;
-					}
-				}
-			} else if (record.stripeCustomerId) {
-				// No charge found (PI unavailable) — use balance credit as primary path
-				await stripe.customers.createBalanceTransaction(record.stripeCustomerId, {
-					amount: -refundCents,
-					currency: 'usd',
-					description: `Order Local refund — immediate cancellation (${refundCents} cents)`
-				});
-				refundIssued = true;
-			}
+			const result = await issueSubscriptionRefund(
+				stripe,
+				subscription,
+				record.stripeCustomerId,
+				refundCents,
+				`Order Local refund — immediate cancellation (${refundCents} cents)`
+			);
+			refundIssued = result.refundIssued;
 		}
 
 		// Persist refund state and cancel-effective BEFORE calling cancel.
@@ -547,7 +776,8 @@ export const actions: Actions = {
 		const stripe = getOrderLocalStripe();
 		const item = await stripe.subscriptionItems.create({
 			subscription: record.stripeSubscriptionId,
-			price: priceId
+			price: priceId,
+			proration_behavior: 'always_invoice'
 		});
 		await db
 			.update(vendor)
@@ -574,7 +804,7 @@ export const actions: Actions = {
 		const stripe = getOrderLocalStripe();
 		try {
 			await stripe.subscriptionItems.del(addonEntry.stripeItemId, {
-				proration_behavior: 'create_prorations'
+				proration_behavior: 'always_invoice'
 			});
 		} catch (e: unknown) {
 			if (!(e instanceof Error && e.message.includes('No such subscription_item'))) throw e;

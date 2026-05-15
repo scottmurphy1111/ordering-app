@@ -58,3 +58,72 @@ export function getAddonPriceId(addonKey: string): string | undefined {
 	};
 	return map[addonKey];
 }
+
+/**
+ * Issue a prorated refund against the most recent charge on a subscription.
+ *
+ * Resolves the charge via the Stripe v22 invoice payments path:
+ *   subscription.latest_invoice.payments[0].payment.payment_intent → PI → latest_charge
+ *
+ * Falls back to a customer balance credit when the charge can't be resolved
+ * (e.g. disputed, expired, or PI unavailable). Balance credit offsets the
+ * next invoice if the vendor returns; otherwise it sits on the customer record.
+ *
+ * The caller is responsible for expanding `latest_invoice.payments.data.payment`
+ * on the subscription before passing it here.
+ */
+export async function issueSubscriptionRefund(
+	stripe: Stripe,
+	subscription: Stripe.Subscription,
+	stripeCustomerId: string | null,
+	refundCents: number,
+	balanceDescription = `Order Local refund (${refundCents} cents)`
+): Promise<{ refundIssued: boolean }> {
+	if (refundCents <= 0) return { refundIssued: false };
+
+	const latestInvoice = subscription.latest_invoice as Stripe.Invoice | null;
+	const firstPayment = latestInvoice?.payments?.data?.[0];
+	const piRef = firstPayment?.payment?.payment_intent;
+	const paymentIntentId = typeof piRef === 'string' ? piRef : (piRef as { id?: string } | null)?.id;
+
+	let chargeId: string | null = null;
+	if (paymentIntentId) {
+		try {
+			const pi = await stripe.paymentIntents.retrieve(paymentIntentId, {
+				expand: ['latest_charge']
+			});
+			chargeId =
+				typeof pi.latest_charge === 'string'
+					? pi.latest_charge
+					: ((pi.latest_charge as Stripe.Charge | null)?.id ?? null);
+		} catch {
+			// PI unavailable — fall through to balance credit
+		}
+	}
+
+	if (chargeId) {
+		try {
+			await stripe.refunds.create({ charge: chargeId, amount: refundCents });
+			return { refundIssued: true };
+		} catch (err) {
+			console.error('[issueSubscriptionRefund] refund to charge failed; falling back to balance credit:', err);
+			if (stripeCustomerId) {
+				await stripe.customers.createBalanceTransaction(stripeCustomerId, {
+					amount: -refundCents,
+					currency: 'usd',
+					description: balanceDescription
+				});
+				return { refundIssued: true };
+			}
+		}
+	} else if (stripeCustomerId) {
+		await stripe.customers.createBalanceTransaction(stripeCustomerId, {
+			amount: -refundCents,
+			currency: 'usd',
+			description: balanceDescription
+		});
+		return { refundIssued: true };
+	}
+
+	return { refundIssued: false };
+}

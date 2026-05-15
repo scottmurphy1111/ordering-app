@@ -194,14 +194,46 @@ export const POST: RequestHandler = async ({ request }) => {
 				// only that transition — it won't fire on plan/interval switches or add-on
 				// changes (in those cases the prior status was already 'active').
 				//
-				// The 'created' event has no previous_attributes; optional-chain returns
-				// undefined and the email is skipped (the sub is created in incomplete state
-				// with no payment confirmed yet).
+				// Two activation paths:
+				//   Legacy (default_incomplete flow): prev status was 'incomplete', now 'active'.
+				//   New (SetupIntent flow): subscription.created event with status 'active' directly —
+				//     finalizeSubscription creates subscriptions without default_incomplete, so they
+				//     start active immediately. The 'created' event has no previous_attributes.
 				const prevStatus = (event.data.previous_attributes as { status?: string } | undefined)
 					?.status;
-				const justActivated = prevStatus === 'incomplete' && subscription.status === 'active';
+				const isLegacyActivation = prevStatus === 'incomplete' && subscription.status === 'active';
+				const isFreshlyCreatedActive =
+					event.type === 'customer.subscription.created' && subscription.status === 'active';
+				const justActivated = isLegacyActivation || isFreshlyCreatedActive;
+				// Promote the subscription's saved PM to the customer's invoice_settings.default_payment_method.
+				// This ensures the card survives subscription changes (plan upgrades, interval switches)
+				// and auto-charges future proration invoices without requiring checkout.
+				if (justActivated) {
+					const pmRef = subscription.default_payment_method;
+					if (pmRef) {
+						const pmId = typeof pmRef === 'string' ? pmRef : pmRef.id;
+						try {
+							await stripe.customers.update(customerId, {
+								invoice_settings: { default_payment_method: pmId }
+							});
+						} catch (err) {
+							console.error('[webhook] failed to promote payment method to customer default:', err);
+						}
+					}
+				}
 				const tierForEmail = tierKey ?? vendorRecord.subscriptionTier;
-				if (justActivated && vendorRecord.email && tierForEmail && PAID_TIERS.has(tierForEmail)) {
+				// Only send the welcome email on a genuine Starter→paid transition. Prevents
+				// double-sending when the webhook fires after finalizeSubscription has already
+				// written the tier, and prevents sending on paid→paid plan changes where the
+				// subscription briefly goes through a created/updated cycle.
+				const wasStarter = vendorRecord.subscriptionTier === 'starter';
+				if (
+					justActivated &&
+					wasStarter &&
+					vendorRecord.email &&
+					tierForEmail &&
+					PAID_TIERS.has(tierForEmail)
+				) {
 					const item = subscription.items.data[0];
 					const amount = item?.price?.unit_amount ?? 0;
 					await sendEmail({
@@ -252,6 +284,69 @@ export const POST: RequestHandler = async ({ request }) => {
 				await recordSystemEvent('webhook.subscription_deleted', 'ok', vendorRecord.id, {
 					stripeEventId: event.id
 				});
+				break;
+			}
+
+			case 'invoice.payment_succeeded': {
+				const invoice = event.data.object as Stripe.Invoice;
+				const customerId =
+					typeof invoice.customer === 'string' ? invoice.customer : invoice.customer?.id;
+				if (!customerId) break;
+
+				// Promote the payment method that settled this invoice to the customer's
+				// invoice_settings.default_payment_method. This is a backstop to the
+				// justActivated promotion in customer.subscription.updated — by the time
+				// an invoice is paid, the payment method is definitively known.
+				//
+				// Only promotes when the customer has no default yet, so it's a no-op
+				// on every recurring invoice after the first.
+				let pmId: string | null = null;
+
+				const invoicePm = invoice.default_payment_method;
+				if (invoicePm) {
+					pmId = typeof invoicePm === 'string' ? invoicePm : invoicePm.id;
+				}
+
+				// Fall back to the subscription's default_payment_method.
+				// invoice.subscription is a runtime field not typed in all SDK versions — cast safely.
+				const invoiceSubRef = (
+					invoice as Stripe.Invoice & {
+						subscription?: string | { id: string } | null;
+					}
+				).subscription;
+				if (!pmId && invoiceSubRef) {
+					const subId =
+						typeof invoiceSubRef === 'string' ? invoiceSubRef : invoiceSubRef.id;
+					try {
+						const sub = await stripe.subscriptions.retrieve(subId);
+						const subPm = sub.default_payment_method;
+						if (subPm) pmId = typeof subPm === 'string' ? subPm : subPm.id;
+					} catch (err) {
+						console.error(
+							'[webhook] invoice.payment_succeeded: subscription retrieve failed:',
+							err
+						);
+					}
+				}
+
+				if (pmId) {
+					try {
+						const customer = await stripe.customers.retrieve(customerId);
+						const alreadySet =
+							!customer.deleted && !!customer.invoice_settings?.default_payment_method;
+						if (!alreadySet) {
+							await stripe.customers.update(customerId, {
+								invoice_settings: { default_payment_method: pmId }
+							});
+						}
+					} catch (err) {
+						console.error(
+							'[webhook] invoice.payment_succeeded: failed to promote payment method to customer default:',
+							err
+						);
+					}
+				}
+
 				break;
 			}
 
