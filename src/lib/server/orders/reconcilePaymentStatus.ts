@@ -5,7 +5,7 @@ import { vendor } from '$lib/server/db/vendor';
 import Stripe from 'stripe';
 import { sendEmail } from '$lib/server/email';
 import { customDateOrderRecoveredEmail } from '$lib/server/email/templates/customDateOrderRecovered';
-import { env } from '$env/dynamic/private';
+import { vendorUrl } from '$lib/server/vendor-origin';
 
 type OrderRow = typeof orders.$inferSelect;
 
@@ -70,7 +70,7 @@ export async function reconcilePaymentStatus(order: OrderRow, vendorId: number):
 						scheduledFor: updated.scheduledFor!,
 						vendorTimezone: vendorRecord.timezone ?? 'America/New_York',
 						notes: updated.notes,
-						orderStatusUrl: `${env.ORIGIN}/${vendorRecord.slug}/orders/${updated.id}`
+						orderStatusUrl: vendorUrl(vendorRecord.slug, `/orders/${updated.id}`)
 					})
 				}).catch(console.error);
 			}

@@ -48,7 +48,7 @@
 				or two.
 			</p>
 			<div class="mt-6">
-				<Button href={resolve(`/${vendor.slug}/catalog` as `/${string}`)} variant="outline">
+				<Button href={resolve('/catalog' as `/${string}`)} variant="outline">
 					Back to {vendor.name}
 				</Button>
 			</div>

@@ -86,7 +86,9 @@
 		submitting = true;
 		paymentError = '';
 
-		const returnUrl = `${window.location.origin}/${data.vendor.slug}/orders/${data.order.id}`;
+		// Customer is already on the storefront subdomain; the host implies the vendor,
+		// so the return URL only needs the path.
+		const returnUrl = `${window.location.origin}/orders/${data.order.id}`;
 
 		let stripeError: import('@stripe/stripe-js').StripeError | undefined;
 
@@ -295,7 +297,7 @@
 
 				<div class="mt-3 flex justify-center">
 					<a
-						href={resolve(`/${data.vendor.slug}/cart`)}
+						href={resolve('/cart' as `/${string}`)}
 						class="flex items-center gap-1 text-xs text-muted-foreground transition-colors hover:text-muted-foreground"
 					>
 						<Icon icon="mdi:arrow-left" class="h-3.5 w-3.5" /> Back to cart

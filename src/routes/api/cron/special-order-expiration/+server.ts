@@ -7,6 +7,7 @@ import { vendor } from '$lib/server/db/vendor';
 import { sendEmail } from '$lib/server/email';
 import { specialOrderQuoteExpiredEmail } from '$lib/server/email/templates/specialOrderQuoteExpired';
 import { env } from '$env/dynamic/private';
+import { vendorUrl } from '$lib/server/vendor-origin';
 
 export const GET: RequestHandler = async ({ request }) => {
 	const secret = env.CRON_SECRET;
@@ -70,8 +71,7 @@ export const GET: RequestHandler = async ({ request }) => {
 			});
 
 			if (vendorRecord) {
-				const origin = env.ORIGIN ?? 'https://app.getorderlocal.com';
-				const requestUrl = `${origin}/${vendorRecord.slug}/request`;
+				const requestUrl = vendorUrl(vendorRecord.slug, '/request');
 
 				await sendEmail({
 					to: req.customerEmail,

@@ -54,7 +54,7 @@
 				<p class="truncate text-sm font-semibold text-foreground">{vendor.name}</p>
 			</div>
 			<a
-				href={resolve(`/${vendor.slug}/catalog` as `/${string}`)}
+				href={resolve('/catalog' as `/${string}`)}
 				class="text-xs font-medium text-muted-foreground hover:text-foreground"
 			>
 				← Back to shop
@@ -76,7 +76,7 @@
 					This link is invalid or may have already been used.
 				</p>
 				<div class="mt-6">
-					<Button href={resolve(`/${vendor.slug}/catalog` as `/${string}`)} variant="outline">
+					<Button href={resolve('/catalog' as `/${string}`)} variant="outline">
 						Back to {vendor.name}
 					</Button>
 				</div>
@@ -94,7 +94,7 @@
 					{vendor.name} will be in touch to confirm the details and arrange payment.
 				</p>
 				<div class="mt-6">
-					<Button href={resolve(`/${vendor.slug}/catalog` as `/${string}`)} variant="outline">
+					<Button href={resolve('/catalog' as `/${string}`)} variant="outline">
 						Back to {vendor.name}
 					</Button>
 				</div>
@@ -112,7 +112,7 @@
 					No problem. Feel free to reach out to {vendor.name} if you'd like to discuss other options.
 				</p>
 				<div class="mt-6">
-					<Button href={resolve(`/${vendor.slug}/catalog` as `/${string}`)} variant="outline">
+					<Button href={resolve('/catalog' as `/${string}`)} variant="outline">
 						Back to {vendor.name}
 					</Button>
 				</div>
@@ -130,7 +130,7 @@
 					This quote is no longer available. Contact {vendor.name} to request a new one.
 				</p>
 				<div class="mt-6">
-					<Button href={resolve(`/${vendor.slug}/request` as `/${string}`)} variant="outline">
+					<Button href={resolve('/request' as `/${string}`)} variant="outline">
 						Submit a new request
 					</Button>
 				</div>

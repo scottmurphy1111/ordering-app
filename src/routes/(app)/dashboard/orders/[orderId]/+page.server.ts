@@ -5,8 +5,8 @@ import { eq, and } from 'drizzle-orm';
 import { orders, orderItems } from '$lib/server/db/schema';
 import { vendor } from '$lib/server/db/vendor';
 import Stripe from 'stripe';
-import { env } from '$env/dynamic/private';
 import { sendEmail } from '$lib/server/email';
+import { vendorUrl } from '$lib/server/vendor-origin';
 import { orderReadyEmail } from '$lib/server/email/templates/orderReady';
 import { orderCancelledEmail } from '$lib/server/email/templates/orderCancelled';
 import { orderRefundedEmail } from '$lib/server/email/templates/orderRefunded';
@@ -316,7 +316,7 @@ export const actions: Actions = {
 							total: orderRow.total,
 							scheduledFor: orderRow.scheduledFor,
 							vendorTimezone: vendorRecord.timezone ?? 'America/New_York',
-							orderStatusUrl: `${env.ORIGIN}/${vendorRecord.slug}/orders/${orderRow.id}`
+							orderStatusUrl: vendorUrl(vendorRecord.slug, `/orders/${orderRow.id}`)
 						})
 					}).catch(console.error);
 				}
@@ -352,7 +352,7 @@ export const actions: Actions = {
 						orderNumber: orderRow.orderNumber,
 						customerName: orderRow.customerName ?? 'there',
 						total: orderRow.total,
-						recoveryUrl: `${env.ORIGIN}/${vendorRecord.slug}/orders/${orderRow.id}`
+						recoveryUrl: vendorUrl(vendorRecord.slug, `/orders/${orderRow.id}`)
 					})
 				}).catch(console.error);
 			}
@@ -466,7 +466,7 @@ export const actions: Actions = {
 					proposedDate,
 					proposedReason: reason,
 					vendorTimezone: vendorRecord.timezone ?? 'America/New_York',
-					orderStatusUrl: `${env.ORIGIN}/${vendorRecord.slug}/orders/${orderRow.id}`
+					orderStatusUrl: vendorUrl(vendorRecord.slug, `/orders/${orderRow.id}`)
 				})
 			}).catch(console.error);
 		}

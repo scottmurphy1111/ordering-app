@@ -37,9 +37,7 @@
 
 	onMount(() => {
 		mounted = true;
-		if (data.vendor?.slug) {
-			catalogUrl = `${window.location.origin}${resolve(`/${data.vendor.slug}/catalog`)}`;
-		}
+		catalogUrl = data.catalogUrl ?? '';
 		let interval: ReturnType<typeof setInterval> | null = null;
 		function refresh() {
 			invalidate('app:overview');
@@ -138,15 +136,17 @@
 		</div>
 		{#if data.vendor?.slug}
 			<div class="flex items-center gap-2">
+				<!-- eslint-disable svelte/no-navigation-without-resolve -->
 				<a
 					data-tour="view-catalog"
-					href={resolve(`/${data.vendor.slug}/catalog`)}
+					href={data.catalogUrl ?? ''}
 					target="_blank"
 					rel="noopener noreferrer"
 					class="inline-flex items-center gap-1.5 rounded-md border border-primary px-4 py-2 text-sm font-semibold text-primary transition-colors hover:bg-primary/5"
 				>
 					Open live catalog <Icon icon="mdi:open-in-new" class="h-3.5 w-3.5" />
 				</a>
+				<!-- eslint-enable svelte/no-navigation-without-resolve -->
 			</div>
 		{/if}
 	</div>

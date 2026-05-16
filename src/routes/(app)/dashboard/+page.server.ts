@@ -1,5 +1,6 @@
 import type { PageServerLoad } from './$types';
 import { db } from '$lib/server/db';
+import { vendorUrl } from '$lib/server/vendor-origin';
 import { eq, sql, and, gte, lt, ne, asc, desc, sum } from 'drizzle-orm';
 import {
 	catalogItems,
@@ -214,6 +215,7 @@ export const load: PageServerLoad = async ({ locals, depends }) => {
 			dayAfterDate: dayAfterStart
 		},
 		vendorTimezone: locals.vendor?.timezone ?? 'America/New_York',
-		recentOrders
+		recentOrders,
+		catalogUrl: locals.vendor?.slug ? vendorUrl(locals.vendor.slug, '/catalog') : null
 	};
 };
