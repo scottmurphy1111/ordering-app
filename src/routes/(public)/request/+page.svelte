@@ -60,7 +60,7 @@
 				<p class="truncate text-sm font-semibold text-foreground">{vendor.name}</p>
 			</div>
 			<a
-				href={resolve(`/${vendor.slug}/catalog` as `/${string}`)}
+				href={resolve('/catalog' as `/${string}`)}
 				class="text-xs font-medium text-muted-foreground hover:text-foreground"
 			>
 				← Back to shop

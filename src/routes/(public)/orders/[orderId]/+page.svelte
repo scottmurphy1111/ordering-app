@@ -100,7 +100,7 @@
 	<header style="background-color: var(--background-color);">
 		<div class="mx-auto max-w-lg px-4 py-4">
 			<a
-				href={resolve(`/${data.vendorSlug}/catalog`)}
+				href={resolve('/catalog' as `/${string}`)}
 				class="inline-flex items-center gap-1 text-sm font-medium transition-opacity hover:opacity-75"
 				style="color: var(--foreground-color);"
 			>
@@ -477,7 +477,7 @@
 		{/if}
 
 		<a
-			href={resolve(`/${data.vendorSlug}/catalog`)}
+			href={resolve('/catalog' as `/${string}`)}
 			style="background-color: var(--background-color); color: var(--foreground-color);"
 			class="block w-full rounded-xl px-6 py-3 text-center text-sm font-semibold shadow-sm transition-opacity hover:opacity-90"
 		>

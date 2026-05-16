@@ -12,11 +12,9 @@
 
 	let {
 		windows,
-		vendorSlug,
 		vendorTimezone
 	}: {
 		windows: UpcomingWindow[];
-		vendorSlug: string;
 		vendorTimezone: string;
 	} = $props();
 
@@ -49,7 +47,7 @@
 			</h2>
 			{#if hasMore}
 				<a
-					href={resolve(`/${vendorSlug}/cart`)}
+					href={resolve('/cart' as `/${string}`)}
 					class="text-xs font-medium text-primary hover:underline"
 				>
 					See all

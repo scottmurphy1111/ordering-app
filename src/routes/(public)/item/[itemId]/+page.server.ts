@@ -46,5 +46,5 @@ export const load: PageServerLoad = async ({ locals, params }) => {
 			}))
 		}));
 
-	return { item, modifierGroups, vendorSlug: params.vendorSlug };
+	return { item, modifierGroups };
 };

@@ -106,6 +106,10 @@
 		cancelled: 'bg-red-100 text-red-600'
 	};
 
+	// Tracks which billing action is currently in flight. Set when a form submits,
+	// cleared when the action completes (failure path only — success paths navigate away).
+	let submittingAction = $state<string | null>(null);
+
 	// --- Refund account credit modal ---
 	let pendingRefundCreditOpen = $state(false);
 
@@ -320,7 +324,8 @@
 			{#if data.billingInterval === 'annual'}
 				You've switched to annual billing. The prorated charge has been billed to your card on file.
 			{:else}
-				You've switched to monthly billing. A prorated credit has been applied to your account — it'll offset your upcoming monthly invoices automatically.
+				You've switched to monthly billing. A prorated credit has been applied to your account —
+				it'll offset your upcoming monthly invoices automatically.
 			{/if}
 		</Alert>
 	{/if}
@@ -478,22 +483,31 @@
 						<form
 							method="post"
 							action="?/resumeSubscription"
-							use:enhance={() =>
-								async ({ result, update }) => {
+							use:enhance={() => {
+								submittingAction = 'resume';
+								return async ({ result, update }) => {
 									if (result.type === 'redirect') {
 										window.location.href = result.location;
-									} else {
-										await update({ invalidateAll: true });
+										return;
 									}
-								}}
+									submittingAction = null;
+									await update({ invalidateAll: true });
+								};
+							}}
 						>
 							<Button
 								type="submit"
 								variant="outline"
+								disabled={submittingAction !== null}
 								class="gap-1.5 border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100 hover:text-amber-900"
 							>
-								<Icon icon="mdi:play-circle-outline" class="h-3.5 w-3.5" />
-								Resume now
+								{#if submittingAction === 'resume'}
+									<Icon icon="mdi:loading" class="h-3.5 w-3.5 animate-spin" />
+									Resuming...
+								{:else}
+									<Icon icon="mdi:play-circle-outline" class="h-3.5 w-3.5" />
+									Resume now
+								{/if}
 							</Button>
 						</form>
 					</CardFooter>
@@ -502,22 +516,31 @@
 						<form
 							method="post"
 							action="?/reactivate"
-							use:enhance={() =>
-								async ({ result, update }) => {
+							use:enhance={() => {
+								submittingAction = 'reactivate';
+								return async ({ result, update }) => {
 									if (result.type === 'success') {
 										window.location.href = resolve('/dashboard/account/billing') + '?reactivated=1';
-									} else {
-										await update({ invalidateAll: true });
+										return;
 									}
-								}}
+									submittingAction = null;
+									await update({ invalidateAll: true });
+								};
+							}}
 						>
 							<Button
 								type="submit"
 								variant="outline"
+								disabled={submittingAction !== null}
 								class="gap-1.5 border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100 hover:text-amber-900"
 							>
-								<Icon icon="mdi:undo-variant" class="h-3.5 w-3.5" />
-								Don't cancel — keep {tierInfo.name}
+								{#if submittingAction === 'reactivate'}
+									<Icon icon="mdi:loading" class="h-3.5 w-3.5 animate-spin" />
+									Saving...
+								{:else}
+									<Icon icon="mdi:undo-variant" class="h-3.5 w-3.5" />
+									Don't cancel — keep {tierInfo.name}
+								{/if}
 							</Button>
 						</form>
 					</CardFooter>
@@ -1007,20 +1030,39 @@
 				</p>
 			</div>
 			<DialogFooter class="flex gap-3 sm:flex-row">
-				<Button type="button" onclick={closeModal} variant="outline" class="flex-1">Cancel</Button>
+				<Button
+					type="button"
+					onclick={closeModal}
+					variant="outline"
+					class="flex-1"
+					disabled={submittingAction !== null}
+				>
+					Cancel
+				</Button>
 				<form
 					method="post"
 					action={isActivate ? '?/activateAddon' : '?/deactivateAddon'}
-					use:enhance={() =>
-						({ update }) => {
+					use:enhance={() => {
+						submittingAction = 'addon';
+						return async ({ update }) => {
+							submittingAction = null;
 							pendingAddon = null;
-							update();
-						}}
+							await update({ invalidateAll: true });
+						};
+					}}
 					class="flex-1"
 				>
 					<input type="hidden" name="key" value={pendingAddon.key} />
-					<Button type="submit" variant={isActivate ? 'default' : 'destructive'} class="w-full">
-						{#if isActivate}
+					<Button
+						type="submit"
+						variant={isActivate ? 'default' : 'destructive'}
+						class="w-full"
+						disabled={submittingAction !== null}
+					>
+						{#if submittingAction === 'addon'}
+							<Icon icon="mdi:loading" class="h-3.5 w-3.5 animate-spin" />
+							{isActivate ? 'Activating...' : 'Removing...'}
+						{:else if isActivate}
 							Confirm — {fmtMoney(proration ?? pendingAddon.price)} today
 						{:else}
 							Confirm removal
@@ -1128,6 +1170,7 @@
 					onclick={() => (pendingCancelOpen = false)}
 					variant="outline"
 					class="flex-1"
+					disabled={submittingAction !== null}
 				>
 					Keep plan
 				</Button>
@@ -1135,6 +1178,7 @@
 					method="post"
 					action={cancelChoice === 'immediate_refund' ? '?/cancelImmediate' : '?/downgrade'}
 					use:enhance={() => {
+						submittingAction = 'cancel';
 						const wasImmediate = cancelChoice === 'immediate_refund';
 						return async ({ result, update }) => {
 							pendingCancelOpen = false;
@@ -1142,18 +1186,29 @@
 								window.location.href =
 									resolve('/dashboard/account/billing') +
 									(wasImmediate ? '?refunded=1' : '?downgraded=1');
-							} else {
-								await update({ invalidateAll: true });
+								return;
 							}
+							submittingAction = null;
+							await update({ invalidateAll: true });
 						};
 					}}
 					class="flex-1"
 				>
 					<input type="hidden" name="planKey" value="starter" />
-					<Button type="submit" variant="destructive" class="w-full">
-						{cancelChoice === 'immediate_refund' && cancelPreview
-							? `Cancel & refund ${fmtMoney(cancelPreview.refundCents / 100)}`
-							: 'Downgrade to Starter'}
+					<Button
+						type="submit"
+						variant="destructive"
+						class="w-full"
+						disabled={submittingAction !== null}
+					>
+						{#if submittingAction === 'cancel'}
+							<Icon icon="mdi:loading" class="h-3.5 w-3.5 animate-spin" />
+							{cancelChoice === 'immediate_refund' ? 'Cancelling...' : 'Downgrading...'}
+						{:else if cancelChoice === 'immediate_refund' && cancelPreview}
+							Cancel & refund {fmtMoney(cancelPreview.refundCents / 100)}
+						{:else}
+							Downgrade to Starter
+						{/if}
 					</Button>
 				</form>
 			</DialogFooter>
@@ -1294,13 +1349,20 @@
 			</div>
 
 			<DialogFooter class="flex gap-3 sm:flex-row">
-				<Button type="button" onclick={closeIntervalSwitchModal} variant="outline" class="flex-1">
+				<Button
+					type="button"
+					onclick={closeIntervalSwitchModal}
+					variant="outline"
+					class="flex-1"
+					disabled={submittingAction !== null}
+				>
 					Cancel
 				</Button>
 				<form
 					method="post"
 					action="?/switchInterval"
 					use:enhance={() => {
+						submittingAction = 'switchInterval';
 						const wasSwitchingToAnnual = target === 'annual';
 						const choiceAtSubmit = intervalSwitchChoice;
 						return async ({ result, update }) => {
@@ -1312,9 +1374,10 @@
 										? 'switched=refund'
 										: 'switched=1';
 								window.location.href = resolve('/dashboard/account/billing') + '?' + flag;
-							} else {
-								await update({ invalidateAll: true });
+								return;
 							}
+							submittingAction = null;
+							await update({ invalidateAll: true });
 						};
 					}}
 					class="flex-1"
@@ -1323,8 +1386,16 @@
 					{#if !switchingToAnnual}
 						<input type="hidden" name="switchChoice" value={intervalSwitchChoice} />
 					{/if}
-					<Button type="submit" variant="default" class="w-full">
-						{#if switchingToAnnual}
+					<Button
+						type="submit"
+						variant="default"
+						class="w-full"
+						disabled={submittingAction !== null}
+					>
+						{#if submittingAction === 'switchInterval'}
+							<Icon icon="mdi:loading" class="h-3.5 w-3.5 animate-spin" />
+							Switching...
+						{:else if switchingToAnnual}
 							Confirm annual billing
 						{:else if intervalSwitchChoice === 'refund' && cancelPreview && cancelPreview.refundCents > 0}
 							Confirm & refund {fmtMoney(cancelPreview.refundCents / 100)}
@@ -1415,21 +1486,30 @@
 			</div>
 
 			<DialogFooter class="flex gap-3 sm:flex-row">
-				<Button type="button" onclick={closePauseModal} variant="outline" class="flex-1">
+				<Button
+					type="button"
+					onclick={closePauseModal}
+					variant="outline"
+					class="flex-1"
+					disabled={submittingAction !== null}
+				>
 					Cancel
 				</Button>
 				<form
 					method="post"
 					action="?/pauseSubscription"
-					use:enhance={() =>
-						async ({ result, update }) => {
+					use:enhance={() => {
+						submittingAction = 'pause';
+						return async ({ result, update }) => {
 							closePauseModal();
 							if (result.type === 'redirect') {
 								window.location.href = result.location;
-							} else {
-								await update({ invalidateAll: true });
+								return;
 							}
-						}}
+							submittingAction = null;
+							await update({ invalidateAll: true });
+						};
+					}}
 					class="flex-1"
 				>
 					<input type="hidden" name="pauseUntilDate" value={computePauseDate()} />
@@ -1437,13 +1517,18 @@
 						type="submit"
 						variant="default"
 						class="w-full"
-						disabled={pauseDuration === 'custom' && !pauseCustomDate}
+						disabled={submittingAction !== null || (pauseDuration === 'custom' && !pauseCustomDate)}
 					>
-						Pause until {pauseDuration !== 'custom'
-							? fmtDate(computePauseDate())
-							: pauseCustomDate
-								? fmtDate(pauseCustomDate)
-								: '…'}
+						{#if submittingAction === 'pause'}
+							<Icon icon="mdi:loading" class="h-3.5 w-3.5 animate-spin" />
+							Pausing...
+						{:else}
+							Pause until {pauseDuration !== 'custom'
+								? fmtDate(computePauseDate())
+								: pauseCustomDate
+									? fmtDate(pauseCustomDate)
+									: '…'}
+						{/if}
 					</Button>
 				</form>
 			</DialogFooter>
@@ -1641,25 +1726,35 @@
 			</div>
 
 			<DialogFooter class="flex gap-3 sm:flex-row">
-				<Button type="button" onclick={closePlanChangeModal} variant="outline" class="flex-1">
+				<Button
+					type="button"
+					onclick={closePlanChangeModal}
+					variant="outline"
+					class="flex-1"
+					disabled={submittingAction !== null}
+				>
 					{isUpgrade ? 'Cancel' : 'Keep current plan'}
 				</Button>
 				<form
 					method="post"
 					action={isUpgrade ? '?/upgrade' : '?/downgrade'}
-					use:enhance={() =>
-						async ({ result, update }) => {
+					use:enhance={() => {
+						submittingAction = 'planChange';
+						return async ({ result, update }) => {
 							const wasUpgrade = isUpgrade;
 							pendingPlanChange = null;
 							if (result.type === 'redirect') {
 								window.location.href = result.location;
+								return;
 							} else if (result.type === 'success') {
 								const flag = wasUpgrade ? 'upgraded=1' : 'downgraded=1';
 								window.location.href = resolve('/dashboard/account/billing') + `?${flag}`;
-							} else {
-								await update({ invalidateAll: true });
+								return;
 							}
-						}}
+							submittingAction = null;
+							await update({ invalidateAll: true });
+						};
+					}}
 					class="flex-1"
 				>
 					<input type="hidden" name="planKey" value={pendingPlanChange.targetTierKey} />
@@ -1670,8 +1765,12 @@
 						class="w-full {isUpgrade
 							? ''
 							: 'bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700'}"
+						disabled={submittingAction !== null}
 					>
-						{#if isUpgrade}
+						{#if submittingAction === 'planChange'}
+							<Icon icon="mdi:loading" class="h-3.5 w-3.5 animate-spin" />
+							{isUpgrade ? 'Upgrading...' : 'Downgrading...'}
+						{:else if isUpgrade}
 							{data.hasStripeSubscription ? 'Confirm upgrade' : 'Continue to payment →'}
 						{:else}
 							Confirm downgrade
@@ -1726,26 +1825,34 @@
 					onclick={() => (pendingRefundCreditOpen = false)}
 					variant="outline"
 					class="flex-1"
+					disabled={submittingAction !== null}
 				>
 					Cancel
 				</Button>
 				<form
 					method="post"
 					action="?/refundAccountCredit"
-					use:enhance={() =>
-						async ({ result, update }) => {
+					use:enhance={() => {
+						submittingAction = 'refundCredit';
+						return async ({ result, update }) => {
 							pendingRefundCreditOpen = false;
 							if (result.type === 'success') {
-								window.location.href =
-									resolve('/dashboard/account/billing') + '?credit_refunded=1';
-							} else {
-								await update({ invalidateAll: true });
+								window.location.href = resolve('/dashboard/account/billing') + '?credit_refunded=1';
+								return;
 							}
-						}}
+							submittingAction = null;
+							await update({ invalidateAll: true });
+						};
+					}}
 					class="flex-1"
 				>
-					<Button type="submit" class="w-full">
-						Refund ${(data.accountCreditCents / 100).toFixed(2)}
+					<Button type="submit" class="w-full" disabled={submittingAction !== null}>
+						{#if submittingAction === 'refundCredit'}
+							<Icon icon="mdi:loading" class="h-3.5 w-3.5 animate-spin" />
+							Refunding...
+						{:else}
+							Refund ${(data.accountCreditCents / 100).toFixed(2)}
+						{/if}
 					</Button>
 				</form>
 			</DialogFooter>

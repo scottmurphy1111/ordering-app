@@ -1,14 +1,17 @@
 <script lang="ts">
+	import type { PageData } from './$types';
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
 	import Icon from '@iconify/svelte';
+
+	let { data }: { data: PageData } = $props();
 	import QRCode from 'qrcode';
 	import { Button } from '$lib/components/ui/button';
 	import { Badge } from '$lib/components/ui/badge';
 	import { Card, CardContent } from '$lib/components/ui/card';
 
 	const vendor = $derived(page.data.vendor);
-	const catalogUrl = $derived(vendor?.slug ? `${page.url.origin}/${vendor.slug}/catalog` : '');
+	const catalogUrl = $derived(data.catalogUrl ?? '');
 
 	// ── Catalog QR ───────────────────────────────────────────────────────────
 	const qrDataUrl = $derived(
@@ -327,11 +330,7 @@
 								<Button onclick={downloadCatalogQr} variant="default" class="gap-2">
 									<Icon icon="mdi:download" class="h-4 w-4" /> Download PNG
 								</Button>
-								<Button
-									href={resolve(`/${vendor.slug}/catalog` as `/${string}`)}
-									variant="outline"
-									class="gap-2"
-								>
+								<Button href={data.catalogUrl} variant="outline" class="gap-2">
 									<Icon icon="mdi:open-in-new" class="h-4 w-4" /> Preview catalog
 								</Button>
 							</div>

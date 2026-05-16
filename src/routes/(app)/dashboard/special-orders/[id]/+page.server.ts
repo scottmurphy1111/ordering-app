@@ -7,7 +7,7 @@ import { orders } from '$lib/server/db/schema';
 import { requireStaff } from '$lib/server/roles';
 import { sendEmail } from '$lib/server/email';
 import { specialOrderQuoteSentEmail } from '$lib/server/email/templates/specialOrderQuoteSent';
-import { env } from '$env/dynamic/private';
+import { vendorUrl } from '$lib/server/vendor-origin';
 
 function generateToken(): string {
 	const bytes = crypto.getRandomValues(new Uint8Array(16));
@@ -78,7 +78,6 @@ export const actions: Actions = {
 		}
 
 		const token = generateToken();
-		const origin = env.ORIGIN ?? 'https://app.getorderlocal.com';
 		const vendorSlug = locals.vendor!.slug;
 
 		const [quote] = await db
@@ -99,8 +98,8 @@ export const actions: Actions = {
 			.where(and(eq(specialOrderRequests.id, id), eq(specialOrderRequests.vendorId, vendorId)));
 
 		const vendor = locals.vendor!;
-		const acceptUrl = `${origin}/${vendorSlug}/quote/${token}`;
-		const declineUrl = `${origin}/${vendorSlug}/quote/${token}?action=decline`;
+		const acceptUrl = vendorUrl(vendorSlug, `/quote/${token}`);
+		const declineUrl = `${vendorUrl(vendorSlug, `/quote/${token}`)}?action=decline`;
 
 		try {
 			const html = specialOrderQuoteSentEmail({

@@ -5,6 +5,7 @@ import { eq, isNull } from 'drizzle-orm';
 import { vendor, vendorUsers } from '$lib/server/db/schema';
 import { seedVendorWithArchetype } from '$lib/server/seed/seed';
 import { ARCHETYPES } from '$lib/server/seed/archetypes/index';
+import { isReservedSubdomain } from '$lib/server/reserved-subdomains';
 
 function canCreateVendor(isInternal: boolean, userVendors: Array<{ role: string }>) {
 	if (isInternal) return true;
@@ -132,6 +133,8 @@ export const actions: Actions = {
 		if (!slug) return fail(400, { error: 'Slug is required' });
 		if (!/^[a-z0-9-]+$/.test(slug))
 			return fail(400, { error: 'Slug may only contain lowercase letters, numbers, and hyphens' });
+		if (isReservedSubdomain(slug))
+			return fail(400, { error: 'That slug is reserved. Please choose a different one.' });
 
 		try {
 			new Intl.DateTimeFormat('en-US', { timeZone: timezone });

@@ -7,6 +7,7 @@ import { getRequestEvent } from '$app/server';
 import { db } from '$lib/server/db';
 import { sendEmail } from '$lib/server/email';
 import { emailWrapper } from '$lib/server/email/base';
+import { dev } from '$app/environment';
 
 // Netlify provides URL (the deploy-specific URL) and DEPLOY_PRIME_URL for previews.
 // Fall back through them so OAuth redirects work on deploy previews too.
@@ -14,9 +15,12 @@ const baseURL = env.ORIGIN || env.URL || env.DEPLOY_PRIME_URL;
 
 export const auth = betterAuth({
 	baseURL,
-	trustedOrigins: [baseURL, 'https://getorderlocal.com', 'https://order-local.netlify.app'].filter(
-		(s): s is string => Boolean(s)
-	),
+	trustedOrigins: [
+		baseURL,
+		'https://getorderlocal.com',
+		'https://order-local.netlify.app',
+		...(dev ? ['http://localhost:5173', 'http://127.0.0.1:5173'] : [])
+	].filter((s): s is string => Boolean(s)),
 	secret: env.BETTER_AUTH_SECRET,
 	database: drizzleAdapter(db, { provider: 'pg' }),
 

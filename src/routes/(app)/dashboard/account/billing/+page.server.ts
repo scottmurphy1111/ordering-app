@@ -21,6 +21,7 @@ import { subscriptionCancellationScheduledEmail } from '$lib/server/email/templa
 import { subscriptionCancellationImmediateEmail } from '$lib/server/email/templates/subscriptionCancellationImmediate';
 import { subscriptionAddonChangedEmail } from '$lib/server/email/templates/subscriptionAddonChanged';
 import { accountCreditRefundedEmail } from '$lib/server/email/templates/accountCreditRefunded';
+import { subscriptionReactivatedEmail } from '$lib/server/email/templates/subscriptionReactivated';
 import { requireStaff } from '$lib/server/roles';
 import type Stripe from 'stripe';
 import {
@@ -770,7 +771,13 @@ export const actions: Actions = {
 		const vendorId = locals.vendorId!;
 		const record = await db.query.vendor.findFirst({
 			where: eq(vendor.id, vendorId),
-			columns: { stripeSubscriptionId: true, subscriptionEndsAt: true }
+			columns: {
+				stripeSubscriptionId: true,
+				subscriptionEndsAt: true,
+				email: true,
+				name: true,
+				subscriptionTier: true
+			}
 		});
 		if (!record?.stripeSubscriptionId) return fail(400, { error: 'No active subscription.' });
 		if (!record.subscriptionEndsAt) return fail(400, { error: 'No cancellation scheduled.' });
@@ -783,6 +790,18 @@ export const actions: Actions = {
 			.update(vendor)
 			.set({ subscriptionEndsAt: null, updatedAt: new Date() })
 			.where(eq(vendor.id, vendorId));
+		if (record.email && record.subscriptionTier) {
+			const planName =
+				record.subscriptionTier.charAt(0).toUpperCase() + record.subscriptionTier.slice(1);
+			await sendEmail({
+				to: record.email,
+				subject: `Your Order Local ${planName} subscription is staying active`,
+				html: subscriptionReactivatedEmail({
+					recipientName: record.name,
+					planName
+				})
+			}).catch(console.error);
+		}
 		return { success: true, reactivated: true };
 	},
 

@@ -420,7 +420,7 @@
 					return;
 				}
 				await goto(
-					resolve(`/${data.vendorSlug}/checkout?orderId=${result.orderId}` as `/${string}`)
+					resolve(`/checkout?orderId=${result.orderId}` as `/${string}`)
 				);
 				cart.clear();
 			} else {
@@ -509,7 +509,7 @@
 						return;
 					}
 					await goto(
-						resolve(`/${data.vendorSlug}/checkout?orderId=${result.orderId}` as `/${string}`)
+						resolve(`/checkout?orderId=${result.orderId}` as `/${string}`)
 					);
 					cart.clear();
 				}
@@ -530,7 +530,7 @@
 	<header style="background-color: var(--background-color);">
 		<div class="mx-auto flex max-w-lg items-center justify-between px-4 py-4">
 			<a
-				href={resolve(`/${data.vendorSlug}/catalog`)}
+				href={resolve('/catalog' as `/${string}`)}
 				class="inline-flex items-center gap-1 text-sm font-medium transition-opacity hover:opacity-75"
 				style="color: var(--foreground-color);"
 			>
@@ -643,7 +643,7 @@
 			<div class="rounded-xl border border-dashed p-12 text-center">
 				<p class="mb-3 text-muted-foreground">Your cart is empty.</p>
 				<a
-					href={resolve(`/${data.vendorSlug}/catalog`)}
+					href={resolve('/catalog' as `/${string}`)}
 					class="text-sm font-medium transition-opacity hover:opacity-75"
 					style="color: var(--background-color);"
 				>

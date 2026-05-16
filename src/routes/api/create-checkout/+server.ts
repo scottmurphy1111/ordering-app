@@ -1,7 +1,7 @@
 import { error, json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import Stripe from 'stripe';
-import { env } from '$env/dynamic/private';
+import { vendorUrl } from '$lib/server/vendor-origin';
 import { db } from '$lib/server/db';
 import { eq, and, sql } from 'drizzle-orm';
 import { vendor } from '$lib/server/db/vendor';
@@ -29,8 +29,6 @@ function itemUnitPrice(item: CartItem): number {
 }
 
 export const POST: RequestHandler = async ({ request }) => {
-	const origin = env.ORIGIN;
-
 	const body = (await request.json()) as {
 		vendorSlug: string;
 		items: CartItem[];
@@ -233,8 +231,8 @@ export const POST: RequestHandler = async ({ request }) => {
 			mode: 'subscription',
 			line_items: subLineItems,
 			...(customer.email ? { customer_email: customer.email } : {}),
-			success_url: `${origin}/${vendorSlug}/orders/${newOrder.id}?session_id={CHECKOUT_SESSION_ID}`,
-			cancel_url: `${origin}/${vendorSlug}/cart`,
+			success_url: `${vendorUrl(vendorSlug, `/orders/${newOrder.id}`)}?session_id={CHECKOUT_SESSION_ID}`,
+			cancel_url: vendorUrl(vendorSlug, '/cart'),
 			metadata: { orderId: String(newOrder.id), vendorSlug, isSubscription: 'true' }
 		});
 
@@ -286,8 +284,8 @@ export const POST: RequestHandler = async ({ request }) => {
 			line_items: lineItems,
 			...(stripeCouponId ? { discounts: [{ coupon: stripeCouponId }] } : {}),
 			...(customer.email ? { customer_email: customer.email } : {}),
-			success_url: `${origin}/${vendorSlug}/orders/${newOrder.id}?session_id={CHECKOUT_SESSION_ID}`,
-			cancel_url: `${origin}/${vendorSlug}/cart`,
+			success_url: `${vendorUrl(vendorSlug, `/orders/${newOrder.id}`)}?session_id={CHECKOUT_SESSION_ID}`,
+			cancel_url: vendorUrl(vendorSlug, '/cart'),
 			metadata: { orderId: String(newOrder.id), vendorSlug }
 		});
 

@@ -29,11 +29,11 @@ export const load: PageServerLoad = async ({ locals, params, depends }) => {
 		where: eq(orderItems.orderId, orderId)
 	});
 
-	return { order, items, vendorSlug: params.vendorSlug };
+	return { order, items };
 };
 
 export const actions: Actions = {
-	recoverPayment: async ({ request, locals, params }) => {
+	recoverPayment: async ({ request, locals }) => {
 		const vendorId = locals.vendorId!;
 		const formData = await request.formData();
 		const id = parseInt(formData.get('id')?.toString() ?? '');
@@ -59,7 +59,7 @@ export const actions: Actions = {
 			// has automatic_payment_methods enabled via its payment_method_configuration, which
 			// causes Stripe to ignore any payment_method parameter at PI creation. The saved PM
 			// is surfaced to the customer via a Customer Session created in the checkout page
-			// load — see (public)/[vendorSlug]/checkout/+page.server.ts.
+			// load — see (public)/checkout/+page.server.ts.
 			const pi = await stripe.paymentIntents.create({
 				amount: order.total,
 				currency: 'usd',
@@ -68,7 +68,7 @@ export const actions: Actions = {
 				...(order.customerEmail ? { receipt_email: order.customerEmail } : {}),
 				metadata: {
 					orderId: String(order.id),
-					vendorSlug: params.vendorSlug,
+					vendorSlug: vendorRecord.slug,
 					orderNumber: order.orderNumber
 				}
 			});
@@ -87,7 +87,7 @@ export const actions: Actions = {
 			});
 		}
 
-		throw redirect(303, `/${params.vendorSlug}/checkout?orderId=${id}`);
+		throw redirect(303, `/checkout?orderId=${id}`);
 	},
 
 	acceptAlternate: async ({ locals, request }) => {

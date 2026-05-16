@@ -5,7 +5,7 @@ import { catalogItems, catalogCategories } from '$lib/server/db/schema';
 import { vendorHours, vendorHoursExceptions } from '$lib/server/db/vendor-hours';
 import { pickupWindows, pickupLocations } from '$lib/server/db/pickup';
 
-export const load: PageServerLoad = async ({ locals, params }) => {
+export const load: PageServerLoad = async ({ locals }) => {
 	const vendorId = locals.vendorId!;
 	const vendor = locals.vendor!;
 
@@ -89,7 +89,7 @@ export const load: PageServerLoad = async ({ locals, params }) => {
 		categories,
 		items,
 		itemsByCategory: Object.fromEntries(itemsByCategory),
-		vendorSlug: params.vendorSlug,
+		vendorSlug: vendor.slug,
 		hours,
 		exceptions,
 		upcomingWindows

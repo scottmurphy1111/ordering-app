@@ -15,7 +15,7 @@
 
 	let { data }: { data: PageData } = $props();
 
-	onMount(() => cart.init(data.vendorSlug));
+	onMount(() => cart.init(data.vendor.slug));
 
 	const modifierGroups = $derived(data.modifierGroups);
 	const isPaused = $derived(!!data.vendor.subscriptionPausedAt);
@@ -99,7 +99,7 @@
 			}
 		}
 
-		goto(resolve(`/${data.vendorSlug}/catalog`));
+		goto(resolve('/catalog' as `/${string}`));
 	}
 </script>
 
@@ -112,7 +112,7 @@
 	<header style="background-color: var(--background-color);">
 		<div class="mx-auto max-w-lg px-4 py-4">
 			<a
-				href={resolve(`/${data.vendorSlug}/catalog`)}
+				href={resolve('/catalog' as `/${string}`)}
 				class="inline-flex items-center gap-1 text-sm font-medium transition-opacity hover:opacity-75"
 				style="color: var(--foreground-color);"
 			>

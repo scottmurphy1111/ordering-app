@@ -6,6 +6,9 @@ import { sveltekit } from '@sveltejs/kit/vite';
 
 export default defineConfig({
 	plugins: [tailwindcss(), sveltekit(), devtoolsJson()],
+	server: {
+		host: true // bind to all interfaces — accepts localhost, 127.0.0.1, *.localhost, LAN IP
+	},
 	ssr: {
 		noExternal: ['bits-ui', 'svelte-sonner', 'mode-watcher', 'rrule']
 	},

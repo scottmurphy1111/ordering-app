@@ -13,6 +13,7 @@ import { customDateOrderRecoveredEmail } from '$lib/server/email/templates/custo
 import { specialOrderAcceptedEmail } from '$lib/server/email/templates/specialOrderAccepted';
 import { specialOrderAcceptedVendorEmail } from '$lib/server/email/templates/specialOrderAcceptedVendor';
 import { sendSms } from '$lib/server/sms';
+import { vendorUrl } from '$lib/server/vendor-origin';
 import { env } from '$env/dynamic/private';
 import type { PickupWindowSnapshot } from '$lib/server/pickup/checkout';
 import { HORIZON_DAYS } from '$lib/server/pickup/lifecycle';
@@ -84,7 +85,7 @@ type VendorCtx = {
 };
 
 function orderUrl(vendorSlug: string, orderId: number) {
-	return `${env.ORIGIN}/${vendorSlug}/orders/${orderId}`;
+	return vendorUrl(vendorSlug, `/orders/${orderId}`);
 }
 
 async function handleEvent(event: Stripe.Event, ctx: VendorCtx) {

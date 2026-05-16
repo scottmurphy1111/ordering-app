@@ -195,7 +195,7 @@ export const actions: Actions = {
 			.set({ state: 'accepted', updatedAt: new Date() })
 			.where(eq(specialOrderRequests.id, requestRow.id));
 
-		throw redirect(303, `/${params.vendorSlug}/checkout?orderId=${order.id}`);
+		throw redirect(303, `/checkout?orderId=${order.id}`);
 	},
 
 	decline: async ({ params, locals }) => {

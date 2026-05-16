@@ -4,7 +4,7 @@ import { db } from '$lib/server/db';
 import { vendorHours, vendorHoursExceptions } from '$lib/server/db/vendor-hours';
 import { getAvailableWindows } from '$lib/server/pickup/checkout';
 
-export const load: PageServerLoad = async ({ params, locals }) => {
+export const load: PageServerLoad = async ({ locals }) => {
 	const vendorId = locals.vendorId!;
 	const vendor = locals.vendor!;
 
@@ -24,7 +24,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 	]);
 
 	return {
-		vendorSlug: params.vendorSlug,
+		vendorSlug: vendor.slug,
 		availableWindows,
 		hours,
 		exceptions

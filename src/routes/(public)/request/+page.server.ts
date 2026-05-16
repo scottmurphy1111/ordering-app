@@ -20,7 +20,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 };
 
 export const actions: Actions = {
-	submit: async ({ request, locals, params }) => {
+	submit: async ({ request, locals }) => {
 		const vendor = locals.vendor;
 		if (!vendor) return fail(400, { error: 'Vendor not found.' });
 
@@ -133,6 +133,6 @@ export const actions: Actions = {
 			})
 		}).catch(console.error);
 
-		throw redirect(303, `/${params.vendorSlug}/request/sent`);
+		throw redirect(303, '/request/sent');
 	}
 };
