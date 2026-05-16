@@ -32,7 +32,8 @@ export async function runResumeDue(): Promise<{ processed: number; errors: strin
 			if (v.stripeSubscriptionId) {
 				const stripe = getOrderLocalStripe();
 				await stripe.subscriptions.update(v.stripeSubscriptionId, {
-					pause_collection: '' as Stripe.Emptyable<Stripe.SubscriptionUpdateParams.PauseCollection>
+					pause_collection: '' as Stripe.Emptyable<Stripe.SubscriptionUpdateParams.PauseCollection>,
+					metadata: { pause_until: '', paused_at: '' }
 				});
 			}
 

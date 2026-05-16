@@ -77,73 +77,86 @@ export const load: PageServerLoad = async ({ locals }) => {
 		type: 'invoice' | 'credit_note' | 'refund';
 	}> = [];
 
-	if (vendorRecord?.stripeSubscriptionId) {
+	if (vendorRecord?.stripeCustomerId) {
 		const stripe = getOrderLocalStripe();
 
-		// 1. Subscription retrieve (critical — carries billingInterval).
-		// Rarely fails for a real subscription. If it does (deleted on Stripe),
-		// the page still renders with empty billing details.
+		// subscription is hoisted here so the customer-scoped block below can read
+		// it for subDefaultId resolution. For ex-paid Starter vendors (no active
+		// subscription) it stays null — the resolution chain falls through to
+		// customerDefaultId or first card, which is correct.
 		let subscription: Stripe.Subscription | null = null;
-		try {
-			subscription = await stripe.subscriptions.retrieve(vendorRecord.stripeSubscriptionId, {
-				expand: ['items']
-			});
-		} catch (err) {
-			console.error('[billing load] subscription retrieve failed:', err);
-		}
 
-		if (subscription) {
-			const planItem =
-				subscription.items.data.find((i) => {
-					const meta = i.price.metadata?.type;
-					return meta === 'plan' || !meta;
-				}) ?? subscription.items.data[0];
-			// billingInterval from the subscription's own price — NOT gated behind createPreview.
-			// Must stay correct even when the preview call fails (e.g. cancel_at_period_end).
-			billingInterval = planItem?.price.recurring?.interval === 'year' ? 'annual' : 'monthly';
-		}
-
-		// 2. Invoice preview (fragile — throws for subscriptions with cancel_at_period_end
-		// because there's no upcoming invoice to preview). Its failure ONLY affects
-		// nextBillingDate / periodStart; nothing else is in this try block.
-		try {
-			const preview = await stripe.invoices.createPreview({
-				subscription: vendorRecord.stripeSubscriptionId
-			});
-			periodStart = new Date(preview.period_start * 1000).toISOString();
-			nextBillingDate = new Date(preview.period_end * 1000).toISOString();
-		} catch (err) {
-			// Expected when the subscription is scheduled to cancel — fall back to the
-			// subscription's own period bounds so the UI still has a date to show.
-			const item = subscription?.items.data[0];
-			if (item?.current_period_end) {
-				nextBillingDate = new Date(item.current_period_end * 1000).toISOString();
+		// Subscription-specific data — only when a live subscription exists.
+		// billingInterval, nextBillingDate, and periodStart only make sense with
+		// a current subscription; ex-paid Starter vendors skip this block entirely
+		// and those fields stay at their defaults (null / 'monthly').
+		if (vendorRecord.stripeSubscriptionId) {
+			// 1. Subscription retrieve (critical — carries billingInterval).
+			// Rarely fails for a real subscription. If it does (deleted on Stripe),
+			// the page still renders with empty billing details.
+			try {
+				subscription = await stripe.subscriptions.retrieve(vendorRecord.stripeSubscriptionId, {
+					expand: ['items']
+				});
+			} catch (err) {
+				console.error('[billing load] subscription retrieve failed:', err);
 			}
-			if (item?.current_period_start) {
-				periodStart = new Date(item.current_period_start * 1000).toISOString();
+
+			if (subscription) {
+				const planItem =
+					subscription.items.data.find((i) => {
+						const meta = i.price.metadata?.type;
+						return meta === 'plan' || !meta;
+					}) ?? subscription.items.data[0];
+				// billingInterval from the subscription's own price — NOT gated behind createPreview.
+				// Must stay correct even when the preview call fails (e.g. cancel_at_period_end).
+				billingInterval = planItem?.price.recurring?.interval === 'year' ? 'annual' : 'monthly';
 			}
-			console.error(
-				'[billing load] invoice preview unavailable (expected for ending subscriptions):',
-				err
-			);
+
+			// 2. Invoice preview (fragile — throws for subscriptions with cancel_at_period_end
+			// because there's no upcoming invoice to preview). Its failure ONLY affects
+			// nextBillingDate / periodStart; nothing else is in this try block.
+			try {
+				const preview = await stripe.invoices.createPreview({
+					subscription: vendorRecord.stripeSubscriptionId
+				});
+				periodStart = new Date(preview.period_start * 1000).toISOString();
+				nextBillingDate = new Date(preview.period_end * 1000).toISOString();
+			} catch (err) {
+				// Expected when the subscription is scheduled to cancel — fall back to the
+				// subscription's own period bounds so the UI still has a date to show.
+				const item = subscription?.items.data[0];
+				if (item?.current_period_end) {
+					nextBillingDate = new Date(item.current_period_end * 1000).toISOString();
+				}
+				if (item?.current_period_start) {
+					periodStart = new Date(item.current_period_start * 1000).toISOString();
+				}
+				console.error(
+					'[billing load] invoice preview unavailable (expected for ending subscriptions):',
+					err
+				);
+			}
 		}
 
-		// 3. Payment methods + invoice history + customer — independent of the preview.
-		// A preview failure must not blank these out.
+		// 3. Customer-scoped data (payment methods, invoices, charges, credit notes,
+		// balance) — runs for any vendor with a Stripe customer record, including
+		// ex-paid Starter vendors. These are historical / account-state queries
+		// that don't depend on a current subscription.
 		try {
 			const [pmList, invoiceList, customer, creditNoteList, chargeList] = await Promise.all([
 				stripe.paymentMethods.list({
-					customer: vendorRecord.stripeCustomerId!,
+					customer: vendorRecord.stripeCustomerId,
 					type: 'card'
 				}),
-				stripe.invoices.list({ customer: vendorRecord.stripeCustomerId!, limit: 3 }),
-				stripe.customers.retrieve(vendorRecord.stripeCustomerId!),
-				stripe.creditNotes.list({ customer: vendorRecord.stripeCustomerId!, limit: 3 }),
+				stripe.invoices.list({ customer: vendorRecord.stripeCustomerId, limit: 3 }),
+				stripe.customers.retrieve(vendorRecord.stripeCustomerId),
+				stripe.creditNotes.list({ customer: vendorRecord.stripeCustomerId, limit: 3 }),
 				// Refunds: list charges for this customer, then extract refunds from each.
 				// refunds.list doesn't filter by customer directly, so charges.list is the
 				// only customer-scoped path to refund objects.
 				stripe.charges.list({
-					customer: vendorRecord.stripeCustomerId!,
+					customer: vendorRecord.stripeCustomerId,
 					limit: 10,
 					expand: ['data.refunds']
 				})
@@ -151,8 +164,9 @@ export const load: PageServerLoad = async ({ locals }) => {
 
 			totalPaymentMethods = pmList.data.length;
 
-			// Subscription's default payment method takes priority over customer-level
-			// default. Fall back to first card if neither is set explicitly.
+			// Subscription's default PM takes priority over customer-level default.
+			// For ex-paid Starter vendors, subscription is null — falls through to
+			// customerDefaultId or first card.
 			const subDefaultId =
 				typeof subscription?.default_payment_method === 'string'
 					? subscription.default_payment_method
@@ -172,7 +186,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 			// resolved a usable card, promote it now. Backstop to the webhook
 			// promotions — guarantees the invariant holds by the time the vendor
 			// views this page. Idempotent: no-op once customerDefaultId is set.
-			if (!customerDefaultId && defaultPm?.id && vendorRecord.stripeCustomerId) {
+			if (!customerDefaultId && defaultPm?.id) {
 				try {
 					await stripe.customers.update(vendorRecord.stripeCustomerId, {
 						invoice_settings: { default_payment_method: defaultPm.id }
@@ -865,7 +879,14 @@ export const actions: Actions = {
 
 		const stripe = getOrderLocalStripe();
 		await stripe.subscriptions.update(record.stripeSubscriptionId, {
-			pause_collection: { behavior: 'mark_uncollectible' }
+			pause_collection: { behavior: 'mark_uncollectible' },
+			// Informational only — gives Stripe-dashboard visibility into when the pause
+			// is scheduled to end. Nothing in our code reads these back; vendor.pauseUntil
+			// is the source of truth. Empty string deletes a metadata key in Stripe.
+			metadata: {
+				pause_until: resumeAt.toISOString().slice(0, 10),
+				paused_at: new Date().toISOString().slice(0, 10)
+			}
 		});
 
 		const now = new Date();
@@ -912,7 +933,8 @@ export const actions: Actions = {
 
 		const stripe = getOrderLocalStripe();
 		await stripe.subscriptions.update(record.stripeSubscriptionId, {
-			pause_collection: '' as Stripe.Emptyable<Stripe.SubscriptionUpdateParams.PauseCollection>
+			pause_collection: '' as Stripe.Emptyable<Stripe.SubscriptionUpdateParams.PauseCollection>,
+			metadata: { pause_until: '', paused_at: '' }
 		});
 
 		const now = new Date();
@@ -933,5 +955,107 @@ export const actions: Actions = {
 		}
 
 		redirect(303, '/dashboard/account/billing?resumed=1');
+	},
+
+	refundAccountCredit: async ({ locals }) => {
+		requireStaff(locals);
+		const vendorId = locals.vendorId!;
+
+		const record = await db.query.vendor.findFirst({
+			where: eq(vendor.id, vendorId),
+			columns: { stripeCustomerId: true }
+		});
+		if (!record?.stripeCustomerId) {
+			return fail(400, { error: 'No Stripe customer on file.' });
+		}
+
+		const stripe = getOrderLocalStripe();
+
+		// 1. Re-read the customer balance from Stripe — source of truth, not client-side amount.
+		let customer: Stripe.Customer;
+		try {
+			const c = await stripe.customers.retrieve(record.stripeCustomerId);
+			if (c.deleted) return fail(400, { error: 'Customer record is no longer available.' });
+			customer = c;
+		} catch (err) {
+			console.error('[refundAccountCredit] customer retrieve failed:', err);
+			return fail(500, { error: 'Could not read your account balance. Please try again.' });
+		}
+
+		// Stripe convention: balance < 0 = credit owed to customer.
+		const balance = customer.balance ?? 0;
+		if (balance >= 0) {
+			return fail(400, { error: 'No account credit to refund.' });
+		}
+		const creditCents = Math.abs(balance);
+
+		// 2. Find a refundable charge ≥ creditCents within Stripe's 180-day window.
+		let chargeList: Stripe.ApiList<Stripe.Charge>;
+		try {
+			chargeList = await stripe.charges.list({
+				customer: record.stripeCustomerId,
+				limit: 20
+			});
+		} catch (err) {
+			console.error('[refundAccountCredit] charges list failed:', err);
+			return fail(500, { error: 'Could not look up your charges. Please try again.' });
+		}
+
+		const REFUND_WINDOW_SECONDS = 180 * 24 * 60 * 60;
+		const nowSeconds = Math.floor(Date.now() / 1000);
+
+		const eligibleCharge = chargeList.data.find((c) => {
+			if (c.status !== 'succeeded') return false;
+			if (c.refunded) return false;
+			const refundableAmount = (c.amount ?? 0) - (c.amount_refunded ?? 0);
+			if (refundableAmount < creditCents) return false;
+			if (nowSeconds - c.created > REFUND_WINDOW_SECONDS) return false;
+			return true;
+		});
+
+		if (!eligibleCharge) {
+			return fail(400, {
+				error:
+					'Could not find a recent charge to refund this credit against. Please contact support and we can issue the refund manually.'
+			});
+		}
+
+		// 3. Refund the credit amount to the eligible charge. Do NOT fall back to
+		// balance credit on failure — this action's purpose is to CLEAR the balance.
+		try {
+			await stripe.refunds.create({
+				charge: eligibleCharge.id,
+				amount: creditCents,
+				metadata: { vendorId: String(vendorId), reason: 'account_credit_refund' }
+			});
+		} catch (err) {
+			console.error('[refundAccountCredit] refund create failed:', err);
+			const message =
+				err instanceof Error
+					? err.message
+					: 'Could not process the refund. Please contact support.';
+			return fail(500, { error: message });
+		}
+
+		// 4. Zero out the customer balance. A positive createBalanceTransaction
+		// (amount = +creditCents) cancels the negative customer.balance.
+		// If this step fails after the refund succeeded, the card refund went through
+		// but Stripe still shows credit — log loudly for manual cleanup via dashboard.
+		try {
+			await stripe.customers.createBalanceTransaction(record.stripeCustomerId, {
+				amount: creditCents,
+				currency: 'usd',
+				description: `Account credit refunded to card (charge ${eligibleCharge.id})`
+			});
+		} catch (err) {
+			console.error(
+				'[refundAccountCredit] balance zeroing failed AFTER refund issued — manual cleanup required:',
+				err
+			);
+			// Don't fail — the vendor's refund went through. Surface partial-sync warning.
+			return { success: true, creditRefunded: true, partialSync: true, refundedCents: creditCents };
+		}
+
+		return { success: true, creditRefunded: true, refundedCents: creditCents };
 	}
 };

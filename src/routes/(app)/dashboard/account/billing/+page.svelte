@@ -50,6 +50,7 @@
 	let isResumed = $state(initialParams.get('resumed') === '1');
 	let isSwitched = $state(initialParams.get('switched') === '1');
 	let isSwitchedRefund = $state(initialParams.get('switched') === 'refund');
+	let isCreditRefunded = $state(initialParams.get('credit_refunded') === '1');
 
 	// Strip one-time success/notice params from the URL after the router is ready.
 	// onMount + tick defers until after hydration so replaceState never fires
@@ -64,7 +65,8 @@
 			'refunded',
 			'paused',
 			'resumed',
-			'switched'
+			'switched',
+			'credit_refunded'
 		];
 		if (!noticeKeys.some((k) => page.url.searchParams.has(k))) return;
 		try {
@@ -103,6 +105,9 @@
 		past_due: 'bg-amber-100 text-amber-700',
 		cancelled: 'bg-red-100 text-red-600'
 	};
+
+	// --- Refund account credit modal ---
+	let pendingRefundCreditOpen = $state(false);
 
 	// --- Cancel choice modal (annual vendors choose period-end vs immediate-with-refund) ---
 	type CancelChoice = 'period_end' | 'immediate_refund';
@@ -323,6 +328,12 @@
 		<Alert severity="success" dismissible={true} autofade={0} class="mb-4">
 			You've switched to monthly billing and a prorated refund has been issued. It will appear on
 			your original payment method within 5–10 business days.
+		</Alert>
+	{/if}
+	{#if isCreditRefunded}
+		<Alert severity="success" dismissible={true} autofade={0} class="mb-4">
+			Your account credit has been refunded to your card. The refund will appear in 5–10 business
+			days.
 		</Alert>
 	{/if}
 
@@ -598,20 +609,29 @@
 						<p class="mb-2 text-xs font-medium tracking-wide text-muted-foreground uppercase">
 							Account credit
 						</p>
-						<div class="flex items-center gap-3">
-							<div
-								class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-success/10"
+						<div class="flex flex-wrap items-center justify-between gap-3">
+							<div class="flex items-center gap-3">
+								<div
+									class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-success/10"
+								>
+									<Icon icon="mdi:cash-refund" class="h-4 w-4 text-success" />
+								</div>
+								<div>
+									<p class="text-sm font-medium text-success">
+										${(data.accountCreditCents / 100).toFixed(2)} credit
+									</p>
+									<p class="text-xs text-muted-foreground">
+										Applied automatically to upcoming invoices
+									</p>
+								</div>
+							</div>
+							<Button
+								type="button"
+								variant="outline"
+								onclick={() => (pendingRefundCreditOpen = true)}
 							>
-								<Icon icon="mdi:cash-refund" class="h-4 w-4 text-success" />
-							</div>
-							<div>
-								<p class="text-sm font-medium text-success">
-									${(data.accountCreditCents / 100).toFixed(2)} credit
-								</p>
-								<p class="text-xs text-muted-foreground">
-									Applied automatically to upcoming invoices
-								</p>
-							</div>
+								Refund to card
+							</Button>
 						</div>
 					</div>
 				{/if}
@@ -1656,6 +1676,76 @@
 						{:else}
 							Confirm downgrade
 						{/if}
+					</Button>
+				</form>
+			</DialogFooter>
+		</DialogContent>
+	</Dialog>
+{/if}
+
+<!-- Refund account credit dialog -->
+{#if pendingRefundCreditOpen}
+	<Dialog
+		open={pendingRefundCreditOpen}
+		onOpenChange={(open) => {
+			if (!open) pendingRefundCreditOpen = false;
+		}}
+	>
+		<DialogContent class="max-w-md">
+			<DialogHeader>
+				<DialogTitle>Refund credit to card</DialogTitle>
+				<DialogDescription class="text-sm text-muted-foreground">
+					Convert your account credit back to cash on your card.
+				</DialogDescription>
+			</DialogHeader>
+			<div class="flex flex-col gap-3">
+				<div class="rounded-lg border border-border bg-muted/30 p-4">
+					<p class="text-sm font-medium text-foreground">
+						Refund <strong class="text-success"
+							>${(data.accountCreditCents / 100).toFixed(2)}</strong
+						>
+						{#if data.defaultPaymentMethod}
+							to {data.defaultPaymentMethod.brand} ···· {data.defaultPaymentMethod.last4}
+						{:else}
+							to your original payment method
+						{/if}?
+					</p>
+					<p class="mt-2 text-xs leading-relaxed text-muted-foreground">
+						Stripe routes the refund through your original payment method. If that card has been
+						replaced or expired, your bank will typically redirect it to your new card or account.
+						Allow 5–10 business days.
+					</p>
+				</div>
+				<p class="text-center text-xs text-muted-foreground">
+					This clears your account credit. Future invoices will be charged normally.
+				</p>
+			</div>
+			<DialogFooter class="flex gap-3 sm:flex-row">
+				<Button
+					type="button"
+					onclick={() => (pendingRefundCreditOpen = false)}
+					variant="outline"
+					class="flex-1"
+				>
+					Cancel
+				</Button>
+				<form
+					method="post"
+					action="?/refundAccountCredit"
+					use:enhance={() =>
+						async ({ result, update }) => {
+							pendingRefundCreditOpen = false;
+							if (result.type === 'success') {
+								window.location.href =
+									resolve('/dashboard/account/billing') + '?credit_refunded=1';
+							} else {
+								await update({ invalidateAll: true });
+							}
+						}}
+					class="flex-1"
+				>
+					<Button type="submit" class="w-full">
+						Refund ${(data.accountCreditCents / 100).toFixed(2)}
 					</Button>
 				</form>
 			</DialogFooter>
