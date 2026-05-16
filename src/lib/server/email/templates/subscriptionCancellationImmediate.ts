@@ -1,0 +1,32 @@
+import { emailWrapper } from '../base';
+
+export function subscriptionCancellationImmediateEmail({
+	recipientName,
+	planName,
+	refundAmount
+}: {
+	recipientName: string;
+	planName: string;
+	refundAmount: string;
+}) {
+	const content = `
+    <p style="margin:0 0 16px;font-size:16px;color:#111827;">Hi ${recipientName},</p>
+    <p style="margin:0 0 24px;font-size:14px;color:#374151;line-height:1.6;">
+      Your <strong>Order Local ${planName}</strong> subscription has been cancelled immediately. A refund of <strong>${refundAmount}</strong> for the unused portion of your subscription will appear on your card in 5–10 business days.
+    </p>
+    <p style="margin:0 0 24px;font-size:14px;color:#374151;line-height:1.6;">
+      Your account has been moved to the free Starter plan. Your storefront and order history remain accessible — you can resubscribe anytime from your billing dashboard.
+    </p>
+    <p style="margin:0;font-size:13px;color:#6b7280;">
+      Questions? Reply to this email or reach us at <a href="mailto:hello@getorderlocal.com" style="color:#16a34a;">hello@getorderlocal.com</a>.
+    </p>
+  `;
+
+	return emailWrapper({
+		title: 'Subscription cancelled',
+		previewText: `Your Order Local ${planName} subscription has been cancelled`,
+		content,
+		displayName: 'Order Local',
+		primaryColor: '#16a34a'
+	});
+}

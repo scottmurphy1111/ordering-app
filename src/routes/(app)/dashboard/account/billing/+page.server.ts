@@ -15,6 +15,12 @@ import {
 import { sendEmail } from '$lib/server/email';
 import { pauseConfirmedEmail } from '$lib/server/email/templates/pauseConfirmed';
 import { pauseResumedEmail } from '$lib/server/email/templates/pauseResumed';
+import { subscriptionTierChangedEmail } from '$lib/server/email/templates/subscriptionTierChanged';
+import { subscriptionIntervalChangedEmail } from '$lib/server/email/templates/subscriptionIntervalChanged';
+import { subscriptionCancellationScheduledEmail } from '$lib/server/email/templates/subscriptionCancellationScheduled';
+import { subscriptionCancellationImmediateEmail } from '$lib/server/email/templates/subscriptionCancellationImmediate';
+import { subscriptionAddonChangedEmail } from '$lib/server/email/templates/subscriptionAddonChanged';
+import { accountCreditRefundedEmail } from '$lib/server/email/templates/accountCreditRefunded';
 import { requireStaff } from '$lib/server/roles';
 import type Stripe from 'stripe';
 import {
@@ -26,6 +32,10 @@ import {
 
 const VALID_ADDON_KEYS = new Set<string>(ADDONS.map((a) => a.key));
 const PAID_TIERS = new Set(['market', 'pro']);
+
+function fmtAmount(cents: number): string {
+	return `$${(cents / 100).toFixed(2)}`;
+}
 
 export const load: PageServerLoad = async ({ locals }) => {
 	requireStaff(locals);
@@ -360,6 +370,22 @@ export const actions: Actions = {
 						.update(vendor)
 						.set({ subscriptionTier: planKey, subscriptionEndsAt: null, updatedAt: new Date() })
 						.where(eq(vendor.id, vendorId));
+					if (record.email) {
+						const fromPlanName =
+							(record.subscriptionTier ?? 'plan').charAt(0).toUpperCase() +
+							(record.subscriptionTier ?? 'plan').slice(1);
+						const toPlanName = planKey.charAt(0).toUpperCase() + planKey.slice(1);
+						await sendEmail({
+							to: record.email,
+							subject: `Your Order Local plan has been upgraded to ${toPlanName}`,
+							html: subscriptionTierChangedEmail({
+								recipientName: record.name,
+								fromPlanName,
+								toPlanName,
+								direction: 'upgrade'
+							})
+						}).catch(console.error);
+					}
 					return { success: true, upgraded: true };
 				}
 			}
@@ -407,7 +433,7 @@ export const actions: Actions = {
 
 		const record = await db.query.vendor.findFirst({
 			where: eq(vendor.id, vendorId),
-			columns: { stripeSubscriptionId: true, subscriptionTier: true }
+			columns: { stripeSubscriptionId: true, subscriptionTier: true, name: true, email: true }
 		});
 		if (record?.subscriptionTier === planKey) return fail(400, { error: 'Already on this plan.' });
 
@@ -481,6 +507,25 @@ export const actions: Actions = {
 					updatedAt: new Date()
 				})
 				.where(eq(vendor.id, vendorId));
+			if (record?.email && endsAt) {
+				const planName =
+					(record.subscriptionTier ?? 'plan').charAt(0).toUpperCase() +
+					(record.subscriptionTier ?? 'plan').slice(1);
+				const accessUntil = endsAt.toLocaleDateString('en-US', {
+					month: 'long',
+					day: 'numeric',
+					year: 'numeric'
+				});
+				await sendEmail({
+					to: record.email,
+					subject: `Your Order Local ${planName} subscription is scheduled to cancel`,
+					html: subscriptionCancellationScheduledEmail({
+						recipientName: record.name,
+						planName,
+						accessUntil
+					})
+				}).catch(console.error);
+			}
 			return { success: true, downgraded: true };
 		}
 
@@ -555,6 +600,22 @@ export const actions: Actions = {
 			.update(vendor)
 			.set({ subscriptionTier: planKey, updatedAt: new Date() })
 			.where(eq(vendor.id, vendorId));
+		if (record?.email) {
+			const fromPlanName =
+				(record.subscriptionTier ?? 'plan').charAt(0).toUpperCase() +
+				(record.subscriptionTier ?? 'plan').slice(1);
+			const toPlanName = (planKey ?? 'plan').charAt(0).toUpperCase() + (planKey ?? 'plan').slice(1);
+			await sendEmail({
+				to: record.email,
+				subject: `Your Order Local plan has been changed to ${toPlanName}`,
+				html: subscriptionTierChangedEmail({
+					recipientName: record.name,
+					fromPlanName,
+					toPlanName,
+					direction: 'downgrade'
+				})
+			}).catch(console.error);
+		}
 		return { success: true, downgraded: true };
 	},
 
@@ -567,7 +628,13 @@ export const actions: Actions = {
 
 		const record = await db.query.vendor.findFirst({
 			where: eq(vendor.id, vendorId),
-			columns: { stripeSubscriptionId: true, subscriptionTier: true, stripeCustomerId: true }
+			columns: {
+				stripeSubscriptionId: true,
+				subscriptionTier: true,
+				stripeCustomerId: true,
+				name: true,
+				email: true
+			}
 		});
 		if (
 			!record?.subscriptionTier ||
@@ -603,6 +670,20 @@ export const actions: Actions = {
 				price: priceId,
 				proration_behavior: 'always_invoice'
 			});
+			if (record.email) {
+				const planName =
+					record.subscriptionTier.charAt(0).toUpperCase() + record.subscriptionTier.slice(1);
+				await sendEmail({
+					to: record.email,
+					subject: `Your Order Local plan is now billed annually`,
+					html: subscriptionIntervalChangedEmail({
+						recipientName: record.name,
+						planName,
+						fromInterval: 'monthly',
+						toInterval: 'annual'
+					})
+				}).catch(console.error);
+			}
 			return { success: true, switched: true };
 		} else {
 			// annual → monthly: vendor chooses credit (deferred on next invoice) or
@@ -640,6 +721,23 @@ export const actions: Actions = {
 					);
 				}
 
+				if (record.email) {
+					const planName =
+						record.subscriptionTier.charAt(0).toUpperCase() + record.subscriptionTier.slice(1);
+					await sendEmail({
+						to: record.email,
+						subject: refundCents > 0
+							? `Your Order Local plan is now billed monthly — refund on the way`
+							: `Your Order Local plan is now billed monthly`,
+						html: subscriptionIntervalChangedEmail({
+							recipientName: record.name,
+							planName,
+							fromInterval: 'annual',
+							toInterval: 'monthly',
+							refundAmount: refundCents > 0 ? fmtAmount(refundCents) : undefined
+						})
+					}).catch(console.error);
+				}
 				return { success: true, switched: true, refunded: refundCents > 0 };
 			} else {
 				// Credit path: always_invoice generates a credit memo immediately for the
@@ -648,6 +746,20 @@ export const actions: Actions = {
 					price: priceId,
 					proration_behavior: 'always_invoice'
 				});
+				if (record.email) {
+					const planName =
+						record.subscriptionTier.charAt(0).toUpperCase() + record.subscriptionTier.slice(1);
+					await sendEmail({
+						to: record.email,
+						subject: `Your Order Local plan is now billed monthly`,
+						html: subscriptionIntervalChangedEmail({
+							recipientName: record.name,
+							planName,
+							fromInterval: 'annual',
+							toInterval: 'monthly'
+						})
+					}).catch(console.error);
+				}
 				return { success: true, switched: true };
 			}
 		}
@@ -684,7 +796,9 @@ export const actions: Actions = {
 				stripeSubscriptionId: true,
 				stripeCustomerId: true,
 				subscriptionTier: true,
-				subscriptionRefundedAt: true
+				subscriptionRefundedAt: true,
+				name: true,
+				email: true
 			}
 		});
 		if (!record?.stripeSubscriptionId)
@@ -759,6 +873,19 @@ export const actions: Actions = {
 			return { success: true, cancelDeferred: true, refundCents };
 		}
 
+		if (record.email && record.subscriptionTier) {
+			const planName =
+				record.subscriptionTier.charAt(0).toUpperCase() + record.subscriptionTier.slice(1);
+			await sendEmail({
+				to: record.email,
+				subject: `Your Order Local ${planName} subscription has been cancelled`,
+				html: subscriptionCancellationImmediateEmail({
+					recipientName: record.name,
+					planName,
+					refundAmount: fmtAmount(refundCents)
+				})
+			}).catch(console.error);
+		}
 		return { success: true, cancelImmediate: true, refundCents };
 	},
 
@@ -772,7 +899,7 @@ export const actions: Actions = {
 
 		const record = await db.query.vendor.findFirst({
 			where: eq(vendor.id, vendorId),
-			columns: { subscriptionTier: true, stripeSubscriptionId: true, addons: true }
+			columns: { subscriptionTier: true, stripeSubscriptionId: true, addons: true, name: true, email: true }
 		});
 		if (!record?.subscriptionTier || !PAID_TIERS.has(record.subscriptionTier))
 			return fail(400, { error: 'Upgrade your plan before activating add-ons.' });
@@ -797,6 +924,18 @@ export const actions: Actions = {
 			.update(vendor)
 			.set({ addons: [...current, { key, stripeItemId: item.id }], updatedAt: new Date() })
 			.where(eq(vendor.id, vendorId));
+		if (record.email) {
+			const addonName = ADDONS.find((a) => a.key === key)?.name ?? key;
+			await sendEmail({
+				to: record.email,
+				subject: `${addonName} add-on activated on your Order Local account`,
+				html: subscriptionAddonChangedEmail({
+					recipientName: record.name,
+					addonName,
+					direction: 'activated'
+				})
+			}).catch(console.error);
+		}
 		return { success: true };
 	},
 
@@ -809,7 +948,7 @@ export const actions: Actions = {
 
 		const record = await db.query.vendor.findFirst({
 			where: eq(vendor.id, vendorId),
-			columns: { addons: true }
+			columns: { addons: true, name: true, email: true }
 		});
 		const current = (record?.addons ?? []) as AddonItem[];
 		const addonEntry = current.find((a) => a.key === key);
@@ -827,6 +966,18 @@ export const actions: Actions = {
 			.update(vendor)
 			.set({ addons: current.filter((a) => a.key !== key), updatedAt: new Date() })
 			.where(eq(vendor.id, vendorId));
+		if (record?.email) {
+			const addonName = ADDONS.find((a) => a.key === key)?.name ?? key;
+			await sendEmail({
+				to: record.email,
+				subject: `${addonName} add-on deactivated on your Order Local account`,
+				html: subscriptionAddonChangedEmail({
+					recipientName: record.name,
+					addonName,
+					direction: 'deactivated'
+				})
+			}).catch(console.error);
+		}
 		return { success: true };
 	},
 
@@ -963,7 +1114,7 @@ export const actions: Actions = {
 
 		const record = await db.query.vendor.findFirst({
 			where: eq(vendor.id, vendorId),
-			columns: { stripeCustomerId: true }
+			columns: { stripeCustomerId: true, name: true, email: true }
 		});
 		if (!record?.stripeCustomerId) {
 			return fail(400, { error: 'No Stripe customer on file.' });
@@ -1053,9 +1204,29 @@ export const actions: Actions = {
 				err
 			);
 			// Don't fail — the vendor's refund went through. Surface partial-sync warning.
+			if (record.email) {
+				await sendEmail({
+					to: record.email,
+					subject: 'Your Order Local account credit has been refunded',
+					html: accountCreditRefundedEmail({
+						recipientName: record.name,
+						refundAmount: fmtAmount(creditCents)
+					})
+				}).catch(console.error);
+			}
 			return { success: true, creditRefunded: true, partialSync: true, refundedCents: creditCents };
 		}
 
+		if (record.email) {
+			await sendEmail({
+				to: record.email,
+				subject: 'Your Order Local account credit has been refunded',
+				html: accountCreditRefundedEmail({
+					recipientName: record.name,
+					refundAmount: fmtAmount(creditCents)
+				})
+			}).catch(console.error);
+		}
 		return { success: true, creditRefunded: true, refundedCents: creditCents };
 	}
 };

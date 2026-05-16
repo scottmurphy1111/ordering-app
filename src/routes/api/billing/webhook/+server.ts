@@ -10,6 +10,7 @@ import { getOrderLocalStripe, getTierKeyFromPriceId } from '$lib/server/stripe-b
 import { sendEmail } from '$lib/server/email';
 import { subscriptionConfirmedEmail } from '$lib/server/email/templates/subscriptionConfirmed';
 import { paymentFailedEmail } from '$lib/server/email/templates/paymentFailed';
+import { subscriptionCancellationCompletedEmail } from '$lib/server/email/templates/subscriptionCancellationCompleted';
 
 async function recordSystemEvent(
 	eventType: string,
@@ -263,9 +264,21 @@ export const POST: RequestHandler = async ({ request }) => {
 
 				const vendorRecord = await db.query.vendor.findFirst({
 					where: eq(vendor.stripeCustomerId, customerId),
-					columns: { id: true }
+					columns: {
+						id: true,
+						name: true,
+						email: true,
+						subscriptionTier: true,
+						subscriptionRefundedAt: true
+					}
 				});
 				if (!vendorRecord) break;
+
+				// Capture plan name before the DB update resets tier to 'starter'.
+				const cancelledPlanName = vendorRecord.subscriptionTier
+					? vendorRecord.subscriptionTier.charAt(0).toUpperCase() +
+						vendorRecord.subscriptionTier.slice(1)
+					: 'plan';
 
 				await db
 					.update(vendor)
@@ -281,6 +294,24 @@ export const POST: RequestHandler = async ({ request }) => {
 						updatedAt: new Date()
 					})
 					.where(eq(vendor.id, vendorRecord.id));
+
+				// Send cancellation-completed email unless the cancelImmediate action already
+				// sent a more specific refund email within the last 5 minutes. The 5-minute
+				// window prevents double-sending when the webhook fires shortly after the action.
+				const recentRefund =
+					vendorRecord.subscriptionRefundedAt &&
+					Date.now() - vendorRecord.subscriptionRefundedAt.getTime() < 5 * 60 * 1000;
+				if (!recentRefund && vendorRecord.email) {
+					await sendEmail({
+						to: vendorRecord.email,
+						subject: `Your Order Local ${cancelledPlanName} subscription has ended`,
+						html: subscriptionCancellationCompletedEmail({
+							recipientName: vendorRecord.name,
+							planName: cancelledPlanName
+						})
+					}).catch(console.error);
+				}
+
 				await recordSystemEvent('webhook.subscription_deleted', 'ok', vendorRecord.id, {
 					stripeEventId: event.id
 				});
