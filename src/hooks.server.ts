@@ -1,5 +1,5 @@
 import type { Handle } from '@sveltejs/kit';
-import { building, dev } from '$app/environment';
+import { building } from '$app/environment';
 import { redirect } from '@sveltejs/kit';
 import { env } from '$env/dynamic/private';
 import { auth } from '$lib/server/auth';
@@ -10,6 +10,7 @@ import { vendor, vendorUsers } from '$lib/server/db/vendor';
 import { user as userTable } from '$lib/server/db/auth.schema';
 import { RESERVED_SUBDOMAINS } from '$lib/server/reserved-subdomains';
 import { appUrl } from '$lib/server/app-origin';
+import { isProduction } from '$lib/server/is-production';
 
 // Paths that belong on the app host (app.getorderlocal.com / dashboard).
 function isAppPath(pathname: string): boolean {
@@ -74,7 +75,8 @@ const handleVendorContext: Handle = async ({ event, resolve }) => {
 	const isDashboardOrApexHost = isApexHost || isDashboardHost;
 
 	// Production cross-host redirects: keep each path on its canonical host.
-	if (!dev) {
+	// Skipped on preview deploys — they're single-host on *.vercel.app.
+	if (isProduction) {
 		if (isApexHost && isAppPath(url.pathname)) {
 			// Dashboard paths that landed on the apex → send to the app host.
 			throw redirect(302, appUrl(url.pathname + url.search));

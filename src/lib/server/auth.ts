@@ -8,6 +8,7 @@ import { db } from '$lib/server/db';
 import { sendEmail } from '$lib/server/email';
 import { emailWrapper } from '$lib/server/email/base';
 import { dev } from '$app/environment';
+import { isProduction } from '$lib/server/is-production';
 
 // baseURL is the apex host where BetterAuth's API endpoints live.
 // In production this is always set via the ORIGIN env var (https://getorderlocal.com).
@@ -32,7 +33,9 @@ export const auth = betterAuth({
 
 	// In production, session cookies must be readable across subdomains
 	// (apex auth host + app dashboard host). Domain=.getorderlocal.com covers both.
-	...(!dev && {
+	// On preview deploys (*.vercel.app) this must stay off — browsers reject
+	// Domain=.getorderlocal.com cookies on mismatched hosts.
+	...(isProduction && {
 		advanced: {
 			crossSubDomainCookies: {
 				enabled: true,
