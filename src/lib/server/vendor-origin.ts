@@ -4,7 +4,7 @@ import { env } from '$env/dynamic/private';
 /**
  * Build the public-facing origin (scheme + host) for a vendor's storefront.
  *
- * Production:  https://{slug}.getorderlocal.com
+ * Production:  https://{slug}.getorderlocal.com  (apex is ORIGIN env var)
  * Dev (Chrome resolves *.localhost natively):  http://{slug}.localhost:5173
  *
  * Use this for any URL that crosses host boundaries:
@@ -20,12 +20,10 @@ export function vendorOrigin(slug: string): string {
 		const port = env.PORT ?? '5173';
 		return `http://${slug}.localhost:${port}`;
 	}
-	// Production: derive from ORIGIN env (set to https://app.getorderlocal.com in netlify.toml).
+	// Production: ORIGIN is the apex (getorderlocal.com); vendor subdomains sit directly under it.
 	const origin = env.ORIGIN ?? 'https://getorderlocal.com';
 	const url = new URL(origin);
-	// Strip the "app" subdomain if present — vendor subdomains sit directly under the apex.
-	const apex = url.hostname.replace(/^app\./, '');
-	return `${url.protocol}//${slug}.${apex}${url.port ? ':' + url.port : ''}`;
+	return `${url.protocol}//${slug}.${url.hostname}${url.port ? ':' + url.port : ''}`;
 }
 
 /**

@@ -1,13 +1,10 @@
-# Apex and www redirect to the dashboard host. There's no marketing site at
-# the apex yet; until there is, apex/www visits should land on the dashboard
-# instead of accidentally rendering the auth-gated app on the wrong host
-# (which breaks BetterAuth and Stripe origin checks).
+# Netlify _redirects
 #
-# When a marketing site is added at the apex, replace these blanket rules
-# with path-scoped ones: redirect /login, /dashboard, /vendors, /admin, etc.
-# to app.getorderlocal.com but serve marketing content for /, /about, /pricing.
+# The three-host architecture routes requests at the SvelteKit hooks layer
+# (hooks.server.ts), not via static redirect rules here. Dashboard routes on
+# the apex are redirected to app.getorderlocal.com server-side; auth routes
+# on the app subdomain are redirected to getorderlocal.com server-side.
 #
-# Format: from to status[!]   (! forces the rule even when a static file matches)
-
-https://getorderlocal.com/*     https://app.getorderlocal.com/:splat  301!
-https://www.getorderlocal.com/* https://app.getorderlocal.com/:splat  301!
+# Add path-scoped rules here only for cases that must be handled before the
+# SvelteKit app runs (e.g. legacy URL aliases, forced HTTPS for a custom
+# domain that isn't the primary Netlify domain).

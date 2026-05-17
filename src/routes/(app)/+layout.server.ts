@@ -1,13 +1,17 @@
 import type { LayoutServerLoad } from './$types';
 import { redirect } from '@sveltejs/kit';
+import { dev } from '$app/environment';
+import { env } from '$env/dynamic/private';
 import { db } from '$lib/server/db';
 import { and, eq } from 'drizzle-orm';
 import { vendorUsers } from '$lib/server/db/schema';
 
 export const load: LayoutServerLoad = async ({ locals, url }) => {
-	// Require authentication
+	// Require authentication. In production the login page lives on the apex host,
+	// so redirect there directly to avoid an extra hop through the cross-host guard.
 	if (!locals.user) {
-		throw redirect(303, `/login?redirectTo=${encodeURIComponent(url.pathname)}`);
+		const loginBase = dev ? '' : (env.ORIGIN ?? 'https://getorderlocal.com');
+		throw redirect(303, `${loginBase}/login?redirectTo=${encodeURIComponent(url.pathname)}`);
 	}
 
 	// Allow /vendors without a selected vendor (that's where you pick one)

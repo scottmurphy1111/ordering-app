@@ -1,11 +1,14 @@
 <script lang="ts">
+	import { PUBLIC_APP_ORIGIN } from '$env/static/public';
 	import { page } from '$app/state';
 	import { resolve } from '$app/paths';
 	import Icon from '@iconify/svelte';
 	import { Card, CardContent } from '$lib/components/ui/card';
 
 	const token = $derived(page.url.searchParams.get('token'));
-	const callbackURL = $derived(page.url.searchParams.get('callbackURL') ?? '/vendors');
+	// Default callback lands on the app (dashboard) host, not the current host.
+	const defaultCallback = PUBLIC_APP_ORIGIN ? `${PUBLIC_APP_ORIGIN}/vendors` : '/vendors';
+	const callbackURL = $derived(page.url.searchParams.get('callbackURL') ?? defaultCallback);
 
 	// Build the real better-auth verify URL - navigating here creates the session
 	const verifyHref = $derived(

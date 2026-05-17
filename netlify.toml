@@ -5,13 +5,25 @@
 [functions]
   directory = "netlify/functions"
 
-# ORIGIN points to the vendor dashboard subdomain. vendorOrigin() strips the
-# "app." prefix to derive the apex domain for customer storefront subdomains.
+# Three-host architecture:
+#   ORIGIN          = apex (getorderlocal.com) — marketing + auth host; BetterAuth baseURL
+#   APP_ORIGIN      = dashboard subdomain (app.getorderlocal.com)
+#   PUBLIC_APP_ORIGIN = same as APP_ORIGIN, exposed to client-side code for auth callbacks
+#
+# Storefront subdomains ({slug}.getorderlocal.com) are derived by prepending the
+# vendor slug to the ORIGIN hostname — no separate env var needed.
+
 [context.production.environment]
-  ORIGIN = "https://app.getorderlocal.com"
+  ORIGIN = "https://getorderlocal.com"
+  APP_ORIGIN = "https://app.getorderlocal.com"
+  PUBLIC_APP_ORIGIN = "https://app.getorderlocal.com"
 
 [context.deploy-preview.environment]
   ORIGIN = "https://order-local.netlify.app"
+  APP_ORIGIN = "https://order-local.netlify.app"
+  PUBLIC_APP_ORIGIN = "https://order-local.netlify.app"
 
 [context.branch-deploy.environment]
   ORIGIN = "https://order-local.netlify.app"
+  APP_ORIGIN = "https://order-local.netlify.app"
+  PUBLIC_APP_ORIGIN = "https://order-local.netlify.app"

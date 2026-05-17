@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { PUBLIC_APP_ORIGIN } from '$env/static/public';
+	import { page } from '$app/state';
 	import { signIn, authClient } from '$lib/auth-client';
 	import { Button } from '$lib/components/ui/button';
 	import { Input } from '$lib/components/ui/input';
@@ -10,9 +12,18 @@
 	let magicSent = $state(false);
 	let magicError = $state<string | null>(null);
 
+	// Auth callbacks must land on the app host (dashboard), not the current host
+	// (which may be the apex marketing/auth host in production).
+	const appOrigin = PUBLIC_APP_ORIGIN || (typeof window !== 'undefined' ? window.location.origin : '');
+
+	function callbackURL(): string {
+		const redirectTo = page.url.searchParams.get('redirectTo');
+		return redirectTo ? `${appOrigin}${redirectTo}` : `${appOrigin}/vendors`;
+	}
+
 	async function signInWithGoogle() {
 		loading = true;
-		await signIn.social({ provider: 'google', callbackURL: `${window.location.origin}/vendors` });
+		await signIn.social({ provider: 'google', callbackURL: callbackURL() });
 	}
 
 	async function sendMagicLink(e: SubmitEvent) {
@@ -22,7 +33,7 @@
 		magicError = null;
 		const { error } = await authClient.signIn.magicLink({
 			email: magicEmail,
-			callbackURL: `${window.location.origin}/vendors`
+			callbackURL: callbackURL()
 		});
 		loading = false;
 		if (error) {

@@ -7,6 +7,7 @@ import { vendorUsers, vendorInvitations, vendor } from '$lib/server/db/vendor';
 import { user } from '$lib/server/db/auth.schema';
 import { auth } from '$lib/server/auth';
 import { APIError } from 'better-auth/api';
+import { appUrl } from '$lib/server/app-origin';
 
 async function acceptInvite(token: string, userId: string) {
 	const invite = await db.query.vendorInvitations.findFirst({
@@ -58,7 +59,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 		}
 		const accepted = await acceptInvite(token, locals.user.id);
 		if (accepted) {
-			redirect(302, '/vendors');
+			redirect(302, appUrl('/vendors'));
 		}
 	}
 
@@ -101,7 +102,7 @@ export const actions: Actions = {
 		if (!foundUser) return fail(400, { message: 'Sign in failed' });
 
 		await acceptInvite(token, foundUser.id);
-		redirect(302, '/vendors');
+		redirect(302, appUrl('/vendors'));
 	},
 
 	signUpAndAccept: async (event) => {
@@ -137,6 +138,6 @@ export const actions: Actions = {
 		if (!foundUser) return fail(400, { message: 'Account created but could not sign in' });
 
 		await acceptInvite(token, foundUser.id);
-		redirect(302, '/vendors');
+		redirect(302, appUrl('/vendors'));
 	}
 };

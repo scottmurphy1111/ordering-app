@@ -17,12 +17,29 @@ export const auth = betterAuth({
 	baseURL,
 	trustedOrigins: [
 		baseURL,
+		env.APP_ORIGIN,
 		'https://getorderlocal.com',
+		'https://app.getorderlocal.com',
 		'https://order-local.netlify.app',
 		...(dev ? ['http://localhost:5173', 'http://127.0.0.1:5173'] : [])
 	].filter((s): s is string => Boolean(s)),
 	secret: env.BETTER_AUTH_SECRET,
 	database: drizzleAdapter(db, { provider: 'pg' }),
+
+	// In production, session cookies must be readable across subdomains
+	// (apex auth host + app dashboard host). Domain=.getorderlocal.com covers both.
+	...(!dev && {
+		advanced: {
+			crossSubDomainCookies: {
+				enabled: true,
+				domain: '.getorderlocal.com'
+			},
+			defaultCookieAttributes: {
+				sameSite: 'lax' as const,
+				secure: true
+			}
+		}
+	}),
 
 	user: {
 		additionalFields: {
