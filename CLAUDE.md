@@ -20,7 +20,7 @@ until Scott updates this section to say otherwise.
 ### Production domains and addressing
 
 - **Marketing site (apex)**: `getorderlocal.com` — currently the production
-  ORIGIN in `netlify.toml`. Will become a marketing presence; future
+  ORIGIN in `vercel.json` / env vars. Will become a marketing presence; future
   customer storefront entry point.
 - **Vendor dashboard (subdomain)**: `app.getorderlocal.com` — code references
   this as the canonical app origin (e.g. `env.ORIGIN` fallback in
@@ -32,7 +32,7 @@ until Scott updates this section to say otherwise.
   certificate. Phase Ops-1 task.
 - **Email "from"**: `orders@getorderlocal.com`, support replies to
   `hello@getorderlocal.com` — requires Resend domain verification.
-- **Preview deploys**: `order-local.netlify.app` — trusted by auth.
+- **Preview deploys**: Vercel preview URLs (`<project>-git-<branch>-<team>.vercel.app`) — trusted by auth via `trustedOrigins` in `src/lib/server/auth.ts`.
 - **Custom vendor domains** (future feature, not yet supported): vendors who
   want their own branded URL would point their domain at the app. The host
   detection in `src/lib/server/vendor.ts:getCurrentVendor` already anticipates
@@ -43,9 +43,9 @@ Canonical origin via `env.ORIGIN`. Do not hardcode the domain in app code.
 **Phase Ops-1 task list (gates real-user launch):**
 - Configure DNS for `app.getorderlocal.com` (vendor dashboard subdomain)
 - Configure wildcard DNS for `*.getorderlocal.com` (customer storefront subdomains)
-- Provision wildcard TLS cert via Netlify (Let's Encrypt DNS challenge)
+- Provision wildcard TLS cert via Vercel (automatic via Let's Encrypt on custom domains)
 - Verify Resend domain ownership for email sending
-- Update `netlify.toml` production ORIGIN to `https://app.getorderlocal.com`
+- Set production env vars in Vercel dashboard (ORIGIN, APP_ORIGIN, PUBLIC_APP_ORIGIN, PUBLIC_AUTH_ORIGIN)
 - Update the slug-prefix UI text in `src/routes/(app)/vendors/+page.svelte`
   (around line 175) from `getorderlocal.com/` to `{slug}.getorderlocal.com`
 - Refine `src/lib/server/vendor.ts:getCurrentVendor` so the subdomain branch
@@ -2885,14 +2885,15 @@ Stripe search is eventually consistent. A customer created within the last few s
   The script reads `CRON_SECRET` from the environment and prints the JSON response. No
   curl needed. The dev server must be running; the script does not start it.
 
-- **Production cron via Netlify Scheduled Functions.** The function at
-  `netlify/functions/materialize.mts` is a thin HTTP wrapper that calls the SvelteKit endpoint
-  at `/api/cron/materialize` daily at 7am UTC (~2-3am Eastern, low-traffic window). The endpoint
-  runs `materializeAllActiveTemplates()` (extends pickup window horizon) and
-  `transitionScheduledOrders()` (flips scheduled→received within the production horizon).
-  Production `CRON_SECRET` is set in Netlify environment variables, distinct from the dev value
-  in `.env`. Schedule is declared via the `config` export in the function file (Netlify Functions
-  v2 — no `[[scheduled-functions]]` stanza needed in `netlify.toml`).
+- **Production cron via Vercel Cron Jobs.** Scheduled in `vercel.json` under the `crons` array.
+  Each entry is `{ path, schedule }` — Vercel sends a GET to the SvelteKit endpoint on the cron
+  schedule with `Authorization: Bearer ${CRON_SECRET}` included automatically. The three cron
+  endpoints (`/api/cron/materialize`, `/api/cron/billing`, `/api/cron/special-order-expiration`)
+  already validate the bearer token, so no endpoint code changes are needed. Production
+  `CRON_SECRET` is set in the Vercel dashboard environment variables, distinct from the dev value
+  in `.env`. Previously (before the Vercel migration) crons ran via Netlify Scheduled Functions
+  in `netlify/functions/*.mts` — those trampolines are deleted; the `vercel.json` crons call
+  the SvelteKit endpoints directly.
 
 - **`drizzle/meta/` was rebaselined Apr 2026** to recover from broken snapshot state caused
   by hand-written migrations 0001–0005 that were never run through `drizzle-kit generate`.

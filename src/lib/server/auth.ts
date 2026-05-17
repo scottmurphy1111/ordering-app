@@ -9,9 +9,13 @@ import { sendEmail } from '$lib/server/email';
 import { emailWrapper } from '$lib/server/email/base';
 import { dev } from '$app/environment';
 
-// Netlify provides URL (the deploy-specific URL) and DEPLOY_PRIME_URL for previews.
-// Fall back through them so OAuth redirects work on deploy previews too.
-const baseURL = env.ORIGIN || env.URL || env.DEPLOY_PRIME_URL;
+// baseURL is the apex host where BetterAuth's API endpoints live.
+// In production this is always set via the ORIGIN env var (https://getorderlocal.com).
+// For preview deploys: Vercel injects VERCEL_URL (hostname only, no protocol); Netlify
+// previously injected URL and DEPLOY_PRIME_URL (full URLs). All three stay in the chain
+// so the same build artifact works on either platform during migration.
+const vercelUrl = env.VERCEL_URL ? `https://${env.VERCEL_URL}` : undefined;
+const baseURL = env.ORIGIN || vercelUrl || env.URL || env.DEPLOY_PRIME_URL;
 
 export const auth = betterAuth({
 	baseURL,

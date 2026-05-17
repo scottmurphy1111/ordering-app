@@ -133,17 +133,23 @@ const handleVendorContext: Handle = async ({ event, resolve }) => {
 		}
 
 		// Cookie-based resolution (runs only if ?v= didn't resolve a vendor).
-		if (!event.locals.vendorId) {
+		// The selected-vendor cookie is meaningless without an authenticated session —
+		// gate on locals.user to prevent stale cookies from populating locals.vendor
+		// after signout. Without this gate the membership ternary's else branch
+		// (intended for internal users) falsely fires for unauthenticated requests
+		// because userId is undefined, making the condition falsy and returning a
+		// truthy { vendorId } stub.
+		if (!event.locals.vendorId && event.locals.user) {
 			const vendorIdCookie = cookies.get('selected-vendor-id');
 			if (vendorIdCookie) {
 				const vendorId = parseInt(vendorIdCookie);
 				if (!isNaN(vendorId)) {
-					const userId = event.locals.user?.id;
-					const isInternal = event.locals.user?.isInternal ?? false;
+					const userId = event.locals.user.id;
+					const isInternal = event.locals.user.isInternal;
 
 					// Verify the user is actually a member of this vendor (internal users can access any).
 					const membership =
-						userId && !isInternal
+						!isInternal
 							? await db.query.vendorUsers.findFirst({
 									where: and(eq(vendorUsers.vendorId, vendorId), eq(vendorUsers.userId, userId)),
 									columns: { vendorId: true }
@@ -159,7 +165,7 @@ const handleVendorContext: Handle = async ({ event, resolve }) => {
 							event.locals.vendor = currentVendor;
 
 							// Resolve the user's role within this vendor.
-							if (userId && !isInternal) {
+							if (!isInternal) {
 								const memberRecord = await db.query.vendorUsers.findFirst({
 									where: and(eq(vendorUsers.vendorId, vendorId), eq(vendorUsers.userId, userId)),
 									columns: { role: true }
