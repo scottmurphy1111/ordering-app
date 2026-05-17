@@ -1,0 +1,13 @@
+# Apex and www redirect to the dashboard host. There's no marketing site at
+# the apex yet; until there is, apex/www visits should land on the dashboard
+# instead of accidentally rendering the auth-gated app on the wrong host
+# (which breaks BetterAuth and Stripe origin checks).
+#
+# When a marketing site is added at the apex, replace these blanket rules
+# with path-scoped ones: redirect /login, /dashboard, /vendors, /admin, etc.
+# to app.getorderlocal.com but serve marketing content for /, /about, /pricing.
+#
+# Format: from to status[!]   (! forces the rule even when a static file matches)
+
+https://getorderlocal.com/*     https://app.getorderlocal.com/:splat  301!
+https://www.getorderlocal.com/* https://app.getorderlocal.com/:splat  301!

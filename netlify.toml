@@ -15,23 +15,3 @@
 
 [context.branch-deploy.environment]
   ORIGIN = "https://order-local.netlify.app"
-
-# Redirect apex and www to the dashboard host. There's no marketing site
-# at the apex yet; until there is, apex visits should land on the dashboard
-# instead of accidentally rendering the auth-gated app on the wrong host
-# (which breaks BetterAuth and Stripe origin checks).
-#
-# When a marketing site is added at the apex, replace these with rules that
-# serve marketing content for apex paths and only redirect /login, /dashboard,
-# /vendors, etc. to app.getorderlocal.com.
-[[redirects]]
-  from = "https://getorderlocal.com/*"
-  to = "https://app.getorderlocal.com/:splat"
-  status = 301
-  force = true
-
-[[redirects]]
-  from = "https://www.getorderlocal.com/*"
-  to = "https://app.getorderlocal.com/:splat"
-  status = 301
-  force = true
