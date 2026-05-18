@@ -1,4 +1,5 @@
 import type { Handle } from '@sveltejs/kit';
+import { sequence } from '@sveltejs/kit/hooks';
 import { building } from '$app/environment';
 import { redirect } from '@sveltejs/kit';
 import { env } from '$env/dynamic/private';
@@ -32,6 +33,46 @@ function isApexPath(pathname: string): boolean {
 		pathname.startsWith('/vendor-archived')
 	);
 }
+
+// Trusted origins for auth API CORS. Must match auth.ts trustedOrigins for
+// the cross-subdomain calls we expect (apex ↔ app). Keep this list narrow —
+// only origins that actually make /api/auth/* calls.
+const AUTH_CORS_ORIGINS = new Set([
+	'https://getorderlocal.com',
+	'https://app.getorderlocal.com'
+]);
+
+const handleAuthCors: Handle = async ({ event, resolve }) => {
+	if (!event.url.pathname.startsWith('/api/auth')) {
+		return resolve(event);
+	}
+
+	const origin = event.request.headers.get('origin');
+	const isTrustedOrigin = origin !== null && AUTH_CORS_ORIGINS.has(origin);
+
+	// Handle preflight OPTIONS — short-circuit without running BetterAuth.
+	// Must include credentials headers because the actual request will send cookies.
+	if (event.request.method === 'OPTIONS' && isTrustedOrigin) {
+		return new Response(null, {
+			status: 204,
+			headers: {
+				'Access-Control-Allow-Origin': origin,
+				'Access-Control-Allow-Credentials': 'true',
+				'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+				'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+				'Access-Control-Max-Age': '86400'
+			}
+		});
+	}
+
+	// Actual request: let it through, then add CORS headers to the response.
+	const response = await resolve(event);
+	if (isTrustedOrigin) {
+		response.headers.set('Access-Control-Allow-Origin', origin);
+		response.headers.set('Access-Control-Allow-Credentials', 'true');
+	}
+	return response;
+};
 
 const handleBetterAuth: Handle = async ({ event, resolve }) => {
 	const session = await auth.api.getSession({ headers: event.request.headers });
@@ -189,9 +230,4 @@ const handleVendorContext: Handle = async ({ event, resolve }) => {
 	return resolve(event);
 };
 
-export const handle: Handle = async ({ event, resolve }) => {
-	return handleBetterAuth({
-		event,
-		resolve: (event) => handleVendorContext({ event, resolve })
-	});
-};
+export const handle = sequence(handleAuthCors, handleBetterAuth, handleVendorContext);
