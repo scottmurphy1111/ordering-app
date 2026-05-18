@@ -23,7 +23,8 @@ export async function runResumeDue(): Promise<{ processed: number; errors: strin
 			name: true,
 			email: true,
 			subscriptionTier: true,
-			stripeSubscriptionId: true
+			stripeSubscriptionId: true,
+			pauseUntil: true
 		}
 	});
 
@@ -31,10 +32,14 @@ export async function runResumeDue(): Promise<{ processed: number; errors: strin
 		try {
 			if (v.stripeSubscriptionId) {
 				const stripe = getOrderLocalStripe();
-				await stripe.subscriptions.update(v.stripeSubscriptionId, {
-					pause_collection: '' as Stripe.Emptyable<Stripe.SubscriptionUpdateParams.PauseCollection>,
-					metadata: { pause_until: '', paused_at: '' }
-				});
+				await stripe.subscriptions.update(
+					v.stripeSubscriptionId,
+					{
+						pause_collection: '' as Stripe.Emptyable<Stripe.SubscriptionUpdateParams.PauseCollection>,
+						metadata: { pause_until: '', paused_at: '' }
+					},
+					{ idempotencyKey: `sub-resume-cron:${v.id}:${v.pauseUntil?.toISOString() ?? 'no-date'}` }
+				);
 			}
 
 			await db

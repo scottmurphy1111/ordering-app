@@ -77,6 +77,7 @@ export async function issueSubscriptionRefund(
 	subscription: Stripe.Subscription,
 	stripeCustomerId: string | null,
 	refundCents: number,
+	vendorId: number,
 	balanceDescription = `Order Local refund (${refundCents} cents)`
 ): Promise<{ refundIssued: boolean }> {
 	if (refundCents <= 0) return { refundIssued: false };
@@ -103,25 +104,28 @@ export async function issueSubscriptionRefund(
 
 	if (chargeId) {
 		try {
-			await stripe.refunds.create({ charge: chargeId, amount: refundCents });
+			await stripe.refunds.create(
+				{ charge: chargeId, amount: refundCents },
+				{ idempotencyKey: `refund:${vendorId}:cancel:${chargeId}` }
+			);
 			return { refundIssued: true };
 		} catch (err) {
 			console.error('[issueSubscriptionRefund] refund to charge failed; falling back to balance credit:', err);
 			if (stripeCustomerId) {
-				await stripe.customers.createBalanceTransaction(stripeCustomerId, {
-					amount: -refundCents,
-					currency: 'usd',
-					description: balanceDescription
-				});
+				await stripe.customers.createBalanceTransaction(
+					stripeCustomerId,
+					{ amount: -refundCents, currency: 'usd', description: balanceDescription },
+					{ idempotencyKey: `balance-tx:${vendorId}:credit:${chargeId}:${refundCents}` }
+				);
 				return { refundIssued: true };
 			}
 		}
 	} else if (stripeCustomerId) {
-		await stripe.customers.createBalanceTransaction(stripeCustomerId, {
-			amount: -refundCents,
-			currency: 'usd',
-			description: balanceDescription
-		});
+		await stripe.customers.createBalanceTransaction(
+			stripeCustomerId,
+			{ amount: -refundCents, currency: 'usd', description: balanceDescription },
+			{ idempotencyKey: `balance-tx:${vendorId}:credit:no-charge:${refundCents}` }
+		);
 		return { refundIssued: true };
 	}
 

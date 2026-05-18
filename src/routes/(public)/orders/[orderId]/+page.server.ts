@@ -60,18 +60,21 @@ export const actions: Actions = {
 			// causes Stripe to ignore any payment_method parameter at PI creation. The saved PM
 			// is surfaced to the customer via a Customer Session created in the checkout page
 			// load — see (public)/checkout/+page.server.ts.
-			const pi = await stripe.paymentIntents.create({
-				amount: order.total,
-				currency: 'usd',
-				customer: order.stripeCustomerId,
-				setup_future_usage: 'off_session',
-				...(order.customerEmail ? { receipt_email: order.customerEmail } : {}),
-				metadata: {
-					orderId: String(order.id),
-					vendorSlug: vendorRecord.slug,
-					orderNumber: order.orderNumber
-				}
-			});
+			const pi = await stripe.paymentIntents.create(
+				{
+					amount: order.total,
+					currency: 'usd',
+					customer: order.stripeCustomerId,
+					setup_future_usage: 'off_session',
+					...(order.customerEmail ? { receipt_email: order.customerEmail } : {}),
+					metadata: {
+						orderId: String(order.id),
+						vendorSlug: vendorRecord.slug,
+						orderNumber: order.orderNumber
+					}
+				},
+				{ idempotencyKey: `pi-create:${vendorId}:${order.id}:retry` }
+			);
 
 			await db
 				.update(orders)

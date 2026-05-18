@@ -199,16 +199,19 @@ export const POST: RequestHandler = async ({ request }) => {
 		}))
 	);
 
-	const paymentIntent = await stripe.paymentIntents.create({
-		amount: verifiedTotal,
-		currency: 'usd',
-		...(customer.email ? { receipt_email: customer.email } : {}),
-		metadata: {
-			orderId: String(newOrder.id),
-			vendorSlug,
-			orderNumber
-		}
-	});
+	const paymentIntent = await stripe.paymentIntents.create(
+		{
+			amount: verifiedTotal,
+			currency: 'usd',
+			...(customer.email ? { receipt_email: customer.email } : {}),
+			metadata: {
+				orderId: String(newOrder.id),
+				vendorSlug,
+				orderNumber
+			}
+		},
+		{ idempotencyKey: `pi-create:${vendorRecord.id}:${newOrder.id}` }
+	);
 
 	await db
 		.update(orders)

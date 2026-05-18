@@ -174,7 +174,10 @@ export const actions: Actions = {
 		}
 
 		try {
-			await stripe.refunds.create({ payment_intent: paymentIntentId });
+			await stripe.refunds.create(
+				{ payment_intent: paymentIntentId },
+				{ idempotencyKey: `refund:${vendorId}:order:${paymentIntentId}` }
+			);
 		} catch (e: unknown) {
 			return fail(502, { error: e instanceof Error ? e.message : 'Stripe refund failed' });
 		}
@@ -254,20 +257,23 @@ export const actions: Actions = {
 		}
 
 		try {
-			const pi = await stripe.paymentIntents.create({
-				amount: orderRow.total,
-				currency: 'usd',
-				...(orderRow.stripeCustomerId ? { customer: orderRow.stripeCustomerId } : {}),
-				payment_method: paymentMethodId,
-				off_session: true,
-				confirm: true,
-				...(orderRow.customerEmail ? { receipt_email: orderRow.customerEmail } : {}),
-				metadata: {
-					orderId: String(orderRow.id),
-					vendorSlug: vendorRecord.slug ?? '',
-					orderNumber: orderRow.orderNumber
-				}
-			});
+			const pi = await stripe.paymentIntents.create(
+				{
+					amount: orderRow.total,
+					currency: 'usd',
+					...(orderRow.stripeCustomerId ? { customer: orderRow.stripeCustomerId } : {}),
+					payment_method: paymentMethodId,
+					off_session: true,
+					confirm: true,
+					...(orderRow.customerEmail ? { receipt_email: orderRow.customerEmail } : {}),
+					metadata: {
+						orderId: String(orderRow.id),
+						vendorSlug: vendorRecord.slug ?? '',
+						orderNumber: orderRow.orderNumber
+					}
+				},
+				{ idempotencyKey: `pi-create:${vendorId}:${orderRow.id}:dashboard` }
+			);
 
 			await db
 				.update(orders)

@@ -197,12 +197,15 @@ export const actions: Actions = {
 		// No payment_behavior: 'default_incomplete' — subscription starts active.
 		let subscription: Stripe.Subscription;
 		try {
-			subscription = await stripe.subscriptions.create({
-				customer: customerId,
-				items: [{ price: priceId }],
-				default_payment_method: paymentMethodId,
-				metadata: { vendorId: String(vendorId), planKey, interval }
-			});
+			subscription = await stripe.subscriptions.create(
+				{
+					customer: customerId,
+					items: [{ price: priceId }],
+					default_payment_method: paymentMethodId,
+					metadata: { vendorId: String(vendorId), planKey, interval }
+				},
+				{ idempotencyKey: `sub-create:${vendorId}:${planKey}:${interval}` }
+			);
 		} catch (err) {
 			console.error('[finalizeSubscription] subscription create failed:', err);
 			// Customer + PM exist. Persist customerId so the card is saved for next

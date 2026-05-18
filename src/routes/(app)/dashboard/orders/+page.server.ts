@@ -391,7 +391,10 @@ export const actions: Actions = {
 		}
 
 		try {
-			await stripe.refunds.create({ payment_intent: paymentIntentId });
+			await stripe.refunds.create(
+				{ payment_intent: paymentIntentId },
+				{ idempotencyKey: `refund:${vendorId}:order:${paymentIntentId}` }
+			);
 		} catch (e: unknown) {
 			return fail(502, { error: e instanceof Error ? e.message : 'Stripe refund failed' });
 		}

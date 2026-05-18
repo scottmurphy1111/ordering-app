@@ -481,11 +481,14 @@ export const actions: Actions = {
 				return { success: true, downgraded: true, alreadyEnded: true };
 			}
 
+			const bucket = Math.floor(Date.now() / 60000);
 			let updated: Stripe.Subscription;
 			try {
-				updated = await stripe.subscriptions.update(record.stripeSubscriptionId, {
-					cancel_at_period_end: true
-				});
+				updated = await stripe.subscriptions.update(
+					record.stripeSubscriptionId,
+					{ cancel_at_period_end: true },
+					{ idempotencyKey: `sub-update:${vendorId}:cancel-schedule:${bucket}` }
+				);
 			} catch (err) {
 				const message = err instanceof Error ? err.message : '';
 				if (message.includes('canceled subscription')) {
@@ -718,6 +721,7 @@ export const actions: Actions = {
 						subscription,
 						record.stripeCustomerId,
 						refundCents,
+						vendorId,
 						`Order Local refund — annual to monthly switch (${refundCents} cents)`
 					);
 				}
@@ -783,9 +787,12 @@ export const actions: Actions = {
 		if (!record.subscriptionEndsAt) return fail(400, { error: 'No cancellation scheduled.' });
 
 		const stripe = getOrderLocalStripe();
-		await stripe.subscriptions.update(record.stripeSubscriptionId, {
-			cancel_at_period_end: false
-		});
+		const bucket = Math.floor(Date.now() / 60000);
+		await stripe.subscriptions.update(
+			record.stripeSubscriptionId,
+			{ cancel_at_period_end: false },
+			{ idempotencyKey: `sub-update:${vendorId}:reactivate:${bucket}` }
+		);
 		await db
 			.update(vendor)
 			.set({ subscriptionEndsAt: null, updatedAt: new Date() })
@@ -866,6 +873,7 @@ export const actions: Actions = {
 				subscription,
 				record.stripeCustomerId,
 				refundCents,
+				vendorId,
 				`Order Local refund — immediate cancellation (${refundCents} cents)`
 			);
 			refundIssued = result.refundIssued;
@@ -1048,16 +1056,21 @@ export const actions: Actions = {
 		const resumeAt = pauseUntilTimestamp(pauseUntilDate, tz);
 
 		const stripe = getOrderLocalStripe();
-		await stripe.subscriptions.update(record.stripeSubscriptionId, {
-			pause_collection: { behavior: 'mark_uncollectible' },
-			// Informational only — gives Stripe-dashboard visibility into when the pause
-			// is scheduled to end. Nothing in our code reads these back; vendor.pauseUntil
-			// is the source of truth. Empty string deletes a metadata key in Stripe.
-			metadata: {
-				pause_until: resumeAt.toISOString().slice(0, 10),
-				paused_at: new Date().toISOString().slice(0, 10)
-			}
-		});
+		const bucket = Math.floor(Date.now() / 60000);
+		await stripe.subscriptions.update(
+			record.stripeSubscriptionId,
+			{
+				pause_collection: { behavior: 'mark_uncollectible' },
+				// Informational only — gives Stripe-dashboard visibility into when the pause
+				// is scheduled to end. Nothing in our code reads these back; vendor.pauseUntil
+				// is the source of truth. Empty string deletes a metadata key in Stripe.
+				metadata: {
+					pause_until: resumeAt.toISOString().slice(0, 10),
+					paused_at: new Date().toISOString().slice(0, 10)
+				}
+			},
+			{ idempotencyKey: `sub-update:${vendorId}:pause:${bucket}` }
+		);
 
 		const now = new Date();
 		await db
@@ -1102,10 +1115,15 @@ export const actions: Actions = {
 		if (!record.stripeSubscriptionId) return fail(400, { error: 'No active subscription.' });
 
 		const stripe = getOrderLocalStripe();
-		await stripe.subscriptions.update(record.stripeSubscriptionId, {
-			pause_collection: '' as Stripe.Emptyable<Stripe.SubscriptionUpdateParams.PauseCollection>,
-			metadata: { pause_until: '', paused_at: '' }
-		});
+		const bucket = Math.floor(Date.now() / 60000);
+		await stripe.subscriptions.update(
+			record.stripeSubscriptionId,
+			{
+				pause_collection: '' as Stripe.Emptyable<Stripe.SubscriptionUpdateParams.PauseCollection>,
+				metadata: { pause_until: '', paused_at: '' }
+			},
+			{ idempotencyKey: `sub-update:${vendorId}:resume:${bucket}` }
+		);
 
 		const now = new Date();
 		await db
@@ -1193,11 +1211,14 @@ export const actions: Actions = {
 		// 3. Refund the credit amount to the eligible charge. Do NOT fall back to
 		// balance credit on failure — this action's purpose is to CLEAR the balance.
 		try {
-			await stripe.refunds.create({
-				charge: eligibleCharge.id,
-				amount: creditCents,
-				metadata: { vendorId: String(vendorId), reason: 'account_credit_refund' }
-			});
+			await stripe.refunds.create(
+				{
+					charge: eligibleCharge.id,
+					amount: creditCents,
+					metadata: { vendorId: String(vendorId), reason: 'account_credit_refund' }
+				},
+				{ idempotencyKey: `refund:${vendorId}:credit:${eligibleCharge.id}:${creditCents}` }
+			);
 		} catch (err) {
 			console.error('[refundAccountCredit] refund create failed:', err);
 			const message =
@@ -1212,11 +1233,15 @@ export const actions: Actions = {
 		// If this step fails after the refund succeeded, the card refund went through
 		// but Stripe still shows credit — log loudly for manual cleanup via dashboard.
 		try {
-			await stripe.customers.createBalanceTransaction(record.stripeCustomerId, {
-				amount: creditCents,
-				currency: 'usd',
-				description: `Account credit refunded to card (charge ${eligibleCharge.id})`
-			});
+			await stripe.customers.createBalanceTransaction(
+				record.stripeCustomerId,
+				{
+					amount: creditCents,
+					currency: 'usd',
+					description: `Account credit refunded to card (charge ${eligibleCharge.id})`
+				},
+				{ idempotencyKey: `balance-tx:${vendorId}:credit-clear:${eligibleCharge.id}` }
+			);
 		} catch (err) {
 			console.error(
 				'[refundAccountCredit] balance zeroing failed AFTER refund issued — manual cleanup required:',

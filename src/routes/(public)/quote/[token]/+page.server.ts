@@ -167,18 +167,21 @@ export const actions: Actions = {
 				notes: null
 			});
 
-		const pi = await stripe.paymentIntents.create({
-			amount: quote.priceCents,
-			currency: 'usd',
-			customer: stripeCustomer.id,
-			setup_future_usage: 'off_session',
-			receipt_email: requestRow.customerEmail ?? undefined,
-			metadata: {
-				orderId: String(order.id),
-				vendorSlug: vendorCtx.slug,
-				orderNumber: order.orderNumber
-			}
-		});
+		const pi = await stripe.paymentIntents.create(
+			{
+				amount: quote.priceCents,
+				currency: 'usd',
+				customer: stripeCustomer.id,
+				setup_future_usage: 'off_session',
+				receipt_email: requestRow.customerEmail ?? undefined,
+				metadata: {
+					orderId: String(order.id),
+					vendorSlug: vendorCtx.slug,
+					orderNumber: order.orderNumber
+				}
+			},
+			{ idempotencyKey: `pi-create:${vendorId}:quote:${token}` }
+		);
 
 		await db
 			.update(orders)

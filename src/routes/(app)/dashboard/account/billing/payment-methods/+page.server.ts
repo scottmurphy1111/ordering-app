@@ -84,9 +84,11 @@ export const actions: Actions = {
 			invoice_settings: { default_payment_method: paymentMethodId }
 		});
 		if (vendorRecord.stripeSubscriptionId) {
-			await stripe.subscriptions.update(vendorRecord.stripeSubscriptionId, {
-				default_payment_method: paymentMethodId
-			});
+			await stripe.subscriptions.update(
+				vendorRecord.stripeSubscriptionId,
+				{ default_payment_method: paymentMethodId },
+				{ idempotencyKey: `sub-update:${vendorId}:pm-swap:${paymentMethodId}` }
+			);
 		}
 		return { success: true, defaultUpdated: true };
 	},
