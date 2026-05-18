@@ -12,11 +12,10 @@ import { isProduction } from '$lib/server/is-production';
 
 // baseURL is the apex host where BetterAuth's API endpoints live.
 // In production this is always set via the ORIGIN env var (https://getorderlocal.com).
-// For preview deploys: Vercel injects VERCEL_URL (hostname only, no protocol); Netlify
-// previously injected URL and DEPLOY_PRIME_URL (full URLs). All three stay in the chain
-// so the same build artifact works on either platform during migration.
+// For Vercel preview deploys, fall back to VERCEL_URL (which Vercel auto-injects as
+// hostname-only — prefix with https:// to make it a full URL).
 const vercelUrl = env.VERCEL_URL ? `https://${env.VERCEL_URL}` : undefined;
-const baseURL = env.ORIGIN || vercelUrl || env.URL || env.DEPLOY_PRIME_URL;
+const baseURL = env.ORIGIN || vercelUrl;
 
 export const auth = betterAuth({
 	baseURL,
@@ -25,7 +24,6 @@ export const auth = betterAuth({
 		env.APP_ORIGIN,
 		'https://getorderlocal.com',
 		'https://app.getorderlocal.com',
-		'https://order-local.netlify.app',
 		...(dev ? ['http://localhost:5173', 'http://127.0.0.1:5173'] : [])
 	].filter((s): s is string => Boolean(s)),
 	secret: env.BETTER_AUTH_SECRET,
