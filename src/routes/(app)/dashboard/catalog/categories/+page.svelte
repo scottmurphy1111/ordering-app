@@ -54,6 +54,7 @@
 	let drawerIsActive = $state(true);
 	let drawerError = $state<string | null>(null);
 	let drawerSuccess = $state(false);
+	let submittingDeleteId = $state<number | null>(null);
 
 	$effect(() => {
 		if (!data.drawer) return;
@@ -388,13 +389,20 @@
 								>
 									<Icon icon="mdi:pencil-outline" class="h-3.5 w-3.5" />
 								</Button>
-								<form method="post" action="?/delete" use:enhance>
+								<form method="post" action="?/delete" use:enhance={() => {
+									submittingDeleteId = cat.id;
+									return async ({ update }) => {
+										submittingDeleteId = null;
+										await update();
+									};
+								}}>
 									<input type="hidden" name="id" value={cat.id} />
 									<Button
 										type="submit"
 										size="icon"
 										variant="ghost"
 										class="text-red-500 hover:bg-red-50 hover:text-red-600"
+										disabled={submittingDeleteId !== null}
 										onclick={async (e) => {
 											e.preventDefault();
 											const form = (e.currentTarget as HTMLButtonElement).form;
@@ -407,7 +415,11 @@
 										}}
 										aria-label="Delete category"
 									>
-										<Icon icon="mdi:trash-can-outline" class="h-3.5 w-3.5" />
+										{#if submittingDeleteId === cat.id}
+											<Icon icon="mdi:loading" class="h-3.5 w-3.5 animate-spin" />
+										{:else}
+											<Icon icon="mdi:trash-can-outline" class="h-3.5 w-3.5" />
+										{/if}
 									</Button>
 								</form>
 							</div>
@@ -505,13 +517,20 @@
 										>
 											<Icon icon="mdi:pencil-outline" class="h-3.5 w-3.5" />
 										</Button>
-										<form method="post" action="?/delete" use:enhance>
+										<form method="post" action="?/delete" use:enhance={() => {
+											submittingDeleteId = cat.id;
+											return async ({ update }) => {
+												submittingDeleteId = null;
+												await update();
+											};
+										}}>
 											<input type="hidden" name="id" value={cat.id} />
 											<Button
 												type="submit"
 												size="icon"
 												variant="ghost"
 												class="text-red-400 hover:bg-red-50 hover:text-red-600"
+												disabled={submittingDeleteId !== null}
 												onclick={async (e) => {
 													e.preventDefault();
 													const form = (e.currentTarget as HTMLButtonElement).form;
@@ -524,7 +543,11 @@
 												}}
 												aria-label="Delete category"
 											>
-												<Icon icon="mdi:trash-can-outline" class="h-3.5 w-3.5" />
+												{#if submittingDeleteId === cat.id}
+													<Icon icon="mdi:loading" class="h-3.5 w-3.5 animate-spin" />
+												{:else}
+													<Icon icon="mdi:trash-can-outline" class="h-3.5 w-3.5" />
+												{/if}
 											</Button>
 										</form>
 									</div>

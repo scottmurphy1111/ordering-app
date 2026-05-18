@@ -43,6 +43,7 @@
 	let slugValue = $state('');
 	let archetypeValue = $state('');
 	let search = $state('');
+	let submitting = $state(false);
 
 	const compatibleArchetypes = $derived(
 		data.archetypesList.filter((a) =>
@@ -155,7 +156,17 @@
 				<CardTitle>New shop</CardTitle>
 			</CardHeader>
 			<CardContent>
-				<form method="post" action="?/create" use:enhance class="space-y-4">
+				<form method="post" action="?/create" use:enhance={() => {
+					submitting = true;
+					return async ({ result, update }) => {
+						if (result.type === 'redirect') {
+							window.location.href = result.location;
+							return;
+						}
+						submitting = false;
+						await update();
+					};
+				}} class="space-y-4">
 					<div>
 						<label class="mb-1 block text-sm font-medium text-muted-foreground" for="name"
 							>Business name</label
@@ -321,7 +332,14 @@
 					</div>
 
 					<div class="flex gap-2 pt-1">
-						<Button type="submit" variant="default" class="flex-1">Create & go to dashboard</Button>
+						<Button type="submit" variant="default" class="flex-1" disabled={submitting}>
+							{#if submitting}
+								<Icon icon="mdi:loading" class="h-4 w-4 animate-spin" />
+								Creating...
+							{:else}
+								Create & go to dashboard
+							{/if}
+						</Button>
 						<Button type="button" onclick={() => (showCreate = false)} variant="outline">
 							Cancel
 						</Button>

@@ -32,6 +32,7 @@
 	let editingOption = $state<number | null>(null);
 	let showAddGroup = $state(false);
 	let modifierError = $state<string | null>(null);
+	let submittingDelete = $state<{ kind: 'modifier' | 'option'; id: number } | null>(null);
 
 	const sortedGroups = $derived(
 		[...groups].sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0))
@@ -265,10 +266,17 @@
 							>
 								Edit
 							</Button>
-							<form method="post" action="?/deleteModifier" use:enhance>
+							<form method="post" action="?/deleteModifier" use:enhance={() => {
+								submittingDelete = { kind: 'modifier', id: mod.id };
+								return async ({ update }) => {
+									submittingDelete = null;
+									await update();
+								};
+							}}>
 								<input type="hidden" name="modifierId" value={mod.id} />
 								<Button
 									type="submit"
+									disabled={submittingDelete !== null}
 									onclick={async (e) => {
 										e.preventDefault();
 										const form = (e.currentTarget as HTMLButtonElement).form;
@@ -278,7 +286,12 @@
 									variant="ghost"
 									class="text-xs text-red-500 hover:bg-red-50 hover:text-red-600"
 								>
-									Delete
+									{#if submittingDelete?.kind === 'modifier' && submittingDelete?.id === mod.id}
+										<Icon icon="mdi:loading" class="h-3.5 w-3.5 animate-spin" />
+										Deleting...
+									{:else}
+										Delete
+									{/if}
 								</Button>
 							</form>
 						</div>
@@ -386,10 +399,17 @@
 									>
 										<Icon icon="mdi:pencil-outline" class="h-3.5 w-3.5" />
 									</Button>
-									<form method="post" action="?/deleteOption" use:enhance>
+									<form method="post" action="?/deleteOption" use:enhance={() => {
+										submittingDelete = { kind: 'option', id: opt.id };
+										return async ({ update }) => {
+											submittingDelete = null;
+											await update();
+										};
+									}}>
 										<input type="hidden" name="optionId" value={opt.id} />
 										<Button
 											type="submit"
+											disabled={submittingDelete !== null}
 											onclick={async (e) => {
 												e.preventDefault();
 												const form = (e.currentTarget as HTMLButtonElement).form;
@@ -400,7 +420,11 @@
 											size="icon"
 											class="text-red-400 hover:bg-red-50 hover:text-red-600"
 										>
-											<Icon icon="mdi:trash-can-outline" class="h-3.5 w-3.5" />
+											{#if submittingDelete?.kind === 'option' && submittingDelete?.id === opt.id}
+												<Icon icon="mdi:loading" class="h-3.5 w-3.5 animate-spin" />
+											{:else}
+												<Icon icon="mdi:trash-can-outline" class="h-3.5 w-3.5" />
+											{/if}
 										</Button>
 									</form>
 								</div>

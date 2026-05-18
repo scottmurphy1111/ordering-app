@@ -62,6 +62,7 @@
 	>;
 
 	let mounted = $state(false);
+	let submittingDeleteId = $state<number | null>(null);
 	onMount(() => {
 		mounted = true;
 	});
@@ -733,12 +734,19 @@
 								>
 									<Icon icon="mdi:pencil-outline" class="h-3.5 w-3.5" />
 								</Button>
-								<form method="post" action="?/delete" use:enhance>
+								<form method="post" action="?/delete" use:enhance={() => {
+									submittingDeleteId = item.id;
+									return async ({ update }) => {
+										submittingDeleteId = null;
+										await update();
+									};
+								}}>
 									<input type="hidden" name="id" value={item.id} />
 									<Button
 										type="submit"
 										variant="ghost"
 										size="icon"
+										disabled={submittingDeleteId !== null}
 										onclick={async (e) => {
 											e.preventDefault();
 											const form = (e.currentTarget as HTMLButtonElement).form;
@@ -747,7 +755,11 @@
 										aria-label="Delete {item.name}"
 										class="text-red-400 hover:bg-red-50 hover:text-red-600"
 									>
-										<Icon icon="mdi:trash-can-outline" class="h-4 w-4" />
+										{#if submittingDeleteId === item.id}
+											<Icon icon="mdi:loading" class="h-4 w-4 animate-spin" />
+										{:else}
+											<Icon icon="mdi:trash-can-outline" class="h-4 w-4" />
+										{/if}
 									</Button>
 								</form>
 							</div>
@@ -887,12 +899,19 @@
 										>
 											<Icon icon="mdi:pencil-outline" class="h-3.5 w-3.5" />
 										</Button>
-										<form method="post" action="?/delete" use:enhance>
+										<form method="post" action="?/delete" use:enhance={() => {
+											submittingDeleteId = item.id;
+											return async ({ update }) => {
+												submittingDeleteId = null;
+												await update();
+											};
+										}}>
 											<input type="hidden" name="id" value={item.id} />
 											<Button
 												type="submit"
 												variant="ghost"
 												size="icon"
+												disabled={submittingDeleteId !== null}
 												onclick={async (e) => {
 													e.preventDefault();
 													const form = (e.currentTarget as HTMLButtonElement).form;
@@ -901,7 +920,11 @@
 												aria-label="Delete item"
 												class="text-red-400 hover:bg-red-50 hover:text-red-600"
 											>
-												<Icon icon="mdi:trash-can-outline" class="h-3.5 w-3.5" />
+												{#if submittingDeleteId === item.id}
+													<Icon icon="mdi:loading" class="h-3.5 w-3.5 animate-spin" />
+												{:else}
+													<Icon icon="mdi:trash-can-outline" class="h-3.5 w-3.5" />
+												{/if}
 											</Button>
 										</form>
 									</div>

@@ -21,6 +21,7 @@
 	const quotes = $derived(data.quotes);
 
 	let priceDollars = $state('');
+	let submittingAction = $state<'sendQuote' | 'decline' | null>(null);
 
 	const priceCents = $derived.by(() => {
 		const val = parseFloat(priceDollars);
@@ -261,7 +262,13 @@
 				<h2 class="mb-4 text-sm font-medium tracking-wide text-gray-500 uppercase">
 					{isQuoted ? 'Send revised quote' : 'Send quote'}
 				</h2>
-				<form method="post" action="?/sendQuote" use:enhance class="space-y-4">
+				<form method="post" action="?/sendQuote" use:enhance={() => {
+					submittingAction = 'sendQuote';
+					return async ({ update }) => {
+						submittingAction = null;
+						await update();
+					};
+				}} class="space-y-4">
 					<div class="grid gap-4 sm:grid-cols-2">
 						<div>
 							<label for="priceInput" class="mb-1 block text-sm font-medium text-foreground">
@@ -300,16 +307,27 @@
 						></textarea>
 					</div>
 					<div class="pt-1">
-						<Button type="submit">
-							<Icon icon="mdi:send-outline" class="h-3.5 w-3.5" />
-							Send quote
+						<Button type="submit" disabled={submittingAction !== null}>
+							{#if submittingAction === 'sendQuote'}
+								<Icon icon="mdi:loading" class="h-4 w-4 animate-spin" />
+								Sending...
+							{:else}
+								<Icon icon="mdi:send-outline" class="h-3.5 w-3.5" />
+								Send quote
+							{/if}
 						</Button>
 					</div>
 				</form>
 
 				{#if canDecline}
 					<div class="mt-4 flex items-center justify-end gap-2 border-t border-gray-100 pt-4">
-						<form method="post" action="?/decline" class="w-full" use:enhance>
+						<form method="post" action="?/decline" class="w-full" use:enhance={() => {
+						submittingAction = 'decline';
+						return async ({ update }) => {
+							submittingAction = null;
+							await update();
+						};
+					}}>
 							<div class="flex items-center gap-2">
 								<textarea
 									name="reason"
@@ -321,6 +339,7 @@
 									type="submit"
 									variant="ghost"
 									class="text-red-500 hover:bg-red-50 hover:text-red-600"
+									disabled={submittingAction !== null}
 									onclick={async (e) => {
 										e.preventDefault();
 										const f = (e.currentTarget as HTMLButtonElement).form;
@@ -333,7 +352,12 @@
 											f?.requestSubmit();
 									}}
 								>
-									Decline
+									{#if submittingAction === 'decline'}
+										<Icon icon="mdi:loading" class="h-4 w-4 animate-spin" />
+										Declining...
+									{:else}
+										Decline
+									{/if}
 								</Button>
 							</div>
 						</form>

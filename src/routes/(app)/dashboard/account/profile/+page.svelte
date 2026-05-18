@@ -33,6 +33,7 @@
 	let avatarInput = $state<HTMLInputElement | null>(null);
 	let avatarUploading = $state(false);
 	let avatarError = $state('');
+	let submittingAction = $state<'updateProfile' | 'removeAvatar' | null>(null);
 
 	async function uploadAvatar(file: File) {
 		const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
@@ -110,13 +111,25 @@
 							{avatarUploading ? 'Uploading…' : data.user.image ? 'Replace' : 'Upload'}
 						</Button>
 						{#if data.user.image}
-							<form method="post" action="?/removeAvatar" use:enhance>
+							<form method="post" action="?/removeAvatar" use:enhance={() => {
+								submittingAction = 'removeAvatar';
+								return async ({ update }) => {
+									submittingAction = null;
+									await update();
+								};
+							}}>
 								<Button
 									type="submit"
 									variant="ghost"
 									class="text-red-500 hover:bg-red-50 hover:text-red-600"
+									disabled={submittingAction !== null}
 								>
-									Remove
+									{#if submittingAction === 'removeAvatar'}
+										<Icon icon="mdi:loading" class="h-4 w-4 animate-spin" />
+										Removing...
+									{:else}
+										Remove
+									{/if}
 								</Button>
 							</form>
 						{/if}
@@ -143,7 +156,13 @@
 					id="profile-form"
 					method="post"
 					action="?/updateProfile"
-					use:enhance
+					use:enhance={() => {
+						submittingAction = 'updateProfile';
+						return async ({ update }) => {
+							submittingAction = null;
+							await update();
+						};
+					}}
 					class="space-y-4"
 				>
 					<div>
@@ -158,7 +177,14 @@
 				</form>
 			</CardContent>
 			<CardFooter>
-				<Button type="submit" form="profile-form" variant="default">Save changes</Button>
+				<Button type="submit" form="profile-form" variant="default" disabled={submittingAction !== null}>
+					{#if submittingAction === 'updateProfile'}
+						<Icon icon="mdi:loading" class="h-4 w-4 animate-spin" />
+						Saving...
+					{:else}
+						Save changes
+					{/if}
+				</Button>
 			</CardFooter>
 		</Card>
 

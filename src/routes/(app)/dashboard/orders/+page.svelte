@@ -25,6 +25,7 @@
 	let soundEnabled = $state(true);
 	let prevOrderCount = $state(-1);
 	let copiedId = $state<number | null>(null);
+	let submittingRowAction = $state<{ id: number; action: 'cancel' | 'refund' } | null>(null);
 
 	onMount(() => {
 		mounted = true;
@@ -760,29 +761,48 @@
 		{#if hasActions}
 			<div class="flex items-center justify-end gap-3 border-t border-gray-100 px-4 py-2">
 				{#if showCancel}
-					<form method="post" action="?/cancel" use:enhance autocomplete="off" class="flex">
+					<form method="post" action="?/cancel" use:enhance={() => {
+						submittingRowAction = { id: order.id, action: 'cancel' };
+						return async ({ update }) => {
+							submittingRowAction = null;
+							await update();
+						};
+					}} autocomplete="off" class="flex">
 						<input type="hidden" name="id" value={order.id} />
 						<Button
 							type="submit"
 							variant="ghost"
 							class="text-red-500 hover:bg-red-50 hover:text-red-600"
+							disabled={submittingRowAction !== null}
 							onclick={async (e) => {
 								e.preventDefault();
 								const form = (e.currentTarget as HTMLButtonElement).form;
 								if (await confirmDialog('Cancel this order?')) form?.requestSubmit();
 							}}
 						>
-							Cancel
+							{#if submittingRowAction?.id === order.id && submittingRowAction?.action === 'cancel'}
+								<Icon icon="mdi:loading" class="h-4 w-4 animate-spin" />
+								Cancelling...
+							{:else}
+								Cancel
+							{/if}
 						</Button>
 					</form>
 				{/if}
 				{#if showRefund}
-					<form method="post" action="?/refund" use:enhance autocomplete="off" class="flex">
+					<form method="post" action="?/refund" use:enhance={() => {
+						submittingRowAction = { id: order.id, action: 'refund' };
+						return async ({ update }) => {
+							submittingRowAction = null;
+							await update();
+						};
+					}} autocomplete="off" class="flex">
 						<input type="hidden" name="id" value={order.id} />
 						<Button
 							type="submit"
 							variant="ghost"
 							class="text-red-500 hover:bg-red-50 hover:text-red-600"
+							disabled={submittingRowAction !== null}
 							onclick={async (e) => {
 								e.preventDefault();
 								const form = (e.currentTarget as HTMLButtonElement).form;
@@ -790,7 +810,12 @@
 									form?.requestSubmit();
 							}}
 						>
-							Refund
+							{#if submittingRowAction?.id === order.id && submittingRowAction?.action === 'refund'}
+								<Icon icon="mdi:loading" class="h-4 w-4 animate-spin" />
+								Refunding...
+							{:else}
+								Refund
+							{/if}
 						</Button>
 					</form>
 				{/if}

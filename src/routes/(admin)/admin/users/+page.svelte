@@ -18,6 +18,7 @@
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
 	let search = $state('');
+	let submittingUserAction = $state<{ id: string; action: 'ban' | 'unban' } | null>(null);
 
 	const filteredUsers = $derived(
 		search.trim()
@@ -142,7 +143,13 @@
 
 										<!-- Ban / Unban -->
 										{#if u.bannedAt}
-											<form method="post" action="?/unban" use:enhance>
+											<form method="post" action="?/unban" use:enhance={() => {
+												submittingUserAction = { id: u.id, action: 'unban' };
+												return async ({ update }) => {
+													submittingUserAction = null;
+													await update();
+												};
+											}}>
 												<input type="hidden" name="id" value={u.id} />
 												<Button
 													type="submit"
@@ -152,14 +159,26 @@
 														if (await confirmDialog(`Restore access for ${u.name}?`))
 															form?.requestSubmit();
 													}}
+													disabled={submittingUserAction !== null}
 													variant="outline"
 													class="w-full md:w-auto"
 												>
-													Unban
+													{#if submittingUserAction?.id === u.id && submittingUserAction?.action === 'unban'}
+														<Icon icon="mdi:loading" class="h-4 w-4 animate-spin" />
+														Unbanning...
+													{:else}
+														Unban
+													{/if}
 												</Button>
 											</form>
 										{:else}
-											<form method="post" action="?/ban" use:enhance>
+											<form method="post" action="?/ban" use:enhance={() => {
+												submittingUserAction = { id: u.id, action: 'ban' };
+												return async ({ update }) => {
+													submittingUserAction = null;
+													await update();
+												};
+											}}>
 												<input type="hidden" name="id" value={u.id} />
 												<Button
 													type="submit"
@@ -173,10 +192,16 @@
 														)
 															form?.requestSubmit();
 													}}
+													disabled={submittingUserAction !== null}
 													variant="ghost"
 													class="w-full text-red-500 hover:bg-red-50 hover:text-red-600 md:w-auto"
 												>
-													Suspend
+													{#if submittingUserAction?.id === u.id && submittingUserAction?.action === 'ban'}
+														<Icon icon="mdi:loading" class="h-4 w-4 animate-spin" />
+														Suspending...
+													{:else}
+														Suspend
+													{/if}
 												</Button>
 											</form>
 										{/if}

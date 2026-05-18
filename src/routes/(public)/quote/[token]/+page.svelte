@@ -34,6 +34,7 @@
 
 	const isAccepted = $derived(!!quote?.acceptedAt || !!form?.acceptSuccess);
 	const isDeclined = $derived(!!quote?.declinedAt || !!form?.declineSuccess);
+	let submittingAction = $state<'accept' | 'decline' | null>(null);
 </script>
 
 <svelte:head>
@@ -208,18 +209,39 @@
 				{/if}
 
 				<!-- Accept CTA -->
-				<form method="post" action="?/accept" use:enhance class="mb-3">
-					<Button type="submit" class="w-full">
-						<Icon icon="mdi:check" class="h-4 w-4" />
-						Accept quote
+				<form method="post" action="?/accept" use:enhance={() => {
+					submittingAction = 'accept';
+					return async ({ result, update }) => {
+						if (result.type === 'redirect') {
+							window.location.href = result.location;
+							return;
+						}
+						submittingAction = null;
+						await update();
+					};
+				}} class="mb-3">
+					<Button type="submit" class="w-full" disabled={submittingAction !== null}>
+						{#if submittingAction === 'accept'}
+							<Icon icon="mdi:loading" class="h-4 w-4 animate-spin" />
+							Accepting...
+						{:else}
+							<Icon icon="mdi:check" class="h-4 w-4" />
+							Accept quote
+						{/if}
 					</Button>
 				</form>
 
 				<div class="text-center text-xs text-muted-foreground">
 					Not interested?
-					<form method="post" action="?/decline" use:enhance class="inline">
-						<button type="submit" class="text-muted-foreground underline hover:text-foreground">
-							Decline this quote
+					<form method="post" action="?/decline" use:enhance={() => {
+						submittingAction = 'decline';
+						return async ({ update }) => {
+							submittingAction = null;
+							await update();
+						};
+					}} class="inline">
+						<button type="submit" disabled={submittingAction !== null} class="text-muted-foreground underline hover:text-foreground disabled:opacity-50">
+							{submittingAction === 'decline' ? 'Declining...' : 'Decline this quote'}
 						</button>
 					</form>
 				</div>

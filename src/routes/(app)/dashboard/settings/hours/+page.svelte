@@ -10,6 +10,8 @@
 
 	let { data, form: _form }: { data: PageData; form: ActionData } = $props();
 	const form = $derived(_form as ActionData | null);
+	let submittingSaveHours = $state(false);
+	let submittingRemoveExceptionId = $state<number | null>(null);
 
 	const DAYS = [
 		'monday',
@@ -131,7 +133,13 @@
 			<CardTitle>Weekly hours</CardTitle>
 		</CardHeader>
 		<CardContent class="p-0">
-			<form method="post" action="?/saveHours" use:enhance class="divide-y divide-gray-100">
+			<form method="post" action="?/saveHours" use:enhance={() => {
+				submittingSaveHours = true;
+				return async ({ update }) => {
+					submittingSaveHours = false;
+					await update();
+				};
+			}} class="divide-y divide-gray-100">
 				{#each DAYS as day (day)}
 					<div class="flex items-center gap-4 px-6 py-3">
 						<!-- Enable toggle -->
@@ -186,7 +194,14 @@
 				{/each}
 
 				<div class="flex justify-end px-6 py-4">
-					<Button type="submit">Save hours</Button>
+					<Button type="submit" disabled={submittingSaveHours}>
+						{#if submittingSaveHours}
+							<Icon icon="mdi:loading" class="h-4 w-4 animate-spin" />
+							Saving...
+						{:else}
+							Save hours
+						{/if}
+					</Button>
 				</div>
 			</form>
 		</CardContent>
@@ -251,7 +266,13 @@
 										<form
 											method="post"
 											action="?/removeException"
-											use:enhance
+											use:enhance={() => {
+												submittingRemoveExceptionId = exc.id;
+												return async ({ update }) => {
+													submittingRemoveExceptionId = null;
+													await update();
+												};
+											}}
 											onsubmit={async (e) => {
 												e.preventDefault();
 												const form = e.currentTarget as HTMLFormElement;
@@ -268,11 +289,16 @@
 											<input type="hidden" name="exceptionId" value={exc.id} />
 											<Button
 												type="submit"
+												disabled={submittingRemoveExceptionId !== null}
 												variant="ghost"
 												size="icon"
 												class="text-red-400 hover:bg-red-50 hover:text-red-600"
 											>
-												<Icon icon="mdi:trash-can-outline" class="h-4 w-4" />
+												{#if submittingRemoveExceptionId === exc.id}
+													<Icon icon="mdi:loading" class="h-4 w-4 animate-spin" />
+												{:else}
+													<Icon icon="mdi:trash-can-outline" class="h-4 w-4" />
+												{/if}
 											</Button>
 										</form>
 									</td>

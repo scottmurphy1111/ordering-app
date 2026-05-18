@@ -2,6 +2,7 @@
 	import { enhance } from '$app/forms';
 	import { signIn } from '$lib/auth-client';
 	import { resolve } from '$app/paths';
+	import Icon from '@iconify/svelte';
 	import { Button } from '$lib/components/ui/button';
 	import type { PageData, ActionData } from './$types';
 
@@ -9,6 +10,7 @@
 
 	let showSignUp = $state(false);
 	let loading = $state(false);
+	let submittingAction = $state<'signIn' | 'signUp' | null>(null);
 
 	const roleLabels: Record<string, string> = {
 		owner: 'Owner',
@@ -135,7 +137,17 @@
 
 				{#if !showSignUp}
 					<!-- Sign in form -->
-					<form method="post" action="?/signInAndAccept" use:enhance class="space-y-3">
+					<form method="post" action="?/signInAndAccept" use:enhance={() => {
+					submittingAction = 'signIn';
+					return async ({ result, update }) => {
+						if (result.type === 'redirect') {
+							window.location.href = result.location;
+							return;
+						}
+						submittingAction = null;
+						await update();
+					};
+				}} class="space-y-3">
 						<div>
 							<label class="mb-1 block text-xs font-medium text-muted-foreground" for="email"
 								>Email</label
@@ -162,8 +174,13 @@
 								class="w-full rounded-lg border px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
 							/>
 						</div>
-						<Button type="submit" variant="default" class="w-full">
-							Sign in &amp; accept invite
+						<Button type="submit" variant="default" class="w-full" disabled={submittingAction !== null}>
+							{#if submittingAction === 'signIn'}
+								<Icon icon="mdi:loading" class="h-4 w-4 animate-spin" />
+								Signing in...
+							{:else}
+								Sign in &amp; accept invite
+							{/if}
 						</Button>
 					</form>
 
@@ -177,7 +194,17 @@
 					</Button>
 				{:else}
 					<!-- Sign up form -->
-					<form method="post" action="?/signUpAndAccept" use:enhance class="space-y-3">
+					<form method="post" action="?/signUpAndAccept" use:enhance={() => {
+					submittingAction = 'signUp';
+					return async ({ result, update }) => {
+						if (result.type === 'redirect') {
+							window.location.href = result.location;
+							return;
+						}
+						submittingAction = null;
+						await update();
+					};
+				}} class="space-y-3">
 						<div>
 							<label class="mb-1 block text-xs font-medium text-muted-foreground" for="name"
 								>Name</label
@@ -218,8 +245,13 @@
 								class="w-full rounded-lg border px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
 							/>
 						</div>
-						<Button type="submit" variant="default" class="w-full">
-							Create account &amp; accept invite
+						<Button type="submit" variant="default" class="w-full" disabled={submittingAction !== null}>
+							{#if submittingAction === 'signUp'}
+								<Icon icon="mdi:loading" class="h-4 w-4 animate-spin" />
+								Creating account...
+							{:else}
+								Create account &amp; accept invite
+							{/if}
 						</Button>
 					</form>
 

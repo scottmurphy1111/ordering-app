@@ -9,6 +9,7 @@
 	import ModifierGroupsManager from '$lib/components/ModifierGroupsManager.svelte';
 
 	let { data }: { data: PageData } = $props();
+	let submitting = $state(false);
 
 	const itemModifiers = $derived(
 		data.item.modifiers
@@ -45,9 +46,17 @@
 	<!-- ── Danger zone ───────────────────────────────────────── -->
 	<div class="mt-6 rounded-xl border border-destructive/20 bg-background p-4">
 		<h2 class="mb-2 text-sm font-semibold text-destructive">Danger zone</h2>
-		<form method="post" action="?/delete" use:enhance>
+		<form method="post" action="?/delete" use:enhance={() => {
+			submitting = true;
+			return async ({ result, update }) => {
+				if (result.type === 'redirect') { window.location.href = result.location; return; }
+				submitting = false;
+				await update();
+			};
+		}}>
 			<Button
 				type="submit"
+				disabled={submitting}
 				onclick={async (e) => {
 					e.preventDefault();
 					const form = (e.currentTarget as HTMLButtonElement).form;
@@ -56,7 +65,12 @@
 				}}
 				variant="destructive"
 			>
-				Delete item
+				{#if submitting}
+					<Icon icon="mdi:loading" class="h-4 w-4 animate-spin" />
+					Deleting...
+				{:else}
+					Delete item
+				{/if}
 			</Button>
 		</form>
 	</div>

@@ -44,6 +44,7 @@
 	);
 
 	let approvePending = $state(false);
+	let submittingAction = $state<string | null>(null);
 
 	function approveEnhance() {
 		approvePending = true;
@@ -290,12 +291,19 @@
 						<Icon icon="mdi:calendar-edit" class="h-3.5 w-3.5" />
 						Propose alternate date
 					</Button>
-					<form method="post" action="?/decline" use:enhance autocomplete="off">
+					<form method="post" action="?/decline" use:enhance={() => {
+						submittingAction = 'decline';
+						return async ({ update }) => {
+							submittingAction = null;
+							await update();
+						};
+					}} autocomplete="off">
 						<input type="hidden" name="id" value={order.id} />
 						<Button
 							type="submit"
 							variant="ghost"
 							class="text-red-500 hover:bg-red-50 hover:text-red-600"
+							disabled={submittingAction !== null}
 							onclick={async (e) => {
 								e.preventDefault();
 								const f = (e.currentTarget as HTMLButtonElement).form!;
@@ -308,8 +316,13 @@
 									f.requestSubmit();
 							}}
 						>
-							<Icon icon="mdi:close" class="h-3.5 w-3.5" />
-							Decline
+							{#if submittingAction === 'decline'}
+								<Icon icon="mdi:loading" class="h-3.5 w-3.5 animate-spin" />
+								Declining...
+							{:else}
+								<Icon icon="mdi:close" class="h-3.5 w-3.5" />
+								Decline
+							{/if}
 						</Button>
 					</form>
 				</div>
@@ -520,34 +533,63 @@
 			<CardContent class="flex flex-wrap gap-2">
 				{#if nextStatus[order.status]}
 					{@const action = actionConfig[order.status]}
-					<form method="post" action="?/updateStatus" use:enhance autocomplete="off">
+					<form method="post" action="?/updateStatus" use:enhance={() => {
+						submittingAction = 'updateStatus';
+						return async ({ update }) => {
+							submittingAction = null;
+							await update();
+						};
+					}} autocomplete="off">
 						<input type="hidden" name="id" value={order.id} />
 						<input type="hidden" name="status" value={nextStatus[order.status]} />
-						<Button type="submit">
-							<Icon icon={action.icon} class="h-3.5 w-3.5" />
-							{action.label}
+						<Button type="submit" disabled={submittingAction !== null}>
+							{#if submittingAction === 'updateStatus'}
+								<Icon icon="mdi:loading" class="h-3.5 w-3.5 animate-spin" />
+								Updating...
+							{:else}
+								<Icon icon={action.icon} class="h-3.5 w-3.5" />
+								{action.label}
+							{/if}
 						</Button>
 					</form>
 				{/if}
 				{#if !['fulfilled', 'cancelled'].includes(order.status)}
-					<form method="post" action="?/cancel" use:enhance autocomplete="off">
+					<form method="post" action="?/cancel" use:enhance={() => {
+						submittingAction = 'cancel';
+						return async ({ update }) => {
+							submittingAction = null;
+							await update();
+						};
+					}} autocomplete="off">
 						<input type="hidden" name="id" value={order.id} />
 						<Button
 							type="submit"
 							variant="ghost"
 							class="text-red-500 hover:bg-red-50 hover:text-red-600"
+							disabled={submittingAction !== null}
 							onclick={async (e) => {
 								e.preventDefault();
 								const form = (e.currentTarget as HTMLButtonElement).form;
 								if (await confirmDialog('Cancel this order?')) form?.requestSubmit();
 							}}
 						>
-							Cancel order
+							{#if submittingAction === 'cancel'}
+								<Icon icon="mdi:loading" class="h-3.5 w-3.5 animate-spin" />
+								Cancelling...
+							{:else}
+								Cancel order
+							{/if}
 						</Button>
 					</form>
 				{/if}
 				{#if order.status === 'cancelled' && order.paymentStatus === 'paid'}
-					<form method="post" action="?/refund" use:enhance autocomplete="off">
+					<form method="post" action="?/refund" use:enhance={() => {
+						submittingAction = 'refund';
+						return async ({ update }) => {
+							submittingAction = null;
+							await update();
+						};
+					}} autocomplete="off">
 						<input type="hidden" name="id" value={order.id} />
 						<Button
 							type="submit"
@@ -557,10 +599,16 @@
 								if (await confirmDialog('Issue a full refund for this order?'))
 									form?.requestSubmit();
 							}}
+							disabled={submittingAction !== null}
 							variant="ghost"
 							class="text-red-500 hover:bg-red-50 hover:text-red-600"
 						>
-							Refund payment
+							{#if submittingAction === 'refund'}
+								<Icon icon="mdi:loading" class="h-3.5 w-3.5 animate-spin" />
+								Refunding...
+							{:else}
+								Refund payment
+							{/if}
 						</Button>
 					</form>
 				{/if}

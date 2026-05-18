@@ -38,6 +38,7 @@
 	let addError = $state<string | null>(null);
 	let editingId = $state<number | null>(null);
 	let editError = $state<string | null>(null);
+	let submittingDeleteTemplateId = $state<number | null>(null);
 
 	const editingLocation = $derived(
 		editingId !== null ? (data.locations.find((l) => l.id === editingId) ?? null) : null
@@ -1462,7 +1463,13 @@
 													{tmpl.isActive ? 'Deactivate' : 'Activate'}
 												</Button>
 											</form>
-											<form method="post" action="?/deleteTemplate" use:enhance>
+											<form method="post" action="?/deleteTemplate" use:enhance={() => {
+												submittingDeleteTemplateId = tmpl.id;
+												return async ({ update }) => {
+													submittingDeleteTemplateId = null;
+													await update();
+												};
+											}}>
 												<input type="hidden" name="id" value={tmpl.id} />
 												<Tooltip>
 													<TooltipTrigger>
@@ -1473,7 +1480,7 @@
 																	variant="ghost"
 																	size="xs"
 																	class="text-xs text-muted-foreground hover:text-destructive"
-																	disabled={!tmpl.canDelete}
+																	disabled={submittingDeleteTemplateId !== null || !tmpl.canDelete}
 																	onclick={async (e) => {
 																		const form = (e.currentTarget as HTMLButtonElement).form;
 																		if (
@@ -1485,7 +1492,12 @@
 																			form?.requestSubmit();
 																	}}
 																>
-																	Delete
+																	{#if submittingDeleteTemplateId === tmpl.id}
+																		<Icon icon="mdi:loading" class="h-3.5 w-3.5 animate-spin" />
+																		Deleting...
+																	{:else}
+																		Delete
+																	{/if}
 																</Button>
 															</span>
 														{/snippet}
@@ -1493,8 +1505,8 @@
 													{#if !tmpl.canDelete}
 														<TooltipContent>
 															Can't delete — {tmpl.futureCommitmentCount} {tmpl.futureCommitmentCount === 1
-																	? 'order is'
-																	: 'orders are'} attached to upcoming pickups. Deactivate instead.
+																		? 'order is'
+																		: 'orders are'} attached to upcoming pickups. Deactivate instead.
 														</TooltipContent>
 													{/if}
 												</Tooltip>
@@ -1616,7 +1628,13 @@
 												{tmpl.isActive ? 'Deactivate' : 'Activate'}
 											</Button>
 										</form>
-										<form method="post" action="?/deleteTemplate" use:enhance>
+										<form method="post" action="?/deleteTemplate" use:enhance={() => {
+											submittingDeleteTemplateId = tmpl.id;
+											return async ({ update }) => {
+												submittingDeleteTemplateId = null;
+												await update();
+											};
+										}}>
 											<input type="hidden" name="id" value={tmpl.id} />
 											<Tooltip>
 												<TooltipTrigger>
@@ -1627,7 +1645,7 @@
 																variant="ghost"
 																size="xs"
 																class="text-xs text-muted-foreground hover:text-destructive"
-																disabled={!tmpl.canDelete}
+																disabled={submittingDeleteTemplateId !== null || !tmpl.canDelete}
 																onclick={async (e) => {
 																	const form = (e.currentTarget as HTMLButtonElement).form;
 																	if (
@@ -1639,7 +1657,12 @@
 																		form?.requestSubmit();
 																}}
 															>
-																Delete
+																{#if submittingDeleteTemplateId === tmpl.id}
+																	<Icon icon="mdi:loading" class="h-3.5 w-3.5 animate-spin" />
+																	Deleting...
+																{:else}
+																	Delete
+																{/if}
 															</Button>
 														</span>
 													{/snippet}

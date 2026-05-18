@@ -20,6 +20,7 @@
 
 	let fromOpen = $state(false);
 	let toOpen = $state(false);
+	let submittingRefundId = $state<number | null>(null);
 
 	const fromDate = $derived(data.from ? parseDate(data.from) : undefined);
 	const toDate = $derived(data.to ? parseDate(data.to) : undefined);
@@ -389,12 +390,19 @@
 					<!-- Action strip: only for cancelled+paid orders -->
 					{#if showRefund}
 						<div class="flex items-center justify-end gap-3 border-t border-gray-100 px-4 py-2">
-							<form method="post" action="?/refund" use:enhance class="flex">
+							<form method="post" action="?/refund" use:enhance={() => {
+								submittingRefundId = order.id;
+								return async ({ update }) => {
+									submittingRefundId = null;
+									await update();
+								};
+							}} class="flex">
 								<input type="hidden" name="id" value={order.id} />
 								<Button
 									type="submit"
 									variant="ghost"
 									class="text-red-500 hover:bg-red-50 hover:text-red-600"
+									disabled={submittingRefundId !== null}
 									onclick={async (e) => {
 										e.preventDefault();
 										const form = (e.currentTarget as HTMLButtonElement).form;
@@ -402,7 +410,12 @@
 											form?.requestSubmit();
 									}}
 								>
-									Refund
+									{#if submittingRefundId === order.id}
+										<Icon icon="mdi:loading" class="h-4 w-4 animate-spin" />
+										Refunding...
+									{:else}
+										Refund
+									{/if}
 								</Button>
 							</form>
 						</div>

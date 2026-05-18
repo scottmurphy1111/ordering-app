@@ -30,6 +30,8 @@
 
 	// Promo codes state
 	let showForm = $state(false);
+	let submittingDeletePromoId = $state<number | null>(null);
+	let submittingDisableLoyalty = $state(false);
 	let typeVal = $state<'percent' | 'flat'>('percent');
 
 	function formatAmount(type: string, amount: number) {
@@ -244,17 +246,31 @@
 										</form>
 									</TableCell>
 									<TableCell class="px-4 py-3">
-										<form method="POST" action="?/delete" use:enhance>
+										<form method="POST" action="?/delete" use:enhance={() => {
+											submittingDeletePromoId = promo.id;
+											return async ({ update }) => {
+												submittingDeletePromoId = null;
+												await update();
+											};
+										}}>
 											<input type="hidden" name="id" value={promo.id} />
 											<Button
 												type="submit"
+												disabled={submittingDeletePromoId !== null}
 												onclick={async (e) => {
 													e.preventDefault();
 													const form = (e.currentTarget as HTMLButtonElement).form;
 													if (await confirmDialog('Delete this code?')) form?.requestSubmit();
 												}}
 												variant="ghost"
-												class="text-red-500 hover:bg-red-50 hover:text-red-600">Delete</Button
+												class="text-red-500 hover:bg-red-50 hover:text-red-600">
+													{#if submittingDeletePromoId === promo.id}
+														<Icon icon="mdi:loading" class="h-4 w-4 animate-spin" />
+														Deleting...
+													{:else}
+														Delete
+													{/if}
+												</Button
 											>
 										</form>
 									</TableCell>
@@ -431,11 +447,25 @@
 					<CardFooter class="gap-3">
 						<Button type="submit" form="loyalty-form">Save program</Button>
 						{#if data.loyalty.enabled}
-							<form method="POST" action="?/disableLoyalty" use:enhance>
+							<form method="POST" action="?/disableLoyalty" use:enhance={() => {
+								submittingDisableLoyalty = true;
+								return async ({ update }) => {
+									submittingDisableLoyalty = false;
+									await update();
+								};
+							}}>
 								<Button
 									type="submit"
 									variant="ghost"
-									class="text-red-500 hover:bg-red-50 hover:text-red-600">Disable loyalty</Button
+									class="text-red-500 hover:bg-red-50 hover:text-red-600"
+									disabled={submittingDisableLoyalty}>
+									{#if submittingDisableLoyalty}
+										<Icon icon="mdi:loading" class="h-4 w-4 animate-spin" />
+										Disabling...
+									{:else}
+										Disable loyalty
+									{/if}
+								</Button
 								>
 							</form>
 						{/if}
@@ -511,11 +541,25 @@
 					<CardFooter class="gap-3">
 						<Button type="submit" form="loyalty-form">Save program</Button>
 						{#if data.loyalty.enabled}
-							<form method="POST" action="?/disableLoyalty" use:enhance>
+							<form method="POST" action="?/disableLoyalty" use:enhance={() => {
+								submittingDisableLoyalty = true;
+								return async ({ update }) => {
+									submittingDisableLoyalty = false;
+									await update();
+								};
+							}}>
 								<Button
 									type="submit"
 									variant="ghost"
-									class="text-red-500 hover:bg-red-50 hover:text-red-600">Disable loyalty</Button
+									class="text-red-500 hover:bg-red-50 hover:text-red-600"
+									disabled={submittingDisableLoyalty}>
+									{#if submittingDisableLoyalty}
+										<Icon icon="mdi:loading" class="h-4 w-4 animate-spin" />
+										Disabling...
+									{:else}
+										Disable loyalty
+									{/if}
+								</Button
 								>
 							</form>
 						{/if}

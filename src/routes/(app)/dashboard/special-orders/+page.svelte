@@ -13,6 +13,7 @@
 	const form = $derived(_form as { error?: string; declineSuccess?: boolean } | null);
 
 	let expandedId = $state<number | null>(null);
+	let submittingDeclineId = $state<number | null>(null);
 
 	function formatDate(d: Date | string) {
 		return new Intl.DateTimeFormat('en-US', {
@@ -250,7 +251,13 @@
 									data-slot="card-footer"
 									class="mt-4 flex items-center justify-between gap-3 border-t border-gray-100 pt-3"
 								>
-									<form method="post" action="?/decline" use:enhance>
+									<form method="post" action="?/decline" use:enhance={() => {
+										submittingDeclineId = req.id;
+										return async ({ update }) => {
+											submittingDeclineId = null;
+											await update();
+										};
+									}}>
 										<input type="hidden" name="id" value={req.id} />
 										<div class="flex items-center gap-2">
 											<textarea
@@ -263,6 +270,7 @@
 												type="submit"
 												variant="ghost"
 												class="text-red-500 hover:bg-red-50 hover:text-red-600"
+												disabled={submittingDeclineId !== null}
 												onclick={async (e) => {
 													e.preventDefault();
 													const form = (e.currentTarget as HTMLButtonElement).form;
@@ -275,7 +283,12 @@
 														form?.requestSubmit();
 												}}
 											>
-												Decline
+												{#if submittingDeclineId === req.id}
+													<Icon icon="mdi:loading" class="h-4 w-4 animate-spin" />
+													Declining...
+												{:else}
+													Decline
+												{/if}
 											</Button>
 										</div>
 									</form>

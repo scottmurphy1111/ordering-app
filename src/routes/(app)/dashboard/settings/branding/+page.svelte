@@ -36,6 +36,7 @@
 	let logoState = $state<UploadState>({ uploading: false, error: '' });
 	let bannerState = $state<UploadState>({ uploading: false, error: '' });
 	let bgState = $state<UploadState>({ uploading: false, error: '' });
+	let submittingAction = $state<'removeLogo' | 'removeBanner' | 'removeBackground' | null>(null);
 
 	let logoInput = $state<HTMLInputElement | null>(null);
 	let bannerInput = $state<HTMLInputElement | null>(null);
@@ -316,12 +317,26 @@
 								: 'Upload logo'}
 					</Button>
 					{#if data.branding.logoUrl}
-						<form method="post" action="?/removeLogo" use:enhance>
+						<form method="post" action="?/removeLogo" use:enhance={() => {
+							submittingAction = 'removeLogo';
+							return async ({ update }) => {
+								submittingAction = null;
+								await update();
+							};
+						}}>
 							<Button
 								type="submit"
+								disabled={submittingAction !== null}
 								variant="ghost"
-								class="text-red-500 hover:bg-red-50 hover:text-red-600">Remove</Button
+								class="text-red-500 hover:bg-red-50 hover:text-red-600"
 							>
+								{#if submittingAction === 'removeLogo'}
+									<Icon icon="mdi:loading" class="h-4 w-4 animate-spin" />
+									Removing...
+								{:else}
+									Remove
+								{/if}
+							</Button>
 						</form>
 					{/if}
 				</div>
@@ -381,12 +396,26 @@
 								: 'Upload banner'}
 					</Button>
 					{#if data.branding.bannerUrl}
-						<form method="post" action="?/removeBanner" use:enhance>
+						<form method="post" action="?/removeBanner" use:enhance={() => {
+							submittingAction = 'removeBanner';
+							return async ({ update }) => {
+								submittingAction = null;
+								await update();
+							};
+						}}>
 							<Button
 								type="submit"
+								disabled={submittingAction !== null}
 								variant="ghost"
-								class="text-red-500 hover:bg-red-50 hover:text-red-600">Remove</Button
+								class="text-red-500 hover:bg-red-50 hover:text-red-600"
 							>
+								{#if submittingAction === 'removeBanner'}
+									<Icon icon="mdi:loading" class="h-4 w-4 animate-spin" />
+									Removing...
+								{:else}
+									Remove
+								{/if}
+							</Button>
 						</form>
 					{/if}
 				</div>
@@ -451,12 +480,26 @@
 								: 'Upload background'}
 					</Button>
 					{#if data.branding.backgroundImageUrl}
-						<form method="post" action="?/removeBackground" use:enhance>
+						<form method="post" action="?/removeBackground" use:enhance={() => {
+							submittingAction = 'removeBackground';
+							return async ({ update }) => {
+								submittingAction = null;
+								await update();
+							};
+						}}>
 							<Button
 								type="submit"
+								disabled={submittingAction !== null}
 								variant="ghost"
-								class="text-red-500 hover:bg-red-50 hover:text-red-600">Remove</Button
+								class="text-red-500 hover:bg-red-50 hover:text-red-600"
 							>
+								{#if submittingAction === 'removeBackground'}
+									<Icon icon="mdi:loading" class="h-4 w-4 animate-spin" />
+									Removing...
+								{:else}
+									Remove
+								{/if}
+							</Button>
 						</form>
 					{/if}
 				</div>

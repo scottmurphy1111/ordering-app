@@ -11,6 +11,7 @@
 	import { Alert } from '$lib/components/ui/alert';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
+	let submittingRemoveId = $state<string | null>(null);
 
 	const isAdded = $derived(page.url.searchParams.get('added') === '1');
 
@@ -137,13 +138,20 @@
 									</form>
 								{/if}
 
-								<form method="post" action="?/remove" use:enhance>
+								<form method="post" action="?/remove" use:enhance={() => {
+									submittingRemoveId = method.id;
+									return async ({ update }) => {
+										submittingRemoveId = null;
+										await update();
+									};
+								}}>
 									<input type="hidden" name="paymentMethodId" value={method.id} />
 									<Button
 										type="submit"
 										variant="ghost"
 										size="icon"
 										class="text-red-500 hover:bg-red-50 hover:text-red-600"
+										disabled={submittingRemoveId !== null}
 										onclick={async (e) => {
 											e.preventDefault();
 											const formEl = (e.currentTarget as HTMLButtonElement).closest(
@@ -163,7 +171,11 @@
 												formEl.requestSubmit();
 										}}
 									>
-										<Icon icon="mdi:trash-can-outline" />
+										{#if submittingRemoveId === method.id}
+											<Icon icon="mdi:loading" class="h-4 w-4 animate-spin" />
+										{:else}
+											<Icon icon="mdi:trash-can-outline" />
+										{/if}
 									</Button>
 								</form>
 							</div>

@@ -11,6 +11,7 @@
 	const form = $derived(_form as { error?: string } | null);
 
 	const targetModels = $derived(FULFILLMENT_MODELS.filter((m) => m.value !== data.currentModel));
+	let submitting = $state(false);
 </script>
 
 <div class="max-w-2xl">
@@ -115,7 +116,17 @@
 			{/if}
 		{/if}
 
-		<form method="post" action="?/commit" use:enhance class="flex items-center gap-4">
+		<form method="post" action="?/commit" use:enhance={() => {
+			submitting = true;
+			return async ({ result, update }) => {
+				if (result.type === 'redirect') {
+					window.location.href = result.location;
+					return;
+				}
+				submitting = false;
+				await update();
+			};
+		}} class="flex items-center gap-4">
 			<input type="hidden" name="target" value={data.target} />
 			<a
 				href={resolve('/dashboard/settings/fulfillment-model/change')}
@@ -123,7 +134,14 @@
 			>
 				← Change selection
 			</a>
-			<Button type="submit">Confirm change</Button>
+			<Button type="submit" disabled={submitting}>
+				{#if submitting}
+					<Icon icon="mdi:loading" class="h-4 w-4 animate-spin" />
+					Committing...
+				{:else}
+					Confirm change
+				{/if}
+			</Button>
 		</form>
 	{/if}
 </div>

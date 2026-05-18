@@ -2,6 +2,7 @@
 	import { enhance } from '$app/forms';
 	import { confirmDialog } from '$lib/confirm.svelte';
 	import type { PageData, ActionData } from './$types';
+	import Icon from '@iconify/svelte';
 	import { Button } from '$lib/components/ui/button';
 	import { Badge } from '$lib/components/ui/badge';
 	import { Input } from '$lib/components/ui/input';
@@ -32,6 +33,8 @@
 	let addRoleValue = $state('');
 	let inviteRoleValue = $state('');
 	let copiedToken = $state<string | null>(null);
+	let submittingRemoveMemberId = $state<string | null>(null);
+	let submittingCancelInviteId = $state<string | null>(null);
 
 	const inviteUrl = $derived((form as { inviteUrl?: string } | null)?.inviteUrl ?? null);
 	const inviteEmail = $derived((form as { inviteEmail?: string } | null)?.inviteEmail ?? null);
@@ -313,7 +316,13 @@
 														</Button>
 													</form>
 												{/if}
-												<form method="post" action="?/removeMember" use:enhance>
+												<form method="post" action="?/removeMember" use:enhance={() => {
+													submittingRemoveMemberId = member.userId;
+													return async ({ update }) => {
+														submittingRemoveMemberId = null;
+														await update();
+													};
+												}}>
 													<input type="hidden" name="userId" value={member.userId} />
 													<Button
 														type="submit"
@@ -323,10 +332,16 @@
 															if (await confirmDialog(`Remove ${member.name} from this vendor?`))
 																form?.requestSubmit();
 														}}
+														disabled={submittingRemoveMemberId !== null}
 														variant="ghost"
 														class="w-full text-red-500 hover:bg-red-50 hover:text-red-600 md:w-auto"
 													>
-														Remove
+														{#if submittingRemoveMemberId === member.userId}
+															<Icon icon="mdi:loading" class="h-4 w-4 animate-spin" />
+															Removing...
+														{:else}
+															Remove
+														{/if}
 													</Button>
 												</form>
 											</div>
@@ -388,10 +403,17 @@
 													>
 														{copiedToken === invite.id ? 'Copied!' : 'Copy link'}
 													</Button>
-													<form method="post" action="?/cancelInvite" use:enhance>
+													<form method="post" action="?/cancelInvite" use:enhance={() => {
+														submittingCancelInviteId = invite.id;
+														return async ({ update }) => {
+															submittingCancelInviteId = null;
+															await update();
+														};
+													}}>
 														<input type="hidden" name="id" value={invite.id} />
 														<Button
 															type="submit"
+															disabled={submittingCancelInviteId !== null}
 															onclick={async (e) => {
 																e.preventDefault();
 																const form = (e.currentTarget as HTMLButtonElement).form;
@@ -401,7 +423,12 @@
 															variant="ghost"
 															class="w-full text-red-500 hover:bg-red-50 hover:text-red-600 md:w-auto"
 														>
-															Cancel
+															{#if submittingCancelInviteId === invite.id}
+																<Icon icon="mdi:loading" class="h-4 w-4 animate-spin" />
+																Cancelling...
+															{:else}
+																Cancel
+															{/if}
 														</Button>
 													</form>
 												</div>

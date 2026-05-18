@@ -30,6 +30,7 @@
 	}
 
 	let search = $state('');
+	let submittingVendorAction = $state<{ id: number; action: 'restore' | 'archive' | 'delete' | 'reseed' } | null>(null);
 
 	const filteredVendors = $derived(
 		search.trim()
@@ -166,7 +167,13 @@
 															<form
 																method="post"
 																action="?/reseed"
-																use:enhance
+																use:enhance={() => {
+																	submittingVendorAction = { id: t.id, action: 'reseed' };
+																	return async ({ update }) => {
+																		submittingVendorAction = null;
+																		await update();
+																	};
+																}}
 																class="w-full"
 																onsubmit={async (e) => {
 																	e.preventDefault();
@@ -183,9 +190,14 @@
 																<input type="hidden" name="archetypeKey" value={archetype.key} />
 																<button
 																	type="submit"
-																	class="w-full cursor-pointer text-left text-sm"
+																	disabled={submittingVendorAction !== null}
+																	class="w-full cursor-pointer text-left text-sm disabled:opacity-50"
 																>
-																	{archetype.label}
+																	{#if submittingVendorAction?.id === t.id && submittingVendorAction?.action === 'reseed'}
+																		Reseeding...
+																	{:else}
+																		{archetype.label}
+																	{/if}
 																</button>
 															</form>
 														</DropdownMenuItem>
@@ -195,7 +207,13 @@
 										{/if}
 										{#if t.deletedAt || !t.isActive}
 											<!-- Restore -->
-											<form method="post" action="?/restore" use:enhance>
+											<form method="post" action="?/restore" use:enhance={() => {
+												submittingVendorAction = { id: t.id, action: 'restore' };
+												return async ({ update }) => {
+													submittingVendorAction = null;
+													await update();
+												};
+											}}>
 												<input type="hidden" name="id" value={t.id} />
 												<Button
 													type="submit"
@@ -204,15 +222,27 @@
 														const form = (e.currentTarget as HTMLButtonElement).form;
 														if (await confirmDialog('Restore this vendor?')) form?.requestSubmit();
 													}}
+													disabled={submittingVendorAction !== null}
 													variant="outline"
 													class="w-full md:w-auto"
 												>
-													Restore
+													{#if submittingVendorAction?.id === t.id && submittingVendorAction?.action === 'restore'}
+														<Icon icon="mdi:loading" class="h-4 w-4 animate-spin" />
+														Restoring...
+													{:else}
+														Restore
+													{/if}
 												</Button>
 											</form>
 										{:else}
 											<!-- Archive -->
-											<form method="post" action="?/archive" use:enhance>
+											<form method="post" action="?/archive" use:enhance={() => {
+												submittingVendorAction = { id: t.id, action: 'archive' };
+												return async ({ update }) => {
+													submittingVendorAction = null;
+													await update();
+												};
+											}}>
 												<input type="hidden" name="id" value={t.id} />
 												<Button
 													type="submit"
@@ -226,17 +256,29 @@
 														)
 															form?.requestSubmit();
 													}}
+													disabled={submittingVendorAction !== null}
 													variant="ghost"
 													class="w-full text-muted-foreground hover:text-foreground md:w-auto"
 												>
-													Archive
+													{#if submittingVendorAction?.id === t.id && submittingVendorAction?.action === 'archive'}
+														<Icon icon="mdi:loading" class="h-4 w-4 animate-spin" />
+														Archiving...
+													{:else}
+														Archive
+													{/if}
 												</Button>
 											</form>
 										{/if}
 
 										{#if !t.deletedAt}
 											<!-- Soft delete -->
-											<form method="post" action="?/delete" use:enhance>
+											<form method="post" action="?/delete" use:enhance={() => {
+												submittingVendorAction = { id: t.id, action: 'delete' };
+												return async ({ update }) => {
+													submittingVendorAction = null;
+													await update();
+												};
+											}}>
 												<input type="hidden" name="id" value={t.id} />
 												<Button
 													type="submit"
@@ -250,10 +292,16 @@
 														)
 															form?.requestSubmit();
 													}}
+													disabled={submittingVendorAction !== null}
 													variant="ghost"
 													class="w-full text-red-500 hover:bg-red-50 hover:text-red-600 md:w-auto"
 												>
-													Delete
+													{#if submittingVendorAction?.id === t.id && submittingVendorAction?.action === 'delete'}
+														<Icon icon="mdi:loading" class="h-4 w-4 animate-spin" />
+														Deleting...
+													{:else}
+														Delete
+													{/if}
 												</Button>
 											</form>
 										{/if}
