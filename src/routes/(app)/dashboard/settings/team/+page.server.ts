@@ -21,24 +21,14 @@ export const load: PageServerLoad = async ({ locals }) => {
 			role: vendorUsers.role,
 			assignedAt: vendorUsers.assignedAt,
 			name: user.name,
-			email: user.email,
-			isInternal: user.isInternal
+			email: user.email
 		})
 		.from(vendorUsers)
 		.innerJoin(user, eq(vendorUsers.userId, user.id))
-		.where(eq(vendorUsers.vendorId, vendorId))
+		.where(and(eq(vendorUsers.vendorId, vendorId), eq(user.isInternal, false)))
 		.orderBy(vendorUsers.assignedAt);
 
 	const currentMember = members.find((m) => m.userId === currentUserId);
-	const canManageInternal = currentMember?.role === 'owner' || locals.user?.isInternal === true;
-
-	let internalUsers: { id: string; name: string; email: string; createdAt: Date }[] = [];
-	if (canManageInternal) {
-		internalUsers = await db
-			.select({ id: user.id, name: user.name, email: user.email, createdAt: user.createdAt })
-			.from(user)
-			.where(eq(user.isInternal, true));
-	}
 
 	const pendingInvitations =
 		currentMember?.role === 'owner' || locals.user?.isInternal
@@ -63,11 +53,9 @@ export const load: PageServerLoad = async ({ locals }) => {
 
 	return {
 		members,
-		internalUsers,
 		pendingInvitations,
 		currentUserId,
 		currentRole: currentMember?.role ?? null,
-		canManageInternal,
 		roles: ROLES,
 		origin: env.ORIGIN ?? ''
 	};
@@ -218,15 +206,4 @@ export const actions: Actions = {
 		return { success: true };
 	},
 
-	toggleInternal: async ({ request, locals }) => {
-		requireOwner(locals);
-		const formData = await request.formData();
-		const userId = formData.get('userId')?.toString();
-		const current = formData.get('isInternal') === 'true';
-
-		if (!userId) return fail(400, { error: 'Invalid' });
-
-		await db.update(user).set({ isInternal: !current }).where(eq(user.id, userId));
-		return { success: true };
-	}
 };

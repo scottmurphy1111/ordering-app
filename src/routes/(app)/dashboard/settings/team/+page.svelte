@@ -14,7 +14,6 @@
 		SelectValue
 	} from '$lib/components/ui/select';
 	import { Card, CardContent } from '$lib/components/ui/card';
-	import { Tabs, TabsList, TabsTrigger, TabsContent } from '$lib/components/ui/tabs';
 	import {
 		Table,
 		TableHeader,
@@ -27,7 +26,6 @@
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
-	let tab = $state<'members' | 'internal'>('members');
 	let showAddForm = $state(false);
 	let showInviteForm = $state(false);
 	let addRoleValue = $state('');
@@ -58,7 +56,7 @@
 		viewer: 'bg-muted text-muted-foreground'
 	};
 
-	const nonInternalMembers = $derived(data.members.filter((m) => !m.isInternal));
+
 </script>
 
 <div>
@@ -67,22 +65,8 @@
 		<p class="mt-0.5 text-sm text-muted-foreground">Manage who has access to this vendor.</p>
 	</div>
 
-	<Tabs bind:value={tab}>
-		<TabsList class="mb-6">
-			<TabsTrigger value="members">Members</TabsTrigger>
-			{#if data.canManageInternal}
-				<TabsTrigger value="internal">
-					Internal users
-					{#if data.internalUsers.length > 0}
-						<Badge class="ml-1.5 bg-muted text-muted-foreground">{data.internalUsers.length}</Badge>
-					{/if}
-				</TabsTrigger>
-			{/if}
-		</TabsList>
-
-		<!-- ── MEMBERS TAB ── -->
-		<TabsContent value="members">
-			{#if form?.addError}
+	<div>
+		{#if form?.addError}
 				<Alert severity="error" class="mb-4">{form.addError}</Alert>
 			{/if}
 			{#if form?.error}
@@ -252,9 +236,6 @@
 											{#if member.userId === data.currentUserId}
 												<span class="ml-1 text-xs text-muted-foreground">(you)</span>
 											{/if}
-											{#if member.isInternal}
-												<Badge class="ml-1 bg-indigo-100 text-indigo-600">internal</Badge>
-											{/if}
 										</p>
 										<p class="text-xs text-muted-foreground">{member.email}</p>
 									</TableCell>
@@ -292,30 +273,6 @@
 									<TableCell class="px-4 py-3 text-right">
 										{#if member.userId !== data.currentUserId && (data.currentRole === 'owner' || data.currentRole === 'admin')}
 											<div class="flex flex-col items-stretch gap-1 md:flex-row md:items-center md:justify-end md:gap-3">
-												{#if data.canManageInternal && !member.isInternal}
-													<form method="post" action="?/toggleInternal" use:enhance>
-														<input type="hidden" name="userId" value={member.userId} />
-														<input type="hidden" name="isInternal" value="false" />
-														<Button
-															type="submit"
-															onclick={async (e) => {
-																e.preventDefault();
-																const form = (e.currentTarget as HTMLButtonElement).form;
-																if (
-																	await confirmDialog(
-																		`Grant internal platform access to ${member.name}?`,
-																		{ danger: false }
-																	)
-																)
-																	form?.requestSubmit();
-															}}
-															variant="ghost"
-															class="w-full text-indigo-500 hover:text-indigo-700 md:w-auto"
-														>
-															Make internal
-														</Button>
-													</form>
-												{/if}
 												<form method="post" action="?/removeMember" use:enhance={() => {
 													submittingRemoveMemberId = member.userId;
 													return async ({ update }) => {
@@ -441,128 +398,5 @@
 					</Card>
 				</div>
 			{/if}
-		</TabsContent>
-
-		<!-- ── INTERNAL TAB ── -->
-		{#if data.canManageInternal}
-			<TabsContent value="internal">
-				<div
-					class="mb-5 rounded-md border border-indigo-200 bg-indigo-50 px-4 py-3 text-sm text-indigo-700"
-				>
-					Internal users are platform-level staff with access to all vendors. This is separate from
-					vendor membership roles.
-				</div>
-
-				{#if data.internalUsers.length === 0}
-					<div class="mb-6 rounded-xl border border-dashed p-10 text-center">
-						<p class="text-sm text-muted-foreground">No internal users yet.</p>
-						<p class="mt-1 text-xs text-muted-foreground">
-							Promote a vendor member using"Make internal" on the Members tab.
-						</p>
-					</div>
-				{:else}
-					<Card class="mb-6 p-0 shadow-sm">
-						<CardContent>
-							<Table>
-								<TableHeader>
-									<TableRow class="hover:bg-transparent">
-										<TableHead class="px-4 py-2.5">User</TableHead>
-										<TableHead class="hidden px-4 py-2.5 md:table-cell">Account created</TableHead>
-										<TableHead class="px-4 py-2.5"></TableHead>
-									</TableRow>
-								</TableHeader>
-								<TableBody>
-									{#each data.internalUsers as u (u.id)}
-										<TableRow>
-											<TableCell class="px-4 py-3">
-												<p class="font-medium text-foreground">{u.name}</p>
-												<p class="text-xs text-muted-foreground">{u.email}</p>
-											</TableCell>
-											<TableCell
-												class="hidden px-4 py-3 text-xs text-muted-foreground md:table-cell"
-											>
-												{new Date(u.createdAt).toLocaleDateString([], {
-													month: 'short',
-													day: 'numeric',
-													year: 'numeric'
-												})}
-											</TableCell>
-											<TableCell class="px-4 py-3 text-right">
-												<form method="post" action="?/toggleInternal" use:enhance>
-													<input type="hidden" name="userId" value={u.id} />
-													<input type="hidden" name="isInternal" value="true" />
-													<Button
-														type="submit"
-														onclick={async (e) => {
-															e.preventDefault();
-															const form = (e.currentTarget as HTMLButtonElement).form;
-															if (await confirmDialog(`Revoke internal access for ${u.name}?`))
-																form?.requestSubmit();
-														}}
-														variant="ghost"
-														class="text-red-500 hover:bg-red-50 hover:text-red-600"
-													>
-														Revoke internal
-													</Button>
-												</form>
-											</TableCell>
-										</TableRow>
-									{/each}
-								</TableBody>
-							</Table>
-						</CardContent>
-					</Card>
-				{/if}
-
-				<!-- Quick promote from current vendor members -->
-				{#if nonInternalMembers.length > 0}
-					<div>
-						<h2 class="mb-3 text-sm font-semibold text-muted-foreground">
-							Promote a current member to internal
-						</h2>
-						<Card class="p-0 shadow-sm">
-							<CardContent>
-								<Table>
-									<TableBody>
-										{#each nonInternalMembers as member (member.userId)}
-											<TableRow>
-												<TableCell class="px-4 py-3">
-													<p class="font-medium text-foreground">{member.name}</p>
-													<p class="text-xs text-muted-foreground">{member.email}</p>
-												</TableCell>
-												<TableCell class="px-4 py-3 text-right">
-													<form method="post" action="?/toggleInternal" use:enhance>
-														<input type="hidden" name="userId" value={member.userId} />
-														<input type="hidden" name="isInternal" value="false" />
-														<Button
-															type="submit"
-															onclick={async (e) => {
-																e.preventDefault();
-																const form = (e.currentTarget as HTMLButtonElement).form;
-																if (
-																	await confirmDialog(
-																		`Grant internal platform access to ${member.name}?`,
-																		{ danger: false }
-																	)
-																)
-																	form?.requestSubmit();
-															}}
-															variant="outline"
-															class="border-indigo-300 text-indigo-600 hover:bg-indigo-50"
-														>
-															Make internal
-														</Button>
-													</form>
-												</TableCell>
-											</TableRow>
-										{/each}
-									</TableBody>
-								</Table>
-							</CardContent>
-						</Card>
-					</div>
-				{/if}
-			</TabsContent>
-		{/if}
-	</Tabs>
+	</div>
 </div>
