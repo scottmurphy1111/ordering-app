@@ -188,7 +188,7 @@
 			<div class="absolute inset-0 bg-linear-to-t from-black/80 via-black/30 to-transparent"></div>
 			<div class="absolute inset-x-0 bottom-0 mx-auto max-w-2xl px-6 pb-6">
 				<div class="flex items-end gap-4">
-					{#if vendor.logoUrl}
+					{#if vendor.showLogo && vendor.logoUrl}
 						<img
 							src={vendor.logoUrl}
 							alt={vendor.name}
@@ -197,22 +197,30 @@
 						/>
 					{/if}
 					<div>
-						{#if vendor.website}
-							<!-- vendor.website is an external URL; resolve() is for internal routes only -->
-							<!-- eslint-disable svelte/no-navigation-without-resolve -->
-							<a
-								href={vendor.website}
-								target="_blank"
-								rel="noopener noreferrer"
-								class="transition-opacity hover:opacity-80"
-							>
-								<h1 class="display text-3xl font-bold text-white drop-shadow">{vendor.name}</h1>
-							</a>
-							<!-- eslint-enable svelte/no-navigation-without-resolve -->
-						{:else}
-							<h1 class="display text-3xl font-bold text-white drop-shadow">{vendor.name}</h1>
+						{#if vendor.showName}
+							{#if vendor.website}
+								<!-- vendor.website is an external URL; resolve() is for internal routes only -->
+								<!-- eslint-disable svelte/no-navigation-without-resolve -->
+								<a
+									href={vendor.website}
+									target="_blank"
+									rel="noopener noreferrer"
+									class="transition-opacity hover:opacity-80"
+								>
+									<h1
+										class="text-3xl font-bold text-white drop-shadow"
+										style="font-family: var(--font-heading);"
+									>{vendor.name}</h1>
+								</a>
+								<!-- eslint-enable svelte/no-navigation-without-resolve -->
+							{:else}
+								<h1
+									class="text-3xl font-bold text-white drop-shadow"
+									style="font-family: var(--font-heading);"
+								>{vendor.name}</h1>
+							{/if}
 						{/if}
-						{#if vendor.tagline}
+						{#if vendor.showTagline && vendor.tagline}
 							<p class="mt-1 text-sm text-white/75">{vendor.tagline}</p>
 						{/if}
 					</div>
@@ -223,7 +231,7 @@
 		<header class="border-b" style="background-color: var(--background-color);">
 			<div class="mx-auto max-w-2xl px-6 py-8">
 				<div class="flex items-start gap-5">
-					{#if vendor.logoUrl}
+					{#if vendor.showLogo && vendor.logoUrl}
 						<img
 							src={vendor.logoUrl}
 							alt={vendor.name}
@@ -231,32 +239,34 @@
 						/>
 					{/if}
 					<div class="min-w-0 flex-1">
-						{#if vendor.website}
-							<!-- vendor.website is an external URL; resolve() is for internal routes only -->
-							<!-- eslint-disable svelte/no-navigation-without-resolve -->
-							<a
-								href={vendor.website}
-								target="_blank"
-								rel="noopener noreferrer"
-								class="transition-opacity hover:opacity-80"
-							>
+						{#if vendor.showName}
+							{#if vendor.website}
+								<!-- vendor.website is an external URL; resolve() is for internal routes only -->
+								<!-- eslint-disable svelte/no-navigation-without-resolve -->
+								<a
+									href={vendor.website}
+									target="_blank"
+									rel="noopener noreferrer"
+									class="transition-opacity hover:opacity-80"
+								>
+									<h1
+										class="text-3xl leading-tight font-bold"
+										style="color: var(--foreground-color); font-family: var(--font-heading);"
+									>
+										{vendor.name}
+									</h1>
+								</a>
+								<!-- eslint-enable svelte/no-navigation-without-resolve -->
+							{:else}
 								<h1
-									class="display text-3xl leading-tight font-bold"
-									style="color: var(--foreground-color);"
+									class="text-3xl leading-tight font-bold"
+									style="color: var(--foreground-color); font-family: var(--font-heading);"
 								>
 									{vendor.name}
 								</h1>
-							</a>
-							<!-- eslint-enable svelte/no-navigation-without-resolve -->
-						{:else}
-							<h1
-								class="display text-3xl leading-tight font-bold"
-								style="color: var(--foreground-color);"
-							>
-								{vendor.name}
-							</h1>
+							{/if}
 						{/if}
-						{#if vendor.tagline}
+						{#if vendor.showTagline && vendor.tagline}
 							<p
 								class="mt-1.5 text-sm"
 								style="color: color-mix(in srgb, var(--foreground-color) 70%, transparent);"
@@ -660,7 +670,7 @@
 	}
 
 	.display {
-		font-family: 'Fraunces', Georgia, serif;
+		font-family: var(--font-heading);
 	}
 
 	/* Add button pulse animation */

@@ -3,6 +3,7 @@ import { fail } from '@sveltejs/kit';
 import { db } from '$lib/server/db';
 import { eq } from 'drizzle-orm';
 import { vendor } from '$lib/server/db/schema';
+import { FONT_PAIRS } from '$lib/storefront/font-pairs';
 
 export const load: PageServerLoad = async ({ locals }) => {
 	const vendorId = locals.vendorId!;
@@ -14,7 +15,12 @@ export const load: PageServerLoad = async ({ locals }) => {
 			backgroundImageUrl: true,
 			backgroundColor: true,
 			accentColor: true,
-			foregroundColor: true
+			foregroundColor: true,
+			tagline: true,
+			showName: true,
+			showTagline: true,
+			showLogo: true,
+			fontPair: true
 		}
 	});
 
@@ -25,7 +31,12 @@ export const load: PageServerLoad = async ({ locals }) => {
 			backgroundImageUrl: null,
 			backgroundColor: '#000000',
 			accentColor: '#374151',
-			foregroundColor: '#ffffff'
+			foregroundColor: '#ffffff',
+			tagline: null,
+			showName: true,
+			showTagline: true,
+			showLogo: true,
+			fontPair: 'fraunces-dm-sans'
 		}
 	};
 };
@@ -85,5 +96,49 @@ export const actions: Actions = {
 			.set({ backgroundImageUrl: null, updatedAt: new Date() })
 			.where(eq(vendor.id, vendorId));
 		return { success: true, message: 'Background image removed' };
+	},
+
+	saveIdentity: async ({ request, locals }) => {
+		const vendorId = locals.vendorId!;
+		const formData = await request.formData();
+
+		const tagline = formData.get('tagline')?.toString().trim() ?? '';
+		const showName = formData.get('showName') === 'on';
+		const showTagline = formData.get('showTagline') === 'on';
+		const showLogo = formData.get('showLogo') === 'on';
+
+		if (tagline.length > 255) {
+			return fail(400, { error: 'Tagline must be 255 characters or less.' });
+		}
+
+		await db
+			.update(vendor)
+			.set({
+				tagline: tagline || null,
+				showName,
+				showTagline,
+				showLogo,
+				updatedAt: new Date()
+			})
+			.where(eq(vendor.id, vendorId));
+
+		return { success: true, message: 'Identity saved' };
+	},
+
+	saveFontPair: async ({ request, locals }) => {
+		const vendorId = locals.vendorId!;
+		const formData = await request.formData();
+
+		const fontPair = formData.get('fontPair')?.toString();
+		if (!fontPair || !(fontPair in FONT_PAIRS)) {
+			return fail(400, { error: 'Invalid font pair.' });
+		}
+
+		await db
+			.update(vendor)
+			.set({ fontPair, updatedAt: new Date() })
+			.where(eq(vendor.id, vendorId));
+
+		return { success: true, message: 'Typography saved' };
 	}
 };

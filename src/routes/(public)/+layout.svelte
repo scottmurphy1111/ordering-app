@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { LayoutData } from './$types';
 	import ConfirmModal from '$lib/components/ConfirmModal.svelte';
+	import { resolveFontPair, googleFontsUrl } from '$lib/storefront/font-pairs';
 
 	let { data, children }: { data: LayoutData; children: import('svelte').Snippet } = $props();
 
@@ -9,18 +10,18 @@
 	const foregroundColor = $derived(data.vendor.foregroundColor ?? '#ffffff');
 	const logoUrl = $derived(data.vendor.logoUrl ?? '');
 	const backgroundImageUrl = $derived(data.vendor.backgroundImageUrl ?? '');
+
+	const fontPair = $derived(resolveFontPair(data.vendor.fontPair));
+	const fontsUrl = $derived(googleFontsUrl(fontPair));
 </script>
 
 <svelte:head>
-	<link
-		rel="stylesheet"
-		href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..900;1,9..144,300..900&family=DM+Sans:ital,opsz,wght@0,9..40,300..700;1,9..40,300..700&display=swap"
-	/>
+	<link rel="stylesheet" href={fontsUrl} />
 </svelte:head>
 
 <div
 	class="relative flex min-h-screen flex-col"
-	style="--background-color: {backgroundColor}; --accent-color: {accentColor}; --foreground-color: {foregroundColor}; font-family: 'DM Sans', system-ui, sans-serif;"
+	style="--background-color: {backgroundColor}; --accent-color: {accentColor}; --foreground-color: {foregroundColor}; --font-heading: {fontPair.heading.cssStack}; --font-body: {fontPair.body.cssStack}; font-family: var(--font-body);"
 >
 	<!-- Background: custom image takes priority over tiled logo -->
 	{#if backgroundImageUrl}

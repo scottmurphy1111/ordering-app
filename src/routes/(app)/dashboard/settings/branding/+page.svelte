@@ -1,9 +1,12 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import { untrack } from 'svelte';
 	import type { PageData, ActionData } from './$types';
 	import Icon from '@iconify/svelte';
 	import { Button } from '$lib/components/ui/button';
 	import { Input } from '$lib/components/ui/input';
+	import { Label } from '$lib/components/ui/label';
+	import { Checkbox } from '$lib/components/ui/checkbox';
 	import {
 		Card,
 		CardHeader,
@@ -15,6 +18,7 @@
 	} from '$lib/components/ui/card';
 	import { Alert } from '$lib/components/ui/alert';
 	import { Dialog, DialogContent, DialogHeader, DialogTitle } from '$lib/components/ui/dialog';
+	import { FONT_PAIRS, googleFontsUrl, type FontPairSlug } from '$lib/storefront/font-pairs';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
@@ -28,6 +32,10 @@
 		foregroundColor = data.branding.foregroundColor ?? '#ffffff';
 	});
 
+	let selectedFontPair = $state<FontPairSlug>(
+		untrack(() => (data.branding.fontPair as FontPairSlug) ?? 'fraunces-dm-sans')
+	);
+
 	// ── Upload helpers ─────────────────────────────────────────────────────────
 	type UploadState = { uploading: boolean; error: string };
 
@@ -36,7 +44,9 @@
 	let logoState = $state<UploadState>({ uploading: false, error: '' });
 	let bannerState = $state<UploadState>({ uploading: false, error: '' });
 	let bgState = $state<UploadState>({ uploading: false, error: '' });
-	let submittingAction = $state<'removeLogo' | 'removeBanner' | 'removeBackground' | null>(null);
+	let submittingAction = $state<
+		'removeLogo' | 'removeBanner' | 'removeBackground' | 'saveIdentity' | 'saveFontPair' | null
+	>(null);
 
 	let logoInput = $state<HTMLInputElement | null>(null);
 	let bannerInput = $state<HTMLInputElement | null>(null);
@@ -78,6 +88,12 @@
 	}
 </script>
 
+<svelte:head>
+	{#each Object.values(FONT_PAIRS) as pair (pair.slug)}
+		<link rel="stylesheet" href={googleFontsUrl(pair)} />
+	{/each}
+</svelte:head>
+
 <div>
 	<div class="mb-6">
 		<h1 class="text-2xl font-bold text-foreground">Branding</h1>
@@ -92,6 +108,136 @@
 	{/if}
 
 	<div class="space-y-6">
+		<!-- ── Identity ─────────────────────────────────────────────────────────── -->
+		<Card class="shadow-sm">
+			<CardHeader>
+				<CardTitle>Identity</CardTitle>
+				<CardDescription>How your business appears in the storefront header.</CardDescription>
+			</CardHeader>
+			<CardContent>
+				<form
+					method="post"
+					action="?/saveIdentity"
+					use:enhance={() => {
+						submittingAction = 'saveIdentity';
+						return async ({ update }) => {
+							submittingAction = null;
+							await update({ invalidateAll: true });
+						};
+					}}
+					class="space-y-4"
+				>
+					<div>
+						<Label class="mb-1 block" for="tagline">Tagline</Label>
+						<Input
+							id="tagline"
+							name="tagline"
+							type="text"
+							maxlength={255}
+							value={data.branding.tagline ?? ''}
+							placeholder="Baked fresh daily since 2018"
+						/>
+						<p class="mt-1 text-xs text-muted-foreground">
+							A short phrase shown under your name on the storefront. Leave blank to hide.
+						</p>
+					</div>
+
+					<div class="space-y-3 border-t pt-4">
+						<p class="text-sm font-medium">Storefront header visibility</p>
+						<p class="text-xs text-muted-foreground">
+							Useful if your banner image already includes your name or logo.
+						</p>
+
+						<label class="flex cursor-pointer items-start gap-3">
+							<Checkbox name="showName" checked={data.branding.showName} class="mt-0.5" />
+							<span class="text-sm">Show business name</span>
+						</label>
+						<label class="flex cursor-pointer items-start gap-3">
+							<Checkbox name="showTagline" checked={data.branding.showTagline} class="mt-0.5" />
+							<span class="text-sm">Show tagline</span>
+						</label>
+						<label class="flex cursor-pointer items-start gap-3">
+							<Checkbox name="showLogo" checked={data.branding.showLogo} class="mt-0.5" />
+							<span class="text-sm">Show logo</span>
+						</label>
+					</div>
+
+					<Button type="submit" disabled={submittingAction !== null}>
+						{#if submittingAction === 'saveIdentity'}
+							<Icon icon="mdi:loading" class="h-4 w-4 animate-spin" />
+							Saving...
+						{:else}
+							Save identity
+						{/if}
+					</Button>
+				</form>
+			</CardContent>
+		</Card>
+
+		<!-- ── Typography ───────────────────────────────────────────────────────── -->
+		<Card class="shadow-sm">
+			<CardHeader>
+				<CardTitle>Typography</CardTitle>
+				<CardDescription>Choose a font pairing that matches your brand's feel.</CardDescription>
+			</CardHeader>
+			<CardContent>
+				<form
+					method="post"
+					action="?/saveFontPair"
+					use:enhance={() => {
+						submittingAction = 'saveFontPair';
+						return async ({ update }) => {
+							submittingAction = null;
+							await update({ invalidateAll: true });
+						};
+					}}
+					class="space-y-4"
+				>
+					<div class="grid grid-cols-1 gap-3 md:grid-cols-2">
+						{#each Object.values(FONT_PAIRS) as pair (pair.slug)}
+							<label
+								class="cursor-pointer rounded-lg border-2 p-4 transition-colors hover:border-foreground/40 {selectedFontPair ===
+								pair.slug
+									? 'border-foreground'
+									: 'border-border'}"
+							>
+								<input
+									type="radio"
+									name="fontPair"
+									value={pair.slug}
+									checked={selectedFontPair === pair.slug}
+									onchange={() => (selectedFontPair = pair.slug)}
+									class="sr-only"
+								/>
+								<div class="space-y-1.5">
+									<p class="text-xs font-medium text-muted-foreground">{pair.label}</p>
+									<p
+										style="font-family: {pair.heading.cssStack};"
+										class="text-2xl font-bold leading-tight"
+									>
+										{pair.previewHeading}
+									</p>
+									<p style="font-family: {pair.body.cssStack};" class="text-sm leading-snug">
+										{pair.previewBody}
+									</p>
+									<p class="text-xs text-muted-foreground">{pair.description}</p>
+								</div>
+							</label>
+						{/each}
+					</div>
+
+					<Button type="submit" disabled={submittingAction !== null}>
+						{#if submittingAction === 'saveFontPair'}
+							<Icon icon="mdi:loading" class="h-4 w-4 animate-spin" />
+							Saving...
+						{:else}
+							Save typography
+						{/if}
+					</Button>
+				</form>
+			</CardContent>
+		</Card>
+
 		<!-- ── Color scheme ─────────────────────────────────────────────────────── -->
 		<Card class="shadow-sm">
 			<CardHeader>

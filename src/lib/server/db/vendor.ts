@@ -63,6 +63,16 @@ export const vendor = pgTable(
 		accentColor: varchar('accent_color', { length: 7 }).default('#374151'),
 		foregroundColor: varchar('foreground_color', { length: 7 }).default('#ffffff'),
 
+		// Display toggles for storefront header — vendors can hide elements
+		// they don't want shown (e.g. logo already embedded in banner).
+		showName: boolean('show_name').default(true).notNull(),
+		showTagline: boolean('show_tagline').default(true).notNull(),
+		showLogo: boolean('show_logo').default(true).notNull(),
+
+		// Font pairing: heading font + body font slugs. Defaults match
+		// the current hardcoded Fraunces + DM Sans combination.
+		fontPair: varchar('font_pair', { length: 32 }).default('fraunces-dm-sans').notNull(),
+
 		// Business settings
 		settings: jsonb('settings').default({
 			currency: 'USD',

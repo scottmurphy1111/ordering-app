@@ -134,6 +134,13 @@
       "when": 1778685183264,
       "tag": "0018_heavy_jackpot",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1779186758441,
+      "tag": "0019_needy_thunderbolts",
+      "breakpoints": true
     }
   ]
 }
