@@ -47,8 +47,8 @@
 <div>
 	<div class="mb-6 flex items-center justify-between">
 		<div>
-			<h1 class="text-2xl font-bold text-gray-900">Special orders</h1>
-			<p class="mt-0.5 text-sm text-gray-500">Custom order requests from your customers.</p>
+			<h1 class="text-2xl font-bold text-gray-900">Special requests</h1>
+			<p class="mt-0.5 text-sm text-gray-500">Special requests from your customers.</p>
 		</div>
 	</div>
 
@@ -94,7 +94,7 @@
 								? 'Declined requests will appear here.'
 								: data.stateFilter === 'expired'
 									? 'Requests whose quotes expired without a response will appear here.'
-									: 'Custom order requests from your storefront will appear here.'}
+									: 'Special requests from your storefront will appear here.'}
 			</p>
 		</div>
 	{:else}

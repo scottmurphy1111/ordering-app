@@ -70,7 +70,7 @@
 			href={resolve('/dashboard/special-orders')}
 			class="inline-flex items-center gap-1 text-sm text-muted-foreground transition-colors hover:text-foreground"
 		>
-			<Icon icon="mdi:chevron-left" class="h-4 w-4" /> Special orders
+			<Icon icon="mdi:chevron-left" class="h-4 w-4" /> Special requests
 		</a>
 		<span class="text-muted-foreground/40">/</span>
 		<h1 class="text-2xl font-bold text-foreground">{req.customerName}</h1>
@@ -88,7 +88,7 @@
 	{#if form?.declineSuccess}
 		<Alert severity="success" class="mb-4">
 			Request declined. <a href={resolve('/dashboard/special-orders')} class="underline"
-				>Back to special orders</a
+				>Back to special requests</a
 			>
 		</Alert>
 	{/if}

@@ -115,7 +115,7 @@
 		} catch (e) {
 			if (e instanceof CartTypeMismatchError) {
 				const confirmed = await confirmDialog(
-					'Wedding cakes and other custom orders are placed separately — they have their own checkout and approval. Start a new cart for this item?',
+					'Special-order items are placed separately — they have their own checkout and approval. Start a new cart for this item?',
 					{
 						title: 'Start a new cart?',
 						confirmLabel: 'Start new cart',
@@ -271,22 +271,22 @@
 							Other
 						</a>
 					{/if}
-					{#if !isPaused}
+					{#if !isPaused && vendor.acceptsRequests}
 						<a
-							href="#custom-orders"
+							href="#special-requests"
 							onclick={(e) => {
 								e.preventDefault();
-								scrollToSection('custom-orders');
+								scrollToSection('special-requests');
 							}}
 							class="shrink-0 rounded-full px-4 py-1.5 text-sm font-medium transition-colors {activeCategoryId ===
-							'custom-orders'
+							'special-requests'
 								? ''
 								: 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'}"
-							style={activeCategoryId === 'custom-orders'
+							style={activeCategoryId === 'special-requests'
 								? 'background-color: var(--background-color); color: var(--foreground-color);'
 								: ''}
 						>
-							Custom Orders
+							Special Requests
 						</a>
 					{/if}
 				</div>
@@ -360,13 +360,13 @@
 				{/if}
 
 				<!-- Custom orders section -->
-				{#if !isPaused}
-					<section id="custom-orders">
+				{#if !isPaused && vendor.acceptsRequests}
+					<section id="special-requests">
 						<h2
 							class="mb-5 text-xs font-bold tracking-widest text-neutral-900 uppercase"
 							style="font-family: var(--font-heading);"
 						>
-							Custom Orders
+							Special Requests
 						</h2>
 						<a
 							href={resolve('/request' as `/${string}`)}
@@ -385,7 +385,7 @@
 								class="mt-4 inline-flex items-center gap-1 text-sm font-medium"
 								style="color: var(--background-color);"
 							>
-								Make a custom request
+								Make a special request
 								<Icon icon="mdi:arrow-right" class="h-4 w-4" />
 							</span>
 						</a>

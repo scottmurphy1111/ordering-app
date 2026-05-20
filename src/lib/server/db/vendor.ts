@@ -70,6 +70,11 @@ export const vendor = pgTable(
 		showTagline: boolean('show_tagline').default(true).notNull(),
 		showLogo: boolean('show_logo').default(true).notNull(),
 
+		// When false, the storefront hides the Custom Orders section
+		// and the /request route redirects to /catalog. Existing requests
+		// and quotes are unaffected.
+		acceptsRequests: boolean('accepts_requests').default(true).notNull(),
+
 		// Font pairing: heading font + body font slugs. Defaults match
 		// the current hardcoded Fraunces + DM Sans combination.
 		fontPair: varchar('font_pair', { length: 32 }).default('fraunces-dm-sans').notNull(),

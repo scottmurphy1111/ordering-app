@@ -18,7 +18,8 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 			website: true,
 			address: true,
 			timezone: true,
-			settings: true
+			settings: true,
+			acceptsRequests: true
 		}
 	});
 
@@ -98,5 +99,18 @@ export const actions: Actions = {
 			.where(eq(vendor.id, vendorId));
 
 		return { checkoutSuccess: true };
+	},
+
+	saveSpecialRequests: async ({ request, locals }) => {
+		const vendorId = locals.vendorId!;
+		const formData = await request.formData();
+		const acceptsRequests = formData.get('acceptsRequests') === 'on';
+
+		await db
+			.update(vendor)
+			.set({ acceptsRequests, updatedAt: new Date() })
+			.where(eq(vendor.id, vendorId));
+
+		return { specialRequestsSuccess: true };
 	}
 };

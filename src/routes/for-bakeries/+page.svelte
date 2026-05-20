@@ -22,7 +22,7 @@
 		},
 		{
 			icon: 'mdi:format-list-checks',
-			title: 'Custom orders, built right in',
+			title: 'Special requests, built right in',
 			desc: 'Modifiers for size, flavor, filling, and inscription. Customers configure exactly what they want at checkout, and you see every detail when you pull the order.'
 		},
 		{

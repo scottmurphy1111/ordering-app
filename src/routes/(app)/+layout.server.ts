@@ -5,6 +5,7 @@ import { isProduction } from '$lib/server/is-production';
 import { db } from '$lib/server/db';
 import { and, eq } from 'drizzle-orm';
 import { vendorUsers } from '$lib/server/db/schema';
+import { specialOrderRequests } from '$lib/server/db/special-orders';
 
 export const load: LayoutServerLoad = async ({ locals, url }) => {
 	// Require authentication. In production the login page lives on the apex host,
@@ -33,12 +34,23 @@ export const load: LayoutServerLoad = async ({ locals, url }) => {
 		isImpersonating = !membership;
 	}
 
+	let hasSpecialRequestHistory = false;
+	if (locals.vendorId) {
+		const row = await db
+			.select({ id: specialOrderRequests.id })
+			.from(specialOrderRequests)
+			.where(eq(specialOrderRequests.vendorId, locals.vendorId))
+			.limit(1);
+		hasSpecialRequestHistory = row.length > 0;
+	}
+
 	return {
 		user: locals.user,
 		vendor: locals.vendor ?? null,
 		vendorId: locals.vendorId ?? null,
 		vendorRole: locals.vendorRole ?? null,
 		hasMultipleVendors: vendorCount > 1,
-		isImpersonating
+		isImpersonating,
+		hasSpecialRequestHistory
 	};
 };

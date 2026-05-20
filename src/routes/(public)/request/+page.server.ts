@@ -16,13 +16,18 @@ const MAX_PHOTO_SIZE_MB = 10;
 const RATE_LIMIT_PER_DAY = 50;
 
 export const load: PageServerLoad = async ({ locals }) => {
-	return { vendor: locals.vendor! };
+	const vendor = locals.vendor!;
+	if (!vendor.acceptsRequests) {
+		throw redirect(303, '/catalog');
+	}
+	return { vendor };
 };
 
 export const actions: Actions = {
 	submit: async ({ request, locals }) => {
 		const vendor = locals.vendor;
 		if (!vendor) return fail(400, { error: 'Vendor not found.' });
+		if (!vendor.acceptsRequests) return fail(403, { error: 'This shop is not accepting special requests.' });
 
 		const formData = await request.formData();
 

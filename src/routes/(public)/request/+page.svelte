@@ -42,14 +42,14 @@
 </script>
 
 <svelte:head>
-	<title>Custom order request — {vendor.name}</title>
+	<title>Special request — {vendor.name}</title>
 </svelte:head>
 
 
 <main class="mx-auto max-w-2xl px-4 py-8 sm:py-10">
 		<div class="rounded-lg border bg-background p-6 sm:p-8">
 			<div class="mb-6">
-				<h1 class="text-2xl font-bold text-foreground">Custom order request</h1>
+				<h1 class="text-2xl font-bold text-foreground">Special request</h1>
 				<p class="mt-1.5 text-sm text-muted-foreground">
 					Tell {vendor.name} what you're looking for. They'll review your request and follow up.
 				</p>

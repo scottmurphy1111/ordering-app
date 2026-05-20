@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { untrack } from 'svelte';
 	import { enhance } from '$app/forms';
 	import { resolve } from '$app/paths';
 	import type { PageData, ActionData } from './$types';
@@ -17,6 +18,7 @@
 	} from '$lib/components/ui/select';
 	import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '$lib/components/ui/card';
 	import { Checkbox } from '$lib/components/ui/checkbox';
+	import { Switch } from '$lib/components/ui/switch';
 	import { BUSINESS_TYPES } from '$lib/utils/business-type-labels';
 	import { FULFILLMENT_MODELS, fulfillmentModelLabel } from '$lib/utils/fulfillment-model-labels';
 	import { US_TIMEZONES, getAllTimezones, getTimezoneLabel } from '$lib/utils/timezones';
@@ -55,6 +57,10 @@
 				settings?: { enableTips?: boolean; asapPickupEnabled?: boolean };
 			} | null
 		)?.settings ?? {}
+	);
+
+	let acceptsRequests = $state(
+		untrack(() => (data.info as unknown as { acceptsRequests?: boolean } | null)?.acceptsRequests ?? true)
 	);
 </script>
 
@@ -321,6 +327,44 @@
 			</CardContent>
 			<CardFooter>
 				<Button type="submit" variant="default">Save checkout settings</Button>
+			</CardFooter>
+		</Card>
+	</form>
+
+	<!-- Special requests -->
+	{#if form?.specialRequestsSuccess}
+		<Alert severity="success" class="mt-4">Special request settings saved.</Alert>
+	{/if}
+	<form
+		method="post"
+		action="?/saveSpecialRequests"
+		use:enhance={() =>
+			({ update }) =>
+				update({ reset: false })}
+		class="mt-6"
+	>
+		<Card class="shadow-sm">
+			<CardHeader>
+				<CardTitle>Special requests</CardTitle>
+			</CardHeader>
+			<CardContent class="space-y-4">
+				<div class="flex items-start justify-between gap-4">
+					<div class="min-w-0">
+						<label for="acceptsRequests" class="text-sm font-medium">
+							Accept special requests
+						</label>
+						<p class="mt-1 text-sm text-muted-foreground">
+							When on, customers see a "Special Requests" section on your storefront where they can
+							request something not on the catalog. You'll receive an email and can respond with a
+							quote.
+						</p>
+					</div>
+					<input type="hidden" name="acceptsRequests" value={acceptsRequests ? 'on' : ''} />
+					<Switch id="acceptsRequests" bind:checked={acceptsRequests} />
+				</div>
+			</CardContent>
+			<CardFooter>
+				<Button type="submit" variant="default">Save changes</Button>
 			</CardFooter>
 		</Card>
 	</form>
