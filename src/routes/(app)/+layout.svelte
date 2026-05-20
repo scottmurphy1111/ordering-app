@@ -127,6 +127,16 @@
 	});
 </script>
 
+<svelte:head>
+	<style>
+		html,
+		body {
+			overflow: hidden;
+			height: 100vh;
+		}
+	</style>
+</svelte:head>
+
 {#snippet sidebarContent()}
 	<!-- Logo / Vendor Name -->
 	<div class="flex items-center justify-between border-b border-white/10 px-4 py-4">

@@ -11,9 +11,13 @@
 	import { confirmDialog } from '$lib/confirm.svelte';
 	import { resolve } from '$app/paths';
 	import Icon from '@iconify/svelte';
-	import { Badge } from '$lib/components/ui/badge';
 	import StorefrontOpenStatus from '$lib/components/storefront/StorefrontOpenStatus.svelte';
 	import UpcomingPickupEvents from '$lib/components/storefront/UpcomingPickupEvents.svelte';
+	import CatalogHero from '$lib/components/storefront/CatalogHero.svelte';
+	import CatalogItemCard from '$lib/components/storefront/CatalogItemCard.svelte';
+	import CartPanel from '$lib/components/storefront/CartPanel.svelte';
+	import { Sheet, SheetContent, SheetTitle } from '$lib/components/ui/sheet';
+
 
 	let { data }: { data: PageData } = $props();
 
@@ -70,9 +74,9 @@
 	function effectivePrice(item: { price: number; discountedPrice: number | null }) {
 		return item.discountedPrice ?? item.price;
 	}
-	function hasModifiers(item: { modifiers: unknown[] }) {
-		return item.modifiers.length > 0;
-	}
+
+	// ── Mobile cart sheet ────────────────────────────────────────────────────
+	let cartSheetOpen = $state(false);
 
 	// ── Add-to-cart micro-animation ──────────────────────────────────────────
 	let lastAddedId = $state<number | null>(null);
@@ -104,6 +108,10 @@
 
 		try {
 			cart.add(addArgs);
+			// Auto-open the cart sheet on mobile after add
+			if (typeof window !== 'undefined' && window.matchMedia('(max-width: 767px)').matches) {
+				cartSheetOpen = true;
+			}
 		} catch (e) {
 			if (e instanceof CartTypeMismatchError) {
 				const confirmed = await confirmDialog(
@@ -118,6 +126,9 @@
 				if (!confirmed) return;
 				cart.clear();
 				cart.add(addArgs);
+				if (typeof window !== 'undefined' && window.matchMedia('(max-width: 767px)').matches) {
+					cartSheetOpen = true;
+				}
 			} else {
 				throw e;
 			}
@@ -134,15 +145,6 @@
 			lastAddedId = null;
 		}, 2500);
 	}
-
-	// ── Cart preview ─────────────────────────────────────────────────────────
-	const cartFirstItem = $derived(
-		cart.items[0]?.name
-			? cart.items[0].name.length > 20
-				? cart.items[0].name.slice(0, 20) + '…'
-				: cart.items[0].name
-			: ''
-	);
 
 	// ── IntersectionObserver: active category nav ────────────────────────────
 	let activeCategoryId = $state<string | null>(null);
@@ -176,523 +178,260 @@
 	<title>{vendor.name}</title>
 </svelte:head>
 
-<div class="min-h-screen">
-	<!-- ── Banner hero or colored header ──────────────────────────────────── -->
-	{#if vendor.bannerUrl}
-		<div class="relative h-56 overflow-hidden sm:h-72">
-			<img
-				src={vendor.bannerUrl}
-				alt={vendor.name}
-				class="absolute inset-0 h-full w-full object-cover"
-			/>
-			<div class="absolute inset-0 bg-linear-to-t from-black/80 via-black/30 to-transparent"></div>
-			<div class="absolute inset-x-0 bottom-0 mx-auto max-w-2xl px-6 pb-6">
-				<div class="flex items-end gap-4">
-					{#if vendor.showLogo && vendor.logoUrl}
-						<img
-							src={vendor.logoUrl}
-							alt={vendor.name}
-							class="mb-1 h-14 w-auto max-w-36 shrink-0 object-contain drop-shadow"
-							style="filter: brightness(0) invert(1);"
-						/>
-					{/if}
-					<div>
-						{#if vendor.showName}
-							{#if vendor.website}
-								<!-- vendor.website is an external URL; resolve() is for internal routes only -->
-								<!-- eslint-disable svelte/no-navigation-without-resolve -->
-								<a
-									href={vendor.website}
-									target="_blank"
-									rel="noopener noreferrer"
-									class="transition-opacity hover:opacity-80"
-								>
-									<h1
-										class="text-3xl font-bold text-white drop-shadow"
-										style="font-family: var(--font-heading);"
-									>{vendor.name}</h1>
-								</a>
-								<!-- eslint-enable svelte/no-navigation-without-resolve -->
-							{:else}
-								<h1
-									class="text-3xl font-bold text-white drop-shadow"
-									style="font-family: var(--font-heading);"
-								>{vendor.name}</h1>
-							{/if}
-						{/if}
-						{#if vendor.showTagline && vendor.tagline}
-							<p class="mt-1 text-sm text-white/75">{vendor.tagline}</p>
-						{/if}
-					</div>
-				</div>
-			</div>
-		</div>
-	{:else}
-		<header class="border-b" style="background-color: var(--background-color);">
-			<div class="mx-auto max-w-2xl px-6 py-8">
-				<div class="flex items-start gap-5">
-					{#if vendor.showLogo && vendor.logoUrl}
-						<img
-							src={vendor.logoUrl}
-							alt={vendor.name}
-							class="mt-1 h-14 w-auto max-w-36 shrink-0 object-contain"
-						/>
-					{/if}
-					<div class="min-w-0 flex-1">
-						{#if vendor.showName}
-							{#if vendor.website}
-								<!-- vendor.website is an external URL; resolve() is for internal routes only -->
-								<!-- eslint-disable svelte/no-navigation-without-resolve -->
-								<a
-									href={vendor.website}
-									target="_blank"
-									rel="noopener noreferrer"
-									class="transition-opacity hover:opacity-80"
-								>
-									<h1
-										class="text-3xl leading-tight font-bold"
-										style="color: var(--foreground-color); font-family: var(--font-heading);"
-									>
-										{vendor.name}
-									</h1>
-								</a>
-								<!-- eslint-enable svelte/no-navigation-without-resolve -->
-							{:else}
-								<h1
-									class="text-3xl leading-tight font-bold"
-									style="color: var(--foreground-color); font-family: var(--font-heading);"
-								>
-									{vendor.name}
-								</h1>
-							{/if}
-						{/if}
-						{#if vendor.showTagline && vendor.tagline}
-							<p
-								class="mt-1.5 text-sm"
-								style="color: color-mix(in srgb, var(--foreground-color) 70%, transparent);"
-							>
-								{vendor.tagline}
-							</p>
-						{/if}
-					</div>
-				</div>
-			</div>
-		</header>
+<!-- Hero: identity + status -->
+<CatalogHero {vendor}>
+	{#if showOpenStatus}
+		<StorefrontOpenStatus
+			hours={data.hours}
+			exceptions={data.exceptions}
+			vendorTimezone={data.vendor.timezone}
+		/>
+	{:else if showUpcomingEvents}
+		<UpcomingPickupEvents
+			windows={data.upcomingWindows}
+			vendorTimezone={data.vendor.timezone}
+		/>
 	{/if}
+</CatalogHero>
 
-	<!-- ── Pause notice ──────────────────────────────────────────────────── -->
-	{#if isPaused}
-		<div class="border-b border-amber-200 bg-amber-50 px-4 py-3 text-center text-sm text-amber-800">
-			<Icon icon="mdi:pause-circle-outline" class="mb-0.5 inline-block h-4 w-4 align-text-bottom" />
-			Online ordering is temporarily unavailable. Check back soon.
-		</div>
-	{/if}
+<!-- Pause notice -->
+{#if isPaused}
+	<div class="border-b border-amber-200 bg-amber-50 px-4 py-3 text-center text-sm text-amber-800">
+		<Icon icon="mdi:pause-circle-outline" class="mb-0.5 inline-block h-4 w-4 align-text-bottom" />
+		Online ordering is temporarily unavailable. Check back soon.
+	</div>
+{/if}
 
-	<!-- ── Search bar ─────────────────────────────────────────────────────── -->
-	{#if data.items.length > 0}
-		<div class="sticky top-0 z-50 border-b bg-background/95 backdrop-blur-sm">
-			<div class="mx-auto max-w-2xl px-4 pt-2">
-				<!-- Search input -->
-				<div class="relative mb-2">
-					<Icon
-						icon="mdi:magnify"
-						class="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground"
-					/>
-					<input
-						type="search"
-						placeholder="Search…"
-						bind:value={searchQuery}
-						class="w-full rounded-full border bg-muted/50 py-2 pr-4 pl-9 text-sm transition-colors outline-none focus:border-gray-400 focus:bg-background"
-					/>
-					{#if searchQuery}
-						<button
-							type="button"
-							onclick={() => {
-								searchQuery = '';
-							}}
-							class="absolute top-1/2 right-3 -translate-y-1/2 text-muted-foreground hover:text-muted-foreground"
-						>
-							<Icon icon="mdi:close-circle" class="h-4 w-4" />
-						</button>
-					{/if}
-				</div>
-
-				<!-- Category nav (hidden while searching) -->
-				{#if !searchQuery && filteredCategorized.length > 0}
-					<div class="overflow-x-auto">
-						<div class="flex gap-1 pb-2">
-							{#each filteredCategorized as category (category.id)}
-								<a
-									href="#{category.id}"
-									onclick={(e) => {
-										e.preventDefault();
-										scrollToSection(String(category.id));
-									}}
-									class="category-pill shrink-0 rounded-full px-4 py-1.5 text-sm font-medium text-muted-foreground transition-colors {activeCategoryId ===
-									String(category.id)
-										? 'active'
-										: ''}"
-								>
-									{category.name}
-								</a>
-							{/each}
-							{#if filteredUncategorized.length > 0}
-								<a
-									href="#other"
-									onclick={(e) => {
-										e.preventDefault();
-										scrollToSection('other');
-									}}
-									class="category-pill shrink-0 rounded-full px-4 py-1.5 text-sm font-medium text-muted-foreground transition-colors {activeCategoryId ===
-									'other'
-										? 'active'
-										: ''}"
-								>
-									Other
-								</a>
-							{/if}
-						</div>
-					</div>
+<!-- Two-column layout -->
+<div class="mx-auto max-w-6xl px-4 py-8 sm:px-6 md:grid md:grid-cols-[1fr_320px] md:gap-8">
+	<!-- Left column: catalog content -->
+	<div class="min-w-0">
+		<!-- Search input -->
+		{#if data.items.length > 0}
+			<div class="relative mb-6">
+				<Icon
+					icon="mdi:magnify"
+					class="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-neutral-400"
+				/>
+				<input
+					type="search"
+					placeholder="Search the menu…"
+					bind:value={searchQuery}
+					class="w-full rounded-full border border-neutral-200 bg-white py-2.5 pr-4 pl-9 text-sm text-neutral-900 outline-none transition-colors focus:border-neutral-400"
+				/>
+				{#if searchQuery}
+					<button
+						type="button"
+						onclick={() => (searchQuery = '')}
+						class="absolute top-1/2 right-3 -translate-y-1/2 text-neutral-400 hover:text-neutral-600"
+					>
+						<Icon icon="mdi:close-circle" class="h-4 w-4" />
+					</button>
 				{/if}
 			</div>
-		</div>
-	{/if}
+		{/if}
 
-	<!-- ── Storefront sections: model-specific ───────────────────────────── -->
-	{#if showOpenStatus || showUpcomingEvents}
-		<div class="mx-auto max-w-2xl space-y-4 px-6 py-5">
-			{#if showOpenStatus}
-				<StorefrontOpenStatus
-					hours={data.hours}
-					exceptions={data.exceptions}
-					vendorTimezone={data.vendor.timezone}
-				/>
-			{/if}
-			{#if showUpcomingEvents}
-				<UpcomingPickupEvents
-					windows={data.upcomingWindows}
-					vendorTimezone={data.vendor.timezone}
-				/>
-			{/if}
-		</div>
-	{/if}
-
-	<!-- ── Menu items ─────────────────────────────────────────────────────── -->
-	<main
-		class="mx-auto my-8 max-w-2xl space-y-10 rounded-2xl bg-background/80 px-4 py-8 backdrop-blur-sm"
-	>
-		{#if data.items.length === 0}
-			<div class="rounded-xl border border-dashed p-12 text-center">
-				<p class="text-muted-foreground">Coming soon.</p>
-			</div>
-		{:else if !hasResults}
-			<div class="rounded-xl border border-dashed p-12 text-center">
-				<Icon icon="mdi:magnify" class="mx-auto mb-3 h-8 w-8 text-muted-foreground/40" />
-				<p class="text-muted-foreground">
-					No items match "<span class="font-medium">{searchQuery}</span>"
-				</p>
-				<button
-					type="button"
-					onclick={() => {
-						searchQuery = '';
-					}}
-					class="mt-3 text-sm font-medium"
-					style="color: var(--background-color);">Clear search</button
-				>
-			</div>
-		{:else}
-			{#each filteredCategorized as category (category.id)}
-				<section id={String(category.id)}>
-					<h2
-						class="display mb-4 border-b-2 pb-2 text-xl font-semibold text-foreground"
-						style="border-color: var(--background-color);"
-					>
-						{category.name}
-					</h2>
-					<div class="space-y-3">
-						{#each category.items as item (item.id)}
-							{@const imgs = item.images as { url: string; isPrimary?: boolean }[] | null}
-							{@const primaryImage = imgs?.find((i) => i.isPrimary)?.url ?? imgs?.[0]?.url}
-							<div class="item-card flex gap-4 rounded-xl border bg-background p-4 shadow-sm">
-								{#if primaryImage}
-									<img
-										src={primaryImage}
-										alt={item.name}
-										class="h-20 w-20 shrink-0 rounded-lg object-cover"
-									/>
-								{/if}
-								<div class="min-w-0 flex-1">
-									<p class="display font-semibold text-foreground">{item.name}</p>
-									{#if item.description}
-										<p class="mt-0.5 line-clamp-2 text-sm text-muted-foreground">
-											{item.description}
-										</p>
-									{/if}
-									{#if Array.isArray(item.tags) && item.tags.length > 0}
-										<div class="mt-1.5 flex flex-wrap gap-1">
-											{#each item.tags as tag (tag)}
-												<span
-													class="rounded-full px-2 py-0.5 text-xs capitalize"
-													style="background-color: color-mix(in srgb, var(--accent-color) 15%, white); color: var(--accent-color);"
-													>{tag.toLowerCase()}</span
-												>
-											{/each}
-										</div>
-									{/if}
-								</div>
-								<div class="flex shrink-0 flex-col items-end justify-between gap-2">
-									<div class="text-right">
-										{#if item.discountedPrice}
-											<p class="font-semibold" style="color: var(--background-color);">
-												${(item.discountedPrice / 100).toFixed(2)}
-											</p>
-											<p class="text-xs text-muted-foreground line-through">
-												${(item.price / 100).toFixed(2)}
-											</p>
-										{:else}
-											<p class="font-semibold text-foreground">${(item.price / 100).toFixed(2)}</p>
-										{/if}
-										{#if item.availabilityMode === 'storefront_only'}
-											<Badge class="mt-1 bg-amber-50 text-xs text-amber-700">Storefront only</Badge>
-										{:else if item.availabilityMode === 'events_only'}
-											<Badge class="mt-1 bg-sky-50 text-xs text-sky-700">Events only</Badge>
-										{:else if item.availabilityMode === 'special_order'}
-											<Badge class="mt-1 bg-purple-50 text-xs text-purple-700">Special order</Badge>
-										{/if}
-									</div>
-									{#if item.status === 'sold_out'}
-										<span
-											class="rounded-lg bg-amber-100 px-3 py-1.5 text-xs font-medium text-amber-700"
-											>Sold out</span
-										>
-									{:else if isPaused}
-										<span
-											class="rounded-lg bg-gray-100 px-3 py-1.5 text-xs font-medium text-gray-400"
-											>Unavailable</span
-										>
-									{:else if hasModifiers(item)}
-										<a
-											href={resolve(`/item/${item.id}` as `/${string}`)}
-											style="border-color: var(--background-color); color: var(--background-color);"
-											class="rounded-lg border px-3 py-1.5 text-xs font-medium transition-opacity hover:opacity-75"
-											>Options</a
-										>
-									{:else}
-										<button
-											type="button"
-											onclick={() => addSimple(item)}
-											class="add-btn rounded-lg px-3 py-1.5 text-xs font-medium transition-all {pulsingId ===
-											item.id
-												? 'pulsing'
-												: ''} {lastAddedId === item.id ? 'added' : ''}"
-											style="background-color: var(--background-color); color: var(--foreground-color);"
-										>
-											{lastAddedId === item.id ? '✓ Added' : '+ Add'}
-										</button>
-									{/if}
-								</div>
-							</div>
-						{/each}
-					</div>
-				</section>
-			{/each}
-
-			{#if filteredUncategorized.length > 0}
-				<section id="other">
-					{#if filteredCategorized.length > 0}
-						<h2
-							class="display mb-4 border-b-2 pb-2 text-xl font-semibold text-foreground"
-							style="border-color: var(--background-color);"
+		<!-- Category pills (hidden while searching) -->
+		{#if !searchQuery && filteredCategorized.length > 0}
+			<nav class="-mx-4 mb-8 overflow-x-auto px-4 sm:-mx-6 sm:px-6">
+				<div class="flex gap-2 pb-2">
+					{#each filteredCategorized as category (category.id)}
+						<a
+							href="#{category.id}"
+							onclick={(e) => {
+								e.preventDefault();
+								scrollToSection(String(category.id));
+							}}
+							class="shrink-0 rounded-full px-4 py-1.5 text-sm font-medium transition-colors {activeCategoryId ===
+							String(category.id)
+								? ''
+								: 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'}"
+							style={activeCategoryId === String(category.id)
+								? 'background-color: var(--background-color); color: var(--foreground-color);'
+								: ''}
+						>
+							{category.name}
+						</a>
+					{/each}
+					{#if filteredUncategorized.length > 0}
+						<a
+							href="#other"
+							onclick={(e) => {
+								e.preventDefault();
+								scrollToSection('other');
+							}}
+							class="shrink-0 rounded-full px-4 py-1.5 text-sm font-medium transition-colors {activeCategoryId ===
+							'other'
+								? ''
+								: 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'}"
+							style={activeCategoryId === 'other'
+								? 'background-color: var(--background-color); color: var(--foreground-color);'
+								: ''}
 						>
 							Other
-						</h2>
+						</a>
 					{/if}
-					<div class="space-y-3">
-						{#each filteredUncategorized as item (item.id)}
-							{@const imgs = item.images as { url: string; isPrimary?: boolean }[] | null}
-							{@const primaryImage = imgs?.find((i) => i.isPrimary)?.url ?? imgs?.[0]?.url}
-							<div class="item-card flex gap-4 rounded-xl border bg-background p-4 shadow-sm">
-								{#if primaryImage}
-									<img
-										src={primaryImage}
-										alt={item.name}
-										class="h-20 w-20 shrink-0 rounded-lg object-cover"
-									/>
-								{/if}
-								<div class="min-w-0 flex-1">
-									<p class="display font-semibold text-foreground">{item.name}</p>
-									{#if item.description}
-										<p class="mt-0.5 line-clamp-2 text-sm text-muted-foreground">
-											{item.description}
-										</p>
-									{/if}
-									{#if Array.isArray(item.tags) && item.tags.length > 0}
-										<div class="mt-1.5 flex flex-wrap gap-1">
-											{#each item.tags as tag (tag)}
-												<span
-													class="rounded-full px-2 py-0.5 text-xs capitalize"
-													style="background-color: color-mix(in srgb, var(--accent-color) 15%, white); color: var(--accent-color);"
-													>{tag.toLowerCase()}</span
-												>
-											{/each}
-										</div>
-									{/if}
-								</div>
-								<div class="flex shrink-0 flex-col items-end justify-between gap-2">
-									<div class="text-right">
-										{#if item.discountedPrice}
-											<p class="font-semibold" style="color: var(--background-color);">
-												${(item.discountedPrice / 100).toFixed(2)}
-											</p>
-											<p class="text-xs text-muted-foreground line-through">
-												${(item.price / 100).toFixed(2)}
-											</p>
-										{:else}
-											<p class="font-semibold text-foreground">${(item.price / 100).toFixed(2)}</p>
-										{/if}
-										{#if item.availabilityMode === 'storefront_only'}
-											<Badge class="mt-1 bg-amber-50 text-xs text-amber-700">Storefront only</Badge>
-										{:else if item.availabilityMode === 'events_only'}
-											<Badge class="mt-1 bg-sky-50 text-xs text-sky-700">Events only</Badge>
-										{:else if item.availabilityMode === 'special_order'}
-											<Badge class="mt-1 bg-purple-50 text-xs text-purple-700">Special order</Badge>
-										{/if}
-									</div>
-									{#if item.status === 'sold_out'}
-										<span
-											class="rounded-lg bg-amber-100 px-3 py-1.5 text-xs font-medium text-amber-700"
-											>Sold out</span
-										>
-									{:else if isPaused}
-										<span
-											class="rounded-lg bg-gray-100 px-3 py-1.5 text-xs font-medium text-gray-400"
-											>Unavailable</span
-										>
-									{:else if hasModifiers(item)}
-										<a
-											href={resolve(`/item/${item.id}` as `/${string}`)}
-											style="border-color: var(--background-color); color: var(--background-color);"
-											class="rounded-lg border px-3 py-1.5 text-xs font-medium transition-opacity hover:opacity-75"
-											>Options</a
-										>
-									{:else}
-										<button
-											type="button"
-											onclick={() => addSimple(item)}
-											class="add-btn rounded-lg px-3 py-1.5 text-xs font-medium transition-all {pulsingId ===
-											item.id
-												? 'pulsing'
-												: ''} {lastAddedId === item.id ? 'added' : ''}"
-											style="background-color: var(--background-color); color: var(--foreground-color);"
-										>
-											{lastAddedId === item.id ? '✓ Added' : '+ Add'}
-										</button>
-									{/if}
-								</div>
-							</div>
-						{/each}
-					</div>
-				</section>
-			{/if}
+					{#if !isPaused}
+						<a
+							href="#custom-orders"
+							onclick={(e) => {
+								e.preventDefault();
+								scrollToSection('custom-orders');
+							}}
+							class="shrink-0 rounded-full px-4 py-1.5 text-sm font-medium transition-colors {activeCategoryId ===
+							'custom-orders'
+								? ''
+								: 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'}"
+							style={activeCategoryId === 'custom-orders'
+								? 'background-color: var(--background-color); color: var(--foreground-color);'
+								: ''}
+						>
+							Custom Orders
+						</a>
+					{/if}
+				</div>
+			</nav>
 		{/if}
-	</main>
 
-	<!-- ── Custom order CTA ─────────────────────────────────────────────── -->
-	{#if !isPaused}
-		<div class="mx-auto max-w-2xl px-4 pb-8">
-			<div
-				class="rounded-xl border p-5 text-center"
-				style="border-color: color-mix(in srgb, var(--foreground-color) 15%, transparent); background-color: color-mix(in srgb, var(--accent-color) 8%, var(--background-color));"
-			>
-				<p class="text-sm font-semibold text-foreground" style="color: var(--foreground-color);">
-					Looking for something custom?
-				</p>
-				<p
-					class="mt-1 text-xs"
-					style="color: color-mix(in srgb, var(--foreground-color) 60%, transparent);"
+		<!-- Sections -->
+		{#if data.items.length === 0}
+			<div class="rounded-xl border border-dashed border-neutral-300 p-12 text-center">
+				<p class="text-neutral-500">Coming soon.</p>
+			</div>
+		{:else if !hasResults}
+			<div class="rounded-xl border border-dashed border-neutral-300 p-12 text-center">
+				<Icon icon="mdi:magnify" class="mx-auto mb-3 h-8 w-8 text-neutral-400" />
+				<p class="text-sm text-neutral-600">No items match "{searchQuery}".</p>
+				<button
+					type="button"
+					onclick={() => (searchQuery = '')}
+					class="mt-4 text-sm font-medium hover:underline"
+					style="color: var(--background-color);"
 				>
-					Send a request and {vendor.name} will get back to you.
-				</p>
-				<a
-					href={resolve('/request' as `/${string}`)}
-					class="mt-3 inline-block rounded-lg px-4 py-2 text-xs font-medium transition-opacity hover:opacity-85"
-					style="background-color: var(--background-color); color: var(--foreground-color); border: 1px solid color-mix(in srgb, var(--foreground-color) 25%, transparent);"
-				>
-					Make a custom request →
-				</a>
+					Clear search
+				</button>
+			</div>
+		{:else}
+			<div class="space-y-12">
+				{#each filteredCategorized as category (category.id)}
+					<section id={String(category.id)}>
+						<h2
+							class="mb-5 text-xs font-bold tracking-widest text-neutral-900 uppercase"
+							style="font-family: var(--font-heading);"
+						>
+							{category.name}
+						</h2>
+						<div class="grid gap-3 sm:grid-cols-2">
+							{#each category.items as item (item.id)}
+								<CatalogItemCard
+									{item}
+									{isPaused}
+									isAdding={pulsingId === item.id}
+									wasJustAdded={lastAddedId === item.id}
+									onAdd={() => addSimple(item)}
+								/>
+							{/each}
+						</div>
+					</section>
+				{/each}
+
+				{#if filteredUncategorized.length > 0}
+					<section id="other">
+						{#if filteredCategorized.length > 0}
+							<h2
+								class="mb-5 text-xs font-bold tracking-widest text-neutral-900 uppercase"
+								style="font-family: var(--font-heading);"
+							>
+								Other
+							</h2>
+						{/if}
+						<div class="grid gap-3 sm:grid-cols-2">
+							{#each filteredUncategorized as item (item.id)}
+								<CatalogItemCard
+									{item}
+									{isPaused}
+									isAdding={pulsingId === item.id}
+									wasJustAdded={lastAddedId === item.id}
+									onAdd={() => addSimple(item)}
+								/>
+							{/each}
+						</div>
+					</section>
+				{/if}
+
+				<!-- Custom orders section -->
+				{#if !isPaused}
+					<section id="custom-orders">
+						<h2
+							class="mb-5 text-xs font-bold tracking-widest text-neutral-900 uppercase"
+							style="font-family: var(--font-heading);"
+						>
+							Custom Orders
+						</h2>
+						<a
+							href={resolve('/request' as `/${string}`)}
+							class="block rounded-xl border border-neutral-200 bg-white p-6 transition-shadow hover:shadow-md"
+						>
+							<h3
+								class="font-semibold text-neutral-900"
+								style="font-family: var(--font-heading);"
+							>
+								Looking for something custom?
+							</h3>
+							<p class="mt-1 text-sm text-neutral-600">
+								Send {vendor.name} a request and they'll get back to you with a quote.
+							</p>
+							<span
+								class="mt-4 inline-flex items-center gap-1 text-sm font-medium"
+								style="color: var(--background-color);"
+							>
+								Make a custom request
+								<Icon icon="mdi:arrow-right" class="h-4 w-4" />
+							</span>
+						</a>
+					</section>
+				{/if}
+			</div>
+		{/if}
+	</div>
+
+	<!-- Right column: cart panel -->
+	<aside class="hidden md:block">
+		<div class="sticky top-20">
+			<div class="rounded-xl border border-neutral-200 bg-white p-5">
+				<CartPanel />
 			</div>
 		</div>
-	{/if}
+	</aside>
+</div>
 
-	<!-- ── Sticky cart bar ────────────────────────────────────────────────── -->
+<!-- Mobile cart trigger + sheet -->
+<Sheet bind:open={cartSheetOpen}>
 	{#if cart.count > 0 && !isPaused}
-		<div class="sticky bottom-0 flex justify-center p-4">
-			<a
-				href={resolve('/cart' as `/${string}`)}
+		<div class="sticky bottom-0 flex justify-center p-4 md:hidden">
+			<button
+				type="button"
+				onclick={() => (cartSheetOpen = true)}
 				style="background-color: var(--background-color); color: var(--foreground-color);"
 				class="flex w-full max-w-2xl items-center justify-between rounded-xl px-5 py-3.5 shadow-lg transition-opacity hover:opacity-90"
 			>
 				<span class="flex items-center gap-1.5">
 					<span
-						class="flex h-6 w-6 items-center justify-center rounded-full bg-background/20 text-sm font-bold"
+						class="flex h-6 w-6 items-center justify-center rounded-full bg-white/20 text-sm font-bold"
 						>{cart.count}</span
 					>
-					<span class="text-sm font-medium opacity-80">{cart.count === 1 ? 'item' : 'items'}</span>
+					<span class="text-sm font-medium opacity-80">
+						{cart.count === 1 ? 'item' : 'items'}
+					</span>
 				</span>
-				<span class="min-w-0 truncate px-2 text-sm font-medium opacity-80">{cartFirstItem}</span>
-				<span class="shrink-0 font-semibold">View Cart → ${(cart.subtotal / 100).toFixed(2)}</span>
-			</a>
+				<span class="shrink-0 font-semibold">
+					View Cart → ${(cart.subtotal / 100).toFixed(2)}
+				</span>
+			</button>
 		</div>
 	{/if}
-</div>
-
-<style>
-	/* Category nav active + hover */
-	.category-pill:hover,
-	.category-pill.active {
-		background-color: var(--accent-color);
-		color: var(--foreground-color);
-	}
-
-	/* Item card fade-in stagger */
-	@keyframes fadeUp {
-		from {
-			opacity: 0;
-			transform: translateY(10px);
-		}
-		to {
-			opacity: 1;
-			transform: translateY(0);
-		}
-	}
-	.item-card {
-		animation: fadeUp 0.2s ease both;
-	}
-
-	.display {
-		font-family: var(--font-heading);
-	}
-
-	/* Add button pulse animation */
-	@keyframes addPulse {
-		0% {
-			transform: scale(1);
-		}
-		40% {
-			transform: scale(1.18);
-		}
-		100% {
-			transform: scale(1);
-		}
-	}
-	.add-btn:hover:not(.added) {
-		opacity: 0.82;
-	}
-	.add-btn.pulsing {
-		animation: addPulse 0.35s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
-	}
-	.add-btn.added {
-		background-color: var(--accent-color) !important;
-		color: var(--foreground-color) !important;
-	}
-</style>
+	<SheetContent side="bottom" showCloseButton={false} class="flex max-h-[85vh] flex-col p-5">
+		<SheetTitle class="sr-only">Your Order</SheetTitle>
+		<CartPanel onCheckout={() => (cartSheetOpen = false)} />
+	</SheetContent>
+</Sheet>

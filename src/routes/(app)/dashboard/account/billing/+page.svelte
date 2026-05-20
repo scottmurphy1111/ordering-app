@@ -16,7 +16,7 @@
 	import { resolve } from '$app/paths';
 	import { replaceState } from '$app/navigation';
 	import { Button } from '$lib/components/ui/button';
-	import { Badge } from '$lib/components/ui/badge';
+	import StatusBadge from '$lib/components/StatusBadge.svelte';
 	import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '$lib/components/ui/card';
 	import { Alert } from '$lib/components/ui/alert';
 	import {
@@ -387,17 +387,17 @@
 					<!-- Row 1: Plan name + status badges -->
 					<div class="mb-2 flex flex-wrap items-center gap-2">
 						<span class="text-xl font-bold text-foreground">{tierInfo.name}</span>
-						<Badge class={statusColors[data.subscriptionStatus ?? 'active'] ?? statusColors.active}>
+						<StatusBadge tone={statusColors[data.subscriptionStatus ?? 'active'] ?? statusColors.active}>
 							{data.subscriptionStatus === 'past_due'
 								? 'Payment past due'
 								: data.subscriptionStatus === 'cancelled'
 									? 'Cancelled'
 									: 'Active'}
-						</Badge>
+						</StatusBadge>
 						{#if isPaidPlan}
-							<Badge class="bg-muted text-muted-foreground">
+							<StatusBadge variant="neutral">
 								{data.billingInterval === 'annual' ? 'Annual' : 'Monthly'}
-							</Badge>
+							</StatusBadge>
 						{/if}
 					</div>
 
@@ -912,7 +912,7 @@
 								</div>
 							</div>
 							{#if isActive}
-								<Badge class="shrink-0 bg-success/10 text-success">Active</Badge>
+								<StatusBadge variant="success" class="shrink-0">Active</StatusBadge>
 							{/if}
 						</div>
 						<p class="mb-3 text-sm text-muted-foreground">{addon.description}</p>

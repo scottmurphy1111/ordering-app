@@ -59,6 +59,7 @@ export const vendor = pgTable(
 		bannerUrl: text('banner_url'),
 		faviconUrl: text('favicon_url'),
 		backgroundImageUrl: text('background_image_url'),
+		backgroundPatternSlug: varchar('background_pattern_slug', { length: 32 }),
 		backgroundColor: varchar('background_color', { length: 7 }).default('#000000'),
 		accentColor: varchar('accent_color', { length: 7 }).default('#374151'),
 		foregroundColor: varchar('foreground_color', { length: 7 }).default('#ffffff'),

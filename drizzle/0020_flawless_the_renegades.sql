@@ -1,0 +1,2 @@
+CREATE TYPE "public"."background_display_mode" AS ENUM('cover', 'repeat');--> statement-breakpoint
+ALTER TABLE "vendors" ADD COLUMN "background_display_mode" "background_display_mode" DEFAULT 'cover' NOT NULL;

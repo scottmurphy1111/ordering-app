@@ -4,6 +4,9 @@ import { db } from '$lib/server/db';
 import { eq } from 'drizzle-orm';
 import { vendor } from '$lib/server/db/schema';
 import { FONT_PAIRS } from '$lib/storefront/font-pairs';
+import { findPatternBySlug } from '$lib/storefront/background-patterns';
+import { deleteFromR2 } from '$lib/server/r2';
+import { env } from '$env/dynamic/private';
 
 export const load: PageServerLoad = async ({ locals }) => {
 	const vendorId = locals.vendorId!;
@@ -13,6 +16,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 			logoUrl: true,
 			bannerUrl: true,
 			backgroundImageUrl: true,
+			backgroundPatternSlug: true,
 			backgroundColor: true,
 			accentColor: true,
 			foregroundColor: true,
@@ -29,6 +33,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 			logoUrl: null,
 			bannerUrl: null,
 			backgroundImageUrl: null,
+			backgroundPatternSlug: null,
 			backgroundColor: '#000000',
 			accentColor: '#374151',
 			foregroundColor: '#ffffff',
@@ -93,9 +98,9 @@ export const actions: Actions = {
 		const vendorId = locals.vendorId!;
 		await db
 			.update(vendor)
-			.set({ backgroundImageUrl: null, updatedAt: new Date() })
+			.set({ backgroundImageUrl: null, backgroundPatternSlug: null, updatedAt: new Date() })
 			.where(eq(vendor.id, vendorId));
-		return { success: true, message: 'Background image removed' };
+		return { success: true, message: 'Background removed' };
 	},
 
 	saveIdentity: async ({ request, locals }) => {
@@ -123,6 +128,100 @@ export const actions: Actions = {
 			.where(eq(vendor.id, vendorId));
 
 		return { success: true, message: 'Identity saved' };
+	},
+
+	acceptGeneratedBanner: async ({ request, locals }) => {
+		const vendorId = locals.vendorId!;
+		const formData = await request.formData();
+		const url = formData.get('url')?.toString().trim();
+
+		if (!url || !url.startsWith(env.R2_PUBLIC_URL ?? '')) {
+			return fail(400, { error: 'Invalid image URL' });
+		}
+
+		const existing = await db.query.vendor.findFirst({
+			where: eq(vendor.id, vendorId),
+			columns: { bannerUrl: true }
+		});
+		if (existing?.bannerUrl) {
+			try {
+				await deleteFromR2(existing.bannerUrl);
+			} catch (err) {
+				console.warn('[acceptGeneratedBanner] failed to delete old banner:', err);
+			}
+		}
+
+		await db
+			.update(vendor)
+			.set({ bannerUrl: url, updatedAt: new Date() })
+			.where(eq(vendor.id, vendorId));
+
+		return { success: true, message: 'Banner saved' };
+	},
+
+	acceptGeneratedBackground: async ({ request, locals }) => {
+		const vendorId = locals.vendorId!;
+		const formData = await request.formData();
+		const url = formData.get('url')?.toString().trim();
+
+		if (!url || !url.startsWith(env.R2_PUBLIC_URL ?? '')) {
+			return fail(400, { error: 'Invalid image URL' });
+		}
+
+		const existing = await db.query.vendor.findFirst({
+			where: eq(vendor.id, vendorId),
+			columns: { backgroundImageUrl: true }
+		});
+		if (existing?.backgroundImageUrl) {
+			try {
+				await deleteFromR2(existing.backgroundImageUrl);
+			} catch (err) {
+				console.warn('[acceptGeneratedBackground] failed to delete old background:', err);
+			}
+		}
+
+		await db
+			.update(vendor)
+			.set({ backgroundImageUrl: url, backgroundPatternSlug: null, updatedAt: new Date() })
+			.where(eq(vendor.id, vendorId));
+
+		return { success: true, message: 'Background saved' };
+	},
+
+	selectPattern: async ({ request, locals }) => {
+		const vendorId = locals.vendorId!;
+		const formData = await request.formData();
+		const slug = formData.get('slug')?.toString().trim();
+
+		const pattern = findPatternBySlug(slug);
+		if (!pattern) {
+			return fail(400, { error: 'Unknown pattern' });
+		}
+
+		// Any non-null backgroundImageUrl is an R2-hosted asset — delete it
+		// before switching to a pattern (patterns are purely slug-based, no URL).
+		const existing = await db.query.vendor.findFirst({
+			where: eq(vendor.id, vendorId),
+			columns: { backgroundImageUrl: true }
+		});
+		if (existing?.backgroundImageUrl) {
+			try {
+				await deleteFromR2(existing.backgroundImageUrl);
+			} catch (err) {
+				console.warn('[selectPattern] failed to delete old background image:', err);
+			}
+		}
+
+		await db
+			.update(vendor)
+			.set({
+				backgroundImageUrl: null,
+				backgroundPatternSlug: pattern.slug,
+				updatedAt: new Date()
+			})
+			.where(eq(vendor.id, vendorId));
+
+		return { success: true, message: 'Pattern applied' };
 	},
 
 	saveFontPair: async ({ request, locals }) => {

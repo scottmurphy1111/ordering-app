@@ -47,20 +47,22 @@
 	}
 </script>
 
-<div class="flex items-center gap-2 rounded-lg border bg-background/95 px-3 py-2 backdrop-blur-sm">
+<div
+	class="flex items-center gap-2 rounded-lg border px-3 py-2"
+	style="background-color: color-mix(in srgb, var(--foreground-color) 8%, transparent); border-color: color-mix(in srgb, var(--foreground-color) 15%, transparent);"
+>
 	{#if openState.isOpen}
 		<div class="h-2 w-2 shrink-0 rounded-full bg-emerald-500"></div>
-		<p class="text-sm font-medium text-foreground">
-			Open · <span class="text-muted-foreground">closes at {formatTime(openState.closesAt)}</span>
+		<p class="text-sm font-medium" style="color: var(--foreground-color);">
+			Open · <span style="color: color-mix(in srgb, var(--foreground-color) 65%, transparent);">closes at {formatTime(openState.closesAt)}</span>
 		</p>
 	{:else if openState.opensAt}
-		<div class="h-2 w-2 shrink-0 rounded-full bg-muted-foreground/50"></div>
-		<p class="text-sm font-medium text-foreground">
-			Closed · <span class="text-muted-foreground">opens {formatDayAndTime(openState.opensAt)}</span
-			>
+		<div class="h-2 w-2 shrink-0 rounded-full" style="background-color: color-mix(in srgb, var(--foreground-color) 30%, transparent);"></div>
+		<p class="text-sm font-medium" style="color: var(--foreground-color);">
+			Closed · <span style="color: color-mix(in srgb, var(--foreground-color) 65%, transparent);">opens {formatDayAndTime(openState.opensAt)}</span>
 		</p>
 	{:else}
-		<div class="h-2 w-2 shrink-0 rounded-full bg-muted-foreground/50"></div>
-		<p class="text-sm font-medium text-foreground">Closed</p>
+		<div class="h-2 w-2 shrink-0 rounded-full" style="background-color: color-mix(in srgb, var(--foreground-color) 30%, transparent);"></div>
+		<p class="text-sm font-medium" style="color: var(--foreground-color);">Closed</p>
 	{/if}
 </div>

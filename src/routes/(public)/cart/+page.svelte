@@ -10,6 +10,7 @@
 	import { computeMaxLeadDays } from '$lib/utils/lead-days';
 	import { isVendorOpen } from '$lib/hours/isOpen';
 
+
 	let { data }: { data: PageData } = $props();
 
 	const isPaused = $derived(!!data.vendor.subscriptionPausedAt);
@@ -544,7 +545,7 @@
 	</header>
 
 	<main
-		class="mx-auto my-8 max-w-lg space-y-5 rounded-2xl bg-background/80 px-4 py-6 backdrop-blur-sm"
+		class="mx-auto my-8 max-w-lg space-y-5 rounded-2xl px-4 py-6"
 	>
 		{#if isPaused}
 			<div

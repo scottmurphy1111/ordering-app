@@ -7,7 +7,7 @@
 	let { data }: { data: PageData } = $props();
 	import QRCode from 'qrcode';
 	import { Button } from '$lib/components/ui/button';
-	import { Badge } from '$lib/components/ui/badge';
+	import StatusBadge from '$lib/components/StatusBadge.svelte';
 	import { Card, CardContent } from '$lib/components/ui/card';
 
 	const vendor = $derived(page.data.vendor);
@@ -444,7 +444,7 @@
 				<div>
 					<div class="flex items-center gap-2">
 						<h2 class="font-semibold text-muted-foreground">Printable Catalog</h2>
-						<Badge class="bg-muted text-muted-foreground">Coming soon</Badge>
+						<StatusBadge variant="neutral">Coming soon</StatusBadge>
 					</div>
 					<p class="text-sm text-muted-foreground">
 						Generate a print-ready PDF of your full catalog.

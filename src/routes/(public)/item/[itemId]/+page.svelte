@@ -11,7 +11,8 @@
 	import { confirmDialog } from '$lib/confirm.svelte';
 	import { resolve } from '$app/paths';
 	import Icon from '@iconify/svelte';
-	import { Badge } from '$lib/components/ui/badge';
+	import StatusBadge from '$lib/components/StatusBadge.svelte';
+
 
 	let { data }: { data: PageData } = $props();
 
@@ -121,7 +122,7 @@
 		</div>
 	</header>
 
-	<main class="mx-auto max-w-lg space-y-6 rounded-2xl bg-background/80 px-4 py-6 backdrop-blur-sm">
+	<main class="mx-auto max-w-lg space-y-6 rounded-2xl px-4 py-6">
 		<!-- Image -->
 		{#if primaryImage}
 			<img
@@ -150,11 +151,11 @@
 					<p class="text-xl font-bold text-foreground">${(data.item.price / 100).toFixed(2)}</p>
 				{/if}
 				{#if data.item.availabilityMode === 'storefront_only'}
-					<Badge class="bg-amber-50 text-xs text-amber-700">Storefront only</Badge>
+					<StatusBadge tone="bg-amber-50 text-amber-700" class="text-xs">Storefront only</StatusBadge>
 				{:else if data.item.availabilityMode === 'events_only'}
-					<Badge class="bg-sky-50 text-xs text-sky-700">Events only</Badge>
+					<StatusBadge tone="bg-sky-50 text-sky-700" class="text-xs">Events only</StatusBadge>
 				{:else if data.item.availabilityMode === 'special_order'}
-					<Badge class="bg-purple-50 text-xs text-purple-700">Special order</Badge>
+					<StatusBadge tone="bg-purple-50 text-purple-700" class="text-xs">Special order</StatusBadge>
 				{/if}
 			</div>
 			{#if Array.isArray(data.item.tags) && data.item.tags.length > 0}

@@ -4,7 +4,7 @@
 	import Icon from '@iconify/svelte';
 	import type { PageData, ActionData } from './$types';
 	import { Button } from '$lib/components/ui/button';
-	import { Badge } from '$lib/components/ui/badge';
+	import StatusBadge from '$lib/components/StatusBadge.svelte';
 	import { Card, CardContent } from '$lib/components/ui/card';
 	import {
 		Table,
@@ -92,10 +92,10 @@
 									<p class="font-medium text-foreground">{u.name}</p>
 									<p class="mt-0.5 text-xs text-muted-foreground">{u.email}</p>
 									{#if u.isInternal}
-										<Badge class="mt-1 bg-purple-100 text-purple-700">
+										<StatusBadge tone="bg-purple-100 text-purple-700" class="mt-1">
 											<Icon icon="mdi:shield-crown-outline" class="h-3 w-3" />
 											Super admin
-										</Badge>
+										</StatusBadge>
 									{/if}
 								</TableCell>
 								<TableCell class="hidden px-4 py-3 text-sm text-muted-foreground sm:table-cell">
@@ -106,14 +106,14 @@
 								</TableCell>
 								<TableCell class="px-4 py-3">
 									{#if u.bannedAt}
-										<Badge class="bg-destructive/10 text-red-600">Suspended</Badge>
+										<StatusBadge variant="danger">Suspended</StatusBadge>
 									{:else if u.emailVerified}
-										<Badge class="bg-success/10 text-success">
+										<StatusBadge variant="success">
 											<span class="h-1.5 w-1.5 rounded-full bg-primary"></span>
 											Active
-										</Badge>
+										</StatusBadge>
 									{:else}
-										<Badge class="bg-muted text-muted-foreground">Unverified</Badge>
+										<StatusBadge variant="neutral">Unverified</StatusBadge>
 									{/if}
 								</TableCell>
 								<TableCell class="px-4 py-3">

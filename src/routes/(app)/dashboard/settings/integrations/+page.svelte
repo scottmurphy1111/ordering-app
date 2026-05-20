@@ -6,7 +6,7 @@
 	import Icon from '@iconify/svelte';
 	import type { PageData, ActionData } from './$types';
 	import { Button } from '$lib/components/ui/button';
-	import { Badge } from '$lib/components/ui/badge';
+	import StatusBadge from '$lib/components/StatusBadge.svelte';
 	import { Input } from '$lib/components/ui/input';
 	import { Label } from '$lib/components/ui/label';
 	import { Card, CardContent, CardFooter } from '$lib/components/ui/card';
@@ -63,12 +63,12 @@
 				</div>
 				<div class="shrink-0">
 					{#if data.hasStripeKey}
-						<Badge class="bg-success/10 text-success">
+						<StatusBadge variant="success">
 							<span class="h-1.5 w-1.5 rounded-full bg-primary"></span>
 							Connected
-						</Badge>
+						</StatusBadge>
 					{:else}
-						<Badge class="bg-muted text-muted-foreground">Not connected</Badge>
+						<StatusBadge variant="neutral">Not connected</StatusBadge>
 					{/if}
 				</div>
 			</div>
@@ -284,12 +284,12 @@
 						</div>
 						<div class="ml-4 shrink-0">
 							{#if data.hasWebhookEndpoint}
-								<Badge class="bg-success/10 text-success">
+								<StatusBadge variant="success">
 									<span class="h-1.5 w-1.5 rounded-full bg-primary"></span>
 									Auto-configured
-								</Badge>
+								</StatusBadge>
 							{:else}
-								<Badge class="bg-yellow-100 text-yellow-700">Not set</Badge>
+								<StatusBadge tone="bg-yellow-100 text-yellow-700">Not set</StatusBadge>
 							{/if}
 						</div>
 					</div>

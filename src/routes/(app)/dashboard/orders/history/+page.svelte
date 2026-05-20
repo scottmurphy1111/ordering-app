@@ -5,7 +5,7 @@
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import Icon from '@iconify/svelte';
-	import { Badge } from '$lib/components/ui/badge';
+	import StatusBadge from '$lib/components/StatusBadge.svelte';
 	import { Button } from '$lib/components/ui/button';
 	import { Input } from '$lib/components/ui/input';
 	import * as Popover from '$lib/components/ui/popover';
@@ -127,7 +127,7 @@
 	}
 
 	const paymentBadge: Record<string, { cls: string; label: string }> = {
-		paid: { cls: 'bg-emerald-100 text-emerald-700', label: 'Paid' },
+		paid: { cls: 'bg-success/10 text-success', label: 'Paid' },
 		refunded: { cls: 'bg-orange-100 text-orange-700', label: 'Refunded' },
 		failed: { cls: 'bg-red-100 text-red-600', label: 'Failed' },
 		void: { cls: 'bg-gray-100 text-gray-600', label: 'Void' },
@@ -336,11 +336,11 @@
 											{order.status}
 										</span>
 									{/if}
-									<Badge class="bg-gray-100 text-gray-500 capitalize">{order.type}</Badge>
+									<StatusBadge variant="subtle" class="capitalize">{order.type}</StatusBadge>
 									{#if order.paymentStatus && paymentBadge[order.paymentStatus]}
-										<Badge class={paymentBadge[order.paymentStatus].cls}>
+										<StatusBadge tone={paymentBadge[order.paymentStatus].cls}>
 											{paymentBadge[order.paymentStatus].label}
-										</Badge>
+										</StatusBadge>
 									{/if}
 								</div>
 								{#if order.customerName}

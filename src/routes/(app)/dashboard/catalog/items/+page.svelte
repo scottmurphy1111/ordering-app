@@ -11,7 +11,7 @@
 	import Sortable from 'sortablejs';
 	import CatalogTabs from '$lib/components/CatalogTabs.svelte';
 	import { Button } from '$lib/components/ui/button';
-	import { Badge } from '$lib/components/ui/badge';
+	import StatusBadge from '$lib/components/StatusBadge.svelte';
 	import { Input } from '$lib/components/ui/input';
 	import { Checkbox } from '$lib/components/ui/checkbox';
 	import {
@@ -1241,7 +1241,7 @@
 									>${(item.price / 100).toFixed(2)}</span
 								>
 								{#if item.alreadyImported}
-									<Badge class="bg-muted text-muted-foreground">Already imported</Badge>
+									<StatusBadge variant="neutral">Already imported</StatusBadge>
 								{/if}
 							</div>
 						</li>

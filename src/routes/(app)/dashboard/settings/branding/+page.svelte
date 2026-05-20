@@ -19,6 +19,8 @@
 	import { Alert } from '$lib/components/ui/alert';
 	import { Dialog, DialogContent, DialogHeader, DialogTitle } from '$lib/components/ui/dialog';
 	import { FONT_PAIRS, googleFontsUrl, type FontPairSlug } from '$lib/storefront/font-pairs';
+	import { BACKGROUND_PATTERNS, patternDataUriSoft } from '$lib/storefront/background-patterns';
+	import AiImageGenerator from '$lib/components/AiImageGenerator.svelte';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
@@ -44,9 +46,16 @@
 	let logoState = $state<UploadState>({ uploading: false, error: '' });
 	let bannerState = $state<UploadState>({ uploading: false, error: '' });
 	let bgState = $state<UploadState>({ uploading: false, error: '' });
-	let submittingAction = $state<
-		'removeLogo' | 'removeBanner' | 'removeBackground' | 'saveIdentity' | 'saveFontPair' | null
-	>(null);
+	let submittingAction = $state<string | null>(null);
+
+	const removeLabel = $derived.by(() => {
+		const hasImage = !!data.branding.backgroundImageUrl;
+		const hasPattern = !!data.branding.backgroundPatternSlug;
+		if (hasImage && hasPattern) return 'Remove background';
+		if (hasImage) return 'Remove image';
+		if (hasPattern) return 'Remove pattern';
+		return 'Remove';
+	});
 
 	let logoInput = $state<HTMLInputElement | null>(null);
 	let bannerInput = $state<HTMLInputElement | null>(null);
@@ -213,7 +222,7 @@
 									<p class="text-xs font-medium text-muted-foreground">{pair.label}</p>
 									<p
 										style="font-family: {pair.heading.cssStack};"
-										class="text-2xl font-bold leading-tight"
+										class="min-h-20 text-2xl font-bold leading-tight"
 									>
 										{pair.previewHeading}
 									</p>
@@ -568,6 +577,14 @@
 				<p class="text-xs text-muted-foreground">
 					JPG, PNG, or WebP · max 5MB · wide landscape image recommended (1600×600px or similar)
 				</p>
+
+				<div class="my-4 flex items-center gap-2">
+					<div class="h-px flex-1 bg-border"></div>
+					<span class="text-xs text-muted-foreground">or</span>
+					<div class="h-px flex-1 bg-border"></div>
+				</div>
+
+				<AiImageGenerator type="banner" aspect="aspect-video" />
 			</CardContent>
 		</Card>
 
@@ -581,11 +598,13 @@
 				>
 				<CardAction>
 					<span
-						class="rounded-full px-2.5 py-0.5 text-xs font-medium {data.branding.backgroundImageUrl
+						class="rounded-full px-2.5 py-0.5 text-xs font-medium {data.branding.backgroundImageUrl || data.branding.backgroundPatternSlug
 							? 'bg-success/10 text-success'
 							: 'bg-muted text-muted-foreground'}"
 					>
-						{data.branding.backgroundImageUrl ? 'Active' : 'Not set'}
+						{data.branding.backgroundImageUrl || data.branding.backgroundPatternSlug
+							? 'Active'
+							: 'Not set'}
 					</span>
 				</CardAction>
 			</CardHeader>
@@ -625,7 +644,7 @@
 								? 'Replace background'
 								: 'Upload background'}
 					</Button>
-					{#if data.branding.backgroundImageUrl}
+					{#if data.branding.backgroundImageUrl || data.branding.backgroundPatternSlug}
 						<form method="post" action="?/removeBackground" use:enhance={() => {
 							submittingAction = 'removeBackground';
 							return async ({ update }) => {
@@ -643,7 +662,7 @@
 									<Icon icon="mdi:loading" class="h-4 w-4 animate-spin" />
 									Removing...
 								{:else}
-									Remove
+									{removeLabel}
 								{/if}
 							</Button>
 						</form>
@@ -652,6 +671,66 @@
 				<p class="text-xs text-muted-foreground">
 					JPG, PNG, or WebP · max 5MB · tileable textures work best
 				</p>
+
+				<div class="my-4 flex items-center gap-2">
+					<div class="h-px flex-1 bg-border"></div>
+					<span class="text-xs text-muted-foreground">or</span>
+					<div class="h-px flex-1 bg-border"></div>
+				</div>
+
+				<AiImageGenerator type="background" aspect="aspect-[21/9]" />
+
+				<div class="my-4 flex items-center gap-2">
+					<div class="h-px flex-1 bg-border"></div>
+					<span class="text-xs text-muted-foreground">or pick a pattern</span>
+					<div class="h-px flex-1 bg-border"></div>
+				</div>
+
+				<div class="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
+					{#each BACKGROUND_PATTERNS as pattern (pattern.slug)}
+						<form
+							method="post"
+							action="?/selectPattern"
+							use:enhance={() => {
+								submittingAction = `pattern:${pattern.slug}`;
+								return async ({ update }) => {
+									submittingAction = null;
+									await update({ invalidateAll: true });
+								};
+							}}
+						>
+							<input type="hidden" name="slug" value={pattern.slug} />
+							<button
+								type="submit"
+								disabled={submittingAction !== null}
+								aria-label="Select pattern: {pattern.label}"
+								class="group relative block aspect-square w-full overflow-hidden rounded-md border-2 transition-colors {data
+									.branding.backgroundPatternSlug === pattern.slug
+									? 'border-foreground'
+									: 'border-border hover:border-foreground/40'}"
+								style="background-color: {data.branding.backgroundColor}; background-image: {patternDataUriSoft(pattern, data.branding.foregroundColor ?? '#ffffff', data.branding.backgroundColor ?? '#000000')}; background-repeat: repeat; background-size: {pattern.tileSize};"
+							>
+								<span class="sr-only">{pattern.label}</span>
+								{#if data.branding.backgroundPatternSlug === pattern.slug}
+									<span
+										class="absolute top-2 right-2 flex h-6 w-6 items-center justify-center rounded-full bg-white shadow-sm"
+										aria-hidden="true"
+									>
+										<Icon icon="mdi:check" class="h-4 w-4 text-foreground" />
+									</span>
+								{/if}
+								{#if submittingAction === `pattern:${pattern.slug}`}
+									<span
+										class="absolute inset-0 flex items-center justify-center bg-background/60"
+									>
+										<Icon icon="mdi:loading" class="h-5 w-5 animate-spin" />
+									</span>
+								{/if}
+							</button>
+							<p class="mt-1 text-center text-xs text-muted-foreground">{pattern.label}</p>
+						</form>
+					{/each}
+				</div>
 			</CardContent>
 		</Card>
 	</div>

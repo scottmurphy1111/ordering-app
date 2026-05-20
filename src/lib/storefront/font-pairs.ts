@@ -40,7 +40,7 @@ export const FONT_PAIRS: Record<FontPairSlug, FontPair> = {
 			cssStack: "'DM Sans', system-ui, sans-serif",
 			weights: 'ital,opsz,wght@0,9..40,300..700;1,9..40,300..700'
 		},
-		previewHeading: 'Sweet Crumb Bakery',
+		previewHeading: 'Sweet Crumb',
 		previewBody: 'Sourdough loaves, pastries, and seasonal specials.'
 	},
 	'playfair-inter': {
@@ -57,7 +57,7 @@ export const FONT_PAIRS: Record<FontPairSlug, FontPair> = {
 			cssStack: "'Inter', system-ui, sans-serif",
 			weights: 'wght@300..700'
 		},
-		previewHeading: 'Sweet Crumb Bakery',
+		previewHeading: 'Sweet Crumb',
 		previewBody: 'Sourdough loaves, pastries, and seasonal specials.'
 	},
 	'libre-baskerville-source-sans': {
@@ -75,7 +75,7 @@ export const FONT_PAIRS: Record<FontPairSlug, FontPair> = {
 			cssStack: "'Source Sans 3', system-ui, sans-serif",
 			weights: 'ital,wght@0,300..700;1,300..700'
 		},
-		previewHeading: 'Sweet Crumb Bakery',
+		previewHeading: 'Sweet Crumb',
 		previewBody: 'Sourdough loaves, pastries, and seasonal specials.'
 	},
 	'archivo-archivo': {
@@ -93,7 +93,7 @@ export const FONT_PAIRS: Record<FontPairSlug, FontPair> = {
 			cssStack: "'Archivo', system-ui, sans-serif",
 			weights: 'wdth,wght@62.5..125,100..900'
 		},
-		previewHeading: 'Sweet Crumb Bakery',
+		previewHeading: 'Sweet Crumb',
 		previewBody: 'Sourdough loaves, pastries, and seasonal specials.'
 	},
 	'space-grotesk-space-grotesk': {
@@ -111,7 +111,7 @@ export const FONT_PAIRS: Record<FontPairSlug, FontPair> = {
 			cssStack: "'Space Grotesk', system-ui, sans-serif",
 			weights: 'wght@300..700'
 		},
-		previewHeading: 'Sweet Crumb Bakery',
+		previewHeading: 'Sweet Crumb',
 		previewBody: 'Sourdough loaves, pastries, and seasonal specials.'
 	},
 	'lora-nunito-sans': {
@@ -129,7 +129,7 @@ export const FONT_PAIRS: Record<FontPairSlug, FontPair> = {
 			cssStack: "'Nunito Sans', system-ui, sans-serif",
 			weights: 'ital,opsz,wght@0,6..12,300..900;1,6..12,300..900'
 		},
-		previewHeading: 'Sweet Crumb Bakery',
+		previewHeading: 'Sweet Crumb',
 		previewBody: 'Sourdough loaves, pastries, and seasonal specials.'
 	}
 };

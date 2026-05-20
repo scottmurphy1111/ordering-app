@@ -6,7 +6,7 @@
 	import { RRule } from 'rrule';
 	import { SvelteMap } from 'svelte/reactivity';
 	import { Button } from '$lib/components/ui/button';
-	import { Badge } from '$lib/components/ui/badge';
+	import StatusBadge from '$lib/components/StatusBadge.svelte';
 	import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '$lib/components/ui/card';
 	import { Input } from '$lib/components/ui/input';
 	import { Textarea } from '$lib/components/ui/textarea';
@@ -734,9 +734,9 @@
 								</TableCell>
 								<TableCell>
 									{#if loc.isActive}
-										<Badge class="bg-success/10 text-success">Active</Badge>
+										<StatusBadge variant="success">Active</StatusBadge>
 									{:else}
-										<Badge class="bg-gray-100 text-muted-foreground">Inactive</Badge>
+										<StatusBadge variant="neutral">Inactive</StatusBadge>
 									{/if}
 								</TableCell>
 								<TableCell class="text-right">
@@ -1419,7 +1419,7 @@
 													: 'No cap'}{tmplDateRange ? ` · ${tmplDateRange}` : ''}
 											</span>
 											{#if !tmpl.isActive}
-												<Badge class="bg-gray-100 text-xs text-gray-500">Deactivated</Badge>
+												<StatusBadge tone="bg-gray-100 text-gray-500" class="text-xs">Deactivated</StatusBadge>
 											{/if}
 										</div>
 										<div class="flex shrink-0 items-baseline gap-3 md:pl-4">
@@ -1584,7 +1584,7 @@
 												: 'No cap'}{tmplDateRange ? ` · ${tmplDateRange}` : ''}
 										</span>
 										{#if !tmpl.isActive}
-											<Badge class="bg-gray-100 text-xs text-gray-500">Deactivated</Badge>
+											<StatusBadge tone="bg-gray-100 text-gray-500" class="text-xs">Deactivated</StatusBadge>
 										{/if}
 									</div>
 									<div class="flex shrink-0 items-baseline gap-3 md:pl-4">

@@ -96,20 +96,7 @@
 </svelte:head>
 
 <div class="min-h-screen">
-	<!-- Branded header -->
-	<header style="background-color: var(--background-color);">
-		<div class="mx-auto max-w-lg px-4 py-4">
-			<a
-				href={resolve('/catalog' as `/${string}`)}
-				class="inline-flex items-center gap-1 text-sm font-medium transition-opacity hover:opacity-75"
-				style="color: var(--foreground-color);"
-			>
-				<Icon icon="mdi:arrow-left" class="h-4 w-4" /> Back to catalog
-			</a>
-		</div>
-	</header>
-
-	<main class="mx-auto max-w-lg space-y-4 px-4 py-8">
+<main class="mx-auto max-w-lg space-y-4 px-4 py-8">
 		<!-- Payment / confirmation card -->
 		<Card
 			class="text-center shadow-sm"

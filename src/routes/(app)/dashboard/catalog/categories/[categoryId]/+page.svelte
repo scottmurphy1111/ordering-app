@@ -5,7 +5,7 @@
 	import Icon from '@iconify/svelte';
 	import { resolve } from '$app/paths';
 	import { Button } from '$lib/components/ui/button';
-	import { Badge } from '$lib/components/ui/badge';
+	import StatusBadge from '$lib/components/StatusBadge.svelte';
 	import { Input } from '$lib/components/ui/input';
 	import { Checkbox } from '$lib/components/ui/checkbox';
 	import { Switch } from '$lib/components/ui/switch';
@@ -150,7 +150,7 @@
 								<span class="flex-1 text-sm text-foreground">{item.name}</span>
 								<span class="text-xs text-muted-foreground">${(item.price / 100).toFixed(2)}</span>
 								{#if item.categoryId !== null && item.categoryId !== data.category.id}
-									<Badge class="bg-yellow-100 text-yellow-700">Other category</Badge>
+									<StatusBadge tone="bg-yellow-100 text-yellow-700">Other category</StatusBadge>
 								{/if}
 							</label>
 						{/each}

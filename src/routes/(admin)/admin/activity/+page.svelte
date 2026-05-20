@@ -6,7 +6,7 @@
 	import { SvelteURLSearchParams } from 'svelte/reactivity';
 	import Icon from '@iconify/svelte';
 	import { Card, CardContent } from '$lib/components/ui/card';
-	import { Badge } from '$lib/components/ui/badge';
+	import StatusBadge from '$lib/components/StatusBadge.svelte';
 
 	let { data }: { data: PageData } = $props();
 
@@ -97,15 +97,15 @@
 									<div class="flex flex-wrap items-center gap-2">
 										<p class="font-medium text-foreground">{v.name}</p>
 										<span class="font-mono text-xs text-muted-foreground">/{v.slug}</span>
-										<Badge class="bg-muted text-muted-foreground capitalize">
+										<StatusBadge variant="neutral" class="capitalize">
 											{v.subscriptionTier ?? 'starter'}
-										</Badge>
+										</StatusBadge>
 										{#if v.subscriptionPausedAt}
-											<Badge class="bg-amber-100 text-amber-700">Paused</Badge>
+											<StatusBadge variant="warning">Paused</StatusBadge>
 										{:else if v.subscriptionEndsAt}
-											<Badge class="bg-amber-100 text-amber-700">Cancel scheduled</Badge>
+											<StatusBadge variant="warning">Cancel scheduled</StatusBadge>
 										{:else if v.subscriptionStatus === 'past_due'}
-											<Badge class="bg-red-100 text-red-700">Past due</Badge>
+											<StatusBadge variant="danger">Past due</StatusBadge>
 										{/if}
 									</div>
 									<p class="mt-0.5 text-xs text-muted-foreground">

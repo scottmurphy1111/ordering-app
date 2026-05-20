@@ -15,7 +15,7 @@
 		DropdownMenuTrigger,
 		DropdownMenuItem
 	} from '$lib/components/ui/dropdown-menu';
-	import { Badge } from '$lib/components/ui/badge';
+	import StatusBadge from '$lib/components/StatusBadge.svelte';
 	import { Input } from '$lib/components/ui/input';
 	import { Switch } from '$lib/components/ui/switch';
 	import { Label } from '$lib/components/ui/label';
@@ -286,13 +286,9 @@
 							</span>
 							<span class="flex-1 text-sm font-medium text-foreground">{cat.name}</span>
 							<span class="text-xs text-muted-foreground">{cat.itemCount} items</span>
-							<Badge
-								class={cat.isActive
-									? 'bg-success/10 text-success'
-									: 'bg-muted text-muted-foreground'}
-							>
+							<StatusBadge variant={cat.isActive ? 'success' : 'neutral'}>
 								{cat.isActive ? 'Active' : 'Hidden'}
-							</Badge>
+							</StatusBadge>
 						</li>
 					{/each}
 				</ul>

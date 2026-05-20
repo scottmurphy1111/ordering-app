@@ -118,22 +118,7 @@
 </svelte:head>
 
 <div class="min-h-screen bg-muted/50">
-	<!-- Branded header -->
-	<header class="border-b border-white/10" style="background-color: {backgroundColor};">
-		<div class="mx-auto flex max-w-4xl items-center gap-3 px-4 py-4">
-			{#if logoUrl}
-				<img src={logoUrl} alt={data.vendor.name} class="h-8 w-8 rounded object-contain" />
-			{/if}
-			<span class="text-lg font-semibold" style="color: {foregroundColor};">{data.vendor.name}</span
-			>
-			<span class="ml-auto text-sm opacity-60" style="color: {foregroundColor};"
-				>Secure checkout</span
-			>
-			<Icon icon="mdi:lock" class="h-4 w-4 opacity-60" style="color: {foregroundColor};" />
-		</div>
-	</header>
-
-	<main class="mx-auto max-w-4xl px-4 py-8">
+<main class="mx-auto max-w-4xl px-4 py-8">
 		<div class="grid gap-6 lg:grid-cols-[1fr_420px]">
 			<!-- Left: payment form -->
 			<div class="space-y-4">

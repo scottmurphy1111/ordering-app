@@ -8,7 +8,7 @@
 	import { page } from '$app/state';
 	import { formatDistanceToNow } from 'date-fns';
 	import Icon from '@iconify/svelte';
-	import { Badge } from '$lib/components/ui/badge';
+	import StatusBadge from '$lib/components/StatusBadge.svelte';
 	import { Button } from '$lib/components/ui/button';
 	import { Input } from '$lib/components/ui/input';
 	import { Skeleton } from '$lib/components/ui/skeleton';
@@ -700,14 +700,14 @@
 							</span>
 						{/if}
 						{#if order.paymentStatus === 'paid'}
-							<Badge class="bg-emerald-100 text-emerald-700">paid</Badge>
+							<StatusBadge variant="success">paid</StatusBadge>
 						{:else if order.paymentStatus === 'refunded'}
-							<Badge class="bg-orange-100 text-orange-700">refunded</Badge>
+							<StatusBadge tone="bg-orange-100 text-orange-700">refunded</StatusBadge>
 						{:else if order.paymentStatus === 'failed'}
-							<Badge class="bg-red-100 text-red-600">payment failed</Badge>
+							<StatusBadge variant="danger">payment failed</StatusBadge>
 						{/if}
 						{#if order.pickupType === 'custom_date'}
-							<Badge class="bg-slate-100 text-slate-700">Custom date</Badge>
+							<StatusBadge tone="bg-slate-100 text-slate-700">Custom date</StatusBadge>
 						{/if}
 						{#if order.pickupMode === 'storefront_hours' && !order.scheduledFor}
 							<Icon

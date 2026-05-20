@@ -4,7 +4,7 @@
 	import Icon from '@iconify/svelte';
 	import type { PageData, ActionData } from './$types';
 	import { Button } from '$lib/components/ui/button';
-	import { Badge } from '$lib/components/ui/badge';
+	import StatusBadge from '$lib/components/StatusBadge.svelte';
 	import { Card, CardContent } from '$lib/components/ui/card';
 	import {
 		Table,
@@ -135,12 +135,12 @@
 									{new Date(t.createdAt).toLocaleDateString()}
 								</TableCell>
 								<TableCell class="px-4 py-3">
-									<Badge class={statusClass(t)}>
+									<StatusBadge tone={statusClass(t)}>
 										{#if t.isActive && !t.deletedAt}
 											<span class="h-1.5 w-1.5 rounded-full bg-primary"></span>
 										{/if}
 										{statusLabel(t)}
-									</Badge>
+									</StatusBadge>
 								</TableCell>
 								<TableCell class="px-4 py-3">
 									<div

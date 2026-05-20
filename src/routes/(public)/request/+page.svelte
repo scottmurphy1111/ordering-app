@@ -45,30 +45,8 @@
 	<title>Custom order request — {vendor.name}</title>
 </svelte:head>
 
-<div class="min-h-screen bg-muted/30">
-	<!-- Small branded header — vendor context only, not a marketing surface -->
-	<header class="border-b bg-background">
-		<div class="mx-auto flex max-w-2xl items-center gap-3 px-6 py-4">
-			{#if vendor.logoUrl}
-				<img
-					src={vendor.logoUrl}
-					alt={vendor.name}
-					class="h-8 w-auto max-w-24 shrink-0 object-contain"
-				/>
-			{/if}
-			<div class="min-w-0 flex-1">
-				<p class="truncate text-sm font-semibold text-foreground">{vendor.name}</p>
-			</div>
-			<a
-				href={resolve('/catalog' as `/${string}`)}
-				class="text-xs font-medium text-muted-foreground hover:text-foreground"
-			>
-				← Back to shop
-			</a>
-		</div>
-	</header>
 
-	<main class="mx-auto max-w-2xl px-4 py-8 sm:py-10">
+<main class="mx-auto max-w-2xl px-4 py-8 sm:py-10">
 		<div class="rounded-lg border bg-background p-6 sm:p-8">
 			<div class="mb-6">
 				<h1 class="text-2xl font-bold text-foreground">Custom order request</h1>
@@ -239,4 +217,3 @@
 			</form>
 		</div>
 	</main>
-</div>

@@ -4,7 +4,7 @@
 	import { resolve } from '$app/paths';
 	import Icon from '@iconify/svelte';
 	import { Button } from '$lib/components/ui/button';
-	import { Badge } from '$lib/components/ui/badge';
+	import StatusBadge from '$lib/components/StatusBadge.svelte';
 	import { Card, CardHeader, CardTitle, CardContent } from '$lib/components/ui/card';
 	import { Alert } from '$lib/components/ui/alert';
 	import {
@@ -128,17 +128,17 @@
 		<div class="flex min-w-0 flex-col gap-1.5">
 			<h1 class="font-mono text-2xl font-bold text-gray-900">{order.orderNumber}</h1>
 			<div class="flex flex-wrap items-center gap-2">
-				<Badge class="bg-gray-100 text-gray-500 capitalize">{order.type}</Badge>
+				<StatusBadge variant="subtle" class="capitalize">{order.type}</StatusBadge>
 				{#if order.paymentStatus === 'paid'}
-					<Badge class="bg-emerald-100 text-emerald-700">paid</Badge>
+					<StatusBadge variant="success">paid</StatusBadge>
 				{:else if order.paymentStatus === 'refunded'}
-					<Badge class="bg-orange-100 text-orange-700">refunded</Badge>
+					<StatusBadge tone="bg-orange-100 text-orange-700">refunded</StatusBadge>
 				{:else if order.paymentStatus === 'failed'}
-					<Badge class="bg-red-100 text-red-600">payment failed</Badge>
+					<StatusBadge variant="danger">payment failed</StatusBadge>
 				{:else if order.paymentStatus === 'void'}
-					<Badge class="bg-gray-100 text-gray-600">void</Badge>
+					<StatusBadge tone="bg-gray-100 text-gray-600">void</StatusBadge>
 				{:else}
-					<Badge class="bg-amber-50 text-amber-700">pending payment</Badge>
+					<StatusBadge tone="bg-amber-50 text-amber-700">pending payment</StatusBadge>
 				{/if}
 			</div>
 			<p class="mt-1 text-sm text-gray-500">

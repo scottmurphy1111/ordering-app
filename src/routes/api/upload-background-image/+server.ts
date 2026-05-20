@@ -28,7 +28,7 @@ export async function POST(event: RequestEvent) {
 
 		await db
 			.update(vendor)
-			.set({ backgroundImageUrl: imageUrl, updatedAt: new Date() })
+			.set({ backgroundImageUrl: imageUrl, backgroundPatternSlug: null, updatedAt: new Date() })
 			.where(eq(vendor.id, locals.vendorId));
 
 		return json({ success: true, imageUrl });

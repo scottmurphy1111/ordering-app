@@ -29,6 +29,31 @@ export async function uploadToR2(file: File, prefix: string): Promise<string> {
 	return `${env.R2_PUBLIC_URL}/${key}`;
 }
 
+/**
+ * Upload a Buffer to R2. Used for server-generated images (AI gen)
+ * where we have raw bytes rather than an uploaded File.
+ */
+export async function uploadBufferToR2(
+	buffer: Buffer,
+	prefix: string,
+	extension: string,
+	contentType: string
+): Promise<string> {
+	const timestamp = Date.now();
+	const key = `${prefix}-${timestamp}.${extension}`;
+
+	await getClient().send(
+		new PutObjectCommand({
+			Bucket: env.R2_BUCKET_NAME,
+			Key: key,
+			Body: buffer,
+			ContentType: contentType
+		})
+	);
+
+	return `${env.R2_PUBLIC_URL}/${key}`;
+}
+
 export async function deleteFromR2(publicUrl: string): Promise<void> {
 	const key = publicUrl.replace(`${env.R2_PUBLIC_URL}/`, '');
 	await getClient().send(

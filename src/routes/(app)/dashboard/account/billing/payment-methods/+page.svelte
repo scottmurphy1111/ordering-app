@@ -6,7 +6,7 @@
 	import type { PageData, ActionData } from './$types';
 	import { confirmDialog } from '$lib/confirm.svelte';
 	import { Button } from '$lib/components/ui/button';
-	import { Badge } from '$lib/components/ui/badge';
+	import StatusBadge from '$lib/components/StatusBadge.svelte';
 	import { Card, CardHeader, CardTitle, CardAction, CardContent } from '$lib/components/ui/card';
 	import { Alert } from '$lib/components/ui/alert';
 
@@ -130,7 +130,7 @@
 							<!-- Row actions -->
 							<div class="flex items-center gap-2 md:shrink-0">
 								{#if isDefault}
-									<Badge class="bg-primary/10 text-primary">Default</Badge>
+									<StatusBadge tone="bg-primary/10 text-primary">Default</StatusBadge>
 								{:else}
 									<form method="post" action="?/setDefault" use:enhance>
 										<input type="hidden" name="paymentMethodId" value={method.id} />

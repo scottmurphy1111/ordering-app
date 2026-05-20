@@ -4,7 +4,7 @@
 	import type { PageData, ActionData } from './$types';
 	import Icon from '@iconify/svelte';
 	import { Button } from '$lib/components/ui/button';
-	import { Badge } from '$lib/components/ui/badge';
+	import StatusBadge from '$lib/components/StatusBadge.svelte';
 	import { Input } from '$lib/components/ui/input';
 	import {
 		Select,
@@ -258,9 +258,9 @@
 												</select>
 											</form>
 										{:else}
-											<Badge class={roleColors[member.role] ?? 'bg-muted text-muted-foreground'}>
+											<StatusBadge tone={roleColors[member.role] ?? 'bg-muted text-muted-foreground'}>
 												{roleLabels[member.role] ?? member.role}
-											</Badge>
+											</StatusBadge>
 										{/if}
 									</TableCell>
 									<TableCell class="hidden px-4 py-3 text-xs text-muted-foreground md:table-cell">
@@ -316,7 +316,7 @@
 				<div class="mt-6">
 					<h2 class="mb-3 flex items-center gap-1.5 text-sm font-semibold text-muted-foreground">
 						Pending invitations
-						<Badge class="bg-yellow-100 text-yellow-700">{data.pendingInvitations.length}</Badge>
+						<StatusBadge variant="warning">{data.pendingInvitations.length}</StatusBadge>
 					</h2>
 					<Card class="p-0 shadow-sm">
 						<CardContent>
@@ -336,9 +336,9 @@
 												>{invite.email}</TableCell
 											>
 											<TableCell class="px-4 py-3">
-												<Badge class={roleColors[invite.role] ?? 'bg-muted text-muted-foreground'}>
+												<StatusBadge tone={roleColors[invite.role] ?? 'bg-muted text-muted-foreground'}>
 													{roleLabels[invite.role] ?? invite.role}
-												</Badge>
+												</StatusBadge>
 											</TableCell>
 											<TableCell
 												class="hidden px-4 py-3 text-xs text-muted-foreground md:table-cell"
