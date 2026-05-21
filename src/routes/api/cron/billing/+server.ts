@@ -1,7 +1,7 @@
 import type { RequestHandler } from './$types';
 import { json } from '@sveltejs/kit';
 import { env } from '$env/dynamic/private';
-import { runResumeDue, runPauseReminders, runPendingApprovalReminders } from '$lib/server/jobs';
+import { runResumeDue, runPauseReminders, runPendingApprovalReminders, runReconcileSubscriptions } from '$lib/server/jobs';
 
 export const GET: RequestHandler = async ({ request }) => {
 	const secret = env.CRON_SECRET;
@@ -11,10 +11,11 @@ export const GET: RequestHandler = async ({ request }) => {
 		return json({ error: 'Unauthorized' }, { status: 401 });
 	}
 
-	const [resumeResult, reminderResult, pendingApprovalResult] = await Promise.allSettled([
+	const [resumeResult, reminderResult, pendingApprovalResult, reconcileResult] = await Promise.allSettled([
 		runResumeDue(),
 		runPauseReminders(),
-		runPendingApprovalReminders()
+		runPendingApprovalReminders(),
+		runReconcileSubscriptions()
 	]);
 
 	const resume =
@@ -32,5 +33,10 @@ export const GET: RequestHandler = async ({ request }) => {
 			? pendingApprovalResult.value
 			: { processed: 0, errors: [String(pendingApprovalResult.reason)] };
 
-	return json({ resume, reminders, pendingApproval });
+	const reconcile =
+		reconcileResult.status === 'fulfilled'
+			? reconcileResult.value
+			: { processed: 0, drifted: 0, errors: [String(reconcileResult.reason)] };
+
+	return json({ resume, reminders, pendingApproval, reconcile });
 };

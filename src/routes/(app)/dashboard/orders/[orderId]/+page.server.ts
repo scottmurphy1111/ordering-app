@@ -3,6 +3,7 @@ import { error, fail } from '@sveltejs/kit';
 import { db } from '$lib/server/db';
 import { eq, and } from 'drizzle-orm';
 import { orders, orderItems } from '$lib/server/db/schema';
+import { specialOrderRequests } from '$lib/server/db/special-orders';
 import { vendor } from '$lib/server/db/vendor';
 import Stripe from 'stripe';
 import { sendEmail } from '$lib/server/email';
@@ -29,7 +30,21 @@ export const load: PageServerLoad = async ({ locals, params }) => {
 
 	order = await reconcilePaymentStatus(order, vendorId);
 
-	return { order };
+	let originatingRequest: {
+		id: number;
+		customerName: string;
+		state: 'pending' | 'quoted' | 'declined' | 'accepted' | 'expired';
+	} | null = null;
+
+	if (order.specialOrderRequestId) {
+		const req = await db.query.specialOrderRequests.findFirst({
+			where: eq(specialOrderRequests.id, order.specialOrderRequestId),
+			columns: { id: true, customerName: true, state: true }
+		});
+		originatingRequest = req ?? null;
+	}
+
+	return { order, originatingRequest };
 };
 
 export const actions: Actions = {

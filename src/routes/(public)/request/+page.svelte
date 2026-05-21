@@ -49,7 +49,7 @@
 <main class="mx-auto max-w-2xl px-4 py-8 sm:py-10">
 		<div class="rounded-lg border bg-background p-6 sm:p-8">
 			<div class="mb-6">
-				<h1 class="text-2xl font-bold text-foreground">Special request</h1>
+				<h1 class="text-2xl font-bold text-neutral-900" style="font-family: var(--font-heading);">Special request</h1>
 				<p class="mt-1.5 text-sm text-muted-foreground">
 					Tell {vendor.name} what you're looking for. They'll review your request and follow up.
 				</p>
@@ -209,7 +209,8 @@
 				<div class="pt-2">
 					<button
 						type="submit"
-						class="rounded-lg bg-foreground px-5 py-2.5 text-sm font-medium text-background transition-opacity hover:opacity-90"
+						class="rounded-lg px-5 py-2.5 text-sm font-semibold transition-opacity hover:opacity-90 disabled:opacity-50"
+						style="background-color: var(--background-color); color: var(--foreground-color);"
 					>
 						Send request
 					</button>

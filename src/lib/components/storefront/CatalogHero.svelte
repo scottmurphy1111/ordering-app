@@ -57,13 +57,12 @@
 						class="h-14 w-auto max-w-32 shrink-0 object-contain {vendor.bannerUrl
 							? 'drop-shadow'
 							: ''}"
-						style={vendor.bannerUrl ? 'filter: brightness(0) invert(1);' : ''}
 					/>
 				{/if}
 				<div>
 					{#if vendor.showName}
 						<h1
-							class="text-3xl font-bold leading-tight sm:text-4xl md:text-5xl"
+							class="text-3xl leading-tight font-bold sm:text-4xl md:text-5xl"
 							style="font-family: var(--font-heading); color: {vendor.bannerUrl
 								? '#ffffff'
 								: 'var(--foreground-color)'};"

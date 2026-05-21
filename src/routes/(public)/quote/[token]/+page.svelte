@@ -51,7 +51,7 @@
 				>
 					<Icon icon="mdi:link-off" class="h-6 w-6" />
 				</div>
-				<h1 class="text-xl font-bold text-foreground">Quote not found</h1>
+				<h1 class="text-xl font-bold text-neutral-900" style="font-family: var(--font-heading);">Quote not found</h1>
 				<p class="mt-2 text-sm text-muted-foreground">
 					This link is invalid or may have already been used.
 				</p>
@@ -69,7 +69,7 @@
 				>
 					<Icon icon="mdi:check" class="h-6 w-6" />
 				</div>
-				<h1 class="text-xl font-bold text-foreground">Quote accepted!</h1>
+				<h1 class="text-xl font-bold text-neutral-900" style="font-family: var(--font-heading);">Quote accepted!</h1>
 				<p class="mt-2 text-sm text-muted-foreground">
 					{vendor.name} will be in touch to confirm the details and arrange payment.
 				</p>
@@ -87,7 +87,7 @@
 				>
 					<Icon icon="mdi:close" class="h-6 w-6" />
 				</div>
-				<h1 class="text-xl font-bold text-foreground">Quote declined</h1>
+				<h1 class="text-xl font-bold text-neutral-900" style="font-family: var(--font-heading);">Quote declined</h1>
 				<p class="mt-2 text-sm text-muted-foreground">
 					No problem. Feel free to reach out to {vendor.name} if you'd like to discuss other options.
 				</p>
@@ -105,7 +105,7 @@
 				>
 					<Icon icon="mdi:clock-outline" class="h-6 w-6" />
 				</div>
-				<h1 class="text-xl font-bold text-foreground">Quote expired</h1>
+				<h1 class="text-xl font-bold text-neutral-900" style="font-family: var(--font-heading);">Quote expired</h1>
 				<p class="mt-2 text-sm text-muted-foreground">
 					This quote is no longer available. Contact {vendor.name} to request a new one.
 				</p>
@@ -119,7 +119,7 @@
 			<!-- Active quote -->
 			<div class="rounded-lg border bg-background p-6 sm:p-8">
 				<div class="mb-6">
-					<h1 class="text-2xl font-bold text-foreground">Your quote is ready</h1>
+					<h1 class="text-2xl font-bold text-neutral-900" style="font-family: var(--font-heading);">Your quote is ready</h1>
 					<p class="mt-1.5 text-sm text-muted-foreground">
 						{vendor.name} has put together a quote for your special request.
 					</p>

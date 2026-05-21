@@ -73,6 +73,12 @@
 </svelte:head>
 
 <main class="mx-auto max-w-2xl px-4 py-8 sm:py-12">
+	<div class="mb-6">
+		<h1 class="text-2xl font-bold text-neutral-900" style="font-family: var(--font-heading);">
+			Store Info
+		</h1>
+	</div>
+
 	<!-- Open status pill -->
 	<div class="mb-6 flex items-center gap-2">
 		<span
@@ -97,7 +103,7 @@
 			<section class="rounded-xl border border-neutral-200 bg-white">
 				<div class="flex items-center gap-2 border-b border-neutral-100 px-5 py-4">
 					<Icon icon="mdi:clock-outline" class="h-4 w-4 text-neutral-400" />
-					<h2 class="text-sm font-semibold text-neutral-900">Hours</h2>
+					<h2 class="text-sm font-semibold text-neutral-900" style="font-family: var(--font-heading);">Hours</h2>
 				</div>
 				<ul class="divide-y divide-neutral-100">
 					{#each DAYS as day (day)}
@@ -145,7 +151,7 @@
 			<section class="rounded-xl border border-neutral-200 bg-white px-5 py-4">
 				<div class="mb-3 flex items-center gap-2">
 					<Icon icon="mdi:map-marker-outline" class="h-4 w-4 text-neutral-400" />
-					<h2 class="text-sm font-semibold text-neutral-900">Location</h2>
+					<h2 class="text-sm font-semibold text-neutral-900" style="font-family: var(--font-heading);">Location</h2>
 				</div>
 				<address class="not-italic text-sm text-neutral-600">
 					{#if address?.street}<p>{address.street}</p>{/if}
@@ -163,7 +169,7 @@
 			<section class="rounded-xl border border-neutral-200 bg-white px-5 py-4">
 				<div class="mb-3 flex items-center gap-2">
 					<Icon icon="mdi:phone-outline" class="h-4 w-4 text-neutral-400" />
-					<h2 class="text-sm font-semibold text-neutral-900">Contact</h2>
+					<h2 class="text-sm font-semibold text-neutral-900" style="font-family: var(--font-heading);">Contact</h2>
 				</div>
 				<ul class="space-y-2">
 					{#if data.vendor.phone}

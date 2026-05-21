@@ -6,9 +6,13 @@ import { eq, and } from 'drizzle-orm';
 import { specialOrderQuotes, specialOrderRequests } from '$lib/server/db/special-orders';
 import { orders } from '$lib/server/db/schema';
 import { orderItems } from '$lib/server/db/orders';
-import { vendor } from '$lib/server/db/vendor';
+import { vendor as vendorTable, vendorUsers } from '$lib/server/db/vendor';
+import { user } from '$lib/server/db/auth.schema';
 import { generateOrderNumber } from '$lib/server/order-number';
 import type { CartItem } from '$lib/cart.svelte';
+import { sendEmail } from '$lib/server/email';
+import { specialOrderDeclinedByCustomerVendorEmail } from '$lib/server/email/templates/specialOrderDeclinedByCustomerVendor';
+import { env } from '$env/dynamic/private';
 
 export const load: PageServerLoad = async ({ params, locals, url }) => {
 	const vendorCtx = locals.vendor!;
@@ -84,7 +88,7 @@ export const actions: Actions = {
 		}
 
 		const vendorRecord = await db.query.vendor.findFirst({
-			where: eq(vendor.id, vendorId),
+			where: eq(vendorTable.id, vendorId),
 			columns: { id: true, stripeSecretKey: true, name: true }
 		});
 		if (!vendorRecord?.stripeSecretKey) {
@@ -210,7 +214,7 @@ export const actions: Actions = {
 				eq(specialOrderQuotes.acceptToken, token),
 				eq(specialOrderQuotes.vendorId, vendorCtx.id)
 			),
-			columns: { id: true, requestId: true, acceptedAt: true, declinedAt: true }
+			columns: { id: true, requestId: true, priceCents: true, acceptedAt: true, declinedAt: true }
 		});
 
 		if (!quote) return fail(404, { declineError: 'Quote not found.' });
@@ -235,6 +239,53 @@ export const actions: Actions = {
 				updatedAt: new Date()
 			})
 			.where(eq(specialOrderRequests.id, quote.requestId));
+
+		// Vendor notification — best-effort, does not block the response
+		const vendorRow = await db.query.vendor.findFirst({
+			where: eq(vendorTable.id, vendorCtx.id),
+			columns: { email: true, name: true, backgroundColor: true }
+		});
+
+		let notificationEmail = vendorRow?.email ?? null;
+		if (!notificationEmail) {
+			const owner = await db
+				.select({ email: user.email })
+				.from(vendorUsers)
+				.innerJoin(user, eq(user.id, vendorUsers.userId))
+				.where(and(eq(vendorUsers.vendorId, vendorCtx.id), eq(vendorUsers.role, 'owner')))
+				.limit(1);
+			notificationEmail = owner[0]?.email ?? null;
+		}
+
+		if (notificationEmail && vendorRow) {
+			const requestRow = await db.query.specialOrderRequests.findFirst({
+				where: eq(specialOrderRequests.id, quote.requestId),
+				columns: {
+					customerName: true,
+					customerEmail: true,
+					description: true,
+					targetDate: true
+				}
+			});
+
+			if (requestRow) {
+				const origin = env.ORIGIN ?? 'https://app.getorderlocal.com';
+				sendEmail({
+					to: notificationEmail,
+					subject: `Quote declined by ${requestRow.customerName} — ${vendorRow.name}`,
+					html: specialOrderDeclinedByCustomerVendorEmail({
+						vendorName: vendorRow.name,
+						primaryColor: vendorRow.backgroundColor ?? undefined,
+						customerName: requestRow.customerName,
+						customerEmail: requestRow.customerEmail,
+						description: requestRow.description,
+						targetDate: requestRow.targetDate,
+						quotedPriceCents: quote.priceCents,
+						requestUrl: `${origin}/dashboard/special-orders/${quote.requestId}`
+					})
+				}).catch(console.error);
+			}
+		}
 
 		return { declineSuccess: true };
 	}

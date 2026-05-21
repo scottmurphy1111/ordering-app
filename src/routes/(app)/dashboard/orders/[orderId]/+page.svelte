@@ -119,6 +119,16 @@
 		<Icon icon="mdi:chevron-left" class="h-4 w-4" /> Orders
 	</a>
 
+	{#if data.originatingRequest}
+		<a
+			href={resolve(`/dashboard/special-orders/${data.originatingRequest.id}` as `/${string}`)}
+			class="mb-4 inline-flex items-center gap-1 text-sm text-muted-foreground transition-colors hover:text-foreground"
+		>
+			<Icon icon="mdi:link-variant" class="h-4 w-4" />
+			Originated from special request from {data.originatingRequest.customerName}
+		</a>
+	{/if}
+
 	{#if form?.error}
 		<Alert severity="error" class="mb-4">{form.error}</Alert>
 	{/if}

@@ -526,27 +526,12 @@
 	<title>Your Cart — {data.vendor.name}</title>
 </svelte:head>
 
-<div class="min-h-screen">
-	<!-- Branded header -->
-	<header style="background-color: var(--background-color);">
-		<div class="mx-auto flex max-w-lg items-center justify-between px-4 py-4">
-			<a
-				href={resolve('/catalog' as `/${string}`)}
-				class="inline-flex items-center gap-1 text-sm font-medium transition-opacity hover:opacity-75"
-				style="color: var(--foreground-color);"
-			>
-				<Icon icon="mdi:arrow-left" class="h-4 w-4" /> Back to catalog
-			</a>
-			<div class="flex flex-col items-center gap-1">
-				<h1 class="text-lg font-semibold" style="color: var(--foreground-color);">Your Cart</h1>
-			</div>
-			<span class="w-20"></span>
+<main class="mx-auto max-w-lg px-4 py-8">
+		<div class="mb-6">
+			<h1 class="text-2xl font-bold text-neutral-900" style="font-family: var(--font-heading);">
+				Your Cart
+			</h1>
 		</div>
-	</header>
-
-	<main
-		class="mx-auto my-8 max-w-lg space-y-5 rounded-2xl px-4 py-6"
-	>
 		{#if isPaused}
 			<div
 				class="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-center text-sm text-amber-800"
@@ -1224,8 +1209,7 @@
 				{/if}
 			</button>
 		{/if}
-	</main>
-</div>
+</main>
 
 <style>
 	.branded-input:focus {

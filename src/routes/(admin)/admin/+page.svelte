@@ -198,6 +198,74 @@
 		</Card>
 	</div>
 
+	<!-- Webhook health -->
+	<div class="mt-6">
+		<h2 class="mb-3 text-sm font-medium tracking-wide text-gray-500 uppercase">Webhook health</h2>
+		<Card class="shadow-sm">
+			<CardContent>
+				{@const wh = data.webhookHealth}
+				{@const fortyEightHoursAgo = new Date(Date.now() - 48 * 60 * 60 * 1000)}
+				{@const isHealthy = wh.lastSuccessAt !== null && new Date(wh.lastSuccessAt) > fortyEightHoursAgo && wh.errorsLast7 === 0}
+				{@const isStale = wh.lastSuccessAt === null || new Date(wh.lastSuccessAt) <= fortyEightHoursAgo}
+				{@const hasErrors = wh.errorsLast7 > 0}
+
+				<!-- Status indicator -->
+				<div class="mb-4 flex items-center gap-2">
+					<span
+						class="h-2.5 w-2.5 rounded-full {hasErrors
+							? 'bg-red-500'
+							: isStale
+								? 'bg-amber-500'
+								: 'bg-green-500'}"
+					></span>
+					<span
+						class="text-sm font-medium {hasErrors
+							? 'text-red-700'
+							: isStale
+								? 'text-amber-700'
+								: 'text-green-700'}"
+					>
+						{hasErrors ? 'Errors detected' : isStale ? 'Stale' : 'Healthy'}
+					</span>
+				</div>
+
+				<!-- Stat rows -->
+				<div class="space-y-3">
+					<div class="flex items-center justify-between">
+						<p class="text-xs text-gray-500">Last event</p>
+						{#if wh.lastSuccessAt}
+							<p class="text-xs text-gray-700">
+								{fmtDateTime(wh.lastSuccessAt)}
+								<span class="font-mono text-gray-400">({wh.lastSuccessType})</span>
+							</p>
+						{:else}
+							<p class="text-xs text-gray-400">No events received</p>
+						{/if}
+					</div>
+					<div class="flex items-center justify-between">
+						<p class="text-xs text-gray-500">Events · last 7 days</p>
+						<p class="text-sm font-semibold text-gray-900">{wh.totalLast7}</p>
+					</div>
+					<div class="flex items-center justify-between">
+						<p class="text-xs text-gray-500">Errors · last 7 days</p>
+						<p class="text-sm font-semibold {wh.errorsLast7 > 0 ? 'text-red-600' : 'text-gray-900'}">
+							{wh.errorsLast7}
+						</p>
+					</div>
+				</div>
+
+				<div class="mt-3 border-t border-gray-100 pt-3">
+					<a
+						href={resolve('/admin/system-events?type=webhook')}
+						class="text-xs font-medium text-primary hover:underline"
+					>
+						View all webhook events →
+					</a>
+				</div>
+			</CardContent>
+		</Card>
+	</div>
+
 	<p class="mt-6 text-center text-xs text-muted-foreground">
 		Activity feed, metrics breakdown, and Stripe webhook log are coming.
 	</p>

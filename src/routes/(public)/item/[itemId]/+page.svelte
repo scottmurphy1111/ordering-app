@@ -108,21 +108,7 @@
 	<title>{data.item.name} — {data.vendor.name}</title>
 </svelte:head>
 
-<div class="min-h-screen">
-	<!-- Branded header -->
-	<header style="background-color: var(--background-color);">
-		<div class="mx-auto max-w-lg px-4 py-4">
-			<a
-				href={resolve('/catalog' as `/${string}`)}
-				class="inline-flex items-center gap-1 text-sm font-medium transition-opacity hover:opacity-75"
-				style="color: var(--foreground-color);"
-			>
-				<Icon icon="mdi:arrow-left" class="h-4 w-4" /> Back to catalog
-			</a>
-		</div>
-	</header>
-
-	<main class="mx-auto max-w-lg space-y-6 rounded-2xl px-4 py-6">
+<main class="mx-auto max-w-lg space-y-6 px-4 py-8">
 		<!-- Image -->
 		{#if primaryImage}
 			<img
@@ -133,13 +119,27 @@
 			/>
 		{/if}
 
+		<!-- Pattern B: back-link breadcrumb + item name -->
+		<div class="mb-6 flex items-center gap-3">
+			<a
+				href={resolve('/catalog' as `/${string}`)}
+				class="inline-flex items-center gap-1 text-sm text-neutral-500 transition-colors hover:text-neutral-900"
+			>
+				<Icon icon="mdi:chevron-left" class="h-4 w-4" /> Catalog
+			</a>
+			<span class="text-neutral-300">/</span>
+			<h1 class="text-2xl font-bold text-neutral-900" style="font-family: var(--font-heading);">
+				{data.item.name}
+			</h1>
+		</div>
+
+		{#if data.item.description}
+			<p class="-mt-3 mb-4 text-sm text-neutral-600">{data.item.description}</p>
+		{/if}
+
 		<!-- Item info -->
 		<div>
-			<h1 class="text-2xl font-bold text-foreground">{data.item.name}</h1>
-			{#if data.item.description}
-				<p class="mt-1 text-muted-foreground">{data.item.description}</p>
-			{/if}
-			<div class="mt-2 flex items-center gap-2">
+			<div class="flex items-center gap-2">
 				{#if data.item.discountedPrice}
 					<p class="text-xl font-bold" style="color: var(--background-color);">
 						${(data.item.discountedPrice / 100).toFixed(2)}
@@ -281,5 +281,4 @@
 				</button>
 			</div>
 		{/if}
-	</main>
-</div>
+</main>

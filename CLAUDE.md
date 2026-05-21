@@ -2906,6 +2906,168 @@ Stripe search is eventually consistent. A customer created within the last few s
 
 ---
 
+## Layout & CSS gotchas
+
+Layout-level traps that have bitten this codebase. Read these before
+touching flex/scroll layouts or theming with CSS variables.
+
+### Flex children with `overflow-*-auto` need `min-h-0` (or `min-w-0`)
+
+Flex items have `min-height: auto` by default — they can never shrink
+below their content's intrinsic size. In a flex container that's
+ALSO supposed to be a scroll container (`overflow-y-auto`), this means
+tall content pushes the item past its allocated flex height instead of
+overflowing into its own scrollbar. That extra height cascades up: the
+flex parent grows, the document body grows past viewport, and the body
+gets its own scrollbar. Result: **two scrollbars side-by-side at the
+page edge**, plus phantom blank space below the in-page content.
+
+**Diagnostic fingerprint:** two scrollbars at the right edge of the
+window. The outer one is on `<body>` / `<html>`. The inner one is on
+the supposedly-scrolling flex child. They scroll independently.
+
+**Wrong (the dashboard's `<main>` before the fix):**
+
+```svelte
+<div class="flex h-screen">
+  <aside>sidebar</aside>
+  <main class="flex flex-1 flex-col overflow-y-auto">
+    <!-- tall content -->
+  </main>
+</div>
+```
+
+**Right — two complementary fixes, applied together for the
+dashboard:**
+
+```svelte
+<svelte:head>
+  <style>html, body { overflow: hidden; height: 100vh; }</style>
+</svelte:head>
+
+<div class="flex h-screen">
+  <aside>sidebar</aside>
+  <main class="flex min-h-0 flex-1 flex-col overflow-y-auto">
+    <!-- tall content -->
+  </main>
+</div>
+```
+
+`min-h-0` lets the flex child shrink below its content's intrinsic
+height, so overflow goes to its own scrollbar instead of pushing the
+parent. The `html, body { overflow: hidden; height: 100vh }` lock
+prevents any descendant overflow from reaching the document body
+even if some other layout bug puts something past the viewport edge.
+
+**General rule:** any flex child with `overflow-*-auto` should also
+have `min-h-0` (vertical flex) or `min-w-0` (horizontal flex). The
+`overflow-hidden` body lock is appropriate specifically for full-app-
+shell layouts (fixed sidebar + scrolling content area). Do not apply
+the body lock globally — public storefront pages and marketing pages
+should scroll normally.
+
+This trap is responsible for the four-prompt detour that culminated
+in `src/routes/(app)/+layout.svelte`'s current shape. The fingerprint
+(two scrollbars + phantom space at the bottom of tall pages) recurs;
+if you see it, jump straight to `min-h-0` on the flex/scroll child.
+
+### CSS custom properties must live at `:root` if portaled overlays consume them
+
+CSS custom properties cascade through the DOM tree. When a component
+sets brand-color variables on a wrapper `<div>` (e.g. the storefront
+layout's outer flex container), every descendant inherits them — UNTIL
+a descendant gets portaled out. `bits-ui` Sheet, Dialog, Popover, and
+related primitives portal their content to `document.body`. Once
+portaled, the content is no longer inside the wrapper, the cascade
+doesn't reach it, and `var(--brand-color)` returns nothing.
+
+**Diagnostic fingerprint:** an overlay that opens but renders without
+brand colors or vendor fonts — the Checkout button is invisible
+because `background-color: var(--background-color)` resolves to
+nothing; the heading text uses the system default font instead of the
+vendor's `--font-heading`.
+
+**Wrong (the storefront layout before the fix):**
+
+```svelte
+<div
+  class="flex min-h-screen flex-col"
+  style="--background-color: {bg}; --foreground-color: {fg}; --font-heading: {fontStack};"
+>
+  <!-- storefront content; CSS vars cascade fine here -->
+  <Sheet><SheetContent>
+    <!-- portaled to <body>; CSS vars unreachable -->
+    <button style="background-color: var(--background-color)">Invisible</button>
+  </SheetContent></Sheet>
+</div>
+```
+
+**Right:** define dynamic CSS variables at `:root` via a `<style>`
+block injected into `<svelte:head>`, not on a wrapper div:
+
+```svelte
+<svelte:head>
+  {@html `<style>
+    :root {
+      --background-color: ${bg};
+      --foreground-color: ${fg};
+      --font-heading: ${fontStack};
+    }
+  </style>`}
+</svelte:head>
+
+<div class="flex min-h-screen flex-col">
+  <!-- content; variables now cascade from :root to every element,
+       including portaled overlays -->
+</div>
+```
+
+The `{@html}` form is required because `<style>` content must reach
+the parser as a real style element. Setting the variables on the
+wrapper div ONLY works if no descendant uses a portal — a brittle
+contract that the next added Sheet, Dialog, or Popover quietly
+breaks.
+
+**General rule:** any CSS variable that might be consumed by a
+portaled overlay must be defined at `:root` (or `html` / `body`), not
+on a component wrapper. When in doubt, hoist.
+
+### Font-display: swap layout shift with many font-family previews
+
+A page that renders many distinct font-family previews simultaneously
+(e.g. a font-pair picker with N preview cards) loads N Google Fonts
+stylesheets, each with `display=swap`. Pre-swap, each card renders in
+its fallback font; post-swap, in the real font. **If the real font's
+text metrics differ enough from the fallback's, each card's height
+changes.** N cards × per-card shift = cumulative layout shift that's
+hard to attribute.
+
+When the shift happens *below the fold*, the visible symptom is NOT
+"content jumped" — it's "the page has extra blank space at the
+bottom" because the scroll container measured its content size pre-
+swap and didn't fully recompute post-swap.
+
+**Wrong:** preview heading at `text-2xl font-bold leading-tight` with
+no reserved space, rendering wide multi-word strings like "Sweet Crumb
+Bakery" that wrap to 1, 2, or 3 lines depending on the font.
+
+**Right:** stabilize each preview's height against the font swap.
+Either (a) reserve enough vertical space for the worst-case render
+(`min-h-[N]` on the heading element), (b) choose preview strings that
+render in a consistent number of lines across all fonts in the set,
+or (c) both.
+
+If the page has many such previews, **also** consider whether all of
+them need to load eagerly. A picker where the user only looks at one
+pair at a time can defer non-active font loads.
+
+**General rule:** when rendering many simultaneous font-family
+previews at large sizes, expect layout shift. Either reserve space or
+delay loads. Don't ship and find the bug six prompts later when a
+phantom-scrollbar symptom traces back to it.
+
+---
+
 ## Svelte gotchas
 
 Framework-level traps that have bitten this codebase. Read these once.
@@ -3429,6 +3591,46 @@ The rule prevents responses that read as if verification was performed when it w
 
 Static verification has caught zero load-bearing bugs in this codebase. Every real bug found through verification was found by behavioral testing — actual database queries, real browser clicks, observed runtime values. Treating "PASS by inspection" as equivalent to "PASS by observation" has hidden bugs that would have shipped to production. The protocol prevents that.
 
+### Self-check reports are not load-bearing
+
+A self-check report that claims "smallest diff" or "only the prompted
+file was touched" can be wrong. Claude Code occasionally under-reports
+its own work: the full diff lands correctly, but the report describes
+only one part of it. The opposite also happens — the report claims
+work was done that actually wasn't.
+
+Two real incidents from the storefront redesign:
+
+1. A prompt restructured the storefront layout, deleted a helper
+   file, removed inline headers from five pages, and added a new
+   route. The self-check report mentioned only the new route, with
+   the line "smallest diff — only the two new files added."
+   Verification by `view` and `grep` confirmed all the other work
+   had also landed correctly. The report was wrong by omission.
+
+2. A "fix" prompt for typography preview cards was reported as
+   complete. The self-check listed every change verbatim from the
+   prompt. The actual file diff applied half of it. A subsequent
+   screenshot showed the unchanged behavior.
+
+**The rule for Scott:** never queue the next prompt based solely on
+the self-check report's claims. Spot-check at least the headline
+changes with `grep` or `view` before moving forward. The cost of a
+30-second verification is much lower than the cost of building on a
+half-done foundation.
+
+**The rule for Claude Code:** report the full set of changes actually
+made, not the subset that's easiest to describe. If the diff covers
+ten files but the prompt mentioned three, list all ten. "Smallest
+diff" describes the goal of the change, not a justification for an
+incomplete report.
+
+This is not a structural problem with the verification protocol —
+the static/behavioral distinction works. It's a reliability problem
+with the reports themselves. Until Claude Code's self-reports are
+trustworthy by default, Scott's eyes on the diff are the load-
+bearing check.
+
 ### Visual-reality-check phases
 
 Static checks (`bun run check`, `bun run lint`) verify type correctness and lint rules. They do not verify that primitives render correctly in real UI contexts.
@@ -3596,6 +3798,31 @@ Living documents that complement this file. These are not auto-generated — the
 - ❌ Do not use `opacity-0 group-hover:opacity-100` for row actions in tables or
   cards. Row actions are always visible. Use `hover:bg-gray-50` on the row for
   hover feedback only.
+- ❌ Do not write hand-rolled `drizzle/NNNN_*.sql` migration files in
+  prompts. Schema changes go in the schema file (`src/lib/server/db/*.ts`)
+  only; Scott runs `bun run db:generate` to produce the migration with
+  correct metadata. A hand-written `.sql` file in `drizzle/` without a
+  matching journal entry in `drizzle/meta/` does not apply when
+  `db:migrate` runs.
+- ❌ Do not define CSS custom properties on a wrapper `<div>` if any
+  consumer of those variables renders via a portal (Sheet, Dialog,
+  Popover, any `bits-ui` primitive that mounts to `document.body`).
+  Hoist the variables to `:root` via `<svelte:head>{@html ...}</svelte:head>`.
+  See "CSS custom properties must live at `:root`..." under Layout &
+  CSS gotchas.
+- ❌ Do not put `overflow-*-auto` on a flex child without also adding
+  `min-h-0` (or `min-w-0` for horizontal flex). The flex default
+  `min-height: auto` will push content past the parent and produce a
+  second scrollbar on the document body. See "Flex children with
+  `overflow-*-auto`..." under Layout & CSS gotchas.
+- ❌ Do not introduce a new user-visible string without auditing
+  existing nomenclature first. The codebase had four overlapping terms
+  ("Custom orders," "custom order request," "Special orders," "Special
+  order") for two distinct concepts before they were reconciled. Before
+  picking a label, `grep -rn "<your-candidate-term>" src/` and check
+  what's already used adjacent to it. If multiple terms exist for the
+  same concept, surface the inconsistency to Scott before adding a
+  fifth.
 
 ---
 

@@ -2,7 +2,6 @@
 	import type { PageData } from './$types';
 	import { resolve } from '$app/paths';
 	import Icon from '@iconify/svelte';
-	import { Button } from '$lib/components/ui/button';
 
 	let { data }: { data: PageData } = $props();
 	const vendor = $derived(data.vendor);
@@ -20,15 +19,19 @@
 		>
 			<Icon icon="mdi:check" class="h-6 w-6" />
 		</div>
-		<h1 class="text-2xl font-bold text-foreground">Request sent</h1>
+		<h1 class="text-2xl font-bold text-neutral-900" style="font-family: var(--font-heading);">Request sent</h1>
 		<p class="mt-2 text-sm text-muted-foreground">
 			{vendor.name} will review your request and reply by email. Check your inbox in the next day
 			or two.
 		</p>
 		<div class="mt-6">
-			<Button href={resolve('/catalog' as `/${string}`)} variant="outline">
+			<a
+				href={resolve('/catalog' as `/${string}`)}
+				class="inline-flex items-center rounded-lg px-5 py-2.5 text-sm font-semibold transition-opacity hover:opacity-90"
+				style="background-color: var(--background-color); color: var(--foreground-color);"
+			>
 				Back to {vendor.name}
-			</Button>
+			</a>
 		</div>
 	</div>
 </main>

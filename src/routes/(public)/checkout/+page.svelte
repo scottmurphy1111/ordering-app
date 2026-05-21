@@ -124,7 +124,7 @@
 			<div class="space-y-4">
 				<Card class="shadow-sm">
 					<CardContent class="p-6">
-						<h2 class="mb-5 text-base font-semibold text-foreground">Payment details</h2>
+						<h2 class="mb-5 text-base font-semibold text-foreground" style="font-family: var(--font-heading);">Payment details</h2>
 
 						{#if !mountReady}
 							<div class="space-y-3">
@@ -186,7 +186,7 @@
 				<Card class="shadow-sm">
 					<CardContent class="p-6">
 						<div class="mb-5 flex items-center justify-between">
-							<h2 class="text-base font-semibold text-foreground">Order summary</h2>
+							<h2 class="text-base font-semibold text-foreground" style="font-family: var(--font-heading);">Order summary</h2>
 							<span
 								class="rounded-full px-2.5 py-0.5 text-xs font-medium"
 								style="background-color: {accentColor}1a; color: {accentColor};"

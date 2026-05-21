@@ -18,7 +18,10 @@ export const load: PageServerLoad = async () => {
 		recent7,
 		lastResumeDue,
 		lastPauseReminders,
-		cronErrorsLast7
+		cronErrorsLast7,
+		lastWebhookSuccess,
+		webhookErrorsLast7,
+		webhookTotalLast7
 	] = await Promise.all([
 		db
 			.select({ value: count() })
@@ -71,6 +74,34 @@ export const load: PageServerLoad = async () => {
 					eq(systemEvents.status, 'error'),
 					gte(systemEvents.createdAt, sevenDaysAgo)
 				)
+			),
+		db
+			.select({
+				createdAt: systemEvents.createdAt,
+				eventType: systemEvents.eventType
+			})
+			.from(systemEvents)
+			.where(and(like(systemEvents.eventType, 'webhook.%'), eq(systemEvents.status, 'ok')))
+			.orderBy(desc(systemEvents.createdAt))
+			.limit(1),
+		db
+			.select({ value: count() })
+			.from(systemEvents)
+			.where(
+				and(
+					like(systemEvents.eventType, 'webhook.%'),
+					eq(systemEvents.status, 'error'),
+					gte(systemEvents.createdAt, sevenDaysAgo)
+				)
+			),
+		db
+			.select({ value: count() })
+			.from(systemEvents)
+			.where(
+				and(
+					like(systemEvents.eventType, 'webhook.%'),
+					gte(systemEvents.createdAt, sevenDaysAgo)
+				)
 			)
 	]);
 
@@ -103,6 +134,12 @@ export const load: PageServerLoad = async () => {
 				} | null
 			}
 		],
-		cronErrorsLast7: cronErrorsLast7[0]?.value ?? 0
+		cronErrorsLast7: cronErrorsLast7[0]?.value ?? 0,
+		webhookHealth: {
+			lastSuccessAt: lastWebhookSuccess[0]?.createdAt ?? null,
+			lastSuccessType: lastWebhookSuccess[0]?.eventType ?? null,
+			errorsLast7: webhookErrorsLast7[0]?.value ?? 0,
+			totalLast7: webhookTotalLast7[0]?.value ?? 0
+		}
 	};
 };

@@ -94,8 +94,8 @@
 	<!-- Page header -->
 	<div class="mb-6 flex flex-col justify-between gap-2">
 		<div class="w-auto">
-			<h1 class="text-2xl font-bold text-gray-900">Operating Hours</h1>
-			<p class="mt-1 text-sm text-gray-500">
+			<h1 class="text-2xl font-bold text-foreground">Operating Hours</h1>
+			<p class="mt-1 text-sm text-muted-foreground">
 				Set your regular weekly hours and override specific dates as needed.
 			</p>
 		</div>
@@ -104,11 +104,11 @@
 		<div
 			class="flex w-fit items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium text-nowrap {data
 				.openState.isOpen
-				? 'bg-green-50 text-green-700'
-				: 'bg-gray-100 text-gray-500'}"
+				? 'bg-success/10 text-success'
+				: 'bg-muted text-muted-foreground'}"
 		>
 			<span
-				class="h-1.5 w-1.5 rounded-full {data.openState.isOpen ? 'bg-green-500' : 'bg-gray-400'}"
+				class="h-1.5 w-1.5 rounded-full {data.openState.isOpen ? 'bg-success' : 'bg-muted-foreground/40'}"
 			></span>
 			{#if data.openState.isOpen}
 				Open now · closes {formatTime(data.openState.closesAt)}
@@ -139,7 +139,7 @@
 					submittingSaveHours = false;
 					await update();
 				};
-			}} class="divide-y divide-gray-100">
+			}} class="divide-y divide-border">
 				{#each DAYS as day (day)}
 					<div class="flex items-center gap-4 px-6 py-3">
 						<!-- Enable toggle -->
@@ -168,7 +168,7 @@
 						{/if}
 
 						<!-- Day label -->
-						<span class="w-28 text-sm font-medium text-gray-700">{DAY_LABELS[day]}</span>
+						<span class="w-28 text-sm font-medium text-foreground">{DAY_LABELS[day]}</span>
 
 						{#if dayStates[day].enabled}
 							<!-- Time inputs -->
@@ -177,18 +177,18 @@
 									type="time"
 									name="{day}_open"
 									bind:value={dayStates[day].openTime}
-									class="h-8 rounded-lg border border-gray-200 bg-white px-3 text-sm focus:ring-2 focus:ring-primary focus:outline-none"
+									class="h-8 rounded-lg border border-input bg-background px-3 text-sm focus:ring-2 focus:ring-primary focus:outline-none"
 								/>
-								<span class="text-xs text-gray-400">to</span>
+								<span class="text-xs text-muted-foreground/60">to</span>
 								<input
 									type="time"
 									name="{day}_close"
 									bind:value={dayStates[day].closeTime}
-									class="h-8 rounded-lg border border-gray-200 bg-white px-3 text-sm focus:ring-2 focus:ring-primary focus:outline-none"
+									class="h-8 rounded-lg border border-input bg-background px-3 text-sm focus:ring-2 focus:ring-primary focus:outline-none"
 								/>
 							</div>
 						{:else}
-							<span class="flex-1 text-sm text-gray-400">Closed</span>
+							<span class="flex-1 text-sm text-muted-foreground/60">Closed</span>
 						{/if}
 					</div>
 				{/each}
@@ -231,37 +231,37 @@
 
 			<!-- Existing exceptions -->
 			{#if data.exceptions.length > 0}
-				<div class="overflow-hidden">
+				<div class="overflow-hidden rounded-xl border border-border">
 					<table class="w-full">
-						<thead class="border-b border-gray-200 bg-gray-50">
+						<thead class="border-b border-border bg-muted/50">
 							<tr>
 								<th
-									class="px-6 py-3 text-left text-xs font-medium tracking-wide text-gray-500 uppercase"
+									class="px-6 py-3 text-left text-xs font-medium tracking-wide text-muted-foreground uppercase"
 									>Date</th
 								>
 								<th
-									class="px-6 py-3 text-left text-xs font-medium tracking-wide text-gray-500 uppercase"
+									class="px-6 py-3 text-left text-xs font-medium tracking-wide text-muted-foreground uppercase"
 									>Override</th
 								>
 								<th
-									class="px-6 py-3 text-left text-xs font-medium tracking-wide text-gray-500 uppercase"
+									class="px-6 py-3 text-left text-xs font-medium tracking-wide text-muted-foreground uppercase"
 									>Note</th
 								>
 								<th class="px-6 py-3"></th>
 							</tr>
 						</thead>
-						<tbody class="divide-y divide-gray-100">
+						<tbody class="divide-y divide-border">
 							{#each data.exceptions as exc (exc.id)}
-								<tr class="hover:bg-gray-50">
-									<td class="px-6 py-3 text-sm text-gray-900">{formatExceptionDate(exc.date)}</td>
-									<td class="px-6 py-3 text-sm text-gray-500">
+								<tr class="hover:bg-muted/50">
+									<td class="px-6 py-3 text-sm text-foreground">{formatExceptionDate(exc.date)}</td>
+									<td class="px-6 py-3 text-sm text-muted-foreground">
 										{#if exc.isClosed}
 											Closed all day
 										{:else}
 											{exc.openTime?.substring(0, 5) ?? ''} – {exc.closeTime?.substring(0, 5) ?? ''}
 										{/if}
 									</td>
-									<td class="px-6 py-3 text-sm text-gray-400">{exc.note ?? '—'}</td>
+									<td class="px-6 py-3 text-sm text-muted-foreground/60">{exc.note ?? '—'}</td>
 									<td class="px-6 py-3 text-right">
 										<form
 											method="post"
@@ -292,7 +292,7 @@
 												disabled={submittingRemoveExceptionId !== null}
 												variant="ghost"
 												size="icon"
-												class="text-red-400 hover:bg-red-50 hover:text-red-600"
+												class="text-red-500 hover:bg-red-50 hover:text-red-600"
 											>
 												{#if submittingRemoveExceptionId === exc.id}
 													<Icon icon="mdi:loading" class="h-4 w-4 animate-spin" />
@@ -309,13 +309,13 @@
 				</div>
 			{:else}
 				<div class="px-6 py-8 text-center">
-					<p class="text-sm text-gray-500">No date exceptions yet.</p>
+					<p class="text-sm text-muted-foreground">No date exceptions yet.</p>
 				</div>
 			{/if}
 
 			<!-- Add exception form -->
-			<div class="border-t border-gray-100 px-6 py-4">
-				<p class="mb-3 text-sm font-medium text-gray-700">Add a date exception</p>
+			<div class="border-t border-border px-6 py-4">
+				<p class="mb-3 text-sm font-medium text-foreground">Add a date exception</p>
 				<form
 					method="post"
 					action="?/addException"
@@ -330,7 +330,7 @@
 					<div class="flex flex-wrap items-end gap-3">
 						<!-- Date -->
 						<div>
-							<label for="exc-date" class="mb-1.5 block text-sm font-medium text-gray-700"
+							<label for="exc-date" class="mb-1.5 block text-sm font-medium text-foreground"
 								>Date</label
 							>
 							<input
@@ -339,7 +339,7 @@
 								name="date"
 								bind:value={addDate}
 								required
-								class="h-8 rounded-lg border border-gray-200 bg-white px-3 text-sm focus:ring-2 focus:ring-primary focus:outline-none"
+								class="h-8 rounded-lg border border-input bg-background px-3 text-sm focus:ring-2 focus:ring-primary focus:outline-none"
 							/>
 						</div>
 
@@ -360,14 +360,14 @@
 								></span>
 							</button>
 							<input type="hidden" name="isClosed" value={addIsClosed ? 'on' : 'off'} />
-							<span class="text-sm text-gray-700">Closed all day</span>
+							<span class="text-sm text-foreground">Closed all day</span>
 						</div>
 					</div>
 
 					{#if !addIsClosed}
 						<div class="flex flex-wrap items-end gap-3">
 							<div>
-								<label for="exc-open" class="mb-1.5 block text-sm font-medium text-gray-700"
+								<label for="exc-open" class="mb-1.5 block text-sm font-medium text-foreground"
 									>Opens</label
 								>
 								<input
@@ -375,11 +375,11 @@
 									type="time"
 									name="openTime"
 									bind:value={addOpen}
-									class="h-8 rounded-lg border border-gray-200 bg-white px-3 text-sm focus:ring-2 focus:ring-primary focus:outline-none"
+									class="h-8 rounded-lg border border-input bg-background px-3 text-sm focus:ring-2 focus:ring-primary focus:outline-none"
 								/>
 							</div>
 							<div>
-								<label for="exc-close" class="mb-1.5 block text-sm font-medium text-gray-700"
+								<label for="exc-close" class="mb-1.5 block text-sm font-medium text-foreground"
 									>Closes</label
 								>
 								<input
@@ -387,15 +387,15 @@
 									type="time"
 									name="closeTime"
 									bind:value={addClose}
-									class="h-8 rounded-lg border border-gray-200 bg-white px-3 text-sm focus:ring-2 focus:ring-primary focus:outline-none"
+									class="h-8 rounded-lg border border-input bg-background px-3 text-sm focus:ring-2 focus:ring-primary focus:outline-none"
 								/>
 							</div>
 						</div>
 					{/if}
 
 					<div>
-						<label for="exc-note" class="mb-1.5 block text-sm font-medium text-gray-700"
-							>Note <span class="font-normal text-gray-400">(optional)</span></label
+						<label for="exc-note" class="mb-1.5 block text-sm font-medium text-foreground"
+							>Note <span class="font-normal text-muted-foreground/60">(optional)</span></label
 						>
 						<input
 							id="exc-note"
@@ -403,7 +403,7 @@
 							name="note"
 							bind:value={addNote}
 							placeholder="e.g. Thanksgiving, holiday closure"
-							class="h-8 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm placeholder:text-gray-400 focus:ring-2 focus:ring-primary focus:outline-none"
+							class="h-8 w-full rounded-lg border border-input bg-background px-3 text-sm placeholder:text-muted-foreground/50 focus:ring-2 focus:ring-primary focus:outline-none"
 						/>
 					</div>
 

@@ -20,9 +20,7 @@
 	function isActive(path: string): boolean {
 		if (path === '/catalog') {
 			return (
-				currentPath === '/catalog' ||
-				currentPath.startsWith('/item/') ||
-				currentPath === '/cart'
+				currentPath === '/catalog' || currentPath.startsWith('/item/') || currentPath === '/cart'
 			);
 		}
 		return currentPath === path || currentPath.startsWith(path + '/');
@@ -40,12 +38,7 @@
 			class="flex items-center gap-3 transition-opacity hover:opacity-85"
 		>
 			{#if showLogo && logoUrl}
-				<img
-					src={logoUrl}
-					alt={vendorName}
-					class="h-8 w-auto max-w-24 shrink-0 object-contain"
-					style="filter: brightness(0) invert(1);"
-				/>
+				<img src={logoUrl} alt={vendorName} class="h-8 w-auto max-w-24 shrink-0 object-contain" />
 			{/if}
 			{#if showName}
 				<span
@@ -61,15 +54,23 @@
 		<nav class="hidden flex-1 items-center justify-center gap-8 md:flex">
 			<a
 				href={resolve('/catalog' as `/${string}`)}
-				class="text-sm font-medium transition-opacity hover:opacity-100 {isActive('/catalog') ? 'opacity-100' : 'opacity-70'}"
-				style="color: var(--foreground-color); border-bottom: 2px solid {isActive('/catalog') ? 'var(--foreground-color)' : 'transparent'}; padding-bottom: 2px;"
+				class="text-sm font-medium transition-opacity hover:opacity-100 {isActive('/catalog')
+					? 'opacity-100'
+					: 'opacity-70'}"
+				style="color: var(--foreground-color); border-bottom: 2px solid {isActive('/catalog')
+					? 'var(--foreground-color)'
+					: 'transparent'}; padding-bottom: 2px;"
 			>
 				Menu
 			</a>
 			<a
 				href={resolve('/store-info' as `/${string}`)}
-				class="text-sm font-medium transition-opacity hover:opacity-100 {isActive('/store-info') ? 'opacity-100' : 'opacity-70'}"
-				style="color: var(--foreground-color); border-bottom: 2px solid {isActive('/store-info') ? 'var(--foreground-color)' : 'transparent'}; padding-bottom: 2px;"
+				class="text-sm font-medium transition-opacity hover:opacity-100 {isActive('/store-info')
+					? 'opacity-100'
+					: 'opacity-70'}"
+				style="color: var(--foreground-color); border-bottom: 2px solid {isActive('/store-info')
+					? 'var(--foreground-color)'
+					: 'transparent'}; padding-bottom: 2px;"
 			>
 				Store Info
 			</a>
