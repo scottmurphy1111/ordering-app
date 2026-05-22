@@ -137,7 +137,8 @@ export const actions: Actions = {
 					invitedByName: inviterName,
 					role,
 					inviteUrl
-				})
+				}),
+				category: 'invite'
 			}).catch(console.error);
 		}
 

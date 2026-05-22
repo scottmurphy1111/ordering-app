@@ -53,7 +53,8 @@ export async function runPauseReminders(): Promise<{ processed: number; errors: 
 					planName,
 					pauseUntil: pauseUntilStr,
 					daysRemaining: daysOut as 7 | 3 | 1
-				})
+				}),
+				category: 'pause_reminder'
 			});
 
 			processed++;

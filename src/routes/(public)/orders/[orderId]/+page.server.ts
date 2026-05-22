@@ -150,7 +150,7 @@ export const actions: Actions = {
 		if (cancelled?.customerEmail || cancelled?.customerPhone) {
 			const vendorRecord = await db.query.vendor.findFirst({
 				where: eq(vendor.id, vendorId),
-				columns: { name: true, backgroundColor: true }
+				columns: { name: true, email: true, backgroundColor: true }
 			});
 			if (vendorRecord) {
 				if (cancelled.customerEmail) {
@@ -163,7 +163,10 @@ export const actions: Actions = {
 							orderNumber: cancelled.orderNumber,
 							customerName: cancelled.customerName ?? 'there',
 							total: cancelled.total
-						})
+						}),
+						fromName: vendorRecord.name,
+						replyTo: vendorRecord.email ?? undefined,
+						category: 'alternate_declined'
 					}).catch(console.error);
 				}
 				if (cancelled.customerPhone) {

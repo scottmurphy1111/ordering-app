@@ -384,7 +384,8 @@ export const actions: Actions = {
 								fromPlanName,
 								toPlanName,
 								direction: 'upgrade'
-							})
+							}),
+							category: 'subscription_tier_changed'
 						}).catch(console.error);
 					}
 					return { success: true, upgraded: true };
@@ -527,7 +528,8 @@ export const actions: Actions = {
 						recipientName: record.name,
 						planName,
 						accessUntil
-					})
+					}),
+					category: 'subscription_cancellation_scheduled'
 				}).catch(console.error);
 			}
 			return { success: true, downgraded: true };
@@ -617,7 +619,8 @@ export const actions: Actions = {
 					fromPlanName,
 					toPlanName,
 					direction: 'downgrade'
-				})
+				}),
+				category: 'subscription_tier_changed'
 			}).catch(console.error);
 		}
 		return { success: true, downgraded: true };
@@ -685,7 +688,8 @@ export const actions: Actions = {
 						planName,
 						fromInterval: 'monthly',
 						toInterval: 'annual'
-					})
+					}),
+					category: 'subscription_interval_changed'
 				}).catch(console.error);
 			}
 			return { success: true, switched: true };
@@ -740,7 +744,8 @@ export const actions: Actions = {
 							fromInterval: 'annual',
 							toInterval: 'monthly',
 							refundAmount: refundCents > 0 ? fmtAmount(refundCents) : undefined
-						})
+						}),
+						category: 'subscription_interval_changed'
 					}).catch(console.error);
 				}
 				return { success: true, switched: true, refunded: refundCents > 0 };
@@ -762,7 +767,8 @@ export const actions: Actions = {
 							planName,
 							fromInterval: 'annual',
 							toInterval: 'monthly'
-						})
+						}),
+						category: 'subscription_interval_changed'
 					}).catch(console.error);
 				}
 				return { success: true, switched: true };
@@ -806,7 +812,8 @@ export const actions: Actions = {
 				html: subscriptionReactivatedEmail({
 					recipientName: record.name,
 					planName
-				})
+				}),
+				category: 'subscription_reactivated'
 			}).catch(console.error);
 		}
 		return { success: true, reactivated: true };
@@ -910,7 +917,8 @@ export const actions: Actions = {
 					recipientName: record.name,
 					planName,
 					refundAmount: fmtAmount(refundCents)
-				})
+				}),
+				category: 'subscription_cancellation_immediate'
 			}).catch(console.error);
 		}
 		return { success: true, cancelImmediate: true, refundCents };
@@ -960,7 +968,8 @@ export const actions: Actions = {
 					recipientName: record.name,
 					addonName,
 					direction: 'activated'
-				})
+				}),
+				category: 'subscription_addon_changed'
 			}).catch(console.error);
 		}
 		return { success: true };
@@ -1002,7 +1011,8 @@ export const actions: Actions = {
 					recipientName: record.name,
 					addonName,
 					direction: 'deactivated'
-				})
+				}),
+				category: 'subscription_addon_changed'
 			}).catch(console.error);
 		}
 		return { success: true };
@@ -1089,7 +1099,8 @@ export const actions: Actions = {
 			await sendEmail({
 				to: record.email,
 				subject: 'Your Order Local subscription has been paused',
-				html: pauseConfirmedEmail({ recipientName: record.name, planName, pauseUntil: pauseUntilStr })
+				html: pauseConfirmedEmail({ recipientName: record.name, planName, pauseUntil: pauseUntilStr }),
+				category: 'pause_confirmed'
 			}).catch(console.error);
 		}
 
@@ -1138,7 +1149,8 @@ export const actions: Actions = {
 			await sendEmail({
 				to: record.email,
 				subject: 'Your Order Local subscription has resumed',
-				html: pauseResumedEmail({ recipientName: record.name, planName })
+				html: pauseResumedEmail({ recipientName: record.name, planName }),
+				category: 'pause_resumed'
 			}).catch(console.error);
 		}
 
@@ -1255,7 +1267,8 @@ export const actions: Actions = {
 					html: accountCreditRefundedEmail({
 						recipientName: record.name,
 						refundAmount: fmtAmount(creditCents)
-					})
+					}),
+					category: 'account_credit_refunded'
 				}).catch(console.error);
 			}
 			return { success: true, creditRefunded: true, partialSync: true, refundedCents: creditCents };
@@ -1268,7 +1281,8 @@ export const actions: Actions = {
 				html: accountCreditRefundedEmail({
 					recipientName: record.name,
 					refundAmount: fmtAmount(creditCents)
-				})
+				}),
+				category: 'account_credit_refunded'
 			}).catch(console.error);
 		}
 		return { success: true, creditRefunded: true, refundedCents: creditCents };

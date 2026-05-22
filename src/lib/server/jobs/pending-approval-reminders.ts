@@ -97,7 +97,8 @@ export async function runPendingApprovalReminders(): Promise<{
 					pendingOrders: orderList,
 					dashboardUrl,
 					daysOpen: maxDaysOpen
-				})
+				}),
+				category: 'pending_approval_reminder'
 			});
 
 			processed++;

@@ -282,7 +282,8 @@ export const actions: Actions = {
 						targetDate: requestRow.targetDate,
 						quotedPriceCents: quote.priceCents,
 						requestUrl: `${origin}/dashboard/special-orders/${quote.requestId}`
-					})
+					}),
+					category: 'special_order_declined_by_customer_vendor'
 				}).catch(console.error);
 			}
 		}

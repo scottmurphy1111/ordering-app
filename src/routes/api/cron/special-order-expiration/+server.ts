@@ -67,7 +67,7 @@ export const GET: RequestHandler = async ({ request }) => {
 
 			const vendorRecord = await db.query.vendor.findFirst({
 				where: eq(vendor.id, req.vendorId),
-				columns: { name: true, backgroundColor: true, slug: true }
+				columns: { name: true, email: true, backgroundColor: true, slug: true }
 			});
 
 			if (vendorRecord) {
@@ -81,7 +81,10 @@ export const GET: RequestHandler = async ({ request }) => {
 						primaryColor: vendorRecord.backgroundColor ?? undefined,
 						customerName: req.customerName,
 						requestUrl
-					})
+					}),
+					fromName: vendorRecord.name,
+					replyTo: vendorRecord.email ?? undefined,
+					category: 'special_order_quote_expired'
 				}).catch(console.error);
 			}
 		} catch (err) {

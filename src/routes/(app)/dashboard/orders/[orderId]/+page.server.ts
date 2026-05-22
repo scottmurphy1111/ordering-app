@@ -64,7 +64,7 @@ export const actions: Actions = {
 		if (status === 'ready' && (order?.customerEmail || order?.customerPhone)) {
 			const vendorRecord = await db.query.vendor.findFirst({
 				where: eq(vendor.id, vendorId),
-				columns: { name: true, backgroundColor: true, slug: true }
+				columns: { name: true, email: true, backgroundColor: true, slug: true }
 			});
 			if (vendorRecord) {
 				if (order.customerEmail) {
@@ -78,7 +78,10 @@ export const actions: Actions = {
 							customerName: order.customerName ?? 'there',
 							total: order.total,
 							orderType: order.type
-						})
+						}),
+						fromName: vendorRecord.name,
+						replyTo: vendorRecord.email ?? undefined,
+						category: 'order_ready'
 					}).catch(console.error);
 				}
 				if (order.customerPhone) {
@@ -116,7 +119,7 @@ export const actions: Actions = {
 		if (order?.customerEmail || order?.customerPhone) {
 			const vendorRecord = await db.query.vendor.findFirst({
 				where: eq(vendor.id, vendorId),
-				columns: { name: true, backgroundColor: true, slug: true }
+				columns: { name: true, email: true, backgroundColor: true, slug: true }
 			});
 			if (vendorRecord) {
 				if (order.customerEmail) {
@@ -129,7 +132,10 @@ export const actions: Actions = {
 							orderNumber: order.orderNumber,
 							customerName: order.customerName ?? 'there',
 							total: order.total
-						})
+						}),
+						fromName: vendorRecord.name,
+						replyTo: vendorRecord.email ?? undefined,
+						category: 'order_cancelled'
 					}).catch(console.error);
 				}
 				if (order.customerPhone) {
@@ -156,7 +162,7 @@ export const actions: Actions = {
 			}),
 			db.query.vendor.findFirst({
 				where: eq(vendor.id, vendorId),
-				columns: { stripeSecretKey: true, name: true, backgroundColor: true }
+				columns: { stripeSecretKey: true, name: true, email: true, backgroundColor: true }
 			})
 		]);
 
@@ -213,7 +219,10 @@ export const actions: Actions = {
 					orderNumber: refundedOrder.orderNumber,
 					customerName: refundedOrder.customerName ?? 'there',
 					total: refundedOrder.total
-				})
+				}),
+				fromName: vendorRecord.name,
+				replyTo: vendorRecord.email ?? undefined,
+				category: 'order_refunded'
 			}).catch(console.error);
 		}
 
@@ -235,6 +244,7 @@ export const actions: Actions = {
 				columns: {
 					stripeSecretKey: true,
 					name: true,
+					email: true,
 					backgroundColor: true,
 					slug: true,
 					timezone: true
@@ -338,7 +348,10 @@ export const actions: Actions = {
 							scheduledFor: orderRow.scheduledFor,
 							vendorTimezone: vendorRecord.timezone ?? 'America/New_York',
 							orderStatusUrl: vendorUrl(vendorRecord.slug, `/orders/${orderRow.id}`)
-						})
+						}),
+						fromName: vendorRecord.name,
+						replyTo: vendorRecord.email ?? undefined,
+						category: 'custom_date_approved'
 					}).catch(console.error);
 				}
 				if (orderRow.customerPhone) {
@@ -374,7 +387,10 @@ export const actions: Actions = {
 						customerName: orderRow.customerName ?? 'there',
 						total: orderRow.total,
 						recoveryUrl: vendorUrl(vendorRecord.slug, `/orders/${orderRow.id}`)
-					})
+					}),
+					fromName: vendorRecord.name,
+					replyTo: vendorRecord.email ?? undefined,
+					category: 'custom_date_payment_failed'
 				}).catch(console.error);
 			}
 			return fail(502, {
@@ -409,7 +425,7 @@ export const actions: Actions = {
 		if (order?.customerEmail || order?.customerPhone) {
 			const vendorRecord = await db.query.vendor.findFirst({
 				where: eq(vendor.id, vendorId),
-				columns: { name: true, backgroundColor: true, slug: true }
+				columns: { name: true, email: true, backgroundColor: true, slug: true }
 			});
 			if (vendorRecord) {
 				if (order.customerEmail) {
@@ -422,7 +438,10 @@ export const actions: Actions = {
 							orderNumber: order.orderNumber,
 							customerName: order.customerName ?? 'there',
 							total: order.total
-						})
+						}),
+						fromName: vendorRecord.name,
+						replyTo: vendorRecord.email ?? undefined,
+						category: 'order_cancelled'
 					}).catch(console.error);
 				}
 				if (order.customerPhone) {
@@ -460,7 +479,7 @@ export const actions: Actions = {
 			}),
 			db.query.vendor.findFirst({
 				where: eq(vendor.id, vendorId),
-				columns: { name: true, backgroundColor: true, slug: true, timezone: true }
+				columns: { name: true, email: true, backgroundColor: true, slug: true, timezone: true }
 			})
 		]);
 
@@ -488,7 +507,10 @@ export const actions: Actions = {
 					proposedReason: reason,
 					vendorTimezone: vendorRecord.timezone ?? 'America/New_York',
 					orderStatusUrl: vendorUrl(vendorRecord.slug, `/orders/${orderRow.id}`)
-				})
+				}),
+				fromName: vendorRecord.name,
+				replyTo: vendorRecord.email ?? undefined,
+				category: 'alternate_date_proposed'
 			}).catch(console.error);
 		}
 		if (orderRow.customerPhone && vendorRecord) {

@@ -31,6 +31,7 @@ export async function reconcilePaymentStatus(order: OrderRow, vendorId: number):
 			columns: {
 				stripeSecretKey: true,
 				name: true,
+				email: true,
 				backgroundColor: true,
 				slug: true,
 				timezone: true
@@ -71,7 +72,10 @@ export async function reconcilePaymentStatus(order: OrderRow, vendorId: number):
 						vendorTimezone: vendorRecord.timezone ?? 'America/New_York',
 						notes: updated.notes,
 						orderStatusUrl: vendorUrl(vendorRecord.slug, `/orders/${updated.id}`)
-					})
+					}),
+					fromName: vendorRecord.name,
+					replyTo: vendorRecord.email ?? undefined,
+					category: 'custom_date_recovered'
 				}).catch(console.error);
 			}
 

@@ -153,7 +153,10 @@ async function handleEvent(event: Stripe.Event, ctx: VendorCtx) {
 							vendorTimezone: ctx.timezone,
 							notes: order.notes,
 							orderStatusUrl: orderUrl(ctx.slug, order.id)
-						})
+						}),
+						fromName: ctx.name,
+						replyTo: ctx.email ?? undefined,
+						category: 'custom_date_recovered'
 					}).catch(console.error);
 				} else if (order.specialOrderRequestId) {
 					await sendEmail({
@@ -169,7 +172,10 @@ async function handleEvent(event: Stripe.Event, ctx: VendorCtx) {
 							scheduledFor: order.scheduledFor,
 							vendorTimezone: ctx.timezone,
 							orderStatusUrl: orderUrl(ctx.slug, order.id)
-						})
+						}),
+						fromName: ctx.name,
+						replyTo: ctx.email ?? undefined,
+						category: 'special_order_accepted'
 					}).catch(console.error);
 					if (ctx.email) {
 						await sendEmail({
@@ -187,7 +193,8 @@ async function handleEvent(event: Stripe.Event, ctx: VendorCtx) {
 								scheduledFor: order.scheduledFor,
 								vendorTimezone: ctx.timezone,
 								orderStatusUrl: `${env.ORIGIN ?? 'https://app.getorderlocal.com'}/dashboard/orders/${order.id}`
-							})
+							}),
+							category: 'special_order_accepted_vendor'
 						}).catch(console.error);
 					}
 				} else {
@@ -210,7 +217,10 @@ async function handleEvent(event: Stripe.Event, ctx: VendorCtx) {
 							pickupWindowSnapshot: order.pickupWindowSnapshot as PickupWindowSnapshot | null,
 							scheduledFor: order.scheduledFor,
 							vendorTimezone: ctx.timezone
-						})
+						}),
+						fromName: ctx.name,
+						replyTo: ctx.email ?? undefined,
+						category: 'order_confirmed'
 					}).catch(console.error);
 				}
 			}
@@ -260,7 +270,10 @@ async function handleEvent(event: Stripe.Event, ctx: VendorCtx) {
 						orderNumber: order.orderNumber,
 						customerName: order.customerName ?? 'there',
 						total: order.total
-					})
+					}),
+					fromName: ctx.name,
+					replyTo: ctx.email ?? undefined,
+					category: 'order_cancelled'
 				}).catch(console.error);
 			}
 			if (order?.customerPhone) {
@@ -294,7 +307,10 @@ async function handleEvent(event: Stripe.Event, ctx: VendorCtx) {
 						orderNumber: order.orderNumber,
 						customerName: order.customerName ?? 'there',
 						total: order.total
-					})
+					}),
+					fromName: ctx.name,
+					replyTo: ctx.email ?? undefined,
+					category: 'order_refunded'
 				}).catch(console.error);
 			}
 			if (order?.customerPhone) {
@@ -363,7 +379,10 @@ async function handleEvent(event: Stripe.Event, ctx: VendorCtx) {
 						pickupWindowSnapshot: order.pickupWindowSnapshot as PickupWindowSnapshot | null,
 						scheduledFor: order.scheduledFor,
 						vendorTimezone: ctx.timezone
-					})
+					}),
+					fromName: ctx.name,
+					replyTo: ctx.email ?? undefined,
+					category: 'order_confirmed'
 				}).catch(console.error);
 			}
 			if (order?.customerPhone) {
@@ -435,7 +454,10 @@ async function handleEvent(event: Stripe.Event, ctx: VendorCtx) {
 						total: recurring.total,
 						orderType: 'subscription',
 						notes: null
-					})
+					}),
+					fromName: ctx.name,
+					replyTo: ctx.email ?? undefined,
+					category: 'order_confirmed'
 				}).catch(console.error);
 			}
 			if (recurring?.customerPhone) {

@@ -282,7 +282,7 @@ export const actions: Actions = {
 		if (status === 'ready' && order?.customerEmail) {
 			const vendorRecord = await db.query.vendor.findFirst({
 				where: eq(vendor.id, vendorId),
-				columns: { name: true, backgroundColor: true }
+				columns: { name: true, email: true, backgroundColor: true }
 			});
 			if (vendorRecord) {
 				await sendEmail({
@@ -295,7 +295,10 @@ export const actions: Actions = {
 						customerName: order.customerName ?? 'there',
 						total: order.total,
 						orderType: order.type
-					})
+					}),
+					fromName: vendorRecord.name,
+					replyTo: vendorRecord.email ?? undefined,
+					category: 'order_ready'
 				}).catch(console.error);
 			}
 		}
@@ -326,7 +329,7 @@ export const actions: Actions = {
 		if (order?.customerEmail) {
 			const vendorRecord = await db.query.vendor.findFirst({
 				where: eq(vendor.id, vendorId),
-				columns: { name: true, backgroundColor: true }
+				columns: { name: true, email: true, backgroundColor: true }
 			});
 			if (vendorRecord) {
 				await sendEmail({
@@ -338,7 +341,10 @@ export const actions: Actions = {
 						orderNumber: order.orderNumber,
 						customerName: order.customerName ?? 'there',
 						total: order.total
-					})
+					}),
+					fromName: vendorRecord.name,
+					replyTo: vendorRecord.email ?? undefined,
+					category: 'order_cancelled'
 				}).catch(console.error);
 			}
 		}
@@ -358,7 +364,7 @@ export const actions: Actions = {
 			}),
 			db.query.vendor.findFirst({
 				where: eq(vendor.id, vendorId),
-				columns: { stripeSecretKey: true, name: true, backgroundColor: true }
+				columns: { stripeSecretKey: true, name: true, email: true, backgroundColor: true }
 			})
 		]);
 
@@ -415,7 +421,10 @@ export const actions: Actions = {
 					orderNumber: refundedOrder.orderNumber,
 					customerName: refundedOrder.customerName ?? 'there',
 					total: refundedOrder.total
-				})
+				}),
+				fromName: vendorRecord.name,
+				replyTo: vendorRecord.email ?? undefined,
+				category: 'order_refunded'
 			}).catch(console.error);
 		}
 

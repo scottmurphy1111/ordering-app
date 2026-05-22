@@ -93,7 +93,7 @@ export const auth = betterAuth({
 						<p style="margin:16px 0 0;font-size:12px;color:#9ca3af;">If you didn't request this, you can safely ignore this email.</p>
 					`
 				});
-				await sendEmail({ to: email, subject: 'Sign in to Order Local', html });
+				await sendEmail({ to: email, subject: 'Sign in to Order Local', html, category: 'auth' });
 			}
 		}),
 		sveltekitCookies(getRequestEvent) // must be last

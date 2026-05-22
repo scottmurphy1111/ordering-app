@@ -128,7 +128,7 @@ export async function resolveStaleOrders(vendorId: number): Promise<number> {
 
 			const vendorRecordC = await db.query.vendor.findFirst({
 				where: eq(vendor.id, vendorId),
-				columns: { name: true, backgroundColor: true }
+				columns: { name: true, email: true, backgroundColor: true }
 			});
 			if (vendorRecordC) {
 				for (const o of vendorStalledOrders) {
@@ -143,7 +143,10 @@ export async function resolveStaleOrders(vendorId: number): Promise<number> {
 							customerName: o.customerName ?? 'there',
 							total: o.total,
 							reason: `Your custom-date order request expired after ${VENDOR_STALL_DAYS} days without a response from the vendor. You were not charged.`
-						})
+						}),
+						fromName: vendorRecordC.name,
+						replyTo: vendorRecordC.email ?? undefined,
+						category: 'order_cancelled'
 					}).catch(console.error);
 				}
 			}
@@ -193,7 +196,7 @@ export async function resolveStaleOrders(vendorId: number): Promise<number> {
 
 			const vendorRecordD = await db.query.vendor.findFirst({
 				where: eq(vendor.id, vendorId),
-				columns: { name: true, backgroundColor: true }
+				columns: { name: true, email: true, backgroundColor: true }
 			});
 			if (vendorRecordD) {
 				for (const o of customerStalledOrders) {
@@ -208,7 +211,10 @@ export async function resolveStaleOrders(vendorId: number): Promise<number> {
 							customerName: o.customerName ?? 'there',
 							total: o.total,
 							reason: `The proposed alternate date for your order expired after ${CUSTOMER_STALL_DAYS} days without a response. You were not charged.`
-						})
+						}),
+						fromName: vendorRecordD.name,
+						replyTo: vendorRecordD.email ?? undefined,
+						category: 'order_cancelled'
 					}).catch(console.error);
 				}
 			}

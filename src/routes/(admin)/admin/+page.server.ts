@@ -21,7 +21,9 @@ export const load: PageServerLoad = async () => {
 		cronErrorsLast7,
 		lastWebhookSuccess,
 		webhookErrorsLast7,
-		webhookTotalLast7
+		webhookTotalLast7,
+		lastPendingApprovalReminders,
+		lastReconcileSubscriptions
 	] = await Promise.all([
 		db
 			.select({ value: count() })
@@ -102,7 +104,27 @@ export const load: PageServerLoad = async () => {
 					like(systemEvents.eventType, 'webhook.%'),
 					gte(systemEvents.createdAt, sevenDaysAgo)
 				)
-			)
+			),
+		db
+			.select({
+				createdAt: systemEvents.createdAt,
+				status: systemEvents.status,
+				metadata: systemEvents.metadata
+			})
+			.from(systemEvents)
+			.where(eq(systemEvents.eventType, 'cron.pending_approval_reminders'))
+			.orderBy(desc(systemEvents.createdAt))
+			.limit(1),
+		db
+			.select({
+				createdAt: systemEvents.createdAt,
+				status: systemEvents.status,
+				metadata: systemEvents.metadata
+			})
+			.from(systemEvents)
+			.where(eq(systemEvents.eventType, 'cron.reconcile_subscriptions'))
+			.orderBy(desc(systemEvents.createdAt))
+			.limit(1)
 	]);
 
 	return {
@@ -120,6 +142,7 @@ export const load: PageServerLoad = async () => {
 				lastStatus: lastResumeDue[0]?.status ?? null,
 				lastMeta: (lastResumeDue[0]?.metadata ?? null) as {
 					processed: number;
+					drifted?: number;
 					errors: string[];
 				} | null
 			},
@@ -130,6 +153,29 @@ export const load: PageServerLoad = async () => {
 				lastStatus: lastPauseReminders[0]?.status ?? null,
 				lastMeta: (lastPauseReminders[0]?.metadata ?? null) as {
 					processed: number;
+					drifted?: number;
+					errors: string[];
+				} | null
+			},
+			{
+				name: 'Pending approval reminders',
+				eventType: 'cron.pending_approval_reminders',
+				lastRun: lastPendingApprovalReminders[0]?.createdAt ?? null,
+				lastStatus: lastPendingApprovalReminders[0]?.status ?? null,
+				lastMeta: (lastPendingApprovalReminders[0]?.metadata ?? null) as {
+					processed: number;
+					drifted?: number;
+					errors: string[];
+				} | null
+			},
+			{
+				name: 'Reconcile subscriptions',
+				eventType: 'cron.reconcile_subscriptions',
+				lastRun: lastReconcileSubscriptions[0]?.createdAt ?? null,
+				lastStatus: lastReconcileSubscriptions[0]?.status ?? null,
+				lastMeta: (lastReconcileSubscriptions[0]?.metadata ?? null) as {
+					processed: number;
+					drifted?: number;
 					errors: string[];
 				} | null
 			}

@@ -149,7 +149,7 @@
 									<p class="text-xs text-gray-500">{fmtDateTime(job.lastRun)}</p>
 									{#if job.lastMeta}
 										<p class="text-xs text-gray-400">
-											{job.lastMeta.processed} processed
+											{job.lastMeta.processed} processed{#if job.lastMeta.drifted !== undefined && job.lastMeta.drifted > 0}, {job.lastMeta.drifted} drifted{/if}
 										</p>
 									{/if}
 								</div>

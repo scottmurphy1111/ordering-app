@@ -59,6 +59,14 @@ export const POST: RequestHandler = async ({ request }) => {
 	}
 
 	try {
+		// Record every webhook that passes signature verification — includes events
+		// whose case bails early (e.g., no matching local vendor). The specific
+		// Stripe event type lives in metadata for per-event drill-down via event.id.
+		await recordSystemEvent('webhook.received', 'ok', null, {
+			stripeEventId: event.id,
+			stripeEventType: event.type
+		});
+
 		switch (event.type) {
 			case 'checkout.session.completed': {
 				const session = event.data.object as Stripe.Checkout.Session;
@@ -101,14 +109,10 @@ export const POST: RequestHandler = async ({ request }) => {
 							recipientName: vendorRecord.name,
 							planName: planKey.charAt(0).toUpperCase() + planKey.slice(1),
 							amount: formatAmount(amount)
-						})
+						}),
+						category: 'subscription_confirmed'
 					}).catch(console.error);
 				}
-				await recordSystemEvent('webhook.checkout_completed', 'ok', vendorId, {
-					stripeEventId: event.id,
-					planKey,
-					subscriptionId: subscriptionId ?? null
-				});
 				break;
 			}
 
@@ -244,14 +248,10 @@ export const POST: RequestHandler = async ({ request }) => {
 							recipientName: vendorRecord.name,
 							planName: tierForEmail.charAt(0).toUpperCase() + tierForEmail.slice(1),
 							amount: formatAmount(amount)
-						})
+						}),
+						category: 'subscription_confirmed'
 					}).catch(console.error);
 				}
-				await recordSystemEvent('webhook.subscription_updated', 'ok', vendorRecord.id, {
-					stripeEventId: event.id,
-					status,
-					tierKey: tierKey ?? null
-				});
 				break;
 			}
 
@@ -308,13 +308,11 @@ export const POST: RequestHandler = async ({ request }) => {
 						html: subscriptionCancellationCompletedEmail({
 							recipientName: vendorRecord.name,
 							planName: cancelledPlanName
-						})
+						}),
+						category: 'subscription_cancellation_completed'
 					}).catch(console.error);
 				}
 
-				await recordSystemEvent('webhook.subscription_deleted', 'ok', vendorRecord.id, {
-					stripeEventId: event.id
-				});
 				break;
 			}
 
@@ -414,13 +412,10 @@ export const POST: RequestHandler = async ({ request }) => {
 							planName,
 							amount: formatAmount(amount),
 							nextRetryDate: nextRetry ? formatDate(nextRetry) : undefined
-						})
+						}),
+						category: 'payment_failed'
 					}).catch(console.error);
 				}
-				await recordSystemEvent('webhook.payment_failed', 'ok', vendorRecord.id, {
-					stripeEventId: event.id,
-					amountDue: invoice.amount_due ?? 0
-				});
 				break;
 			}
 		}

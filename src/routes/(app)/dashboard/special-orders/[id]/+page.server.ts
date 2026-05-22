@@ -114,7 +114,10 @@ export const actions: Actions = {
 			await sendEmail({
 				to: existing.customerEmail,
 				subject: `Quote from ${vendor.name}`,
-				html
+				html,
+				fromName: vendor.name,
+				replyTo: vendor.email ?? undefined,
+				category: 'special_order_quote_sent'
 			});
 		} catch {
 			// best-effort; don't fail the action if email fails

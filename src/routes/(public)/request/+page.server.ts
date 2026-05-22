@@ -121,7 +121,8 @@ export const actions: Actions = {
 					targetDate,
 					photoCount: photoUrls.length,
 					requestUrl: `${origin}/dashboard/special-orders/${newRequest.id}`
-				})
+				}),
+				category: 'special_order_request_received_vendor'
 			}).catch(console.error);
 		}
 
@@ -135,7 +136,10 @@ export const actions: Actions = {
 				customerName,
 				description,
 				targetDate
-			})
+			}),
+			fromName: vendor.name,
+			replyTo: vendorRow?.email ?? undefined,
+			category: 'special_order_request_received_customer'
 		}).catch(console.error);
 
 		throw redirect(303, '/request/sent');

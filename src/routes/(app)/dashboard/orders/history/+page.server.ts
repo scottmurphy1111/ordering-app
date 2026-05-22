@@ -103,7 +103,7 @@ export const actions: Actions = {
 			}),
 			db.query.vendor.findFirst({
 				where: eq(vendor.id, vendorId),
-				columns: { stripeSecretKey: true, name: true, backgroundColor: true }
+				columns: { stripeSecretKey: true, name: true, email: true, backgroundColor: true }
 			})
 		]);
 
@@ -160,7 +160,10 @@ export const actions: Actions = {
 					orderNumber: refundedOrder.orderNumber,
 					customerName: refundedOrder.customerName ?? 'there',
 					total: refundedOrder.total
-				})
+				}),
+				fromName: vendorRecord.name,
+				replyTo: vendorRecord.email ?? undefined,
+				category: 'order_refunded'
 			}).catch(console.error);
 		}
 
