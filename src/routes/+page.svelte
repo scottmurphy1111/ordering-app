@@ -15,33 +15,65 @@
 	const audiences = [
 		{
 			icon: 'mdi:bread-slice-outline',
-			label: 'Bakeries',
-			path: '/for-bakeries' as string | undefined
+			label: 'Bakers',
+			path: '/for-bakers' as string | undefined
 		},
-		{ icon: 'mdi:barley', label: 'Farm stands', path: undefined },
+		{
+			icon: 'mdi:silverware-fork-knife',
+			label: 'Makers',
+			path: '/for-makers' as string | undefined
+		},
+		{
+			icon: 'mdi:barley',
+			label: 'Growers',
+			path: '/for-growers' as string | undefined
+		},
 		{ icon: 'mdi:food-steak', label: 'Butchers', path: undefined },
 		{ icon: 'mdi:flower-outline', label: 'Florists', path: undefined },
 		{ icon: 'mdi:package-variant-closed', label: 'CSA boxes', path: undefined },
 		{ icon: 'mdi:truck-outline', label: 'Food trucks', path: undefined },
 		{ icon: 'mdi:coffee-outline', label: 'Coffee shops', path: undefined },
-		{ icon: 'mdi:silverware-fork-knife', label: 'Specialty makers', path: undefined },
+		{ icon: 'mdi:tent', label: 'Market vendors', path: undefined }
+	];
+
+	const storefrontFeatures = [
 		{
-			icon: 'mdi:tent',
-			label: 'Market vendors',
-			path: '/for-farmers-markets' as string | undefined
+			icon: 'mdi:storefront-outline',
+			title: 'Sell online, in person, or both',
+			desc: 'A storefront for pre-orders. A booth checkout for market days. Customers see one brand; you see one dashboard.'
+		},
+		{
+			icon: 'mdi:palette-outline',
+			title: 'Make it look like yours',
+			desc: 'Choose your colors, fonts, banners, and background patterns. Your storefront feels like your business — not a templated landing page.'
+		},
+		{
+			icon: 'mdi:image-auto-adjust',
+			title: 'AI-generated product photos',
+			desc: 'No professional photographer on payroll? Generate clean, consistent product shots in seconds. Tune until they match your style.'
+		},
+		{
+			icon: 'mdi:qrcode',
+			title: 'Reach customers everywhere',
+			desc: 'QR codes for the booth. An embeddable button for your existing site. Wherever they find you, they can order.'
 		}
 	];
 
-	const features = [
-		{
-			icon: 'mdi:view-dashboard-outline',
-			title: 'Branded ordering page',
-			desc: 'Your products, your photos, your colors. Share by link or QR code — works on any phone, no app to download.'
-		},
+	const operationsFeatures = [
 		{
 			icon: 'mdi:calendar-clock-outline',
 			title: 'Pickup windows that match your schedule',
 			desc: 'Set the days, hours, and locations customers can pick up. Saturday at the market. Thursdays at the shop. A holiday-only window for Thanksgiving pies.'
+		},
+		{
+			icon: 'mdi:clipboard-list-outline',
+			title: 'Production planning',
+			desc: 'See exactly what you need to produce each day, totaled across all open orders. No more spreadsheets to add up the sourdough count.'
+		},
+		{
+			icon: 'mdi:bell-ring-outline',
+			title: 'Real-time order management',
+			desc: 'New orders appear instantly. Mark them ready and customers get notified. Works one-handed on your phone — built for the way you actually run the day.'
 		},
 		{
 			icon: 'mdi:timer-off-outline',
@@ -49,19 +81,27 @@
 			desc: '"Orders by Thursday 8pm for Saturday pickup." "Only 12 dozen available this week." Sell out cleanly instead of disappointing customers in person.'
 		},
 		{
-			icon: 'mdi:credit-card-outline',
-			title: 'Stripe-powered checkout',
-			desc: 'Customers pay when they order. Funds land in your bank account, not ours. Standard processing fees only — no commission, no per-order cut.'
+			icon: 'mdi:file-document-edit-outline',
+			title: 'Custom orders with quotes',
+			desc: 'Let customers request something off-menu — a birthday cake, a holiday box. Send a quote, take a deposit, deliver on the date.'
+		}
+	];
+
+	const growthFeatures = [
+		{
+			icon: 'mdi:tag-outline',
+			title: 'Promo codes',
+			desc: 'Run a Friday-only discount. Send a code to your newsletter list. Cap usage or expire automatically.'
 		},
 		{
-			icon: 'mdi:format-list-checks',
-			title: 'Modifiers, sizes, and options',
-			desc: 'Half-pound or full-pound. Sourdough or rye. Pre-sliced. Extra honey. Pricing adjusts itself.'
+			icon: 'mdi:chart-line',
+			title: 'Analytics dashboard',
+			desc: "Revenue trends, top items, peak hours. Know what's working without exporting CSVs."
 		},
 		{
-			icon: 'mdi:bell-ring-outline',
-			title: 'Real-time order management',
-			desc: 'New orders appear instantly. Mark them ready and customers get notified. Works one-handed on your phone — built for the way you actually run the day.'
+			icon: 'mdi:cog-refresh-outline',
+			title: 'Flexible billing',
+			desc: 'Change plans anytime. Add a feature for the holidays, drop it after. No yearly contracts, no surprise renewals.'
 		}
 	];
 
@@ -596,7 +636,7 @@
 		{#each audiences as a (a.label)}
 			{#if a.path}
 				<a
-					href={resolve(a.path as '/for-bakeries' | '/for-farmers-markets')}
+					href={resolve(a.path as '/for-bakers' | '/for-makers' | '/for-growers')}
 					class="inline-flex items-center gap-1.5 rounded-full border border-border bg-background px-3 py-1.5 text-sm font-medium text-foreground transition-colors hover:border-primary/40 hover:text-primary focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none"
 				>
 					<Icon icon={a.icon} class="h-3.5 w-3.5 text-primary" aria-hidden="true" />
@@ -614,23 +654,97 @@
 	</div>
 </div>
 
-<!-- Features -->
+<!-- Storefront features -->
 <section id="features" class="scroll-mt-20 bg-background px-6 py-24">
+	<div class="mx-auto max-w-6xl">
+		<div class="mb-12 overflow-hidden rounded-2xl">
+			<img
+				src="https://images.unsplash.com/photo-1488459716781-31db52582fe9?w=1600&h=400&fit=crop&q=80"
+				alt="Vendor handing a paper bag to a customer at a farmers market booth"
+				class="h-48 w-full object-cover sm:h-56 md:h-64 lg:h-72"
+				loading="lazy"
+			/>
+		</div>
+		<div class="mb-14 text-center">
+			<span
+				class="mb-3 inline-block rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold tracking-widest text-primary/90 uppercase"
+			>
+				Your storefront
+			</span>
+			<h2 class="mt-3 text-3xl font-bold text-foreground sm:text-4xl">
+				A presence customers recognize, wherever they find you.
+			</h2>
+		</div>
+		<div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+			{#each storefrontFeatures as f (f.title)}
+				<div
+					class="flex h-full flex-col rounded-2xl border border-emerald-100 bg-background p-6 shadow-sm transition"
+				>
+					<div class="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
+						<Icon icon={f.icon} class="h-5 w-5 text-primary" aria-hidden="true" />
+					</div>
+					<h3 class="font-semibold text-foreground">{f.title}</h3>
+					<p class="mt-1.5 flex-1 text-sm leading-relaxed text-muted-foreground">{f.desc}</p>
+				</div>
+			{/each}
+		</div>
+	</div>
+</section>
+
+<!-- Operations features -->
+<section class="scroll-mt-20 bg-emerald-50/40 px-6 py-24">
+	<div class="mx-auto max-w-6xl">
+		<div class="mb-12 overflow-hidden rounded-2xl">
+			<img
+				src="https://images.unsplash.com/photo-1698093121320-9df031f3e414?w=1600&h=400&fit=crop&q=80"
+				alt="A baker kneading dough on a wooden table"
+				class="h-48 w-full object-cover sm:h-56 md:h-64 lg:h-72"
+				loading="lazy"
+			/>
+		</div>
+		<div class="mb-14 text-center">
+			<span
+				class="mb-3 inline-block rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold tracking-widest text-primary/90 uppercase"
+			>
+				Day-to-day operations
+			</span>
+			<h2 class="mt-3 text-3xl font-bold text-foreground sm:text-4xl">
+				Run your day, not a spreadsheet.
+			</h2>
+		</div>
+		<div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+			{#each operationsFeatures as f (f.title)}
+				<div
+					class="flex h-full flex-col rounded-2xl border border-emerald-100 bg-background p-6 shadow-sm transition"
+				>
+					<div class="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
+						<Icon icon={f.icon} class="h-5 w-5 text-primary" aria-hidden="true" />
+					</div>
+					<h3 class="font-semibold text-foreground">{f.title}</h3>
+					<p class="mt-1.5 flex-1 text-sm leading-relaxed text-muted-foreground">{f.desc}</p>
+				</div>
+			{/each}
+		</div>
+	</div>
+</section>
+
+<!-- Growth features -->
+<section class="scroll-mt-20 bg-background px-6 py-24">
 	<div class="mx-auto max-w-6xl">
 		<div class="mb-14 text-center">
 			<span
 				class="mb-3 inline-block rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold tracking-widest text-primary/90 uppercase"
 			>
-				What's included
+				Grow what's working
 			</span>
 			<h2 class="mt-3 text-3xl font-bold text-foreground sm:text-4xl">
-				Everything you need to take an order. Nothing you don't.
+				Tools to grow as your business does.
 			</h2>
 		</div>
 		<div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-			{#each features as f (f.title)}
+			{#each growthFeatures as f (f.title)}
 				<div
-					class="flex h-full flex-col rounded-2xl border bg-muted/50 p-6 transition hover:border-emerald-200 hover:shadow-sm"
+					class="flex h-full flex-col rounded-2xl border border-emerald-100 bg-background p-6 shadow-sm transition"
 				>
 					<div class="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
 						<Icon icon={f.icon} class="h-5 w-5 text-primary" aria-hidden="true" />
@@ -646,6 +760,14 @@
 <!-- How it works -->
 <section id="how-it-works" class="scroll-mt-20 bg-muted/50 px-6 py-24">
 	<div class="mx-auto max-w-4xl">
+		<div class="mb-12 overflow-hidden rounded-2xl">
+			<img
+				src="https://images.unsplash.com/photo-1477524076598-003de1c88dff?w=1600&h=400&fit=crop&q=80"
+				alt="A vendor holding a sunflower bouquet at a farmers market"
+				class="h-48 w-full object-cover sm:h-56 md:h-64 lg:h-72"
+				loading="lazy"
+			/>
+		</div>
 		<div class="mb-14 text-center">
 			<span
 				class="mb-3 inline-block rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold tracking-widest text-primary/90 uppercase"
@@ -951,7 +1073,16 @@
 </section>
 
 <!-- Closing CTA -->
-<section class="bg-primary/95 px-6 py-20">
+<section
+	class="relative overflow-hidden bg-primary px-6 py-20"
+	style="
+		background-image:
+			linear-gradient(oklch(0.55 0.16 152.75 / 0.88), oklch(0.45 0.16 152.75 / 0.88)),
+			url('https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=1600&h=600&fit=crop&q=80');
+		background-size: cover;
+		background-position: center;
+	"
+>
 	<div class="mx-auto max-w-2xl text-center">
 		<h2 class="text-3xl font-bold text-white sm:text-4xl">Ready to take your first pre-order?</h2>
 		<p class="mt-4 text-lg text-primary-foreground/80">
@@ -992,11 +1123,14 @@
 			<div>
 				<p class="mb-3 text-xs font-semibold tracking-wide text-foreground uppercase">Solutions</p>
 				<nav class="flex flex-col gap-2 text-sm text-muted-foreground">
-					<a href={resolve('/for-bakeries')} class="transition-colors hover:text-foreground"
-						>For Bakeries</a
+					<a href={resolve('/for-bakers')} class="transition-colors hover:text-foreground"
+						>For Bakers</a
 					>
-					<a href={resolve('/for-farmers-markets')} class="transition-colors hover:text-foreground"
-						>For Farmers Markets</a
+					<a href={resolve('/for-makers')} class="transition-colors hover:text-foreground"
+						>For Makers</a
+					>
+					<a href={resolve('/for-growers')} class="transition-colors hover:text-foreground"
+						>For Growers</a
 					>
 				</nav>
 			</div>
