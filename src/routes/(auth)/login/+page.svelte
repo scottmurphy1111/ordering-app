@@ -7,7 +7,8 @@
 	import { Label } from '$lib/components/ui/label';
 	import { Card, CardContent } from '$lib/components/ui/card';
 
-	let loading = $state(false);
+	let googleLoading = $state(false);
+	let magicLoading = $state(false);
 	let magicEmail = $state('');
 	let magicSent = $state(false);
 	let magicError = $state<string | null>(null);
@@ -22,20 +23,20 @@
 	}
 
 	async function signInWithGoogle() {
-		loading = true;
+		googleLoading = true;
 		await signIn.social({ provider: 'google', callbackURL: callbackURL() });
 	}
 
 	async function sendMagicLink(e: SubmitEvent) {
 		e.preventDefault();
 		if (!magicEmail) return;
-		loading = true;
+		magicLoading = true;
 		magicError = null;
 		const { error } = await authClient.signIn.magicLink({
 			email: magicEmail,
 			callbackURL: callbackURL()
 		});
-		loading = false;
+		magicLoading = false;
 		if (error) {
 			magicError = error.message ?? 'Failed to send link. Please try again.';
 		} else {
@@ -46,8 +47,17 @@
 
 <Card>
 	<CardContent class="p-8">
+		<p class="mb-6 text-center text-sm text-muted-foreground">
+			Sign in with Google or get a magic link by email. No password needed.
+		</p>
+
 		<!-- Google button -->
-		<Button onclick={signInWithGoogle} disabled={loading} variant="outline" class="w-full gap-3">
+		<Button
+			onclick={signInWithGoogle}
+			disabled={googleLoading || magicLoading}
+			variant="outline"
+			class="w-full gap-3"
+		>
 			<svg class="h-5 w-5" viewBox="0 0 24 24" aria-hidden="true">
 				<path
 					fill="#4285F4"
@@ -66,7 +76,7 @@
 					d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
 				/>
 			</svg>
-			{loading ? 'Redirecting…' : 'Continue with Google'}
+			{googleLoading ? 'Redirecting…' : 'Continue with Google'}
 		</Button>
 
 		<!-- Divider -->
@@ -112,8 +122,13 @@
 						{magicError}
 					</div>
 				{/if}
-				<Button type="submit" disabled={loading} variant="default" class="w-full">
-					{loading ? 'Sending…' : 'Send sign-in link'}
+				<Button
+					type="submit"
+					disabled={googleLoading || magicLoading}
+					variant="default"
+					class="w-full"
+				>
+					{magicLoading ? 'Sending…' : 'Send sign-in link'}
 				</Button>
 			</form>
 		{/if}
