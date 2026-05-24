@@ -11,11 +11,13 @@ function escapeHtml(str: string): string {
 export function specialOrderQuoteExpiredEmail({
 	vendorName,
 	primaryColor,
+	vendorSubscriptionTier,
 	customerName,
 	requestUrl
 }: {
 	vendorName: string;
 	primaryColor?: string;
+	vendorSubscriptionTier?: string;
 	customerName: string;
 	requestUrl: string;
 }) {
@@ -44,6 +46,7 @@ export function specialOrderQuoteExpiredEmail({
 		previewText: `Your custom order quote from ${vendorName} is no longer available`,
 		content,
 		displayName: vendorName,
-		primaryColor
+		primaryColor,
+		hideOrderLocalBranding: vendorSubscriptionTier === 'pro'
 	});
 }

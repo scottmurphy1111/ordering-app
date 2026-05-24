@@ -3,12 +3,14 @@ import { emailWrapper, formatCents } from '../base';
 export function orderRefundedEmail({
 	vendorName,
 	primaryColor,
+	vendorSubscriptionTier,
 	orderNumber,
 	customerName,
 	total
 }: {
 	vendorName: string;
 	primaryColor?: string;
+	vendorSubscriptionTier?: string;
 	orderNumber: string;
 	customerName: string;
 	total: number;
@@ -30,6 +32,7 @@ export function orderRefundedEmail({
 		previewText: `Your refund of ${formatCents(total)} for order ${orderNumber} has been processed.`,
 		content,
 		displayName: vendorName,
-		primaryColor
+		primaryColor,
+		hideOrderLocalBranding: vendorSubscriptionTier === 'pro'
 	});
 }

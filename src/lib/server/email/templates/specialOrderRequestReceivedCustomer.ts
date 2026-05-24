@@ -7,12 +7,14 @@ function escapeHtml(s: string): string {
 export function specialOrderRequestReceivedCustomerEmail({
 	vendorName,
 	primaryColor,
+	vendorSubscriptionTier,
 	customerName,
 	description,
 	targetDate
 }: {
 	vendorName: string;
 	primaryColor?: string;
+	vendorSubscriptionTier?: string;
 	customerName: string;
 	description: string;
 	targetDate: string | null;
@@ -56,6 +58,7 @@ export function specialOrderRequestReceivedCustomerEmail({
 		previewText: `Your custom-order request has been received. ${vendorName} will follow up.`,
 		displayName: vendorName,
 		primaryColor,
-		content
+		content,
+		hideOrderLocalBranding: vendorSubscriptionTier === 'pro'
 	});
 }

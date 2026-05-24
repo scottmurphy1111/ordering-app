@@ -8,6 +8,7 @@
 		ADDONS,
 		getTier,
 		hasAddon,
+		getIncludedAddons,
 		cancelImmediateRefundPreview,
 		type BillingInterval,
 		type AddonItem
@@ -19,6 +20,7 @@
 	import StatusBadge from '$lib/components/StatusBadge.svelte';
 	import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '$lib/components/ui/card';
 	import { Alert } from '$lib/components/ui/alert';
+	import { Tooltip, TooltipTrigger, TooltipContent } from '$lib/components/ui/tooltip';
 	import {
 		Dialog,
 		DialogContent,
@@ -860,9 +862,9 @@
 	<div>
 		<h2 class="mb-1 text-lg font-semibold text-foreground">Add-ons</h2>
 		{#if !isPaidPlan}
-			<Alert severity="warning" class="mb-4"
-				>Add-ons require a Market or Pro plan. Upgrade above to unlock.</Alert
-			>
+			<Alert severity="warning" class="mb-4" dismissible={false} autofade={0}>
+				Add-ons require a Market or Pro plan. Upgrade above to activate add-ons.
+			</Alert>
 		{:else if !data.hasStripeSubscription}
 			<Alert severity="warning" class="mb-4">Complete your plan upgrade to activate add-ons.</Alert>
 		{:else}
@@ -874,8 +876,9 @@
 
 		<div class="grid gap-4 md:grid-cols-2">
 			{#each ADDONS as addon (addon.key)}
+				{@const isIncluded = getIncludedAddons(currentTierKey).includes(addon.key)}
 				{@const isActive = hasAddon(activeAddons, addon.key)}
-				{@const canToggle = isPaidPlan && data.hasStripeSubscription && !isPaused}
+				{@const canToggle = data.hasStripeSubscription && !isPaused && !isIncluded}
 				{@const canActivate = canToggle && !isCancelScheduled}
 				<div class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
 					<div class="px-4 py-3">
@@ -888,10 +891,14 @@
 								</div>
 								<div>
 									<p class="text-sm font-semibold text-foreground">{addon.name}</p>
-									<p class="text-xs text-muted-foreground">${addon.price}/mo</p>
+									<p class="text-xs text-muted-foreground">
+										{isIncluded ? 'Included with Pro' : `$${addon.price}/mo`}
+									</p>
 								</div>
 							</div>
-							{#if isActive}
+							{#if isIncluded}
+								<StatusBadge variant="success" class="shrink-0">Included with Pro</StatusBadge>
+							{:else if isActive}
 								<StatusBadge variant="success" class="shrink-0">Active</StatusBadge>
 							{/if}
 						</div>
@@ -907,6 +914,19 @@
 							>
 								Activate
 							</Button>
+						</div>
+					{:else if !isPaidPlan && !isIncluded && !isActive}
+						<div class="flex items-center justify-start gap-3 border-t border-gray-100 px-4 py-2">
+							<Tooltip>
+								<TooltipTrigger>
+									{#snippet child({ props })}
+										<span {...props} class="inline-block">
+											<Button type="button" variant="default" disabled>Activate</Button>
+										</span>
+									{/snippet}
+								</TooltipTrigger>
+								<TooltipContent>Upgrade to Market or Pro to activate add-ons.</TooltipContent>
+							</Tooltip>
 						</div>
 					{/if}
 					{#if canToggle && isActive}

@@ -13,7 +13,7 @@ import {
 import { db } from '$lib/server/db';
 import { eq, and } from 'drizzle-orm';
 import { catalogItems, catalogCategories } from '$lib/server/db/schema';
-import { hasAddon, type AddonItem } from '$lib/billing';
+import { effectiveHasAddon, type AddonItem } from '$lib/billing';
 import { vendor } from '$lib/server/db/vendor';
 
 export const load: PageServerLoad = async ({ locals, params }) => {
@@ -40,12 +40,23 @@ export const load: PageServerLoad = async ({ locals, params }) => {
 			columns: { id: true, name: true },
 			orderBy: (c, { asc }) => [asc(c.sortOrder), asc(c.name)]
 		}),
-		db.query.vendor.findFirst({ where: eq(vendor.id, vendorId), columns: { addons: true } })
+		db.query.vendor.findFirst({
+			where: eq(vendor.id, vendorId),
+			columns: { addons: true, subscriptionTier: true }
+		})
 	]);
 
 	if (!item) throw error(404, 'Item not found');
 	const addons = (vendorRecord?.addons ?? []) as AddonItem[];
-	return { item, categories, hasSubscriptionsAddon: hasAddon(addons, 'subscriptions') };
+	return {
+		item,
+		categories,
+		hasSubscriptionsAddon: effectiveHasAddon(
+			vendorRecord?.subscriptionTier ?? 'starter',
+			addons,
+			'subscriptions'
+		)
+	};
 };
 
 export const actions: Actions = {

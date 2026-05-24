@@ -11,6 +11,7 @@ function escapeHtml(str: string): string {
 export function specialOrderQuoteSentEmail({
 	vendorName,
 	primaryColor,
+	vendorSubscriptionTier,
 	customerName,
 	priceCents,
 	message,
@@ -19,6 +20,7 @@ export function specialOrderQuoteSentEmail({
 }: {
 	vendorName: string;
 	primaryColor?: string;
+	vendorSubscriptionTier?: string;
 	customerName: string;
 	priceCents: number;
 	message: string | null;
@@ -68,6 +70,7 @@ export function specialOrderQuoteSentEmail({
 		previewText: `${vendorName} sent you a quote for ${formatCents(priceCents)} — review it now`,
 		content,
 		displayName: vendorName,
-		primaryColor
+		primaryColor,
+		hideOrderLocalBranding: vendorSubscriptionTier === 'pro'
 	});
 }

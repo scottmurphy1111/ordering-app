@@ -3,6 +3,7 @@ import { emailWrapper, formatCents } from '../base';
 export function customDatePaymentFailedEmail({
 	vendorName,
 	primaryColor,
+	vendorSubscriptionTier,
 	orderNumber,
 	customerName,
 	total,
@@ -10,6 +11,7 @@ export function customDatePaymentFailedEmail({
 }: {
 	vendorName: string;
 	primaryColor?: string;
+	vendorSubscriptionTier?: string;
 	orderNumber: string;
 	customerName: string;
 	total: number;
@@ -38,6 +40,7 @@ export function customDatePaymentFailedEmail({
 		previewText: `Action needed: update your payment method for order ${orderNumber}.`,
 		content,
 		displayName: vendorName,
-		primaryColor
+		primaryColor,
+		hideOrderLocalBranding: vendorSubscriptionTier === 'pro'
 	});
 }

@@ -14,6 +14,7 @@ function fmtDate(date: Date | string, tz: string): string {
 export function customDateOrderApprovedEmail({
 	vendorName,
 	primaryColor,
+	vendorSubscriptionTier,
 	orderNumber,
 	customerName,
 	items,
@@ -27,6 +28,7 @@ export function customDateOrderApprovedEmail({
 }: {
 	vendorName: string;
 	primaryColor?: string;
+	vendorSubscriptionTier?: string;
 	orderNumber: string;
 	customerName: string;
 	items: Array<{
@@ -100,6 +102,7 @@ export function customDateOrderApprovedEmail({
 		previewText: `Your custom date order ${orderNumber} is approved. Total charged: ${formatCents(total)}`,
 		content,
 		displayName: vendorName,
-		primaryColor
+		primaryColor,
+		hideOrderLocalBranding: vendorSubscriptionTier === 'pro'
 	});
 }

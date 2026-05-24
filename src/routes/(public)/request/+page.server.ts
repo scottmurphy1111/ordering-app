@@ -92,7 +92,7 @@ export const actions: Actions = {
 		// Resolve vendor notification email — vendor.email, fallback to owner's user.email
 		const vendorRow = await db.query.vendor.findFirst({
 			where: eq(vendorTable.id, vendor.id),
-			columns: { email: true, name: true, backgroundColor: true }
+			columns: { email: true, name: true, backgroundColor: true, subscriptionTier: true }
 		});
 
 		let notificationEmail = vendorRow?.email ?? null;
@@ -149,6 +149,7 @@ export const actions: Actions = {
 			html: specialOrderRequestReceivedCustomerEmail({
 				vendorName: vendor.name,
 				primaryColor: vendor.backgroundColor ?? undefined,
+				vendorSubscriptionTier: vendor.subscriptionTier ?? undefined,
 				customerName,
 				description,
 				targetDate

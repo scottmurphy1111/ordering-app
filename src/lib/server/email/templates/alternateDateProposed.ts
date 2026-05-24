@@ -14,6 +14,7 @@ function fmtDate(date: Date | string, tz: string): string {
 export function alternateDateProposedEmail({
 	vendorName,
 	primaryColor,
+	vendorSubscriptionTier,
 	orderNumber,
 	customerName,
 	total,
@@ -25,6 +26,7 @@ export function alternateDateProposedEmail({
 }: {
 	vendorName: string;
 	primaryColor?: string;
+	vendorSubscriptionTier?: string;
 	orderNumber: string;
 	customerName: string;
 	total: number;
@@ -74,6 +76,7 @@ export function alternateDateProposedEmail({
 		previewText: `${vendorName} has proposed a new pickup date for order ${orderNumber}. Tap to accept or decline.`,
 		content,
 		displayName: vendorName,
-		primaryColor
+		primaryColor,
+		hideOrderLocalBranding: vendorSubscriptionTier === 'pro'
 	});
 }

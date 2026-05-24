@@ -64,7 +64,13 @@ export const actions: Actions = {
 		if (status === 'ready' && (order?.customerEmail || order?.customerPhone)) {
 			const vendorRecord = await db.query.vendor.findFirst({
 				where: eq(vendor.id, vendorId),
-				columns: { name: true, email: true, backgroundColor: true, slug: true }
+				columns: {
+					name: true,
+					email: true,
+					backgroundColor: true,
+					slug: true,
+					subscriptionTier: true
+				}
 			});
 			if (vendorRecord) {
 				if (order.customerEmail) {
@@ -74,6 +80,7 @@ export const actions: Actions = {
 						html: orderReadyEmail({
 							vendorName: vendorRecord.name,
 							primaryColor: vendorRecord.backgroundColor ?? undefined,
+							vendorSubscriptionTier: vendorRecord.subscriptionTier ?? undefined,
 							orderNumber: order.orderNumber,
 							customerName: order.customerName ?? 'there',
 							total: order.total,
@@ -120,7 +127,13 @@ export const actions: Actions = {
 		if (order?.customerEmail || order?.customerPhone) {
 			const vendorRecord = await db.query.vendor.findFirst({
 				where: eq(vendor.id, vendorId),
-				columns: { name: true, email: true, backgroundColor: true, slug: true }
+				columns: {
+					name: true,
+					email: true,
+					backgroundColor: true,
+					slug: true,
+					subscriptionTier: true
+				}
 			});
 			if (vendorRecord) {
 				if (order.customerEmail) {
@@ -130,6 +143,7 @@ export const actions: Actions = {
 						html: orderCancelledEmail({
 							vendorName: vendorRecord.name,
 							primaryColor: vendorRecord.backgroundColor ?? undefined,
+							vendorSubscriptionTier: vendorRecord.subscriptionTier ?? undefined,
 							orderNumber: order.orderNumber,
 							customerName: order.customerName ?? 'there',
 							total: order.total
@@ -163,7 +177,13 @@ export const actions: Actions = {
 			}),
 			db.query.vendor.findFirst({
 				where: eq(vendor.id, vendorId),
-				columns: { stripeSecretKey: true, name: true, email: true, backgroundColor: true }
+				columns: {
+					stripeSecretKey: true,
+					name: true,
+					email: true,
+					backgroundColor: true,
+					subscriptionTier: true
+				}
 			})
 		]);
 
@@ -217,6 +237,7 @@ export const actions: Actions = {
 				html: orderRefundedEmail({
 					vendorName: vendorRecord.name,
 					primaryColor: vendorRecord.backgroundColor ?? undefined,
+					vendorSubscriptionTier: vendorRecord.subscriptionTier ?? undefined,
 					orderNumber: refundedOrder.orderNumber,
 					customerName: refundedOrder.customerName ?? 'there',
 					total: refundedOrder.total
@@ -248,7 +269,8 @@ export const actions: Actions = {
 					email: true,
 					backgroundColor: true,
 					slug: true,
-					timezone: true
+					timezone: true,
+					subscriptionTier: true
 				}
 			})
 		]);
@@ -339,6 +361,7 @@ export const actions: Actions = {
 						html: customDateOrderApprovedEmail({
 							vendorName: vendorRecord.name,
 							primaryColor: vendorRecord.backgroundColor ?? undefined,
+							vendorSubscriptionTier: vendorRecord.subscriptionTier ?? undefined,
 							orderNumber: orderRow.orderNumber,
 							customerName: orderRow.customerName ?? 'there',
 							items: emailItems,
@@ -384,6 +407,7 @@ export const actions: Actions = {
 					html: customDatePaymentFailedEmail({
 						vendorName: vendorRecord.name,
 						primaryColor: vendorRecord.backgroundColor ?? undefined,
+						vendorSubscriptionTier: vendorRecord.subscriptionTier ?? undefined,
 						orderNumber: orderRow.orderNumber,
 						customerName: orderRow.customerName ?? 'there',
 						total: orderRow.total,
@@ -426,7 +450,13 @@ export const actions: Actions = {
 		if (order?.customerEmail || order?.customerPhone) {
 			const vendorRecord = await db.query.vendor.findFirst({
 				where: eq(vendor.id, vendorId),
-				columns: { name: true, email: true, backgroundColor: true, slug: true }
+				columns: {
+					name: true,
+					email: true,
+					backgroundColor: true,
+					slug: true,
+					subscriptionTier: true
+				}
 			});
 			if (vendorRecord) {
 				if (order.customerEmail) {
@@ -436,6 +466,7 @@ export const actions: Actions = {
 						html: orderCancelledEmail({
 							vendorName: vendorRecord.name,
 							primaryColor: vendorRecord.backgroundColor ?? undefined,
+							vendorSubscriptionTier: vendorRecord.subscriptionTier ?? undefined,
 							orderNumber: order.orderNumber,
 							customerName: order.customerName ?? 'there',
 							total: order.total
@@ -482,7 +513,14 @@ export const actions: Actions = {
 			}),
 			db.query.vendor.findFirst({
 				where: eq(vendor.id, vendorId),
-				columns: { name: true, email: true, backgroundColor: true, slug: true, timezone: true }
+				columns: {
+					name: true,
+					email: true,
+					backgroundColor: true,
+					slug: true,
+					timezone: true,
+					subscriptionTier: true
+				}
 			})
 		]);
 
@@ -503,6 +541,7 @@ export const actions: Actions = {
 				html: alternateDateProposedEmail({
 					vendorName: vendorRecord.name,
 					primaryColor: vendorRecord.backgroundColor ?? undefined,
+					vendorSubscriptionTier: vendorRecord.subscriptionTier ?? undefined,
 					orderNumber: orderRow.orderNumber,
 					customerName: orderRow.customerName ?? 'there',
 					total: orderRow.total,

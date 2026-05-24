@@ -3,12 +3,14 @@ import { emailWrapper, formatCents } from '../base';
 export function alternateDeclinedEmail({
 	vendorName,
 	primaryColor,
+	vendorSubscriptionTier,
 	orderNumber,
 	customerName,
 	total
 }: {
 	vendorName: string;
 	primaryColor?: string;
+	vendorSubscriptionTier?: string;
 	orderNumber: string;
 	customerName: string;
 	total: number;
@@ -30,6 +32,7 @@ export function alternateDeclinedEmail({
 		previewText: `Your order ${orderNumber} from ${vendorName} has been cancelled — we couldn't find a pickup date.`,
 		content,
 		displayName: vendorName,
-		primaryColor
+		primaryColor,
+		hideOrderLocalBranding: vendorSubscriptionTier === 'pro'
 	});
 }

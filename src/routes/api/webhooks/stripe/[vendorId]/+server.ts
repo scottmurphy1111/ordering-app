@@ -33,7 +33,8 @@ export const POST: RequestHandler = async ({ request, params }) => {
 			backgroundColor: true,
 			slug: true,
 			timezone: true,
-			email: true
+			email: true,
+			subscriptionTier: true
 		}
 	});
 
@@ -61,6 +62,7 @@ export const POST: RequestHandler = async ({ request, params }) => {
 		id: vendorRecord.id,
 		name: vendorRecord.name,
 		primaryColor: vendorRecord.backgroundColor ?? undefined,
+		subscriptionTier: vendorRecord.subscriptionTier ?? undefined,
 		slug: vendorRecord.slug,
 		timezone: vendorRecord.timezone ?? 'America/New_York',
 		email: vendorRecord.email ?? null
@@ -80,6 +82,7 @@ type VendorCtx = {
 	id: number;
 	name: string;
 	primaryColor?: string;
+	subscriptionTier?: string;
 	slug: string;
 	timezone: string;
 	email: string | null;
@@ -143,6 +146,7 @@ async function handleEvent(event: Stripe.Event, ctx: VendorCtx) {
 						html: customDateOrderRecoveredEmail({
 							vendorName: ctx.name,
 							primaryColor: ctx.primaryColor,
+							vendorSubscriptionTier: ctx.subscriptionTier,
 							orderNumber: order.orderNumber,
 							customerName: order.customerName ?? 'there',
 							items: order.items as Parameters<typeof customDateOrderRecoveredEmail>[0]['items'],
@@ -166,6 +170,7 @@ async function handleEvent(event: Stripe.Event, ctx: VendorCtx) {
 						html: specialOrderAcceptedEmail({
 							vendorName: ctx.name,
 							primaryColor: ctx.primaryColor,
+							vendorSubscriptionTier: ctx.subscriptionTier,
 							orderNumber: order.orderNumber,
 							customerName: order.customerName ?? 'there',
 							priceCents: order.total,
@@ -214,6 +219,7 @@ async function handleEvent(event: Stripe.Event, ctx: VendorCtx) {
 						html: orderConfirmedEmail({
 							vendorName: ctx.name,
 							primaryColor: ctx.primaryColor,
+							vendorSubscriptionTier: ctx.subscriptionTier,
 							orderNumber: order.orderNumber,
 							customerName: order.customerName ?? 'there',
 							items: order.items as Parameters<typeof orderConfirmedEmail>[0]['items'],
@@ -277,6 +283,7 @@ async function handleEvent(event: Stripe.Event, ctx: VendorCtx) {
 					html: orderCancelledEmail({
 						vendorName: ctx.name,
 						primaryColor: ctx.primaryColor,
+						vendorSubscriptionTier: ctx.subscriptionTier,
 						orderNumber: order.orderNumber,
 						customerName: order.customerName ?? 'there',
 						total: order.total
@@ -314,6 +321,7 @@ async function handleEvent(event: Stripe.Event, ctx: VendorCtx) {
 					html: orderRefundedEmail({
 						vendorName: ctx.name,
 						primaryColor: ctx.primaryColor,
+						vendorSubscriptionTier: ctx.subscriptionTier,
 						orderNumber: order.orderNumber,
 						customerName: order.customerName ?? 'there',
 						total: order.total
@@ -376,6 +384,7 @@ async function handleEvent(event: Stripe.Event, ctx: VendorCtx) {
 					html: orderConfirmedEmail({
 						vendorName: ctx.name,
 						primaryColor: ctx.primaryColor,
+						vendorSubscriptionTier: ctx.subscriptionTier,
 						orderNumber: order.orderNumber,
 						customerName: order.customerName ?? 'there',
 						items: order.items as Parameters<typeof orderConfirmedEmail>[0]['items'],
@@ -455,6 +464,7 @@ async function handleEvent(event: Stripe.Event, ctx: VendorCtx) {
 					html: orderConfirmedEmail({
 						vendorName: ctx.name,
 						primaryColor: ctx.primaryColor,
+						vendorSubscriptionTier: ctx.subscriptionTier,
 						orderNumber: recurring.orderNumber,
 						customerName: recurring.customerName ?? 'there',
 						items: recurring.items as Parameters<typeof orderConfirmedEmail>[0]['items'],

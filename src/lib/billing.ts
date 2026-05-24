@@ -18,37 +18,49 @@ export const TIERS = [
 		features: [
 			'Up to 10 catalog items',
 			'Online ordering & payments',
+			'Multiple pickup locations',
+			'Pickup windows & cutoff times',
 			'Order management',
 			'Customer email receipts',
 			'Catalog QR code'
-		]
+		],
+		includedAddons: [] as readonly string[]
 	},
 	{
 		key: 'market',
 		name: 'Market',
-		price: 29,
-		annualMonthly: 24,
-		annualTotal: 290,
-		annualSavings: 58,
+		price: 49,
+		annualMonthly: 39,
+		annualTotal: 468,
+		annualSavings: 120,
 		itemLimit: 30,
-		features: ['Up to 30 catalog items', 'Everything in Starter', 'CSV catalog import']
+		features: [
+			'Up to 30 catalog items',
+			'Everything in Starter',
+			'CSV catalog import',
+			'Eligible for all add-ons'
+		],
+		includedAddons: [] as readonly string[]
 	},
 	{
 		key: 'pro',
 		name: 'Pro',
-		price: 79,
-		annualMonthly: 65,
-		annualTotal: 780,
-		annualSavings: 168,
+		price: 99,
+		annualMonthly: 79,
+		annualTotal: 948,
+		annualSavings: 240,
 		itemLimit: null,
 		features: [
 			'Unlimited catalog items',
 			'Everything in Market',
-			'All add-ons unlocked',
-			'White-label — remove OrderLocal branding',
-			'Integrations — QuickBooks, Xero, Mailchimp, Zapier & more (coming soon)',
-			'Dedicated support'
-		]
+			'Embed on your website',
+			'Priority support',
+			'SMS Notifications included',
+			'Advanced Analytics included',
+			'White-label — hide OrderLocal branding',
+			'Eligible for Loyalty and Subscriptions add-ons'
+		],
+		includedAddons: ['sms_notifications', 'analytics'] as readonly string[]
 	}
 ] as const;
 
@@ -58,28 +70,28 @@ export const ADDONS = [
 	{
 		key: 'sms_notifications',
 		name: 'SMS Notifications',
-		price: 19,
+		price: 29,
 		icon: 'mdi:message-text-outline',
 		description: 'Text customers when their order is ready or its status changes.'
 	},
 	{
 		key: 'analytics',
 		name: 'Advanced Analytics',
-		price: 19,
+		price: 29,
 		icon: 'mdi:chart-line',
 		description: 'Revenue charts, top items, peak hours, and customer insights.'
 	},
 	{
 		key: 'loyalty',
 		name: 'Loyalty Program',
-		price: 29,
+		price: 19,
 		icon: 'mdi:star-circle-outline',
 		description: 'Stamp cards and points system to reward repeat customers.'
 	},
 	{
 		key: 'subscriptions',
 		name: 'Subscriptions',
-		price: 29,
+		price: 19,
 		icon: 'mdi:refresh-circle',
 		description:
 			'Sell recurring items or services — customers subscribe and are billed monthly or yearly.'
@@ -99,6 +111,19 @@ export function getItemLimit(tierKey: string): number | null {
 export function isAtItemLimit(tierKey: string, itemCount: number): boolean {
 	const limit = getItemLimit(tierKey);
 	return limit !== null && itemCount >= limit;
+}
+
+export function getIncludedAddons(tierKey: string): readonly string[] {
+	return getTier(tierKey).includedAddons;
+}
+
+export function effectiveHasAddon(
+	tierKey: string,
+	addons: Array<AddonItem | string> | null | undefined,
+	addonKey: string
+): boolean {
+	if (getIncludedAddons(tierKey).includes(addonKey)) return true;
+	return hasAddon(addons, addonKey);
 }
 
 /**

@@ -332,14 +332,14 @@
 	<!-- ── Advanced Analytics ────────────────────────────────────── -->
 	{#if hasAdvancedAnalytics}
 		<div class="mt-10">
-			<!-- Pro section divider -->
+			<!-- Advanced Analytics section divider -->
 			<div class="my-6 flex items-center gap-3">
 				<div class="flex-1 border-t border-gray-200"></div>
 				<div
 					class="flex items-center gap-2 rounded-full border border-amber-200 bg-amber-50 px-3 py-1.5"
 				>
 					<Icon icon="mdi:star" class="h-3.5 w-3.5 text-amber-500" />
-					<span class="text-xs font-semibold text-amber-700">Pro features</span>
+					<span class="text-xs font-semibold text-amber-700">Advanced Analytics</span>
 				</div>
 				<div class="flex-1 border-t border-gray-200"></div>
 			</div>

@@ -128,7 +128,7 @@ export async function resolveStaleOrders(vendorId: number): Promise<number> {
 
 			const vendorRecordC = await db.query.vendor.findFirst({
 				where: eq(vendor.id, vendorId),
-				columns: { name: true, email: true, backgroundColor: true }
+				columns: { name: true, email: true, backgroundColor: true, subscriptionTier: true }
 			});
 			if (vendorRecordC) {
 				for (const o of vendorStalledOrders) {
@@ -139,6 +139,7 @@ export async function resolveStaleOrders(vendorId: number): Promise<number> {
 						html: orderCancelledEmail({
 							vendorName: vendorRecordC.name,
 							primaryColor: vendorRecordC.backgroundColor ?? undefined,
+							vendorSubscriptionTier: vendorRecordC.subscriptionTier ?? undefined,
 							orderNumber: o.orderNumber,
 							customerName: o.customerName ?? 'there',
 							total: o.total,
@@ -196,7 +197,7 @@ export async function resolveStaleOrders(vendorId: number): Promise<number> {
 
 			const vendorRecordD = await db.query.vendor.findFirst({
 				where: eq(vendor.id, vendorId),
-				columns: { name: true, email: true, backgroundColor: true }
+				columns: { name: true, email: true, backgroundColor: true, subscriptionTier: true }
 			});
 			if (vendorRecordD) {
 				for (const o of customerStalledOrders) {
@@ -207,6 +208,7 @@ export async function resolveStaleOrders(vendorId: number): Promise<number> {
 						html: orderCancelledEmail({
 							vendorName: vendorRecordD.name,
 							primaryColor: vendorRecordD.backgroundColor ?? undefined,
+							vendorSubscriptionTier: vendorRecordD.subscriptionTier ?? undefined,
 							orderNumber: o.orderNumber,
 							customerName: o.customerName ?? 'there',
 							total: o.total,

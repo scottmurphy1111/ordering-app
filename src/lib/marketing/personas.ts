@@ -21,25 +21,7 @@ export type PersonaFaq = {
 	a: string;
 };
 
-export type PersonaPricingPlan = {
-	name: string;
-	tagline: string;
-	price: string;
-	priceUnit?: string;
-	features: string[];
-	ctaLabel: string;
-	ctaTrackLocation: string;
-	highlight?: boolean;
-};
-
-export type PersonaFoundingOffer = {
-	badge: string;
-	headline: string;
-	body: string;
-	fineprint: string;
-	ctaLabel: string;
-	ctaTrackLocation: string;
-} | null;
+import type { TierKey } from '$lib/billing';
 
 export type Persona = {
 	slug: string;
@@ -64,11 +46,11 @@ export type Persona = {
 	howItWorksHeadline: string;
 	features: PersonaFeature[];
 	featuresHeadline: string;
-	foundingOffer: PersonaFoundingOffer;
 	pricing: {
 		headline: string;
 		subhead: string;
-		plans: PersonaPricingPlan[];
+		/** Optional per-tier marketing tagline, keyed by canonical tier key. */
+		taglinesByTier?: Partial<Record<TierKey, string>>;
 	};
 	faqHeadline: string;
 	faqs: PersonaFaq[];
@@ -158,55 +140,13 @@ export const bakersPersona: Persona = {
 		}
 	],
 
-	foundingOffer: {
-		badge: 'Founding bakery offer — first 25 only',
-		headline: 'Lock in Pro at $49/mo — for life.',
-		body: "We're signing up our first 25 bakery partners at a founding rate. You get the full Pro plan — unlimited items, multiple pickup locations, website embed, priority support — locked at $49/mo as long as you stay active.",
-		fineprint: 'Pro normally lists at $79/mo. This rate never increases.',
-		ctaLabel: 'Claim your founding spot',
-		ctaTrackLocation: 'founding_callout'
-	},
-
 	pricing: {
 		headline: 'Simple pricing. No commissions.',
 		subhead: "Keep 100% of your sales. Pay only Stripe's standard processing fee.",
-		plans: [
-			{
-				name: 'Market',
-				tagline: 'For growing bakeries taking regular pre-orders.',
-				price: '$29',
-				priceUnit: '/ month',
-				features: [
-					'Up to 30 catalog items',
-					'Pickup windows & cutoff times',
-					'Inventory limits per item',
-					'Online ordering & Stripe checkout',
-					'Customer email receipts',
-					'Catalog QR code',
-					'Standard Stripe fees only (2.9% + 30¢)'
-				],
-				ctaLabel: 'Start free trial',
-				ctaTrackLocation: 'pricing_market'
-			},
-			{
-				name: 'Pro',
-				tagline: 'For established bakeries running multiple windows.',
-				price: '$79',
-				priceUnit: '/ month',
-				features: [
-					'Unlimited catalog items',
-					'Multiple pickup locations',
-					'Embed on your existing website',
-					'Custom subdomain',
-					'Priority email support',
-					'Loyalty program add-on available',
-					'Standard Stripe fees only (2.9% + 30¢)'
-				],
-				ctaLabel: 'Start free trial',
-				ctaTrackLocation: 'pricing_pro',
-				highlight: true
-			}
-		]
+		taglinesByTier: {
+			market: 'For growing bakeries taking regular pre-orders.',
+			pro: 'For established bakeries running multiple windows.'
+		}
 	},
 
 	faqHeadline: 'Questions from bakery owners',
@@ -220,8 +160,8 @@ export const bakersPersona: Persona = {
 			a: 'Through modifiers. You set up the options (flavor, size, filling, inscription text) and customers fill them in during checkout. Every detail shows up on the order — no follow-up needed.'
 		},
 		{
-			q: 'What happens when I sell out?',
-			a: 'Set an inventory limit on any item. Once that number is hit, the item shows as sold out and no more orders come through. No awkward calls to customers who ordered after you were full.'
+			q: 'How do I keep customers from ordering more than I can bake?',
+			a: 'Set a hard cap on total orders for a pickup window. Once that number is hit, the window closes and no more orders come through. No awkward calls to customers who ordered after you were full.'
 		},
 		{
 			q: 'Do customers pay upfront for custom cakes?',
@@ -233,7 +173,7 @@ export const bakersPersona: Persona = {
 		},
 		{
 			q: 'What plan do I need for pickup windows and cutoff times?',
-			a: 'Pickup windows, cutoff times, and inventory limits are available on Market ($29/mo) and Pro. Modifiers are available on all plans, including the free Starter plan.'
+			a: 'Pickup windows, cutoff times, and multiple pickup locations are available on every plan, including the free Starter plan. Catalog limits (10 items on Starter, 30 on Market $49/mo, unlimited on Pro $99/mo) determine which plan fits your operation. Modifiers work on all plans too.'
 		}
 	],
 
@@ -323,55 +263,13 @@ export const makersPersona: Persona = {
 		}
 	],
 
-	foundingOffer: {
-		badge: 'Founding maker offer — first 25 only',
-		headline: 'Lock in Pro at $49/mo — for life.',
-		body: "We're signing up our first 25 maker partners at a founding rate. You get the full Pro plan — unlimited items, multiple pickup locations, website embed, priority support — locked at $49/mo as long as you stay active.",
-		fineprint: 'Pro normally lists at $79/mo. This rate never increases.',
-		ctaLabel: 'Claim your founding spot',
-		ctaTrackLocation: 'founding_callout'
-	},
-
 	pricing: {
 		headline: 'Simple pricing. No commissions.',
 		subhead: "Keep 100% of your sales. Pay only Stripe's standard processing fee.",
-		plans: [
-			{
-				name: 'Market',
-				tagline: 'For makers running regular drops or seasonal batches.',
-				price: '$29',
-				priceUnit: '/ month',
-				features: [
-					'Up to 30 catalog items',
-					'Pickup windows & cutoff times',
-					'Inventory caps per item',
-					'Variants and modifiers',
-					'Online ordering & Stripe checkout',
-					'Customer email receipts',
-					'Standard Stripe fees only (2.9% + 30¢)'
-				],
-				ctaLabel: 'Start free trial',
-				ctaTrackLocation: 'pricing_market'
-			},
-			{
-				name: 'Pro',
-				tagline: 'For established makers selling across multiple channels.',
-				price: '$79',
-				priceUnit: '/ month',
-				features: [
-					'Unlimited catalog items',
-					'Multiple pickup locations',
-					'Embed on your existing website',
-					'Custom subdomain',
-					'Priority email support',
-					'Loyalty program add-on available',
-					'Standard Stripe fees only (2.9% + 30¢)'
-				],
-				ctaLabel: 'Start free trial',
-				ctaTrackLocation: 'pricing_pro',
-				highlight: true
-			}
-		]
+		taglinesByTier: {
+			market: 'For makers running regular drops or seasonal batches.',
+			pro: 'For established makers selling across multiple channels.'
+		}
 	},
 
 	faqHeadline: 'Questions from makers',
@@ -386,7 +284,7 @@ export const makersPersona: Persona = {
 		},
 		{
 			q: 'What if I only made a small batch and want to limit orders?',
-			a: 'Set an inventory cap on the item. Once that number is hit, the item shows as sold out and no more orders come through. Reset the count for your next batch.'
+			a: 'Cap the total orders on the pickup window for that batch. Once that number is hit, the window closes and no more orders come through. Open a fresh window for your next batch.'
 		},
 		{
 			q: 'Do customers pay upfront?',
@@ -397,8 +295,8 @@ export const makersPersona: Persona = {
 			a: "Instagram DMs don't scale — you lose track of who paid, what they ordered, when they're picking up. Order Local replaces the DM chaos with a real ordering page while still letting you funnel from Instagram, Pinterest, or anywhere else."
 		},
 		{
-			q: 'What plan do I need for variants and inventory caps?',
-			a: 'Inventory caps and pickup scheduling are on Market ($29/mo) and Pro. Variants and modifiers work on all plans, including the free Starter plan.'
+			q: 'What plan do I need for variants and pickup windows?',
+			a: 'Pickup windows, cutoff times, and variants/modifiers are available on every plan, including the free Starter plan. Catalog limits (10 items on Starter, 30 on Market $49/mo, unlimited on Pro $99/mo) determine which plan fits the size of your catalog.'
 		}
 	],
 
@@ -488,55 +386,13 @@ export const growersPersona: Persona = {
 		}
 	],
 
-	foundingOffer: {
-		badge: 'Founding grower offer — first 25 only',
-		headline: 'Lock in Pro at $49/mo — for life.',
-		body: "We're signing up our first 25 grower partners at a founding rate. You get the full Pro plan — unlimited items, multiple pickup locations, website embed, priority support — locked at $49/mo as long as you stay active.",
-		fineprint: 'Pro normally lists at $79/mo. This rate never increases.',
-		ctaLabel: 'Claim your founding spot',
-		ctaTrackLocation: 'founding_callout'
-	},
-
 	pricing: {
 		headline: 'Simple pricing. No commissions.',
 		subhead: "Keep 100% of your sales. Pay only Stripe's standard processing fee.",
-		plans: [
-			{
-				name: 'Market',
-				tagline: 'For growers selling at one or two markets a week.',
-				price: '$29',
-				priceUnit: '/ month',
-				features: [
-					'Up to 30 catalog items',
-					'Pickup windows & cutoff times',
-					'Seasonal inventory limits',
-					'Online ordering & Stripe checkout',
-					'Customer email receipts',
-					'Catalog QR code for your booth',
-					'Standard Stripe fees only (2.9% + 30¢)'
-				],
-				ctaLabel: 'Start free trial',
-				ctaTrackLocation: 'pricing_market'
-			},
-			{
-				name: 'Pro',
-				tagline: 'For established growers across multiple markets and CSAs.',
-				price: '$79',
-				priceUnit: '/ month',
-				features: [
-					'Unlimited catalog items',
-					'Multiple pickup locations',
-					'CSA / subscription support',
-					'Custom subdomain',
-					'Priority email support',
-					'Loyalty program add-on available',
-					'Standard Stripe fees only (2.9% + 30¢)'
-				],
-				ctaLabel: 'Start free trial',
-				ctaTrackLocation: 'pricing_pro',
-				highlight: true
-			}
-		]
+		taglinesByTier: {
+			market: 'For growers selling at one or two markets a week.',
+			pro: 'For established growers across multiple markets and CSAs.'
+		}
 	},
 
 	faqHeadline: 'Questions from growers and market vendors',
@@ -547,15 +403,15 @@ export const growersPersona: Persona = {
 		},
 		{
 			q: 'How do I handle weekly CSA shares?',
-			a: "Set up your share as a recurring item with a weekly pickup window. Customers subscribe; the dashboard tracks who's active, who picked up, and who hasn't. CSA / subscription support is on the Pro plan."
+			a: "Set up your share as a recurring item with a weekly pickup window. Customers subscribe; the dashboard tracks who's active, who picked up, and who hasn't. Recurring subscriptions require the Subscriptions add-on (available on Market $49/mo and Pro $99/mo plans)."
 		},
 		{
 			q: 'Multiple markets each week — does Order Local handle that?',
-			a: 'Yes. Set up multiple pickup locations on the Pro plan. Customers pick where they want to grab their order; you see one consolidated list per day, sorted by location.'
+			a: 'Yes. Set up multiple pickup locations on any plan. Customers pick where they want to grab their order; you see one consolidated list per day, sorted by location.'
 		},
 		{
 			q: 'What if the crop comes in short this week?',
-			a: 'Adjust the inventory cap mid-week. The dashboard reflects the new limit immediately. Existing orders are unaffected; new orders see the lower cap.'
+			a: "Adjust the pickup window's order cap mid-week. The dashboard reflects the new limit immediately. Existing orders are unaffected; new orders see the lower cap."
 		},
 		{
 			q: 'Do customers pay upfront?',
@@ -563,7 +419,7 @@ export const growersPersona: Persona = {
 		},
 		{
 			q: 'What plan do I need for multiple markets or a CSA?',
-			a: 'Multiple pickup locations and CSA subscription support are on the Pro plan ($79/mo). Market plan covers a single location at $29/mo.'
+			a: 'Multiple pickup locations come standard on every plan, including the free Starter plan. Recurring CSA shares require the Subscriptions add-on (available on Market $49/mo and Pro $99/mo). Pick the tier based on your catalog size — 10 items on Starter, 30 on Market, unlimited on Pro.'
 		}
 	],
 

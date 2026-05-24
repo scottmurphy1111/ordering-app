@@ -3,6 +3,7 @@ import { emailWrapper, formatCents } from '../base';
 export function loyaltyRewardEmail({
 	vendorName,
 	primaryColor,
+	vendorSubscriptionTier,
 	customerName,
 	promoCode,
 	loyaltyType,
@@ -11,6 +12,7 @@ export function loyaltyRewardEmail({
 }: {
 	vendorName: string;
 	primaryColor?: string;
+	vendorSubscriptionTier?: string;
 	customerName: string;
 	promoCode: string;
 	loyaltyType: 'stamps' | 'points';
@@ -47,6 +49,7 @@ export function loyaltyRewardEmail({
 		previewText: `Your loyalty reward is ready — use code ${promoCode} at checkout.`,
 		content,
 		displayName: vendorName,
-		primaryColor
+		primaryColor,
+		hideOrderLocalBranding: vendorSubscriptionTier === 'pro'
 	});
 }

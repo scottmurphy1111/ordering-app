@@ -3,14 +3,26 @@ export function emailWrapper({
 	previewText,
 	content,
 	displayName,
-	primaryColor = '#000000'
+	primaryColor = '#000000',
+	hideOrderLocalBranding = false
 }: {
 	title: string;
 	previewText: string;
 	content: string;
 	displayName: string;
 	primaryColor?: string;
+	hideOrderLocalBranding?: boolean;
 }) {
+	const footerRow = hideOrderLocalBranding
+		? ''
+		: `<tr>
+            <td style="padding:24px 32px;text-align:center;">
+              <p style="margin:0;color:#9ca3af;font-size:12px;">
+                Powered by <a href="https://getorderlocal.com" style="color:#9ca3af;">Order Local</a>
+              </p>
+            </td>
+          </tr>`;
+
 	return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -40,13 +52,7 @@ export function emailWrapper({
           </tr>
 
           <!-- Footer -->
-          <tr>
-            <td style="padding:24px 32px;text-align:center;">
-              <p style="margin:0;color:#9ca3af;font-size:12px;">
-                Powered by <a href="https://getorderlocal.com" style="color:#9ca3af;">Order Local</a>
-              </p>
-            </td>
-          </tr>
+          ${footerRow}
 
         </table>
       </td>

@@ -34,7 +34,8 @@ export async function reconcilePaymentStatus(order: OrderRow, vendorId: number):
 				email: true,
 				backgroundColor: true,
 				slug: true,
-				timezone: true
+				timezone: true,
+				subscriptionTier: true
 			}
 		});
 		if (!vendorRecord?.stripeSecretKey) return order;
@@ -56,6 +57,7 @@ export async function reconcilePaymentStatus(order: OrderRow, vendorId: number):
 					html: customDateOrderRecoveredEmail({
 						vendorName: vendorRecord.name,
 						primaryColor: vendorRecord.backgroundColor ?? undefined,
+						vendorSubscriptionTier: vendorRecord.subscriptionTier ?? undefined,
 						orderNumber: updated.orderNumber,
 						customerName: updated.customerName ?? 'there',
 						items: updated.items as Array<{

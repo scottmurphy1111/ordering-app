@@ -3,6 +3,7 @@ import { emailWrapper, formatCents } from '../base';
 export function orderReadyEmail({
 	vendorName,
 	primaryColor,
+	vendorSubscriptionTier,
 	orderNumber,
 	customerName,
 	total,
@@ -10,6 +11,7 @@ export function orderReadyEmail({
 }: {
 	vendorName: string;
 	primaryColor?: string;
+	vendorSubscriptionTier?: string;
 	orderNumber: string;
 	customerName: string;
 	total: number;
@@ -37,6 +39,7 @@ export function orderReadyEmail({
 		previewText: `Your order ${orderNumber} is ready${isPickup ? ' for pickup' : ''}!`,
 		content,
 		displayName: vendorName,
-		primaryColor
+		primaryColor,
+		hideOrderLocalBranding: vendorSubscriptionTier === 'pro'
 	});
 }

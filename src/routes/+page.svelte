@@ -9,8 +9,18 @@
 		AccordionItem,
 		AccordionTrigger
 	} from '$lib/components/ui/accordion';
+	import { TIERS, ADDONS, getTier, getIncludedAddons, type TierKey } from '$lib/billing';
 
 	const loginHref = resolve('/login');
+
+	// Marketing-only per-tier copy. Objective product data (prices, features,
+	// item limits) lives in $lib/billing as the canonical source.
+	const taglines: Record<TierKey, string> = {
+		starter: 'Try it out, take your first orders.',
+		market: 'For booth vendors, market sellers, and side-hustle makers.',
+		pro: 'The full toolkit for shops, bakeries, and growing businesses.'
+	};
+	const highlightTier: TierKey = 'pro';
 
 	const audiences = [
 		{
@@ -128,106 +138,6 @@
 		}
 	];
 
-	const plans = [
-		{
-			name: 'Starter',
-			tagline: 'Try it out, take your first orders.',
-			monthlyPrice: null as number | null,
-			annualYearlyPrice: null as number | null,
-			annualSavings: null as string | null,
-			features: [
-				'Up to 10 catalog items',
-				'Your own branded storefront link',
-				'Online ordering & payments',
-				'Order management',
-				'Customer email receipts',
-				'Catalog QR code',
-				'Standard Stripe fees only (2.9% + 30¢)'
-			],
-			cta: 'Start for free',
-			highlight: false
-		},
-		{
-			name: 'Market',
-			tagline: 'For booth vendors, market sellers, and side-hustle makers.',
-			monthlyPrice: 29,
-			annualYearlyPrice: 290,
-			annualSavings: 'Save $58/yr',
-			features: [
-				'Everything in Starter',
-				'Up to 30 catalog items',
-				'Pickup windows & cutoff times',
-				'Inventory limits per item',
-				'Single pickup location',
-				'Eligible for select add-ons',
-				'Standard Stripe fees only'
-			],
-			cta: 'Start free trial',
-			highlight: false
-		},
-		{
-			name: 'Pro',
-			tagline: 'The full toolkit for shops, bakeries, and growing businesses.',
-			monthlyPrice: 79,
-			annualYearlyPrice: 780,
-			annualSavings: 'Save $168/yr',
-			features: [
-				'Everything in Market',
-				'Unlimited catalog items',
-				'Multiple pickup locations',
-				'Website embed',
-				'Priority support',
-				'Eligible for all add-ons',
-				'Standard Stripe fees only'
-			],
-			cta: 'Get started',
-			highlight: true
-		}
-	];
-
-	const addons = [
-		{
-			icon: 'mdi:message-text-outline',
-			name: 'SMS Notifications',
-			monthlyPrice: 19,
-			annualMonthlyPrice: 16,
-			price: '$19/mo',
-			annualPrice: '$16/mo billed annually',
-			annualSavings: 'save $36/yr',
-			desc: 'Text customers the moment their order is ready — fewer missed pickups, happier guests.'
-		},
-		{
-			icon: 'mdi:chart-line',
-			name: 'Advanced Analytics',
-			monthlyPrice: 19,
-			annualMonthlyPrice: 16,
-			price: '$19/mo',
-			annualPrice: '$16/mo billed annually',
-			annualSavings: 'save $36/yr',
-			desc: 'Revenue trends, top items, peak hours, and customer insights in one dashboard.'
-		},
-		{
-			icon: 'mdi:star-circle-outline',
-			name: 'Loyalty Program',
-			monthlyPrice: 29,
-			annualMonthlyPrice: 24,
-			price: '$29/mo',
-			annualPrice: '$24/mo billed annually',
-			annualSavings: 'save $60/yr',
-			desc: 'Reward repeat customers with a stamp card or points system built into your ordering flow.'
-		},
-		{
-			icon: 'mdi:refresh-circle',
-			name: 'Subscriptions',
-			monthlyPrice: 29,
-			annualMonthlyPrice: 24,
-			price: '$29/mo',
-			annualPrice: '$24/mo billed annually',
-			annualSavings: 'save $60/yr',
-			desc: 'Sell meal plans, weekly boxes, or retainers — customers subscribe and are billed automatically.'
-		}
-	];
-
 	const faqs = [
 		{
 			q: 'Does Order Local take a cut of my sales?',
@@ -247,7 +157,7 @@
 		},
 		{
 			q: 'What happens when I hit 10 items on the Starter plan?',
-			a: 'Upgrade to Market ($29/mo) for 30 items or Pro ($79/mo) for unlimited. Your existing catalog and orders carry over.'
+			a: 'Upgrade to Market ($49/mo) for 30 items or Pro ($99/mo) for unlimited. Your existing catalog and orders carry over.'
 		},
 		{
 			q: 'Can I pause my subscription in the off-season?',
@@ -263,35 +173,30 @@
 		}
 	];
 
-	let estimatorChecked = $state<boolean[]>(addons.map(() => false));
-	let estimatorPlan = $state<'Starter' | 'Market' | 'Pro'>('Pro');
+	let estimatorChecked = $state<boolean[]>(ADDONS.map(() => false));
+	let estimatorPlan = $state<TierKey>('pro');
 	let pricingInterval = $state<'monthly' | 'annual'>('monthly');
 	let openFaq = $state<string | undefined>(undefined);
 	let mobileMenuOpen = $state(false);
 
-	const estimatorBase = $derived(
-		estimatorPlan === 'Starter'
-			? 0
-			: estimatorPlan === 'Market'
-				? pricingInterval === 'annual'
-					? 24
-					: 29
-				: pricingInterval === 'annual'
-					? 66
-					: 79
+	const estimatorBase = $derived.by(() => {
+		const tier = getTier(estimatorPlan);
+		if (!('annualMonthly' in tier)) return tier.price;
+		return pricingInterval === 'annual' ? tier.annualMonthly : tier.price;
+	});
+
+	const estimatorBundled = $derived(new Set(getIncludedAddons(estimatorPlan)));
+	const estimatorBundledNames = $derived(
+		ADDONS.filter((a) => estimatorBundled.has(a.key)).map((a) => a.name)
 	);
 
+	// Add-ons are monthly-only; their price doesn't change with the tier interval toggle.
+	// Bundled add-ons (e.g. SMS + Analytics on Pro) are excluded from the total — included with tier.
 	const estimatorTotal = $derived(
-		addons.reduce(
-			(sum, addon, i) =>
-				sum +
-				(estimatorChecked[i]
-					? pricingInterval === 'annual'
-						? addon.annualMonthlyPrice
-						: addon.monthlyPrice
-					: 0),
-			0
-		)
+		ADDONS.reduce((sum, addon, i) => {
+			if (estimatorBundled.has(addon.key)) return sum;
+			return sum + (estimatorChecked[i] ? addon.price : 0);
+		}, 0)
 	);
 
 	const faqJsonLd = JSON.stringify({
@@ -851,46 +756,46 @@
 
 		<!-- 3-tier grid -->
 		<div class="mt-10 grid items-start gap-6 lg:grid-cols-3">
-			{#each plans as plan (plan.name)}
-				<div class="relative flex flex-col {plan.highlight ? 'lg:scale-105' : ''}">
-					{#if plan.highlight}
+			{#each TIERS as tier (tier.key)}
+				{@const isHighlight = tier.key === highlightTier}
+				{@const hasAnnual = 'annualMonthly' in tier}
+				<div class="relative flex flex-col {isHighlight ? 'lg:scale-105' : ''}">
+					{#if isHighlight}
 						<div class="absolute -top-3 right-0 left-0 flex justify-center">
 							<Badge class="bg-primary text-primary-foreground shadow-sm">Most popular</Badge>
 						</div>
 					{/if}
 					<div
-						class="flex flex-1 flex-col overflow-hidden rounded-2xl border {plan.highlight
+						class="flex flex-1 flex-col overflow-hidden rounded-2xl border {isHighlight
 							? 'border-primary shadow-2xl ring-2 ring-primary/20'
 							: 'bg-background'} "
 					>
-						{#if plan.highlight}
+						{#if isHighlight}
 							<div class="h-1 bg-primary"></div>
 						{/if}
 						<div class="flex flex-1 flex-col p-7">
-							<p class="text-lg font-bold text-foreground">{plan.name}</p>
-							<p class="mt-1 text-sm text-muted-foreground">{plan.tagline}</p>
+							<p class="text-lg font-bold text-foreground">{tier.name}</p>
+							<p class="mt-1 text-sm text-muted-foreground">{taglines[tier.key]}</p>
 
 							<!-- Price -->
 							<div class="mt-5 flex flex-wrap items-end gap-x-2 gap-y-1">
-								{#if plan.monthlyPrice === null}
+								{#if tier.price === 0}
 									<span class="text-4xl font-bold text-foreground">Free</span>
-								{:else if pricingInterval === 'monthly'}
-									<span class="text-4xl font-bold text-foreground">${plan.monthlyPrice}</span>
+								{:else if pricingInterval === 'monthly' || !hasAnnual}
+									<span class="text-4xl font-bold text-foreground">${tier.price}</span>
 									<span class="mb-1 text-sm text-muted-foreground">/ month</span>
 								{:else}
-									<span class="text-4xl font-bold text-foreground">${plan.annualYearlyPrice}</span>
+									<span class="text-4xl font-bold text-foreground">${tier.annualTotal}</span>
 									<span class="mb-1 text-sm text-muted-foreground">/ year</span>
-									{#if plan.annualSavings}
-										<span
-											class="mb-1 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary"
-											>{plan.annualSavings}</span
-										>
-									{/if}
+									<span
+										class="mb-1 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary"
+										>Save ${tier.annualSavings}/yr</span
+									>
 								{/if}
 							</div>
 
 							<ul class="mt-6 flex-1 space-y-2.5">
-								{#each plan.features as feat (feat)}
+								{#each tier.features as feat (feat)}
 									<li class="flex items-start gap-2 text-sm text-muted-foreground">
 										<Icon
 											icon="mdi:check-circle-outline"
@@ -903,13 +808,12 @@
 
 							<a
 								href={loginHref}
-								onclick={() =>
-									track('cta_click', { location: `pricing_${plan.name.toLowerCase()}` })}
-								class="mt-8 block rounded-xl px-5 py-3 text-center text-sm font-semibold transition-colors {plan.highlight
+								onclick={() => track('cta_click', { location: `pricing_${tier.key}` })}
+								class="mt-8 block rounded-xl px-5 py-3 text-center text-sm font-semibold transition-colors {isHighlight
 									? 'bg-primary text-white hover:bg-primary/90'
 									: 'bg-gray-900 text-white hover:bg-gray-700'}"
 							>
-								{plan.cta}
+								Get started
 							</a>
 						</div>
 					</div>
@@ -945,7 +849,7 @@
 			</p>
 		</div>
 		<div class="grid gap-5 sm:grid-cols-2">
-			{#each addons as addon (addon.name)}
+			{#each ADDONS as addon (addon.key)}
 				<div
 					class="flex flex-col gap-3 rounded-2xl border bg-background p-6 hover:border-emerald-200 hover:shadow-sm"
 				>
@@ -953,18 +857,14 @@
 						<div class="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
 							<Icon icon={addon.icon} class="h-5 w-5 text-primary" aria-hidden="true" />
 						</div>
-						<div class="flex flex-col items-end gap-0.5">
-							<span
-								class="rounded-full border bg-background px-2.5 py-0.5 text-xs font-semibold text-muted-foreground"
-								>{addon.price}</span
-							>
-							<span class="text-xs text-muted-foreground">or {addon.annualPrice}</span>
-							<span class="text-xs text-primary/70">{addon.annualSavings}</span>
-						</div>
+						<span
+							class="rounded-full border bg-background px-2.5 py-0.5 text-xs font-semibold text-muted-foreground"
+							>${addon.price}/mo</span
+						>
 					</div>
 					<div>
 						<h3 class="font-semibold text-foreground">{addon.name}</h3>
-						<p class="mt-1 text-sm leading-relaxed text-muted-foreground">{addon.desc}</p>
+						<p class="mt-1 text-sm leading-relaxed text-muted-foreground">{addon.description}</p>
 					</div>
 				</div>
 			{/each}
@@ -982,59 +882,72 @@
 					Base plan
 				</p>
 				<div class="flex gap-2">
-					{#each ['Starter', 'Market', 'Pro'] as p (p)}
+					{#each TIERS as tier (tier.key)}
 						<button
 							type="button"
-							onclick={() => (estimatorPlan = p as 'Starter' | 'Market' | 'Pro')}
+							onclick={() => (estimatorPlan = tier.key)}
 							class="flex-1 rounded-lg border px-3 py-2 text-xs font-medium transition-colors {estimatorPlan ===
-							p
+							tier.key
 								? 'border-primary bg-primary/10 text-primary'
 								: 'border-border text-muted-foreground hover:border-primary/40 hover:text-foreground'}"
 						>
-							{p}
+							{tier.name}
 						</button>
 					{/each}
 				</div>
 			</div>
 
 			<div class="space-y-3">
-				{#each addons as addon, i (addon.name)}
-					<label class="flex cursor-pointer items-center justify-between gap-3">
+				{#each ADDONS as addon, i (addon.key)}
+					{@const isBundled = estimatorBundled.has(addon.key)}
+					<label
+						class="flex items-center justify-between gap-3 {isBundled
+							? 'cursor-default'
+							: 'cursor-pointer'}"
+					>
 						<span class="flex items-center gap-2 text-sm text-foreground">
 							<input
 								type="checkbox"
 								class="h-4 w-4 rounded text-primary accent-primary focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none"
-								bind:checked={estimatorChecked[i]}
-								disabled={estimatorPlan === 'Starter'}
+								checked={isBundled || estimatorChecked[i]}
+								disabled={isBundled || estimatorPlan === 'starter'}
+								onchange={(e) => {
+									if (!isBundled)
+										estimatorChecked[i] = (e.currentTarget as HTMLInputElement).checked;
+								}}
 							/>
 							{addon.name}
 						</span>
-						<span class="text-sm font-medium text-muted-foreground">
-							{pricingInterval === 'annual' ? `$${addon.annualMonthlyPrice}/mo` : addon.price}
+						<span
+							class="text-sm font-medium {isBundled ? 'text-primary' : 'text-muted-foreground'}"
+						>
+							{isBundled ? 'Included' : `$${addon.price}/mo`}
 						</span>
 					</label>
 				{/each}
 			</div>
-			{#if estimatorPlan === 'Starter'}
+			{#if estimatorPlan === 'starter'}
 				<p class="mt-3 text-xs text-amber-600">Add-ons require Market or Pro plan.</p>
 			{/if}
 			<div class="mt-5 border-t pt-4">
 				<div class="flex items-baseline justify-between">
 					<span class="text-sm text-muted-foreground">Estimated total</span>
 					<span class="text-lg font-bold text-foreground">
-						{estimatorPlan === 'Starter' && estimatorTotal === 0
+						{estimatorPlan === 'starter' && estimatorTotal === 0
 							? 'Free'
 							: `$${estimatorBase + estimatorTotal}`}
-						{#if estimatorPlan !== 'Starter' || estimatorTotal > 0}
+						{#if estimatorPlan !== 'starter' || estimatorTotal > 0}
 							<span class="text-sm font-normal text-muted-foreground"> / month</span>
 						{/if}
 					</span>
 				</div>
 				<p class="mt-1 text-xs text-muted-foreground">
-					Includes {estimatorPlan === 'Starter' ? 'Free' : `$${estimatorBase}`}
-					{estimatorPlan} base ({pricingInterval === 'annual'
+					Includes {estimatorPlan === 'starter' ? 'Free' : `$${estimatorBase}`}
+					{getTier(estimatorPlan).name} base ({pricingInterval === 'annual'
 						? 'billed annually'
-						: 'billed monthly'}) + selected add-ons.
+						: 'billed monthly'}){#if estimatorBundledNames.length > 0}, {estimatorBundledNames.join(
+							' and '
+						)} included with Pro{/if}{#if estimatorTotal > 0}, plus selected add-ons{/if}.
 				</p>
 			</div>
 		</div>

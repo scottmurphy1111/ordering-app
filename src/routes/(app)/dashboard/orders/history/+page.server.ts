@@ -103,7 +103,13 @@ export const actions: Actions = {
 			}),
 			db.query.vendor.findFirst({
 				where: eq(vendor.id, vendorId),
-				columns: { stripeSecretKey: true, name: true, email: true, backgroundColor: true }
+				columns: {
+					stripeSecretKey: true,
+					name: true,
+					email: true,
+					backgroundColor: true,
+					subscriptionTier: true
+				}
 			})
 		]);
 
@@ -157,6 +163,7 @@ export const actions: Actions = {
 				html: orderRefundedEmail({
 					vendorName: vendorRecord.name,
 					primaryColor: vendorRecord.backgroundColor ?? undefined,
+					vendorSubscriptionTier: vendorRecord.subscriptionTier ?? undefined,
 					orderNumber: refundedOrder.orderNumber,
 					customerName: refundedOrder.customerName ?? 'there',
 					total: refundedOrder.total

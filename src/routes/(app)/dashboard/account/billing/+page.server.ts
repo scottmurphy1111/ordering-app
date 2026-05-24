@@ -1011,8 +1011,9 @@ export const actions: Actions = {
 				email: true
 			}
 		});
-		if (!record?.subscriptionTier || !PAID_TIERS.has(record.subscriptionTier))
-			return fail(400, { error: 'Upgrade your plan before activating add-ons.' });
+		if (!record?.subscriptionTier) return fail(400, { error: 'Vendor record not found.' });
+		if (!PAID_TIERS.has(record.subscriptionTier))
+			return fail(400, { error: 'Add-ons require a Market or Pro plan. Upgrade to activate.' });
 		if (!record.stripeSubscriptionId)
 			return fail(400, {
 				error: 'No active Stripe subscription found. Complete your plan upgrade first.'

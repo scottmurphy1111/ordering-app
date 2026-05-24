@@ -21,6 +21,7 @@ function fmtDate(d: Date | string, tz: string): string {
 export function specialOrderAcceptedEmail({
 	vendorName,
 	primaryColor,
+	vendorSubscriptionTier,
 	orderNumber,
 	customerName,
 	priceCents,
@@ -31,6 +32,7 @@ export function specialOrderAcceptedEmail({
 }: {
 	vendorName: string;
 	primaryColor?: string;
+	vendorSubscriptionTier?: string;
 	orderNumber: string;
 	customerName: string;
 	priceCents: number;
@@ -91,6 +93,7 @@ export function specialOrderAcceptedEmail({
 		previewText: `Payment confirmed for your custom order from ${vendorName} — ${formatCents(priceCents)}`,
 		content,
 		displayName: vendorName,
-		primaryColor
+		primaryColor,
+		hideOrderLocalBranding: vendorSubscriptionTier === 'pro'
 	});
 }

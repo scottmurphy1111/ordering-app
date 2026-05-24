@@ -2,11 +2,15 @@ import type { PageServerLoad } from './$types';
 import { db } from '$lib/server/db';
 import { eq, and, gte, sql, desc } from 'drizzle-orm';
 import { orders, orderItems, catalogItems, catalogCategories } from '$lib/server/db/schema';
-import { hasAddon } from '$lib/billing';
+import { effectiveHasAddon } from '$lib/billing';
 
 export const load: PageServerLoad = async ({ locals, url }) => {
 	const vendorId = locals.vendorId!;
-	const hasAdvancedAnalytics = hasAddon(locals.vendor?.addons, 'analytics');
+	const hasAdvancedAnalytics = effectiveHasAddon(
+		locals.vendor?.subscriptionTier ?? 'starter',
+		locals.vendor?.addons,
+		'analytics'
+	);
 
 	const rangeStr = url.searchParams.get('range');
 	const rangeDays = rangeStr === '7' ? 7 : 30;

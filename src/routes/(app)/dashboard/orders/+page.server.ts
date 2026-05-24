@@ -282,7 +282,7 @@ export const actions: Actions = {
 		if (status === 'ready' && order?.customerEmail) {
 			const vendorRecord = await db.query.vendor.findFirst({
 				where: eq(vendor.id, vendorId),
-				columns: { name: true, email: true, backgroundColor: true }
+				columns: { name: true, email: true, backgroundColor: true, subscriptionTier: true }
 			});
 			if (vendorRecord) {
 				await sendEmail({
@@ -291,6 +291,7 @@ export const actions: Actions = {
 					html: orderReadyEmail({
 						vendorName: vendorRecord.name,
 						primaryColor: vendorRecord.backgroundColor ?? undefined,
+						vendorSubscriptionTier: vendorRecord.subscriptionTier ?? undefined,
 						orderNumber: order.orderNumber,
 						customerName: order.customerName ?? 'there',
 						total: order.total,
@@ -330,7 +331,7 @@ export const actions: Actions = {
 		if (order?.customerEmail) {
 			const vendorRecord = await db.query.vendor.findFirst({
 				where: eq(vendor.id, vendorId),
-				columns: { name: true, email: true, backgroundColor: true }
+				columns: { name: true, email: true, backgroundColor: true, subscriptionTier: true }
 			});
 			if (vendorRecord) {
 				await sendEmail({
@@ -339,6 +340,7 @@ export const actions: Actions = {
 					html: orderCancelledEmail({
 						vendorName: vendorRecord.name,
 						primaryColor: vendorRecord.backgroundColor ?? undefined,
+						vendorSubscriptionTier: vendorRecord.subscriptionTier ?? undefined,
 						orderNumber: order.orderNumber,
 						customerName: order.customerName ?? 'there',
 						total: order.total
@@ -365,7 +367,13 @@ export const actions: Actions = {
 			}),
 			db.query.vendor.findFirst({
 				where: eq(vendor.id, vendorId),
-				columns: { stripeSecretKey: true, name: true, email: true, backgroundColor: true }
+				columns: {
+					stripeSecretKey: true,
+					name: true,
+					email: true,
+					backgroundColor: true,
+					subscriptionTier: true
+				}
 			})
 		]);
 
@@ -419,6 +427,7 @@ export const actions: Actions = {
 				html: orderRefundedEmail({
 					vendorName: vendorRecord.name,
 					primaryColor: vendorRecord.backgroundColor ?? undefined,
+					vendorSubscriptionTier: vendorRecord.subscriptionTier ?? undefined,
 					orderNumber: refundedOrder.orderNumber,
 					customerName: refundedOrder.customerName ?? 'there',
 					total: refundedOrder.total

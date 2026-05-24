@@ -4,7 +4,7 @@ import { eq, desc, like, and, sql, isNull } from 'drizzle-orm';
 import { requireVendor } from '$lib/server/vendor';
 import { fail, redirect } from '@sveltejs/kit';
 import { catalogCategories, catalogItems } from '$lib/server/db/schema';
-import { hasAddon, type AddonItem } from '$lib/billing';
+import { effectiveHasAddon, type AddonItem } from '$lib/billing';
 import { vendor } from '$lib/server/db/vendor';
 import {
 	CatalogItemError,
@@ -148,7 +148,11 @@ export const load: PageServerLoad = async (event) => {
 		selectedCategoryId: filterUncategorized ? 'uncategorized' : categoryId,
 		canImportCsv,
 		totalItemsUnfiltered,
-		hasSubscriptionsAddon: hasAddon(addons, 'subscriptions'),
+		hasSubscriptionsAddon: effectiveHasAddon(
+			vendorRecord?.subscriptionTier ?? 'starter',
+			addons,
+			'subscriptions'
+		),
 		drawer
 	};
 };

@@ -10,11 +10,13 @@
 	} from '$lib/components/ui/accordion';
 	import { Badge } from '$lib/components/ui/badge';
 	import type { Persona } from '$lib/marketing/personas';
+	import { TIERS } from '$lib/billing';
 
 	type Props = { persona: Persona };
 	let { persona }: Props = $props();
 
 	const loginHref = resolve('/login');
+	const highlightTier = 'pro';
 
 	let mobileMenuOpen = $state(false);
 	let openFaq = $state<string | undefined>(undefined);
@@ -303,42 +305,6 @@
 	</div>
 </section>
 
-<!-- Founding offer -->
-{#if persona.foundingOffer}
-	<section class="bg-amber-50 px-6 py-16">
-		<div class="mx-auto max-w-2xl text-center">
-			<div
-				class="inline-flex items-center gap-2 rounded-full border border-amber-300 bg-amber-100 px-4 py-1.5 text-xs font-semibold text-amber-800"
-			>
-				<Icon icon="mdi:fire" class="h-3.5 w-3.5" aria-hidden="true" />
-				{persona.foundingOffer.badge}
-			</div>
-			<h2 class="mt-5 text-2xl font-bold text-gray-900 sm:text-3xl">
-				{persona.foundingOffer.headline}
-			</h2>
-			<p class="mt-3 text-base leading-relaxed text-gray-700">
-				{persona.foundingOffer.body}
-			</p>
-			<p class="mt-2 text-sm text-amber-700">
-				{persona.foundingOffer.fineprint}
-			</p>
-			<a
-				href={loginHref}
-				onclick={() =>
-					persona.foundingOffer &&
-					track('cta_click', {
-						location: persona.foundingOffer.ctaTrackLocation,
-						page: persona.trackPage
-					})}
-				class="mt-7 inline-block rounded-xl bg-amber-600 px-8 py-3.5 text-base font-semibold text-white shadow-md transition-colors hover:bg-amber-700"
-			>
-				{persona.foundingOffer.ctaLabel}
-			</a>
-			<p class="mt-3 text-xs text-gray-500">No credit card required to start. Cancel anytime.</p>
-		</div>
-	</section>
-{/if}
-
 <!-- Pricing -->
 <section id="pricing" class="scroll-mt-20 bg-background px-6 py-24">
 	<div class="mx-auto max-w-4xl">
@@ -356,10 +322,12 @@
 			</p>
 		</div>
 
-		<div class="grid gap-6 sm:grid-cols-2">
-			{#each persona.pricing.plans as plan (plan.name)}
-				<div class="relative flex flex-col {plan.highlight ? 'lg:scale-105' : ''}">
-					{#if plan.highlight}
+		<div class="grid items-start gap-6 lg:grid-cols-3">
+			{#each TIERS as tier (tier.key)}
+				{@const isHighlight = tier.key === highlightTier}
+				{@const tagline = persona.pricing.taglinesByTier?.[tier.key]}
+				<div class="relative flex flex-col {isHighlight ? 'lg:scale-105' : ''}">
+					{#if isHighlight}
 						<div class="absolute -top-3 right-0 left-0 flex justify-center">
 							<Badge class="bg-primary text-primary-foreground shadow-sm">
 								Most popular for {persona.label.toLowerCase()}
@@ -367,24 +335,28 @@
 						</div>
 					{/if}
 					<div
-						class="flex flex-1 flex-col overflow-hidden rounded-2xl border {plan.highlight
+						class="flex flex-1 flex-col overflow-hidden rounded-2xl border {isHighlight
 							? 'border-primary shadow-2xl ring-2 ring-primary/20'
 							: 'bg-background'}"
 					>
-						{#if plan.highlight}
+						{#if isHighlight}
 							<div class="h-1 bg-primary"></div>
 						{/if}
 						<div class="flex flex-1 flex-col p-7">
-							<p class="text-lg font-bold text-foreground">{plan.name}</p>
-							<p class="mt-1 text-sm text-muted-foreground">{plan.tagline}</p>
+							<p class="text-lg font-bold text-foreground">{tier.name}</p>
+							{#if tagline}
+								<p class="mt-1 text-sm text-muted-foreground">{tagline}</p>
+							{/if}
 							<div class="mt-5 flex items-end gap-x-2">
-								<span class="text-4xl font-bold text-foreground">{plan.price}</span>
-								{#if plan.priceUnit}
-									<span class="mb-1 text-sm text-muted-foreground">{plan.priceUnit}</span>
+								{#if tier.price === 0}
+									<span class="text-4xl font-bold text-foreground">Free</span>
+								{:else}
+									<span class="text-4xl font-bold text-foreground">${tier.price}</span>
+									<span class="mb-1 text-sm text-muted-foreground">/ month</span>
 								{/if}
 							</div>
 							<ul class="mt-6 flex-1 space-y-2.5">
-								{#each plan.features as feat (feat)}
+								{#each tier.features as feat (feat)}
 									<li class="flex items-start gap-2 text-sm text-muted-foreground">
 										<Icon
 											icon="mdi:check-circle-outline"
@@ -398,14 +370,14 @@
 								href={loginHref}
 								onclick={() =>
 									track('cta_click', {
-										location: plan.ctaTrackLocation,
+										location: `pricing_${tier.key}`,
 										page: persona.trackPage
 									})}
-								class="mt-8 block rounded-xl px-5 py-3 text-center text-sm font-semibold text-white transition-colors {plan.highlight
+								class="mt-8 block rounded-xl px-5 py-3 text-center text-sm font-semibold text-white transition-colors {isHighlight
 									? 'bg-primary hover:bg-primary/90'
 									: 'bg-gray-900 hover:bg-gray-700'}"
 							>
-								{plan.ctaLabel}
+								Get started
 							</a>
 						</div>
 					</div>

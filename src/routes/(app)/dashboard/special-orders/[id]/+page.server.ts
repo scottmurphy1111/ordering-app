@@ -103,6 +103,7 @@ export const actions: Actions = {
 			const html = specialOrderQuoteSentEmail({
 				vendorName: vendor.name,
 				primaryColor: vendor.backgroundColor ?? undefined,
+				vendorSubscriptionTier: vendor.subscriptionTier ?? undefined,
 				customerName: existing.customerName,
 				priceCents: quote.priceCents,
 				message: quote.message,

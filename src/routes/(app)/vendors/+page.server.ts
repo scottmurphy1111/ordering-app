@@ -104,7 +104,7 @@ export const actions: Actions = {
 				.from(vendorUsers)
 				.where(eq(vendorUsers.userId, userId));
 			if (!canCreateVendor(false, memberships)) {
-				return fail(403, { error: 'Upgrade to the Pro plan to create additional vendors.' });
+				return fail(403, { error: 'Only the vendor owner can create additional vendors.' });
 			}
 		}
 

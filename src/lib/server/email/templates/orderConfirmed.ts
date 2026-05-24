@@ -89,6 +89,7 @@ function renderPickupSection(
 export function orderConfirmedEmail({
 	vendorName,
 	primaryColor,
+	vendorSubscriptionTier,
 	orderNumber,
 	customerName,
 	items,
@@ -105,6 +106,7 @@ export function orderConfirmedEmail({
 }: {
 	vendorName: string;
 	primaryColor?: string;
+	vendorSubscriptionTier?: string;
 	orderNumber: string;
 	customerName: string;
 	items: Array<{
@@ -174,6 +176,7 @@ export function orderConfirmedEmail({
 		previewText: `Your order ${orderNumber} is confirmed. Total: ${formatCents(total)}`,
 		content,
 		displayName: vendorName,
-		primaryColor
+		primaryColor,
+		hideOrderLocalBranding: vendorSubscriptionTier === 'pro'
 	});
 }

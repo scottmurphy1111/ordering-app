@@ -14,6 +14,7 @@ function fmtDate(date: Date | string, tz: string): string {
 export function customDateOrderRecoveredEmail({
 	vendorName,
 	primaryColor,
+	vendorSubscriptionTier,
 	orderNumber,
 	customerName,
 	items,
@@ -28,6 +29,7 @@ export function customDateOrderRecoveredEmail({
 }: {
 	vendorName: string;
 	primaryColor?: string;
+	vendorSubscriptionTier?: string;
 	orderNumber: string;
 	customerName: string;
 	items: Array<{
@@ -108,6 +110,7 @@ export function customDateOrderRecoveredEmail({
 		previewText: `Payment confirmed for order ${orderNumber}. Total charged: ${formatCents(total)}`,
 		content,
 		displayName: vendorName,
-		primaryColor
+		primaryColor,
+		hideOrderLocalBranding: vendorSubscriptionTier === 'pro'
 	});
 }

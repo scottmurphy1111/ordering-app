@@ -4,7 +4,7 @@ import { db } from '$lib/server/db';
 import { eq, and, desc, count } from 'drizzle-orm';
 import { promoCodes } from '$lib/server/db/schema';
 import { vendor } from '$lib/server/db/vendor';
-import { hasAddon } from '$lib/billing';
+import { effectiveHasAddon } from '$lib/billing';
 import { loyaltyAccounts, DEFAULT_LOYALTY_CONFIG } from '$lib/server/db/loyalty';
 import type { LoyaltyConfig } from '$lib/server/db/loyalty';
 
@@ -12,10 +12,14 @@ export const load: PageServerLoad = async ({ locals }) => {
 	const vendorId = locals.vendorId!;
 	const vendorRecord = await db.query.vendor.findFirst({
 		where: eq(vendor.id, vendorId),
-		columns: { addons: true, settings: true }
+		columns: { addons: true, settings: true, subscriptionTier: true }
 	});
 
-	const hasLoyalty = hasAddon(vendorRecord?.addons as string[] | null, 'loyalty');
+	const hasLoyalty = effectiveHasAddon(
+		vendorRecord?.subscriptionTier ?? 'starter',
+		vendorRecord?.addons as string[] | null,
+		'loyalty'
+	);
 	const settings = vendorRecord?.settings as Record<string, unknown> | null;
 	const loyalty: LoyaltyConfig = (settings?.loyalty as LoyaltyConfig) ?? DEFAULT_LOYALTY_CONFIG;
 
@@ -115,9 +119,15 @@ export const actions: Actions = {
 		const vendorId = locals.vendorId!;
 		const vendorRecord = await db.query.vendor.findFirst({
 			where: eq(vendor.id, vendorId),
-			columns: { addons: true, settings: true }
+			columns: { addons: true, settings: true, subscriptionTier: true }
 		});
-		if (!hasAddon(vendorRecord?.addons as string[] | null, 'loyalty')) {
+		if (
+			!effectiveHasAddon(
+				vendorRecord?.subscriptionTier ?? 'starter',
+				vendorRecord?.addons as string[] | null,
+				'loyalty'
+			)
+		) {
 			return fail(403, { error: 'Loyalty add-on not active.' });
 		}
 

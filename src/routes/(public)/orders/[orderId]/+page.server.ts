@@ -152,7 +152,7 @@ export const actions: Actions = {
 		if (cancelled?.customerEmail || cancelled?.customerPhone) {
 			const vendorRecord = await db.query.vendor.findFirst({
 				where: eq(vendor.id, vendorId),
-				columns: { name: true, email: true, backgroundColor: true }
+				columns: { name: true, email: true, backgroundColor: true, subscriptionTier: true }
 			});
 			if (vendorRecord) {
 				if (cancelled.customerEmail) {
@@ -162,6 +162,7 @@ export const actions: Actions = {
 						html: alternateDeclinedEmail({
 							vendorName: vendorRecord.name,
 							primaryColor: vendorRecord.backgroundColor ?? undefined,
+							vendorSubscriptionTier: vendorRecord.subscriptionTier ?? undefined,
 							orderNumber: cancelled.orderNumber,
 							customerName: cancelled.customerName ?? 'there',
 							total: cancelled.total

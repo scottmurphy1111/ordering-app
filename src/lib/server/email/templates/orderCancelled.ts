@@ -3,6 +3,7 @@ import { emailWrapper, formatCents } from '../base';
 export function orderCancelledEmail({
 	vendorName,
 	primaryColor,
+	vendorSubscriptionTier,
 	orderNumber,
 	customerName,
 	total,
@@ -10,6 +11,7 @@ export function orderCancelledEmail({
 }: {
 	vendorName: string;
 	primaryColor?: string;
+	vendorSubscriptionTier?: string;
 	orderNumber: string;
 	customerName: string;
 	total: number;
@@ -36,6 +38,7 @@ export function orderCancelledEmail({
 		previewText: `Your order ${orderNumber} from ${vendorName} has been cancelled.`,
 		content,
 		displayName: vendorName,
-		primaryColor
+		primaryColor,
+		hideOrderLocalBranding: vendorSubscriptionTier === 'pro'
 	});
 }
