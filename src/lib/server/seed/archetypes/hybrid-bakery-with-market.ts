@@ -216,7 +216,11 @@ export const hybridBakeryWithMarket: ArchetypeFixture = {
 		loyalty: {
 			enabled: true,
 			type: 'stamps',
-			stamps: { stampsPerOrder: 1, rewardAt: 10, rewardDescription: 'Free pastry of your choice (up to $6.50)' },
+			stamps: {
+				stampsPerOrder: 1,
+				rewardAt: 10,
+				rewardDescription: 'Free pastry of your choice (up to $6.50)'
+			},
 			points: { pointsPerDollar: 1, redeemAt: 100, redeemValue: 500 }
 		}
 	},
@@ -341,9 +345,7 @@ export const hybridBakeryWithMarket: ArchetypeFixture = {
 			stripeSetupIntentId: 'seti_demo_riley',
 			notes:
 				'Three-tier cake — vanilla, lemon, and chocolate. Garden party theme, blush and sage colors.',
-			items: [
-				{ name: 'Custom Wedding Cake', quantity: 1, basePrice: 35000, selectedModifiers: [] }
-			]
+			items: [{ name: 'Custom Wedding Cake', quantity: 1, basePrice: 35000, selectedModifiers: [] }]
 		},
 		{
 			orderNumber: '#6',
@@ -359,11 +361,8 @@ export const hybridBakeryWithMarket: ArchetypeFixture = {
 			scheduledFor: new Date('2026-07-20T12:00:00Z'),
 			stripeCustomerId: 'cus_demo_avery',
 			stripePaymentIntentId: 'pi_demo_avery',
-			notes:
-				'Chocolate cake, rainbow sprinkles, "Happy 10th Birthday Sofia!" in blue frosting.',
-			items: [
-				{ name: 'Custom Birthday Cake', quantity: 1, basePrice: 8500, selectedModifiers: [] }
-			]
+			notes: 'Chocolate cake, rainbow sprinkles, "Happy 10th Birthday Sofia!" in blue frosting.',
+			items: [{ name: 'Custom Birthday Cake', quantity: 1, basePrice: 8500, selectedModifiers: [] }]
 		}
 	],
 

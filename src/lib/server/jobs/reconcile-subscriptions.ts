@@ -17,7 +17,11 @@ export async function runReconcileSubscriptions(): Promise<{
 	const stripe = getOrderLocalStripe();
 
 	const vendors = await db.query.vendor.findMany({
-		where: and(isNull(vendor.deletedAt), eq(vendor.isActive, true), isNotNull(vendor.stripeSubscriptionId)),
+		where: and(
+			isNull(vendor.deletedAt),
+			eq(vendor.isActive, true),
+			isNotNull(vendor.stripeSubscriptionId)
+		),
 		columns: {
 			id: true,
 			subscriptionTier: true,
@@ -64,7 +68,9 @@ export async function runReconcileSubscriptions(): Promise<{
 						metadata: { reason: 'stripe_subscription_missing', stripeSubscriptionId: subId }
 					});
 
-					errors.push(`vendor ${v.id}: subscription ${subId} not found in Stripe — reverted to starter`);
+					errors.push(
+						`vendor ${v.id}: subscription ${subId} not found in Stripe — reverted to starter`
+					);
 					processed++;
 					continue;
 				}
@@ -77,13 +83,10 @@ export async function runReconcileSubscriptions(): Promise<{
 			}
 
 			// Compute Stripe truth for the four reconcilable fields
-			const stripeStatus =
-				sub.status === 'incomplete_expired' ? 'canceled' : sub.status;
+			const stripeStatus = sub.status === 'incomplete_expired' ? 'canceled' : sub.status;
 
 			const stripeEndsAt =
-				sub.cancel_at_period_end && sub.cancel_at
-					? new Date(sub.cancel_at * 1000)
-					: null;
+				sub.cancel_at_period_end && sub.cancel_at ? new Date(sub.cancel_at * 1000) : null;
 
 			// Derive tier from first matching price item
 			let stripeTier: string | null = null;
@@ -104,7 +107,11 @@ export async function runReconcileSubscriptions(): Promise<{
 					: null;
 
 			// Detect drift — compare nullable Date fields by ISO string
-			type DriftField = 'subscriptionStatus' | 'subscriptionEndsAt' | 'subscriptionTier' | 'subscriptionPausedAt';
+			type DriftField =
+				| 'subscriptionStatus'
+				| 'subscriptionEndsAt'
+				| 'subscriptionTier'
+				| 'subscriptionPausedAt';
 			const fieldsChanged: DriftField[] = [];
 			const before: Partial<Record<DriftField, string | null>> = {};
 			const after: Partial<Record<DriftField, string | null>> = {};
@@ -115,7 +122,9 @@ export async function runReconcileSubscriptions(): Promise<{
 				after.subscriptionStatus = stripeStatus;
 			}
 
-			const dbEndsAtIso = v.subscriptionEndsAt ? new Date(v.subscriptionEndsAt).toISOString() : null;
+			const dbEndsAtIso = v.subscriptionEndsAt
+				? new Date(v.subscriptionEndsAt).toISOString()
+				: null;
 			const stripeEndsAtIso = stripeEndsAt ? stripeEndsAt.toISOString() : null;
 			if (dbEndsAtIso !== stripeEndsAtIso) {
 				fieldsChanged.push('subscriptionEndsAt');
@@ -130,7 +139,9 @@ export async function runReconcileSubscriptions(): Promise<{
 				after.subscriptionTier = stripeTier;
 			}
 
-			const dbPausedAtIso = v.subscriptionPausedAt ? new Date(v.subscriptionPausedAt).toISOString() : null;
+			const dbPausedAtIso = v.subscriptionPausedAt
+				? new Date(v.subscriptionPausedAt).toISOString()
+				: null;
 			const stripePausedAtIso = stripePausedAt ? stripePausedAt.toISOString() : null;
 			if (dbPausedAtIso !== stripePausedAtIso) {
 				fieldsChanged.push('subscriptionPausedAt');
@@ -142,8 +153,10 @@ export async function runReconcileSubscriptions(): Promise<{
 				const update: Record<string, string | Date | null> = { updatedAt: new Date() };
 				if (fieldsChanged.includes('subscriptionStatus')) update.subscriptionStatus = stripeStatus;
 				if (fieldsChanged.includes('subscriptionEndsAt')) update.subscriptionEndsAt = stripeEndsAt;
-				if (fieldsChanged.includes('subscriptionTier') && stripeTier !== null) update.subscriptionTier = stripeTier;
-				if (fieldsChanged.includes('subscriptionPausedAt')) update.subscriptionPausedAt = stripePausedAt;
+				if (fieldsChanged.includes('subscriptionTier') && stripeTier !== null)
+					update.subscriptionTier = stripeTier;
+				if (fieldsChanged.includes('subscriptionPausedAt'))
+					update.subscriptionPausedAt = stripePausedAt;
 
 				await db.update(vendor).set(update).where(eq(vendor.id, v.id));
 

@@ -10,10 +10,7 @@ import type { db as Db } from './db';
  * row-lock level. If the subsequent INSERT INTO orders fails, the counter
  * value is "wasted" but no orders will use it. Acceptable trade-off.
  */
-export async function generateOrderNumber(
-	vendorId: number,
-	db: typeof Db
-): Promise<string> {
+export async function generateOrderNumber(vendorId: number, db: typeof Db): Promise<string> {
 	const [updated] = await db
 		.update(vendor)
 		.set({ lastOrderNumber: sql`${vendor.lastOrderNumber} + 1` })

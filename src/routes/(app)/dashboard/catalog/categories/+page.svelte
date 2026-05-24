@@ -387,14 +387,18 @@
 								>
 									<Icon icon="mdi:pencil-outline" class="h-3.5 w-3.5" />
 								</Button>
-								<form method="post" action="?/delete" use:enhance={() => {
-									submittingDeleteId = cat.id;
-									return async ({ result, update }) => {
-										submittingDeleteId = null;
-										await update();
-										if (result.type === 'success') toast.success('Category deleted');
-									};
-								}}>
+								<form
+									method="post"
+									action="?/delete"
+									use:enhance={() => {
+										submittingDeleteId = cat.id;
+										return async ({ result, update }) => {
+											submittingDeleteId = null;
+											await update();
+											if (result.type === 'success') toast.success('Category deleted');
+										};
+									}}
+								>
 									<input type="hidden" name="id" value={cat.id} />
 									<Button
 										type="submit"
@@ -516,14 +520,18 @@
 										>
 											<Icon icon="mdi:pencil-outline" class="h-3.5 w-3.5" />
 										</Button>
-										<form method="post" action="?/delete" use:enhance={() => {
-											submittingDeleteId = cat.id;
-											return async ({ result, update }) => {
-												submittingDeleteId = null;
-												await update();
-												if (result.type === 'success') toast.success('Category deleted');
-											};
-										}}>
+										<form
+											method="post"
+											action="?/delete"
+											use:enhance={() => {
+												submittingDeleteId = cat.id;
+												return async ({ result, update }) => {
+													submittingDeleteId = null;
+													await update();
+													if (result.type === 'success') toast.success('Category deleted');
+												};
+											}}
+										>
 											<input type="hidden" name="id" value={cat.id} />
 											<Button
 												type="submit"

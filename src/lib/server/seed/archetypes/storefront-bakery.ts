@@ -192,9 +192,7 @@ export const storefrontBakery: ArchetypeFixture = {
 			stripeCustomerId: 'cus_demo_keiko',
 			stripeSetupIntentId: 'seti_demo_keiko',
 			notes: 'Chocolate cake with vanilla buttercream. "Happy Birthday Mei!" in pink. Serves 12.',
-			items: [
-				{ name: 'Custom Birthday Cake', quantity: 1, basePrice: 6500, selectedModifiers: [] }
-			]
+			items: [{ name: 'Custom Birthday Cake', quantity: 1, basePrice: 6500, selectedModifiers: [] }]
 		}
 	],
 

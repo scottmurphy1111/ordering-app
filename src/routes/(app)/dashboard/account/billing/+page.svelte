@@ -69,9 +69,7 @@
 			});
 		if (isPausedSuccess)
 			toast.success('Subscription paused', {
-				description: data.pauseUntil
-					? `Billing resumes ${fmtDate(data.pauseUntil)}`
-					: undefined
+				description: data.pauseUntil ? `Billing resumes ${fmtDate(data.pauseUntil)}` : undefined
 			});
 		if (isResumed) toast.success('Subscription resumed');
 		if (isSwitched && data.billingInterval === 'annual')
@@ -106,6 +104,7 @@
 		try {
 			const cleaned = new URL(page.url.href);
 			for (const k of noticeKeys) cleaned.searchParams.delete(k);
+			// eslint-disable-next-line svelte/no-navigation-without-resolve -- same-page query-param cleanup, not navigation
 			replaceState(cleaned.toString(), page.state);
 		} catch (err) {
 			console.debug('[billing] skipped notice-param cleanup:', err);
@@ -366,7 +365,9 @@
 					<!-- Row 1: Plan name + status badges -->
 					<div class="mb-2 flex flex-wrap items-center gap-2">
 						<span class="text-xl font-bold text-foreground">{tierInfo.name}</span>
-						<StatusBadge tone={statusColors[data.subscriptionStatus ?? 'active'] ?? statusColors.active}>
+						<StatusBadge
+							tone={statusColors[data.subscriptionStatus ?? 'active'] ?? statusColors.active}
+						>
 							{data.subscriptionStatus === 'past_due'
 								? 'Payment past due'
 								: data.subscriptionStatus === 'cancelled'

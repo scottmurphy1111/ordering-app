@@ -21,7 +21,6 @@
 	const backgroundColor = $derived(data.vendor.backgroundColor ?? '#000000');
 	const accentColor = $derived(data.vendor.accentColor ?? '#374151');
 	const foregroundColor = $derived(data.vendor.foregroundColor ?? '#ffffff');
-	const logoUrl = $derived(data.vendor.logoUrl ?? '');
 
 	onMount(async () => {
 		const stripeInstance = await loadStripe(data.publishableKey);
@@ -118,13 +117,18 @@
 </svelte:head>
 
 <div class="min-h-screen bg-muted/50">
-<main class="mx-auto max-w-4xl px-4 py-8">
+	<main class="mx-auto max-w-4xl px-4 py-8">
 		<div class="grid gap-6 lg:grid-cols-[1fr_420px]">
 			<!-- Left: payment form -->
 			<div class="space-y-4">
 				<Card class="shadow-sm">
 					<CardContent class="p-6">
-						<h2 class="mb-5 text-base font-semibold text-foreground" style="font-family: var(--font-heading);">Payment details</h2>
+						<h2
+							class="mb-5 text-base font-semibold text-foreground"
+							style="font-family: var(--font-heading);"
+						>
+							Payment details
+						</h2>
 
 						{#if !mountReady}
 							<div class="space-y-3">
@@ -186,7 +190,12 @@
 				<Card class="shadow-sm">
 					<CardContent class="p-6">
 						<div class="mb-5 flex items-center justify-between">
-							<h2 class="text-base font-semibold text-foreground" style="font-family: var(--font-heading);">Order summary</h2>
+							<h2
+								class="text-base font-semibold text-foreground"
+								style="font-family: var(--font-heading);"
+							>
+								Order summary
+							</h2>
 							<span
 								class="rounded-full px-2.5 py-0.5 text-xs font-medium"
 								style="background-color: {accentColor}1a; color: {accentColor};"

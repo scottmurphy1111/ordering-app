@@ -2,6 +2,7 @@
 	import type { PageData, ActionData } from './$types';
 	import { untrack } from 'svelte';
 	import { enhance } from '$app/forms';
+	import { resolve } from '$app/paths';
 	import { SvelteSet } from 'svelte/reactivity';
 	import Icon from '@iconify/svelte';
 	import { Button } from '$lib/components/ui/button';
@@ -74,9 +75,7 @@
 <div class="max-w-2xl">
 	<div class="mb-6">
 		<h1 class="text-2xl font-bold text-foreground">Notifications</h1>
-		<p class="mt-0.5 text-sm text-muted-foreground">
-			Account activity and email preferences.
-		</p>
+		<p class="mt-0.5 text-sm text-muted-foreground">Account activity and email preferences.</p>
 	</div>
 
 	<!-- ─── Recent activity ─── -->
@@ -144,7 +143,7 @@
 							<p class="mt-0.5 text-sm text-muted-foreground">{entry.body}</p>
 							{#if entry.actionUrl}
 								<a
-									href={entry.actionUrl}
+									href={resolve(entry.actionUrl as `/${string}`)}
 									class="mt-2 inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
 								>
 									{entry.actionLabel ?? 'View'}
@@ -230,8 +229,7 @@
 										{:else}
 											<Switch
 												checked={categoryEnabled(category)}
-												onCheckedChange={(checked) =>
-													toggleCategory(category, !(checked === true))}
+												onCheckedChange={(checked) => toggleCategory(category, !(checked === true))}
 											/>
 										{/if}
 									</li>

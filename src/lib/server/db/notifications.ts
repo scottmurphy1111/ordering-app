@@ -1,4 +1,13 @@
-import { pgTable, serial, integer, text, varchar, timestamp, pgEnum, index } from 'drizzle-orm/pg-core';
+import {
+	pgTable,
+	serial,
+	integer,
+	text,
+	varchar,
+	timestamp,
+	pgEnum,
+	index
+} from 'drizzle-orm/pg-core';
 import { vendor } from './vendor';
 
 export const notificationSeverityEnum = pgEnum('notification_severity', [

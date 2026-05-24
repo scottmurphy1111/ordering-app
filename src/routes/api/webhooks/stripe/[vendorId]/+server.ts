@@ -187,10 +187,7 @@ async function handleEvent(event: Stripe.Event, ctx: VendorCtx) {
 						actionUrl: `/dashboard/orders/${order.id}`,
 						actionLabel: 'View order'
 					});
-					if (
-						ctx.email &&
-						(await shouldSendEmail(ctx.id, 'special_order_accepted_vendor'))
-					) {
+					if (ctx.email && (await shouldSendEmail(ctx.id, 'special_order_accepted_vendor'))) {
 						await sendEmail({
 							to: ctx.email,
 							subject: `New special order ${order.orderNumber} from ${order.customerName ?? 'a customer'}`,

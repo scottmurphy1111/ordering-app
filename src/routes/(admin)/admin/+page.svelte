@@ -149,7 +149,8 @@
 									<p class="text-xs text-gray-500">{fmtDateTime(job.lastRun)}</p>
 									{#if job.lastMeta}
 										<p class="text-xs text-gray-400">
-											{job.lastMeta.processed} processed{#if job.lastMeta.drifted !== undefined && job.lastMeta.drifted > 0}, {job.lastMeta.drifted} drifted{/if}
+											{job.lastMeta.processed} processed{#if job.lastMeta.drifted !== undefined && job.lastMeta.drifted > 0},
+												{job.lastMeta.drifted} drifted{/if}
 										</p>
 									{/if}
 								</div>
@@ -205,8 +206,8 @@
 			<CardContent>
 				{@const wh = data.webhookHealth}
 				{@const fortyEightHoursAgo = new Date(Date.now() - 48 * 60 * 60 * 1000)}
-				{@const isHealthy = wh.lastSuccessAt !== null && new Date(wh.lastSuccessAt) > fortyEightHoursAgo && wh.errorsLast7 === 0}
-				{@const isStale = wh.lastSuccessAt === null || new Date(wh.lastSuccessAt) <= fortyEightHoursAgo}
+				{@const isStale =
+					wh.lastSuccessAt === null || new Date(wh.lastSuccessAt) <= fortyEightHoursAgo}
 				{@const hasErrors = wh.errorsLast7 > 0}
 
 				<!-- Status indicator -->
@@ -248,7 +249,9 @@
 					</div>
 					<div class="flex items-center justify-between">
 						<p class="text-xs text-gray-500">Errors · last 7 days</p>
-						<p class="text-sm font-semibold {wh.errorsLast7 > 0 ? 'text-red-600' : 'text-gray-900'}">
+						<p
+							class="text-sm font-semibold {wh.errorsLast7 > 0 ? 'text-red-600' : 'text-gray-900'}"
+						>
 							{wh.errorsLast7}
 						</p>
 					</div>

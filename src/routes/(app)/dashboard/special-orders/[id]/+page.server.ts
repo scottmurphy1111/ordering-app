@@ -30,9 +30,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
 	const quotes = await db
 		.select()
 		.from(specialOrderQuotes)
-		.where(
-			and(eq(specialOrderQuotes.requestId, id), eq(specialOrderQuotes.vendorId, vendorId))
-		)
+		.where(and(eq(specialOrderQuotes.requestId, id), eq(specialOrderQuotes.vendorId, vendorId)))
 		.orderBy(desc(specialOrderQuotes.createdAt));
 
 	const linkedOrder =

@@ -1,4 +1,13 @@
-import { pgTable, serial, text, varchar, integer, jsonb, timestamp, index } from 'drizzle-orm/pg-core';
+import {
+	pgTable,
+	serial,
+	text,
+	varchar,
+	integer,
+	jsonb,
+	timestamp,
+	index
+} from 'drizzle-orm/pg-core';
 import { vendor } from './vendor';
 
 /**

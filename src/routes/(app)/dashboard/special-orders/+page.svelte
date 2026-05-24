@@ -107,7 +107,8 @@
 				{@const isExpanded = expandedId === req.id}
 				{@const isPending = req.state === 'pending'}
 				<div
-					class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm transition-shadow {req.state === 'pending' || req.state === 'quoted'
+					class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm transition-shadow {req.state ===
+						'pending' || req.state === 'quoted'
 						? 'hover:shadow-md'
 						: 'opacity-60'}"
 				>
@@ -255,13 +256,17 @@
 									data-slot="card-footer"
 									class="mt-4 flex items-center justify-between gap-3 border-t border-gray-100 pt-3"
 								>
-									<form method="post" action="?/decline" use:enhance={() => {
-										submittingDeclineId = req.id;
-										return async ({ update }) => {
-											submittingDeclineId = null;
-											await update();
-										};
-									}}>
+									<form
+										method="post"
+										action="?/decline"
+										use:enhance={() => {
+											submittingDeclineId = req.id;
+											return async ({ update }) => {
+												submittingDeclineId = null;
+												await update();
+											};
+										}}
+									>
 										<input type="hidden" name="id" value={req.id} />
 										<div class="flex items-center gap-2">
 											<textarea
@@ -296,10 +301,7 @@
 											</Button>
 										</div>
 									</form>
-									<Button
-										href={resolve(`/dashboard/special-orders/${req.id}`)}
-										variant="outline"
-									>
+									<Button href={resolve(`/dashboard/special-orders/${req.id}`)} variant="outline">
 										<Icon icon="mdi:send-outline" class="h-3.5 w-3.5" />
 										Send quote
 									</Button>

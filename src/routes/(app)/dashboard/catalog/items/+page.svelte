@@ -716,7 +716,10 @@
 									<div class="flex items-center gap-1.5">
 										<p class="truncate text-sm font-medium text-gray-900">{item.name}</p>
 										{#if item.pickupType === 'custom_date'}
-											<span class="shrink-0 rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium capitalize text-slate-700">Custom date</span>
+											<span
+												class="shrink-0 rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-700 capitalize"
+												>Custom date</span
+											>
 										{/if}
 									</div>
 									<p class="truncate text-xs text-gray-500">
@@ -738,14 +741,18 @@
 								>
 									<Icon icon="mdi:pencil-outline" class="h-3.5 w-3.5" />
 								</Button>
-								<form method="post" action="?/delete" use:enhance={() => {
-									submittingDeleteId = item.id;
-									return async ({ result, update }) => {
-										submittingDeleteId = null;
-										await update();
-										if (result.type === 'success') toast.success('Item deleted');
-									};
-								}}>
+								<form
+									method="post"
+									action="?/delete"
+									use:enhance={() => {
+										submittingDeleteId = item.id;
+										return async ({ result, update }) => {
+											submittingDeleteId = null;
+											await update();
+											if (result.type === 'success') toast.success('Item deleted');
+										};
+									}}
+								>
 									<input type="hidden" name="id" value={item.id} />
 									<Button
 										type="submit"
@@ -866,7 +873,10 @@
 												{item.name}
 											</a>
 											{#if item.pickupType === 'custom_date'}
-												<span class="shrink-0 rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium capitalize text-slate-700">Custom date</span>
+												<span
+													class="shrink-0 rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-700 capitalize"
+													>Custom date</span
+												>
 											{/if}
 										</div>
 										{#if item.description}
@@ -904,14 +914,18 @@
 										>
 											<Icon icon="mdi:pencil-outline" class="h-3.5 w-3.5" />
 										</Button>
-										<form method="post" action="?/delete" use:enhance={() => {
-											submittingDeleteId = item.id;
-											return async ({ result, update }) => {
-												submittingDeleteId = null;
-												await update();
-												if (result.type === 'success') toast.success('Item deleted');
-											};
-										}}>
+										<form
+											method="post"
+											action="?/delete"
+											use:enhance={() => {
+												submittingDeleteId = item.id;
+												return async ({ result, update }) => {
+													submittingDeleteId = null;
+													await update();
+													if (result.type === 'success') toast.success('Item deleted');
+												};
+											}}
+										>
 											<input type="hidden" name="id" value={item.id} />
 											<Button
 												type="submit"

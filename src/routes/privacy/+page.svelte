@@ -12,23 +12,23 @@
 	<p class="mt-2 text-sm text-muted-foreground">Effective [EFFECTIVE_DATE]</p>
 
 	<p class="mt-6 text-foreground">
-		This Privacy Policy describes how [COMPANY_NAME] ("Order Local," "we," "us," or "our")
-		collects, uses, and shares information when you use our website, our pre-order and pickup
-		platform, and related services (collectively, the "Service"). By using the Service, you
-		agree to the practices described in this Policy.
+		This Privacy Policy describes how [COMPANY_NAME] ("Order Local," "we," "us," or "our") collects,
+		uses, and shares information when you use our website, our pre-order and pickup platform, and
+		related services (collectively, the "Service"). By using the Service, you agree to the practices
+		described in this Policy.
 	</p>
 
 	<h2 class="mt-10 text-xl font-semibold text-foreground">1. Who We Are</h2>
 	<p class="mt-4 text-foreground">
-		Order Local is a software platform that lets small businesses ("Vendors") — including
-		bakers, makers, growers, and other producers — sell pre-orders for pickup. When a customer
-		("Customer") places an order on a Vendor's storefront, the Customer is purchasing from the
-		Vendor; Order Local provides the technology that makes the transaction possible.
+		Order Local is a software platform that lets small businesses ("Vendors") — including bakers,
+		makers, growers, and other producers — sell pre-orders for pickup. When a customer ("Customer")
+		places an order on a Vendor's storefront, the Customer is purchasing from the Vendor; Order
+		Local provides the technology that makes the transaction possible.
 	</p>
 	<p class="mt-4 text-foreground">
-		For most Customer information, Order Local acts as a "data processor" on behalf of the
-		Vendor (who is the "data controller"). For information collected directly from Vendors
-		when they sign up and use the Service, Order Local is the data controller.
+		For most Customer information, Order Local acts as a "data processor" on behalf of the Vendor
+		(who is the "data controller"). For information collected directly from Vendors when they sign
+		up and use the Service, Order Local is the data controller.
 	</p>
 
 	<h2 class="mt-10 text-xl font-semibold text-foreground">2. Information We Collect</h2>
@@ -36,39 +36,37 @@
 	<h3 class="mt-6 text-lg font-semibold text-foreground">From Vendors</h3>
 	<ul class="mt-4 ml-6 list-disc space-y-2 text-foreground">
 		<li>
-			<strong>Account information:</strong> name, email address, business name, business address,
-			phone number, and password (stored as a one-way hash).
+			<strong>Account information:</strong> name, email address, business name, business address, phone
+			number, and password (stored as a one-way hash).
 		</li>
 		<li>
-			<strong>Authentication data:</strong> if you sign in with Google, we receive your name, email,
-			and profile photo from Google. We do not receive your Google password.
+			<strong>Authentication data:</strong> if you sign in with Google, we receive your name, email, and
+			profile photo from Google. We do not receive your Google password.
 		</li>
 		<li>
-			<strong>Business details:</strong> your catalog (product names, descriptions, photos, prices),
-			pickup locations and windows, brand assets (logo, colors), and similar storefront content
-			you upload.
+			<strong>Business details:</strong> your catalog (product names, descriptions, photos, prices), pickup
+			locations and windows, brand assets (logo, colors), and similar storefront content you upload.
 		</li>
 		<li>
-			<strong>Stripe Connect information:</strong> when you connect your Stripe account, we receive
-			identifiers and account status from Stripe so we can route payments to you. We do not store
-			your bank account or tax ID numbers — those live with Stripe.
+			<strong>Stripe Connect information:</strong> when you connect your Stripe account, we receive identifiers
+			and account status from Stripe so we can route payments to you. We do not store your bank account
+			or tax ID numbers — those live with Stripe.
 		</li>
 		<li>
-			<strong>Subscription billing:</strong> if you're on a paid plan, our payment processor
-			(Stripe) handles your payment method. We store your subscription tier and billing status, not
-			your card number.
+			<strong>Subscription billing:</strong> if you're on a paid plan, our payment processor (Stripe)
+			handles your payment method. We store your subscription tier and billing status, not your card number.
 		</li>
 	</ul>
 
 	<h3 class="mt-6 text-lg font-semibold text-foreground">From Customers</h3>
 	<ul class="mt-4 ml-6 list-disc space-y-2 text-foreground">
 		<li>
-			<strong>Order information:</strong> name, email address, phone number, items ordered,
-			modifier selections, pickup window, order notes, and order total.
+			<strong>Order information:</strong> name, email address, phone number, items ordered, modifier selections,
+			pickup window, order notes, and order total.
 		</li>
 		<li>
-			<strong>Payment information:</strong> payment is processed by Stripe directly. We receive a
-			tokenized reference and the last four digits of the card, never the full card number.
+			<strong>Payment information:</strong> payment is processed by Stripe directly. We receive a tokenized
+			reference and the last four digits of the card, never the full card number.
 		</li>
 		<li>
 			<strong>Communications:</strong> if you reply to an order confirmation email or SMS, we receive
@@ -79,8 +77,8 @@
 	<h3 class="mt-6 text-lg font-semibold text-foreground">Automatically</h3>
 	<ul class="mt-4 ml-6 list-disc space-y-2 text-foreground">
 		<li>
-			<strong>Device and usage data:</strong> IP address, browser type, operating system, referring
-			URL, pages viewed, and timestamps.
+			<strong>Device and usage data:</strong> IP address, browser type, operating system, referring URL,
+			pages viewed, and timestamps.
 		</li>
 		<li>
 			<strong>Cookies and similar technologies:</strong> see Section 8 below.
@@ -126,15 +124,17 @@
 
 	<h3 class="mt-6 text-lg font-semibold text-foreground">With Vendors</h3>
 	<p class="mt-4 text-foreground">
-		When a Customer places an order, we share the order details with the Vendor whose storefront
-		the Customer ordered from. The Vendor is responsible for handling that information in
-		accordance with the Vendor's own privacy practices and applicable law.
+		When a Customer places an order, we share the order details with the Vendor whose storefront the
+		Customer ordered from. The Vendor is responsible for handling that information in accordance
+		with the Vendor's own privacy practices and applicable law.
 	</p>
 
-	<h3 class="mt-6 text-lg font-semibold text-foreground">With Service Providers (Sub-Processors)</h3>
+	<h3 class="mt-6 text-lg font-semibold text-foreground">
+		With Service Providers (Sub-Processors)
+	</h3>
 	<p class="mt-4 text-foreground">
-		We use the following service providers to operate the Service. Each is contractually required
-		to protect information consistent with this Policy and applicable law:
+		We use the following service providers to operate the Service. Each is contractually required to
+		protect information consistent with this Policy and applicable law:
 	</p>
 	<ul class="mt-4 ml-6 list-disc space-y-2 text-foreground">
 		<li><strong>Stripe</strong> — payment processing and Vendor payouts.</li>
@@ -165,10 +165,10 @@
 
 	<h2 class="mt-10 text-xl font-semibold text-foreground">6. Data Retention</h2>
 	<p class="mt-4 text-foreground">
-		We retain Vendor account information for as long as the account is active and for a
-		reasonable period after closure for record-keeping, legal compliance, and dispute resolution.
-		We retain Customer order information for as long as the associated Vendor account is active.
-		Backups may persist for a short period after deletion.
+		We retain Vendor account information for as long as the account is active and for a reasonable
+		period after closure for record-keeping, legal compliance, and dispute resolution. We retain
+		Customer order information for as long as the associated Vendor account is active. Backups may
+		persist for a short period after deletion.
 	</p>
 	<p class="mt-4 text-foreground">
 		Vendors can request deletion of inactive Customer records at any time by contacting us.
@@ -177,8 +177,7 @@
 
 	<h2 class="mt-10 text-xl font-semibold text-foreground">7. Your Rights and Choices</h2>
 	<p class="mt-4 text-foreground">
-		Depending on where you live, you may have rights regarding your personal information,
-		including:
+		Depending on where you live, you may have rights regarding your personal information, including:
 	</p>
 	<ul class="mt-4 ml-6 list-disc space-y-2 text-foreground">
 		<li><strong>Access</strong> a copy of the information we hold about you.</li>
@@ -194,8 +193,8 @@
 		To exercise these rights, email us at
 		<a href="mailto:hello@getorderlocal.com" class="text-primary underline"
 			>hello@getorderlocal.com</a
-		>. For information you provided to a Vendor's storefront, please contact the Vendor directly;
-		we will assist the Vendor in fulfilling valid requests.
+		>. For information you provided to a Vendor's storefront, please contact the Vendor directly; we
+		will assist the Vendor in fulfilling valid requests.
 	</p>
 
 	<h2 class="mt-10 text-xl font-semibold text-foreground">8. Cookies and Tracking</h2>
@@ -206,8 +205,8 @@
 	</p>
 	<p class="mt-4 text-foreground">
 		We currently use essential cookies for authentication and session management, and limited
-		analytics cookies to understand aggregate usage patterns. We do not use third-party
-		advertising cookies.
+		analytics cookies to understand aggregate usage patterns. We do not use third-party advertising
+		cookies.
 		<!-- TODO(legal): update if analytics or ad cookies are added. -->
 	</p>
 
@@ -215,8 +214,8 @@
 	<p class="mt-4 text-foreground">
 		We use commercially reasonable technical and organizational measures to protect information,
 		including encryption in transit (TLS), encryption at rest for sensitive fields, hashed
-		passwords, and access controls. No system is perfectly secure; we cannot guarantee the
-		security of information transmitted to or stored on the Service.
+		passwords, and access controls. No system is perfectly secure; we cannot guarantee the security
+		of information transmitted to or stored on the Service.
 	</p>
 
 	<h2 class="mt-10 text-xl font-semibold text-foreground">10. Children's Privacy</h2>
@@ -229,16 +228,16 @@
 	<h2 class="mt-10 text-xl font-semibold text-foreground">11. International Data Transfers</h2>
 	<p class="mt-4 text-foreground">
 		Order Local is based in the United States. If you access the Service from outside the United
-		States, your information may be transferred to, stored, and processed in the United States.
-		By using the Service, you consent to such transfer.
+		States, your information may be transferred to, stored, and processed in the United States. By
+		using the Service, you consent to such transfer.
 		<!-- TODO(legal): if you onboard EU/UK customers, add SCCs / UK addendum details. -->
 	</p>
 
 	<h2 class="mt-10 text-xl font-semibold text-foreground">12. Changes to This Policy</h2>
 	<p class="mt-4 text-foreground">
-		We may update this Policy from time to time. If we make material changes, we will notify
-		Vendors by email and update the Effective Date at the top of this page. Continued use of the
-		Service after a change indicates acceptance of the updated Policy.
+		We may update this Policy from time to time. If we make material changes, we will notify Vendors
+		by email and update the Effective Date at the top of this page. Continued use of the Service
+		after a change indicates acceptance of the updated Policy.
 	</p>
 
 	<h2 class="mt-10 text-xl font-semibold text-foreground">13. Contact Us</h2>

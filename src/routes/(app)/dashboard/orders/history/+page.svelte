@@ -390,13 +390,18 @@
 					<!-- Action strip: only for cancelled+paid orders -->
 					{#if showRefund}
 						<div class="flex items-center justify-end gap-3 border-t border-gray-100 px-4 py-2">
-							<form method="post" action="?/refund" use:enhance={() => {
-								submittingRefundId = order.id;
-								return async ({ update }) => {
-									submittingRefundId = null;
-									await update();
-								};
-							}} class="flex">
+							<form
+								method="post"
+								action="?/refund"
+								use:enhance={() => {
+									submittingRefundId = order.id;
+									return async ({ update }) => {
+										submittingRefundId = null;
+										await update();
+									};
+								}}
+								class="flex"
+							>
 								<input type="hidden" name="id" value={order.id} />
 								<Button
 									type="submit"

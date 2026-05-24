@@ -108,7 +108,8 @@ export const actions: Actions = {
 		});
 		if (!existing) return fail(404, { error: 'Order not found' });
 
-		const nextPaymentStatus = existing.paymentStatus === 'pending' ? 'void' : existing.paymentStatus;
+		const nextPaymentStatus =
+			existing.paymentStatus === 'pending' ? 'void' : existing.paymentStatus;
 
 		const [order] = await db
 			.update(orders)
@@ -468,10 +469,12 @@ export const actions: Actions = {
 		if (isNaN(proposedDate.getTime())) return fail(400, { error: 'Invalid date' });
 		const now = new Date();
 		const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-		if (proposedDate < todayStart) return fail(400, { error: 'Proposed date must be today or later' });
+		if (proposedDate < todayStart)
+			return fail(400, { error: 'Proposed date must be today or later' });
 		const oneYearOut = new Date(todayStart);
 		oneYearOut.setFullYear(oneYearOut.getFullYear() + 1);
-		if (proposedDate > oneYearOut) return fail(400, { error: 'Proposed date must be within one year' });
+		if (proposedDate > oneYearOut)
+			return fail(400, { error: 'Proposed date must be within one year' });
 
 		const [orderRow, vendorRecord] = await Promise.all([
 			db.query.orders.findFirst({
@@ -484,7 +487,8 @@ export const actions: Actions = {
 		]);
 
 		if (!orderRow) return fail(404, { error: 'Order not found' });
-		if (orderRow.status !== 'pending_approval') return fail(400, { error: 'Order is not pending approval' });
+		if (orderRow.status !== 'pending_approval')
+			return fail(400, { error: 'Order is not pending approval' });
 		if (orderRow.proposedAt !== null) return fail(400, { error: 'A proposal is already pending' });
 
 		await db
@@ -533,7 +537,8 @@ export const actions: Actions = {
 			where: and(eq(orders.id, id), eq(orders.vendorId, vendorId))
 		});
 		if (!existing) return fail(404, { error: 'Order not found' });
-		if (existing.status !== 'pending_approval') return fail(400, { error: 'Order is not pending approval' });
+		if (existing.status !== 'pending_approval')
+			return fail(400, { error: 'Order is not pending approval' });
 		if (existing.proposedAt === null) return fail(400, { error: 'No proposal to withdraw' });
 
 		await db

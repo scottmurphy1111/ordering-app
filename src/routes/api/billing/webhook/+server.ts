@@ -375,8 +375,7 @@ export const POST: RequestHandler = async ({ request }) => {
 					}
 				).subscription;
 				if (!pmId && invoiceSubRef) {
-					const subId =
-						typeof invoiceSubRef === 'string' ? invoiceSubRef : invoiceSubRef.id;
+					const subId = typeof invoiceSubRef === 'string' ? invoiceSubRef : invoiceSubRef.id;
 					try {
 						const sub = await stripe.subscriptions.retrieve(subId);
 						const subPm = sub.default_payment_method;

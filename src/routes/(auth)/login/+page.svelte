@@ -15,7 +15,8 @@
 
 	// Auth callbacks must land on the app host (dashboard), not the current host
 	// (which may be the apex marketing/auth host in production).
-	const appOrigin = PUBLIC_APP_ORIGIN || (typeof window !== 'undefined' ? window.location.origin : '');
+	const appOrigin =
+		PUBLIC_APP_ORIGIN || (typeof window !== 'undefined' ? window.location.origin : '');
 
 	function callbackURL(): string {
 		const redirectTo = page.url.searchParams.get('redirectTo');

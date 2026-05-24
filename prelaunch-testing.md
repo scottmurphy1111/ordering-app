@@ -139,7 +139,7 @@ The product surfaces two contact addresses (see CLAUDE.md "Support and hello ema
 
 **Surface coverage check (one-time pre-launch sweep):**
 
-- [ ] Resources page — does it mention support? If yes, address is correct per the split. If no, add it.  ← Resources page audit is its own roadmap item; this item is just "check whether the support address is mentioned correctly there."
+- [ ] Resources page — does it mention support? If yes, address is correct per the split. If no, add it. ← Resources page audit is its own roadmap item; this item is just "check whether the support address is mentioned correctly there."
 - [ ] ToS / Privacy Policy — when these documents land, the contact address used in them should be `support@` (these are formal documents; help-channel treatment is right).
 - [ ] Welcome email to new vendors — currently uses `hello@` per the email template. Confirm this is still right; vendors signing up are warm-channel.
 - [ ] Stripe failed-payment email — currently uses `hello@`. This is borderline (vendor receiving the email is in a problem state) but the existing template has it as `hello@`. Decision: leave as `hello@` for v1 since the email itself is friendly-toned. Revisit if it reads wrong with real vendor traffic.

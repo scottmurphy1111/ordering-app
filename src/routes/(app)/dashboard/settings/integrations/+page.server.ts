@@ -56,10 +56,7 @@ export const actions: Actions = {
 		if (!newKey.startsWith('pk_'))
 			return fail(400, { error: 'Publishable key must start with pk_' });
 
-		await db
-			.update(vendor)
-			.set({ stripePublishableKey: newKey })
-			.where(eq(vendor.id, vendorId));
+		await db.update(vendor).set({ stripePublishableKey: newKey }).where(eq(vendor.id, vendorId));
 
 		return { publishableSuccess: true };
 	},

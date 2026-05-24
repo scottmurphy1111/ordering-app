@@ -102,7 +102,9 @@ export const actions: Actions = {
 		const note = formData.get('note')?.toString().trim() || null;
 
 		if (!isClosed && (!openRaw || !closeRaw)) {
-			return fail(400, { addError: 'Open and close times are required when not marking as closed.' });
+			return fail(400, {
+				addError: 'Open and close times are required when not marking as closed.'
+			});
 		}
 
 		const openTime = openRaw ? openRaw + ':00' : null;

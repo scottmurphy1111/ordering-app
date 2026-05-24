@@ -143,13 +143,17 @@
 
 										<!-- Ban / Unban -->
 										{#if u.bannedAt}
-											<form method="post" action="?/unban" use:enhance={() => {
-												submittingUserAction = { id: u.id, action: 'unban' };
-												return async ({ update }) => {
-													submittingUserAction = null;
-													await update();
-												};
-											}}>
+											<form
+												method="post"
+												action="?/unban"
+												use:enhance={() => {
+													submittingUserAction = { id: u.id, action: 'unban' };
+													return async ({ update }) => {
+														submittingUserAction = null;
+														await update();
+													};
+												}}
+											>
 												<input type="hidden" name="id" value={u.id} />
 												<Button
 													type="submit"
@@ -172,13 +176,17 @@
 												</Button>
 											</form>
 										{:else}
-											<form method="post" action="?/ban" use:enhance={() => {
-												submittingUserAction = { id: u.id, action: 'ban' };
-												return async ({ update }) => {
-													submittingUserAction = null;
-													await update();
-												};
-											}}>
+											<form
+												method="post"
+												action="?/ban"
+												use:enhance={() => {
+													submittingUserAction = { id: u.id, action: 'ban' };
+													return async ({ update }) => {
+														submittingUserAction = null;
+														await update();
+													};
+												}}
+											>
 												<input type="hidden" name="id" value={u.id} />
 												<Button
 													type="submit"

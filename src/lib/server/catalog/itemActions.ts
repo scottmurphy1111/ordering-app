@@ -40,9 +40,7 @@ function parseItemFormData(formData: FormData) {
 			: null;
 	const rawAvailabilityMode = formData.get('availabilityMode')?.toString();
 	const availabilityMode = (
-		pickupType === 'custom_date' || !rawAvailabilityMode
-			? 'special_order'
-			: rawAvailabilityMode
+		pickupType === 'custom_date' || !rawAvailabilityMode ? 'special_order' : rawAvailabilityMode
 	) as 'always' | 'storefront_only' | 'events_only' | 'special_order';
 
 	if (customDateLeadDays !== null && (customDateLeadDays < 1 || customDateLeadDays > 365)) {

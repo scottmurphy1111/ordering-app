@@ -156,17 +156,22 @@
 				<CardTitle>New shop</CardTitle>
 			</CardHeader>
 			<CardContent>
-				<form method="post" action="?/create" use:enhance={() => {
-					submitting = true;
-					return async ({ result, update }) => {
-						if (result.type === 'redirect') {
-							window.location.href = result.location;
-							return;
-						}
-						submitting = false;
-						await update();
-					};
-				}} class="space-y-4">
+				<form
+					method="post"
+					action="?/create"
+					use:enhance={() => {
+						submitting = true;
+						return async ({ result, update }) => {
+							if (result.type === 'redirect') {
+								window.location.href = result.location;
+								return;
+							}
+							submitting = false;
+							await update();
+						};
+					}}
+					class="space-y-4"
+				>
 					<div>
 						<label class="mb-1 block text-sm font-medium text-muted-foreground" for="name"
 							>Business name</label
@@ -276,13 +281,11 @@
 					</div>
 
 					<div>
-						<p class="mb-1.5 block text-sm font-medium text-muted-foreground">
-							Example data
-						</p>
+						<p class="mb-1.5 block text-sm font-medium text-muted-foreground">Example data</p>
 						{#if compatibleArchetypes.length === 0}
 							<p class="text-xs text-muted-foreground">
-								No example catalog available for this fulfillment model yet. Your shop will
-								start blank.
+								No example catalog available for this fulfillment model yet. Your shop will start
+								blank.
 							</p>
 							<input type="hidden" name="archetypeKey" value="" />
 						{:else}

@@ -145,9 +145,7 @@
 					Try again
 				</Button>
 
-				<Button variant="ghost" onclick={reset} disabled={accepting || generating}>
-					Discard
-				</Button>
+				<Button variant="ghost" onclick={reset} disabled={accepting || generating}>Discard</Button>
 			</div>
 		</div>
 	{/if}

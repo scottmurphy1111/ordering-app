@@ -547,7 +547,6 @@
 			{/if}
 		</div>
 
-
 		<!-- Edit form -->
 		{#if editingId !== null && editingLocation !== null}
 			{#if editError}
@@ -626,11 +625,7 @@
 						</div>
 					</CardContent>
 					<CardFooter class="gap-3">
-						<Button
-							type="submit"
-							variant="default"
-							disabled={submittingUpdateLocation}
-						>
+						<Button type="submit" variant="default" disabled={submittingUpdateLocation}>
 							{#if submittingUpdateLocation}
 								<Icon icon="mdi:loading" class="h-4 w-4 animate-spin" />
 								Saving...
@@ -709,11 +704,7 @@
 						</label>
 					</CardContent>
 					<CardFooter class="gap-3">
-						<Button
-							type="submit"
-							variant="default"
-							disabled={submittingCreateLocation}
-						>
+						<Button type="submit" variant="default" disabled={submittingCreateLocation}>
 							{#if submittingCreateLocation}
 								<Icon icon="mdi:loading" class="h-4 w-4 animate-spin" />
 								Saving...
@@ -859,7 +850,6 @@
 				</Button>
 			{/if}
 		</div>
-
 
 		<!-- Edit template form -->
 		{#if editingTemplateId !== null && editingTemplate !== null}
@@ -1139,11 +1129,7 @@
 						{@render occurrencePreviewBlock()}
 					</CardContent>
 					<CardFooter class="gap-3">
-						<Button
-							type="submit"
-							variant="default"
-							disabled={submittingUpdateTemplate}
-						>
+						<Button type="submit" variant="default" disabled={submittingUpdateTemplate}>
 							{#if submittingUpdateTemplate}
 								<Icon icon="mdi:loading" class="h-4 w-4 animate-spin" />
 								Saving...
@@ -1393,11 +1379,7 @@
 						{@render occurrencePreviewBlock()}
 					</CardContent>
 					<CardFooter class="gap-3">
-						<Button
-							type="submit"
-							variant="default"
-							disabled={submittingCreateTemplate}
-						>
+						<Button type="submit" variant="default" disabled={submittingCreateTemplate}>
 							{#if submittingCreateTemplate}
 								<Icon icon="mdi:loading" class="h-4 w-4 animate-spin" />
 								Saving...
@@ -1484,7 +1466,9 @@
 													: 'No cap'}{tmplDateRange ? ` · ${tmplDateRange}` : ''}
 											</span>
 											{#if !tmpl.isActive}
-												<StatusBadge tone="bg-gray-100 text-gray-500" class="text-xs">Deactivated</StatusBadge>
+												<StatusBadge tone="bg-gray-100 text-gray-500" class="text-xs"
+													>Deactivated</StatusBadge
+												>
 											{/if}
 										</div>
 										<div class="flex shrink-0 items-baseline gap-3 md:pl-4">
@@ -1544,14 +1528,18 @@
 													{/if}
 												</Button>
 											</form>
-											<form method="post" action="?/deleteTemplate" use:enhance={() => {
-												submittingDeleteTemplateId = tmpl.id;
-												return async ({ result, update }) => {
-													submittingDeleteTemplateId = null;
-													await update();
-													if (result.type === 'success') toast.success('Pickup schedule updated');
-												};
-											}}>
+											<form
+												method="post"
+												action="?/deleteTemplate"
+												use:enhance={() => {
+													submittingDeleteTemplateId = tmpl.id;
+													return async ({ result, update }) => {
+														submittingDeleteTemplateId = null;
+														await update();
+														if (result.type === 'success') toast.success('Pickup schedule updated');
+													};
+												}}
+											>
 												<input type="hidden" name="id" value={tmpl.id} />
 												<Tooltip>
 													<TooltipTrigger>
@@ -1586,9 +1574,9 @@
 													</TooltipTrigger>
 													{#if !tmpl.canDelete}
 														<TooltipContent>
-															Can't delete — {tmpl.futureCommitmentCount} {tmpl.futureCommitmentCount === 1
-																		? 'order is'
-																		: 'orders are'} attached to upcoming pickups. Deactivate instead.
+															Can't delete — {tmpl.futureCommitmentCount}
+															{tmpl.futureCommitmentCount === 1 ? 'order is' : 'orders are'} attached
+															to upcoming pickups. Deactivate instead.
 														</TooltipContent>
 													{/if}
 												</Tooltip>
@@ -1666,7 +1654,9 @@
 												: 'No cap'}{tmplDateRange ? ` · ${tmplDateRange}` : ''}
 										</span>
 										{#if !tmpl.isActive}
-											<StatusBadge tone="bg-gray-100 text-gray-500" class="text-xs">Deactivated</StatusBadge>
+											<StatusBadge tone="bg-gray-100 text-gray-500" class="text-xs"
+												>Deactivated</StatusBadge
+											>
 										{/if}
 									</div>
 									<div class="flex shrink-0 items-baseline gap-3 md:pl-4">
@@ -1726,14 +1716,18 @@
 												{/if}
 											</Button>
 										</form>
-										<form method="post" action="?/deleteTemplate" use:enhance={() => {
-											submittingDeleteTemplateId = tmpl.id;
-											return async ({ result, update }) => {
-												submittingDeleteTemplateId = null;
-												await update();
-												if (result.type === 'success') toast.success('Pickup schedule updated');
-											};
-										}}>
+										<form
+											method="post"
+											action="?/deleteTemplate"
+											use:enhance={() => {
+												submittingDeleteTemplateId = tmpl.id;
+												return async ({ result, update }) => {
+													submittingDeleteTemplateId = null;
+													await update();
+													if (result.type === 'success') toast.success('Pickup schedule updated');
+												};
+											}}
+										>
 											<input type="hidden" name="id" value={tmpl.id} />
 											<Tooltip>
 												<TooltipTrigger>
@@ -1768,9 +1762,9 @@
 												</TooltipTrigger>
 												{#if !tmpl.canDelete}
 													<TooltipContent>
-														Can't delete — {tmpl.futureCommitmentCount} {tmpl.futureCommitmentCount === 1
-																? 'order is'
-																: 'orders are'} attached to upcoming pickups. Deactivate instead.
+														Can't delete — {tmpl.futureCommitmentCount}
+														{tmpl.futureCommitmentCount === 1 ? 'order is' : 'orders are'} attached to
+														upcoming pickups. Deactivate instead.
 													</TooltipContent>
 												{/if}
 											</Tooltip>
@@ -1894,11 +1888,7 @@
 						<input type="hidden" name="isCancelled" value="false" />
 						<input type="hidden" name="maxOrders" value="" />
 						<input type="hidden" name="notes" value="" />
-						<Button
-							type="submit"
-							variant="outline"
-							disabled={occurrenceSavingId === occ.id}
-						>
+						<Button type="submit" variant="outline" disabled={occurrenceSavingId === occ.id}>
 							{#if occurrenceSavingId === occ.id}
 								<Icon icon="mdi:loading" class="h-4 w-4 animate-spin" />
 								Saving...

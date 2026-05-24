@@ -116,17 +116,22 @@
 			{/if}
 		{/if}
 
-		<form method="post" action="?/commit" use:enhance={() => {
-			submitting = true;
-			return async ({ result, update }) => {
-				if (result.type === 'redirect') {
-					window.location.href = result.location;
-					return;
-				}
-				submitting = false;
-				await update();
-			};
-		}} class="flex items-center gap-4">
+		<form
+			method="post"
+			action="?/commit"
+			use:enhance={() => {
+				submitting = true;
+				return async ({ result, update }) => {
+					if (result.type === 'redirect') {
+						window.location.href = result.location;
+						return;
+					}
+					submitting = false;
+					await update();
+				};
+			}}
+			class="flex items-center gap-4"
+		>
 			<input type="hidden" name="target" value={data.target} />
 			<a
 				href={resolve('/dashboard/settings/fulfillment-model/change')}

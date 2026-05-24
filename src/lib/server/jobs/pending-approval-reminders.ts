@@ -33,7 +33,10 @@ export async function runPendingApprovalReminders(): Promise<{
 	});
 
 	// Group by vendorId, collecting orders that hit a threshold today.
-	const byVendor = new Map<number, Array<{ orderNumber: string; customerName: string; scheduledFor?: string; daysOpen: 1 | 3 | 7 }>>();
+	const byVendor = new Map<
+		number,
+		Array<{ orderNumber: string; customerName: string; scheduledFor?: string; daysOpen: 1 | 3 | 7 }>
+	>();
 
 	for (const order of pendingOrders) {
 		const createdUtcMidnight = new Date(order.createdAt);

@@ -137,17 +137,22 @@
 
 				{#if !showSignUp}
 					<!-- Sign in form -->
-					<form method="post" action="?/signInAndAccept" use:enhance={() => {
-					submittingAction = 'signIn';
-					return async ({ result, update }) => {
-						if (result.type === 'redirect') {
-							window.location.href = result.location;
-							return;
-						}
-						submittingAction = null;
-						await update();
-					};
-				}} class="space-y-3">
+					<form
+						method="post"
+						action="?/signInAndAccept"
+						use:enhance={() => {
+							submittingAction = 'signIn';
+							return async ({ result, update }) => {
+								if (result.type === 'redirect') {
+									window.location.href = result.location;
+									return;
+								}
+								submittingAction = null;
+								await update();
+							};
+						}}
+						class="space-y-3"
+					>
 						<div>
 							<label class="mb-1 block text-xs font-medium text-muted-foreground" for="email"
 								>Email</label
@@ -174,7 +179,12 @@
 								class="w-full rounded-lg border px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
 							/>
 						</div>
-						<Button type="submit" variant="default" class="w-full" disabled={submittingAction !== null}>
+						<Button
+							type="submit"
+							variant="default"
+							class="w-full"
+							disabled={submittingAction !== null}
+						>
 							{#if submittingAction === 'signIn'}
 								<Icon icon="mdi:loading" class="h-4 w-4 animate-spin" />
 								Signing in...
@@ -194,17 +204,22 @@
 					</Button>
 				{:else}
 					<!-- Sign up form -->
-					<form method="post" action="?/signUpAndAccept" use:enhance={() => {
-					submittingAction = 'signUp';
-					return async ({ result, update }) => {
-						if (result.type === 'redirect') {
-							window.location.href = result.location;
-							return;
-						}
-						submittingAction = null;
-						await update();
-					};
-				}} class="space-y-3">
+					<form
+						method="post"
+						action="?/signUpAndAccept"
+						use:enhance={() => {
+							submittingAction = 'signUp';
+							return async ({ result, update }) => {
+								if (result.type === 'redirect') {
+									window.location.href = result.location;
+									return;
+								}
+								submittingAction = null;
+								await update();
+							};
+						}}
+						class="space-y-3"
+					>
 						<div>
 							<label class="mb-1 block text-xs font-medium text-muted-foreground" for="name"
 								>Name</label
@@ -245,7 +260,12 @@
 								class="w-full rounded-lg border px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
 							/>
 						</div>
-						<Button type="submit" variant="default" class="w-full" disabled={submittingAction !== null}>
+						<Button
+							type="submit"
+							variant="default"
+							class="w-full"
+							disabled={submittingAction !== null}
+						>
 							{#if submittingAction === 'signUp'}
 								<Icon icon="mdi:loading" class="h-4 w-4 animate-spin" />
 								Creating account...

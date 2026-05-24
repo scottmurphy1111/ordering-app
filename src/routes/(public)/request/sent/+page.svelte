@@ -11,7 +11,6 @@
 	<title>Request sent — {vendor.name}</title>
 </svelte:head>
 
-
 <main class="mx-auto max-w-xl px-4 py-12 sm:py-16">
 	<div class="rounded-lg border bg-background p-8 text-center sm:p-12">
 		<div
@@ -19,10 +18,11 @@
 		>
 			<Icon icon="mdi:check" class="h-6 w-6" />
 		</div>
-		<h1 class="text-2xl font-bold text-neutral-900" style="font-family: var(--font-heading);">Request sent</h1>
+		<h1 class="text-2xl font-bold text-neutral-900" style="font-family: var(--font-heading);">
+			Request sent
+		</h1>
 		<p class="mt-2 text-sm text-muted-foreground">
-			{vendor.name} will review your request and reply by email. Check your inbox in the next day
-			or two.
+			{vendor.name} will review your request and reply by email. Check your inbox in the next day or two.
 		</p>
 		<div class="mt-6">
 			<a

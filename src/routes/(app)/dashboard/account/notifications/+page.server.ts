@@ -65,12 +65,7 @@ export const actions: Actions = {
 		await db
 			.update(vendorNotifications)
 			.set({ readAt: new Date() })
-			.where(
-				and(
-					eq(vendorNotifications.vendorId, vendorId),
-					isNull(vendorNotifications.readAt)
-				)
-			);
+			.where(and(eq(vendorNotifications.vendorId, vendorId), isNull(vendorNotifications.readAt)));
 		return { success: true };
 	}
 };

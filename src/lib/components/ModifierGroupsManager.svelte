@@ -266,13 +266,17 @@
 							>
 								Edit
 							</Button>
-							<form method="post" action="?/deleteModifier" use:enhance={() => {
-								submittingDelete = { kind: 'modifier', id: mod.id };
-								return async ({ update }) => {
-									submittingDelete = null;
-									await update();
-								};
-							}}>
+							<form
+								method="post"
+								action="?/deleteModifier"
+								use:enhance={() => {
+									submittingDelete = { kind: 'modifier', id: mod.id };
+									return async ({ update }) => {
+										submittingDelete = null;
+										await update();
+									};
+								}}
+							>
 								<input type="hidden" name="modifierId" value={mod.id} />
 								<Button
 									type="submit"
@@ -399,13 +403,17 @@
 									>
 										<Icon icon="mdi:pencil-outline" class="h-3.5 w-3.5" />
 									</Button>
-									<form method="post" action="?/deleteOption" use:enhance={() => {
-										submittingDelete = { kind: 'option', id: opt.id };
-										return async ({ update }) => {
-											submittingDelete = null;
-											await update();
-										};
-									}}>
+									<form
+										method="post"
+										action="?/deleteOption"
+										use:enhance={() => {
+											submittingDelete = { kind: 'option', id: opt.id };
+											return async ({ update }) => {
+												submittingDelete = null;
+												await update();
+											};
+										}}
+									>
 										<input type="hidden" name="optionId" value={opt.id} />
 										<Button
 											type="submit"

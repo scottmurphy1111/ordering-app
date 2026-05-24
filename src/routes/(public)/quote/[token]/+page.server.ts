@@ -62,7 +62,8 @@ export const actions: Actions = {
 		});
 
 		if (!quote) return fail(404, { acceptError: 'Quote not found.' });
-		if (quote.acceptedAt) return fail(400, { acceptError: 'You have already accepted this quote.' });
+		if (quote.acceptedAt)
+			return fail(400, { acceptError: 'You have already accepted this quote.' });
 		if (quote.declinedAt) return fail(400, { acceptError: 'This quote has been declined.' });
 		if (quote.expiresAt && quote.expiresAt < new Date()) {
 			return fail(400, { acceptError: 'This quote has expired.' });
@@ -146,15 +147,15 @@ export const actions: Actions = {
 				tip: 0,
 				total: quote.priceCents,
 				items: [
-				{
-					itemId: 0,
-					name: 'Custom order',
-					basePrice: quote.priceCents,
-					quantity: 1,
-					selectedModifiers: [],
-					pickupType: 'custom_date'
-				} satisfies CartItem
-			],
+					{
+						itemId: 0,
+						name: 'Custom order',
+						basePrice: quote.priceCents,
+						quantity: 1,
+						selectedModifiers: [],
+						pickupType: 'custom_date'
+					} satisfies CartItem
+				],
 				notes: requestRow.description,
 				scheduledFor,
 				stripeCustomerId: stripeCustomer.id,
@@ -163,14 +164,14 @@ export const actions: Actions = {
 			.returning();
 
 		await db.insert(orderItems).values({
-				orderId: order.id,
-				catalogItemId: null,
-				name: 'Custom order',
-				quantity: 1,
-				unitPrice: quote.priceCents,
-				selectedModifiers: [],
-				notes: null
-			});
+			orderId: order.id,
+			catalogItemId: null,
+			name: 'Custom order',
+			quantity: 1,
+			unitPrice: quote.priceCents,
+			selectedModifiers: [],
+			notes: null
+		});
 
 		const pi = await stripe.paymentIntents.create(
 			{

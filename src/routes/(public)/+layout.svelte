@@ -18,6 +18,7 @@
 
 <svelte:head>
 	<link rel="stylesheet" href={fontsUrl} />
+	<!-- eslint-disable-next-line svelte/no-at-html-tags -- values are server-validated (hex-regex for colors, known-list for fonts); safe to inline as CSS custom properties -->
 	{@html `<style>
 		:root {
 			--background-color: ${backgroundColor};

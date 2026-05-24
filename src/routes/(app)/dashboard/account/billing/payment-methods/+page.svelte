@@ -42,10 +42,8 @@
 		try {
 			const cleaned = new URL(page.url.href);
 			cleaned.searchParams.delete('added');
-			// Same-page cleanup of a single query param — not a navigation that resolve() applies to.
-			/* eslint-disable svelte/no-navigation-without-resolve */
+			// eslint-disable-next-line svelte/no-navigation-without-resolve -- same-page query-param cleanup, not navigation
 			replaceState(cleaned.toString(), page.state);
-			/* eslint-enable svelte/no-navigation-without-resolve */
 		} catch (err) {
 			console.debug('[payment-methods] skipped added-param cleanup:', err);
 		}
@@ -187,13 +185,17 @@
 									</form>
 								{/if}
 
-								<form method="post" action="?/remove" use:enhance={() => {
-									submittingRemoveId = method.id;
-									return async ({ update }) => {
-										submittingRemoveId = null;
-										await update();
-									};
-								}}>
+								<form
+									method="post"
+									action="?/remove"
+									use:enhance={() => {
+										submittingRemoveId = method.id;
+										return async ({ update }) => {
+											submittingRemoveId = null;
+											await update();
+										};
+									}}
+								>
 									<input type="hidden" name="paymentMethodId" value={method.id} />
 									<Button
 										type="submit"

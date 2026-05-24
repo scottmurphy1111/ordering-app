@@ -412,8 +412,7 @@ export const growersPersona: Persona = {
 	label: 'Growers',
 	trackPage: 'for-growers',
 
-	metaTitle:
-		'Online Ordering for Growers — Pre-Orders for Farm Stands & Markets | Order Local',
+	metaTitle: 'Online Ordering for Growers — Pre-Orders for Farm Stands & Markets | Order Local',
 	metaDescription:
 		'Take pre-orders for what you grow. Pickup windows for market days, CSA boxes, and farm stands. Stripe checkout. No commissions. Free to start.',
 

@@ -318,7 +318,8 @@ export const actions: Actions = {
 		});
 		if (!existing) return fail(404, { error: 'Order not found' });
 
-		const nextPaymentStatus = existing.paymentStatus === 'pending' ? 'void' : existing.paymentStatus;
+		const nextPaymentStatus =
+			existing.paymentStatus === 'pending' ? 'void' : existing.paymentStatus;
 
 		const [order] = await db
 			.update(orders)

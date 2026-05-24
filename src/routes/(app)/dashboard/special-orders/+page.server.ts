@@ -30,21 +30,55 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		.limit(100);
 
 	// Counts for filter pills — one query per state to avoid loading full rows
-	const [
-		[pendingRow],
-		[quotedRow],
-		[declinedRow],
-		[acceptedRow],
-		[expiredRow],
-		[totalRow]
-	] = await Promise.all([
-		db.select({ value: count() }).from(specialOrderRequests).where(and(eq(specialOrderRequests.vendorId, vendorId), eq(specialOrderRequests.state, 'pending'))),
-		db.select({ value: count() }).from(specialOrderRequests).where(and(eq(specialOrderRequests.vendorId, vendorId), eq(specialOrderRequests.state, 'quoted'))),
-		db.select({ value: count() }).from(specialOrderRequests).where(and(eq(specialOrderRequests.vendorId, vendorId), eq(specialOrderRequests.state, 'declined'))),
-		db.select({ value: count() }).from(specialOrderRequests).where(and(eq(specialOrderRequests.vendorId, vendorId), eq(specialOrderRequests.state, 'accepted'))),
-		db.select({ value: count() }).from(specialOrderRequests).where(and(eq(specialOrderRequests.vendorId, vendorId), eq(specialOrderRequests.state, 'expired'))),
-		db.select({ value: count() }).from(specialOrderRequests).where(eq(specialOrderRequests.vendorId, vendorId))
-	]);
+	const [[pendingRow], [quotedRow], [declinedRow], [acceptedRow], [expiredRow], [totalRow]] =
+		await Promise.all([
+			db
+				.select({ value: count() })
+				.from(specialOrderRequests)
+				.where(
+					and(
+						eq(specialOrderRequests.vendorId, vendorId),
+						eq(specialOrderRequests.state, 'pending')
+					)
+				),
+			db
+				.select({ value: count() })
+				.from(specialOrderRequests)
+				.where(
+					and(eq(specialOrderRequests.vendorId, vendorId), eq(specialOrderRequests.state, 'quoted'))
+				),
+			db
+				.select({ value: count() })
+				.from(specialOrderRequests)
+				.where(
+					and(
+						eq(specialOrderRequests.vendorId, vendorId),
+						eq(specialOrderRequests.state, 'declined')
+					)
+				),
+			db
+				.select({ value: count() })
+				.from(specialOrderRequests)
+				.where(
+					and(
+						eq(specialOrderRequests.vendorId, vendorId),
+						eq(specialOrderRequests.state, 'accepted')
+					)
+				),
+			db
+				.select({ value: count() })
+				.from(specialOrderRequests)
+				.where(
+					and(
+						eq(specialOrderRequests.vendorId, vendorId),
+						eq(specialOrderRequests.state, 'expired')
+					)
+				),
+			db
+				.select({ value: count() })
+				.from(specialOrderRequests)
+				.where(eq(specialOrderRequests.vendorId, vendorId))
+		]);
 
 	return {
 		requests,

@@ -110,7 +110,10 @@ export async function issueSubscriptionRefund(
 			);
 			return { refundIssued: true };
 		} catch (err) {
-			console.error('[issueSubscriptionRefund] refund to charge failed; falling back to balance credit:', err);
+			console.error(
+				'[issueSubscriptionRefund] refund to charge failed; falling back to balance credit:',
+				err
+			);
 			if (stripeCustomerId) {
 				await stripe.customers.createBalanceTransaction(
 					stripeCustomerId,

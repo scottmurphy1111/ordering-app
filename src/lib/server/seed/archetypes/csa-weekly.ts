@@ -29,8 +29,7 @@ export const csaWeekly: ArchetypeFixture = {
 		{
 			categoryKey: 'weekly',
 			name: 'Half Share Box',
-			description:
-				'Half share — 6–8 seasonal items. Great for 1–2 people or those new to CSA.',
+			description: 'Half share — 6–8 seasonal items. Great for 1–2 people or those new to CSA.',
 			price: 1600,
 			sortOrder: 2,
 			availabilityMode: 'events_only'
@@ -56,8 +55,7 @@ export const csaWeekly: ArchetypeFixture = {
 		{
 			categoryKey: 'addons',
 			name: 'Raw Wildflower Honey',
-			description:
-				'8 oz jar of unfiltered wildflower honey. Harvested from on-farm hives.',
+			description: '8 oz jar of unfiltered wildflower honey. Harvested from on-farm hives.',
 			price: 1400,
 			sortOrder: 2,
 			availabilityMode: 'events_only'
@@ -114,7 +112,11 @@ export const csaWeekly: ArchetypeFixture = {
 		loyalty: {
 			enabled: false,
 			type: 'stamps',
-			stamps: { stampsPerOrder: 1, rewardAt: 10, rewardDescription: 'Free add-on item of your choice' },
+			stamps: {
+				stampsPerOrder: 1,
+				rewardAt: 10,
+				rewardDescription: 'Free add-on item of your choice'
+			},
 			points: { pointsPerDollar: 1, redeemAt: 100, redeemValue: 500 }
 		}
 	},

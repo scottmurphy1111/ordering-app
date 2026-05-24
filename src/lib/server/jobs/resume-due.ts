@@ -36,7 +36,8 @@ export async function runResumeDue(): Promise<{ processed: number; errors: strin
 				await stripe.subscriptions.update(
 					v.stripeSubscriptionId,
 					{
-						pause_collection: '' as Stripe.Emptyable<Stripe.SubscriptionUpdateParams.PauseCollection>,
+						pause_collection:
+							'' as Stripe.Emptyable<Stripe.SubscriptionUpdateParams.PauseCollection>,
 						metadata: { pause_until: '', paused_at: '' }
 					},
 					{ idempotencyKey: `sub-resume-cron:${v.id}:${v.pauseUntil?.toISOString() ?? 'no-date'}` }

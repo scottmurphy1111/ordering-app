@@ -86,11 +86,15 @@
 	let billingInterval = $state(untrack(() => item?.billingInterval ?? 'monthly'));
 
 	// Pickup type
-	let pickupType = $state<PickupType>(untrack(() => (item?.pickupType as PickupType | null | undefined) ?? 'windowed'));
+	let pickupType = $state<PickupType>(
+		untrack(() => (item?.pickupType as PickupType | null | undefined) ?? 'windowed')
+	);
 	let customDateLeadDays = $state(untrack(() => item?.customDateLeadDays ?? 14));
 
 	// Availability mode
-	let availabilityMode = $state<AvailabilityMode>(untrack(() => (item?.availabilityMode as AvailabilityMode | null | undefined) ?? 'always'));
+	let availabilityMode = $state<AvailabilityMode>(
+		untrack(() => (item?.availabilityMode as AvailabilityMode | null | undefined) ?? 'always')
+	);
 
 	// Internal feedback
 	let internalError = $state<string | null>(null);
@@ -98,7 +102,9 @@
 
 	// Controlled select mirrors — must be $state so bind:value propagates user selections
 	let categoryValue = $state(untrack(() => String(item?.category?.id ?? '')));
-	let statusValue = $state(untrack(() => (mode === 'edit' ? (item?.status ?? 'available') : 'available')));
+	let statusValue = $state(
+		untrack(() => (mode === 'edit' ? (item?.status ?? 'available') : 'available'))
+	);
 
 	async function onImageChange(e: Event) {
 		const input = e.target as HTMLInputElement;
@@ -371,7 +377,10 @@
 		</p>
 		{#if pickupType === 'custom_date'}
 			<div>
-				<label class="mb-1.5 block text-sm font-medium text-muted-foreground" for="customDateLeadDays">
+				<label
+					class="mb-1.5 block text-sm font-medium text-muted-foreground"
+					for="customDateLeadDays"
+				>
 					Lead time (days)
 				</label>
 				<Input
@@ -382,7 +391,8 @@
 					max={365}
 					required
 					value={customDateLeadDays}
-					oninput={(e) => (customDateLeadDays = parseInt((e.target as HTMLInputElement).value) || 14)}
+					oninput={(e) =>
+						(customDateLeadDays = parseInt((e.target as HTMLInputElement).value) || 14)}
 				/>
 				<p class="mt-1.5 text-xs text-gray-400">Minimum days between order and fulfillment.</p>
 			</div>
@@ -393,7 +403,11 @@
 {#snippet fieldAvailabilityMode()}
 	{@const AVAILABILITY_OPTIONS = [
 		['always', 'Always available', 'Show to all customers regardless of how they are ordering.'],
-		['storefront_only', 'Storefront only', 'Only shown when ordering for storefront / ASAP pickup.'],
+		[
+			'storefront_only',
+			'Storefront only',
+			'Only shown when ordering for storefront / ASAP pickup.'
+		],
 		['events_only', 'Events only', 'Only shown when ordering for a scheduled pickup event.'],
 		['special_order', 'Special order', 'Hidden from the catalog — must be ordered directly.']
 	] as const}

@@ -32,7 +32,6 @@ export type CartValidationResult =
 			availabilityMismatch?: AvailabilityMismatch[];
 	  };
 
-
 /**
  * Validates cart items against live catalog state for a vendor.
  * Items with status != 'available' or missing from DB go into `unavailable`.
@@ -86,7 +85,11 @@ export async function validateCartItems(
 			seenPriceChangeIds.add(item.itemId);
 		}
 		if (!isCompatible(row.availabilityMode, pickupMode) && !seenMismatchIds.has(item.itemId)) {
-			availabilityMismatch.push({ itemId: item.itemId, name: item.name, mode: row.availabilityMode });
+			availabilityMismatch.push({
+				itemId: item.itemId,
+				name: item.name,
+				mode: row.availabilityMode
+			});
 			seenMismatchIds.add(item.itemId);
 		}
 		validatedItems.push({

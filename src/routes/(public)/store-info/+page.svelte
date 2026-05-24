@@ -24,12 +24,15 @@
 	}
 
 	const hoursByDay = $derived(
-		DAYS.reduce<Record<Day, typeof data.hours>>((acc, day) => {
-			acc[day] = data.hours
-				.filter((r) => r.dayOfWeek === day)
-				.sort((a, b) => a.openTime.localeCompare(b.openTime));
-			return acc;
-		}, {} as Record<Day, typeof data.hours>)
+		DAYS.reduce<Record<Day, typeof data.hours>>(
+			(acc, day) => {
+				acc[day] = data.hours
+					.filter((r) => r.dayOfWeek === day)
+					.sort((a, b) => a.openTime.localeCompare(b.openTime));
+				return acc;
+			},
+			{} as Record<Day, typeof data.hours>
+		)
 	);
 
 	const address = $derived(
@@ -103,7 +106,12 @@
 			<section class="rounded-xl border border-neutral-200 bg-white">
 				<div class="flex items-center gap-2 border-b border-neutral-100 px-5 py-4">
 					<Icon icon="mdi:clock-outline" class="h-4 w-4 text-neutral-400" />
-					<h2 class="text-sm font-semibold text-neutral-900" style="font-family: var(--font-heading);">Hours</h2>
+					<h2
+						class="text-sm font-semibold text-neutral-900"
+						style="font-family: var(--font-heading);"
+					>
+						Hours
+					</h2>
 				</div>
 				<ul class="divide-y divide-neutral-100">
 					{#each DAYS as day (day)}
@@ -122,7 +130,7 @@
 								{day}
 								{#if isToday}
 									<span
-										class="ml-1 inline-block rounded-full px-1.5 py-0.5 text-[10px] font-medium leading-none"
+										class="ml-1 inline-block rounded-full px-1.5 py-0.5 text-[10px] leading-none font-medium"
 										style="background-color: var(--accent-color); color: var(--foreground-color);"
 									>
 										Today
@@ -134,8 +142,14 @@
 									<span class="text-sm text-neutral-400">Closed</span>
 								{:else}
 									{#each shifts as shift (shift.id)}
-										<span class="text-sm {isToday ? 'font-medium text-neutral-900' : 'text-neutral-600'}">
-											{formatTime(shift.openTime.slice(0, 5))} – {formatTime(shift.closeTime.slice(0, 5))}
+										<span
+											class="text-sm {isToday
+												? 'font-medium text-neutral-900'
+												: 'text-neutral-600'}"
+										>
+											{formatTime(shift.openTime.slice(0, 5))} – {formatTime(
+												shift.closeTime.slice(0, 5)
+											)}
 										</span>
 									{/each}
 								{/if}
@@ -151,9 +165,14 @@
 			<section class="rounded-xl border border-neutral-200 bg-white px-5 py-4">
 				<div class="mb-3 flex items-center gap-2">
 					<Icon icon="mdi:map-marker-outline" class="h-4 w-4 text-neutral-400" />
-					<h2 class="text-sm font-semibold text-neutral-900" style="font-family: var(--font-heading);">Location</h2>
+					<h2
+						class="text-sm font-semibold text-neutral-900"
+						style="font-family: var(--font-heading);"
+					>
+						Location
+					</h2>
 				</div>
-				<address class="not-italic text-sm text-neutral-600">
+				<address class="text-sm text-neutral-600 not-italic">
 					{#if address?.street}<p>{address.street}</p>{/if}
 					{#if address?.city || address?.state || address?.zip}
 						<p>
@@ -169,7 +188,12 @@
 			<section class="rounded-xl border border-neutral-200 bg-white px-5 py-4">
 				<div class="mb-3 flex items-center gap-2">
 					<Icon icon="mdi:phone-outline" class="h-4 w-4 text-neutral-400" />
-					<h2 class="text-sm font-semibold text-neutral-900" style="font-family: var(--font-heading);">Contact</h2>
+					<h2
+						class="text-sm font-semibold text-neutral-900"
+						style="font-family: var(--font-heading);"
+					>
+						Contact
+					</h2>
 				</div>
 				<ul class="space-y-2">
 					{#if data.vendor.phone}

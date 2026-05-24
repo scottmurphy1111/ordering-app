@@ -46,14 +46,21 @@
 	<!-- ── Danger zone ───────────────────────────────────────── -->
 	<div class="mt-6 rounded-xl border border-destructive/20 bg-background p-4">
 		<h2 class="mb-2 text-sm font-semibold text-destructive">Danger zone</h2>
-		<form method="post" action="?/delete" use:enhance={() => {
-			submitting = true;
-			return async ({ result, update }) => {
-				if (result.type === 'redirect') { window.location.href = result.location; return; }
-				submitting = false;
-				await update();
-			};
-		}}>
+		<form
+			method="post"
+			action="?/delete"
+			use:enhance={() => {
+				submitting = true;
+				return async ({ result, update }) => {
+					if (result.type === 'redirect') {
+						window.location.href = result.location;
+						return;
+					}
+					submitting = false;
+					await update();
+				};
+			}}
+		>
 			<Button
 				type="submit"
 				disabled={submitting}

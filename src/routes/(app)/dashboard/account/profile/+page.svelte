@@ -112,13 +112,17 @@
 							{avatarUploading ? 'Uploading…' : data.user.image ? 'Replace' : 'Upload'}
 						</Button>
 						{#if data.user.image}
-							<form method="post" action="?/removeAvatar" use:enhance={() => {
-								submittingAction = 'removeAvatar';
-								return async ({ update }) => {
-									submittingAction = null;
-									await update();
-								};
-							}}>
+							<form
+								method="post"
+								action="?/removeAvatar"
+								use:enhance={() => {
+									submittingAction = 'removeAvatar';
+									return async ({ update }) => {
+										submittingAction = null;
+										await update();
+									};
+								}}
+							>
 								<Button
 									type="submit"
 									variant="ghost"
@@ -176,7 +180,12 @@
 				</form>
 			</CardContent>
 			<CardFooter>
-				<Button type="submit" form="profile-form" variant="default" disabled={submittingAction !== null}>
+				<Button
+					type="submit"
+					form="profile-form"
+					variant="default"
+					disabled={submittingAction !== null}
+				>
 					{#if submittingAction === 'updateProfile'}
 						<Icon icon="mdi:loading" class="h-4 w-4 animate-spin" />
 						Saving...

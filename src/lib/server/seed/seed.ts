@@ -62,8 +62,7 @@ async function _seed(vendorId: number, fixture: ArchetypeFixture): Promise<void>
 					? { customDateLeadDays: item.customDateLeadDays }
 					: {}),
 				availabilityMode:
-					item.availabilityMode ??
-					(item.pickupType === 'custom_date' ? 'special_order' : 'always')
+					item.availabilityMode ?? (item.pickupType === 'custom_date' ? 'special_order' : 'always')
 			}))
 		)
 		.returning({ id: catalogItems.id, name: catalogItems.name });

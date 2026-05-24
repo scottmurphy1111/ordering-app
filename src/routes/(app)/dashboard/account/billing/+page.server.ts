@@ -204,10 +204,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 						invoice_settings: { default_payment_method: defaultPm.id }
 					});
 				} catch (err) {
-					console.error(
-						'[billing load] failed to self-heal customer default payment method:',
-						err
-					);
+					console.error('[billing load] failed to self-heal customer default payment method:', err);
 				}
 			}
 
@@ -340,10 +337,9 @@ export const actions: Actions = {
 		if (record?.stripeSubscriptionId) {
 			let existingSubscription: Stripe.Subscription | null = null;
 			try {
-				existingSubscription = await stripe.subscriptions.retrieve(
-					record.stripeSubscriptionId,
-					{ expand: ['items'] }
-				);
+				existingSubscription = await stripe.subscriptions.retrieve(record.stripeSubscriptionId, {
+					expand: ['items']
+				});
 			} catch (err) {
 				// Subscription doesn't exist on Stripe (deleted, or wiped test env) — treat
 				// as no subscription and fall through to create a fresh one via checkout.
@@ -351,8 +347,7 @@ export const actions: Actions = {
 			}
 
 			const isLive =
-				existingSubscription?.status === 'active' ||
-				existingSubscription?.status === 'trialing';
+				existingSubscription?.status === 'active' || existingSubscription?.status === 'trialing';
 
 			if (existingSubscription && isLive) {
 				const planItem =
@@ -484,10 +479,7 @@ export const actions: Actions = {
 				return { success: true, downgraded: true, alreadyEnded: true };
 			}
 
-			if (
-				subscription.status === 'canceled' ||
-				subscription.status === 'incomplete_expired'
-			) {
+			if (subscription.status === 'canceled' || subscription.status === 'incomplete_expired') {
 				await syncToStarter();
 				return { success: true, downgraded: true, alreadyEnded: true };
 			}
@@ -570,10 +562,7 @@ export const actions: Actions = {
 
 		// A canceled subscription can't be moved to a different paid tier — sync DB to
 		// Starter so the UI stops showing a stale paid tier, then tell the vendor to re-subscribe.
-		if (
-			subscription.status === 'canceled' ||
-			subscription.status === 'incomplete_expired'
-		) {
+		if (subscription.status === 'canceled' || subscription.status === 'incomplete_expired') {
 			await db
 				.update(vendor)
 				.set({
@@ -585,8 +574,7 @@ export const actions: Actions = {
 				})
 				.where(eq(vendor.id, vendorId));
 			return fail(400, {
-				error:
-					'Your previous subscription has ended. Please choose a plan to subscribe again.'
+				error: 'Your previous subscription has ended. Please choose a plan to subscribe again.'
 			});
 		}
 
@@ -616,8 +604,7 @@ export const actions: Actions = {
 					})
 					.where(eq(vendor.id, vendorId));
 				return fail(400, {
-					error:
-						'Your previous subscription has ended. Please choose a plan to subscribe again.'
+					error: 'Your previous subscription has ended. Please choose a plan to subscribe again.'
 				});
 			}
 			console.error('[downgrade] subscriptionItems update failed:', err);
@@ -696,8 +683,7 @@ export const actions: Actions = {
 			}) ?? subscription.items.data[0];
 		if (!planItem) return fail(500, { error: 'Could not find subscription item.' });
 
-		const currentInterval =
-			planItem.price.recurring?.interval === 'year' ? 'annual' : 'monthly';
+		const currentInterval = planItem.price.recurring?.interval === 'year' ? 'annual' : 'monthly';
 		if (currentInterval === interval) return fail(400, { error: `Already billing ${interval}.` });
 
 		if (interval === 'annual') {
@@ -786,9 +772,10 @@ export const actions: Actions = {
 				if (record.email) {
 					await sendEmail({
 						to: record.email,
-						subject: refundCents > 0
-							? `Your Order Local plan is now billed monthly — refund on the way`
-							: `Your Order Local plan is now billed monthly`,
+						subject:
+							refundCents > 0
+								? `Your Order Local plan is now billed monthly — refund on the way`
+								: `Your Order Local plan is now billed monthly`,
 						html: subscriptionIntervalChangedEmail({
 							recipientName: record.name,
 							planName,
@@ -1016,7 +1003,13 @@ export const actions: Actions = {
 
 		const record = await db.query.vendor.findFirst({
 			where: eq(vendor.id, vendorId),
-			columns: { subscriptionTier: true, stripeSubscriptionId: true, addons: true, name: true, email: true }
+			columns: {
+				subscriptionTier: true,
+				stripeSubscriptionId: true,
+				addons: true,
+				name: true,
+				email: true
+			}
 		});
 		if (!record?.subscriptionTier || !PAID_TIERS.has(record.subscriptionTier))
 			return fail(400, { error: 'Upgrade your plan before activating add-ons.' });
@@ -1208,7 +1201,11 @@ export const actions: Actions = {
 			await sendEmail({
 				to: record.email,
 				subject: 'Your Order Local subscription has been paused',
-				html: pauseConfirmedEmail({ recipientName: record.name, planName, pauseUntil: pauseUntilStr }),
+				html: pauseConfirmedEmail({
+					recipientName: record.name,
+					planName,
+					pauseUntil: pauseUntilStr
+				}),
 				category: 'pause_confirmed'
 			}).catch(console.error);
 		}

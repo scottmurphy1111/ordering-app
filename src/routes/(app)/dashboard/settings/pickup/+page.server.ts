@@ -54,7 +54,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 		}
 	}
 
-		// Per-template "can delete" check: deletable only when no future non-cancelled orders
+	// Per-template "can delete" check: deletable only when no future non-cancelled orders
 	// reference any of its occurrences. Drives the UI's Delete button enabled/disabled state.
 	const templateIds = templates.map((t) => t.id);
 	const futureCommitments: Record<number, number> = {};
@@ -62,12 +62,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 		const futureWindowsForTemplates = await db
 			.select({ id: pickupWindows.id, templateId: pickupWindows.templateId })
 			.from(pickupWindows)
-			.where(
-				and(
-					inArray(pickupWindows.templateId, templateIds),
-					gt(pickupWindows.endsAt, now)
-				)
-			);
+			.where(and(inArray(pickupWindows.templateId, templateIds), gt(pickupWindows.endsAt, now)));
 
 		const windowToTemplate = new Map<number, number>();
 		for (const w of futureWindowsForTemplates) {
@@ -79,12 +74,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 			const orderRows = await db
 				.select({ pickupWindowId: orders.pickupWindowId })
 				.from(orders)
-				.where(
-					and(
-						inArray(orders.pickupWindowId, windowIds),
-						ne(orders.status, 'cancelled')
-					)
-				);
+				.where(and(inArray(orders.pickupWindowId, windowIds), ne(orders.status, 'cancelled')));
 
 			for (const o of orderRows) {
 				if (o.pickupWindowId === null) continue;
@@ -208,12 +198,7 @@ async function cascadeCancelOnDeactivate(
 	const orderfulRows = await db
 		.selectDistinct({ windowId: orders.pickupWindowId })
 		.from(orders)
-		.where(
-			and(
-				inArray(orders.pickupWindowId, candidateIds),
-				ne(orders.status, 'cancelled')
-			)
-		);
+		.where(and(inArray(orders.pickupWindowId, candidateIds), ne(orders.status, 'cancelled')));
 	const orderfulIds = new Set(
 		orderfulRows.map((r) => r.windowId).filter((v): v is number => v !== null)
 	);
@@ -224,12 +209,7 @@ async function cascadeCancelOnDeactivate(
 	await db
 		.update(pickupWindows)
 		.set({ isCancelled: true })
-		.where(
-			and(
-				inArray(pickupWindows.id, toCancelIds),
-				eq(pickupWindows.vendorId, vendorId)
-			)
-		);
+		.where(and(inArray(pickupWindows.id, toCancelIds), eq(pickupWindows.vendorId, vendorId)));
 }
 
 async function cascadeUncancelOnActivate(
@@ -634,12 +614,7 @@ export const actions: Actions = {
 			const commitments = await db
 				.select({ id: orders.id })
 				.from(orders)
-				.where(
-					and(
-						inArray(orders.pickupWindowId, windowIds),
-						ne(orders.status, 'cancelled')
-					)
-				)
+				.where(and(inArray(orders.pickupWindowId, windowIds), ne(orders.status, 'cancelled')))
 				.limit(1);
 
 			if (commitments.length > 0) {
@@ -652,12 +627,7 @@ export const actions: Actions = {
 			// No commitments — safe to delete the future un-orderful windows.
 			await db
 				.delete(pickupWindows)
-				.where(
-					and(
-						inArray(pickupWindows.id, windowIds),
-						eq(pickupWindows.vendorId, vendorId)
-					)
-				);
+				.where(and(inArray(pickupWindows.id, windowIds), eq(pickupWindows.vendorId, vendorId)));
 		}
 
 		// Delete the template row. Past pickup_windows with templateId = id get their

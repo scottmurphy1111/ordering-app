@@ -54,15 +54,25 @@
 	{#if openState.isOpen}
 		<div class="h-2 w-2 shrink-0 rounded-full bg-emerald-500"></div>
 		<p class="text-sm font-medium" style="color: var(--foreground-color);">
-			Open · <span style="color: color-mix(in srgb, var(--foreground-color) 65%, transparent);">closes at {formatTime(openState.closesAt)}</span>
+			Open · <span style="color: color-mix(in srgb, var(--foreground-color) 65%, transparent);"
+				>closes at {formatTime(openState.closesAt)}</span
+			>
 		</p>
 	{:else if openState.opensAt}
-		<div class="h-2 w-2 shrink-0 rounded-full" style="background-color: color-mix(in srgb, var(--foreground-color) 30%, transparent);"></div>
+		<div
+			class="h-2 w-2 shrink-0 rounded-full"
+			style="background-color: color-mix(in srgb, var(--foreground-color) 30%, transparent);"
+		></div>
 		<p class="text-sm font-medium" style="color: var(--foreground-color);">
-			Closed · <span style="color: color-mix(in srgb, var(--foreground-color) 65%, transparent);">opens {formatDayAndTime(openState.opensAt)}</span>
+			Closed · <span style="color: color-mix(in srgb, var(--foreground-color) 65%, transparent);"
+				>opens {formatDayAndTime(openState.opensAt)}</span
+			>
 		</p>
 	{:else}
-		<div class="h-2 w-2 shrink-0 rounded-full" style="background-color: color-mix(in srgb, var(--foreground-color) 30%, transparent);"></div>
+		<div
+			class="h-2 w-2 shrink-0 rounded-full"
+			style="background-color: color-mix(in srgb, var(--foreground-color) 30%, transparent);"
+		></div>
 		<p class="text-sm font-medium" style="color: var(--foreground-color);">Closed</p>
 	{/if}
 </div>

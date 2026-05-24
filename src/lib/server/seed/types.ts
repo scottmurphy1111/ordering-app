@@ -71,13 +71,7 @@ export interface SeedOrder {
 	customerName: string;
 	customerEmail: string;
 	type: 'pickup';
-	status:
-		| 'received'
-		| 'preparing'
-		| 'ready'
-		| 'fulfilled'
-		| 'pending_approval'
-		| 'payment_failed';
+	status: 'received' | 'preparing' | 'ready' | 'fulfilled' | 'pending_approval' | 'payment_failed';
 	paymentStatus: 'paid' | 'pending' | 'failed';
 	pickupType?: 'custom_date';
 	pickupMode?: 'pickup_event' | 'storefront_hours' | 'custom_date';

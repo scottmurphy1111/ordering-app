@@ -78,7 +78,10 @@ export const POST: RequestHandler = async ({ request }) => {
 			{
 				type: 'cart_validation_failed',
 				unavailable: [],
-				pickupTypeMismatch: { firstType: 'custom_date' as const, conflictingType: 'windowed' as const }
+				pickupTypeMismatch: {
+					firstType: 'custom_date' as const,
+					conflictingType: 'windowed' as const
+				}
 			},
 			{ status: 400 }
 		);

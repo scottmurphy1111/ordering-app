@@ -95,10 +95,7 @@ if (vendorArg) {
 
 // ── Archetype selection ───────────────────────────────────────────────────────
 
-const fulfillmentModel = targetVendor.fulfillment_model as
-	| 'storefront'
-	| 'pickup_only'
-	| 'hybrid';
+const fulfillmentModel = targetVendor.fulfillment_model as 'storefront' | 'pickup_only' | 'hybrid';
 const compatible = archetypesForFulfillmentModel(fulfillmentModel);
 
 let archetypeKey: string;
@@ -226,7 +223,9 @@ try {
 }
 
 console.log('');
-console.log(`✓ Reseeded vendor "${targetVendor.name}" (${targetVendor.slug}, id=${targetVendor.id})`);
+console.log(
+	`✓ Reseeded vendor "${targetVendor.name}" (${targetVendor.slug}, id=${targetVendor.id})`
+);
 console.log(`  Archetype: ${fixture.label}`);
 console.log(
 	`  - ${fixture.categories.length} categories, ${fixture.items.length} catalog items, ${fixture.modifiers.length} modifier groups`

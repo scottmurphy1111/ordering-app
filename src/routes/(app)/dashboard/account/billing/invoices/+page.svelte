@@ -109,7 +109,9 @@
 									</span>
 								</TableCell>
 								<TableCell class="px-4 py-3 text-right">
-									<div class="flex flex-col items-stretch gap-1 md:flex-row md:items-center md:justify-end">
+									<div
+										class="flex flex-col items-stretch gap-1 md:flex-row md:items-center md:justify-end"
+									>
 										{#if invoice.hostedInvoiceUrl}
 											<!-- eslint-disable svelte/no-navigation-without-resolve -->
 											<Button

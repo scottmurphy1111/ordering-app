@@ -110,7 +110,9 @@
 				: 'bg-muted text-muted-foreground'}"
 		>
 			<span
-				class="h-1.5 w-1.5 rounded-full {data.openState.isOpen ? 'bg-success' : 'bg-muted-foreground/40'}"
+				class="h-1.5 w-1.5 rounded-full {data.openState.isOpen
+					? 'bg-success'
+					: 'bg-muted-foreground/40'}"
 			></span>
 			{#if data.openState.isOpen}
 				Open now · closes {formatTime(data.openState.closesAt)}
@@ -132,14 +134,19 @@
 			<CardTitle>Weekly hours</CardTitle>
 		</CardHeader>
 		<CardContent class="p-0">
-			<form method="post" action="?/saveHours" use:enhance={() => {
-				submittingSaveHours = true;
-				return async ({ result, update }) => {
-					submittingSaveHours = false;
-					await update();
-					if (result.type === 'success') toast.success('Hours saved');
-				};
-			}} class="divide-y divide-border">
+			<form
+				method="post"
+				action="?/saveHours"
+				use:enhance={() => {
+					submittingSaveHours = true;
+					return async ({ result, update }) => {
+						submittingSaveHours = false;
+						await update();
+						if (result.type === 'success') toast.success('Hours saved');
+					};
+				}}
+				class="divide-y divide-border"
+			>
 				{#each DAYS as day (day)}
 					<div class="flex items-center gap-4 px-6 py-3">
 						<!-- Enable toggle -->

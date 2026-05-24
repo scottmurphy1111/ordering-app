@@ -38,10 +38,7 @@ export const CRITICAL_EMAIL_CATEGORIES = new Set<EmailCategory>([
  * fail-open. We'd rather send a duplicate than silently drop a
  * notification.
  */
-export async function shouldSendEmail(
-	vendorId: number,
-	category: EmailCategory
-): Promise<boolean> {
+export async function shouldSendEmail(vendorId: number, category: EmailCategory): Promise<boolean> {
 	if (CRITICAL_EMAIL_CATEGORIES.has(category)) return true;
 	try {
 		const row = await db.query.vendor.findFirst({

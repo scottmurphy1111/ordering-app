@@ -20,7 +20,9 @@
 	let showPk = $state(false);
 	let showSk = $state(false);
 	let lastSubmitted: 'pk' | 'sk' | null = $state(null);
-	let submittingAction = $state<'saveStripePublishableKey' | 'saveStripeSecretKey' | 'clearStripeKey' | null>(null);
+	let submittingAction = $state<
+		'saveStripePublishableKey' | 'saveStripeSecretKey' | 'clearStripeKey' | null
+	>(null);
 </script>
 
 <div>
@@ -125,11 +127,7 @@
 							</Button>
 						</div>
 						{#if editingPublishable}
-							<Button
-								type="submit"
-								variant="default"
-								disabled={submittingAction !== null}
-							>
+							<Button type="submit" variant="default" disabled={submittingAction !== null}>
 								{#if submittingAction === 'saveStripePublishableKey'}
 									<Icon icon="mdi:loading" class="h-4 w-4 animate-spin" />
 									Saving...
@@ -218,11 +216,7 @@
 							</Button>
 						</div>
 						{#if editingSecret}
-							<Button
-								type="submit"
-								variant="default"
-								disabled={submittingAction !== null}
-							>
+							<Button type="submit" variant="default" disabled={submittingAction !== null}>
 								{#if submittingAction === 'saveStripeSecretKey'}
 									<Icon icon="mdi:loading" class="h-4 w-4 animate-spin" />
 									Saving...

@@ -63,7 +63,11 @@ describe('validateStorefrontPickup', () => {
 
 	it('Scheduled: returns valid when scheduledFor matches exception custom hours', () => {
 		// Regular hours: 7am–2pm. Exception opens 10am–8pm. Schedule at 6pm (in exception window).
-		const earlyClose: HoursRow = { dayOfWeek: 'monday', openTime: '07:00:00', closeTime: '14:00:00' };
+		const earlyClose: HoursRow = {
+			dayOfWeek: 'monday',
+			openTime: '07:00:00',
+			closeTime: '14:00:00'
+		};
 		const exception: ExceptionRow = {
 			date: '2026-05-04',
 			isClosed: false,

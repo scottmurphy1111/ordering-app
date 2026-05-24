@@ -761,13 +761,19 @@
 		{#if hasActions}
 			<div class="flex items-center justify-end gap-3 border-t border-gray-100 px-4 py-2">
 				{#if showCancel}
-					<form method="post" action="?/cancel" use:enhance={() => {
-						submittingRowAction = { id: order.id, action: 'cancel' };
-						return async ({ update }) => {
-							submittingRowAction = null;
-							await update();
-						};
-					}} autocomplete="off" class="flex">
+					<form
+						method="post"
+						action="?/cancel"
+						use:enhance={() => {
+							submittingRowAction = { id: order.id, action: 'cancel' };
+							return async ({ update }) => {
+								submittingRowAction = null;
+								await update();
+							};
+						}}
+						autocomplete="off"
+						class="flex"
+					>
 						<input type="hidden" name="id" value={order.id} />
 						<Button
 							type="submit"
@@ -790,13 +796,19 @@
 					</form>
 				{/if}
 				{#if showRefund}
-					<form method="post" action="?/refund" use:enhance={() => {
-						submittingRowAction = { id: order.id, action: 'refund' };
-						return async ({ update }) => {
-							submittingRowAction = null;
-							await update();
-						};
-					}} autocomplete="off" class="flex">
+					<form
+						method="post"
+						action="?/refund"
+						use:enhance={() => {
+							submittingRowAction = { id: order.id, action: 'refund' };
+							return async ({ update }) => {
+								submittingRowAction = null;
+								await update();
+							};
+						}}
+						autocomplete="off"
+						class="flex"
+					>
 						<input type="hidden" name="id" value={order.id} />
 						<Button
 							type="submit"

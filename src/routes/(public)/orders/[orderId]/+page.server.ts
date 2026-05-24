@@ -103,7 +103,8 @@ export const actions: Actions = {
 			where: and(eq(orders.id, id), eq(orders.vendorId, vendorId))
 		});
 		if (!order) return fail(404, { error: 'Order not found' });
-		if (order.status !== 'pending_approval') return fail(400, { error: 'Order is not pending approval' });
+		if (order.status !== 'pending_approval')
+			return fail(400, { error: 'Order is not pending approval' });
 		if (order.proposedAt === null) return fail(400, { error: 'No proposal to accept' });
 		if (!order.proposedDate) return fail(400, { error: 'Proposed date missing' });
 
@@ -131,7 +132,8 @@ export const actions: Actions = {
 			where: and(eq(orders.id, id), eq(orders.vendorId, vendorId))
 		});
 		if (!orderRow) return fail(404, { error: 'Order not found' });
-		if (orderRow.status !== 'pending_approval') return fail(400, { error: 'Order is not pending approval' });
+		if (orderRow.status !== 'pending_approval')
+			return fail(400, { error: 'Order is not pending approval' });
 		if (orderRow.proposedAt === null) return fail(400, { error: 'No proposal to decline' });
 
 		const [cancelled] = await db

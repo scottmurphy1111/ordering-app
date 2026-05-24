@@ -28,7 +28,9 @@
 
 	let { data, form: _form }: { data: PageData; form: ActionData } = $props();
 	const form = $derived(_form as ActionData | null);
-	let submittingAction = $state<'saveBusinessProfile' | 'saveCheckout' | 'saveSpecialRequests' | null>(null);
+	let submittingAction = $state<
+		'saveBusinessProfile' | 'saveCheckout' | 'saveSpecialRequests' | null
+	>(null);
 
 	const address = $derived(
 		data.info?.address as {
@@ -63,7 +65,9 @@
 	);
 
 	let acceptsRequests = $state(
-		untrack(() => (data.info as unknown as { acceptsRequests?: boolean } | null)?.acceptsRequests ?? true)
+		untrack(
+			() => (data.info as unknown as { acceptsRequests?: boolean } | null)?.acceptsRequests ?? true
+		)
 	);
 </script>
 
@@ -275,11 +279,7 @@
 				</div>
 			</CardContent>
 			<CardFooter>
-				<Button
-					type="submit"
-					variant="default"
-					disabled={submittingAction !== null}
-				>
+				<Button type="submit" variant="default" disabled={submittingAction !== null}>
 					{#if submittingAction === 'saveBusinessProfile'}
 						<Icon icon="mdi:loading" class="h-4 w-4 animate-spin" />
 						Saving...
@@ -344,11 +344,7 @@
 				</label>
 			</CardContent>
 			<CardFooter>
-				<Button
-					type="submit"
-					variant="default"
-					disabled={submittingAction !== null}
-				>
+				<Button type="submit" variant="default" disabled={submittingAction !== null}>
 					{#if submittingAction === 'saveCheckout'}
 						<Icon icon="mdi:loading" class="h-4 w-4 animate-spin" />
 						Saving...
@@ -395,11 +391,7 @@
 				</div>
 			</CardContent>
 			<CardFooter>
-				<Button
-					type="submit"
-					variant="default"
-					disabled={submittingAction !== null}
-				>
+				<Button type="submit" variant="default" disabled={submittingAction !== null}>
 					{#if submittingAction === 'saveSpecialRequests'}
 						<Icon icon="mdi:loading" class="h-4 w-4 animate-spin" />
 						Saving...

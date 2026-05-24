@@ -100,10 +100,7 @@ export const load: PageServerLoad = async () => {
 			.select({ value: count() })
 			.from(systemEvents)
 			.where(
-				and(
-					like(systemEvents.eventType, 'webhook.%'),
-					gte(systemEvents.createdAt, sevenDaysAgo)
-				)
+				and(like(systemEvents.eventType, 'webhook.%'), gte(systemEvents.createdAt, sevenDaysAgo))
 			),
 		db
 			.select({

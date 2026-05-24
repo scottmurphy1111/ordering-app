@@ -84,230 +84,229 @@
 	</div>
 
 	{#if showForm}
-			<Card class="mb-6 shadow-sm">
-				<CardContent class="pt-6 pb-2">
-					<form
-						method="POST"
-						action="?/create"
-						use:enhance={() => {
-							submittingCreate = true;
-							return async ({ update, result }) => {
-								submittingCreate = false;
-								await update({ reset: false });
-								if (result.type === 'success') {
-									showForm = false;
-									toast.success('Promo saved');
-								}
-							};
-						}}
-						class="space-y-4"
-					>
-						<h3 class="font-semibold text-foreground">New promo code</h3>
-						<div class="grid gap-4 sm:grid-cols-2">
-							<div>
-								<Label class="mb-1 block text-xs" for="code">Code *</Label>
-								<Input
-									id="code"
-									name="code"
-									type="text"
-									required
-									placeholder="e.g. SUMMER20"
-									class="uppercase"
-								/>
-								<p class="mt-1 text-xs text-muted-foreground">
-									2–20 characters, letters, numbers, - or _
-								</p>
-							</div>
-							<div>
-								<Label class="mb-1 block text-xs" for="description">Description</Label>
-								<Input
-									id="description"
-									name="description"
-									type="text"
-									placeholder="Summer sale, VIP, etc."
-								/>
-							</div>
-							<div>
-								<Label class="mb-1 block text-xs" for="discountType">Discount type *</Label>
-								<Select type="single" name="type" bind:value={typeVal}>
-									<SelectTrigger id="discountType" class="w-full">
-										<SelectValue placeholder="Select type" />
-									</SelectTrigger>
-									<SelectContent>
-										<SelectItem value="percent">Percent off (%)</SelectItem>
-										<SelectItem value="flat">Flat amount ($)</SelectItem>
-									</SelectContent>
-								</Select>
-							</div>
-							<div>
-								<Label class="mb-1 block text-xs" for="amount"
-									>Amount * {typeVal === 'percent' ? '(%)' : '($)'}</Label
-								>
-								<Input
-									id="amount"
-									name="amount"
-									type="number"
-									required
-									min={1}
-									step={typeVal === 'percent' ? '1' : '0.01'}
-									max={typeVal === 'percent' ? 100 : undefined}
-									placeholder={typeVal === 'percent' ? '20' : '5.00'}
-								/>
-							</div>
-							<div>
-								<Label class="mb-1 block text-xs" for="minOrderAmount">Min order amount ($)</Label>
-								<Input
-									id="minOrderAmount"
-									name="minOrderAmount"
-									type="number"
-									min={0}
-									step="0.01"
-									placeholder="0.00 (no minimum)"
-								/>
-							</div>
-							<div>
-								<Label class="mb-1 block text-xs" for="maxUses">Max uses</Label>
-								<Input
-									id="maxUses"
-									name="maxUses"
-									type="number"
-									min={1}
-									step="1"
-									placeholder="Unlimited"
-								/>
-							</div>
-							<div class="sm:col-span-2">
-								<Label class="mb-1 block text-xs" for="expiresAt">Expiry date</Label>
-								<Input id="expiresAt" name="expiresAt" type="date" />
-							</div>
+		<Card class="mb-6 shadow-sm">
+			<CardContent class="pt-6 pb-2">
+				<form
+					method="POST"
+					action="?/create"
+					use:enhance={() => {
+						submittingCreate = true;
+						return async ({ update, result }) => {
+							submittingCreate = false;
+							await update({ reset: false });
+							if (result.type === 'success') {
+								showForm = false;
+								toast.success('Promo saved');
+							}
+						};
+					}}
+					class="space-y-4"
+				>
+					<h3 class="font-semibold text-foreground">New promo code</h3>
+					<div class="grid gap-4 sm:grid-cols-2">
+						<div>
+							<Label class="mb-1 block text-xs" for="code">Code *</Label>
+							<Input
+								id="code"
+								name="code"
+								type="text"
+								required
+								placeholder="e.g. SUMMER20"
+								class="uppercase"
+							/>
+							<p class="mt-1 text-xs text-muted-foreground">
+								2–20 characters, letters, numbers, - or _
+							</p>
 						</div>
-						<Button type="submit" variant="default" disabled={submittingCreate}>
-							{#if submittingCreate}
-								<Icon icon="mdi:loading" class="h-4 w-4 animate-spin" />
-								Saving...
-							{:else}
-								Create code
-							{/if}
-						</Button>
-					</form>
-				</CardContent>
-			</Card>
-		{/if}
+						<div>
+							<Label class="mb-1 block text-xs" for="description">Description</Label>
+							<Input
+								id="description"
+								name="description"
+								type="text"
+								placeholder="Summer sale, VIP, etc."
+							/>
+						</div>
+						<div>
+							<Label class="mb-1 block text-xs" for="discountType">Discount type *</Label>
+							<Select type="single" name="type" bind:value={typeVal}>
+								<SelectTrigger id="discountType" class="w-full">
+									<SelectValue placeholder="Select type" />
+								</SelectTrigger>
+								<SelectContent>
+									<SelectItem value="percent">Percent off (%)</SelectItem>
+									<SelectItem value="flat">Flat amount ($)</SelectItem>
+								</SelectContent>
+							</Select>
+						</div>
+						<div>
+							<Label class="mb-1 block text-xs" for="amount"
+								>Amount * {typeVal === 'percent' ? '(%)' : '($)'}</Label
+							>
+							<Input
+								id="amount"
+								name="amount"
+								type="number"
+								required
+								min={1}
+								step={typeVal === 'percent' ? '1' : '0.01'}
+								max={typeVal === 'percent' ? 100 : undefined}
+								placeholder={typeVal === 'percent' ? '20' : '5.00'}
+							/>
+						</div>
+						<div>
+							<Label class="mb-1 block text-xs" for="minOrderAmount">Min order amount ($)</Label>
+							<Input
+								id="minOrderAmount"
+								name="minOrderAmount"
+								type="number"
+								min={0}
+								step="0.01"
+								placeholder="0.00 (no minimum)"
+							/>
+						</div>
+						<div>
+							<Label class="mb-1 block text-xs" for="maxUses">Max uses</Label>
+							<Input
+								id="maxUses"
+								name="maxUses"
+								type="number"
+								min={1}
+								step="1"
+								placeholder="Unlimited"
+							/>
+						</div>
+						<div class="sm:col-span-2">
+							<Label class="mb-1 block text-xs" for="expiresAt">Expiry date</Label>
+							<Input id="expiresAt" name="expiresAt" type="date" />
+						</div>
+					</div>
+					<Button type="submit" variant="default" disabled={submittingCreate}>
+						{#if submittingCreate}
+							<Icon icon="mdi:loading" class="h-4 w-4 animate-spin" />
+							Saving...
+						{:else}
+							Create code
+						{/if}
+					</Button>
+				</form>
+			</CardContent>
+		</Card>
+	{/if}
 
-		{#if data.codes.length === 0}
-			<div class="mb-10 rounded-xl border border-dashed p-10 text-center">
-				<p class="text-sm text-muted-foreground">
-					No promo codes yet. Create your first one above.
-				</p>
-			</div>
-		{:else}
-			<Card class="mb-10 shadow-sm">
-				<CardContent class="p-0">
-					<Table>
-						<TableHeader>
-							<TableRow class="hover:bg-transparent">
-								<TableHead class="px-4 py-2.5">Code</TableHead>
-								<TableHead class="px-4 py-2.5">Discount</TableHead>
-								<TableHead class="hidden px-4 py-2.5 md:table-cell">Usage</TableHead>
-								<TableHead class="hidden px-4 py-2.5 md:table-cell">Expires</TableHead>
-								<TableHead class="px-4 py-2.5">Status</TableHead>
-								<TableHead class="px-4 py-2.5"></TableHead>
-							</TableRow>
-						</TableHeader>
-						<TableBody>
-							{#each data.codes as promo (promo.id)}
-								{@const expired =
-									promo.expiresAt && Date.now() > new Date(promo.expiresAt).getTime()}
-								<TableRow>
-									<TableCell class="px-4 py-3">
-										<p class="font-mono font-semibold text-foreground">{promo.code}</p>
-										{#if promo.description}<p class="mt-0.5 text-xs text-muted-foreground">
-												{promo.description}
-											</p>{/if}
-										{#if promo.minOrderAmount > 0}<p class="text-xs text-muted-foreground">
-												Min ${(promo.minOrderAmount / 100).toFixed(2)}
-											</p>{/if}
-									</TableCell>
-									<TableCell class="px-4 py-3 font-semibold text-foreground"
-										>{formatAmount(promo.type, promo.amount)}</TableCell
+	{#if data.codes.length === 0}
+		<div class="mb-10 rounded-xl border border-dashed p-10 text-center">
+			<p class="text-sm text-muted-foreground">No promo codes yet. Create your first one above.</p>
+		</div>
+	{:else}
+		<Card class="mb-10 shadow-sm">
+			<CardContent class="p-0">
+				<Table>
+					<TableHeader>
+						<TableRow class="hover:bg-transparent">
+							<TableHead class="px-4 py-2.5">Code</TableHead>
+							<TableHead class="px-4 py-2.5">Discount</TableHead>
+							<TableHead class="hidden px-4 py-2.5 md:table-cell">Usage</TableHead>
+							<TableHead class="hidden px-4 py-2.5 md:table-cell">Expires</TableHead>
+							<TableHead class="px-4 py-2.5">Status</TableHead>
+							<TableHead class="px-4 py-2.5"></TableHead>
+						</TableRow>
+					</TableHeader>
+					<TableBody>
+						{#each data.codes as promo (promo.id)}
+							{@const expired = promo.expiresAt && Date.now() > new Date(promo.expiresAt).getTime()}
+							<TableRow>
+								<TableCell class="px-4 py-3">
+									<p class="font-mono font-semibold text-foreground">{promo.code}</p>
+									{#if promo.description}<p class="mt-0.5 text-xs text-muted-foreground">
+											{promo.description}
+										</p>{/if}
+									{#if promo.minOrderAmount > 0}<p class="text-xs text-muted-foreground">
+											Min ${(promo.minOrderAmount / 100).toFixed(2)}
+										</p>{/if}
+								</TableCell>
+								<TableCell class="px-4 py-3 font-semibold text-foreground"
+									>{formatAmount(promo.type, promo.amount)}</TableCell
+								>
+								<TableCell class="hidden px-4 py-3 text-muted-foreground md:table-cell"
+									>{promo.usedCount}{promo.maxUses !== null ? ` / ${promo.maxUses}` : ''}</TableCell
+								>
+								<TableCell class="hidden px-4 py-3 text-muted-foreground md:table-cell"
+									>{promo.expiresAt
+										? new Date(promo.expiresAt).toLocaleDateString()
+										: '—'}</TableCell
+								>
+								<TableCell class="px-4 py-3">
+									<form
+										method="POST"
+										action="?/toggle"
+										use:enhance={() => {
+											submittingTogglePromoId = promo.id;
+											return async ({ result, update }) => {
+												submittingTogglePromoId = null;
+												await update({ reset: false });
+												if (result.type === 'success') toast.success('Promo updated');
+											};
+										}}
 									>
-									<TableCell class="hidden px-4 py-3 text-muted-foreground md:table-cell"
-										>{promo.usedCount}{promo.maxUses !== null
-											? ` / ${promo.maxUses}`
-											: ''}</TableCell
-									>
-									<TableCell class="hidden px-4 py-3 text-muted-foreground md:table-cell"
-										>{promo.expiresAt
-											? new Date(promo.expiresAt).toLocaleDateString()
-											: '—'}</TableCell
-									>
-									<TableCell class="px-4 py-3">
-										<form
-											method="POST"
-											action="?/toggle"
-											use:enhance={() => {
-												submittingTogglePromoId = promo.id;
-												return async ({ result, update }) => {
-													submittingTogglePromoId = null;
-													await update({ reset: false });
-													if (result.type === 'success') toast.success('Promo updated');
-												};
-											}}
+										<input type="hidden" name="id" value={promo.id} />
+										<input type="hidden" name="isActive" value={String(!promo.isActive)} />
+										<button
+											type="submit"
+											disabled={submittingTogglePromoId !== null}
+											class="rounded-full px-2.5 py-0.5 text-xs font-medium transition-colors {promo.isActive &&
+											!expired
+												? 'bg-primary/10 text-primary hover:bg-red-50 hover:text-red-600'
+												: 'bg-muted text-muted-foreground hover:bg-primary/5 hover:text-primary'}"
 										>
-											<input type="hidden" name="id" value={promo.id} />
-											<input type="hidden" name="isActive" value={String(!promo.isActive)} />
-											<button
-												type="submit"
-												disabled={submittingTogglePromoId !== null}
-												class="rounded-full px-2.5 py-0.5 text-xs font-medium transition-colors {promo.isActive &&
-												!expired
-													? 'bg-primary/10 text-primary hover:bg-red-50 hover:text-red-600'
-													: 'bg-muted text-muted-foreground hover:bg-primary/5 hover:text-primary'}"
-											>
-												{#if submittingTogglePromoId === promo.id}
-													<Icon icon="mdi:loading" class="inline h-3 w-3 animate-spin" />
-												{:else}
-													{expired ? 'Expired' : promo.isActive ? 'Active' : 'Inactive'}
-												{/if}
-											</button>
-										</form>
-									</TableCell>
-									<TableCell class="px-4 py-3">
-										<form method="POST" action="?/delete" use:enhance={() => {
+											{#if submittingTogglePromoId === promo.id}
+												<Icon icon="mdi:loading" class="inline h-3 w-3 animate-spin" />
+											{:else}
+												{expired ? 'Expired' : promo.isActive ? 'Active' : 'Inactive'}
+											{/if}
+										</button>
+									</form>
+								</TableCell>
+								<TableCell class="px-4 py-3">
+									<form
+										method="POST"
+										action="?/delete"
+										use:enhance={() => {
 											submittingDeletePromoId = promo.id;
 											return async ({ result, update }) => {
 												submittingDeletePromoId = null;
 												await update();
 												if (result.type === 'success') toast.success('Promo removed');
 											};
-										}}>
-											<input type="hidden" name="id" value={promo.id} />
-											<Button
-												type="submit"
-												disabled={submittingDeletePromoId !== null}
-												onclick={async (e) => {
-													e.preventDefault();
-													const form = (e.currentTarget as HTMLButtonElement).form;
-													if (await confirmDialog('Delete this code?')) form?.requestSubmit();
-												}}
-												variant="ghost"
-												class="text-red-500 hover:bg-red-50 hover:text-red-600">
-													{#if submittingDeletePromoId === promo.id}
-														<Icon icon="mdi:loading" class="h-4 w-4 animate-spin" />
-														Deleting...
-													{:else}
-														Delete
-													{/if}
-												</Button
-											>
-										</form>
-									</TableCell>
-								</TableRow>
-							{/each}
-						</TableBody>
-					</Table>
-				</CardContent>
-			</Card>
+										}}
+									>
+										<input type="hidden" name="id" value={promo.id} />
+										<Button
+											type="submit"
+											disabled={submittingDeletePromoId !== null}
+											onclick={async (e) => {
+												e.preventDefault();
+												const form = (e.currentTarget as HTMLButtonElement).form;
+												if (await confirmDialog('Delete this code?')) form?.requestSubmit();
+											}}
+											variant="ghost"
+											class="text-red-500 hover:bg-red-50 hover:text-red-600"
+										>
+											{#if submittingDeletePromoId === promo.id}
+												<Icon icon="mdi:loading" class="h-4 w-4 animate-spin" />
+												Deleting...
+											{:else}
+												Delete
+											{/if}
+										</Button>
+									</form>
+								</TableCell>
+							</TableRow>
+						{/each}
+					</TableBody>
+				</Table>
+			</CardContent>
+		</Card>
 	{/if}
 
 	<!-- ── LOYALTY PROGRAM ─────────────────────────────────────────────────── -->
@@ -487,27 +486,31 @@
 							{/if}
 						</Button>
 						{#if data.loyalty.enabled}
-							<form method="POST" action="?/disableLoyalty" use:enhance={() => {
-								submittingDisableLoyalty = true;
-								return async ({ result, update }) => {
-									submittingDisableLoyalty = false;
-									await update();
-									if (result.type === 'success') toast.success('Loyalty disabled');
-								};
-							}}>
+							<form
+								method="POST"
+								action="?/disableLoyalty"
+								use:enhance={() => {
+									submittingDisableLoyalty = true;
+									return async ({ result, update }) => {
+										submittingDisableLoyalty = false;
+										await update();
+										if (result.type === 'success') toast.success('Loyalty disabled');
+									};
+								}}
+							>
 								<Button
 									type="submit"
 									variant="ghost"
 									class="text-red-500 hover:bg-red-50 hover:text-red-600"
-									disabled={submittingDisableLoyalty}>
+									disabled={submittingDisableLoyalty}
+								>
 									{#if submittingDisableLoyalty}
 										<Icon icon="mdi:loading" class="h-4 w-4 animate-spin" />
 										Disabling...
 									{:else}
 										Disable loyalty
 									{/if}
-								</Button
-								>
+								</Button>
 							</form>
 						{/if}
 					</CardFooter>
@@ -589,27 +592,31 @@
 							{/if}
 						</Button>
 						{#if data.loyalty.enabled}
-							<form method="POST" action="?/disableLoyalty" use:enhance={() => {
-								submittingDisableLoyalty = true;
-								return async ({ result, update }) => {
-									submittingDisableLoyalty = false;
-									await update();
-									if (result.type === 'success') toast.success('Loyalty disabled');
-								};
-							}}>
+							<form
+								method="POST"
+								action="?/disableLoyalty"
+								use:enhance={() => {
+									submittingDisableLoyalty = true;
+									return async ({ result, update }) => {
+										submittingDisableLoyalty = false;
+										await update();
+										if (result.type === 'success') toast.success('Loyalty disabled');
+									};
+								}}
+							>
 								<Button
 									type="submit"
 									variant="ghost"
 									class="text-red-500 hover:bg-red-50 hover:text-red-600"
-									disabled={submittingDisableLoyalty}>
+									disabled={submittingDisableLoyalty}
+								>
 									{#if submittingDisableLoyalty}
 										<Icon icon="mdi:loading" class="h-4 w-4 animate-spin" />
 										Disabling...
 									{:else}
 										Disable loyalty
 									{/if}
-								</Button
-								>
+								</Button>
 							</form>
 						{/if}
 					</CardFooter>

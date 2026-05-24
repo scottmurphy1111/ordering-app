@@ -225,7 +225,7 @@
 									<p class="text-xs font-medium text-muted-foreground">{pair.label}</p>
 									<p
 										style="font-family: {pair.heading.cssStack};"
-										class="min-h-20 text-2xl font-bold leading-tight"
+										class="min-h-20 text-2xl leading-tight font-bold"
 									>
 										{pair.previewHeading}
 									</p>
@@ -492,14 +492,18 @@
 								: 'Upload logo'}
 					</Button>
 					{#if data.branding.logoUrl}
-						<form method="post" action="?/removeLogo" use:enhance={() => {
-							submittingAction = 'removeLogo';
-							return async ({ result, update }) => {
-								submittingAction = null;
-								await update();
-								if (result.type === 'success') toast.success('Logo removed');
-							};
-						}}>
+						<form
+							method="post"
+							action="?/removeLogo"
+							use:enhance={() => {
+								submittingAction = 'removeLogo';
+								return async ({ result, update }) => {
+									submittingAction = null;
+									await update();
+									if (result.type === 'success') toast.success('Logo removed');
+								};
+							}}
+						>
 							<Button
 								type="submit"
 								disabled={submittingAction !== null}
@@ -555,7 +559,8 @@
 						bind:this={bannerInput}
 						onchange={(e) => {
 							const f = (e.target as HTMLInputElement).files?.[0];
-							if (f) uploadImage(f, '/api/upload-banner', 'banner', bannerState, 5, 'Banner updated');
+							if (f)
+								uploadImage(f, '/api/upload-banner', 'banner', bannerState, 5, 'Banner updated');
 						}}
 						class="hidden"
 					/>
@@ -572,14 +577,18 @@
 								: 'Upload banner'}
 					</Button>
 					{#if data.branding.bannerUrl}
-						<form method="post" action="?/removeBanner" use:enhance={() => {
-							submittingAction = 'removeBanner';
-							return async ({ result, update }) => {
-								submittingAction = null;
-								await update();
-								if (result.type === 'success') toast.success('Banner removed');
-							};
-						}}>
+						<form
+							method="post"
+							action="?/removeBanner"
+							use:enhance={() => {
+								submittingAction = 'removeBanner';
+								return async ({ result, update }) => {
+									submittingAction = null;
+									await update();
+									if (result.type === 'success') toast.success('Banner removed');
+								};
+							}}
+						>
 							<Button
 								type="submit"
 								disabled={submittingAction !== null}
@@ -620,7 +629,8 @@
 				>
 				<CardAction>
 					<span
-						class="rounded-full px-2.5 py-0.5 text-xs font-medium {data.branding.backgroundImageUrl || data.branding.backgroundPatternSlug
+						class="rounded-full px-2.5 py-0.5 text-xs font-medium {data.branding
+							.backgroundImageUrl || data.branding.backgroundPatternSlug
 							? 'bg-success/10 text-success'
 							: 'bg-muted text-muted-foreground'}"
 					>
@@ -650,7 +660,15 @@
 						bind:this={bgInput}
 						onchange={(e) => {
 							const f = (e.target as HTMLInputElement).files?.[0];
-							if (f) uploadImage(f, '/api/upload-background-image', 'backgroundImage', bgState, 5, 'Background updated');
+							if (f)
+								uploadImage(
+									f,
+									'/api/upload-background-image',
+									'backgroundImage',
+									bgState,
+									5,
+									'Background updated'
+								);
 						}}
 						class="hidden"
 					/>
@@ -667,14 +685,18 @@
 								: 'Upload background'}
 					</Button>
 					{#if data.branding.backgroundImageUrl || data.branding.backgroundPatternSlug}
-						<form method="post" action="?/removeBackground" use:enhance={() => {
-							submittingAction = 'removeBackground';
-							return async ({ result, update }) => {
-								submittingAction = null;
-								await update();
-								if (result.type === 'success') toast.success('Background removed');
-							};
-						}}>
+						<form
+							method="post"
+							action="?/removeBackground"
+							use:enhance={() => {
+								submittingAction = 'removeBackground';
+								return async ({ result, update }) => {
+									submittingAction = null;
+									await update();
+									if (result.type === 'success') toast.success('Background removed');
+								};
+							}}
+						>
 							<Button
 								type="submit"
 								disabled={submittingAction !== null}
@@ -732,7 +754,12 @@
 									.branding.backgroundPatternSlug === pattern.slug
 									? 'border-foreground'
 									: 'border-border hover:border-foreground/40'}"
-								style="background-color: {data.branding.backgroundColor}; background-image: {patternDataUriSoft(pattern, data.branding.foregroundColor ?? '#ffffff', data.branding.backgroundColor ?? '#000000')}; background-repeat: repeat; background-size: {pattern.tileSize};"
+								style="background-color: {data.branding
+									.backgroundColor}; background-image: {patternDataUriSoft(
+									pattern,
+									data.branding.foregroundColor ?? '#ffffff',
+									data.branding.backgroundColor ?? '#000000'
+								)}; background-repeat: repeat; background-size: {pattern.tileSize};"
 							>
 								<span class="sr-only">{pattern.label}</span>
 								{#if data.branding.backgroundPatternSlug === pattern.slug}
@@ -744,9 +771,7 @@
 									</span>
 								{/if}
 								{#if submittingAction === `pattern:${pattern.slug}`}
-									<span
-										class="absolute inset-0 flex items-center justify-center bg-background/60"
-									>
+									<span class="absolute inset-0 flex items-center justify-center bg-background/60">
 										<Icon icon="mdi:loading" class="h-5 w-5 animate-spin" />
 									</span>
 								{/if}

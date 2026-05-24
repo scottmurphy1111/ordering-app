@@ -28,7 +28,8 @@ export const actions: Actions = {
 	submit: async ({ request, locals }) => {
 		const vendor = locals.vendor;
 		if (!vendor) return fail(400, { error: 'Vendor not found.' });
-		if (!vendor.acceptsRequests) return fail(403, { error: 'This shop is not accepting special requests.' });
+		if (!vendor.acceptsRequests)
+			return fail(403, { error: 'This shop is not accepting special requests.' });
 
 		const formData = await request.formData();
 

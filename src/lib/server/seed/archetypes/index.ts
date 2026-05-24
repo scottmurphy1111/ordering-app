@@ -17,8 +17,6 @@ export function getArchetypeFixture(key: string): ArchetypeFixture | undefined {
 	return ARCHETYPES[key];
 }
 
-export function archetypesForFulfillmentModel(
-	model: FulfillmentModelValue
-): ArchetypeFixture[] {
+export function archetypesForFulfillmentModel(model: FulfillmentModelValue): ArchetypeFixture[] {
 	return Object.values(ARCHETYPES).filter((a) => a.allowedFulfillmentModels.includes(model));
 }

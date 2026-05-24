@@ -140,6 +140,7 @@ Brand green is hardcoded as Tailwind utility classes (`bg-green-600`, `text-gree
 **Status:** Resolved (2026-05-07) — shipped schema bounds, form pickers, expand/materialize plumbing, summary-line display, and season-ended empty state. Behavioral spot-checks passed; thorough sweep deferred to pre-launch verification.
 
 **What shipped:**
+
 - Two new nullable columns on `pickup_window_templates`: `recurrence_start_date` and `recurrence_end_date`, both `TIMESTAMPTZ` interpreted as start-of-day in the vendor's timezone. Migration `0005_past_wraith.sql`.
 - New `startOfDayInTZ(yyyyMmDd, ianaTimezone) → Date` helper in `src/lib/server/pickup/expand.ts`, mirrored client-side in the pickup settings page. Centralizes the TZ math at the form/server boundary so neither expand nor materialize need timezone-conversion logic of their own.
 - `expandTemplate()` honors both bounds in its loop: occurrences before `recurrenceStart` are skipped; the loop breaks once `startsAt > recurrenceEnd`. RRule's chronological yield order makes the `break` safe.
@@ -151,6 +152,7 @@ Brand green is hardcoded as Tailwind utility classes (`bg-green-600`, `text-gree
 - Live preview is truthful: occurrences are capped at the end date and skipped before the start date, mirroring server-side expand semantics. No extra "season ends" line in the preview block.
 
 **Files involved:**
+
 - `src/lib/server/db/pickup.ts` — two new columns
 - `src/lib/server/pickup/expand.ts` — `startOfDayInTZ` helper, `ExpandTemplateInput` extension, loop bound checks
 - `src/lib/server/pickup/materialize.ts` — bounds passed through to expand
@@ -159,6 +161,7 @@ Brand green is hardcoded as Tailwind utility classes (`bg-green-600`, `text-gree
 - Migration: `drizzle/0005_past_wraith.sql`
 
 **Out of scope of this entry (still applies):**
+
 - Non-weekly recurrence patterns (every other week, monthly on the Nth weekday, custom intervals). Tracked separately as Tier 2 "Pickup window non-weekly recurrence patterns." The bounds added in this entry compose cleanly with future recurrence kinds.
 - "Skip these specific dates" (holiday exceptions). Per-occurrence cancellation already handles one-off skips; bulk-skip is a separate feature.
 - Auto-renewal of seasonal windows year-over-year. Vendors set new dates each season for v1.
@@ -167,6 +170,7 @@ Brand green is hardcoded as Tailwind utility classes (`bg-green-600`, `text-gree
 - The `isSeasonEnded` UI heuristic uses `endDate + 24h < now` for the empty-state affordance. This is a tight approximation that handles DST acceptably for UI purposes — no orders are at risk because materialize uses the strict `>` comparator on the resolved-TZ instant. If a vendor reports off-by-a-few-hours behavior on the empty-state copy, the fix is one line.
 
 **Resolved questions:**
+
 - End-date-with-orderful-occurrences-past-it: orderful AND customized rows are preserved by the existing materialize policy; only orderless+uncustomized rows past the new end date are deleted. ✓
 - Date column type: `TIMESTAMPTZ` interpreted as start-of-day in vendor TZ (matches surrounding code style). ✓
 - Live preview when end date limits occurrences: truthful — show only what will materialize, no extra "season ends" line in the preview. ✓

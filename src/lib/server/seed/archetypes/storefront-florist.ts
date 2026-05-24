@@ -38,7 +38,8 @@ export const storefrontFlorist: ArchetypeFixture = {
 		{
 			categoryKey: 'arrangements',
 			name: 'Garden Arrangement',
-			description: 'Lush mixed-flower arrangement in a glass vase. Perfect for a table centerpiece.',
+			description:
+				'Lush mixed-flower arrangement in a glass vase. Perfect for a table centerpiece.',
 			price: 6500,
 			sortOrder: 1
 		},
@@ -142,9 +143,7 @@ export const storefrontFlorist: ArchetypeFixture = {
 			subtotal: 3500,
 			tax: 245,
 			total: 3745,
-			items: [
-				{ name: 'Seasonal Bouquet', quantity: 1, basePrice: 3500, selectedModifiers: [] }
-			]
+			items: [{ name: 'Seasonal Bouquet', quantity: 1, basePrice: 3500, selectedModifiers: [] }]
 		},
 		{
 			orderNumber: '#2',
@@ -157,9 +156,7 @@ export const storefrontFlorist: ArchetypeFixture = {
 			subtotal: 6500,
 			tax: 455,
 			total: 6955,
-			items: [
-				{ name: 'Garden Arrangement', quantity: 1, basePrice: 6500, selectedModifiers: [] }
-			]
+			items: [{ name: 'Garden Arrangement', quantity: 1, basePrice: 6500, selectedModifiers: [] }]
 		},
 		{
 			orderNumber: '#3',
@@ -177,9 +174,7 @@ export const storefrontFlorist: ArchetypeFixture = {
 			stripeCustomerId: 'cus_demo_clara',
 			stripeSetupIntentId: 'seti_demo_clara',
 			notes: 'Garden wedding, blush and ivory palette. Bridal bouquet + 6 centerpieces.',
-			items: [
-				{ name: 'Wedding Arrangement', quantity: 1, basePrice: 18000, selectedModifiers: [] }
-			]
+			items: [{ name: 'Wedding Arrangement', quantity: 1, basePrice: 18000, selectedModifiers: [] }]
 		}
 	],
 

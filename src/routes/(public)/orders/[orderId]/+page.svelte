@@ -96,7 +96,7 @@
 </svelte:head>
 
 <div class="min-h-screen">
-<main class="mx-auto max-w-lg space-y-4 px-4 py-8">
+	<main class="mx-auto max-w-lg space-y-4 px-4 py-8">
 		<!-- Payment / confirmation card -->
 		<Card
 			class="text-center shadow-sm"
@@ -122,7 +122,9 @@
 							/>
 						</div>
 					</div>
-					<h1 class="text-xl font-bold text-neutral-900" style="font-family: var(--font-heading);">Payment confirmed!</h1>
+					<h1 class="text-xl font-bold text-neutral-900" style="font-family: var(--font-heading);">
+						Payment confirmed!
+					</h1>
 					<p class="mt-1 text-sm text-muted-foreground">
 						Thank you{order.customerName ? `, ${order.customerName}` : ''}. Your order is in.
 					</p>
@@ -132,7 +134,9 @@
 							<Icon icon="mdi:close-circle" class="h-8 w-8 text-red-400" />
 						</div>
 					</div>
-					<h1 class="text-xl font-bold text-neutral-900" style="font-family: var(--font-heading);">Order cancelled</h1>
+					<h1 class="text-xl font-bold text-neutral-900" style="font-family: var(--font-heading);">
+						Order cancelled
+					</h1>
 					<p class="mt-1 text-sm text-muted-foreground">
 						This order has been cancelled. Contact the vendor with any questions.
 					</p>
@@ -142,7 +146,9 @@
 							<Icon icon="mdi:calendar-clock" class="h-8 w-8 text-amber-500" />
 						</div>
 					</div>
-					<h1 class="text-xl font-bold text-neutral-900" style="font-family: var(--font-heading);">Request received!</h1>
+					<h1 class="text-xl font-bold text-neutral-900" style="font-family: var(--font-heading);">
+						Request received!
+					</h1>
 					<p class="mt-1 text-sm text-muted-foreground">
 						Your payment method is saved.
 						{order.customerName ? ` Thanks, ${order.customerName}.` : ''} We'll review your order and
@@ -154,7 +160,9 @@
 							<Icon icon="mdi:clock-outline" class="h-8 w-8 text-amber-500" />
 						</div>
 					</div>
-					<h1 class="text-xl font-bold text-neutral-900" style="font-family: var(--font-heading);">Awaiting payment</h1>
+					<h1 class="text-xl font-bold text-neutral-900" style="font-family: var(--font-heading);">
+						Awaiting payment
+					</h1>
 					<p class="mt-1 text-sm text-muted-foreground">
 						We'll update this page once your payment is confirmed.
 					</p>
@@ -164,7 +172,9 @@
 							<Icon icon="mdi:credit-card-off-outline" class="h-8 w-8 text-red-400" />
 						</div>
 					</div>
-					<h1 class="text-xl font-bold text-neutral-900" style="font-family: var(--font-heading);">Payment needs attention</h1>
+					<h1 class="text-xl font-bold text-neutral-900" style="font-family: var(--font-heading);">
+						Payment needs attention
+					</h1>
 					<p class="mt-1 text-sm text-muted-foreground">
 						We weren't able to charge your saved card for this order.{order.customerName
 							? ` Thanks for your patience, ${order.customerName}.`
@@ -176,7 +186,9 @@
 							<Icon icon="mdi:alert-circle-outline" class="h-8 w-8 text-red-400" />
 						</div>
 					</div>
-					<h1 class="text-xl font-bold text-neutral-900" style="font-family: var(--font-heading);">Payment issue</h1>
+					<h1 class="text-xl font-bold text-neutral-900" style="font-family: var(--font-heading);">
+						Payment issue
+					</h1>
 					<p class="mt-1 text-sm text-muted-foreground">Your payment could not be processed.</p>
 				{/if}
 
@@ -206,7 +218,12 @@
 			<Card class="shadow-sm">
 				<CardContent class="p-5">
 					<div class="mb-4 flex items-center justify-between">
-						<h2 class="text-sm font-semibold text-foreground" style="font-family: var(--font-heading);">Order status</h2>
+						<h2
+							class="text-sm font-semibold text-foreground"
+							style="font-family: var(--font-heading);"
+						>
+							Order status
+						</h2>
 						{#if !isDone}
 							<span class="flex items-center gap-1 text-xs text-muted-foreground">
 								<Icon icon="mdi:refresh" class="h-3.5 w-3.5" /> Auto-refreshing
@@ -249,7 +266,12 @@
 							<Icon icon="mdi:calendar-arrow-right" class="h-5 w-5 text-blue-500" />
 						</div>
 						<div class="flex-1">
-							<h2 class="text-sm font-semibold text-foreground" style="font-family: var(--font-heading);">New date proposed</h2>
+							<h2
+								class="text-sm font-semibold text-foreground"
+								style="font-family: var(--font-heading);"
+							>
+								New date proposed
+							</h2>
 							<p class="mt-1 text-xs text-muted-foreground">
 								{data.vendor.name} has proposed a different pickup date for your order.
 							</p>
@@ -260,7 +282,7 @@
 								</p>
 							{/if}
 							{#if order.proposedReason}
-								<p class="mt-1 text-xs italic text-muted-foreground">"{order.proposedReason}"</p>
+								<p class="mt-1 text-xs text-muted-foreground italic">"{order.proposedReason}"</p>
 							{/if}
 							{#if form?.error}
 								<p class="mt-2 text-xs font-medium text-destructive">{form.error}</p>

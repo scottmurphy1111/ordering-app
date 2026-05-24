@@ -205,6 +205,5 @@ export const actions: Actions = {
 			.where(and(eq(vendorUsers.vendorId, vendorId), eq(vendorUsers.userId, userId)));
 
 		return { success: true };
-	},
-
+	}
 };

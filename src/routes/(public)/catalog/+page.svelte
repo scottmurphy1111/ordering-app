@@ -18,7 +18,6 @@
 	import CartPanel from '$lib/components/storefront/CartPanel.svelte';
 	import { Sheet, SheetContent, SheetTitle } from '$lib/components/ui/sheet';
 
-
 	let { data }: { data: PageData } = $props();
 
 	onMount(() => cart.init(data.vendorSlug));
@@ -187,10 +186,7 @@
 			vendorTimezone={data.vendor.timezone}
 		/>
 	{:else if showUpcomingEvents}
-		<UpcomingPickupEvents
-			windows={data.upcomingWindows}
-			vendorTimezone={data.vendor.timezone}
-		/>
+		<UpcomingPickupEvents windows={data.upcomingWindows} vendorTimezone={data.vendor.timezone} />
 	{/if}
 </CatalogHero>
 
@@ -217,7 +213,7 @@
 					type="search"
 					placeholder="Search the menu…"
 					bind:value={searchQuery}
-					class="w-full rounded-full border border-neutral-200 bg-white py-2.5 pr-4 pl-9 text-sm text-neutral-900 outline-none transition-colors focus:border-neutral-400"
+					class="w-full rounded-full border border-neutral-200 bg-white py-2.5 pr-4 pl-9 text-sm text-neutral-900 transition-colors outline-none focus:border-neutral-400"
 				/>
 				{#if searchQuery}
 					<button
@@ -372,10 +368,7 @@
 							href={resolve('/request' as `/${string}`)}
 							class="block rounded-xl border border-neutral-200 bg-white p-6 transition-shadow hover:shadow-md"
 						>
-							<h3
-								class="font-semibold text-neutral-900"
-								style="font-family: var(--font-heading);"
-							>
+							<h3 class="font-semibold text-neutral-900" style="font-family: var(--font-heading);">
 								Looking for something custom?
 							</h3>
 							<p class="mt-1 text-sm text-neutral-600">

@@ -1,7 +1,12 @@
 import type { RequestHandler } from './$types';
 import { json } from '@sveltejs/kit';
 import { env } from '$env/dynamic/private';
-import { runResumeDue, runPauseReminders, runPendingApprovalReminders, runReconcileSubscriptions } from '$lib/server/jobs';
+import {
+	runResumeDue,
+	runPauseReminders,
+	runPendingApprovalReminders,
+	runReconcileSubscriptions
+} from '$lib/server/jobs';
 
 export const GET: RequestHandler = async ({ request }) => {
 	const secret = env.CRON_SECRET;
@@ -11,12 +16,13 @@ export const GET: RequestHandler = async ({ request }) => {
 		return json({ error: 'Unauthorized' }, { status: 401 });
 	}
 
-	const [resumeResult, reminderResult, pendingApprovalResult, reconcileResult] = await Promise.allSettled([
-		runResumeDue(),
-		runPauseReminders(),
-		runPendingApprovalReminders(),
-		runReconcileSubscriptions()
-	]);
+	const [resumeResult, reminderResult, pendingApprovalResult, reconcileResult] =
+		await Promise.allSettled([
+			runResumeDue(),
+			runPauseReminders(),
+			runPendingApprovalReminders(),
+			runReconcileSubscriptions()
+		]);
 
 	const resume =
 		resumeResult.status === 'fulfilled'

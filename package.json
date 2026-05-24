@@ -7,7 +7,7 @@
 		"dev": "vite dev",
 		"build": "vite build",
 		"preview": "vite preview",
-		"prepare": "svelte-kit sync || echo ''",
+		"prepare": "(svelte-kit sync || echo '') && husky",
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
 		"lint:format": "prettier --check .",
@@ -23,6 +23,10 @@
 		"db:studio": "drizzle-kit studio",
 		"cron:materialize": "bun -e \"const r=await fetch('http://localhost:5173/api/cron/materialize',{headers:{Authorization:'Bearer '+process.env.CRON_SECRET}});console.log(JSON.stringify(await r.json(),null,2))\"",
 		"auth:schema": "better-auth generate --config src/lib/server/auth.ts --output src/lib/server/db/auth.schema.ts --yes"
+	},
+	"lint-staged": {
+		"*.{js,ts,svelte,json,md,css,html}": "prettier --write",
+		"*.{js,ts,svelte}": "eslint --fix"
 	},
 	"devDependencies": {
 		"@better-auth/cli": "~1.4.21",
@@ -47,6 +51,8 @@
 		"eslint-config-prettier": "^10.1.8",
 		"eslint-plugin-svelte": "^3.15.2",
 		"globals": "^17.4.0",
+		"husky": "^9.1.7",
+		"lint-staged": "^17.0.5",
 		"mdsvex": "^0.12.6",
 		"prettier": "^3.8.1",
 		"prettier-plugin-svelte": "^3.4.1",

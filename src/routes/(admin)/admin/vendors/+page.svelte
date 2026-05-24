@@ -30,7 +30,10 @@
 	}
 
 	let search = $state('');
-	let submittingVendorAction = $state<{ id: number; action: 'restore' | 'archive' | 'delete' | 'reseed' } | null>(null);
+	let submittingVendorAction = $state<{
+		id: number;
+		action: 'restore' | 'archive' | 'delete' | 'reseed';
+	} | null>(null);
 
 	const filteredVendors = $derived(
 		search.trim()
@@ -207,13 +210,17 @@
 										{/if}
 										{#if t.deletedAt || !t.isActive}
 											<!-- Restore -->
-											<form method="post" action="?/restore" use:enhance={() => {
-												submittingVendorAction = { id: t.id, action: 'restore' };
-												return async ({ update }) => {
-													submittingVendorAction = null;
-													await update();
-												};
-											}}>
+											<form
+												method="post"
+												action="?/restore"
+												use:enhance={() => {
+													submittingVendorAction = { id: t.id, action: 'restore' };
+													return async ({ update }) => {
+														submittingVendorAction = null;
+														await update();
+													};
+												}}
+											>
 												<input type="hidden" name="id" value={t.id} />
 												<Button
 													type="submit"
@@ -236,13 +243,17 @@
 											</form>
 										{:else}
 											<!-- Archive -->
-											<form method="post" action="?/archive" use:enhance={() => {
-												submittingVendorAction = { id: t.id, action: 'archive' };
-												return async ({ update }) => {
-													submittingVendorAction = null;
-													await update();
-												};
-											}}>
+											<form
+												method="post"
+												action="?/archive"
+												use:enhance={() => {
+													submittingVendorAction = { id: t.id, action: 'archive' };
+													return async ({ update }) => {
+														submittingVendorAction = null;
+														await update();
+													};
+												}}
+											>
 												<input type="hidden" name="id" value={t.id} />
 												<Button
 													type="submit"
@@ -272,13 +283,17 @@
 
 										{#if !t.deletedAt}
 											<!-- Soft delete -->
-											<form method="post" action="?/delete" use:enhance={() => {
-												submittingVendorAction = { id: t.id, action: 'delete' };
-												return async ({ update }) => {
-													submittingVendorAction = null;
-													await update();
-												};
-											}}>
+											<form
+												method="post"
+												action="?/delete"
+												use:enhance={() => {
+													submittingVendorAction = { id: t.id, action: 'delete' };
+													return async ({ update }) => {
+														submittingVendorAction = null;
+														await update();
+													};
+												}}
+											>
 												<input type="hidden" name="id" value={t.id} />
 												<Button
 													type="submit"

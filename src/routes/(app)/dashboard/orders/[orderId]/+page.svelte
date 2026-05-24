@@ -323,14 +323,19 @@
 						<Icon icon="mdi:calendar-edit" class="h-3.5 w-3.5" />
 						Propose alternate date
 					</Button>
-					<form method="post" action="?/decline" use:enhance={() => {
-						submittingAction = 'decline';
-						return async ({ result, update }) => {
-							submittingAction = null;
-							await update();
-							if (result.type === 'success') toast.success('Quote declined');
-						};
-					}} autocomplete="off">
+					<form
+						method="post"
+						action="?/decline"
+						use:enhance={() => {
+							submittingAction = 'decline';
+							return async ({ result, update }) => {
+								submittingAction = null;
+								await update();
+								if (result.type === 'success') toast.success('Quote declined');
+							};
+						}}
+						autocomplete="off"
+					>
 						<input type="hidden" name="id" value={order.id} />
 						<Button
 							type="submit"
@@ -566,15 +571,20 @@
 			<CardContent class="flex flex-wrap gap-2">
 				{#if nextStatus[order.status]}
 					{@const action = actionConfig[order.status]}
-					<form method="post" action="?/updateStatus" use:enhance={() => {
-						submittingAction = 'updateStatus';
-						const target = nextStatus[order.status];
-						return async ({ result, update }) => {
-							submittingAction = null;
-							await update();
-							if (result.type === 'success') toast.success(`Order marked as ${target}`);
-						};
-					}} autocomplete="off">
+					<form
+						method="post"
+						action="?/updateStatus"
+						use:enhance={() => {
+							submittingAction = 'updateStatus';
+							const target = nextStatus[order.status];
+							return async ({ result, update }) => {
+								submittingAction = null;
+								await update();
+								if (result.type === 'success') toast.success(`Order marked as ${target}`);
+							};
+						}}
+						autocomplete="off"
+					>
 						<input type="hidden" name="id" value={order.id} />
 						<input type="hidden" name="status" value={nextStatus[order.status]} />
 						<Button type="submit" disabled={submittingAction !== null}>
@@ -589,14 +599,19 @@
 					</form>
 				{/if}
 				{#if !['fulfilled', 'cancelled'].includes(order.status)}
-					<form method="post" action="?/cancel" use:enhance={() => {
-						submittingAction = 'cancel';
-						return async ({ result, update }) => {
-							submittingAction = null;
-							await update();
-							if (result.type === 'success') toast.success('Order cancelled');
-						};
-					}} autocomplete="off">
+					<form
+						method="post"
+						action="?/cancel"
+						use:enhance={() => {
+							submittingAction = 'cancel';
+							return async ({ result, update }) => {
+								submittingAction = null;
+								await update();
+								if (result.type === 'success') toast.success('Order cancelled');
+							};
+						}}
+						autocomplete="off"
+					>
 						<input type="hidden" name="id" value={order.id} />
 						<Button
 							type="submit"
@@ -619,14 +634,19 @@
 					</form>
 				{/if}
 				{#if order.status === 'cancelled' && order.paymentStatus === 'paid'}
-					<form method="post" action="?/refund" use:enhance={() => {
-						submittingAction = 'refund';
-						return async ({ result, update }) => {
-							submittingAction = null;
-							await update();
-							if (result.type === 'success') toast.success('Refund issued');
-						};
-					}} autocomplete="off">
+					<form
+						method="post"
+						action="?/refund"
+						use:enhance={() => {
+							submittingAction = 'refund';
+							return async ({ result, update }) => {
+								submittingAction = null;
+								await update();
+								if (result.type === 'success') toast.success('Refund issued');
+							};
+						}}
+						autocomplete="off"
+					>
 						<input type="hidden" name="id" value={order.id} />
 						<Button
 							type="submit"

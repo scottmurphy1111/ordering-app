@@ -208,7 +208,11 @@
 							</p>
 						</div>
 					</div>
-					<Button href={resolve(`/dashboard/orders/${linkedOrder.id}`)} variant="outline" class="shrink-0">
+					<Button
+						href={resolve(`/dashboard/orders/${linkedOrder.id}`)}
+						variant="outline"
+						class="shrink-0"
+					>
 						<Icon icon="mdi:arrow-right" class="h-3.5 w-3.5" />
 						View order
 					</Button>
@@ -271,13 +275,18 @@
 				<h2 class="mb-4 text-sm font-medium tracking-wide text-gray-500 uppercase">
 					{isQuoted ? 'Send revised quote' : 'Send quote'}
 				</h2>
-				<form method="post" action="?/sendQuote" use:enhance={() => {
-					submittingAction = 'sendQuote';
-					return async ({ update }) => {
-						submittingAction = null;
-						await update();
-					};
-				}} class="space-y-4">
+				<form
+					method="post"
+					action="?/sendQuote"
+					use:enhance={() => {
+						submittingAction = 'sendQuote';
+						return async ({ update }) => {
+							submittingAction = null;
+							await update();
+						};
+					}}
+					class="space-y-4"
+				>
 					<div class="grid gap-4 sm:grid-cols-2">
 						<div>
 							<label for="priceInput" class="mb-1 block text-sm font-medium text-foreground">
@@ -330,13 +339,18 @@
 
 				{#if canDecline}
 					<div class="mt-4 flex items-center justify-end gap-2 border-t border-gray-100 pt-4">
-						<form method="post" action="?/decline" class="w-full" use:enhance={() => {
-						submittingAction = 'decline';
-						return async ({ update }) => {
-							submittingAction = null;
-							await update();
-						};
-					}}>
+						<form
+							method="post"
+							action="?/decline"
+							class="w-full"
+							use:enhance={() => {
+								submittingAction = 'decline';
+								return async ({ update }) => {
+									submittingAction = null;
+									await update();
+								};
+							}}
+						>
 							<div class="flex items-center gap-2">
 								<textarea
 									name="reason"

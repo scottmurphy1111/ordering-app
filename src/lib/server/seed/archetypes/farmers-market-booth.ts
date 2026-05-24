@@ -39,8 +39,7 @@ export const farmersMarketBooth: ArchetypeFixture = {
 		{
 			categoryKey: 'jams',
 			name: 'Peach Ginger Jam',
-			description:
-				'8 oz jar. Late-summer peaches with fresh ginger. Chunky style, not too sweet.',
+			description: '8 oz jar. Late-summer peaches with fresh ginger. Chunky style, not too sweet.',
 			price: 1200,
 			sortOrder: 3,
 			availabilityMode: 'events_only'
@@ -48,8 +47,7 @@ export const farmersMarketBooth: ArchetypeFixture = {
 		{
 			categoryKey: 'pickles',
 			name: 'Garlic Dill Pickles',
-			description:
-				'16 oz jar. Classic dill brine with roasted garlic and black pepper. Crunchy.',
+			description: '16 oz jar. Classic dill brine with roasted garlic and black pepper. Crunchy.',
 			price: 1100,
 			sortOrder: 1,
 			availabilityMode: 'events_only'
@@ -93,8 +91,7 @@ export const farmersMarketBooth: ArchetypeFixture = {
 		{
 			categoryKey: 'honey',
 			name: 'Sunflower Seed Butter',
-			description:
-				'8 oz jar. Stone-ground from roasted sunflower seeds. No added sugar or oils.',
+			description: '8 oz jar. Stone-ground from roasted sunflower seeds. No added sugar or oils.',
 			price: 1000,
 			sortOrder: 3,
 			availabilityMode: 'events_only'

@@ -58,7 +58,8 @@
 							<span
 								class="rounded-full px-2 py-0.5 text-xs capitalize"
 								style="background-color: color-mix(in srgb, var(--accent-color) 15%, white); color: var(--accent-color);"
-							>{tag.toLowerCase()}</span>
+								>{tag.toLowerCase()}</span
+							>
 						{/each}
 					</div>
 				{/if}
@@ -78,8 +79,7 @@
 							>Storefront only</StatusBadge
 						>
 					{:else if item.availabilityMode === 'events_only'}
-						<StatusBadge tone="bg-sky-50 text-sky-700" class="mt-1 text-xs"
-							>Events only</StatusBadge
+						<StatusBadge tone="bg-sky-50 text-sky-700" class="mt-1 text-xs">Events only</StatusBadge
 						>
 					{:else if item.availabilityMode === 'special_order'}
 						<StatusBadge tone="bg-purple-50 text-purple-700" class="mt-1 text-xs"
@@ -135,7 +135,8 @@
 						<span
 							class="rounded-full px-2 py-0.5 text-xs capitalize"
 							style="background-color: color-mix(in srgb, var(--accent-color) 15%, white); color: var(--accent-color);"
-						>{tag.toLowerCase()}</span>
+							>{tag.toLowerCase()}</span
+						>
 					{/each}
 				</div>
 			{/if}
@@ -161,8 +162,7 @@
 				<a
 					href={resolve(`/item/${item.id}` as `/${string}`)}
 					class="rounded-lg border px-3 py-1.5 text-xs font-medium transition-opacity hover:opacity-75"
-					style="border-color: var(--background-color); color: var(--background-color);"
-					>Options</a
+					style="border-color: var(--background-color); color: var(--background-color);">Options</a
 				>
 			{:else}
 				<button

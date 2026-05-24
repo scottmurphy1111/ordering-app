@@ -233,10 +233,7 @@ export const actions: Actions = {
 			return fail(400, { error: 'Invalid font pair.' });
 		}
 
-		await db
-			.update(vendor)
-			.set({ fontPair, updatedAt: new Date() })
-			.where(eq(vendor.id, vendorId));
+		await db.update(vendor).set({ fontPair, updatedAt: new Date() }).where(eq(vendor.id, vendorId));
 
 		return { success: true, message: 'Typography saved' };
 	}
