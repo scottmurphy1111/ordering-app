@@ -8,6 +8,7 @@
 	import { Alert } from '$lib/components/ui/alert';
 	import { confirmDialog } from '$lib/confirm.svelte';
 	import FilterPills from '$lib/components/FilterPills.svelte';
+	import { toast } from '$lib/toast';
 
 	let { data, form: _form }: { data: PageData; form: ActionData } = $props();
 	const form = $derived(_form as { error?: string; declineSuccess?: boolean } | null);
@@ -42,6 +43,12 @@
 		{ label: 'Expired', value: 'expired', count: data.expiredCount },
 		{ label: 'All', value: 'all', count: data.totalCount }
 	]);
+
+	$effect(() => {
+		if (form?.declineSuccess) {
+			toast.success('Request declined');
+		}
+	});
 </script>
 
 <div>
@@ -54,9 +61,6 @@
 
 	{#if form?.error}
 		<Alert severity="error" class="mb-4">{form.error}</Alert>
-	{/if}
-	{#if form?.declineSuccess}
-		<Alert severity="success" class="mb-4">Request declined.</Alert>
 	{/if}
 
 	<div class="mb-4">

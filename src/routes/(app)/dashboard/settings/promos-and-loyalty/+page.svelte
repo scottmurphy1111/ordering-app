@@ -25,12 +25,16 @@
 	} from '$lib/components/ui/table';
 	import { confirmDialog } from '$lib/confirm.svelte';
 	import { Alert } from '$lib/components/ui/alert';
+	import { toast } from '$lib/toast';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
 	// Promo codes state
 	let showForm = $state(false);
+	let submittingCreate = $state(false);
+	let submittingTogglePromoId = $state<number | null>(null);
 	let submittingDeletePromoId = $state<number | null>(null);
+	let submittingSaveLoyalty = $state(false);
 	let submittingDisableLoyalty = $state(false);
 	let typeVal = $state<'percent' | 'flat'>('percent');
 
@@ -85,11 +89,17 @@
 					<form
 						method="POST"
 						action="?/create"
-						use:enhance={async () =>
-							async ({ update, result }) => {
+						use:enhance={() => {
+							submittingCreate = true;
+							return async ({ update, result }) => {
+								submittingCreate = false;
 								await update({ reset: false });
-								if (result.type === 'success') showForm = false;
-							}}
+								if (result.type === 'success') {
+									showForm = false;
+									toast.success('Promo saved');
+								}
+							};
+						}}
 						class="space-y-4"
 					>
 						<h3 class="font-semibold text-foreground">New promo code</h3>
@@ -171,7 +181,14 @@
 								<Input id="expiresAt" name="expiresAt" type="date" />
 							</div>
 						</div>
-						<Button type="submit" variant="default">Create code</Button>
+						<Button type="submit" variant="default" disabled={submittingCreate}>
+							{#if submittingCreate}
+								<Icon icon="mdi:loading" class="h-4 w-4 animate-spin" />
+								Saving...
+							{:else}
+								Create code
+							{/if}
+						</Button>
 					</form>
 				</CardContent>
 			</Card>
@@ -228,29 +245,40 @@
 										<form
 											method="POST"
 											action="?/toggle"
-											use:enhance={() =>
-												({ update }) =>
-													update({ reset: false })}
+											use:enhance={() => {
+												submittingTogglePromoId = promo.id;
+												return async ({ result, update }) => {
+													submittingTogglePromoId = null;
+													await update({ reset: false });
+													if (result.type === 'success') toast.success('Promo updated');
+												};
+											}}
 										>
 											<input type="hidden" name="id" value={promo.id} />
 											<input type="hidden" name="isActive" value={String(!promo.isActive)} />
 											<button
 												type="submit"
+												disabled={submittingTogglePromoId !== null}
 												class="rounded-full px-2.5 py-0.5 text-xs font-medium transition-colors {promo.isActive &&
 												!expired
 													? 'bg-primary/10 text-primary hover:bg-red-50 hover:text-red-600'
 													: 'bg-muted text-muted-foreground hover:bg-primary/5 hover:text-primary'}"
 											>
-												{expired ? 'Expired' : promo.isActive ? 'Active' : 'Inactive'}
+												{#if submittingTogglePromoId === promo.id}
+													<Icon icon="mdi:loading" class="inline h-3 w-3 animate-spin" />
+												{:else}
+													{expired ? 'Expired' : promo.isActive ? 'Active' : 'Inactive'}
+												{/if}
 											</button>
 										</form>
 									</TableCell>
 									<TableCell class="px-4 py-3">
 										<form method="POST" action="?/delete" use:enhance={() => {
 											submittingDeletePromoId = promo.id;
-											return async ({ update }) => {
+											return async ({ result, update }) => {
 												submittingDeletePromoId = null;
 												await update();
+												if (result.type === 'success') toast.success('Promo removed');
 											};
 										}}>
 											<input type="hidden" name="id" value={promo.id} />
@@ -372,9 +400,14 @@
 			id="loyalty-form"
 			method="POST"
 			action="?/saveLoyalty"
-			use:enhance={() =>
-				({ update }) =>
-					update({ reset: false })}
+			use:enhance={() => {
+				submittingSaveLoyalty = true;
+				return async ({ result, update }) => {
+					submittingSaveLoyalty = false;
+					await update({ reset: false });
+					if (result.type === 'success') toast.success('Loyalty settings saved');
+				};
+			}}
 		>
 			<input type="hidden" name="type" value={programType} />
 			<input type="hidden" name="stampsPerOrder" value={stampsPerOrder} />
@@ -445,13 +478,21 @@
 						</div>
 					</CardContent>
 					<CardFooter class="gap-3">
-						<Button type="submit" form="loyalty-form">Save program</Button>
+						<Button type="submit" form="loyalty-form" disabled={submittingSaveLoyalty}>
+							{#if submittingSaveLoyalty}
+								<Icon icon="mdi:loading" class="h-4 w-4 animate-spin" />
+								Saving...
+							{:else}
+								Save program
+							{/if}
+						</Button>
 						{#if data.loyalty.enabled}
 							<form method="POST" action="?/disableLoyalty" use:enhance={() => {
 								submittingDisableLoyalty = true;
-								return async ({ update }) => {
+								return async ({ result, update }) => {
 									submittingDisableLoyalty = false;
 									await update();
+									if (result.type === 'success') toast.success('Loyalty disabled');
 								};
 							}}>
 								<Button
@@ -539,13 +580,21 @@
 						</div>
 					</CardContent>
 					<CardFooter class="gap-3">
-						<Button type="submit" form="loyalty-form">Save program</Button>
+						<Button type="submit" form="loyalty-form" disabled={submittingSaveLoyalty}>
+							{#if submittingSaveLoyalty}
+								<Icon icon="mdi:loading" class="h-4 w-4 animate-spin" />
+								Saving...
+							{:else}
+								Save program
+							{/if}
+						</Button>
 						{#if data.loyalty.enabled}
 							<form method="POST" action="?/disableLoyalty" use:enhance={() => {
 								submittingDisableLoyalty = true;
-								return async ({ update }) => {
+								return async ({ result, update }) => {
 									submittingDisableLoyalty = false;
 									await update();
+									if (result.type === 'success') toast.success('Loyalty disabled');
 								};
 							}}>
 								<Button

@@ -3,6 +3,7 @@ import { vendor } from '$lib/server/db/vendor';
 import { systemEvents } from '$lib/server/db/system-events';
 import { and, isNotNull } from 'drizzle-orm';
 import { sendEmail } from '$lib/server/email';
+import { recordNotification } from '$lib/server/notifications';
 import { pauseReminderEmail } from '$lib/server/email/templates/pauseReminder';
 
 export async function runPauseReminders(): Promise<{ processed: number; errors: string[] }> {
@@ -45,6 +46,15 @@ export async function runPauseReminders(): Promise<{ processed: number; errors: 
 				year: 'numeric'
 			});
 
+			await recordNotification({
+				vendorId: v.id,
+				category: 'pause_reminder',
+				title: `Pause ends in ${daysOut} ${daysOut === 1 ? 'day' : 'days'}`,
+				body: `Your ${planName} subscription resumes on ${pauseUntilStr}.`,
+				severity: 'warning',
+				actionUrl: '/dashboard/account/billing',
+				actionLabel: 'View billing'
+			});
 			await sendEmail({
 				to: v.email,
 				subject: `Your Order Local subscription resumes in ${daysOut} ${daysOut === 1 ? 'day' : 'days'}`,

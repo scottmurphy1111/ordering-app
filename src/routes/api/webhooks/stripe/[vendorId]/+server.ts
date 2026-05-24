@@ -6,6 +6,7 @@ import { eq, sql } from 'drizzle-orm';
 import { vendor } from '$lib/server/db/vendor';
 import { orders } from '$lib/server/db/schema';
 import { sendEmail } from '$lib/server/email';
+import { recordNotification, shouldSendEmail } from '$lib/server/notifications';
 import { orderConfirmedEmail } from '$lib/server/email/templates/orderConfirmed';
 import { orderCancelledEmail } from '$lib/server/email/templates/orderCancelled';
 import { orderRefundedEmail } from '$lib/server/email/templates/orderRefunded';
@@ -177,7 +178,19 @@ async function handleEvent(event: Stripe.Event, ctx: VendorCtx) {
 						replyTo: ctx.email ?? undefined,
 						category: 'special_order_accepted'
 					}).catch(console.error);
-					if (ctx.email) {
+					await recordNotification({
+						vendorId: ctx.id,
+						category: 'special_order_accepted_vendor',
+						title: `Custom order accepted — ${order.orderNumber}`,
+						body: `${order.customerName ?? 'A customer'} accepted your quote.`,
+						severity: 'info',
+						actionUrl: `/dashboard/orders/${order.id}`,
+						actionLabel: 'View order'
+					});
+					if (
+						ctx.email &&
+						(await shouldSendEmail(ctx.id, 'special_order_accepted_vendor'))
+					) {
 						await sendEmail({
 							to: ctx.email,
 							subject: `New special order ${order.orderNumber} from ${order.customerName ?? 'a customer'}`,

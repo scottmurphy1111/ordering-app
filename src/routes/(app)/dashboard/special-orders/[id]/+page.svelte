@@ -1,11 +1,13 @@
 <script lang="ts">
 	import type { PageData, ActionData } from './$types';
 	import { enhance } from '$app/forms';
+	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import Icon from '@iconify/svelte';
 	import { Button } from '$lib/components/ui/button';
 	import { Alert } from '$lib/components/ui/alert';
 	import { confirmDialog } from '$lib/confirm.svelte';
+	import { toast } from '$lib/toast';
 
 	let { data, form: _form }: { data: PageData; form: ActionData } = $props();
 	const form = $derived(
@@ -61,6 +63,23 @@
 	const canDecline = $derived(isPending || isQuoted);
 
 	const linkedOrder = $derived(data.linkedOrder ?? null);
+
+	$effect(() => {
+		if (form?.sendSuccess) {
+			toast.success('Quote sent', { description: `Sent to ${req.customerEmail}` });
+		}
+	});
+
+	$effect(() => {
+		if (form?.declineSuccess) {
+			toast.success('Request declined', {
+				action: {
+					label: 'Back to list',
+					onClick: () => goto(resolve('/dashboard/special-orders'))
+				}
+			});
+		}
+	});
 </script>
 
 <div class="max-w-2xl">
@@ -79,18 +98,8 @@
 	{#if form?.sendError}
 		<Alert severity="error" class="mb-4">{form.sendError}</Alert>
 	{/if}
-	{#if form?.sendSuccess}
-		<Alert severity="success" class="mb-4">Quote sent to {req.customerEmail}.</Alert>
-	{/if}
 	{#if form?.declineError}
 		<Alert severity="error" class="mb-4">{form.declineError}</Alert>
-	{/if}
-	{#if form?.declineSuccess}
-		<Alert severity="success" class="mb-4">
-			Request declined. <a href={resolve('/dashboard/special-orders')} class="underline"
-				>Back to special requests</a
-			>
-		</Alert>
 	{/if}
 
 	<div class="space-y-5">

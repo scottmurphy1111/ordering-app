@@ -29,8 +29,9 @@
 	import { Alert } from '$lib/components/ui/alert';
 	import { Tabs, TabsList, TabsTrigger } from '$lib/components/ui/tabs';
 	import { Tooltip, TooltipTrigger, TooltipContent } from '$lib/components/ui/tooltip';
+	import { toast } from '$lib/toast';
 
-	let { data, form }: { data: PageData; form: ActionData } = $props();
+	let { data, form: _form }: { data: PageData; form: ActionData } = $props();
 
 	// ── Phase 2: location state ───────────────────────────────────────────────
 
@@ -38,6 +39,12 @@
 	let addError = $state<string | null>(null);
 	let editingId = $state<number | null>(null);
 	let editError = $state<string | null>(null);
+	let submittingCreateLocation = $state(false);
+	let submittingUpdateLocation = $state(false);
+	let submittingToggleLocationId = $state<number | null>(null);
+	let submittingCreateTemplate = $state(false);
+	let submittingUpdateTemplate = $state(false);
+	let submittingToggleTemplateId = $state<number | null>(null);
 	let submittingDeleteTemplateId = $state<number | null>(null);
 
 	const editingLocation = $derived(
@@ -63,6 +70,7 @@
 
 	function handleAddEnhance() {
 		addError = null;
+		submittingCreateLocation = true;
 		return async ({
 			result,
 			update
@@ -70,6 +78,7 @@
 			result: { type: string; data?: Record<string, unknown> };
 			update: (opts?: { reset?: boolean }) => Promise<void>;
 		}) => {
+			submittingCreateLocation = false;
 			if (result.type === 'failure') {
 				addError = (result.data?.error as string) ?? 'Something went wrong.';
 				return;
@@ -77,11 +86,13 @@
 			showAddForm = false;
 			addError = null;
 			await update({ reset: true });
+			if (result.type === 'success') toast.success('Pickup schedule saved');
 		};
 	}
 
 	function handleEditEnhance() {
 		editError = null;
+		submittingUpdateLocation = true;
 		return async ({
 			result,
 			update
@@ -89,6 +100,7 @@
 			result: { type: string; data?: Record<string, unknown> };
 			update: (opts?: { reset?: boolean }) => Promise<void>;
 		}) => {
+			submittingUpdateLocation = false;
 			if (result.type === 'failure') {
 				editError = (result.data?.error as string) ?? 'Something went wrong.';
 				return;
@@ -96,6 +108,7 @@
 			editingId = null;
 			editError = null;
 			await update({ reset: false });
+			if (result.type === 'success') toast.success('Pickup schedule saved');
 		};
 	}
 
@@ -400,6 +413,7 @@
 			cancel();
 			return;
 		}
+		submittingCreateTemplate = true;
 		return async ({
 			result,
 			update
@@ -407,6 +421,7 @@
 			result: { type: string; data?: Record<string, unknown> };
 			update: (opts?: { reset?: boolean }) => Promise<void>;
 		}) => {
+			submittingCreateTemplate = false;
 			if (result.type === 'failure') {
 				addTemplateError = (result.data?.templateError as string) ?? 'Something went wrong.';
 				return;
@@ -421,6 +436,7 @@
 			previewRecurrenceEndDate = '';
 			previewTemplateKind = 'weekly';
 			await update({ reset: true });
+			if (result.type === 'success') toast.success('Pickup schedule saved');
 		};
 	}
 
@@ -443,6 +459,7 @@
 			cancel();
 			return;
 		}
+		submittingUpdateTemplate = true;
 		return async ({
 			result,
 			update
@@ -450,6 +467,7 @@
 			result: { type: string; data?: Record<string, unknown> };
 			update: (opts?: { reset?: boolean }) => Promise<void>;
 		}) => {
+			submittingUpdateTemplate = false;
 			if (result.type === 'failure') {
 				editTemplateError = (result.data?.templateError as string) ?? 'Something went wrong.';
 				return;
@@ -465,6 +483,7 @@
 			editExdates = [];
 			addExdateInput = '';
 			await update({ reset: false });
+			if (result.type === 'success') toast.success('Pickup schedule saved');
 		};
 	}
 
@@ -492,6 +511,7 @@
 			occurrenceError = null;
 			occurrenceSavingId = null;
 			await update({ reset: false });
+			if (result.type === 'success') toast.success('Pickup schedule saved');
 		};
 	}
 </script>
@@ -527,12 +547,6 @@
 			{/if}
 		</div>
 
-		{#if form?.createSuccess}
-			<Alert severity="success" class="mb-3">Location saved.</Alert>
-		{/if}
-		{#if form?.updateSuccess}
-			<Alert severity="success" class="mb-3">Location updated.</Alert>
-		{/if}
 
 		<!-- Edit form -->
 		{#if editingId !== null && editingLocation !== null}
@@ -612,7 +626,18 @@
 						</div>
 					</CardContent>
 					<CardFooter class="gap-3">
-						<Button type="submit" variant="default">Save changes</Button>
+						<Button
+							type="submit"
+							variant="default"
+							disabled={submittingUpdateLocation}
+						>
+							{#if submittingUpdateLocation}
+								<Icon icon="mdi:loading" class="h-4 w-4 animate-spin" />
+								Saving...
+							{:else}
+								Save changes
+							{/if}
+						</Button>
 						<Button
 							type="button"
 							onclick={() => {
@@ -684,7 +709,18 @@
 						</label>
 					</CardContent>
 					<CardFooter class="gap-3">
-						<Button type="submit" variant="default">Save location</Button>
+						<Button
+							type="submit"
+							variant="default"
+							disabled={submittingCreateLocation}
+						>
+							{#if submittingCreateLocation}
+								<Icon icon="mdi:loading" class="h-4 w-4 animate-spin" />
+								Saving...
+							{:else}
+								Save location
+							{/if}
+						</Button>
 						<Button
 							type="button"
 							onclick={() => {
@@ -756,7 +792,18 @@
 										>
 											Edit
 										</Button>
-										<form method="post" action="?/toggleActive" use:enhance>
+										<form
+											method="post"
+											action="?/toggleActive"
+											use:enhance={() => {
+												submittingToggleLocationId = loc.id;
+												return async ({ result, update }) => {
+													submittingToggleLocationId = null;
+													await update();
+													if (result.type === 'success') toast.success('Pickup schedule updated');
+												};
+											}}
+										>
 											<input type="hidden" name="id" value={loc.id} />
 											<Button
 												type="submit"
@@ -765,8 +812,13 @@
 													? 'text-muted-foreground hover:text-destructive'
 													: 'text-muted-foreground hover:text-primary'}"
 												size="xs"
+												disabled={submittingToggleLocationId !== null}
 											>
-												{loc.isActive ? 'Deactivate' : 'Activate'}
+												{#if submittingToggleLocationId === loc.id}
+													<Icon icon="mdi:loading" class="h-3.5 w-3.5 animate-spin" />
+												{:else}
+													{loc.isActive ? 'Deactivate' : 'Activate'}
+												{/if}
 											</Button>
 										</form>
 									</div>
@@ -808,15 +860,6 @@
 			{/if}
 		</div>
 
-		{#if form?.createTemplateSuccess}
-			<Alert severity="success" class="mb-3">Window saved.</Alert>
-		{/if}
-		{#if form?.updateTemplateSuccess}
-			<Alert severity="success" class="mb-3">Window updated.</Alert>
-		{/if}
-		{#if form?.deleteTemplateSuccess}
-			<Alert severity="success" class="mb-3">Window removed.</Alert>
-		{/if}
 
 		<!-- Edit template form -->
 		{#if editingTemplateId !== null && editingTemplate !== null}
@@ -1096,7 +1139,18 @@
 						{@render occurrencePreviewBlock()}
 					</CardContent>
 					<CardFooter class="gap-3">
-						<Button type="submit" variant="default">Save changes</Button>
+						<Button
+							type="submit"
+							variant="default"
+							disabled={submittingUpdateTemplate}
+						>
+							{#if submittingUpdateTemplate}
+								<Icon icon="mdi:loading" class="h-4 w-4 animate-spin" />
+								Saving...
+							{:else}
+								Save changes
+							{/if}
+						</Button>
 						<Button
 							type="button"
 							onclick={() => {
@@ -1339,7 +1393,18 @@
 						{@render occurrencePreviewBlock()}
 					</CardContent>
 					<CardFooter class="gap-3">
-						<Button type="submit" variant="default">Save window</Button>
+						<Button
+							type="submit"
+							variant="default"
+							disabled={submittingCreateTemplate}
+						>
+							{#if submittingCreateTemplate}
+								<Icon icon="mdi:loading" class="h-4 w-4 animate-spin" />
+								Saving...
+							{:else}
+								Save window
+							{/if}
+						</Button>
 						<Button
 							type="button"
 							onclick={() => {
@@ -1450,24 +1515,41 @@
 											>
 												Edit
 											</Button>
-											<form method="post" action="?/toggleTemplateActive" use:enhance>
+											<form
+												method="post"
+												action="?/toggleTemplateActive"
+												use:enhance={() => {
+													submittingToggleTemplateId = tmpl.id;
+													return async ({ result, update }) => {
+														submittingToggleTemplateId = null;
+														await update();
+														if (result.type === 'success') toast.success('Pickup schedule updated');
+													};
+												}}
+											>
 												<input type="hidden" name="id" value={tmpl.id} />
 												<Button
 													type="submit"
 													variant="ghost"
 													size="xs"
+													disabled={submittingToggleTemplateId !== null}
 													class={tmpl.isActive
 														? 'text-xs text-muted-foreground hover:text-destructive'
 														: 'text-xs text-muted-foreground hover:text-foreground'}
 												>
-													{tmpl.isActive ? 'Deactivate' : 'Activate'}
+													{#if submittingToggleTemplateId === tmpl.id}
+														<Icon icon="mdi:loading" class="h-3.5 w-3.5 animate-spin" />
+													{:else}
+														{tmpl.isActive ? 'Deactivate' : 'Activate'}
+													{/if}
 												</Button>
 											</form>
 											<form method="post" action="?/deleteTemplate" use:enhance={() => {
 												submittingDeleteTemplateId = tmpl.id;
-												return async ({ update }) => {
+												return async ({ result, update }) => {
 													submittingDeleteTemplateId = null;
 													await update();
+													if (result.type === 'success') toast.success('Pickup schedule updated');
 												};
 											}}>
 												<input type="hidden" name="id" value={tmpl.id} />
@@ -1615,24 +1697,41 @@
 										>
 											Edit
 										</Button>
-										<form method="post" action="?/toggleTemplateActive" use:enhance>
+										<form
+											method="post"
+											action="?/toggleTemplateActive"
+											use:enhance={() => {
+												submittingToggleTemplateId = tmpl.id;
+												return async ({ result, update }) => {
+													submittingToggleTemplateId = null;
+													await update();
+													if (result.type === 'success') toast.success('Pickup schedule updated');
+												};
+											}}
+										>
 											<input type="hidden" name="id" value={tmpl.id} />
 											<Button
 												type="submit"
 												variant="ghost"
 												size="xs"
+												disabled={submittingToggleTemplateId !== null}
 												class={tmpl.isActive
 													? 'text-xs text-muted-foreground hover:text-destructive'
 													: 'text-xs text-muted-foreground hover:text-foreground'}
 											>
-												{tmpl.isActive ? 'Deactivate' : 'Activate'}
+												{#if submittingToggleTemplateId === tmpl.id}
+													<Icon icon="mdi:loading" class="h-3.5 w-3.5 animate-spin" />
+												{:else}
+													{tmpl.isActive ? 'Deactivate' : 'Activate'}
+												{/if}
 											</Button>
 										</form>
 										<form method="post" action="?/deleteTemplate" use:enhance={() => {
 											submittingDeleteTemplateId = tmpl.id;
-											return async ({ update }) => {
+											return async ({ result, update }) => {
 												submittingDeleteTemplateId = null;
 												await update();
+												if (result.type === 'success') toast.success('Pickup schedule updated');
 											};
 										}}>
 											<input type="hidden" name="id" value={tmpl.id} />
@@ -1795,7 +1894,18 @@
 						<input type="hidden" name="isCancelled" value="false" />
 						<input type="hidden" name="maxOrders" value="" />
 						<input type="hidden" name="notes" value="" />
-						<Button type="submit" variant="outline">Restore this date</Button>
+						<Button
+							type="submit"
+							variant="outline"
+							disabled={occurrenceSavingId === occ.id}
+						>
+							{#if occurrenceSavingId === occ.id}
+								<Icon icon="mdi:loading" class="h-4 w-4 animate-spin" />
+								Saving...
+							{:else}
+								Restore this date
+							{/if}
+						</Button>
 					{:else}
 						<div class="space-y-3">
 							<label class="flex cursor-pointer items-center gap-2">
@@ -1839,8 +1949,13 @@
 								</p>
 							</div>
 							<div class="flex items-center gap-2">
-								<Button type="submit">
-									{occurrenceSavingId === occ.id ? 'Saving…' : 'Save changes'}
+								<Button type="submit" disabled={occurrenceSavingId === occ.id}>
+									{#if occurrenceSavingId === occ.id}
+										<Icon icon="mdi:loading" class="h-4 w-4 animate-spin" />
+										Saving...
+									{:else}
+										Save changes
+									{/if}
 								</Button>
 								<Button
 									type="button"

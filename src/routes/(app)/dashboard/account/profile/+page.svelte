@@ -9,6 +9,7 @@
 	import { Alert } from '$lib/components/ui/alert';
 	import { signOut } from '$lib/auth-client';
 	import { confirmDialog } from '$lib/confirm.svelte';
+	import { toast } from '$lib/toast';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
@@ -148,9 +149,6 @@
 				{#if form?.profileError}
 					<Alert severity="error" class="mb-4">{form.profileError}</Alert>
 				{/if}
-				{#if form?.profileSuccess}
-					<Alert severity="success" class="mb-4">Profile updated.</Alert>
-				{/if}
 
 				<form
 					id="profile-form"
@@ -158,9 +156,10 @@
 					action="?/updateProfile"
 					use:enhance={() => {
 						submittingAction = 'updateProfile';
-						return async ({ update }) => {
+						return async ({ result, update }) => {
 							submittingAction = null;
 							await update();
+							if (result.type === 'success') toast.success('Profile saved');
 						};
 					}}
 					class="space-y-4"

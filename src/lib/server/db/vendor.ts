@@ -128,6 +128,11 @@ export const vendor = pgTable(
 		// Active add-ons with their Stripe subscription item IDs
 		addons: jsonb('addons').default([]).$type<import('$lib/billing').AddonItem[]>(),
 
+		// Per-vendor notification preferences (email opt-outs + marketing opt-in)
+		notificationPrefs: jsonb('notification_prefs')
+			.default({ emailOptOuts: [], marketingOptIn: false })
+			.$type<{ emailOptOuts: string[]; marketingOptIn: boolean }>(),
+
 		// Per-vendor sequential order counter — incremented atomically at order creation
 		lastOrderNumber: integer('last_order_number').notNull().default(0),
 

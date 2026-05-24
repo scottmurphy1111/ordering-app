@@ -10,3 +10,4 @@ export * from './promos';
 export * from './loyalty';
 export * from './system-events';
 export * from './special-orders';
+export * from './notifications';

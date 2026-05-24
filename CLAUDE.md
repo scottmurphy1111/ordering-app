@@ -2158,6 +2158,8 @@ Errors persist by default — auto-fading them risks users missing critical feed
 
 **Pattern A — Transient action feedback (the dominant pattern):**
 
+> **Note:** This pattern is being migrated. New code should follow the [Save form feedback](#save-form-feedback) convention (success → toast, error → inline Alert). The callsites documented here are pending migration in the settings + account + catalog sweep. Once that sweep completes, this Pattern A section will be rewritten for page-load info banners only.
+
 ```svelte
 {#if form?.someSuccess}
 	<Alert severity="success">Changes saved.</Alert>
@@ -2209,6 +2211,21 @@ Don't use Pattern B for active errors or warnings — those should use their nat
 - Don't override the severity icon at the callsite — severity determines icon consistently across the dashboard.
 - Don't use `autofade={0}` on error Alerts — errors are already persistent by default.
 - Field-level validation errors (invalid email, missing required field) render as `text-xs text-red-500 mt-1.5` below the input, not as Alert. Alert is for form-level action feedback only.
+
+---
+
+## Save form feedback
+
+Dashboard forms follow a single convention for save UX:
+
+- **In-flight**: spinner inside the submit button (`mdi:loading` with `animate-spin`) plus "Saving..." text, button disabled. Use an `isSubmitting`/`submittingAction` `$state` flag flipped in the `use:enhance` callback.
+- **Success**: `toast.success('Specific message')` from `$lib/toast`. No inline success Alert.
+- **Error**: persistent inline `<Alert severity="error">` referencing the field or condition. No error toast.
+- **Page-load info banners** (from redirect query params, e.g. `?fulfillmentChanged=1`) stay as inline Alerts — they aren't form-action feedback.
+
+Toaster is mounted in `(app)/+layout.svelte` at `top-right`. Marketing and public routes do not mount it.
+
+Toast messages are specific to the action: "Hours saved", "Identity saved", "Item created" — not generic "Saved".
 
 ---
 

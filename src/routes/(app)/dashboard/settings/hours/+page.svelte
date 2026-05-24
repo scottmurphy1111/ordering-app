@@ -7,10 +7,12 @@
 	import Icon from '@iconify/svelte';
 	import { untrack } from 'svelte';
 	import { confirmDialog } from '$lib/confirm.svelte';
+	import { toast } from '$lib/toast';
 
 	let { data, form: _form }: { data: PageData; form: ActionData } = $props();
 	const form = $derived(_form as ActionData | null);
 	let submittingSaveHours = $state(false);
+	let submittingAddException = $state(false);
 	let submittingRemoveExceptionId = $state<number | null>(null);
 
 	const DAYS = [
@@ -120,9 +122,6 @@
 		</div>
 	</div>
 
-	{#if form?.saveSuccess}
-		<Alert severity="success" class="mb-6">Hours saved.</Alert>
-	{/if}
 	{#if form?.error}
 		<Alert severity="error" class="mb-6">{form.error}</Alert>
 	{/if}
@@ -135,9 +134,10 @@
 		<CardContent class="p-0">
 			<form method="post" action="?/saveHours" use:enhance={() => {
 				submittingSaveHours = true;
-				return async ({ update }) => {
+				return async ({ result, update }) => {
 					submittingSaveHours = false;
 					await update();
+					if (result.type === 'success') toast.success('Hours saved');
 				};
 			}} class="divide-y divide-border">
 				{#each DAYS as day (day)}
@@ -213,19 +213,9 @@
 			<CardTitle>Date exceptions</CardTitle>
 		</CardHeader>
 		<CardContent class="p-0">
-			{#if form?.addSuccess}
-				<div class="px-6 pt-4">
-					<Alert severity="success">Exception saved.</Alert>
-				</div>
-			{/if}
 			{#if form?.addError}
 				<div class="px-6 pt-4">
 					<Alert severity="error">{form.addError}</Alert>
-				</div>
-			{/if}
-			{#if form?.removeSuccess}
-				<div class="px-6 pt-4">
-					<Alert severity="success">Exception removed.</Alert>
 				</div>
 			{/if}
 
@@ -268,9 +258,10 @@
 											action="?/removeException"
 											use:enhance={() => {
 												submittingRemoveExceptionId = exc.id;
-												return async ({ update }) => {
+												return async ({ result, update }) => {
 													submittingRemoveExceptionId = null;
 													await update();
+													if (result.type === 'success') toast.success('Hours saved');
 												};
 											}}
 											onsubmit={async (e) => {
@@ -320,9 +311,12 @@
 					method="post"
 					action="?/addException"
 					use:enhance={({ formElement }) => {
+						submittingAddException = true;
 						return async ({ result, update }) => {
+							submittingAddException = false;
 							if (result.type === 'success') formElement.reset();
 							await update();
+							if (result.type === 'success') toast.success('Hours saved');
 						};
 					}}
 					class="flex flex-col gap-3"
@@ -408,7 +402,14 @@
 					</div>
 
 					<div>
-						<Button type="submit" variant="outline">Add exception</Button>
+						<Button type="submit" variant="outline" disabled={submittingAddException}>
+							{#if submittingAddException}
+								<Icon icon="mdi:loading" class="h-4 w-4 animate-spin" />
+								Saving...
+							{:else}
+								Add exception
+							{/if}
+						</Button>
 					</div>
 				</form>
 			</div>

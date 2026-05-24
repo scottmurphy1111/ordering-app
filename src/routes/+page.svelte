@@ -678,7 +678,7 @@
 		<div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
 			{#each storefrontFeatures as f (f.title)}
 				<div
-					class="flex h-full flex-col rounded-2xl border border-emerald-100 bg-background p-6 shadow-sm transition"
+					class="flex h-full flex-col rounded-2xl border bg-background p-6 transition hover:border-emerald-200 hover:shadow-sm"
 				>
 					<div class="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
 						<Icon icon={f.icon} class="h-5 w-5 text-primary" aria-hidden="true" />
@@ -715,7 +715,7 @@
 		<div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
 			{#each operationsFeatures as f (f.title)}
 				<div
-					class="flex h-full flex-col rounded-2xl border border-emerald-100 bg-background p-6 shadow-sm transition"
+					class="flex h-full flex-col rounded-2xl border bg-background p-6 transition hover:border-emerald-200 hover:shadow-sm"
 				>
 					<div class="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
 						<Icon icon={f.icon} class="h-5 w-5 text-primary" aria-hidden="true" />
@@ -744,7 +744,7 @@
 		<div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
 			{#each growthFeatures as f (f.title)}
 				<div
-					class="flex h-full flex-col rounded-2xl border border-emerald-100 bg-background p-6 shadow-sm transition"
+					class="flex h-full flex-col rounded-2xl border bg-background p-6 transition hover:border-emerald-200 hover:shadow-sm"
 				>
 					<div class="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
 						<Icon icon={f.icon} class="h-5 w-5 text-primary" aria-hidden="true" />
@@ -946,7 +946,9 @@
 		</div>
 		<div class="grid gap-5 sm:grid-cols-2">
 			{#each addons as addon (addon.name)}
-				<div class="flex flex-col gap-3 rounded-2xl border border-emerald-100 bg-background p-6">
+				<div
+					class="flex flex-col gap-3 rounded-2xl border bg-background p-6 hover:border-emerald-200 hover:shadow-sm"
+				>
 					<div class="flex items-start justify-between">
 						<div class="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
 							<Icon icon={addon.icon} class="h-5 w-5 text-primary" aria-hidden="true" />
@@ -970,7 +972,7 @@
 
 		<!-- Cost estimator -->
 		<div
-			class="mx-auto mt-12 max-w-lg rounded-2xl border border-emerald-100 bg-background p-6 shadow-sm"
+			class="mx-auto mt-12 max-w-lg rounded-2xl border bg-background p-6 hover:border-emerald-200 hover:shadow-sm"
 		>
 			<h3 class="mb-4 text-base font-semibold text-foreground">Estimate your cost</h3>
 

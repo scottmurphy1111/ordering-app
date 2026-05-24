@@ -12,8 +12,10 @@
 	import { Label } from '$lib/components/ui/label';
 	import { Card, CardContent, CardFooter } from '$lib/components/ui/card';
 	import { Alert } from '$lib/components/ui/alert';
+	import { toast } from '$lib/toast';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
+	let submittingAction = $state<'update' | 'assignItems' | null>(null);
 
 	let isActiveOverride = $state<boolean | null>(null);
 	const isActive = $derived(isActiveOverride ?? data.category.isActive ?? true);
@@ -53,9 +55,6 @@
 	{#if form?.error}
 		<Alert severity="error">{form.error}</Alert>
 	{/if}
-	{#if form?.success}
-		<Alert severity="success">Saved.</Alert>
-	{/if}
 
 	<!-- Category details -->
 	<Card class="shadow-sm">
@@ -63,9 +62,14 @@
 			id="details-form"
 			method="post"
 			action="?/update"
-			use:enhance={() =>
-				({ update }) =>
-					update({ reset: false })}
+			use:enhance={() => {
+				submittingAction = 'update';
+				return async ({ result, update }) => {
+					submittingAction = null;
+					await update({ reset: false });
+					if (result.type === 'success') toast.success('Category saved');
+				};
+			}}
 		>
 			<CardContent class="space-y-4 pt-6">
 				<h2 class="font-semibold text-foreground">Details</h2>
@@ -108,7 +112,14 @@
 				</div>
 			</CardContent>
 			<CardFooter>
-				<Button type="submit" variant="default">Save changes</Button>
+				<Button type="submit" variant="default" disabled={submittingAction !== null}>
+					{#if submittingAction === 'update'}
+						<Icon icon="mdi:loading" class="h-4 w-4 animate-spin" />
+						Saving...
+					{:else}
+						Save changes
+					{/if}
+				</Button>
 			</CardFooter>
 		</form>
 	</Card>
@@ -129,11 +140,15 @@
 					id="assign-form"
 					method="post"
 					action="?/assignItems"
-					use:enhance={() =>
-						({ result, update }) => {
+					use:enhance={() => {
+						submittingAction = 'assignItems';
+						return async ({ result, update }) => {
+							submittingAction = null;
 							if (result.type === 'success') resetOverrides();
-							return update({ reset: false });
-						}}
+							await update({ reset: false });
+							if (result.type === 'success') toast.success('Assignments saved');
+						};
+					}}
 				>
 					<div class="space-y-2">
 						{#each data.items as item (item.id)}
@@ -160,7 +175,19 @@
 		</CardContent>
 		{#if data.items.length > 0}
 			<CardFooter>
-				<Button type="submit" form="assign-form" variant="default">Save assignments</Button>
+				<Button
+					type="submit"
+					form="assign-form"
+					variant="default"
+					disabled={submittingAction !== null}
+				>
+					{#if submittingAction === 'assignItems'}
+						<Icon icon="mdi:loading" class="h-4 w-4 animate-spin" />
+						Saving...
+					{:else}
+						Save assignments
+					{/if}
+				</Button>
 			</CardFooter>
 		{/if}
 	</Card>

@@ -11,6 +11,7 @@ import { user } from '$lib/server/db/auth.schema';
 import { generateOrderNumber } from '$lib/server/order-number';
 import type { CartItem } from '$lib/cart.svelte';
 import { sendEmail } from '$lib/server/email';
+import { recordNotification, shouldSendEmail } from '$lib/server/notifications';
 import { specialOrderDeclinedByCustomerVendorEmail } from '$lib/server/email/templates/specialOrderDeclinedByCustomerVendor';
 import { env } from '$env/dynamic/private';
 
@@ -257,7 +258,7 @@ export const actions: Actions = {
 			notificationEmail = owner[0]?.email ?? null;
 		}
 
-		if (notificationEmail && vendorRow) {
+		if (vendorRow) {
 			const requestRow = await db.query.specialOrderRequests.findFirst({
 				where: eq(specialOrderRequests.id, quote.requestId),
 				columns: {
@@ -270,21 +271,35 @@ export const actions: Actions = {
 
 			if (requestRow) {
 				const origin = env.ORIGIN ?? 'https://app.getorderlocal.com';
-				sendEmail({
-					to: notificationEmail,
-					subject: `Quote declined by ${requestRow.customerName} — ${vendorRow.name}`,
-					html: specialOrderDeclinedByCustomerVendorEmail({
-						vendorName: vendorRow.name,
-						primaryColor: vendorRow.backgroundColor ?? undefined,
-						customerName: requestRow.customerName,
-						customerEmail: requestRow.customerEmail,
-						description: requestRow.description,
-						targetDate: requestRow.targetDate,
-						quotedPriceCents: quote.priceCents,
-						requestUrl: `${origin}/dashboard/special-orders/${quote.requestId}`
-					}),
-					category: 'special_order_declined_by_customer_vendor'
-				}).catch(console.error);
+				await recordNotification({
+					vendorId: vendorCtx.id,
+					category: 'special_order_declined_by_customer_vendor',
+					title: 'Custom order declined',
+					body: `${requestRow.customerName} declined your quote.`,
+					severity: 'info',
+					actionUrl: `/dashboard/special-orders/${quote.requestId}`,
+					actionLabel: 'View request'
+				});
+				if (
+					notificationEmail &&
+					(await shouldSendEmail(vendorCtx.id, 'special_order_declined_by_customer_vendor'))
+				) {
+					sendEmail({
+						to: notificationEmail,
+						subject: `Quote declined by ${requestRow.customerName} — ${vendorRow.name}`,
+						html: specialOrderDeclinedByCustomerVendorEmail({
+							vendorName: vendorRow.name,
+							primaryColor: vendorRow.backgroundColor ?? undefined,
+							customerName: requestRow.customerName,
+							customerEmail: requestRow.customerEmail,
+							description: requestRow.description,
+							targetDate: requestRow.targetDate,
+							quotedPriceCents: quote.priceCents,
+							requestUrl: `${origin}/dashboard/special-orders/${quote.requestId}`
+						}),
+						category: 'special_order_declined_by_customer_vendor'
+					}).catch(console.error);
+				}
 			}
 		}
 

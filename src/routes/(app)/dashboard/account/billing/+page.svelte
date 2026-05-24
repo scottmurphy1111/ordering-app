@@ -28,6 +28,7 @@
 		DialogFooter
 	} from '$lib/components/ui/dialog';
 	import { onMount, tick } from 'svelte';
+	import { toast } from '$lib/toast';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
@@ -37,27 +38,60 @@
 	const activeAddons = $derived(data.addons ?? []);
 	const isPaidPlan = $derived(currentTierKey !== 'starter');
 	const isCancelScheduled = $derived(!!data.subscriptionEndsAt);
-	// Capture one-time notice flags at component init — NOT as live $derived off
-	// page.url, because the $effect below strips these params from the URL right
-	// after first render. Plain $state keeps alerts visible for this visit; on
-	// reload the params are gone so they init to false.
+	// Read URL params once at script init — captured before onMount strips them.
+	// These are post-redirect notice flags consumed exactly once per visit.
 	const initialParams = page.url.searchParams;
-	let isUpgraded = $state(initialParams.get('upgraded') === '1');
-	let isDowngraded = $state(initialParams.get('downgraded') === '1');
-	let isReactivated = $state(initialParams.get('reactivated') === '1');
-	let isRefunded = $state(initialParams.get('refunded') === '1');
-	let isPausedSuccess = $state(initialParams.get('paused') === '1');
-	let isResumed = $state(initialParams.get('resumed') === '1');
-	let isSwitched = $state(initialParams.get('switched') === '1');
-	let isSwitchedRefund = $state(initialParams.get('switched') === 'refund');
-	let isCreditRefunded = $state(initialParams.get('credit_refunded') === '1');
+	const isUpgraded = initialParams.get('upgraded') === '1';
+	const isDowngraded = initialParams.get('downgraded') === '1';
+	const isReactivated = initialParams.get('reactivated') === '1';
+	const isRefunded = initialParams.get('refunded') === '1';
+	const isPausedSuccess = initialParams.get('paused') === '1';
+	const isResumed = initialParams.get('resumed') === '1';
+	const isSwitched = initialParams.get('switched') === '1';
+	const isSwitchedRefund = initialParams.get('switched') === 'refund';
+	const isCreditRefunded = initialParams.get('credit_refunded') === '1';
 
-	// Strip one-time success/notice params from the URL after the router is ready.
-	// onMount + tick defers until after hydration so replaceState never fires
-	// before the client router is initialized. Best-effort: a try/catch ensures
-	// a timing edge case can never crash the page — this is cosmetic cleanup only.
+	// Fire post-action toasts and strip notice params from the URL after the
+	// router is ready. tick() defers until after hydration so the Toaster portal
+	// is mounted (otherwise toast.success() queues into a portal that doesn't
+	// exist yet and the toast is dropped on the post-hydration repaint).
 	onMount(async () => {
 		await tick();
+
+		if (isUpgraded) toast.success('Plan upgraded', { description: `Welcome to ${tierInfo.name}` });
+		if (isReactivated)
+			toast.success('Cancellation reversed', {
+				description: `Your ${tierInfo.name} plan will continue`
+			});
+		if (isRefunded)
+			toast.success('Subscription cancelled', {
+				description: 'Prorated refund will appear in 5–10 business days'
+			});
+		if (isPausedSuccess)
+			toast.success('Subscription paused', {
+				description: data.pauseUntil
+					? `Billing resumes ${fmtDate(data.pauseUntil)}`
+					: undefined
+			});
+		if (isResumed) toast.success('Subscription resumed');
+		if (isSwitched && data.billingInterval === 'annual')
+			toast.success('Switched to annual billing', {
+				description: 'Prorated charge billed to your card'
+			});
+		if (isSwitched && data.billingInterval !== 'annual')
+			toast.success('Switched to monthly billing', {
+				description: 'Prorated credit applied'
+			});
+		if (isSwitchedRefund)
+			toast.success('Switched to monthly billing', {
+				description: 'Prorated refund will appear in 5–10 business days'
+			});
+		if (isCreditRefunded)
+			toast.success('Account credit refunded', {
+				description: 'Refund will appear in 5–10 business days'
+			});
+		if (isDowngraded && !isCancelScheduled) toast.success(`Plan changed to ${tierInfo.name}`);
+
 		const noticeKeys = [
 			'upgraded',
 			'downgraded',
@@ -292,56 +326,6 @@
 		<p class="mt-0.5 text-sm text-muted-foreground">Manage your subscription plan and add-ons.</p>
 	</div>
 
-	{#if isUpgraded}
-		<Alert severity="success" dismissible={true} autofade={0} class="mb-4"
-			>Your plan has been upgraded. Welcome to {tierInfo.name}!</Alert
-		>
-	{/if}
-	{#if isReactivated}
-		<Alert severity="success" dismissible={true} autofade={0} class="mb-4">
-			Cancellation reversed. Your {tierInfo.name} plan will continue.
-		</Alert>
-	{/if}
-	{#if isRefunded}
-		<Alert severity="success" dismissible={true} autofade={0} class="mb-4">
-			Your annual subscription has been cancelled and a prorated refund has been issued. The refund
-			will appear on your original payment method within 5–10 business days.
-		</Alert>
-	{/if}
-	{#if isPausedSuccess}
-		<Alert severity="success" dismissible={true} autofade={0} class="mb-4">
-			Your subscription has been paused. Billing will resume automatically on
-			{data.pauseUntil ? fmtDate(data.pauseUntil) : 'your chosen date'}.
-		</Alert>
-	{/if}
-	{#if isResumed}
-		<Alert severity="success" dismissible={true} autofade={0} class="mb-4">
-			Your subscription has resumed. Normal billing is now active.
-		</Alert>
-	{/if}
-	{#if isSwitched}
-		<Alert severity="success" dismissible={true} autofade={0} class="mb-4">
-			{#if data.billingInterval === 'annual'}
-				You've switched to annual billing. The prorated charge has been billed to your card on file.
-			{:else}
-				You've switched to monthly billing. A prorated credit has been applied to your account —
-				it'll offset your upcoming monthly invoices automatically.
-			{/if}
-		</Alert>
-	{/if}
-	{#if isSwitchedRefund}
-		<Alert severity="success" dismissible={true} autofade={0} class="mb-4">
-			You've switched to monthly billing and a prorated refund has been issued. It will appear on
-			your original payment method within 5–10 business days.
-		</Alert>
-	{/if}
-	{#if isCreditRefunded}
-		<Alert severity="success" dismissible={true} autofade={0} class="mb-4">
-			Your account credit has been refunded to your card. The refund will appear in 5–10 business
-			days.
-		</Alert>
-	{/if}
-
 	<!-- Persistent state banners. These render whenever the vendor is in the
 	     relevant state, not just immediately after the action. -->
 	{#if isPaused && data.pauseUntil}
@@ -367,11 +351,6 @@
 		</Alert>
 	{/if}
 
-	{#if isDowngraded && !isCancelScheduled}
-		<Alert severity="info" class="mb-4" dismissible={true} autofade={0}
-			>Your plan has been changed to {tierInfo.name}.</Alert
-		>
-	{/if}
 	{#if form?.error}
 		<Alert severity="error" class="mb-4">{form.error}</Alert>
 	{/if}

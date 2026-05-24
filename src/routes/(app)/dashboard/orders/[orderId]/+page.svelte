@@ -18,6 +18,7 @@
 	import { actionConfig } from '$lib/utils/order-lifecycle';
 	import OrderStatusStepper from '$lib/components/OrderStatusStepper.svelte';
 	import { SvelteDate } from 'svelte/reactivity';
+	import { toast } from '$lib/toast';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
@@ -48,9 +49,16 @@
 
 	function approveEnhance() {
 		approvePending = true;
-		return async ({ update }: { update: (opts?: { reset?: boolean }) => Promise<void> }) => {
+		return async ({
+			result,
+			update
+		}: {
+			result: { type: string };
+			update: (opts?: { reset?: boolean }) => Promise<void>;
+		}) => {
 			await update({ reset: false });
 			approvePending = false;
+			if (result.type === 'success') toast.success('Quote sent');
 		};
 	}
 
@@ -74,18 +82,32 @@
 
 	function proposeEnhance() {
 		proposePending = true;
-		return async ({ update }: { update: (opts?: { reset?: boolean }) => Promise<void> }) => {
+		return async ({
+			result,
+			update
+		}: {
+			result: { type: string };
+			update: (opts?: { reset?: boolean }) => Promise<void>;
+		}) => {
 			await update({ reset: false });
 			proposePending = false;
 			proposeOpen = false;
+			if (result.type === 'success') toast.success('Alternate proposed');
 		};
 	}
 
 	function withdrawEnhance() {
 		withdrawPending = true;
-		return async ({ update }: { update: (opts?: { reset?: boolean }) => Promise<void> }) => {
+		return async ({
+			result,
+			update
+		}: {
+			result: { type: string };
+			update: (opts?: { reset?: boolean }) => Promise<void>;
+		}) => {
 			await update({ reset: false });
 			withdrawPending = false;
+			if (result.type === 'success') toast.success('Proposal withdrawn');
 		};
 	}
 
@@ -303,9 +325,10 @@
 					</Button>
 					<form method="post" action="?/decline" use:enhance={() => {
 						submittingAction = 'decline';
-						return async ({ update }) => {
+						return async ({ result, update }) => {
 							submittingAction = null;
 							await update();
+							if (result.type === 'success') toast.success('Quote declined');
 						};
 					}} autocomplete="off">
 						<input type="hidden" name="id" value={order.id} />
@@ -545,9 +568,11 @@
 					{@const action = actionConfig[order.status]}
 					<form method="post" action="?/updateStatus" use:enhance={() => {
 						submittingAction = 'updateStatus';
-						return async ({ update }) => {
+						const target = nextStatus[order.status];
+						return async ({ result, update }) => {
 							submittingAction = null;
 							await update();
+							if (result.type === 'success') toast.success(`Order marked as ${target}`);
 						};
 					}} autocomplete="off">
 						<input type="hidden" name="id" value={order.id} />
@@ -566,9 +591,10 @@
 				{#if !['fulfilled', 'cancelled'].includes(order.status)}
 					<form method="post" action="?/cancel" use:enhance={() => {
 						submittingAction = 'cancel';
-						return async ({ update }) => {
+						return async ({ result, update }) => {
 							submittingAction = null;
 							await update();
+							if (result.type === 'success') toast.success('Order cancelled');
 						};
 					}} autocomplete="off">
 						<input type="hidden" name="id" value={order.id} />
@@ -595,9 +621,10 @@
 				{#if order.status === 'cancelled' && order.paymentStatus === 'paid'}
 					<form method="post" action="?/refund" use:enhance={() => {
 						submittingAction = 'refund';
-						return async ({ update }) => {
+						return async ({ result, update }) => {
 							submittingAction = null;
 							await update();
+							if (result.type === 'success') toast.success('Refund issued');
 						};
 					}} autocomplete="off">
 						<input type="hidden" name="id" value={order.id} />

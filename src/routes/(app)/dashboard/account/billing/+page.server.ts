@@ -13,6 +13,7 @@ import {
 	pauseUntilTimestamp
 } from '$lib/billing';
 import { sendEmail } from '$lib/server/email';
+import { recordNotification } from '$lib/server/notifications';
 import { pauseConfirmedEmail } from '$lib/server/email/templates/pauseConfirmed';
 import { pauseResumedEmail } from '$lib/server/email/templates/pauseResumed';
 import { subscriptionTierChangedEmail } from '$lib/server/email/templates/subscriptionTierChanged';
@@ -371,11 +372,20 @@ export const actions: Actions = {
 						.update(vendor)
 						.set({ subscriptionTier: planKey, subscriptionEndsAt: null, updatedAt: new Date() })
 						.where(eq(vendor.id, vendorId));
+					const fromPlanName =
+						(record.subscriptionTier ?? 'plan').charAt(0).toUpperCase() +
+						(record.subscriptionTier ?? 'plan').slice(1);
+					const toPlanName = planKey.charAt(0).toUpperCase() + planKey.slice(1);
+					await recordNotification({
+						vendorId,
+						category: 'subscription_tier_changed',
+						title: 'Plan upgraded',
+						body: `Your plan changed from ${fromPlanName} to ${toPlanName}.`,
+						severity: 'info',
+						actionUrl: '/dashboard/account/billing',
+						actionLabel: 'View billing'
+					});
 					if (record.email) {
-						const fromPlanName =
-							(record.subscriptionTier ?? 'plan').charAt(0).toUpperCase() +
-							(record.subscriptionTier ?? 'plan').slice(1);
-						const toPlanName = planKey.charAt(0).toUpperCase() + planKey.slice(1);
 						await sendEmail({
 							to: record.email,
 							subject: `Your Order Local plan has been upgraded to ${toPlanName}`,
@@ -512,25 +522,36 @@ export const actions: Actions = {
 					updatedAt: new Date()
 				})
 				.where(eq(vendor.id, vendorId));
-			if (record?.email && endsAt) {
+			if (endsAt) {
 				const planName =
-					(record.subscriptionTier ?? 'plan').charAt(0).toUpperCase() +
-					(record.subscriptionTier ?? 'plan').slice(1);
+					(record?.subscriptionTier ?? 'plan').charAt(0).toUpperCase() +
+					(record?.subscriptionTier ?? 'plan').slice(1);
 				const accessUntil = endsAt.toLocaleDateString('en-US', {
 					month: 'long',
 					day: 'numeric',
 					year: 'numeric'
 				});
-				await sendEmail({
-					to: record.email,
-					subject: `Your Order Local ${planName} subscription is scheduled to cancel`,
-					html: subscriptionCancellationScheduledEmail({
-						recipientName: record.name,
-						planName,
-						accessUntil
-					}),
-					category: 'subscription_cancellation_scheduled'
-				}).catch(console.error);
+				await recordNotification({
+					vendorId,
+					category: 'subscription_cancellation_scheduled',
+					title: 'Cancellation scheduled',
+					body: `Your ${planName} subscription will end on ${accessUntil}.`,
+					severity: 'warning',
+					actionUrl: '/dashboard/account/billing',
+					actionLabel: 'View billing'
+				});
+				if (record?.email) {
+					await sendEmail({
+						to: record.email,
+						subject: `Your Order Local ${planName} subscription is scheduled to cancel`,
+						html: subscriptionCancellationScheduledEmail({
+							recipientName: record.name,
+							planName,
+							accessUntil
+						}),
+						category: 'subscription_cancellation_scheduled'
+					}).catch(console.error);
+				}
 			}
 			return { success: true, downgraded: true };
 		}
@@ -606,11 +627,20 @@ export const actions: Actions = {
 			.update(vendor)
 			.set({ subscriptionTier: planKey, updatedAt: new Date() })
 			.where(eq(vendor.id, vendorId));
+		const fromPlanName =
+			(record?.subscriptionTier ?? 'plan').charAt(0).toUpperCase() +
+			(record?.subscriptionTier ?? 'plan').slice(1);
+		const toPlanName = (planKey ?? 'plan').charAt(0).toUpperCase() + (planKey ?? 'plan').slice(1);
+		await recordNotification({
+			vendorId,
+			category: 'subscription_tier_changed',
+			title: 'Plan changed',
+			body: `Your plan changed from ${fromPlanName} to ${toPlanName}.`,
+			severity: 'info',
+			actionUrl: '/dashboard/account/billing',
+			actionLabel: 'View billing'
+		});
 		if (record?.email) {
-			const fromPlanName =
-				(record.subscriptionTier ?? 'plan').charAt(0).toUpperCase() +
-				(record.subscriptionTier ?? 'plan').slice(1);
-			const toPlanName = (planKey ?? 'plan').charAt(0).toUpperCase() + (planKey ?? 'plan').slice(1);
 			await sendEmail({
 				to: record.email,
 				subject: `Your Order Local plan has been changed to ${toPlanName}`,
@@ -677,9 +707,18 @@ export const actions: Actions = {
 				price: priceId,
 				proration_behavior: 'always_invoice'
 			});
+			const planName =
+				record.subscriptionTier.charAt(0).toUpperCase() + record.subscriptionTier.slice(1);
+			await recordNotification({
+				vendorId,
+				category: 'subscription_interval_changed',
+				title: 'Switched to annual billing',
+				body: `Your ${planName} plan is now billed annually.`,
+				severity: 'info',
+				actionUrl: '/dashboard/account/billing',
+				actionLabel: 'View billing'
+			});
 			if (record.email) {
-				const planName =
-					record.subscriptionTier.charAt(0).toUpperCase() + record.subscriptionTier.slice(1);
 				await sendEmail({
 					to: record.email,
 					subject: `Your Order Local plan is now billed annually`,
@@ -730,9 +769,21 @@ export const actions: Actions = {
 					);
 				}
 
+				const planName =
+					record.subscriptionTier.charAt(0).toUpperCase() + record.subscriptionTier.slice(1);
+				await recordNotification({
+					vendorId,
+					category: 'subscription_interval_changed',
+					title: 'Switched to monthly billing',
+					body:
+						refundCents > 0
+							? `Your ${planName} plan is now billed monthly. Refund of ${fmtAmount(refundCents)} on the way.`
+							: `Your ${planName} plan is now billed monthly.`,
+					severity: 'info',
+					actionUrl: '/dashboard/account/billing',
+					actionLabel: 'View billing'
+				});
 				if (record.email) {
-					const planName =
-						record.subscriptionTier.charAt(0).toUpperCase() + record.subscriptionTier.slice(1);
 					await sendEmail({
 						to: record.email,
 						subject: refundCents > 0
@@ -756,9 +807,18 @@ export const actions: Actions = {
 					price: priceId,
 					proration_behavior: 'always_invoice'
 				});
+				const planName =
+					record.subscriptionTier.charAt(0).toUpperCase() + record.subscriptionTier.slice(1);
+				await recordNotification({
+					vendorId,
+					category: 'subscription_interval_changed',
+					title: 'Switched to monthly billing',
+					body: `Your ${planName} plan is now billed monthly.`,
+					severity: 'info',
+					actionUrl: '/dashboard/account/billing',
+					actionLabel: 'View billing'
+				});
 				if (record.email) {
-					const planName =
-						record.subscriptionTier.charAt(0).toUpperCase() + record.subscriptionTier.slice(1);
 					await sendEmail({
 						to: record.email,
 						subject: `Your Order Local plan is now billed monthly`,
@@ -803,18 +863,29 @@ export const actions: Actions = {
 			.update(vendor)
 			.set({ subscriptionEndsAt: null, updatedAt: new Date() })
 			.where(eq(vendor.id, vendorId));
-		if (record.email && record.subscriptionTier) {
+		if (record.subscriptionTier) {
 			const planName =
 				record.subscriptionTier.charAt(0).toUpperCase() + record.subscriptionTier.slice(1);
-			await sendEmail({
-				to: record.email,
-				subject: `Your Order Local ${planName} subscription is staying active`,
-				html: subscriptionReactivatedEmail({
-					recipientName: record.name,
-					planName
-				}),
-				category: 'subscription_reactivated'
-			}).catch(console.error);
+			await recordNotification({
+				vendorId,
+				category: 'subscription_reactivated',
+				title: 'Subscription reactivated',
+				body: `Your ${planName} subscription will continue. Cancellation was withdrawn.`,
+				severity: 'info',
+				actionUrl: '/dashboard/account/billing',
+				actionLabel: 'View billing'
+			});
+			if (record.email) {
+				await sendEmail({
+					to: record.email,
+					subject: `Your Order Local ${planName} subscription is staying active`,
+					html: subscriptionReactivatedEmail({
+						recipientName: record.name,
+						planName
+					}),
+					category: 'subscription_reactivated'
+				}).catch(console.error);
+			}
 		}
 		return { success: true, reactivated: true };
 	},
@@ -907,19 +978,30 @@ export const actions: Actions = {
 			return { success: true, cancelDeferred: true, refundCents };
 		}
 
-		if (record.email && record.subscriptionTier) {
+		if (record.subscriptionTier) {
 			const planName =
 				record.subscriptionTier.charAt(0).toUpperCase() + record.subscriptionTier.slice(1);
-			await sendEmail({
-				to: record.email,
-				subject: `Your Order Local ${planName} subscription has been cancelled`,
-				html: subscriptionCancellationImmediateEmail({
-					recipientName: record.name,
-					planName,
-					refundAmount: fmtAmount(refundCents)
-				}),
-				category: 'subscription_cancellation_immediate'
-			}).catch(console.error);
+			await recordNotification({
+				vendorId,
+				category: 'subscription_cancellation_immediate',
+				title: 'Subscription cancelled',
+				body: `Your ${planName} subscription has been cancelled. Refund of ${fmtAmount(refundCents)} on the way.`,
+				severity: 'critical',
+				actionUrl: '/dashboard/account/billing',
+				actionLabel: 'View billing'
+			});
+			if (record.email) {
+				await sendEmail({
+					to: record.email,
+					subject: `Your Order Local ${planName} subscription has been cancelled`,
+					html: subscriptionCancellationImmediateEmail({
+						recipientName: record.name,
+						planName,
+						refundAmount: fmtAmount(refundCents)
+					}),
+					category: 'subscription_cancellation_immediate'
+				}).catch(console.error);
+			}
 		}
 		return { success: true, cancelImmediate: true, refundCents };
 	},
@@ -959,8 +1041,17 @@ export const actions: Actions = {
 			.update(vendor)
 			.set({ addons: [...current, { key, stripeItemId: item.id }], updatedAt: new Date() })
 			.where(eq(vendor.id, vendorId));
+		const addonName = ADDONS.find((a) => a.key === key)?.name ?? key;
+		await recordNotification({
+			vendorId,
+			category: 'subscription_addon_changed',
+			title: 'Add-on activated',
+			body: `${addonName} is now active on your account.`,
+			severity: 'info',
+			actionUrl: '/dashboard/account/billing',
+			actionLabel: 'View billing'
+		});
 		if (record.email) {
-			const addonName = ADDONS.find((a) => a.key === key)?.name ?? key;
 			await sendEmail({
 				to: record.email,
 				subject: `${addonName} add-on activated on your Order Local account`,
@@ -1002,8 +1093,17 @@ export const actions: Actions = {
 			.update(vendor)
 			.set({ addons: current.filter((a) => a.key !== key), updatedAt: new Date() })
 			.where(eq(vendor.id, vendorId));
+		const addonName = ADDONS.find((a) => a.key === key)?.name ?? key;
+		await recordNotification({
+			vendorId,
+			category: 'subscription_addon_changed',
+			title: 'Add-on deactivated',
+			body: `${addonName} has been removed from your account.`,
+			severity: 'info',
+			actionUrl: '/dashboard/account/billing',
+			actionLabel: 'View billing'
+		});
 		if (record?.email) {
-			const addonName = ADDONS.find((a) => a.key === key)?.name ?? key;
 			await sendEmail({
 				to: record.email,
 				subject: `${addonName} add-on deactivated on your Order Local account`,
@@ -1088,14 +1188,23 @@ export const actions: Actions = {
 			.set({ subscriptionPausedAt: now, pauseUntil: resumeAt, updatedAt: now })
 			.where(eq(vendor.id, vendorId));
 
+		const planName =
+			record.subscriptionTier.charAt(0).toUpperCase() + record.subscriptionTier.slice(1);
+		const pauseUntilStr = resumeAt.toLocaleDateString('en-US', {
+			month: 'long',
+			day: 'numeric',
+			year: 'numeric'
+		});
+		await recordNotification({
+			vendorId,
+			category: 'pause_confirmed',
+			title: 'Subscription paused',
+			body: `Your ${planName} subscription is paused until ${pauseUntilStr}.`,
+			severity: 'info',
+			actionUrl: '/dashboard/account/billing',
+			actionLabel: 'View billing'
+		});
 		if (record.email) {
-			const planName =
-				record.subscriptionTier.charAt(0).toUpperCase() + record.subscriptionTier.slice(1);
-			const pauseUntilStr = resumeAt.toLocaleDateString('en-US', {
-				month: 'long',
-				day: 'numeric',
-				year: 'numeric'
-			});
 			await sendEmail({
 				to: record.email,
 				subject: 'Your Order Local subscription has been paused',
@@ -1142,10 +1251,19 @@ export const actions: Actions = {
 			.set({ subscriptionPausedAt: null, pauseUntil: null, updatedAt: now })
 			.where(eq(vendor.id, vendorId));
 
+		const planName =
+			(record.subscriptionTier ?? 'plan').charAt(0).toUpperCase() +
+			(record.subscriptionTier ?? 'plan').slice(1);
+		await recordNotification({
+			vendorId,
+			category: 'pause_resumed',
+			title: 'Subscription resumed',
+			body: `Your ${planName} subscription is active again.`,
+			severity: 'info',
+			actionUrl: '/dashboard/account/billing',
+			actionLabel: 'View billing'
+		});
 		if (record.email) {
-			const planName =
-				(record.subscriptionTier ?? 'plan').charAt(0).toUpperCase() +
-				(record.subscriptionTier ?? 'plan').slice(1);
 			await sendEmail({
 				to: record.email,
 				subject: 'Your Order Local subscription has resumed',

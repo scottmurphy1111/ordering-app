@@ -23,9 +23,12 @@
 	import { FULFILLMENT_MODELS, fulfillmentModelLabel } from '$lib/utils/fulfillment-model-labels';
 	import { US_TIMEZONES, getAllTimezones, getTimezoneLabel } from '$lib/utils/timezones';
 	import { Alert } from '$lib/components/ui/alert';
+	import Icon from '@iconify/svelte';
+	import { toast } from '$lib/toast';
 
 	let { data, form: _form }: { data: PageData; form: ActionData } = $props();
 	const form = $derived(_form as ActionData | null);
+	let submittingAction = $state<'saveBusinessProfile' | 'saveCheckout' | 'saveSpecialRequests' | null>(null);
 
 	const address = $derived(
 		data.info?.address as {
@@ -78,16 +81,18 @@
 	{#if form?.error}
 		<Alert severity="error" class="mb-4">{form.error}</Alert>
 	{/if}
-	{#if form?.success}
-		<Alert severity="success" class="mb-4">Changes saved.</Alert>
-	{/if}
 
 	<form
 		method="post"
 		action="?/saveBusinessProfile"
-		use:enhance={() =>
-			({ update }) =>
-				update({ reset: false })}
+		use:enhance={() => {
+			submittingAction = 'saveBusinessProfile';
+			return async ({ result, update }) => {
+				submittingAction = null;
+				await update({ reset: false });
+				if (result.type === 'success') toast.success('Business info saved');
+			};
+		}}
 		class="space-y-6"
 	>
 		<Card class="shadow-sm">
@@ -270,21 +275,34 @@
 				</div>
 			</CardContent>
 			<CardFooter>
-				<Button type="submit" variant="default">Save changes</Button>
+				<Button
+					type="submit"
+					variant="default"
+					disabled={submittingAction !== null}
+				>
+					{#if submittingAction === 'saveBusinessProfile'}
+						<Icon icon="mdi:loading" class="h-4 w-4 animate-spin" />
+						Saving...
+					{:else}
+						Save changes
+					{/if}
+				</Button>
 			</CardFooter>
 		</Card>
 	</form>
 
 	<!-- Checkout settings — tipping + ASAP -->
-	{#if form?.checkoutSuccess}
-		<Alert severity="success" class="mt-4">Checkout settings saved.</Alert>
-	{/if}
 	<form
 		method="post"
 		action="?/saveCheckout"
-		use:enhance={() =>
-			({ update }) =>
-				update({ reset: false })}
+		use:enhance={() => {
+			submittingAction = 'saveCheckout';
+			return async ({ result, update }) => {
+				submittingAction = null;
+				await update({ reset: false });
+				if (result.type === 'success') toast.success('Checkout settings saved');
+			};
+		}}
 		class="mt-6"
 	>
 		<Card class="shadow-sm">
@@ -326,21 +344,34 @@
 				</label>
 			</CardContent>
 			<CardFooter>
-				<Button type="submit" variant="default">Save checkout settings</Button>
+				<Button
+					type="submit"
+					variant="default"
+					disabled={submittingAction !== null}
+				>
+					{#if submittingAction === 'saveCheckout'}
+						<Icon icon="mdi:loading" class="h-4 w-4 animate-spin" />
+						Saving...
+					{:else}
+						Save checkout settings
+					{/if}
+				</Button>
 			</CardFooter>
 		</Card>
 	</form>
 
 	<!-- Special requests -->
-	{#if form?.specialRequestsSuccess}
-		<Alert severity="success" class="mt-4">Special request settings saved.</Alert>
-	{/if}
 	<form
 		method="post"
 		action="?/saveSpecialRequests"
-		use:enhance={() =>
-			({ update }) =>
-				update({ reset: false })}
+		use:enhance={() => {
+			submittingAction = 'saveSpecialRequests';
+			return async ({ result, update }) => {
+				submittingAction = null;
+				await update({ reset: false });
+				if (result.type === 'success') toast.success('Special requests saved');
+			};
+		}}
 		class="mt-6"
 	>
 		<Card class="shadow-sm">
@@ -364,7 +395,18 @@
 				</div>
 			</CardContent>
 			<CardFooter>
-				<Button type="submit" variant="default">Save changes</Button>
+				<Button
+					type="submit"
+					variant="default"
+					disabled={submittingAction !== null}
+				>
+					{#if submittingAction === 'saveSpecialRequests'}
+						<Icon icon="mdi:loading" class="h-4 w-4 animate-spin" />
+						Saving...
+					{:else}
+						Save changes
+					{/if}
+				</Button>
 			</CardFooter>
 		</Card>
 	</form>

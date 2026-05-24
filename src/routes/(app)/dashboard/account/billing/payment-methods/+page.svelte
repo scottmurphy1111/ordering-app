@@ -9,11 +9,47 @@
 	import StatusBadge from '$lib/components/StatusBadge.svelte';
 	import { Card, CardHeader, CardTitle, CardAction, CardContent } from '$lib/components/ui/card';
 	import { Alert } from '$lib/components/ui/alert';
+	import { toast } from '$lib/toast';
+	import { onMount, tick } from 'svelte';
+	import { replaceState } from '$app/navigation';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 	let submittingRemoveId = $state<string | null>(null);
+	let submittingSetDefaultId = $state<string | null>(null);
 
-	const isAdded = $derived(page.url.searchParams.get('added') === '1');
+	// Form-driven toasts (fire after user-initiated submits — Toaster is long-mounted by then).
+	$effect(() => {
+		if ((form as { saved?: boolean } | null)?.saved) toast.success('Card saved');
+	});
+	$effect(() => {
+		if ((form as { defaultUpdated?: boolean } | null)?.defaultUpdated)
+			toast.success('Default card updated');
+	});
+	$effect(() => {
+		if ((form as { removed?: boolean } | null)?.removed) toast.success('Card removed');
+	});
+
+	// URL-param toast: read once at script init, fire from onMount after the
+	// Toaster portal has mounted, then clean the URL so a refresh doesn't re-fire.
+	const wasAdded = page.url.searchParams.get('added') === '1';
+
+	onMount(async () => {
+		await tick();
+
+		if (wasAdded) toast.success('Card saved');
+
+		if (!page.url.searchParams.has('added')) return;
+		try {
+			const cleaned = new URL(page.url.href);
+			cleaned.searchParams.delete('added');
+			// Same-page cleanup of a single query param — not a navigation that resolve() applies to.
+			/* eslint-disable svelte/no-navigation-without-resolve */
+			replaceState(cleaned.toString(), page.state);
+			/* eslint-enable svelte/no-navigation-without-resolve */
+		} catch (err) {
+			console.debug('[payment-methods] skipped added-param cleanup:', err);
+		}
+	});
 
 	const cardBrandIcon: Record<string, string> = {
 		visa: 'logos:visa',
@@ -59,15 +95,6 @@
 		<p class="mt-1 text-sm text-gray-500">Cards saved to your account for subscription charges.</p>
 	</div>
 
-	{#if isAdded}
-		<Alert severity="success" class="mb-4">Card saved.</Alert>
-	{/if}
-	{#if form?.defaultUpdated}
-		<Alert severity="success" class="mb-4">Default card updated.</Alert>
-	{/if}
-	{#if form?.removed}
-		<Alert severity="success" class="mb-4">Card removed.</Alert>
-	{/if}
 	{#if form?.error}
 		<Alert severity="error" class="mb-4">{form.error}</Alert>
 	{/if}
@@ -132,9 +159,31 @@
 								{#if isDefault}
 									<StatusBadge tone="bg-primary/10 text-primary">Default</StatusBadge>
 								{:else}
-									<form method="post" action="?/setDefault" use:enhance>
+									<form
+										method="post"
+										action="?/setDefault"
+										use:enhance={() => {
+											submittingSetDefaultId = method.id;
+											return async ({ update }) => {
+												submittingSetDefaultId = null;
+												await update();
+											};
+										}}
+									>
 										<input type="hidden" name="paymentMethodId" value={method.id} />
-										<Button type="submit" variant="outline" size="xs">Set as default</Button>
+										<Button
+											type="submit"
+											variant="outline"
+											size="xs"
+											disabled={submittingSetDefaultId !== null}
+										>
+											{#if submittingSetDefaultId === method.id}
+												<Icon icon="mdi:loading" class="h-3.5 w-3.5 animate-spin" />
+												Saving...
+											{:else}
+												Set as default
+											{/if}
+										</Button>
 									</form>
 								{/if}
 

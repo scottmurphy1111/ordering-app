@@ -4,6 +4,7 @@ import { systemEvents } from '$lib/server/db/system-events';
 import { and, isNotNull, lte, eq } from 'drizzle-orm';
 import { getOrderLocalStripe } from '$lib/server/stripe-billing';
 import { sendEmail } from '$lib/server/email';
+import { recordNotification } from '$lib/server/notifications';
 import { pauseResumedEmail } from '$lib/server/email/templates/pauseResumed';
 import type Stripe from 'stripe';
 
@@ -47,10 +48,19 @@ export async function runResumeDue(): Promise<{ processed: number; errors: strin
 				.set({ subscriptionPausedAt: null, pauseUntil: null, updatedAt: new Date() })
 				.where(eq(vendor.id, v.id));
 
+			const planName =
+				(v.subscriptionTier ?? 'plan').charAt(0).toUpperCase() +
+				(v.subscriptionTier ?? 'plan').slice(1);
+			await recordNotification({
+				vendorId: v.id,
+				category: 'pause_resumed',
+				title: 'Subscription resumed',
+				body: `Your ${planName} subscription is active again.`,
+				severity: 'info',
+				actionUrl: '/dashboard/account/billing',
+				actionLabel: 'View billing'
+			});
 			if (v.email) {
-				const planName =
-					(v.subscriptionTier ?? 'plan').charAt(0).toUpperCase() +
-					(v.subscriptionTier ?? 'plan').slice(1);
 				await sendEmail({
 					to: v.email,
 					subject: 'Your Order Local subscription has resumed',

@@ -5,6 +5,7 @@ import { systemEvents } from '$lib/server/db/system-events';
 import { and, eq, isNull, inArray } from 'drizzle-orm';
 import { env } from '$env/dynamic/private';
 import { sendEmail } from '$lib/server/email';
+import { recordNotification } from '$lib/server/notifications';
 import { pendingApprovalReminderEmail } from '$lib/server/email/templates/pendingApprovalReminder';
 
 export async function runPendingApprovalReminders(): Promise<{
@@ -86,6 +87,18 @@ export async function runPendingApprovalReminders(): Promise<{
 			const maxDaysOpen = Math.max(...orderList.map((o) => o.daysOpen)) as 1 | 3 | 7;
 			const dashboardUrl = `${origin}/dashboard/orders`;
 
+			await recordNotification({
+				vendorId,
+				category: 'pending_approval_reminder',
+				title:
+					orderList.length === 1
+						? `Order ${orderList[0].orderNumber} needs your approval`
+						: `${orderList.length} orders need your approval`,
+				body: `Open for ${maxDaysOpen} ${maxDaysOpen === 1 ? 'day' : 'days'}.`,
+				severity: 'critical',
+				actionUrl: '/dashboard/orders?filter=pending_approval',
+				actionLabel: 'Review orders'
+			});
 			await sendEmail({
 				to: v.email,
 				subject:

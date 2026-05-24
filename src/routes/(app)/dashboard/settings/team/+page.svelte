@@ -23,8 +23,15 @@
 		TableCell
 	} from '$lib/components/ui/table';
 	import { Alert } from '$lib/components/ui/alert';
+	import { toast } from '$lib/toast';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
+
+	$effect(() => {
+		if ((form as { addSuccess?: boolean } | null)?.addSuccess) {
+			toast.success('Member added');
+		}
+	});
 
 	let showAddForm = $state(false);
 	let showInviteForm = $state(false);
@@ -71,9 +78,6 @@
 			{/if}
 			{#if form?.error}
 				<Alert severity="error" class="mb-4">{form.error}</Alert>
-			{/if}
-			{#if form?.addSuccess}
-				<Alert severity="success" class="mb-4">Member added.</Alert>
 			{/if}
 			{#if form?.inviteError}
 				<Alert severity="error" class="mb-4">{form.inviteError}</Alert>

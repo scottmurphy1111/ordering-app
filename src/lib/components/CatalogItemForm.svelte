@@ -16,6 +16,7 @@
 	import { Switch } from '$lib/components/ui/switch';
 	import { Tabs, TabsList, TabsTrigger } from '$lib/components/ui/tabs';
 	import { Alert } from '$lib/components/ui/alert';
+	import { toast } from '$lib/toast';
 
 	type ImageEntry = { url: string; isPrimary?: boolean };
 
@@ -93,7 +94,7 @@
 
 	// Internal feedback
 	let internalError = $state<string | null>(null);
-	let internalSuccess = $state(false);
+	let isSubmitting = $state(false);
 
 	// Controlled select mirrors — must be $state so bind:value propagates user selections
 	let categoryValue = $state(untrack(() => String(item?.category?.id ?? '')));
@@ -132,6 +133,7 @@
 
 	function handleEnhance({ submitter }: { submitter: HTMLElement | null; [key: string]: unknown }) {
 		const addAnother = submitter?.getAttribute('data-add-another') === '1';
+		isSubmitting = true;
 
 		return async ({
 			result,
@@ -140,7 +142,7 @@
 			result: { type: string; data?: Record<string, unknown> };
 			update: (opts?: { reset?: boolean }) => Promise<void>;
 		}) => {
-			internalSuccess = false;
+			isSubmitting = false;
 
 			if (result.type === 'failure') {
 				internalError = (result.data?.error as string) ?? 'Something went wrong.';
@@ -150,19 +152,24 @@
 			internalError = null;
 
 			if (mode === 'edit') {
-				internalSuccess = true;
 				await update({ reset: false });
+				if (result.type === 'success') toast.success('Item saved');
+				onSuccess?.((result.data?.item as { id: number; name: string }) ?? { id: 0, name: '' }, {
+					addAnother: false
+				});
 			} else if (onSuccess && result.type === 'success') {
 				const item = result.data?.item as { id: number; name: string };
 				if (addAnother) {
 					userImageUrl = null;
 					await update({ reset: true });
 				}
+				toast.success('Item created');
 				// "Save & add modifiers" path: parent handles the navigation,
 				// no local form reset needed because the page will re-render in edit mode.
 				onSuccess(item, { addAnother });
 			} else {
 				await update();
+				if (result.type === 'success') toast.success('Item created');
 			}
 		};
 	}
@@ -514,31 +521,59 @@
 	{#if mode === 'edit'}
 		<Button
 			type="submit"
-			disabled={uploading}
+			disabled={uploading || isSubmitting}
 			variant="default"
-			class={fullWidth ? 'w-full md:w-auto' : ''}>Save changes</Button
+			class={fullWidth ? 'w-full md:w-auto' : ''}
 		>
+			{#if isSubmitting}
+				<Icon icon="mdi:loading" class="h-4 w-4 animate-spin" />
+				Saving...
+			{:else}
+				Save changes
+			{/if}
+		</Button>
 	{:else if onSuccess}
 		<Button
 			type="submit"
-			disabled={uploading}
+			disabled={uploading || isSubmitting}
 			variant="default"
-			class={fullWidth ? 'w-full md:w-auto' : ''}>Save &amp; add modifiers</Button
+			class={fullWidth ? 'w-full md:w-auto' : ''}
 		>
+			{#if isSubmitting}
+				<Icon icon="mdi:loading" class="h-4 w-4 animate-spin" />
+				Saving...
+			{:else}
+				Save &amp; add modifiers
+			{/if}
+		</Button>
 		<Button
 			type="submit"
 			data-add-another="1"
-			disabled={uploading}
+			disabled={uploading || isSubmitting}
 			variant="outline"
-			class={fullWidth ? 'w-full md:w-auto' : ''}>Save &amp; add another</Button
+			class={fullWidth ? 'w-full md:w-auto' : ''}
 		>
+			{#if isSubmitting}
+				<Icon icon="mdi:loading" class="h-4 w-4 animate-spin" />
+				Saving...
+			{:else}
+				Save &amp; add another
+			{/if}
+		</Button>
 	{:else}
 		<Button
 			type="submit"
-			disabled={uploading}
+			disabled={uploading || isSubmitting}
 			variant="default"
-			class={fullWidth ? 'w-full md:w-auto' : ''}>Create item</Button
+			class={fullWidth ? 'w-full md:w-auto' : ''}
 		>
+			{#if isSubmitting}
+				<Icon icon="mdi:loading" class="h-4 w-4 animate-spin" />
+				Saving...
+			{:else}
+				Create item
+			{/if}
+		</Button>
 		{#if onCancel}
 			<Button
 				type="button"
@@ -552,9 +587,6 @@
 
 {#if internalError}
 	<Alert severity="error" class="mb-4">{internalError}</Alert>
-{/if}
-{#if internalSuccess}
-	<Alert severity="success" class="mb-4">Saved.</Alert>
 {/if}
 
 {#if variant === 'card'}

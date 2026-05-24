@@ -13,7 +13,8 @@
 	} from '$lib/components/ui/dropdown-menu';
 	import Icon from '@iconify/svelte';
 	import ConfirmModal from '$lib/components/ConfirmModal.svelte';
-	import { Button } from '$lib/components/ui/button';
+	import { Toaster } from '$lib/components/ui/sonner';
+	import { toast } from '$lib/toast';
 
 	import { onMount } from 'svelte';
 	import { Sheet, SheetContent } from '$lib/components/ui/sheet';
@@ -24,12 +25,6 @@
 
 	// ── New order alert ──────────────────────────────────────────────────────
 	let lastKnownOrderId = $state(0);
-	let newOrderToast = $state<{
-		orderNumber: string;
-		customerName: string | null;
-		total: number;
-	} | null>(null);
-	let toastTimer: ReturnType<typeof setTimeout> | null = null;
 
 	function playChime() {
 		try {
@@ -55,11 +50,15 @@
 	}
 
 	function showToast(order: { orderNumber: string; customerName: string | null; total: number }) {
-		newOrderToast = order;
-		if (toastTimer) clearTimeout(toastTimer);
-		toastTimer = setTimeout(() => {
-			newOrderToast = null;
-		}, 8000);
+		toast.success('New order!', {
+			description: `${order.orderNumber}${order.customerName ? ` · ${order.customerName}` : ''} · $${(order.total / 100).toFixed(2)}`,
+			duration: 30_000,
+			closeButton: true,
+			action: {
+				label: 'View orders',
+				onClick: () => goto(resolve('/dashboard/orders'))
+			}
+		});
 	}
 
 	async function pollOrders() {
@@ -349,42 +348,6 @@
 	</main>
 </div>
 
-<!-- New order toast -->
-{#if newOrderToast}
-	<div
-		class="fixed right-5 bottom-5 z-300 flex items-start gap-3 rounded-xl border border-primary/20 bg-background px-4 py-3.5 shadow-xl"
-	>
-		<div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-success/10">
-			<Icon icon="mdi:bell-ring-outline" class="h-5 w-5 text-primary" />
-		</div>
-		<div class="min-w-0">
-			<p class="text-sm font-semibold text-foreground">New order!</p>
-			<p class="text-xs text-muted-foreground">
-				{newOrderToast.orderNumber}{newOrderToast.customerName
-					? ` · ${newOrderToast.customerName}`
-					: ''} · ${(newOrderToast.total / 100).toFixed(2)}
-			</p>
-			<a
-				href={resolve('/dashboard/orders')}
-				onclick={() => {
-					newOrderToast = null;
-				}}
-				class="mt-1 inline-block text-xs font-medium text-primary hover:text-primary"
-			>
-				View orders
-			</a>
-		</div>
-		<Button
-			onclick={() => {
-				newOrderToast = null;
-			}}
-			variant="ghost"
-			size="icon"
-			class="shrink-0 text-muted-foreground hover:text-foreground"
-		>
-			<Icon icon="mdi:close" class="h-4 w-4" />
-		</Button>
-	</div>
-{/if}
+<Toaster position="top-right" richColors />
 
 <ConfirmModal />

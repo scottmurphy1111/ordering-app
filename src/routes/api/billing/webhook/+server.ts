@@ -8,6 +8,7 @@ import { vendor } from '$lib/server/db/vendor';
 import { systemEvents } from '$lib/server/db/system-events';
 import { getOrderLocalStripe, getTierKeyFromPriceId } from '$lib/server/stripe-billing';
 import { sendEmail } from '$lib/server/email';
+import { recordNotification } from '$lib/server/notifications';
 import { subscriptionConfirmedEmail } from '$lib/server/email/templates/subscriptionConfirmed';
 import { paymentFailedEmail } from '$lib/server/email/templates/paymentFailed';
 import { subscriptionCancellationCompletedEmail } from '$lib/server/email/templates/subscriptionCancellationCompleted';
@@ -101,13 +102,23 @@ export const POST: RequestHandler = async ({ request }) => {
 					const subscription = await stripe.subscriptions.retrieve(subscriptionId);
 					const item = subscription.items.data[0];
 					const amount = item?.price?.unit_amount ?? 0;
+					const planLabel = planKey.charAt(0).toUpperCase() + planKey.slice(1);
 
+					await recordNotification({
+						vendorId,
+						category: 'subscription_confirmed',
+						title: 'Subscription confirmed',
+						body: `Your ${planLabel} plan is active — ${formatAmount(amount)}.`,
+						severity: 'info',
+						actionUrl: '/dashboard/account/billing',
+						actionLabel: 'View billing'
+					});
 					await sendEmail({
 						to: vendorRecord.email,
-						subject: `You're on Order Local ${planKey.charAt(0).toUpperCase() + planKey.slice(1)}`,
+						subject: `You're on Order Local ${planLabel}`,
 						html: subscriptionConfirmedEmail({
 							recipientName: vendorRecord.name,
-							planName: planKey.charAt(0).toUpperCase() + planKey.slice(1),
+							planName: planLabel,
 							amount: formatAmount(amount)
 						}),
 						category: 'subscription_confirmed'
@@ -241,12 +252,23 @@ export const POST: RequestHandler = async ({ request }) => {
 				) {
 					const item = subscription.items.data[0];
 					const amount = item?.price?.unit_amount ?? 0;
+					const tierLabel = tierForEmail.charAt(0).toUpperCase() + tierForEmail.slice(1);
+
+					await recordNotification({
+						vendorId: vendorRecord.id,
+						category: 'subscription_confirmed',
+						title: 'Subscription confirmed',
+						body: `Your ${tierLabel} plan is active — ${formatAmount(amount)}.`,
+						severity: 'info',
+						actionUrl: '/dashboard/account/billing',
+						actionLabel: 'View billing'
+					});
 					await sendEmail({
 						to: vendorRecord.email,
-						subject: `You're on Order Local ${tierForEmail.charAt(0).toUpperCase() + tierForEmail.slice(1)}`,
+						subject: `You're on Order Local ${tierLabel}`,
 						html: subscriptionConfirmedEmail({
 							recipientName: vendorRecord.name,
-							planName: tierForEmail.charAt(0).toUpperCase() + tierForEmail.slice(1),
+							planName: tierLabel,
 							amount: formatAmount(amount)
 						}),
 						category: 'subscription_confirmed'
@@ -302,6 +324,15 @@ export const POST: RequestHandler = async ({ request }) => {
 					vendorRecord.subscriptionRefundedAt &&
 					Date.now() - vendorRecord.subscriptionRefundedAt.getTime() < 5 * 60 * 1000;
 				if (!recentRefund && vendorRecord.email) {
+					await recordNotification({
+						vendorId: vendorRecord.id,
+						category: 'subscription_cancellation_completed',
+						title: 'Subscription ended',
+						body: `Your ${cancelledPlanName} subscription has ended. You're back on Starter.`,
+						severity: 'critical',
+						actionUrl: '/dashboard/account/billing',
+						actionLabel: 'View billing'
+					});
 					await sendEmail({
 						to: vendorRecord.email,
 						subject: `Your Order Local ${cancelledPlanName} subscription has ended`,
@@ -404,6 +435,15 @@ export const POST: RequestHandler = async ({ request }) => {
 						(vendorRecord.subscriptionTier ?? 'plan').charAt(0).toUpperCase() +
 						(vendorRecord.subscriptionTier ?? 'plan').slice(1);
 
+					await recordNotification({
+						vendorId: vendorRecord.id,
+						category: 'payment_failed',
+						title: 'Payment failed',
+						body: `Charge of ${formatAmount(amount)} for your ${planName} plan failed.${nextRetry ? ` Next retry: ${formatDate(nextRetry)}.` : ''}`,
+						severity: 'critical',
+						actionUrl: '/dashboard/account/billing',
+						actionLabel: 'Update payment method'
+					});
 					await sendEmail({
 						to: vendorRecord.email,
 						subject: 'Order Local — payment failed',

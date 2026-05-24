@@ -11,6 +11,7 @@
 	import { Label } from '$lib/components/ui/label';
 	import { Card, CardContent, CardFooter } from '$lib/components/ui/card';
 	import { Alert } from '$lib/components/ui/alert';
+	import { toast } from '$lib/toast';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
@@ -19,6 +20,7 @@
 	let showPk = $state(false);
 	let showSk = $state(false);
 	let lastSubmitted: 'pk' | 'sk' | null = $state(null);
+	let submittingAction = $state<'saveStripePublishableKey' | 'saveStripeSecretKey' | 'clearStripeKey' | null>(null);
 </script>
 
 <div>
@@ -73,10 +75,6 @@
 				</div>
 			</div>
 
-			{#if form?.cleared}
-				<Alert severity="success" class="mt-3">Stripe keys removed.</Alert>
-			{/if}
-
 			<div class="mt-4 space-y-4">
 				<!-- Publishable key row -->
 				<form
@@ -85,12 +83,15 @@
 					action="?/saveStripePublishableKey"
 					use:enhance={() => {
 						lastSubmitted = 'pk';
-						return ({ result, update }) => {
+						submittingAction = 'saveStripePublishableKey';
+						return async ({ result, update }) => {
+							submittingAction = null;
 							if (result.type === 'success') {
 								editingPublishable = false;
 								showPk = false;
 							}
-							update({ reset: false });
+							await update({ reset: false });
+							if (result.type === 'success') toast.success('Stripe settings updated');
 						};
 					}}
 				>
@@ -124,7 +125,18 @@
 							</Button>
 						</div>
 						{#if editingPublishable}
-							<Button type="submit" variant="default">Save</Button>
+							<Button
+								type="submit"
+								variant="default"
+								disabled={submittingAction !== null}
+							>
+								{#if submittingAction === 'saveStripePublishableKey'}
+									<Icon icon="mdi:loading" class="h-4 w-4 animate-spin" />
+									Saving...
+								{:else}
+									Save
+								{/if}
+							</Button>
 							<Button
 								type="button"
 								variant="outline"
@@ -155,9 +167,6 @@
 					{#if form?.error && lastSubmitted === 'pk'}
 						<Alert severity="error" class="mt-2">{form.error}</Alert>
 					{/if}
-					{#if form?.publishableSuccess}
-						<Alert severity="success" class="mt-2">Publishable key saved.</Alert>
-					{/if}
 				</form>
 
 				<!-- Secret key row -->
@@ -167,12 +176,15 @@
 					action="?/saveStripeSecretKey"
 					use:enhance={() => {
 						lastSubmitted = 'sk';
-						return ({ result, update }) => {
+						submittingAction = 'saveStripeSecretKey';
+						return async ({ result, update }) => {
+							submittingAction = null;
 							if (result.type === 'success') {
 								editingSecret = false;
 								showSk = false;
 							}
-							update({ reset: false });
+							await update({ reset: false });
+							if (result.type === 'success') toast.success('Stripe settings updated');
 						};
 					}}
 				>
@@ -206,8 +218,17 @@
 							</Button>
 						</div>
 						{#if editingSecret}
-							<Button type="submit" variant="default">
-								{data.hasStripeKey ? 'Save & verify' : 'Connect Stripe'}
+							<Button
+								type="submit"
+								variant="default"
+								disabled={submittingAction !== null}
+							>
+								{#if submittingAction === 'saveStripeSecretKey'}
+									<Icon icon="mdi:loading" class="h-4 w-4 animate-spin" />
+									Saving...
+								{:else}
+									{data.hasStripeKey ? 'Save & verify' : 'Connect Stripe'}
+								{/if}
 							</Button>
 							{#if data.hasStripeKey}
 								<Button
@@ -237,9 +258,6 @@
 					{#if form?.error && lastSubmitted === 'sk'}
 						<Alert severity="error" class="mt-2">{form.error}</Alert>
 					{/if}
-					{#if form?.secretSuccess}
-						<Alert severity="success" class="mt-2">Secret key saved and verified.</Alert>
-					{/if}
 				</form>
 
 				{#if editingPublishable || editingSecret}
@@ -261,14 +279,18 @@
 				id="disconnect-stripe-form"
 				method="post"
 				action="?/clearStripeKey"
-				use:enhance={() =>
-					({ update }) => {
+				use:enhance={() => {
+					submittingAction = 'clearStripeKey';
+					return async ({ result, update }) => {
+						submittingAction = null;
 						editingSecret = true;
 						editingPublishable = false;
 						showSk = false;
 						showPk = false;
-						update({ reset: false });
-					}}
+						await update({ reset: false });
+						if (result.type === 'success') toast.success('Stripe keys removed');
+					};
+				}}
 			></form>
 
 			<!-- Webhook status -->
@@ -313,8 +335,14 @@
 							)?.requestSubmit();
 					}}
 					variant="destructive"
+					disabled={submittingAction !== null}
 				>
-					Disconnect
+					{#if submittingAction === 'clearStripeKey'}
+						<Icon icon="mdi:loading" class="h-4 w-4 animate-spin" />
+						Removing...
+					{:else}
+						Disconnect
+					{/if}
 				</Button>
 			{/if}
 		</CardFooter>

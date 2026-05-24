@@ -10,6 +10,7 @@ import {
 import { orders, orderItems } from './orders';
 import { user, session, account } from './auth.schema';
 import { pickupLocations, pickupWindowTemplates, pickupWindows } from './pickup';
+import { vendorNotifications } from './notifications';
 
 export const vendorRelations = relations(vendor, ({ many }) => ({
 	users: many(vendorUsers),
@@ -19,7 +20,15 @@ export const vendorRelations = relations(vendor, ({ many }) => ({
 	modifiers: many(modifiers),
 	pickupLocations: many(pickupLocations),
 	pickupWindowTemplates: many(pickupWindowTemplates),
-	pickupWindows: many(pickupWindows)
+	pickupWindows: many(pickupWindows),
+	notifications: many(vendorNotifications)
+}));
+
+export const vendorNotificationsRelations = relations(vendorNotifications, ({ one }) => ({
+	vendor: one(vendor, {
+		fields: [vendorNotifications.vendorId],
+		references: [vendor.id]
+	})
 }));
 
 export const vendorUsersRelations = relations(vendorUsers, ({ one }) => ({

@@ -7,6 +7,7 @@ import { vendor as vendorTable, vendorUsers } from '$lib/server/db/vendor';
 import { user } from '$lib/server/db/auth.schema';
 import { uploadToR2 } from '$lib/server/r2';
 import { sendEmail } from '$lib/server/email';
+import { recordNotification, shouldSendEmail } from '$lib/server/notifications';
 import { specialOrderRequestReceivedVendorEmail } from '$lib/server/email/templates/specialOrderRequestReceivedVendor';
 import { specialOrderRequestReceivedCustomerEmail } from '$lib/server/email/templates/specialOrderRequestReceivedCustomer';
 import { env } from '$env/dynamic/private';
@@ -107,23 +108,37 @@ export const actions: Actions = {
 		const origin = env.ORIGIN ?? 'https://app.getorderlocal.com';
 
 		// Vendor notification — best-effort
-		if (notificationEmail && vendorRow) {
-			sendEmail({
-				to: notificationEmail,
-				subject: `New special-order request from ${customerName}`,
-				html: specialOrderRequestReceivedVendorEmail({
-					vendorName: vendorRow.name,
-					primaryColor: vendorRow.backgroundColor ?? undefined,
-					customerName,
-					customerEmail,
-					customerPhone,
-					description,
-					targetDate,
-					photoCount: photoUrls.length,
-					requestUrl: `${origin}/dashboard/special-orders/${newRequest.id}`
-				}),
-				category: 'special_order_request_received_vendor'
-			}).catch(console.error);
+		if (vendorRow) {
+			await recordNotification({
+				vendorId: vendor.id,
+				category: 'special_order_request_received_vendor',
+				title: 'New custom order request',
+				body: `From ${customerName} — ${description.slice(0, 120)}${description.length > 120 ? '…' : ''}`,
+				severity: 'info',
+				actionUrl: `/dashboard/special-orders/${newRequest.id}`,
+				actionLabel: 'Review request'
+			});
+			if (
+				notificationEmail &&
+				(await shouldSendEmail(vendor.id, 'special_order_request_received_vendor'))
+			) {
+				sendEmail({
+					to: notificationEmail,
+					subject: `New special-order request from ${customerName}`,
+					html: specialOrderRequestReceivedVendorEmail({
+						vendorName: vendorRow.name,
+						primaryColor: vendorRow.backgroundColor ?? undefined,
+						customerName,
+						customerEmail,
+						customerPhone,
+						description,
+						targetDate,
+						photoCount: photoUrls.length,
+						requestUrl: `${origin}/dashboard/special-orders/${newRequest.id}`
+					}),
+					category: 'special_order_request_received_vendor'
+				}).catch(console.error);
+			}
 		}
 
 		// Customer confirmation — best-effort

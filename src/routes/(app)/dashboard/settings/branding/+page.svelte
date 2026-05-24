@@ -18,6 +18,8 @@
 	} from '$lib/components/ui/card';
 	import { Alert } from '$lib/components/ui/alert';
 	import { Dialog, DialogContent, DialogHeader, DialogTitle } from '$lib/components/ui/dialog';
+	import { invalidateAll } from '$app/navigation';
+	import { toast } from '$lib/toast';
 	import { FONT_PAIRS, googleFontsUrl, type FontPairSlug } from '$lib/storefront/font-pairs';
 	import { BACKGROUND_PATTERNS, patternDataUriSoft } from '$lib/storefront/background-patterns';
 	import AiImageGenerator from '$lib/components/AiImageGenerator.svelte';
@@ -66,7 +68,8 @@
 		endpoint: string,
 		fieldName: string,
 		state: UploadState,
-		maxMb: number
+		maxMb: number,
+		successMessage: string
 	) {
 		const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/svg+xml'];
 		if (!allowedTypes.includes(file.type)) {
@@ -85,7 +88,8 @@
 			const res = await fetch(endpoint, { method: 'POST', body: fd });
 			const result = await res.json();
 			if (result.success) {
-				window.location.reload();
+				await invalidateAll();
+				toast.success(successMessage);
 			} else {
 				state.error = result.error ?? 'Upload failed';
 			}
@@ -112,9 +116,6 @@
 	{#if form?.error}
 		<Alert severity="error" class="mb-4">{form.error}</Alert>
 	{/if}
-	{#if form?.success}
-		<Alert severity="success" class="mb-4">{form.message}</Alert>
-	{/if}
 
 	<div class="space-y-6">
 		<!-- ── Identity ─────────────────────────────────────────────────────────── -->
@@ -129,9 +130,10 @@
 					action="?/saveIdentity"
 					use:enhance={() => {
 						submittingAction = 'saveIdentity';
-						return async ({ update }) => {
+						return async ({ result, update }) => {
 							submittingAction = null;
 							await update({ invalidateAll: true });
+							if (result.type === 'success') toast.success('Identity saved');
 						};
 					}}
 					class="space-y-4"
@@ -195,9 +197,10 @@
 					action="?/saveFontPair"
 					use:enhance={() => {
 						submittingAction = 'saveFontPair';
-						return async ({ update }) => {
+						return async ({ result, update }) => {
 							submittingAction = null;
 							await update({ invalidateAll: true });
+							if (result.type === 'success') toast.success('Typography saved');
 						};
 					}}
 					class="space-y-4"
@@ -258,9 +261,14 @@
 					id="colors-form"
 					method="post"
 					action="?/saveColors"
-					use:enhance={() =>
-						({ update }) =>
-							update({ reset: false })}
+					use:enhance={() => {
+						submittingAction = 'saveColors';
+						return async ({ result, update }) => {
+							submittingAction = null;
+							await update({ reset: false });
+							if (result.type === 'success') toast.success('Colors saved');
+						};
+					}}
 					class="space-y-5"
 				>
 					<div class="grid grid-cols-1 gap-6 sm:grid-cols-3">
@@ -323,7 +331,19 @@
 				</form>
 			</CardContent>
 			<CardFooter class="gap-2">
-				<Button type="submit" form="colors-form" variant="default">Save colors</Button>
+				<Button
+					type="submit"
+					form="colors-form"
+					variant="default"
+					disabled={submittingAction !== null}
+				>
+					{#if submittingAction === 'saveColors'}
+						<Icon icon="mdi:loading" class="h-4 w-4 animate-spin" />
+						Saving...
+					{:else}
+						Save colors
+					{/if}
+				</Button>
 				<Button type="button" variant="outline" onclick={() => (previewOpen = true)}>
 					<Icon icon="mdi:eye-outline" class="h-4 w-4" />
 					Preview
@@ -455,7 +475,7 @@
 						bind:this={logoInput}
 						onchange={(e) => {
 							const f = (e.target as HTMLInputElement).files?.[0];
-							if (f) uploadImage(f, '/api/upload-logo', 'logo', logoState, 2);
+							if (f) uploadImage(f, '/api/upload-logo', 'logo', logoState, 2, 'Logo updated');
 						}}
 						class="hidden"
 					/>
@@ -474,9 +494,10 @@
 					{#if data.branding.logoUrl}
 						<form method="post" action="?/removeLogo" use:enhance={() => {
 							submittingAction = 'removeLogo';
-							return async ({ update }) => {
+							return async ({ result, update }) => {
 								submittingAction = null;
 								await update();
+								if (result.type === 'success') toast.success('Logo removed');
 							};
 						}}>
 							<Button
@@ -534,7 +555,7 @@
 						bind:this={bannerInput}
 						onchange={(e) => {
 							const f = (e.target as HTMLInputElement).files?.[0];
-							if (f) uploadImage(f, '/api/upload-banner', 'banner', bannerState, 5);
+							if (f) uploadImage(f, '/api/upload-banner', 'banner', bannerState, 5, 'Banner updated');
 						}}
 						class="hidden"
 					/>
@@ -553,9 +574,10 @@
 					{#if data.branding.bannerUrl}
 						<form method="post" action="?/removeBanner" use:enhance={() => {
 							submittingAction = 'removeBanner';
-							return async ({ update }) => {
+							return async ({ result, update }) => {
 								submittingAction = null;
 								await update();
+								if (result.type === 'success') toast.success('Banner removed');
 							};
 						}}>
 							<Button
@@ -628,7 +650,7 @@
 						bind:this={bgInput}
 						onchange={(e) => {
 							const f = (e.target as HTMLInputElement).files?.[0];
-							if (f) uploadImage(f, '/api/upload-background-image', 'backgroundImage', bgState, 5);
+							if (f) uploadImage(f, '/api/upload-background-image', 'backgroundImage', bgState, 5, 'Background updated');
 						}}
 						class="hidden"
 					/>
@@ -647,9 +669,10 @@
 					{#if data.branding.backgroundImageUrl || data.branding.backgroundPatternSlug}
 						<form method="post" action="?/removeBackground" use:enhance={() => {
 							submittingAction = 'removeBackground';
-							return async ({ update }) => {
+							return async ({ result, update }) => {
 								submittingAction = null;
 								await update();
+								if (result.type === 'success') toast.success('Background removed');
 							};
 						}}>
 							<Button
@@ -693,9 +716,10 @@
 							action="?/selectPattern"
 							use:enhance={() => {
 								submittingAction = `pattern:${pattern.slug}`;
-								return async ({ update }) => {
+								return async ({ result, update }) => {
 									submittingAction = null;
 									await update({ invalidateAll: true });
+									if (result.type === 'success') toast.success('Background updated');
 								};
 							}}
 						>

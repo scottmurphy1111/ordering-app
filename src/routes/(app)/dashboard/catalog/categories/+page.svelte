@@ -1,7 +1,8 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
-	import { goto } from '$app/navigation';
+	import { goto, invalidateAll } from '$app/navigation';
 	import { resolve } from '$app/paths';
+	import { toast } from '$lib/toast';
 	import { onMount } from 'svelte';
 	import { confirmDialog } from '$lib/confirm.svelte';
 	import type { PageData, ActionData } from './$types';
@@ -53,7 +54,7 @@
 	let drawerCategory = $state<DrawerCategory | null>(null);
 	let drawerIsActive = $state(true);
 	let drawerError = $state<string | null>(null);
-	let drawerSuccess = $state(false);
+	let isSubmittingDrawer = $state(false);
 	let submittingDeleteId = $state<number | null>(null);
 
 	$effect(() => {
@@ -102,6 +103,7 @@
 	}
 
 	function handleDrawerEnhance() {
+		isSubmittingDrawer = true;
 		return async ({
 			result,
 			update
@@ -109,19 +111,15 @@
 			result: { type: string; data?: Record<string, unknown> };
 			update: (opts?: { reset?: boolean }) => Promise<void>;
 		}) => {
-			drawerSuccess = false;
+			isSubmittingDrawer = false;
 			if (result.type === 'failure') {
 				drawerError = (result.data?.error as string) ?? 'Something went wrong.';
 				return;
 			}
 			drawerError = null;
-			if (drawerMode === 'new') {
-				await update({ reset: true });
-				closeDrawer();
-			} else {
-				drawerSuccess = true;
-				await update({ reset: false });
-			}
+			await update({ reset: drawerMode === 'new' });
+			toast.success(drawerMode === 'new' ? 'Category created' : 'Category saved');
+			closeDrawer();
 		};
 	}
 
@@ -167,7 +165,8 @@
 			});
 			if (!res.ok) throw new Error('Failed to save order');
 			sortMode = false;
-			window.location.reload();
+			await invalidateAll();
+			toast.success('Order saved');
 		} catch {
 			saveError = 'Failed to save. Please try again.';
 		} finally {
@@ -317,9 +316,12 @@
 							<form
 								method="post"
 								action="?/setStatus"
-								use:enhance={() =>
-									({ update }) =>
-										update({ reset: false })}
+								use:enhance={() => {
+									return async ({ result, update }) => {
+										await update({ reset: false });
+										if (result.type === 'success') toast.success('Category updated');
+									};
+								}}
 								class="w-full"
 							>
 								<input type="hidden" name="id" value={cat.id} />
@@ -387,9 +389,10 @@
 								</Button>
 								<form method="post" action="?/delete" use:enhance={() => {
 									submittingDeleteId = cat.id;
-									return async ({ update }) => {
+									return async ({ result, update }) => {
 										submittingDeleteId = null;
 										await update();
+										if (result.type === 'success') toast.success('Category deleted');
 									};
 								}}>
 									<input type="hidden" name="id" value={cat.id} />
@@ -515,9 +518,10 @@
 										</Button>
 										<form method="post" action="?/delete" use:enhance={() => {
 											submittingDeleteId = cat.id;
-											return async ({ update }) => {
+											return async ({ result, update }) => {
 												submittingDeleteId = null;
 												await update();
+												if (result.type === 'success') toast.success('Category deleted');
 											};
 										}}>
 											<input type="hidden" name="id" value={cat.id} />
@@ -579,9 +583,6 @@
 			{#if drawerError}
 				<Alert severity="error" class="mb-4">{drawerError}</Alert>
 			{/if}
-			{#if drawerSuccess}
-				<Alert severity="success" class="mb-4">Saved.</Alert>
-			{/if}
 
 			<form
 				method="post"
@@ -628,8 +629,18 @@
 				</div>
 
 				<div class="flex flex-col gap-3 pt-6 md:flex-row">
-					<Button type="submit" variant="default" class="w-full md:w-auto">
-						{drawerMode === 'new' ? 'Create category' : 'Save changes'}
+					<Button
+						type="submit"
+						variant="default"
+						class="w-full md:w-auto"
+						disabled={isSubmittingDrawer}
+					>
+						{#if isSubmittingDrawer}
+							<Icon icon="mdi:loading" class="h-4 w-4 animate-spin" />
+							Saving...
+						{:else}
+							{drawerMode === 'new' ? 'Create category' : 'Save changes'}
+						{/if}
 					</Button>
 					<Button type="button" onclick={closeDrawer} variant="outline" class="w-full md:w-auto">
 						Cancel

@@ -52,6 +52,7 @@
 	} from '$lib/components/ui/sheet';
 	import CatalogItemForm from '$lib/components/CatalogItemForm.svelte';
 	import ModifierGroupsManager from '$lib/components/ModifierGroupsManager.svelte';
+	import { toast } from '$lib/toast';
 	import { Alert } from '$lib/components/ui/alert';
 	import { Skeleton } from '$lib/components/ui/skeleton';
 
@@ -636,9 +637,12 @@
 							<form
 								method="post"
 								action="?/setStatus"
-								use:enhance={() =>
-									({ update }) =>
-										update({ reset: false })}
+								use:enhance={() => {
+									return async ({ result, update }) => {
+										await update({ reset: false });
+										if (result.type === 'success') toast.success('Item updated');
+									};
+								}}
 								class="w-full"
 							>
 								<input type="hidden" name="id" value={item.id} />
@@ -736,9 +740,10 @@
 								</Button>
 								<form method="post" action="?/delete" use:enhance={() => {
 									submittingDeleteId = item.id;
-									return async ({ update }) => {
+									return async ({ result, update }) => {
 										submittingDeleteId = null;
 										await update();
+										if (result.type === 'success') toast.success('Item deleted');
 									};
 								}}>
 									<input type="hidden" name="id" value={item.id} />
@@ -901,9 +906,10 @@
 										</Button>
 										<form method="post" action="?/delete" use:enhance={() => {
 											submittingDeleteId = item.id;
-											return async ({ update }) => {
+											return async ({ result, update }) => {
 												submittingDeleteId = null;
 												await update();
+												if (result.type === 'success') toast.success('Item deleted');
 											};
 										}}>
 											<input type="hidden" name="id" value={item.id} />
@@ -1330,6 +1336,7 @@
 					twoColumn={true}
 					variant="flat"
 					onCancel={() => closeDrawer()}
+					onSuccess={() => closeDrawer()}
 				/>
 				<div class="mt-8">
 					<ModifierGroupsManager
