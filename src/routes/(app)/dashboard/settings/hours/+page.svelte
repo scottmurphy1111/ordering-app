@@ -268,26 +268,26 @@
 												return async ({ result, update }) => {
 													submittingRemoveExceptionId = null;
 													await update();
-													if (result.type === 'success') toast.success('Hours saved');
+													if (result.type === 'success') toast.success('Exception removed');
 												};
-											}}
-											onsubmit={async (e) => {
-												e.preventDefault();
-												const form = e.currentTarget as HTMLFormElement;
-												if (
-													await confirmDialog(
-														`Remove the exception for ${formatExceptionDate(exc.date)}? This cannot be undone.`,
-														{ title: 'Remove exception', confirmLabel: 'Remove' }
-													)
-												) {
-													form.requestSubmit();
-												}
 											}}
 										>
 											<input type="hidden" name="exceptionId" value={exc.id} />
 											<Button
 												type="submit"
 												disabled={submittingRemoveExceptionId !== null}
+												onclick={async (e) => {
+													e.preventDefault();
+													const form = (e.currentTarget as HTMLButtonElement).form;
+													if (
+														await confirmDialog(
+															`Remove the exception for ${formatExceptionDate(exc.date)}? This cannot be undone.`,
+															{ title: 'Remove exception', confirmLabel: 'Remove' }
+														)
+													) {
+														form?.requestSubmit();
+													}
+												}}
 												variant="ghost"
 												size="icon"
 												class="text-red-500 hover:bg-red-50 hover:text-red-600"
@@ -323,7 +323,7 @@
 							submittingAddException = false;
 							if (result.type === 'success') formElement.reset();
 							await update();
-							if (result.type === 'success') toast.success('Hours saved');
+							if (result.type === 'success') toast.success('Exception added');
 						};
 					}}
 					class="flex flex-col gap-3"

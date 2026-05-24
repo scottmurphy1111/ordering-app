@@ -210,7 +210,7 @@ One-line summaries and links to the detailed sections of this document. Scan thi
 - **Input / select / textarea** — `h-8` for single-line, explicit classes documented. Wrap native date inputs in styled containers. → [Forms & Inputs](#forms--inputs)
 - **Label vs value rendering** — DB enum values are canonical; never render raw values where labels belong. Use `.find()` against canonical lists. → [Label vs Value Rendering](#label-vs-value-rendering)
 - **Confirmation dialog** — required for any destructive/irreversible action. Confirm button names the action ("Delete", not "OK"). → [Confirmation Dialogs](#confirmation-dialogs)
-- **Async confirm-then-submit** — capture form ref BEFORE the await; `e.currentTarget` is null after `await confirmDialog(...)`. Bit 19 callsites once. → [Form-ref before `await` in async event handlers](#form-ref-before-await-in-async-event-handlers)
+- **Async confirm-then-submit** — put `confirmDialog` on the submit Button's `onclick`, NOT the form's `onsubmit`. `use:enhance` registers a `submit` listener that fires the AJAX request before an async `onsubmit` handler can cancel it, so the destructive action runs before the dialog appears. Capture the form ref via `e.currentTarget.form` synchronously (`e.currentTarget` is null after the await). → [Form-ref before `await` in async event handlers](#form-ref-before-await-in-async-event-handlers)
 - **Form kind toggles compile to canonical fields** — UI controls whose values are computed into a single canonical column on save. The toggle field itself is form-state-only, never persisted. Example: `templateKind: 'weekly' | 'daily'` → `recurrence: 'FREQ=WEEKLY;BYDAY=...' | 'FREQ=DAILY'`. → [Form kind toggles compile to canonical fields](#form-kind-toggles-compile-to-canonical-fields)
 
 ### Buttons
@@ -3164,6 +3164,34 @@ When a form-submit button's `onclick` handler is async — typically because it 
 This bug shipped in 19 callsites across 7 files before being fixed in a single sweep. The pattern was originally written once and copy-pasted; nothing tested the delete flows end-to-end after copying. The static check that catches recurrence: `grep -r "(e.currentTarget as HTMLButtonElement).form?.requestSubmit()" src/` should return zero matches across the codebase.
 
 Applies to any async event handler that needs the event target after an await — not only form-submit. The general rule: **save references to event-bound objects synchronously, before the first await, then use the saved references after.**
+
+**`use:enhance` + `onsubmit` race condition.** Putting the confirm dialog on the form's `onsubmit` handler **does not work** when the form also has `use:enhance`. Both handlers fire on the same submit event; `use:enhance` synchronously kicks off the AJAX request before the async `onsubmit` awaits the dialog. The destructive action completes before the user sees the prompt. Cancelling the dialog has no effect — the deletion already happened.
+
+```svelte
+<!-- ❌ Race: enhance fires the request before the dialog appears -->
+<form
+	use:enhance={...}
+	onsubmit={async (e) => {
+		e.preventDefault(); // too late — enhance has already dispatched
+		if (await confirmDialog(...)) form.requestSubmit();
+	}}
+>
+
+<!-- ✅ Correct: onclick fires before submit event, preventing it cleanly -->
+<form use:enhance={...}>
+	<Button
+		type="submit"
+		onclick={async (e) => {
+			e.preventDefault();
+			const form = (e.currentTarget as HTMLButtonElement).form;
+			if (await confirmDialog(...)) form?.requestSubmit();
+		}}
+	>
+```
+
+The button's `onclick` fires BEFORE the form's `submit` event. Its `e.preventDefault()` actually prevents submission — `use:enhance` never sees the event. After confirmation, `form.requestSubmit()` programmatically dispatches a new submit event which `use:enhance` then handles normally.
+
+Static check that catches recurrence: `grep -rln onsubmit src/routes/ --include="*.svelte" | xargs grep -l confirmDialog` should return empty.
 
 ### Keyed `{#each}` requires stable identity, not display labels
 

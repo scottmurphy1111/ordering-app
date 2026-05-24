@@ -86,7 +86,7 @@
 			showAddForm = false;
 			addError = null;
 			await update({ reset: true });
-			if (result.type === 'success') toast.success('Pickup schedule saved');
+			if (result.type === 'success') toast.success('Location added');
 		};
 	}
 
@@ -108,7 +108,7 @@
 			editingId = null;
 			editError = null;
 			await update({ reset: false });
-			if (result.type === 'success') toast.success('Pickup schedule saved');
+			if (result.type === 'success') toast.success('Location updated');
 		};
 	}
 
@@ -436,7 +436,7 @@
 			previewRecurrenceEndDate = '';
 			previewTemplateKind = 'weekly';
 			await update({ reset: true });
-			if (result.type === 'success') toast.success('Pickup schedule saved');
+			if (result.type === 'success') toast.success('Pickup window added');
 		};
 	}
 
@@ -483,7 +483,7 @@
 			editExdates = [];
 			addExdateInput = '';
 			await update({ reset: false });
-			if (result.type === 'success') toast.success('Pickup schedule saved');
+			if (result.type === 'success') toast.success('Pickup window updated');
 		};
 	}
 
@@ -511,7 +511,7 @@
 			occurrenceError = null;
 			occurrenceSavingId = null;
 			await update({ reset: false });
-			if (result.type === 'success') toast.success('Pickup schedule saved');
+			if (result.type === 'success') toast.success('Pickup window updated');
 		};
 	}
 </script>
@@ -788,10 +788,13 @@
 											action="?/toggleActive"
 											use:enhance={() => {
 												submittingToggleLocationId = loc.id;
+												const wasActive = loc.isActive;
 												return async ({ result, update }) => {
 													submittingToggleLocationId = null;
 													await update();
-													if (result.type === 'success') toast.success('Pickup schedule updated');
+													if (result.type === 'success') {
+														toast.success(wasActive ? 'Location disabled' : 'Location enabled');
+													}
 												};
 											}}
 										>
@@ -1504,10 +1507,15 @@
 												action="?/toggleTemplateActive"
 												use:enhance={() => {
 													submittingToggleTemplateId = tmpl.id;
+													const wasActive = tmpl.isActive;
 													return async ({ result, update }) => {
 														submittingToggleTemplateId = null;
 														await update();
-														if (result.type === 'success') toast.success('Pickup schedule updated');
+														if (result.type === 'success') {
+															toast.success(
+																wasActive ? 'Pickup window disabled' : 'Pickup window enabled'
+															);
+														}
 													};
 												}}
 											>
@@ -1536,7 +1544,7 @@
 													return async ({ result, update }) => {
 														submittingDeleteTemplateId = null;
 														await update();
-														if (result.type === 'success') toast.success('Pickup schedule updated');
+														if (result.type === 'success') toast.success('Pickup window deleted');
 													};
 												}}
 											>
@@ -1692,10 +1700,15 @@
 											action="?/toggleTemplateActive"
 											use:enhance={() => {
 												submittingToggleTemplateId = tmpl.id;
+												const wasActive = tmpl.isActive;
 												return async ({ result, update }) => {
 													submittingToggleTemplateId = null;
 													await update();
-													if (result.type === 'success') toast.success('Pickup schedule updated');
+													if (result.type === 'success') {
+														toast.success(
+															wasActive ? 'Pickup window disabled' : 'Pickup window enabled'
+														);
+													}
 												};
 											}}
 										>
@@ -1724,7 +1737,7 @@
 												return async ({ result, update }) => {
 													submittingDeleteTemplateId = null;
 													await update();
-													if (result.type === 'success') toast.success('Pickup schedule updated');
+													if (result.type === 'success') toast.success('Pickup window deleted');
 												};
 											}}
 										>

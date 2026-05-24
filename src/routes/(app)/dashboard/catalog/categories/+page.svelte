@@ -319,7 +319,9 @@
 								use:enhance={() => {
 									return async ({ result, update }) => {
 										await update({ reset: false });
-										if (result.type === 'success') toast.success('Category updated');
+										if (result.type === 'success') {
+											toast.success(val === 'true' ? 'Category activated' : 'Category hidden');
+										}
 									};
 								}}
 								class="w-full"

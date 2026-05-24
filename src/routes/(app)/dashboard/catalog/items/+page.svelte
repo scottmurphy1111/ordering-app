@@ -640,7 +640,14 @@
 								use:enhance={() => {
 									return async ({ result, update }) => {
 										await update({ reset: false });
-										if (result.type === 'success') toast.success('Item updated');
+										if (result.type === 'success') {
+											const messages: Record<string, string> = {
+												available: 'Item marked as available',
+												sold_out: 'Item marked as sold out',
+												hidden: 'Item hidden'
+											};
+											toast.success(messages[val]);
+										}
 									};
 								}}
 								class="w-full"

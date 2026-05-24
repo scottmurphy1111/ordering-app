@@ -96,7 +96,7 @@
 							await update({ reset: false });
 							if (result.type === 'success') {
 								showForm = false;
-								toast.success('Promo saved');
+								toast.success('Promo created');
 							}
 						};
 					}}
@@ -242,10 +242,13 @@
 										action="?/toggle"
 										use:enhance={() => {
 											submittingTogglePromoId = promo.id;
+											const wasActive = promo.isActive;
 											return async ({ result, update }) => {
 												submittingTogglePromoId = null;
 												await update({ reset: false });
-												if (result.type === 'success') toast.success('Promo updated');
+												if (result.type === 'success') {
+													toast.success(wasActive ? 'Promo disabled' : 'Promo enabled');
+												}
 											};
 										}}
 									>

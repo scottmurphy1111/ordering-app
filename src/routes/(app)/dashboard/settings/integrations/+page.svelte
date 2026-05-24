@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import { confirmDialog } from '$lib/confirm.svelte';
-	import { untrack } from 'svelte';
 	import { resolve } from '$app/paths';
 	import Icon from '@iconify/svelte';
 	import type { PageData, ActionData } from './$types';
@@ -16,7 +15,7 @@
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
 	let editingPublishable = $state(false);
-	let editingSecret = $state(untrack(() => !data.hasStripeKey));
+	let editingSecret = $state(false);
 	let showPk = $state(false);
 	let showSk = $state(false);
 	let lastSubmitted: 'pk' | 'sk' | null = $state(null);
@@ -35,6 +34,12 @@
 
 	<Card class="shadow-sm">
 		<CardContent>
+			{#if !data.hasStripeKey}
+				<Alert severity="warning" class="mb-4" dismissible={false} autofade={0}>
+					Your shop can't accept orders until Stripe is connected.
+				</Alert>
+			{/if}
+
 			<!-- Stripe header -->
 			<div class="flex items-start justify-between gap-4">
 				<div class="flex items-center gap-3">
@@ -175,6 +180,8 @@
 					use:enhance={() => {
 						lastSubmitted = 'sk';
 						submittingAction = 'saveStripeSecretKey';
+						// Capture before await — data.hasStripeKey flips to true after update().
+						const wasConnected = data.hasStripeKey;
 						return async ({ result, update }) => {
 							submittingAction = null;
 							if (result.type === 'success') {
@@ -182,7 +189,9 @@
 								showSk = false;
 							}
 							await update({ reset: false });
-							if (result.type === 'success') toast.success('Stripe settings updated');
+							if (result.type === 'success') {
+								toast.success(wasConnected ? 'Stripe settings updated' : 'Stripe connected');
+							}
 						};
 					}}
 				>
@@ -221,22 +230,20 @@
 									<Icon icon="mdi:loading" class="h-4 w-4 animate-spin" />
 									Saving...
 								{:else}
-									{data.hasStripeKey ? 'Save & verify' : 'Connect Stripe'}
+									Save
 								{/if}
 							</Button>
-							{#if data.hasStripeKey}
-								<Button
-									type="button"
-									variant="outline"
-									onclick={() => {
-										editingSecret = false;
-										showSk = false;
-									}}
-								>
-									Cancel
-								</Button>
-							{/if}
-						{:else}
+							<Button
+								type="button"
+								variant="outline"
+								onclick={() => {
+									editingSecret = false;
+									showSk = false;
+								}}
+							>
+								Cancel
+							</Button>
+						{:else if data.hasStripeKey}
 							<Button
 								type="button"
 								variant="outline"
@@ -247,12 +254,23 @@
 							>
 								Replace
 							</Button>
+						{:else}
+							<Button type="button" variant="outline" onclick={() => (editingSecret = true)}>
+								Add
+							</Button>
 						{/if}
 					</div>
 					{#if form?.error && lastSubmitted === 'sk'}
 						<Alert severity="error" class="mt-2">{form.error}</Alert>
 					{/if}
 				</form>
+
+				{#if submittingAction === 'saveStripeSecretKey'}
+					<p class="flex items-center gap-2 text-xs text-muted-foreground">
+						<Icon icon="mdi:loading" class="h-3.5 w-3.5 animate-spin" />
+						Verifying Stripe connection...
+					</p>
+				{/if}
 
 				{#if editingPublishable || editingSecret}
 					<p class="text-xs text-muted-foreground">

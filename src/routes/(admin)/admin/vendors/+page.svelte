@@ -178,22 +178,22 @@
 																	};
 																}}
 																class="w-full"
-																onsubmit={async (e) => {
-																	e.preventDefault();
-																	const form = e.currentTarget as HTMLFormElement;
-																	if (
-																		await confirmDialog(
-																			`Reseed "${t.name}" as "${archetype.label}"? This wipes all current vendor data.`
-																		)
-																	)
-																		form.requestSubmit();
-																}}
 															>
 																<input type="hidden" name="id" value={t.id} />
 																<input type="hidden" name="archetypeKey" value={archetype.key} />
 																<button
 																	type="submit"
 																	disabled={submittingVendorAction !== null}
+																	onclick={async (e) => {
+																		e.preventDefault();
+																		const form = (e.currentTarget as HTMLButtonElement).form;
+																		if (
+																			await confirmDialog(
+																				`Reseed "${t.name}" as "${archetype.label}"? This wipes all current vendor data.`
+																			)
+																		)
+																			form?.requestSubmit();
+																	}}
 																	class="w-full cursor-pointer text-left text-sm disabled:opacity-50"
 																>
 																	{#if submittingVendorAction?.id === t.id && submittingVendorAction?.action === 'reseed'}
