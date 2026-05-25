@@ -1,5 +1,6 @@
 import twilio from 'twilio';
 import { env } from '$env/dynamic/private';
+import { effectiveHasAddon, type AddonItem } from '$lib/billing';
 
 function toE164(raw: string): string | null {
 	const digits = raw.replace(/\D/g, '');
@@ -9,7 +10,26 @@ function toE164(raw: string): string | null {
 	return null;
 }
 
-export async function sendSms(to: string, body: string): Promise<void> {
+export type SmsVendorContext = {
+	subscriptionTier: string | undefined;
+	addons: AddonItem[] | null | undefined;
+};
+
+export async function sendSms(
+	to: string,
+	body: string,
+	vendorCtx: SmsVendorContext
+): Promise<void> {
+	// Gate first, before peeking at Twilio config — a vendor without the add-on
+	// burns no Twilio cost regardless of env state. Silent skip is correct: SMS
+	// not being sent is the expected, billed behavior, not an error worth logging.
+	const hasAccess = effectiveHasAddon(
+		vendorCtx.subscriptionTier ?? 'starter',
+		vendorCtx.addons,
+		'sms_notifications'
+	);
+	if (!hasAccess) return;
+
 	const { TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_PHONE_NUMBER } = env;
 	if (!TWILIO_ACCOUNT_SID || !TWILIO_AUTH_TOKEN || !TWILIO_PHONE_NUMBER) {
 		console.warn('[sms] Twilio env vars not set — skipping SMS');

@@ -64,7 +64,14 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 			})
 			.from(orderItems)
 			.innerJoin(orders, eq(orderItems.orderId, orders.id))
-			.where(and(eq(orders.vendorId, vendorId), eq(orders.paymentStatus, 'paid')))
+			.where(
+				and(
+					eq(orders.vendorId, vendorId),
+					eq(orders.paymentStatus, 'paid'),
+					gte(orders.createdAt, startOfRange),
+					sql`${orders.createdAt} <= ${endOfRange}`
+				)
+			)
 			.groupBy(orderItems.name)
 			.orderBy(desc(sql`sum(${orderItems.quantity})`))
 			.limit(5),
@@ -241,7 +248,14 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 				})
 				.from(orderItems)
 				.innerJoin(orders, eq(orderItems.orderId, orders.id))
-				.where(and(eq(orders.vendorId, vendorId), eq(orders.paymentStatus, 'paid')))
+				.where(
+					and(
+						eq(orders.vendorId, vendorId),
+						eq(orders.paymentStatus, 'paid'),
+						gte(orders.createdAt, startOfRange),
+						sql`${orders.createdAt} <= ${endOfRange}`
+					)
+				)
 				.groupBy(orderItems.name)
 				.orderBy(desc(sql`sum(${orderItems.quantity} * ${orderItems.unitPrice})`))
 				.limit(5),

@@ -508,8 +508,19 @@
 		<!-- Top items -->
 		<Card class="self-start shadow-sm lg:col-span-2">
 			<CardContent>
-				<div class="mb-4 flex items-center justify-between gap-3">
-					<h2 class="text-sm font-semibold text-gray-900">Top items</h2>
+				<div class="mb-4 flex items-start justify-between gap-3">
+					<div>
+						<h2 class="text-sm font-semibold text-gray-900">Top items</h2>
+						<p class="mt-0.5 text-xs text-gray-400">
+							{#if data.rangeMode === 'custom'}
+								{data.fromDate ? formatPickerDate(data.fromDate) : '—'} to {data.toDate
+									? formatPickerDate(data.toDate)
+									: '—'}
+							{:else}
+								Last {rangeDays} days
+							{/if}
+						</p>
+					</div>
 					{#if hasAdvancedAnalytics}
 						<Tabs
 							value={topItemsSort}

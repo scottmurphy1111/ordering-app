@@ -152,7 +152,13 @@ export const actions: Actions = {
 		if (cancelled?.customerEmail || cancelled?.customerPhone) {
 			const vendorRecord = await db.query.vendor.findFirst({
 				where: eq(vendor.id, vendorId),
-				columns: { name: true, email: true, backgroundColor: true, subscriptionTier: true }
+				columns: {
+					name: true,
+					email: true,
+					backgroundColor: true,
+					subscriptionTier: true,
+					addons: true
+				}
 			});
 			if (vendorRecord) {
 				if (cancelled.customerEmail) {
@@ -175,7 +181,11 @@ export const actions: Actions = {
 				if (cancelled.customerPhone) {
 					await sendSms(
 						cancelled.customerPhone,
-						`${vendorRecord.name}: Your order ${cancelled.orderNumber} has been cancelled.`
+						`${vendorRecord.name}: Your order ${cancelled.orderNumber} has been cancelled.`,
+						{
+							subscriptionTier: vendorRecord.subscriptionTier ?? undefined,
+							addons: vendorRecord.addons
+						}
 					).catch(console.error);
 				}
 			}

@@ -66,7 +66,7 @@ export const bakersPersona: Persona = {
 
 	metaTitle: 'Online Ordering for Bakers — Pre-Orders, Pickup, and Custom Cakes | Order Local',
 	metaDescription:
-		'Take bakery pre-orders online. Set holiday windows, custom modifiers, pickup cutoffs, and inventory limits. Powered by Stripe. No commissions. Free to start.',
+		'Take bakery pre-orders online. Set holiday windows, custom modifiers, pickup cutoffs, and order limits per window. Powered by Stripe. No commissions. Free to start.',
 
 	eyebrow: 'Built for bakers',
 	heroHeadline: 'Stop taking cake orders by text.',
@@ -102,7 +102,7 @@ export const bakersPersona: Persona = {
 		{
 			num: '1',
 			title: 'Set up your catalog',
-			desc: 'Add your products, photos, prices, and modifier options — sizes, flavors, fillings. Set inventory caps and pickup windows.'
+			desc: 'Add your products, photos, prices, and modifier options — sizes, flavors, fillings. Set up pickup windows with order caps so you never overbook a Saturday.'
 		},
 		{
 			num: '2',
@@ -225,7 +225,7 @@ export const makersPersona: Persona = {
 		{
 			num: '1',
 			title: 'Set up your catalog',
-			desc: 'Add your products, photos, prices, and variants — sizes, scents, colors. Cap orders per item so you only sell what you can make.'
+			desc: 'Add your products, photos, prices, and variants — sizes, scents, colors. Set order caps on each pickup window so you only commit to what you can make.'
 		},
 		{
 			num: '2',
@@ -248,8 +248,8 @@ export const makersPersona: Persona = {
 		},
 		{
 			icon: 'mdi:counter',
-			title: 'Inventory caps per item',
-			desc: "Made 12 candles this week? Set the cap, the item sells out at exactly 12, you never overpromise. Reset the count for next week's batch."
+			title: 'Order caps per pickup window',
+			desc: "Only made 12 candles for this Saturday's market? Cap the window at 12 orders. It closes when it fills up — you never overpromise. Open a new window for next week."
 		},
 		{
 			icon: 'mdi:credit-card-outline',
@@ -348,7 +348,7 @@ export const growersPersona: Persona = {
 		{
 			num: '1',
 			title: 'Set up your catalog',
-			desc: "Add your products, photos, prices, and what's in season this week. Set inventory caps and pickup windows for market days or farm-stand hours."
+			desc: "Add your products, photos, prices, and what's in season this week. Set up pickup windows with order caps for market days or farm-stand hours."
 		},
 		{
 			num: '2',
@@ -371,8 +371,8 @@ export const growersPersona: Persona = {
 		},
 		{
 			icon: 'mdi:basket-outline',
-			title: 'Seasonal inventory limits',
-			desc: '20 bunches of asparagus this week. 100 pints of strawberries when they peak. Cap each item, let it sell out cleanly, no awkward "sold out before you got here."'
+			title: 'Cap each pickup window',
+			desc: 'Only 20 orders worth of asparagus this Saturday? Cap the market window at 20. When it fills up, the window closes — no awkward "sold out before you got here" at the booth.'
 		},
 		{
 			icon: 'mdi:credit-card-outline',

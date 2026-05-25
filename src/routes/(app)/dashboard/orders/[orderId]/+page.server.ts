@@ -69,7 +69,8 @@ export const actions: Actions = {
 					email: true,
 					backgroundColor: true,
 					slug: true,
-					subscriptionTier: true
+					subscriptionTier: true,
+					addons: true
 				}
 			});
 			if (vendorRecord) {
@@ -94,7 +95,11 @@ export const actions: Actions = {
 				if (order.customerPhone) {
 					await sendSms(
 						order.customerPhone,
-						`${vendorRecord.name}: Your order ${order.orderNumber} is ready for pickup!`
+						`${vendorRecord.name}: Your order ${order.orderNumber} is ready for pickup!`,
+						{
+							subscriptionTier: vendorRecord.subscriptionTier ?? undefined,
+							addons: vendorRecord.addons
+						}
 					).catch(console.error);
 				}
 			}
@@ -132,7 +137,8 @@ export const actions: Actions = {
 					email: true,
 					backgroundColor: true,
 					slug: true,
-					subscriptionTier: true
+					subscriptionTier: true,
+					addons: true
 				}
 			});
 			if (vendorRecord) {
@@ -156,7 +162,11 @@ export const actions: Actions = {
 				if (order.customerPhone) {
 					await sendSms(
 						order.customerPhone,
-						`${vendorRecord.name}: Your order ${order.orderNumber} has been cancelled.`
+						`${vendorRecord.name}: Your order ${order.orderNumber} has been cancelled.`,
+						{
+							subscriptionTier: vendorRecord.subscriptionTier ?? undefined,
+							addons: vendorRecord.addons
+						}
 					).catch(console.error);
 				}
 			}
@@ -182,7 +192,8 @@ export const actions: Actions = {
 					name: true,
 					email: true,
 					backgroundColor: true,
-					subscriptionTier: true
+					subscriptionTier: true,
+					addons: true
 				}
 			})
 		]);
@@ -270,7 +281,8 @@ export const actions: Actions = {
 					backgroundColor: true,
 					slug: true,
 					timezone: true,
-					subscriptionTier: true
+					subscriptionTier: true,
+					addons: true
 				}
 			})
 		]);
@@ -381,7 +393,11 @@ export const actions: Actions = {
 				if (orderRow.customerPhone) {
 					await sendSms(
 						orderRow.customerPhone,
-						`${vendorRecord.name}: Your order ${orderRow.orderNumber} has been approved and payment processed!`
+						`${vendorRecord.name}: Your order ${orderRow.orderNumber} has been approved and payment processed!`,
+						{
+							subscriptionTier: vendorRecord.subscriptionTier ?? undefined,
+							addons: vendorRecord.addons
+						}
 					).catch(console.error);
 				}
 			}
@@ -455,7 +471,8 @@ export const actions: Actions = {
 					email: true,
 					backgroundColor: true,
 					slug: true,
-					subscriptionTier: true
+					subscriptionTier: true,
+					addons: true
 				}
 			});
 			if (vendorRecord) {
@@ -479,7 +496,11 @@ export const actions: Actions = {
 				if (order.customerPhone) {
 					await sendSms(
 						order.customerPhone,
-						`${vendorRecord.name}: Your order request ${order.orderNumber} was not approved.`
+						`${vendorRecord.name}: Your order request ${order.orderNumber} was not approved.`,
+						{
+							subscriptionTier: vendorRecord.subscriptionTier ?? undefined,
+							addons: vendorRecord.addons
+						}
 					).catch(console.error);
 				}
 			}
@@ -519,7 +540,8 @@ export const actions: Actions = {
 					backgroundColor: true,
 					slug: true,
 					timezone: true,
-					subscriptionTier: true
+					subscriptionTier: true,
+					addons: true
 				}
 			})
 		]);
@@ -559,7 +581,11 @@ export const actions: Actions = {
 		if (orderRow.customerPhone && vendorRecord) {
 			await sendSms(
 				orderRow.customerPhone,
-				`${vendorRecord.name}: We've proposed a new date for order ${orderRow.orderNumber}. Please check your order page.`
+				`${vendorRecord.name}: We've proposed a new date for order ${orderRow.orderNumber}. Please check your order page.`,
+				{
+					subscriptionTier: vendorRecord.subscriptionTier ?? undefined,
+					addons: vendorRecord.addons
+				}
 			).catch(console.error);
 		}
 

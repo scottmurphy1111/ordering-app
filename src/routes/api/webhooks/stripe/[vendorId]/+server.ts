@@ -14,6 +14,7 @@ import { customDateOrderRecoveredEmail } from '$lib/server/email/templates/custo
 import { specialOrderAcceptedEmail } from '$lib/server/email/templates/specialOrderAccepted';
 import { specialOrderAcceptedVendorEmail } from '$lib/server/email/templates/specialOrderAcceptedVendor';
 import { sendSms } from '$lib/server/sms';
+import type { AddonItem } from '$lib/billing';
 import { vendorUrl } from '$lib/server/vendor-origin';
 import { env } from '$env/dynamic/private';
 import type { PickupWindowSnapshot } from '$lib/server/pickup/checkout';
@@ -34,7 +35,8 @@ export const POST: RequestHandler = async ({ request, params }) => {
 			slug: true,
 			timezone: true,
 			email: true,
-			subscriptionTier: true
+			subscriptionTier: true,
+			addons: true
 		}
 	});
 
@@ -63,6 +65,7 @@ export const POST: RequestHandler = async ({ request, params }) => {
 		name: vendorRecord.name,
 		primaryColor: vendorRecord.backgroundColor ?? undefined,
 		subscriptionTier: vendorRecord.subscriptionTier ?? undefined,
+		addons: vendorRecord.addons,
 		slug: vendorRecord.slug,
 		timezone: vendorRecord.timezone ?? 'America/New_York',
 		email: vendorRecord.email ?? null
@@ -83,6 +86,7 @@ type VendorCtx = {
 	name: string;
 	primaryColor?: string;
 	subscriptionTier?: string;
+	addons?: AddonItem[] | null;
 	slug: string;
 	timezone: string;
 	email: string | null;
@@ -244,12 +248,14 @@ async function handleEvent(event: Stripe.Event, ctx: VendorCtx) {
 				if (isRecovery) {
 					await sendSms(
 						order.customerPhone,
-						`${ctx.name}: Payment confirmed for order ${order.orderNumber}. We'll see you on your requested date. Track: ${orderUrl(ctx.slug, order.id)}`
+						`${ctx.name}: Payment confirmed for order ${order.orderNumber}. We'll see you on your requested date. Track: ${orderUrl(ctx.slug, order.id)}`,
+						{ subscriptionTier: ctx.subscriptionTier, addons: ctx.addons }
 					).catch(console.error);
 				} else {
 					await sendSms(
 						order.customerPhone,
-						`${ctx.name}: Order ${order.orderNumber} confirmed! We'll text you when it's ready. Track: ${orderUrl(ctx.slug, order.id)}`
+						`${ctx.name}: Order ${order.orderNumber} confirmed! We'll text you when it's ready. Track: ${orderUrl(ctx.slug, order.id)}`,
+						{ subscriptionTier: ctx.subscriptionTier, addons: ctx.addons }
 					).catch(console.error);
 				}
 			}
@@ -296,7 +302,8 @@ async function handleEvent(event: Stripe.Event, ctx: VendorCtx) {
 			if (order?.customerPhone) {
 				await sendSms(
 					order.customerPhone,
-					`${ctx.name}: Your order ${order.orderNumber} has been cancelled.`
+					`${ctx.name}: Your order ${order.orderNumber} has been cancelled.`,
+					{ subscriptionTier: ctx.subscriptionTier, addons: ctx.addons }
 				).catch(console.error);
 			}
 			break;
@@ -334,7 +341,8 @@ async function handleEvent(event: Stripe.Event, ctx: VendorCtx) {
 			if (order?.customerPhone) {
 				await sendSms(
 					order.customerPhone,
-					`${ctx.name}: Your refund for order ${order.orderNumber} has been processed.`
+					`${ctx.name}: Your refund for order ${order.orderNumber} has been processed.`,
+					{ subscriptionTier: ctx.subscriptionTier, addons: ctx.addons }
 				).catch(console.error);
 			}
 			break;
@@ -407,7 +415,8 @@ async function handleEvent(event: Stripe.Event, ctx: VendorCtx) {
 			if (order?.customerPhone) {
 				await sendSms(
 					order.customerPhone,
-					`${ctx.name}: Order ${order.orderNumber} confirmed! We'll text you when it's ready. Track: ${orderUrl(vendorSlug, order.id)}`
+					`${ctx.name}: Order ${order.orderNumber} confirmed! We'll text you when it's ready. Track: ${orderUrl(vendorSlug, order.id)}`,
+					{ subscriptionTier: ctx.subscriptionTier, addons: ctx.addons }
 				).catch(console.error);
 			}
 			break;
@@ -483,7 +492,8 @@ async function handleEvent(event: Stripe.Event, ctx: VendorCtx) {
 			if (recurring?.customerPhone) {
 				await sendSms(
 					recurring.customerPhone,
-					`${ctx.name}: Your subscription has renewed. Order ${recurring.orderNumber} — ${orderUrl(ctx.slug, recurring.id)}`
+					`${ctx.name}: Your subscription has renewed. Order ${recurring.orderNumber} — ${orderUrl(ctx.slug, recurring.id)}`,
+					{ subscriptionTier: ctx.subscriptionTier, addons: ctx.addons }
 				).catch(console.error);
 			}
 			break;

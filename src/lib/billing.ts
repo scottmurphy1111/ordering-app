@@ -38,7 +38,7 @@ export const TIERS = [
 			'Up to 30 catalog items',
 			'Everything in Starter',
 			'CSV catalog import',
-			'Eligible for all add-ons'
+			'Eligible for all\u00A0add-ons'
 		],
 		includedAddons: [] as readonly string[]
 	},
@@ -58,7 +58,7 @@ export const TIERS = [
 			'SMS Notifications included',
 			'Advanced Analytics included',
 			'White-label — hide OrderLocal branding',
-			'Eligible for Loyalty and Subscriptions add-ons'
+			'Eligible for Loyalty and Subscriptions\u00A0add-ons'
 		],
 		includedAddons: ['sms_notifications', 'analytics'] as readonly string[]
 	}

@@ -117,9 +117,10 @@
 								action="?/removeAvatar"
 								use:enhance={() => {
 									submittingAction = 'removeAvatar';
-									return async ({ update }) => {
+									return async ({ result, update }) => {
 										submittingAction = null;
 										await update();
+										if (result.type === 'success') toast.success('Avatar removed');
 									};
 								}}
 							>
