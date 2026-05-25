@@ -106,7 +106,7 @@
 		{
 			icon: 'mdi:chart-line',
 			title: 'Analytics dashboard',
-			desc: "Revenue trends, top items, peak hours. Know what's working without exporting CSVs."
+			desc: 'Revenue trends, top items, and peak hours — with custom date ranges and CSV export on the Advanced Analytics add-on.'
 		},
 		{
 			icon: 'mdi:cog-refresh-outline',

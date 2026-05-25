@@ -79,7 +79,8 @@ export const ADDONS = [
 		name: 'Advanced Analytics',
 		price: 29,
 		icon: 'mdi:chart-line',
-		description: 'Revenue charts, top items, peak hours, and customer insights.'
+		description:
+			'Peak hours heatmap, customer retention, top items by revenue, revenue by category, and CSV export of orders & items.'
 	},
 	{
 		key: 'loyalty',

@@ -3,6 +3,7 @@ import { db } from '$lib/server/db';
 import { eq, and, gte, sql, desc } from 'drizzle-orm';
 import { orders, orderItems, catalogItems, catalogCategories } from '$lib/server/db/schema';
 import { effectiveHasAddon } from '$lib/billing';
+import { resolveRange } from '$lib/server/analytics-range';
 
 export const load: PageServerLoad = async ({ locals, url }) => {
 	const vendorId = locals.vendorId!;
@@ -12,12 +13,25 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		'analytics'
 	);
 
+	const { startOfRange, endOfRange, rangeDays } = resolveRange(url.searchParams);
+
+	// UI-facing mode metadata: tabs show "preset" state; custom date pickers show "custom" state.
+	const fromParam = url.searchParams.get('from');
+	const toParam = url.searchParams.get('to');
 	const rangeStr = url.searchParams.get('range');
-	const rangeDays = rangeStr === '7' ? 7 : 30;
+	const isValidDateStr = (s: string | null): s is string => !!s && /^\d{4}-\d{2}-\d{2}$/.test(s);
+	const isCustom = isValidDateStr(fromParam) && isValidDateStr(toParam) && fromParam <= toParam;
+	const rangeMode: 'preset' | 'custom' = isCustom ? 'custom' : 'preset';
+	const presetDays: 7 | 30 | 90 | null = isCustom
+		? null
+		: rangeStr === '7'
+			? 7
+			: rangeStr === '90'
+				? 90
+				: 30;
 
 	const now = new Date();
-	const startOfRange = new Date(now.getTime() - rangeDays * 24 * 60 * 60 * 1000);
-	const startOfPrevRange = new Date(now.getTime() - 2 * rangeDays * 24 * 60 * 60 * 1000);
+	const startOfPrevRange = new Date(startOfRange.getTime() - rangeDays * 24 * 60 * 60 * 1000);
 	const startOf90Days = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
 
 	const [recentOrders, prevOrders, topItems, statusBreakdown, typeBreakdown] = await Promise.all([
@@ -25,7 +39,8 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 			where: and(
 				eq(orders.vendorId, vendorId),
 				eq(orders.paymentStatus, 'paid'),
-				gte(orders.createdAt, startOfRange)
+				gte(orders.createdAt, startOfRange),
+				sql`${orders.createdAt} <= ${endOfRange}`
 			),
 			columns: { id: true, total: true, type: true, status: true, createdAt: true },
 			orderBy: [orders.createdAt]
@@ -38,7 +53,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 				gte(orders.createdAt, startOfPrevRange),
 				sql`${orders.createdAt} < ${startOfRange}`
 			),
-			columns: { id: true, total: true }
+			columns: { id: true, total: true, status: true, createdAt: true }
 		}),
 
 		db
@@ -60,7 +75,13 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 				count: sql<number>`cast(count(*) as int)`
 			})
 			.from(orders)
-			.where(and(eq(orders.vendorId, vendorId), gte(orders.createdAt, startOfRange)))
+			.where(
+				and(
+					eq(orders.vendorId, vendorId),
+					gte(orders.createdAt, startOfRange),
+					sql`${orders.createdAt} <= ${endOfRange}`
+				)
+			)
 			.groupBy(orders.status),
 
 		db
@@ -74,7 +95,8 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 				and(
 					eq(orders.vendorId, vendorId),
 					eq(orders.paymentStatus, 'paid'),
-					gte(orders.createdAt, startOfRange)
+					gte(orders.createdAt, startOfRange),
+					sql`${orders.createdAt} <= ${endOfRange}`
 				)
 			)
 			.groupBy(orders.type)
@@ -97,11 +119,24 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 	const fulfilledRate = ordersCount > 0 ? Math.round((fulfilledCount / ordersCount) * 100) : null;
 
 	// ── Daily chart data ─────────────────────────────────────────────
+	// Pre-seed one entry per calendar day in the range so empty days render as zero-height bars.
+	// Day-stepping via `+= dayMs` is UTC-correct; the toISOString key is UTC. DST shifts in
+	// non-UTC display zones could drift the bucket by ±1 day at boundaries — acceptable pre-launch.
 	const dailyMap = new Map<string, { revenue: number; count: number }>();
-	for (let i = rangeDays - 1; i >= 0; i--) {
-		const d = new Date(now);
-		d.setDate(d.getDate() - i);
-		dailyMap.set(d.toISOString().slice(0, 10), { revenue: 0, count: 0 });
+	const dayMs = 24 * 60 * 60 * 1000;
+	const startDayUtc = Date.UTC(
+		startOfRange.getUTCFullYear(),
+		startOfRange.getUTCMonth(),
+		startOfRange.getUTCDate()
+	);
+	const endDayUtc = Date.UTC(
+		endOfRange.getUTCFullYear(),
+		endOfRange.getUTCMonth(),
+		endOfRange.getUTCDate()
+	);
+	for (let d = startDayUtc; d <= endDayUtc; d += dayMs) {
+		const key = new Date(d).toISOString().slice(0, 10);
+		dailyMap.set(key, { revenue: 0, count: 0 });
 	}
 	for (const o of recentOrders) {
 		const key = new Date(o.createdAt).toISOString().slice(0, 10);
@@ -112,6 +147,45 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		}
 	}
 	const dailyData = Array.from(dailyMap.entries()).map(([date, v]) => ({ date, ...v }));
+
+	// ── Previous-period daily data (for chart overlay) ──────────────
+	const dailyMapPrev = new Map<string, { revenue: number; count: number }>();
+	const startPrevDayUtc = Date.UTC(
+		startOfPrevRange.getUTCFullYear(),
+		startOfPrevRange.getUTCMonth(),
+		startOfPrevRange.getUTCDate()
+	);
+	// End the prior bucket the day BEFORE startOfRange begins.
+	const endPrevDayUtc = Date.UTC(
+		startOfRange.getUTCFullYear(),
+		startOfRange.getUTCMonth(),
+		startOfRange.getUTCDate() - 1
+	);
+	for (let d = startPrevDayUtc; d <= endPrevDayUtc; d += dayMs) {
+		const key = new Date(d).toISOString().slice(0, 10);
+		dailyMapPrev.set(key, { revenue: 0, count: 0 });
+	}
+	for (const o of prevOrders) {
+		const key = new Date(o.createdAt).toISOString().slice(0, 10);
+		const entry = dailyMapPrev.get(key);
+		if (entry) {
+			entry.revenue += o.total;
+			entry.count += 1;
+		}
+	}
+	const dailyDataPrev = Array.from(dailyMapPrev.entries()).map(([date, v]) => ({
+		date,
+		...v
+	}));
+
+	// Compact projection for client-side status filtering. Just the fields the
+	// filter needs to recompute per-day buckets without re-running the full query.
+	const recentOrdersForFilter = recentOrders.map((o) => ({
+		id: o.id,
+		total: o.total,
+		status: o.status,
+		date: new Date(o.createdAt).toISOString().slice(0, 10)
+	}));
 
 	// ── Advanced analytics ───────────────────────────────────────────
 	let peakHoursGrid: Array<{ dow: number; hour: number; count: number }> | null = null;
@@ -204,6 +278,10 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 
 	return {
 		rangeDays,
+		rangeMode,
+		presetDays,
+		fromDate: rangeMode === 'custom' ? fromParam : null,
+		toDate: rangeMode === 'custom' ? toParam : null,
 		hasAdvancedAnalytics,
 		kpis: {
 			revenue,
@@ -217,6 +295,8 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 			fulfilledRate
 		},
 		dailyData,
+		dailyDataPrev,
+		recentOrdersForFilter,
 		topItems,
 		statusBreakdown,
 		typeBreakdown,

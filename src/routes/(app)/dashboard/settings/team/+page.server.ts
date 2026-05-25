@@ -57,7 +57,8 @@ export const load: PageServerLoad = async ({ locals }) => {
 		currentUserId,
 		currentRole: currentMember?.role ?? null,
 		roles: ROLES,
-		origin: env.ORIGIN ?? ''
+		origin: env.ORIGIN ?? '',
+		isInternal: locals.user?.isInternal ?? false
 	};
 };
 

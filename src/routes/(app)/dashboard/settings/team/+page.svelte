@@ -41,9 +41,6 @@
 	let submittingRemoveMemberId = $state<string | null>(null);
 	let submittingCancelInviteId = $state<string | null>(null);
 
-	const inviteUrl = $derived((form as { inviteUrl?: string } | null)?.inviteUrl ?? null);
-	const inviteEmail = $derived((form as { inviteEmail?: string } | null)?.inviteEmail ?? null);
-
 	async function copyLink(url: string, id: string) {
 		await navigator.clipboard.writeText(url);
 		copiedToken = id;
@@ -81,7 +78,7 @@
 			<Alert severity="error" class="mb-4">{form.inviteError}</Alert>
 		{/if}
 
-		{#if data.currentRole === 'owner' || data.currentRole === 'admin'}
+		{#if data.currentRole === 'owner' || data.currentRole === 'admin' || data.isInternal}
 			<div class="mb-5 flex gap-2">
 				{#if !showAddForm}
 					<Button
@@ -102,7 +99,7 @@
 						}}
 						variant="outline"
 					>
-						+ Invite by link
+						+ Invite by email
 					</Button>
 				{/if}
 			</div>
@@ -134,7 +131,7 @@
 									</SelectTrigger>
 									<SelectContent>
 										{#each data.roles as role (role)}
-											{#if role !== 'owner' || data.currentRole === 'owner'}
+											{#if role !== 'owner' || data.currentRole === 'owner' || data.isInternal}
 												<SelectItem value={role}>{roleLabels[role]}</SelectItem>
 											{/if}
 										{/each}
@@ -154,20 +151,27 @@
 			{/if}
 
 			{#if showInviteForm}
-				<Card class="mb-5 border-blue-200 bg-blue-50 shadow-sm">
+				<Card class="mb-5 shadow-sm">
 					<CardContent>
 						<form
 							method="post"
 							action="?/sendInvite"
-							use:enhance={() =>
-								({ update }) => {
-									update();
-									showInviteForm = false;
-								}}
+							use:enhance={() => {
+								return async ({ result, update }) => {
+									await update();
+									if (
+										result.type === 'success' &&
+										(result.data as { inviteSuccess?: boolean })?.inviteSuccess
+									) {
+										showInviteForm = false;
+										toast.success('Invite sent');
+									}
+								};
+							}}
 						>
-							<h2 class="mb-1 text-sm font-semibold text-foreground">Invite by link</h2>
+							<h2 class="mb-1 text-sm font-semibold text-foreground">Invite by email</h2>
 							<p class="mb-3 text-xs text-muted-foreground">
-								Generate a 7-day invite link — works even if they don't have an account yet.
+								We'll email them a 7-day invite link — works even if they don't have an account yet.
 							</p>
 							<div class="flex flex-wrap gap-2">
 								<Input
@@ -183,13 +187,13 @@
 									</SelectTrigger>
 									<SelectContent>
 										{#each data.roles as role (role)}
-											{#if role !== 'owner' || data.currentRole === 'owner'}
+											{#if role !== 'owner' || data.currentRole === 'owner' || data.isInternal}
 												<SelectItem value={role}>{roleLabels[role]}</SelectItem>
 											{/if}
 										{/each}
 									</SelectContent>
 								</Select>
-								<Button type="submit" variant="default">Generate link</Button>
+								<Button type="submit" variant="default">Send invite</Button>
 								<Button type="button" onclick={() => (showInviteForm = false)} variant="outline">
 									Cancel
 								</Button>
@@ -197,24 +201,6 @@
 						</form>
 					</CardContent>
 				</Card>
-			{/if}
-
-			<!-- Show the generated invite link -->
-			{#if inviteUrl}
-				<div class="mb-5 rounded-lg border border-primary/20 bg-primary/5 p-4">
-					<p class="mb-1 text-sm font-medium text-primary">
-						Invite link for <span class="font-semibold">{inviteEmail}</span>
-					</p>
-					<p class="mb-2 text-xs text-muted-foreground">
-						Share this link with them — expires in 7 days.
-					</p>
-					<div class="flex items-center gap-2">
-						<Input type="text" readonly value={inviteUrl} class="flex-1 text-xs" />
-						<Button type="button" onclick={() => copyLink(inviteUrl!, 'new')} variant="outline">
-							{copiedToken === 'new' ? 'Copied!' : 'Copy'}
-						</Button>
-					</div>
-				</div>
 			{/if}
 		{/if}
 
@@ -242,8 +228,17 @@
 									<p class="text-xs text-muted-foreground">{member.email}</p>
 								</TableCell>
 								<TableCell class="px-4 py-3">
-									{#if (data.currentRole === 'owner' || data.currentRole === 'admin') && member.userId !== data.currentUserId}
-										<form method="post" action="?/changeRole" use:enhance>
+									{#if (data.currentRole === 'owner' || data.currentRole === 'admin' || data.isInternal) && member.userId !== data.currentUserId}
+										<form
+											method="post"
+											action="?/changeRole"
+											use:enhance={() => {
+												return async ({ result, update }) => {
+													await update();
+													if (result.type === 'success') toast.success('Role updated');
+												};
+											}}
+										>
 											<input type="hidden" name="userId" value={member.userId} />
 											<select
 												name="role"
@@ -251,7 +246,7 @@
 												class="rounded-md border px-2 py-1 pr-6 text-xs focus:border-ring focus:outline-none"
 											>
 												{#each data.roles as role (role)}
-													{#if role !== 'owner' || data.currentRole === 'owner'}
+													{#if role !== 'owner' || data.currentRole === 'owner' || data.isInternal}
 														<option value={role} selected={member.role === role}
 															>{roleLabels[role]}</option
 														>
@@ -273,7 +268,7 @@
 									})}
 								</TableCell>
 								<TableCell class="px-4 py-3 text-right">
-									{#if member.userId !== data.currentUserId && (data.currentRole === 'owner' || data.currentRole === 'admin')}
+									{#if member.userId !== data.currentUserId && (data.currentRole === 'owner' || data.currentRole === 'admin' || data.isInternal)}
 										<div
 											class="flex flex-col items-stretch gap-1 md:flex-row md:items-center md:justify-end md:gap-3"
 										>
@@ -282,9 +277,10 @@
 												action="?/removeMember"
 												use:enhance={() => {
 													submittingRemoveMemberId = member.userId;
-													return async ({ update }) => {
+													return async ({ result, update }) => {
 														submittingRemoveMemberId = null;
 														await update();
+														if (result.type === 'success') toast.success('Member removed');
 													};
 												}}
 											>
@@ -374,9 +370,10 @@
 													action="?/cancelInvite"
 													use:enhance={() => {
 														submittingCancelInviteId = invite.id;
-														return async ({ update }) => {
+														return async ({ result, update }) => {
 															submittingCancelInviteId = null;
 															await update();
+															if (result.type === 'success') toast.success('Invite cancelled');
 														};
 													}}
 												>

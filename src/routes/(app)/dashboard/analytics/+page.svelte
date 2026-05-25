@@ -6,8 +6,15 @@
 	import { Tabs, TabsList, TabsTrigger } from '$lib/components/ui/tabs';
 	import { Card, CardHeader, CardTitle, CardContent } from '$lib/components/ui/card';
 	import { Button } from '$lib/components/ui/button';
-	import { SvelteMap } from 'svelte/reactivity';
+	import * as Popover from '$lib/components/ui/popover';
+	import { Calendar } from '$lib/components/ui/calendar';
+	import { parseDate, type CalendarDate } from '@internationalized/date';
+	import { SvelteMap, SvelteSet, SvelteURLSearchParams } from 'svelte/reactivity';
 	import OrdersSummaryBar from '$lib/components/OrdersSummaryBar.svelte';
+	import StatusBadge from '$lib/components/StatusBadge.svelte';
+	import { ADDONS } from '$lib/billing';
+
+	const analyticsAddon = ADDONS.find((a) => a.key === 'analytics');
 
 	let { data }: { data: PageData } = $props();
 
@@ -15,14 +22,75 @@
 		rangeDays,
 		kpis,
 		dailyData,
+		dailyDataPrev,
+		recentOrdersForFilter,
 		topItems,
 		statusBreakdown,
 		typeBreakdown,
 		hasAdvancedAnalytics,
 		peakHoursGrid,
 		customerRetention,
-		revenueByCategory
+		revenueByCategory,
+		topItemsByRevenue
 	} = $derived(data);
+
+	// ── Range controls state ────────────────────────────────────────
+	let fromOpen = $state(false);
+	let toOpen = $state(false);
+
+	const fromCalendarValue = $derived(data.fromDate ? parseDate(data.fromDate) : undefined);
+	const toCalendarValue = $derived(data.toDate ? parseDate(data.toDate) : undefined);
+
+	function formatPickerDate(dateStr: string): string {
+		const [y, m, d] = dateStr.split('-').map(Number);
+		return new Date(y, m - 1, d).toLocaleDateString('en-US', {
+			month: 'short',
+			day: 'numeric',
+			year: 'numeric'
+		});
+	}
+
+	function setPreset(days: 7 | 30 | 90) {
+		goto(
+			resolve(
+				(days === 30
+					? '/dashboard/analytics'
+					: `/dashboard/analytics?range=${days}`) as `/${string}`
+			)
+		);
+	}
+
+	function setCustomDate(which: 'from' | 'to', date: CalendarDate | undefined) {
+		const p = new SvelteURLSearchParams();
+		const nextFrom = which === 'from' ? date?.toString() : data.fromDate;
+		const nextTo = which === 'to' ? date?.toString() : data.toDate;
+		if (nextFrom) p.set('from', nextFrom);
+		if (nextTo) p.set('to', nextTo);
+		const qs = p.toString();
+		goto(
+			qs ? resolve(`/dashboard/analytics?${qs}` as `/${string}`) : resolve('/dashboard/analytics'),
+			{ replaceState: true }
+		);
+	}
+
+	function clearCustomDates() {
+		goto(resolve('/dashboard/analytics'), { replaceState: true });
+	}
+
+	// ── Top items toggle ────────────────────────────────────────────
+	let topItemsSort = $state<'quantity' | 'revenue'>('quantity');
+
+	const topItemsToShow = $derived(
+		topItemsSort === 'revenue' && hasAdvancedAnalytics && topItemsByRevenue
+			? topItemsByRevenue
+			: topItems
+	);
+
+	const maxTopItemValue = $derived(
+		topItemsSort === 'revenue'
+			? Math.max(...topItemsToShow.map((i) => i.totalRevenue), 1)
+			: Math.max(...topItemsToShow.map((i) => i.totalQty), 1)
+	);
 
 	function fmt(cents: number) {
 		return (
@@ -31,9 +99,71 @@
 		);
 	}
 
-	const maxDailyRevenue = $derived(Math.max(...dailyData.map((d) => d.revenue), 1));
 	const totalStatusCount = $derived(statusBreakdown.reduce((s, r) => s + r.count, 0));
-	const dataPointsWithRevenue = $derived(dailyData.filter((d) => d.revenue > 0).length);
+
+	// ── Status filter (client-side recompute for current period) ─────
+	const ALL_STATUSES = [
+		'received',
+		'confirmed',
+		'preparing',
+		'ready',
+		'fulfilled',
+		'cancelled'
+	] as const;
+
+	const activeStatuses = $state(new SvelteSet<string>(ALL_STATUSES));
+
+	function toggleStatus(status: string) {
+		if (activeStatuses.has(status)) activeStatuses.delete(status);
+		else activeStatuses.add(status);
+	}
+	function resetStatuses() {
+		activeStatuses.clear();
+		for (const s of ALL_STATUSES) activeStatuses.add(s);
+	}
+
+	const filterActive = $derived(activeStatuses.size !== ALL_STATUSES.length);
+
+	const filteredDailyData = $derived.by(() => {
+		if (!filterActive) return dailyData;
+		const map = new SvelteMap<string, { revenue: number; count: number }>();
+		for (const d of dailyData) map.set(d.date, { revenue: 0, count: 0 });
+		for (const o of recentOrdersForFilter) {
+			if (!activeStatuses.has(o.status)) continue;
+			const entry = map.get(o.date);
+			if (entry) {
+				entry.revenue += o.total;
+				entry.count += 1;
+			}
+		}
+		return Array.from(map.entries()).map(([date, v]) => ({ date, ...v }));
+	});
+
+	const filteredRevenue = $derived(filteredDailyData.reduce((s, d) => s + d.revenue, 0));
+	const dataPointsWithRevenue = $derived(filteredDailyData.filter((d) => d.revenue > 0).length);
+
+	// ── Previous-period overlay (hidden when filter active) ──────────
+	const showPriorOverlay = $derived(!filterActive && dailyDataPrev.some((d) => d.revenue > 0));
+
+	const dailyPrevByOffset = $derived.by(() => {
+		const map = new SvelteMap<number, { revenue: number; count: number }>();
+		for (let i = 0; i < dailyDataPrev.length; i++) {
+			map.set(i, dailyDataPrev[i]);
+		}
+		return map;
+	});
+
+	// Shared y-scale: both current and prior bars use the same max so the visual
+	// comparison is honest. When filter is active, fall back to filtered current only.
+	const maxDailyAcrossBoth = $derived(
+		filterActive
+			? Math.max(...filteredDailyData.map((d) => d.revenue), 1)
+			: Math.max(
+					...filteredDailyData.map((d) => d.revenue),
+					...dailyDataPrev.map((d) => d.revenue),
+					1
+				)
+	);
 
 	const summaryStats = $derived([
 		{ label: 'Revenue', value: fmt(kpis.revenue), positive: true },
@@ -46,23 +176,29 @@
 		}
 	]);
 
-	// Uses the CLAUDE.md canonical statusStyles map
-	const statusColors: Record<string, string> = {
-		received: 'bg-blue-400',
-		confirmed: 'bg-purple-400',
-		preparing: 'bg-yellow-400',
-		ready: 'bg-primary/70',
-		fulfilled: 'bg-gray-300',
-		cancelled: 'bg-red-300'
+	// Semantic mapping matches StatusBadge's variants used elsewhere on the site.
+	// received/confirmed = informational, preparing = active work, ready/fulfilled = success, cancelled = destructive.
+	const statusVariant: Record<
+		string,
+		'success' | 'warning' | 'danger' | 'neutral' | 'info' | 'subtle'
+	> = {
+		received: 'info',
+		confirmed: 'info',
+		preparing: 'warning',
+		ready: 'success',
+		fulfilled: 'success',
+		cancelled: 'danger'
 	};
 
-	const statusBadge: Record<string, string> = {
-		received: 'bg-blue-100 text-blue-700',
-		confirmed: 'bg-indigo-100 text-indigo-700',
-		preparing: 'bg-amber-100 text-amber-700',
-		ready: 'bg-purple-100 text-purple-700',
-		fulfilled: 'bg-success/10 text-success',
-		cancelled: 'bg-red-100 text-red-700'
+	// Deeper shades of the same semantic hues for the stacked bar (StatusBadge's
+	// internal palette is too pale to read as bar segments).
+	const statusBarColor: Record<string, string> = {
+		received: 'bg-blue-300',
+		confirmed: 'bg-blue-400',
+		preparing: 'bg-amber-400',
+		ready: 'bg-success/70',
+		fulfilled: 'bg-success',
+		cancelled: 'bg-red-300'
 	};
 
 	const typeIcons: Record<string, string> = {
@@ -76,7 +212,6 @@
 	};
 
 	const totalTypeRevenue = $derived(typeBreakdown.reduce((s, r) => s + (r.revenue ?? 0), 0) || 1);
-	const maxItemQty = $derived(Math.max(...topItems.map((i) => i.totalQty), 1));
 	const maxCategoryRevenue = $derived(
 		Math.max(...(revenueByCategory ?? []).map((c) => c.totalRevenue), 1)
 	);
@@ -116,34 +251,131 @@
 
 <div>
 	<!-- ── Page header ───────────────────────────────────────────── -->
-	<div class="mb-6 flex items-center justify-between">
+	<div class="mb-6 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
 		<div>
 			<h1 class="text-2xl font-bold text-gray-900">Analytics</h1>
 			<p class="mt-0.5 text-sm text-gray-500">
-				Last {rangeDays} days vs previous {rangeDays} days
+				{#if data.rangeMode === 'custom'}
+					{data.fromDate ? formatPickerDate(data.fromDate) : '—'} to {data.toDate
+						? formatPickerDate(data.toDate)
+						: '—'}
+					({rangeDays}
+					{rangeDays === 1 ? 'day' : 'days'})
+				{:else}
+					Last {rangeDays} days vs previous {rangeDays} days
+				{/if}
 			</p>
 		</div>
-		<div class="flex items-center gap-2">
+		<div class="flex flex-wrap items-center gap-2">
 			<Tabs
-				value={String(rangeDays)}
-				onValueChange={(v) =>
-					goto(resolve(Number(v) === 7 ? '/dashboard/analytics?range=7' : '/dashboard/analytics'))}
+				value={data.rangeMode === 'preset' && data.presetDays ? String(data.presetDays) : ''}
+				onValueChange={(v) => {
+					if (v === '7' || v === '30' || v === '90') setPreset(Number(v) as 7 | 30 | 90);
+				}}
 			>
 				<TabsList>
-					<TabsTrigger value="30">
-						<Icon icon="mdi:calendar-outline" class="h-3.5 w-3.5" />
-						30 days
-					</TabsTrigger>
 					<TabsTrigger value="7">
 						<Icon icon="mdi:calendar-outline" class="h-3.5 w-3.5" />
 						7 days
 					</TabsTrigger>
+					<TabsTrigger value="30">
+						<Icon icon="mdi:calendar-outline" class="h-3.5 w-3.5" />
+						30 days
+					</TabsTrigger>
+					<TabsTrigger value="90">
+						<Icon icon="mdi:calendar-outline" class="h-3.5 w-3.5" />
+						90 days
+					</TabsTrigger>
 				</TabsList>
 			</Tabs>
-			<Button variant="outline" class="gap-1.5">
-				<Icon icon="mdi:download-outline" class="h-3.5 w-3.5" />
-				Export
-			</Button>
+
+			<div class="flex items-center gap-1.5 rounded-md border px-2.5 py-1">
+				<Icon icon="mdi:calendar-outline" class="h-3.5 w-3.5 shrink-0 text-muted-foreground/60" />
+				<Popover.Root bind:open={fromOpen}>
+					<Popover.Trigger>
+						{#snippet child({ props })}
+							<button
+								{...props}
+								type="button"
+								class="text-xs outline-none {data.fromDate
+									? 'text-foreground'
+									: 'text-muted-foreground'}"
+							>
+								{data.fromDate ? formatPickerDate(data.fromDate) : 'From'}
+							</button>
+						{/snippet}
+					</Popover.Trigger>
+					<Popover.Content class="w-auto p-0" align="start">
+						<Calendar
+							type="single"
+							value={fromCalendarValue}
+							onValueChange={(date) => {
+								fromOpen = false;
+								setCustomDate('from', date as CalendarDate | undefined);
+							}}
+						/>
+					</Popover.Content>
+				</Popover.Root>
+				<span class="text-muted-foreground/40">→</span>
+				<Popover.Root bind:open={toOpen}>
+					<Popover.Trigger>
+						{#snippet child({ props })}
+							<button
+								{...props}
+								type="button"
+								class="text-xs outline-none {data.toDate
+									? 'text-foreground'
+									: 'text-muted-foreground'}"
+							>
+								{data.toDate ? formatPickerDate(data.toDate) : 'To'}
+							</button>
+						{/snippet}
+					</Popover.Trigger>
+					<Popover.Content class="w-auto p-0" align="start">
+						<Calendar
+							type="single"
+							value={toCalendarValue}
+							onValueChange={(date) => {
+								toOpen = false;
+								setCustomDate('to', date as CalendarDate | undefined);
+							}}
+						/>
+					</Popover.Content>
+				</Popover.Root>
+				{#if data.rangeMode === 'custom'}
+					<button
+						type="button"
+						onclick={clearCustomDates}
+						class="text-muted-foreground/60 hover:text-foreground"
+						aria-label="Clear custom range"
+					>
+						<Icon icon="mdi:close" class="h-3 w-3" />
+					</button>
+				{/if}
+			</div>
+
+			{#if hasAdvancedAnalytics}
+				<Button
+					variant="outline"
+					class="gap-1.5"
+					onclick={() => {
+						const qs = new SvelteURLSearchParams();
+						if (data.rangeMode === 'custom') {
+							if (data.fromDate) qs.set('from', data.fromDate);
+							if (data.toDate) qs.set('to', data.toDate);
+						} else if (data.presetDays && data.presetDays !== 30) {
+							qs.set('range', String(data.presetDays));
+						}
+						const qsStr = qs.toString();
+						window.location.href = qsStr
+							? `/dashboard/analytics/export?${qsStr}`
+							: '/dashboard/analytics/export';
+					}}
+				>
+					<Icon icon="mdi:download-outline" class="h-3.5 w-3.5" />
+					Export
+				</Button>
+			{/if}
 		</div>
 	</div>
 
@@ -159,31 +391,86 @@
 					<p class="mt-0.5 text-xs text-gray-400">Last {rangeDays} days</p>
 				</div>
 				<div class="text-right">
-					<p class="text-lg font-semibold text-gray-900">{fmt(kpis.revenue)}</p>
-					<p class="text-xs text-gray-400">total this period</p>
+					<p class="text-lg font-semibold text-gray-900">{fmt(filteredRevenue)}</p>
+					<p class="text-xs text-gray-400">
+						{filterActive
+							? `${activeStatuses.size}/${ALL_STATUSES.length} statuses`
+							: 'total this period'}
+					</p>
 				</div>
 			</div>
+
+			<!-- Status filter pills -->
+			<div class="mb-3 flex flex-wrap items-center gap-1.5 text-xs">
+				<span class="text-muted-foreground">Statuses:</span>
+				{#each ALL_STATUSES as status (status)}
+					{@const active = activeStatuses.has(status)}
+					<button
+						type="button"
+						onclick={() => toggleStatus(status)}
+						aria-pressed={active}
+						class="rounded-full border px-2 py-0.5 capitalize transition-colors {active
+							? `${statusBarColor[status]} border-transparent text-foreground`
+							: 'border-border bg-background text-muted-foreground hover:border-foreground/30'}"
+					>
+						{status}
+					</button>
+				{/each}
+				{#if filterActive}
+					<button
+						type="button"
+						onclick={resetStatuses}
+						class="ml-1 text-xs text-muted-foreground hover:text-foreground"
+					>
+						Reset
+					</button>
+				{/if}
+			</div>
+
 			<div class="flex h-36 items-end gap-px">
-				{#each dailyData as day (day.date)}
-					{@const height =
-						day.revenue === 0 ? 2 : Math.max(4, Math.round((day.revenue / maxDailyRevenue) * 144))}
-					<div class="group relative flex flex-1 flex-col items-center justify-end">
+				{#each filteredDailyData as day, i (day.date)}
+					{@const currentHeight =
+						day.revenue === 0
+							? 2
+							: Math.max(4, Math.round((day.revenue / maxDailyAcrossBoth) * 144))}
+					{@const priorRevenue = dailyPrevByOffset.get(i)?.revenue ?? 0}
+					{@const priorCount = dailyPrevByOffset.get(i)?.count ?? 0}
+					{@const priorHeight =
+						priorRevenue === 0
+							? 0
+							: Math.max(4, Math.round((priorRevenue / maxDailyAcrossBoth) * 144))}
+					<div class="group relative flex flex-1 flex-col items-end justify-end">
+						{#if showPriorOverlay && priorHeight > 0}
+							<div
+								class="absolute right-0 bottom-0 w-full rounded-sm bg-muted-foreground/20"
+								style="height: {priorHeight}px;"
+								aria-hidden="true"
+							></div>
+						{/if}
 						<div
-							class="w-full rounded-sm bg-primary transition-colors group-hover:bg-primary/80"
-							style="height: {height}px;"
+							class="relative w-[70%] rounded-sm bg-primary transition-colors group-hover:bg-primary/80"
+							style="height: {currentHeight}px;"
 						></div>
-						{#if day.revenue > 0}
+						{#if day.revenue > 0 || (showPriorOverlay && priorRevenue > 0)}
 							<div
 								class="pointer-events-none absolute bottom-full left-1/2 z-10 mb-1.5 hidden -translate-x-1/2 flex-col items-center group-hover:flex"
 							>
 								<div
 									class="rounded-md bg-gray-900 px-2 py-1 text-xs whitespace-nowrap text-white shadow-lg"
 								>
-									<p>{fmt(day.revenue)}</p>
+									<p class="font-medium">{fmt(day.revenue)}</p>
 									<p class="text-muted-foreground">
 										{day.count}
 										{day.count === 1 ? 'order' : 'orders'}
 									</p>
+									{#if showPriorOverlay && priorRevenue > 0}
+										<div class="mt-1 border-t border-white/10 pt-1">
+											<p class="text-muted-foreground">
+												Prior: {fmt(priorRevenue)} ({priorCount}
+												{priorCount === 1 ? 'order' : 'orders'})
+											</p>
+										</div>
+									{/if}
 								</div>
 								<div class="-mt-1 h-1.5 w-1.5 rotate-45 bg-gray-900"></div>
 							</div>
@@ -192,10 +479,22 @@
 				{/each}
 			</div>
 			<div class="mt-1.5 flex justify-between text-xs text-muted-foreground">
-				<span>{dailyData[0]?.date.slice(5)}</span>
-				<span>{dailyData[Math.floor(dailyData.length / 2)]?.date.slice(5)}</span>
-				<span>{dailyData[dailyData.length - 1]?.date.slice(5)}</span>
+				<span>{filteredDailyData[0]?.date.slice(5)}</span>
+				<span>{filteredDailyData[Math.floor(filteredDailyData.length / 2)]?.date.slice(5)}</span>
+				<span>{filteredDailyData[filteredDailyData.length - 1]?.date.slice(5)}</span>
 			</div>
+			{#if showPriorOverlay}
+				<div class="mt-2 flex items-center justify-end gap-3 text-xs text-muted-foreground">
+					<span class="flex items-center gap-1.5">
+						<span class="inline-block h-2 w-2 rounded-sm bg-primary"></span>
+						Current
+					</span>
+					<span class="flex items-center gap-1.5">
+						<span class="inline-block h-2 w-2 rounded-sm bg-muted-foreground/40"></span>
+						Previous period
+					</span>
+				</div>
+			{/if}
 			{#if dataPointsWithRevenue < 5}
 				<p class="mt-2 text-center text-xs text-gray-400">
 					Not enough data yet — charts fill in as more orders come through.
@@ -209,12 +508,25 @@
 		<!-- Top items -->
 		<Card class="self-start shadow-sm lg:col-span-2">
 			<CardContent>
-				<h2 class="mb-4 text-sm font-semibold text-gray-900">Top items</h2>
-				{#if topItems.length === 0}
+				<div class="mb-4 flex items-center justify-between gap-3">
+					<h2 class="text-sm font-semibold text-gray-900">Top items</h2>
+					{#if hasAdvancedAnalytics}
+						<Tabs
+							value={topItemsSort}
+							onValueChange={(v) => (topItemsSort = v as 'quantity' | 'revenue')}
+						>
+							<TabsList>
+								<TabsTrigger value="quantity">By quantity</TabsTrigger>
+								<TabsTrigger value="revenue">By revenue</TabsTrigger>
+							</TabsList>
+						</Tabs>
+					{/if}
+				</div>
+				{#if topItemsToShow.length === 0}
 					<p class="text-sm text-muted-foreground">No order data yet.</p>
 				{:else}
 					<div class="space-y-3">
-						{#each topItems as item, i (item.name)}
+						{#each topItemsToShow as item, i (item.name)}
 							<div>
 								<div class="mb-1 flex items-center justify-between gap-2">
 									<div class="flex min-w-0 items-center gap-2">
@@ -231,16 +543,20 @@
 								<div class="h-1.5 w-full rounded-full bg-muted">
 									<div
 										class="h-1.5 rounded-full bg-primary transition-all"
-										style="width: {Math.round((item.totalQty / maxItemQty) * 100)}%"
+										style="width: {Math.round(
+											(topItemsSort === 'revenue'
+												? item.totalRevenue / maxTopItemValue
+												: item.totalQty / maxTopItemValue) * 100
+										)}%"
 									></div>
 								</div>
 							</div>
 						{/each}
 					</div>
-					{#if topItems.length < 5}
+					{#if topItemsToShow.length < 5}
 						<p class="mt-3 text-xs text-gray-400">
-							Only {topItems.length}
-							{topItems.length === 1 ? 'item' : 'items'} ordered this period
+							Only {topItemsToShow.length}
+							{topItemsToShow.length === 1 ? 'item' : 'items'} ordered this period
 						</p>
 					{/if}
 					<div class="mt-3 border-t border-gray-100 pt-3">
@@ -297,28 +613,37 @@
 					{#if statusBreakdown.length === 0}
 						<p class="text-sm text-muted-foreground">No data yet.</p>
 					{:else}
-						<div class="mb-3 flex h-3 w-full overflow-hidden rounded-full">
+						<div class="mb-3 flex h-3 w-full overflow-hidden rounded-full bg-muted">
 							{#each statusBreakdown as row (row.status)}
+								{@const widthPct = (row.count / totalStatusCount) * 100}
 								<div
-									class="{statusColors[row.status] ?? 'bg-muted'} transition-all"
-									style="width: {Math.round((row.count / totalStatusCount) * 100)}%"
-									title="{row.status}: {row.count}"
-								></div>
+									class="group relative {statusBarColor[row.status] ??
+										'bg-muted'} transition-all hover:opacity-80"
+									style="width: {widthPct}%"
+								>
+									<div
+										class="pointer-events-none absolute bottom-full left-1/2 z-10 mb-1.5 hidden -translate-x-1/2 flex-col items-center group-hover:flex"
+									>
+										<div
+											class="rounded-md bg-gray-900 px-2 py-1 text-xs whitespace-nowrap text-white shadow-lg"
+										>
+											<p class="font-medium capitalize">{row.status}</p>
+											<p class="text-muted-foreground">
+												{row.count}
+												{row.count === 1 ? 'order' : 'orders'} ({widthPct.toFixed(1)}%)
+											</p>
+										</div>
+										<div class="-mt-1 h-1.5 w-1.5 rotate-45 bg-gray-900"></div>
+									</div>
+								</div>
 							{/each}
 						</div>
 						<div class="space-y-1.5">
 							{#each statusBreakdown as row (row.status)}
 								<div class="flex items-center justify-between text-xs">
-									<span class="inline-flex items-center gap-1.5">
-										<span class="h-2 w-2 rounded-full {statusColors[row.status] ?? 'bg-gray-300'}"
-										></span>
-										<span
-											class="rounded-full px-1.5 py-0.5 capitalize {statusBadge[row.status] ??
-												'bg-muted text-muted-foreground'}"
-										>
-											{row.status}
-										</span>
-									</span>
+									<StatusBadge variant={statusVariant[row.status] ?? 'subtle'} class="capitalize">
+										{row.status}
+									</StatusBadge>
 									<span class="font-medium text-muted-foreground">{row.count}</span>
 								</div>
 							{/each}
@@ -576,7 +901,7 @@
 						</ul>
 						<Button href={resolve('/dashboard/account/billing')} class="gap-2">
 							<Icon icon="mdi:arrow-up-circle-outline" class="h-4 w-4" />
-							Unlock for $19/mo
+							Unlock for ${analyticsAddon?.price ?? 29}/mo
 						</Button>
 					</div>
 				</CardContent>
