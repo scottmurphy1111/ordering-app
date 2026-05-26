@@ -27,9 +27,9 @@ export const specialOrderRequests = pgTable(
 		photoUrls: jsonb('photo_urls').$type<string[]>().notNull().default([]),
 		declinedReason: text('declined_reason'),
 		declinedBy: declinedByEnum('declined_by'),
-		declinedAt: timestamp('declined_at'),
-		createdAt: timestamp('created_at').notNull().defaultNow(),
-		updatedAt: timestamp('updated_at').notNull().defaultNow()
+		declinedAt: timestamp('declined_at', { withTimezone: true }),
+		createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+		updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()
 	},
 	(t) => [
 		index('special_order_requests_vendor_id_idx').on(t.vendorId),
@@ -50,11 +50,11 @@ export const specialOrderQuotes = pgTable(
 		priceCents: integer('price_cents').notNull(),
 		message: text('message'),
 		acceptToken: varchar('accept_token', { length: 64 }).notNull().unique(),
-		expiresAt: timestamp('expires_at'),
-		acceptedAt: timestamp('accepted_at'),
-		declinedAt: timestamp('declined_at'),
+		expiresAt: timestamp('expires_at', { withTimezone: true }),
+		acceptedAt: timestamp('accepted_at', { withTimezone: true }),
+		declinedAt: timestamp('declined_at', { withTimezone: true }),
 		sentByUserId: text('sent_by_user_id'),
-		createdAt: timestamp('created_at').notNull().defaultNow()
+		createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow()
 	},
 	(t) => [
 		index('special_order_quotes_request_id_idx').on(t.requestId),

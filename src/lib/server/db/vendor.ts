@@ -94,13 +94,13 @@ export const vendor = pgTable(
 		// Operational status
 		isActive: boolean('is_active').default(true).notNull(),
 		isApproved: boolean('is_approved').default(true),
-		suspendedAt: timestamp('suspended_at'),
+		suspendedAt: timestamp('suspended_at', { withTimezone: true }),
 		suspendedReason: text('suspended_reason'),
 
 		// Subscription & billing info
 		subscriptionTier: varchar('subscription_tier', { length: 50 }).default('starter'),
 		subscriptionStatus: varchar('subscription_status', { length: 50 }).default('active'),
-		subscriptionEndsAt: timestamp('subscription_ends_at'),
+		subscriptionEndsAt: timestamp('subscription_ends_at', { withTimezone: true }),
 		// Marks that the immediate-cancel path was used (cancelImmediate action),
 		// independent of whether money actually moved. Set when:
 		//   - a prorated refund was issued (to card or to customer balance), or
@@ -113,9 +113,9 @@ export const vendor = pgTable(
 		// Edge case: stays null if a refund was attempted (refundCents > 0) but BOTH
 		// the card refund AND the balance-credit fallback threw. Vendor loses service
 		// in that path with no audit row — pre-existing failure mode, separate concern.
-		subscriptionRefundedAt: timestamp('subscription_refunded_at'),
-		subscriptionPausedAt: timestamp('subscription_paused_at'),
-		pauseUntil: timestamp('pause_until'),
+		subscriptionRefundedAt: timestamp('subscription_refunded_at', { withTimezone: true }),
+		subscriptionPausedAt: timestamp('subscription_paused_at', { withTimezone: true }),
+		pauseUntil: timestamp('pause_until', { withTimezone: true }),
 		stripeCustomerId: varchar('stripe_customer_id', { length: 255 }),
 		stripeSubscriptionId: varchar('stripe_subscription_id', { length: 255 }),
 
@@ -137,9 +137,9 @@ export const vendor = pgTable(
 		lastOrderNumber: integer('last_order_number').notNull().default(0),
 
 		// Timestamps
-		createdAt: timestamp('created_at').defaultNow().notNull(),
-		updatedAt: timestamp('updated_at').defaultNow().notNull(),
-		deletedAt: timestamp('deleted_at')
+		createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+		updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+		deletedAt: timestamp('deleted_at', { withTimezone: true })
 	},
 	(table) => ({
 		slugIdx: index('vendors_slug_idx').on(table.slug),
@@ -162,7 +162,7 @@ export const vendorUsers = pgTable(
 			.notNull()
 			.references(() => user.id, { onDelete: 'cascade' }),
 		role: varchar('role', { length: 50 }).default('owner').notNull(),
-		assignedAt: timestamp('assigned_at').defaultNow().notNull()
+		assignedAt: timestamp('assigned_at', { withTimezone: true }).defaultNow().notNull()
 	},
 	(table) => [primaryKey({ columns: [table.vendorId, table.userId] })]
 );
@@ -178,7 +178,7 @@ export const vendorInvitations = pgTable('vendor_invitations', {
 	invitedByUserId: text('invited_by_user_id')
 		.notNull()
 		.references(() => user.id, { onDelete: 'cascade' }),
-	expiresAt: timestamp('expires_at').notNull(),
-	acceptedAt: timestamp('accepted_at'),
-	createdAt: timestamp('created_at').defaultNow().notNull()
+	expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+	acceptedAt: timestamp('accepted_at', { withTimezone: true }),
+	createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull()
 });

@@ -29,8 +29,8 @@ export const vendorNotifications = pgTable(
 		severity: notificationSeverityEnum('severity').notNull().default('info'),
 		actionUrl: text('action_url'),
 		actionLabel: varchar('action_label', { length: 64 }),
-		createdAt: timestamp('created_at').defaultNow().notNull(),
-		readAt: timestamp('read_at')
+		createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+		readAt: timestamp('read_at', { withTimezone: true })
 	},
 	(t) => [
 		index('vendor_notifications_vendor_idx').on(t.vendorId, t.createdAt),

@@ -1,6 +1,6 @@
 import type { PageServerLoad } from './$types';
 import { db } from '$lib/server/db';
-import { eq, and, gte, sql, desc } from 'drizzle-orm';
+import { eq, ne, and, gte, sql, desc } from 'drizzle-orm';
 import { orders, orderItems, catalogItems, catalogCategories } from '$lib/server/db/schema';
 import { effectiveHasAddon } from '$lib/billing';
 import { resolveRange } from '$lib/server/analytics-range';
@@ -34,7 +34,15 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 	const startOfPrevRange = new Date(startOfRange.getTime() - rangeDays * 24 * 60 * 60 * 1000);
 	const startOf90Days = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
 
-	const [recentOrders, prevOrders, topItems, statusBreakdown, typeBreakdown] = await Promise.all([
+	const [
+		recentOrders,
+		prevOrders,
+		topItems,
+		statusBreakdown,
+		typeBreakdown,
+		itemsProducedResult,
+		itemsProducedPrevResult
+	] = await Promise.all([
 		db.query.orders.findMany({
 			where: and(
 				eq(orders.vendorId, vendorId),
@@ -106,7 +114,39 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 					sql`${orders.createdAt} <= ${endOfRange}`
 				)
 			)
-			.groupBy(orders.type)
+			.groupBy(orders.type),
+
+		db
+			.select({
+				totalItems: sql<number>`cast(coalesce(sum(${orderItems.quantity}), 0) as int)`
+			})
+			.from(orderItems)
+			.innerJoin(orders, eq(orderItems.orderId, orders.id))
+			.where(
+				and(
+					eq(orders.vendorId, vendorId),
+					eq(orders.paymentStatus, 'paid'),
+					ne(orders.status, 'cancelled' as typeof orders.status._.data),
+					gte(orders.createdAt, startOfRange),
+					sql`${orders.createdAt} <= ${endOfRange}`
+				)
+			),
+
+		db
+			.select({
+				totalItems: sql<number>`cast(coalesce(sum(${orderItems.quantity}), 0) as int)`
+			})
+			.from(orderItems)
+			.innerJoin(orders, eq(orderItems.orderId, orders.id))
+			.where(
+				and(
+					eq(orders.vendorId, vendorId),
+					eq(orders.paymentStatus, 'paid'),
+					ne(orders.status, 'cancelled' as typeof orders.status._.data),
+					gte(orders.createdAt, startOfPrevRange),
+					sql`${orders.createdAt} < ${startOfRange}`
+				)
+			)
 	]);
 
 	// ── KPI calculations ────────────────────────────────────────────
@@ -124,6 +164,11 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 
 	const fulfilledCount = recentOrders.filter((o) => o.status === 'fulfilled').length;
 	const fulfilledRate = ordersCount > 0 ? Math.round((fulfilledCount / ordersCount) * 100) : null;
+
+	const itemsProduced = itemsProducedResult[0]?.totalItems ?? 0;
+	const itemsProducedPrev = itemsProducedPrevResult[0]?.totalItems ?? 0;
+	const itemsProducedChange =
+		itemsProducedPrev > 0 ? ((itemsProduced - itemsProducedPrev) / itemsProducedPrev) * 100 : null;
 
 	// ── Daily chart data ─────────────────────────────────────────────
 	// Pre-seed one entry per calendar day in the range so empty days render as zero-height bars.
@@ -306,7 +351,9 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 			ordersChange,
 			avgOrderValue,
 			avgChange,
-			fulfilledRate
+			fulfilledRate,
+			itemsProduced,
+			itemsProducedChange
 		},
 		dailyData,
 		dailyDataPrev,

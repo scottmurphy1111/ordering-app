@@ -23,9 +23,9 @@ export const loyaltyAccounts = pgTable(
 		currentPoints: integer('current_points').default(0).notNull(),
 		totalPointsEarned: integer('total_points_earned').default(0).notNull(),
 		totalRewardsEarned: integer('total_rewards_earned').default(0).notNull(),
-		lastOrderAt: timestamp('last_order_at'),
-		createdAt: timestamp('created_at').defaultNow().notNull(),
-		updatedAt: timestamp('updated_at').defaultNow().notNull()
+		lastOrderAt: timestamp('last_order_at', { withTimezone: true }),
+		createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+		updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull()
 	},
 	(table) => [
 		uniqueIndex('loyalty_accounts_vendor_email_idx').on(table.vendorId, table.email),

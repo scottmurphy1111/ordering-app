@@ -465,11 +465,11 @@
 					<Table>
 						<TableHeader>
 							<TableRow class="hover:bg-transparent">
-								<TableHead>Order</TableHead>
-								<TableHead class="hidden md:table-cell">Customer</TableHead>
-								<TableHead>Status</TableHead>
-								<TableHead class="hidden text-right md:table-cell">Total</TableHead>
-								<TableHead class="text-right">When</TableHead>
+								<TableHead class="px-4 py-2.5">Order</TableHead>
+								<TableHead class="hidden px-4 py-2.5 md:table-cell">Customer</TableHead>
+								<TableHead class="px-4 py-2.5">Status</TableHead>
+								<TableHead class="hidden px-4 py-2.5 text-right md:table-cell">Total</TableHead>
+								<TableHead class="px-4 py-2.5 text-right">When</TableHead>
 							</TableRow>
 						</TableHeader>
 						<TableBody>
@@ -478,11 +478,13 @@
 									class="cursor-pointer hover:bg-muted/50"
 									onclick={() => (window.location.href = resolve(`/dashboard/orders/${order.id}`))}
 								>
-									<TableCell class="font-mono text-xs font-medium">
+									<TableCell class="px-4 py-3 font-mono text-xs font-medium">
 										{shortOrderId(order.orderNumber)}
 									</TableCell>
-									<TableCell class="hidden md:table-cell">{order.customerName ?? '—'}</TableCell>
-									<TableCell>
+									<TableCell class="hidden px-4 py-3 md:table-cell"
+										>{order.customerName ?? '—'}</TableCell
+									>
+									<TableCell class="px-4 py-3">
 										{@const stage = lifecycleStages.find((s) => s.value === order.status)}
 										{#if stage}
 											<span class="inline-flex items-center gap-1.5">
@@ -516,10 +518,10 @@
 											</span>
 										{/if}
 									</TableCell>
-									<TableCell class="hidden text-right font-medium md:table-cell">
+									<TableCell class="hidden px-4 py-3 text-right font-medium md:table-cell">
 										${(order.total / 100).toFixed(2)}
 									</TableCell>
-									<TableCell class="text-right text-xs text-muted-foreground">
+									<TableCell class="px-4 py-3 text-right text-xs text-muted-foreground">
 										{formatDistanceToNow(new Date(order.createdAt), { addSuffix: true })}
 									</TableCell>
 								</TableRow>

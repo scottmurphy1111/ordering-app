@@ -564,9 +564,9 @@
 	<div class="mx-auto max-w-6xl">
 		<div class="mb-12 overflow-hidden rounded-2xl">
 			<img
-				src="https://images.unsplash.com/photo-1488459716781-31db52582fe9?w=1600&h=400&fit=crop&q=80"
-				alt="Vendor handing a paper bag to a customer at a farmers market booth"
-				class="h-48 w-full object-cover sm:h-56 md:h-64 lg:h-72"
+				src="https://images.unsplash.com/photo-1567306295427-94503f8300d7?w=1600&h=600&fit=crop&q=80"
+				alt="Vibrant produce on display at a farmers market — green tomatillos, peppers, and herbs"
+				class="h-48 w-full object-cover sm:h-64 md:h-72 lg:h-96"
 				loading="lazy"
 			/>
 		</div>
@@ -601,9 +601,9 @@
 	<div class="mx-auto max-w-6xl">
 		<div class="mb-12 overflow-hidden rounded-2xl">
 			<img
-				src="https://images.unsplash.com/photo-1698093121320-9df031f3e414?w=1600&h=400&fit=crop&q=80"
-				alt="A baker kneading dough on a wooden table"
-				class="h-48 w-full object-cover sm:h-56 md:h-64 lg:h-72"
+				src="https://images.unsplash.com/photo-1628927124199-a8a2a5394392?w=1600&h=600&fit=crop&q=80"
+				alt="Florist's workspace — fresh flowers, ribbon, and tools laid out on a wooden floor"
+				class="h-48 w-full object-cover sm:h-64 md:h-72 lg:h-96"
 				loading="lazy"
 			/>
 		</div>
@@ -667,9 +667,9 @@
 	<div class="mx-auto max-w-4xl">
 		<div class="mb-12 overflow-hidden rounded-2xl">
 			<img
-				src="https://images.unsplash.com/photo-1477524076598-003de1c88dff?w=1600&h=400&fit=crop&q=80"
-				alt="A vendor holding a sunflower bouquet at a farmers market"
-				class="h-48 w-full object-cover sm:h-56 md:h-64 lg:h-72"
+				src="https://images.unsplash.com/photo-1608198093002-ad4e005484ec?w=1600&h=400&fit=crop&q=80"
+				alt="Freshly baked brown bread in a wicker basket"
+				class="h-48 w-full object-cover sm:h-52 md:h-64 lg:h-72"
 				loading="lazy"
 			/>
 		</div>
@@ -992,15 +992,18 @@
 	class="relative overflow-hidden bg-primary px-6 py-20"
 	style="
 		background-image:
-			linear-gradient(oklch(0.55 0.16 152.75 / 0.88), oklch(0.45 0.16 152.75 / 0.88)),
-			url('https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=1600&h=600&fit=crop&q=80');
+			
+			url('https://images.unsplash.com/photo-1488459716781-31db52582fe9?fit=crop&q=80');
+      
 		background-size: cover;
 		background-position: center;
 	"
 >
-	<div class="mx-auto max-w-2xl text-center">
-		<h2 class="text-3xl font-bold text-white sm:text-4xl">Ready to take your first pre-order?</h2>
-		<p class="mt-4 text-lg text-primary-foreground/80">
+	<div class="mx-auto max-w-2xl rounded-xl bg-background/40 px-10 py-12 text-center">
+		<h2 class="text-3xl font-bold text-white text-shadow-lg sm:text-4xl">
+			Ready to take your first pre-order?
+		</h2>
+		<p class="mt-4 text-lg font-semibold text-primary-foreground text-shadow-md">
 			Set up your page today. Free, no credit card required.
 		</p>
 		<a

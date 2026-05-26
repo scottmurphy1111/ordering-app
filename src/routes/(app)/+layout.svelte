@@ -269,7 +269,7 @@
 	</aside>
 
 	<!-- Main content -->
-	<main bind:this={mainEl} class="flex flex-1 flex-col overflow-y-auto">
+	<main bind:this={mainEl} class="bg-paper flex flex-1 flex-col overflow-y-auto">
 		<!-- Mobile top bar -->
 		<header
 			class="sticky top-0 z-30 flex items-center gap-3 border-b bg-gray-900 px-4 py-3 md:static md:z-auto md:hidden print:hidden"

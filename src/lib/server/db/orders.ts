@@ -46,11 +46,11 @@ export const orders = pgTable(
 		promoCode: varchar('promo_code', { length: 50 }),
 
 		notes: text('notes'),
-		scheduledFor: timestamp('scheduled_for'),
-		proposedDate: timestamp('proposed_date'),
+		scheduledFor: timestamp('scheduled_for', { withTimezone: true }),
+		proposedDate: timestamp('proposed_date', { withTimezone: true }),
 		proposedReason: text('proposed_reason'),
-		proposedAt: timestamp('proposed_at'),
-		estimatedReadyTime: timestamp('estimated_ready_time'),
+		proposedAt: timestamp('proposed_at', { withTimezone: true }),
+		estimatedReadyTime: timestamp('estimated_ready_time', { withTimezone: true }),
 
 		// Pickup Windows (Phase 1 — columns dormant until Phase 5 checkout integration)
 		pickupWindowId: integer('pickup_window_id').references(() => pickupWindows.id, {
@@ -74,8 +74,8 @@ export const orders = pgTable(
 		stripePaymentMethodId: varchar('stripe_payment_method_id', { length: 255 }),
 		metadata: jsonb('metadata').default({}),
 
-		createdAt: timestamp('created_at').defaultNow().notNull(),
-		updatedAt: timestamp('updated_at').defaultNow().notNull()
+		createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+		updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull()
 	},
 	(table) => [
 		index('orders_vendor_idx').on(table.vendorId),
@@ -91,7 +91,9 @@ export const orderItems = pgTable('order_items', {
 	orderId: integer('order_id')
 		.notNull()
 		.references(() => orders.id, { onDelete: 'cascade' }),
-	catalogItemId: integer('catalog_item_id').references(() => catalogItems.id),
+	catalogItemId: integer('catalog_item_id').references(() => catalogItems.id, {
+		onDelete: 'set null'
+	}),
 
 	name: varchar('name', { length: 255 }).notNull(),
 	quantity: integer('quantity').notNull().default(1),

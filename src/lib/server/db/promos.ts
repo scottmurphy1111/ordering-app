@@ -24,9 +24,9 @@ export const promoCodes = pgTable(
 		minOrderAmount: integer('min_order_amount').default(0).notNull(),
 		maxUses: integer('max_uses'),
 		usedCount: integer('used_count').default(0).notNull(),
-		expiresAt: timestamp('expires_at'),
+		expiresAt: timestamp('expires_at', { withTimezone: true }),
 		isActive: boolean('is_active').default(true).notNull(),
-		createdAt: timestamp('created_at').defaultNow().notNull()
+		createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull()
 	},
 	(table) => [
 		index('promo_codes_vendor_idx').on(table.vendorId),

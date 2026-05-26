@@ -99,6 +99,33 @@
 		);
 	}
 
+	function formatTooltipDate(dateStr: string): string {
+		const [y, m, d] = dateStr.split('-').map(Number);
+		const date = new Date(Date.UTC(y, m - 1, d, 12, 0, 0));
+		return date.toLocaleDateString('en-US', {
+			weekday: 'short',
+			month: 'short',
+			day: 'numeric',
+			timeZone: 'UTC'
+		});
+	}
+
+	function formatXAxisLabel(dateStr: string): string {
+		const [, m, d] = dateStr.split('-');
+		return `${Number(m)}/${Number(d)}`;
+	}
+
+	function getBarAriaLabel(day: StackedDay): string {
+		if (day.totalCount === 0) {
+			return `${formatTooltipDate(day.date)}: no orders`;
+		}
+		const totalStr =
+			chartMode === 'revenue'
+				? `${fmt(day.totalRevenue)} in ${day.totalCount} ${day.totalCount === 1 ? 'order' : 'orders'}`
+				: `${day.totalCount} ${day.totalCount === 1 ? 'order' : 'orders'} (${fmt(day.totalRevenue)})`;
+		return `${formatTooltipDate(day.date)}: ${totalStr}`;
+	}
+
 	const totalStatusCount = $derived(statusBreakdown.reduce((s, r) => s + r.count, 0));
 
 	// ── Status filter (client-side recompute for current period) ─────
@@ -111,36 +138,138 @@
 		'cancelled'
 	] as const;
 
-	const activeStatuses = $state(new SvelteSet<string>(ALL_STATUSES));
+	// Default filter state: all statuses except cancelled.
+	const DEFAULT_STATUSES = new Set<string>([
+		'received',
+		'confirmed',
+		'preparing',
+		'ready',
+		'fulfilled'
+	]);
 
-	function toggleStatus(status: string) {
-		if (activeStatuses.has(status)) activeStatuses.delete(status);
-		else activeStatuses.add(status);
-	}
-	function resetStatuses() {
-		activeStatuses.clear();
-		for (const s of ALL_STATUSES) activeStatuses.add(s);
-	}
+	// Stack order (bottom → top): cool-to-warm. Cancelled sits visually on top.
+	const STACK_ORDER = [
+		'received',
+		'confirmed',
+		'preparing',
+		'ready',
+		'fulfilled',
+		'cancelled'
+	] as const;
 
-	const filterActive = $derived(activeStatuses.size !== ALL_STATUSES.length);
+	const activeStatuses = $state(new SvelteSet<string>(DEFAULT_STATUSES));
 
-	const filteredDailyData = $derived.by(() => {
-		if (!filterActive) return dailyData;
-		const map = new SvelteMap<string, { revenue: number; count: number }>();
-		for (const d of dailyData) map.set(d.date, { revenue: 0, count: 0 });
-		for (const o of recentOrdersForFilter) {
-			if (!activeStatuses.has(o.status)) continue;
-			const entry = map.get(o.date);
-			if (entry) {
-				entry.revenue += o.total;
-				entry.count += 1;
-			}
-		}
-		return Array.from(map.entries()).map(([date, v]) => ({ date, ...v }));
+	const isDefaultState = $derived.by(() => {
+		if (activeStatuses.size !== DEFAULT_STATUSES.size) return false;
+		for (const s of DEFAULT_STATUSES) if (!activeStatuses.has(s)) return false;
+		return true;
 	});
 
-	const filteredRevenue = $derived(filteredDailyData.reduce((s, d) => s + d.revenue, 0));
-	const dataPointsWithRevenue = $derived(filteredDailyData.filter((d) => d.revenue > 0).length);
+	const isolatedStatus = $derived.by(() => {
+		if (activeStatuses.size !== 1) return null;
+		return [...activeStatuses][0];
+	});
+
+	const filterActive = $derived(!isDefaultState);
+
+	function clickPill(status: string) {
+		if (isolatedStatus === status) {
+			activeStatuses.clear();
+			for (const s of DEFAULT_STATUSES) activeStatuses.add(s);
+			return;
+		}
+		if (isDefaultState) {
+			activeStatuses.clear();
+			activeStatuses.add(status);
+			return;
+		}
+		if (activeStatuses.has(status)) {
+			activeStatuses.delete(status);
+		} else {
+			activeStatuses.add(status);
+		}
+	}
+
+	function resetStatuses() {
+		activeStatuses.clear();
+		for (const s of DEFAULT_STATUSES) activeStatuses.add(s);
+	}
+
+	// Toggle: revenue vs count
+	let chartMode = $state<'revenue' | 'count'>('revenue');
+
+	// Per-day per-status aggregation built from recentOrdersForFilter.
+	type StackSegment = { status: string; revenue: number; count: number };
+	type StackedDay = {
+		date: string;
+		segments: StackSegment[];
+		totalRevenue: number;
+		totalCount: number;
+	};
+
+	const stackedDaily = $derived.by<StackedDay[]>(() => {
+		const dateOrder: string[] = dailyData.map((d) => d.date);
+		const map = new SvelteMap<string, SvelteMap<string, { revenue: number; count: number }>>();
+		for (const d of dailyData) {
+			const inner = new SvelteMap<string, { revenue: number; count: number }>();
+			for (const s of STACK_ORDER) inner.set(s, { revenue: 0, count: 0 });
+			map.set(d.date, inner);
+		}
+
+		for (const o of recentOrdersForFilter) {
+			if (!activeStatuses.has(o.status)) continue;
+			const day = map.get(o.date);
+			if (!day) continue;
+			const seg = day.get(o.status);
+			if (!seg) continue;
+			seg.revenue += o.total;
+			seg.count += 1;
+		}
+
+		return dateOrder.map((date) => {
+			const inner = map.get(date)!;
+			const segments: StackSegment[] = STACK_ORDER.map((status) => ({
+				status,
+				...inner.get(status)!
+			})).filter((s) => s.revenue > 0 || s.count > 0);
+			const totalRevenue = segments.reduce((s, x) => s + x.revenue, 0);
+			const totalCount = segments.reduce((s, x) => s + x.count, 0);
+			return { date, segments, totalRevenue, totalCount };
+		});
+	});
+
+	const filteredRevenue = $derived(stackedDaily.reduce((s, d) => s + d.totalRevenue, 0));
+	const filteredCount = $derived(stackedDaily.reduce((s, d) => s + d.totalCount, 0));
+	const dataPointsWithRevenue = $derived(stackedDaily.filter((d) => d.totalRevenue > 0).length);
+
+	const maxDailyValue = $derived(
+		Math.max(
+			...stackedDaily.map((d) => (chartMode === 'revenue' ? d.totalRevenue : d.totalCount)),
+			...stackedDaily.map((_, i) => {
+				if (!showPriorOverlay) return 0;
+				const prior = dailyPrevByOffset.get(i);
+				if (!prior) return 0;
+				return chartMode === 'revenue' ? prior.revenue : prior.count;
+			}),
+			1
+		)
+	);
+
+	// Y-axis tick values (0 / mid / max), with "nice" rounding for display.
+	const yTicks = $derived.by(() => {
+		const max = maxDailyValue;
+		const niceMax = chartMode === 'revenue' ? Math.ceil(max / 100) * 100 : Math.ceil(max);
+		const niceMid = Math.round(niceMax / 2);
+		return { zero: 0, mid: niceMid, max: niceMax };
+	});
+
+	// Adaptive x-axis label density.
+	const labelStride = $derived.by(() => {
+		const n = stackedDaily.length;
+		if (n <= 14) return 1;
+		if (n <= 45) return 3;
+		return 7;
+	});
 
 	// ── Previous-period overlay (hidden when filter active) ──────────
 	const showPriorOverlay = $derived(!filterActive && dailyDataPrev.some((d) => d.revenue > 0));
@@ -153,21 +282,17 @@
 		return map;
 	});
 
-	// Shared y-scale: both current and prior bars use the same max so the visual
-	// comparison is honest. When filter is active, fall back to filtered current only.
-	const maxDailyAcrossBoth = $derived(
-		filterActive
-			? Math.max(...filteredDailyData.map((d) => d.revenue), 1)
-			: Math.max(
-					...filteredDailyData.map((d) => d.revenue),
-					...dailyDataPrev.map((d) => d.revenue),
-					1
-				)
-	);
-
 	const summaryStats = $derived([
 		{ label: 'Revenue', value: fmt(kpis.revenue), positive: true },
 		{ label: 'Orders', value: kpis.ordersCount },
+		{
+			label: 'Items',
+			value: kpis.itemsProduced.toLocaleString(),
+			sublabel:
+				kpis.itemsProducedChange !== null
+					? `${kpis.itemsProducedChange >= 0 ? '+' : ''}${kpis.itemsProducedChange.toFixed(0)}% vs prev`
+					: undefined
+		},
 		{ label: 'Avg order', value: fmt(kpis.avgOrderValue) },
 		{
 			label: 'Fulfilment rate',
@@ -196,8 +321,8 @@
 		received: 'bg-blue-300',
 		confirmed: 'bg-blue-400',
 		preparing: 'bg-amber-400',
-		ready: 'bg-success/70',
-		fulfilled: 'bg-success',
+		ready: 'bg-green-300',
+		fulfilled: 'bg-green-600',
 		cancelled: 'bg-red-300'
 	};
 
@@ -383,7 +508,7 @@
 	<OrdersSummaryBar stats={summaryStats} />
 
 	<!-- ── Daily revenue chart ──────────────────────────────────── -->
-	<Card class="mb-6 shadow-sm">
+	<Card class="mb-6 overflow-visible shadow-sm">
 		<CardContent>
 			<div class="mb-4 flex items-center justify-between">
 				<div>
@@ -391,98 +516,164 @@
 					<p class="mt-0.5 text-xs text-gray-400">Last {rangeDays} days</p>
 				</div>
 				<div class="text-right">
-					<p class="text-lg font-semibold text-gray-900">{fmt(filteredRevenue)}</p>
+					<p class="text-lg font-semibold text-gray-900">
+						{chartMode === 'revenue' ? fmt(filteredRevenue) : filteredCount.toLocaleString()}
+					</p>
 					<p class="text-xs text-gray-400">
-						{filterActive
-							? `${activeStatuses.size}/${ALL_STATUSES.length} statuses`
-							: 'total this period'}
+						{#if isDefaultState}
+							{chartMode === 'revenue' ? 'total this period' : 'orders this period'}
+						{:else if isolatedStatus}
+							{isolatedStatus} only
+						{:else}
+							{activeStatuses.size}/{ALL_STATUSES.length} statuses
+						{/if}
 					</p>
 				</div>
 			</div>
 
-			<!-- Status filter pills -->
-			<div class="mb-3 flex flex-wrap items-center gap-1.5 text-xs">
-				<span class="text-muted-foreground">Statuses:</span>
-				{#each ALL_STATUSES as status (status)}
-					{@const active = activeStatuses.has(status)}
-					<button
-						type="button"
-						onclick={() => toggleStatus(status)}
-						aria-pressed={active}
-						class="rounded-full border px-2 py-0.5 capitalize transition-colors {active
-							? `${statusBarColor[status]} border-transparent text-foreground`
-							: 'border-border bg-background text-muted-foreground hover:border-foreground/30'}"
-					>
-						{status}
-					</button>
-				{/each}
-				{#if filterActive}
-					<button
-						type="button"
-						onclick={resetStatuses}
-						class="ml-1 text-xs text-muted-foreground hover:text-foreground"
-					>
-						Reset
-					</button>
-				{/if}
+			<!-- Chart with y-axis + gridlines + stacked bars -->
+			<div class="relative">
+				<!-- Y-axis labels (3 ticks: max / mid / 0) -->
+				<div
+					class="pointer-events-none absolute top-0 left-0 flex h-36 w-10 flex-col justify-between text-right text-[10px] text-muted-foreground"
+				>
+					<span>{chartMode === 'revenue' ? fmt(yTicks.max) : yTicks.max}</span>
+					<span>{chartMode === 'revenue' ? fmt(yTicks.mid) : yTicks.mid}</span>
+					<span>0</span>
+				</div>
+
+				<!-- Horizontal gridlines (dashed, behind bars) -->
+				<div
+					class="pointer-events-none absolute top-0 right-0 left-12 flex h-36 flex-col justify-between"
+				>
+					<div class="border-t border-dashed border-muted/40"></div>
+					<div class="border-t border-dashed border-muted/40"></div>
+					<div class="border-t border-dashed border-muted/40"></div>
+				</div>
+
+				<!-- Bars container (offset by y-axis width) -->
+				<div class="ml-12 flex h-36 items-end gap-px">
+					{#each stackedDaily as day, i (day.date)}
+						{@const total = chartMode === 'revenue' ? day.totalRevenue : day.totalCount}
+						{@const totalHeight =
+							total === 0 ? 2 : Math.max(4, Math.round((total / maxDailyValue) * 144))}
+						{@const priorRevenue = dailyPrevByOffset.get(i)?.revenue ?? 0}
+						{@const priorCount = dailyPrevByOffset.get(i)?.count ?? 0}
+						{@const priorTotal = chartMode === 'revenue' ? priorRevenue : priorCount}
+						{@const priorHeight =
+							priorTotal === 0 ? 0 : Math.max(4, Math.round((priorTotal / maxDailyValue) * 144))}
+
+						<div
+							class="group relative flex flex-1 flex-col items-end justify-end focus-within:outline-none"
+							tabindex="0"
+							role="button"
+							aria-label={getBarAriaLabel(day)}
+						>
+							<!-- Prior period bar (flat gray, full width, behind) -->
+							{#if showPriorOverlay && priorHeight > 0}
+								<div
+									class="absolute right-0 bottom-0 w-full rounded-sm bg-muted-foreground/20"
+									style="height: {priorHeight}px;"
+									aria-hidden="true"
+								></div>
+							{/if}
+
+							<!-- Current bar: stack of segments, 70% width, bottom-to-top -->
+							{#if total > 0}
+								<div
+									class="relative flex w-[70%] flex-col-reverse justify-end"
+									style="height: {totalHeight}px;"
+								>
+									{#each day.segments as seg (seg.status)}
+										{@const segValue = chartMode === 'revenue' ? seg.revenue : seg.count}
+										{@const segHeight = Math.max(1, Math.round((segValue / total) * totalHeight))}
+										<div
+											class="{statusBarColor[seg.status]} transition-colors group-hover:opacity-90"
+											style="height: {segHeight}px;"
+										></div>
+									{/each}
+								</div>
+							{:else}
+								<!-- Empty day: 2px sliver baseline -->
+								<div class="w-[70%] rounded-sm bg-muted/30" style="height: 2px;"></div>
+							{/if}
+
+							<!-- Tooltip -->
+							{#if total > 0 || (showPriorOverlay && priorTotal > 0)}
+								<div
+									class="pointer-events-none absolute bottom-full left-1/2 z-10 mb-1.5 hidden -translate-x-1/2 flex-col items-center group-focus-within:flex group-hover:flex"
+								>
+									<div
+										class="rounded-md bg-gray-900 px-3 py-2 text-xs whitespace-nowrap text-white shadow-lg"
+									>
+										<p class="mb-1 font-semibold">{formatTooltipDate(day.date)}</p>
+										{#if total > 0}
+											<div class="space-y-0.5 border-t border-white/15 pt-1.5">
+												{#each day.segments as seg (seg.status)}
+													<div class="flex items-center gap-1.5">
+														<span
+															class="inline-block h-2 w-2 rounded-sm {statusBarColor[seg.status]}"
+														></span>
+														<span class="capitalize">{seg.status}</span>
+														<span class="ml-auto pl-2 font-medium">
+															{chartMode === 'revenue' ? fmt(seg.revenue) : seg.count}
+														</span>
+													</div>
+												{/each}
+											</div>
+											<div
+												class="mt-1.5 flex items-center gap-3 border-t border-white/15 pt-1.5 font-medium"
+											>
+												<span>Total</span>
+												<span class="ml-auto">
+													{#if chartMode === 'revenue'}
+														{fmt(day.totalRevenue)} ({day.totalCount}
+														{day.totalCount === 1 ? 'order' : 'orders'})
+													{:else}
+														{day.totalCount}
+														{day.totalCount === 1 ? 'order' : 'orders'} ({fmt(day.totalRevenue)})
+													{/if}
+												</span>
+											</div>
+										{:else}
+											<p class="text-muted-foreground">No orders</p>
+										{/if}
+										{#if showPriorOverlay && priorTotal > 0}
+											<div
+												class="mt-1.5 flex items-center gap-3 border-t border-white/15 pt-1.5 text-muted-foreground"
+											>
+												<span>Prior:</span>
+												<span class="ml-auto">
+													{#if chartMode === 'revenue'}
+														{fmt(priorRevenue)} ({priorCount}
+														{priorCount === 1 ? 'order' : 'orders'})
+													{:else}
+														{priorCount}
+														{priorCount === 1 ? 'order' : 'orders'} ({fmt(priorRevenue)})
+													{/if}
+												</span>
+											</div>
+										{/if}
+									</div>
+									<div class="-mt-1 h-1.5 w-1.5 rotate-45 bg-gray-900"></div>
+								</div>
+							{/if}
+						</div>
+					{/each}
+				</div>
 			</div>
 
-			<div class="flex h-36 items-end gap-px">
-				{#each filteredDailyData as day, i (day.date)}
-					{@const currentHeight =
-						day.revenue === 0
-							? 2
-							: Math.max(4, Math.round((day.revenue / maxDailyAcrossBoth) * 144))}
-					{@const priorRevenue = dailyPrevByOffset.get(i)?.revenue ?? 0}
-					{@const priorCount = dailyPrevByOffset.get(i)?.count ?? 0}
-					{@const priorHeight =
-						priorRevenue === 0
-							? 0
-							: Math.max(4, Math.round((priorRevenue / maxDailyAcrossBoth) * 144))}
-					<div class="group relative flex flex-1 flex-col items-end justify-end">
-						{#if showPriorOverlay && priorHeight > 0}
-							<div
-								class="absolute right-0 bottom-0 w-full rounded-sm bg-muted-foreground/20"
-								style="height: {priorHeight}px;"
-								aria-hidden="true"
-							></div>
-						{/if}
-						<div
-							class="relative w-[70%] rounded-sm bg-primary transition-colors group-hover:bg-primary/80"
-							style="height: {currentHeight}px;"
-						></div>
-						{#if day.revenue > 0 || (showPriorOverlay && priorRevenue > 0)}
-							<div
-								class="pointer-events-none absolute bottom-full left-1/2 z-10 mb-1.5 hidden -translate-x-1/2 flex-col items-center group-hover:flex"
-							>
-								<div
-									class="rounded-md bg-gray-900 px-2 py-1 text-xs whitespace-nowrap text-white shadow-lg"
-								>
-									<p class="font-medium">{fmt(day.revenue)}</p>
-									<p class="text-muted-foreground">
-										{day.count}
-										{day.count === 1 ? 'order' : 'orders'}
-									</p>
-									{#if showPriorOverlay && priorRevenue > 0}
-										<div class="mt-1 border-t border-white/10 pt-1">
-											<p class="text-muted-foreground">
-												Prior: {fmt(priorRevenue)} ({priorCount}
-												{priorCount === 1 ? 'order' : 'orders'})
-											</p>
-										</div>
-									{/if}
-								</div>
-								<div class="-mt-1 h-1.5 w-1.5 rotate-45 bg-gray-900"></div>
-							</div>
-						{/if}
+			<!-- Adaptive x-axis labels -->
+			<div class="mt-1.5 ml-12 flex gap-px">
+				{#each stackedDaily as day, i (day.date)}
+					<div class="flex-1 text-center text-[10px] text-muted-foreground">
+						{i % labelStride === 0 || i === stackedDaily.length - 1
+							? formatXAxisLabel(day.date)
+							: ''}
 					</div>
 				{/each}
 			</div>
-			<div class="mt-1.5 flex justify-between text-xs text-muted-foreground">
-				<span>{filteredDailyData[0]?.date.slice(5)}</span>
-				<span>{filteredDailyData[Math.floor(filteredDailyData.length / 2)]?.date.slice(5)}</span>
-				<span>{filteredDailyData[filteredDailyData.length - 1]?.date.slice(5)}</span>
-			</div>
+
 			{#if showPriorOverlay}
 				<div class="mt-2 flex items-center justify-end gap-3 text-xs text-muted-foreground">
 					<span class="flex items-center gap-1.5">
@@ -495,6 +686,58 @@
 					</span>
 				</div>
 			{/if}
+
+			<!-- Chart controls: toggle + status pills + reset -->
+			<div class="mt-3 flex flex-col gap-2 md:flex-row md:items-center md:justify-end">
+				<div class="flex items-center gap-1 rounded-md border bg-background p-0.5">
+					<button
+						type="button"
+						onclick={() => (chartMode = 'revenue')}
+						class="rounded px-2 py-0.5 text-xs transition-colors {chartMode === 'revenue'
+							? 'bg-foreground text-background'
+							: 'text-muted-foreground hover:text-foreground'}"
+						aria-pressed={chartMode === 'revenue'}
+					>
+						$ Revenue
+					</button>
+					<button
+						type="button"
+						onclick={() => (chartMode = 'count')}
+						class="rounded px-2 py-0.5 text-xs transition-colors {chartMode === 'count'
+							? 'bg-foreground text-background'
+							: 'text-muted-foreground hover:text-foreground'}"
+						aria-pressed={chartMode === 'count'}
+					>
+						# Orders
+					</button>
+				</div>
+
+				<div class="flex flex-wrap items-center gap-1.5 md:ml-2">
+					{#each ALL_STATUSES as status (status)}
+						{@const active = activeStatuses.has(status)}
+						<button
+							type="button"
+							onclick={() => clickPill(status)}
+							aria-pressed={active}
+							class="rounded-full border px-2 py-0.5 text-xs capitalize transition-colors {active
+								? `${statusBarColor[status]} border-transparent text-foreground`
+								: 'border-border bg-background text-muted-foreground hover:border-foreground/30'}"
+						>
+							{status}
+						</button>
+					{/each}
+					{#if filterActive}
+						<button
+							type="button"
+							onclick={resetStatuses}
+							class="ml-1 text-xs text-muted-foreground hover:text-foreground"
+						>
+							Reset
+						</button>
+					{/if}
+				</div>
+			</div>
+
 			{#if dataPointsWithRevenue < 5}
 				<p class="mt-2 text-center text-xs text-gray-400">
 					Not enough data yet — charts fill in as more orders come through.

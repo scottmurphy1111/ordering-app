@@ -28,7 +28,7 @@ export const catalogCategories = pgTable(
 		description: text('description'),
 		sortOrder: integer('sort_order').default(0),
 		isActive: boolean('is_active').default(true),
-		createdAt: timestamp('created_at').defaultNow()
+		createdAt: timestamp('created_at', { withTimezone: true }).defaultNow()
 	},
 	(table) => [index('catalog_categories_vendor_idx').on(table.vendorId)]
 );
@@ -68,8 +68,8 @@ export const catalogItems = pgTable(
 
 		status: itemStatusEnum('status').default('available').notNull(),
 		sortOrder: integer('sort_order').default(0),
-		createdAt: timestamp('created_at').defaultNow(),
-		updatedAt: timestamp('updated_at').defaultNow()
+		createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+		updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow()
 	},
 	(table) => [
 		index('catalog_items_vendor_idx').on(table.vendorId),

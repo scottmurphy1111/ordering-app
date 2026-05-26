@@ -35,7 +35,7 @@ export const systemEvents = pgTable(
 		status: varchar('status', { length: 20 }).notNull().default('ok'),
 		vendorId: integer('vendor_id').references(() => vendor.id, { onDelete: 'set null' }),
 		metadata: jsonb('metadata').$type<Record<string, unknown>>(),
-		createdAt: timestamp('created_at').defaultNow().notNull()
+		createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull()
 	},
 	(t) => [index('system_events_created_at_idx').on(t.createdAt)]
 );
