@@ -26,6 +26,7 @@ export function subscriptionAddonChangedEmail({
 		previewText: `${addonName} add-on ${isActivated ? 'activated' : 'deactivated'} on your Order Local account`,
 		content,
 		displayName: 'Order Local',
-		primaryColor: '#16a34a'
+		primaryColor: '#16a34a',
+		useOrderLocalPattern: true
 	});
 }

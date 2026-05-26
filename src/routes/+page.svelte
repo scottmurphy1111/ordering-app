@@ -999,7 +999,7 @@
 		background-position: center;
 	"
 >
-	<div class="mx-auto max-w-2xl rounded-xl bg-background/40 px-10 py-12 text-center">
+	<div class="mx-auto max-w-3xl rounded-xl bg-background/40 px-10 py-12 text-center">
 		<h2 class="text-3xl font-bold text-white text-shadow-lg sm:text-4xl">
 			Ready to take your first pre-order?
 		</h2>
@@ -1009,7 +1009,7 @@
 		<a
 			href={loginHref}
 			onclick={() => track('cta_click', { location: 'final_banner' })}
-			class="mt-8 inline-block rounded-xl bg-background px-10 py-3.5 text-base font-bold text-primary/90 shadow-md transition-colors hover:bg-white/90"
+			class="mt-8 inline-block rounded-xl bg-background px-10 py-3.5 text-base font-bold text-primary/90 shadow-lg transition-colors hover:bg-white/90"
 		>
 			Start for free
 		</a>

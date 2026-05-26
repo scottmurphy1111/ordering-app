@@ -153,6 +153,64 @@ async function _seed(vendorId: number, fixture: ArchetypeFixture): Promise<void>
 		);
 	}
 
+	// ── Special-order derived orders (quote-accepted flow simulation) ──────────
+	// Creates 1-3 orders with type='special_order' and catalog_item_id=null
+	// order_items. Mirrors what production looks like after a customer accepts a
+	// special-order quote. Count varies deterministically by archetype to keep
+	// dev data realistic (1 for some vendors, 2 or 3 for others).
+	const allSpecialOrderSamples = [
+		{ name: 'Custom order', priceCents: 8300, daysAgo: 3, status: 'fulfilled' as const },
+		{ name: 'Custom order', priceCents: 12500, daysAgo: 14, status: 'fulfilled' as const },
+		{ name: 'Custom order', priceCents: 6700, daysAgo: 25, status: 'preparing' as const }
+	];
+	const specialCount = (fixture.orderCounter % 3) + 1;
+	const specialSamples = allSpecialOrderSamples.slice(0, specialCount);
+
+	let specialOrderCounter = fixture.orderCounter;
+	for (const sample of specialSamples) {
+		specialOrderCounter += 1;
+		const createdAt = new Date(Date.now() - sample.daysAgo * 24 * 60 * 60 * 1000);
+		const scheduledFor = new Date(createdAt.getTime() + 5 * 24 * 60 * 60 * 1000);
+		const lineItems = [
+			{
+				name: sample.name,
+				basePrice: sample.priceCents,
+				quantity: 1,
+				selectedModifiers: []
+			}
+		];
+		const [newOrder] = await db
+			.insert(orders)
+			.values({
+				vendorId,
+				orderNumber: `S-${specialOrderCounter}`,
+				type: 'special_order',
+				status: sample.status,
+				paymentStatus: 'paid',
+				pickupType: 'custom_date',
+				pickupMode: 'custom_date',
+				scheduledFor,
+				subtotal: sample.priceCents,
+				tax: 0,
+				tip: 0,
+				total: sample.priceCents,
+				items: lineItems,
+				customerName: 'Test Customer',
+				customerEmail: 'test@example.com',
+				createdAt
+			})
+			.returning({ id: orders.id });
+
+		await db.insert(orderItems).values({
+			orderId: newOrder.id,
+			catalogItemId: null,
+			name: sample.name,
+			quantity: 1,
+			unitPrice: sample.priceCents,
+			selectedModifiers: []
+		});
+	}
+
 	// ── Operating hours ─────────────────────────────────────────────────────────
 	if (fixture.hours.length > 0) {
 		await db.insert(vendorHours).values(

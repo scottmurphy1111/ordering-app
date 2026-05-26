@@ -1,10 +1,16 @@
+// Hardcoded production URL — emails ship from server-side runtime and the
+// asset must be reachable from any recipient's email client. Outlook desktop
+// ignores background-image on <td> and falls back to the solid color (acceptable).
+const PATTERN_URL = 'https://getorderlocal.com/email-assets/pattern-header.png';
+
 export function emailWrapper({
 	title,
 	previewText,
 	content,
 	displayName,
 	primaryColor = '#000000',
-	hideOrderLocalBranding = false
+	hideOrderLocalBranding = false,
+	useOrderLocalPattern = false
 }: {
 	title: string;
 	previewText: string;
@@ -12,6 +18,7 @@ export function emailWrapper({
 	displayName: string;
 	primaryColor?: string;
 	hideOrderLocalBranding?: boolean;
+	useOrderLocalPattern?: boolean;
 }) {
 	const footerRow = hideOrderLocalBranding
 		? ''
@@ -22,6 +29,10 @@ export function emailWrapper({
               </p>
             </td>
           </tr>`;
+
+	const headerStyle = useOrderLocalPattern
+		? `background-color:${primaryColor};background-image:url('${PATTERN_URL}');background-repeat:no-repeat;background-position:center;background-size:cover;padding:24px 32px;border-radius:12px 12px 0 0;`
+		: `background:${primaryColor};padding:24px 32px;border-radius:12px 12px 0 0;`;
 
 	return `<!DOCTYPE html>
 <html lang="en">
@@ -39,7 +50,7 @@ export function emailWrapper({
 
           <!-- Header -->
           <tr>
-            <td style="background:${primaryColor};padding:24px 32px;border-radius:12px 12px 0 0;">
+            <td style="${headerStyle}">
               <p style="margin:0;color:#ffffff;font-size:18px;font-weight:700;">${displayName}</p>
             </td>
           </tr>

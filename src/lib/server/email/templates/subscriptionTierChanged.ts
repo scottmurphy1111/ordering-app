@@ -28,6 +28,7 @@ export function subscriptionTierChangedEmail({
 		previewText: `Your Order Local plan changed from ${fromPlanName} to ${toPlanName}`,
 		content,
 		displayName: 'Order Local',
-		primaryColor: '#16a34a'
+		primaryColor: '#16a34a',
+		useOrderLocalPattern: true
 	});
 }

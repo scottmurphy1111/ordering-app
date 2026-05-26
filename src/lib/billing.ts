@@ -80,7 +80,7 @@ export const ADDONS = [
 		price: 29,
 		icon: 'mdi:chart-line',
 		description:
-			'Peak hours heatmap, customer retention, top items by revenue, revenue by category, and CSV export of orders & items.'
+			'Operational metrics (peak hours, busiest pickup window, lead time, cancellation trend), customer retention, revenue by category, top items by revenue, and CSV export.'
 	},
 	{
 		key: 'loyalty',

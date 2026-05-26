@@ -25,6 +25,7 @@ export function subscriptionReactivatedEmail({
 		previewText: `Your ${planName} subscription will continue to renew`,
 		content,
 		displayName: 'Order Local',
-		primaryColor: '#16a34a'
+		primaryColor: '#16a34a',
+		useOrderLocalPattern: true
 	});
 }

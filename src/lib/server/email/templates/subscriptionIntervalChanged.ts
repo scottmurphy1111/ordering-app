@@ -38,6 +38,7 @@ export function subscriptionIntervalChangedEmail({
 		previewText: `Your Order Local ${planName} plan is now billed ${toLabel}`,
 		content,
 		displayName: 'Order Local',
-		primaryColor: '#16a34a'
+		primaryColor: '#16a34a',
+		useOrderLocalPattern: true
 	});
 }

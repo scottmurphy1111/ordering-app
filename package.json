@@ -21,6 +21,7 @@
 		"db:push": "drizzle-kit push",
 		"db:reseed": "bun scripts/reseed-dev-vendor.ts",
 		"db:delete-vendor": "bun scripts/delete-vendor.ts",
+		"email:gen-pattern": "bun scripts/generate-email-pattern.ts",
 		"db:studio": "drizzle-kit studio",
 		"cron:materialize": "bun -e \"const r=await fetch('http://localhost:5173/api/cron/materialize',{headers:{Authorization:'Bearer '+process.env.CRON_SECRET}});console.log(JSON.stringify(await r.json(),null,2))\"",
 		"auth:schema": "better-auth generate --config src/lib/server/auth.ts --output src/lib/server/db/auth.schema.ts --yes"

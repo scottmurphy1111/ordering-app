@@ -86,8 +86,8 @@
 							class="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-colors {isActive(
 								item.href
 							)
-								? 'bg-gray-100 font-medium text-gray-900'
-								: 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'}"
+								? 'bg-stone-200 font-medium text-stone-900'
+								: 'text-stone-500 hover:bg-stone-200/50 hover:text-stone-900'}"
 						>
 							<Icon icon={item.icon} class="h-4 w-4 shrink-0" />
 							{item.label}

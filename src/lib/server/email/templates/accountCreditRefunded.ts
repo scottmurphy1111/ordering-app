@@ -22,6 +22,7 @@ export function accountCreditRefundedEmail({
 		previewText: `Your Order Local account credit of ${refundAmount} has been refunded to your card`,
 		content,
 		displayName: 'Order Local',
-		primaryColor: '#16a34a'
+		primaryColor: '#16a34a',
+		useOrderLocalPattern: true
 	});
 }

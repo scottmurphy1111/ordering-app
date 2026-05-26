@@ -27,6 +27,7 @@ export function pauseConfirmedEmail({
 		previewText: `Your Order Local ${planName} subscription is paused until ${pauseUntil}`,
 		content,
 		displayName: 'Order Local',
-		primaryColor: '#16a34a'
+		primaryColor: '#16a34a',
+		useOrderLocalPattern: true
 	});
 }

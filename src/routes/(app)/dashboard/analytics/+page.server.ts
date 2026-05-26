@@ -1,7 +1,13 @@
 import type { PageServerLoad } from './$types';
 import { db } from '$lib/server/db';
-import { eq, ne, and, gte, sql, desc } from 'drizzle-orm';
-import { orders, orderItems, catalogItems, catalogCategories } from '$lib/server/db/schema';
+import { eq, ne, and, gte, sql, desc, inArray } from 'drizzle-orm';
+import {
+	orders,
+	orderItems,
+	catalogItems,
+	catalogCategories,
+	pickupWindows
+} from '$lib/server/db/schema';
 import { effectiveHasAddon } from '$lib/billing';
 import { resolveRange } from '$lib/server/analytics-range';
 
@@ -30,9 +36,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 				? 90
 				: 30;
 
-	const now = new Date();
 	const startOfPrevRange = new Date(startOfRange.getTime() - rangeDays * 24 * 60 * 60 * 1000);
-	const startOf90Days = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
 
 	const [
 		recentOrders,
@@ -239,10 +243,51 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		date: new Date(o.createdAt).toISOString().slice(0, 10)
 	}));
 
+	// ── Top items: prior-period totals for the names in current top 5 ──
+	// Runs after Promise.all because it depends on knowing the current top 5 names.
+	// Cheap: at most 5 names × prior range × paid orders.
+	const topItemNames = topItems.map((i) => i.name);
+
+	let topItemsPrev: Array<{ name: string; totalQty: number; totalRevenue: number }> = [];
+	if (topItemNames.length > 0) {
+		topItemsPrev = await db
+			.select({
+				name: orderItems.name,
+				totalQty: sql<number>`cast(coalesce(sum(${orderItems.quantity}), 0) as int)`,
+				totalRevenue: sql<number>`cast(coalesce(sum(${orderItems.quantity} * ${orderItems.unitPrice}), 0) as int)`
+			})
+			.from(orderItems)
+			.innerJoin(orders, eq(orderItems.orderId, orders.id))
+			.where(
+				and(
+					eq(orders.vendorId, vendorId),
+					eq(orders.paymentStatus, 'paid'),
+					gte(orders.createdAt, startOfPrevRange),
+					sql`${orders.createdAt} < ${startOfRange}`,
+					inArray(orderItems.name, topItemNames)
+				)
+			)
+			.groupBy(orderItems.name);
+	}
+
 	// ── Advanced analytics ───────────────────────────────────────────
-	let peakHoursGrid: Array<{ dow: number; hour: number; count: number }> | null = null;
+	let peakHoursGrid: Array<{
+		dow: number;
+		hour: number;
+		count: number;
+		revenue: number;
+	}> | null = null;
 	let customerRetention: { total: number; returning: number; returnRate: number } | null = null;
 	let topItemsByRevenue: typeof topItems | null = null;
+	let busiestWindow: {
+		windowId: number;
+		name: string;
+		startsAt: Date;
+		orderCount: number;
+		totalRevenue: number;
+	} | null = null;
+	let leadTime: { avgLeadSeconds: number; sampleSize: number } | null = null;
+	let cancellationTrend: { current: number; prior: number } | null = null;
 	let revenueByCategory: Array<{
 		category: string;
 		totalRevenue: number;
@@ -250,19 +295,30 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 	}> | null = null;
 
 	if (hasAdvancedAnalytics) {
-		const [peakHoursRaw, customerData, topByRevenue, revByCategoryRaw] = await Promise.all([
+		const [
+			peakHoursRaw,
+			customerData,
+			topByRevenue,
+			busiestWindowRows,
+			leadTimeRows,
+			cancelledCurrentRows,
+			cancelledPriorRows,
+			revByCategoryRaw
+		] = await Promise.all([
 			db
 				.select({
 					dow: sql<number>`cast(EXTRACT(DOW FROM ${orders.createdAt}) as int)`,
 					hour: sql<number>`cast(EXTRACT(HOUR FROM ${orders.createdAt}) as int)`,
-					count: sql<number>`cast(count(*) as int)`
+					count: sql<number>`cast(count(*) as int)`,
+					revenue: sql<number>`cast(coalesce(sum(${orders.total}), 0) as int)`
 				})
 				.from(orders)
 				.where(
 					and(
 						eq(orders.vendorId, vendorId),
 						eq(orders.paymentStatus, 'paid'),
-						gte(orders.createdAt, startOf90Days)
+						gte(orders.createdAt, startOfRange),
+						sql`${orders.createdAt} <= ${endOfRange}`
 					)
 				)
 				.groupBy(
@@ -280,7 +336,9 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 					and(
 						eq(orders.vendorId, vendorId),
 						eq(orders.paymentStatus, 'paid'),
-						sql`${orders.customerEmail} is not null`
+						sql`${orders.customerEmail} is not null`,
+						gte(orders.createdAt, startOfRange),
+						sql`${orders.createdAt} <= ${endOfRange}`
 					)
 				)
 				.groupBy(orders.customerEmail),
@@ -305,9 +363,85 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 				.orderBy(desc(sql`sum(${orderItems.quantity} * ${orderItems.unitPrice})`))
 				.limit(5),
 
+			// Busiest pickup window for active range: top window by order count.
 			db
 				.select({
-					category: sql<string>`coalesce(${catalogCategories.name}, 'Uncategorized')`,
+					windowId: pickupWindows.id,
+					name: pickupWindows.name,
+					startsAt: pickupWindows.startsAt,
+					orderCount: sql<number>`cast(count(*) as int)`,
+					totalRevenue: sql<number>`cast(coalesce(sum(${orders.total}), 0) as int)`
+				})
+				.from(orders)
+				.innerJoin(pickupWindows, eq(orders.pickupWindowId, pickupWindows.id))
+				.where(
+					and(
+						eq(orders.vendorId, vendorId),
+						eq(orders.paymentStatus, 'paid'),
+						gte(orders.createdAt, startOfRange),
+						sql`${orders.createdAt} <= ${endOfRange}`
+					)
+				)
+				.groupBy(pickupWindows.id, pickupWindows.name, pickupWindows.startsAt)
+				.orderBy(desc(sql`count(*)`))
+				.limit(1),
+
+			// Average scheduled lead time = COALESCE(scheduled_for, windows.starts_at) - created_at.
+			db
+				.select({
+					avgLeadSeconds: sql<number>`cast(coalesce(avg(
+						extract(epoch from (coalesce(${orders.scheduledFor}, ${pickupWindows.startsAt}) - ${orders.createdAt}))
+					), 0) as double precision)`,
+					sampleSize: sql<number>`cast(count(case when ${orders.scheduledFor} is not null or ${pickupWindows.startsAt} is not null then 1 end) as int)`
+				})
+				.from(orders)
+				.leftJoin(pickupWindows, eq(orders.pickupWindowId, pickupWindows.id))
+				.where(
+					and(
+						eq(orders.vendorId, vendorId),
+						eq(orders.paymentStatus, 'paid'),
+						gte(orders.createdAt, startOfRange),
+						sql`${orders.createdAt} <= ${endOfRange}`,
+						sql`(${orders.scheduledFor} is not null or ${pickupWindows.startsAt} is not null)`
+					)
+				),
+
+			// Cancelled count, current range
+			db
+				.select({
+					cancelled: sql<number>`cast(count(*) as int)`
+				})
+				.from(orders)
+				.where(
+					and(
+						eq(orders.vendorId, vendorId),
+						eq(orders.status, 'cancelled'),
+						gte(orders.createdAt, startOfRange),
+						sql`${orders.createdAt} <= ${endOfRange}`
+					)
+				),
+
+			// Cancelled count, prior range
+			db
+				.select({
+					cancelled: sql<number>`cast(count(*) as int)`
+				})
+				.from(orders)
+				.where(
+					and(
+						eq(orders.vendorId, vendorId),
+						eq(orders.status, 'cancelled'),
+						gte(orders.createdAt, startOfPrevRange),
+						sql`${orders.createdAt} < ${startOfRange}`
+					)
+				),
+
+			// Revenue by category — range-scoped. Rows with catalog_item_id IS NULL
+			// (quote-derived "Custom order" rows) bucket into "Special orders" rather
+			// than "Uncategorized" (which is the genuine catalog configuration gap).
+			db
+				.select({
+					category: sql<string>`coalesce(${catalogCategories.name}, case when ${orderItems.catalogItemId} is null then 'Special orders' else 'Uncategorized' end)`,
 					totalRevenue: sql<number>`cast(sum(${orderItems.quantity} * ${orderItems.unitPrice}) as int)`,
 					totalQty: sql<number>`cast(sum(${orderItems.quantity}) as int)`
 				})
@@ -315,8 +449,17 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 				.innerJoin(orders, eq(orderItems.orderId, orders.id))
 				.leftJoin(catalogItems, eq(orderItems.catalogItemId, catalogItems.id))
 				.leftJoin(catalogCategories, eq(catalogItems.categoryId, catalogCategories.id))
-				.where(and(eq(orders.vendorId, vendorId), eq(orders.paymentStatus, 'paid')))
-				.groupBy(sql`coalesce(${catalogCategories.name}, 'Uncategorized')`)
+				.where(
+					and(
+						eq(orders.vendorId, vendorId),
+						eq(orders.paymentStatus, 'paid'),
+						gte(orders.createdAt, startOfRange),
+						sql`${orders.createdAt} <= ${endOfRange}`
+					)
+				)
+				.groupBy(
+					sql`coalesce(${catalogCategories.name}, case when ${orderItems.catalogItemId} is null then 'Special orders' else 'Uncategorized' end)`
+				)
 				.orderBy(desc(sql`sum(${orderItems.quantity} * ${orderItems.unitPrice})`))
 				.limit(6)
 		]);
@@ -332,6 +475,12 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		};
 
 		topItemsByRevenue = topByRevenue;
+		busiestWindow = busiestWindowRows[0] ?? null;
+		leadTime = leadTimeRows[0] ?? null;
+		cancellationTrend = {
+			current: cancelledCurrentRows[0]?.cancelled ?? 0,
+			prior: cancelledPriorRows[0]?.cancelled ?? 0
+		};
 		revenueByCategory = revByCategoryRaw;
 	}
 
@@ -359,11 +508,15 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		dailyDataPrev,
 		recentOrdersForFilter,
 		topItems,
+		topItemsPrev,
 		statusBreakdown,
 		typeBreakdown,
 		peakHoursGrid,
 		customerRetention,
 		topItemsByRevenue,
-		revenueByCategory
+		revenueByCategory,
+		busiestWindow,
+		leadTime,
+		cancellationTrend
 	};
 };

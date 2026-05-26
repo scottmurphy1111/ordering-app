@@ -47,6 +47,7 @@ export function subscriptionConfirmedEmail({
 		previewText: `Your Order Local ${planName} subscription is active — ${amount}/month`,
 		content,
 		displayName: 'Order Local',
-		primaryColor: '#16a34a'
+		primaryColor: '#16a34a',
+		useOrderLocalPattern: true
 	});
 }

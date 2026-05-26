@@ -30,6 +30,7 @@ export function pauseReminderEmail({
 		previewText: `Your Order Local ${planName} subscription resumes in ${daysRemaining} ${dayWord} on ${pauseUntil}`,
 		content,
 		displayName: 'Order Local',
-		primaryColor: '#16a34a'
+		primaryColor: '#16a34a',
+		useOrderLocalPattern: true
 	});
 }

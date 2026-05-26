@@ -25,6 +25,7 @@ export function subscriptionCancellationCompletedEmail({
 		previewText: `Your Order Local ${planName} subscription has ended`,
 		content,
 		displayName: 'Order Local',
-		primaryColor: '#16a34a'
+		primaryColor: '#16a34a',
+		useOrderLocalPattern: true
 	});
 }

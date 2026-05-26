@@ -4,7 +4,7 @@
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { Tabs, TabsList, TabsTrigger } from '$lib/components/ui/tabs';
-	import { Card, CardHeader, CardTitle, CardContent } from '$lib/components/ui/card';
+	import { Card, CardContent } from '$lib/components/ui/card';
 	import { Button } from '$lib/components/ui/button';
 	import * as Popover from '$lib/components/ui/popover';
 	import { Calendar } from '$lib/components/ui/calendar';
@@ -25,21 +25,42 @@
 		dailyDataPrev,
 		recentOrdersForFilter,
 		topItems,
+		topItemsPrev,
 		statusBreakdown,
 		typeBreakdown,
 		hasAdvancedAnalytics,
 		peakHoursGrid,
 		customerRetention,
 		revenueByCategory,
-		topItemsByRevenue
+		topItemsByRevenue,
+		busiestWindow,
+		leadTime,
+		cancellationTrend
 	} = $derived(data);
 
 	// ── Range controls state ────────────────────────────────────────
 	let fromOpen = $state(false);
 	let toOpen = $state(false);
 
-	const fromCalendarValue = $derived(data.fromDate ? parseDate(data.fromDate) : undefined);
-	const toCalendarValue = $derived(data.toDate ? parseDate(data.toDate) : undefined);
+	// Draft date state — the user's tentative pick, applied only via the Apply button.
+	let draftFromDate = $state<string | null>(null);
+	let draftToDate = $state<string | null>(null);
+
+	// Keep draft synced with applied state (e.g. after a preset switch or clear).
+	$effect(() => {
+		draftFromDate = data.fromDate;
+		draftToDate = data.toDate;
+	});
+
+	const draftFromCalendarValue = $derived(draftFromDate ? parseDate(draftFromDate) : undefined);
+	const draftToCalendarValue = $derived(draftToDate ? parseDate(draftToDate) : undefined);
+
+	const canApplyDraft = $derived(
+		draftFromDate !== null &&
+			draftToDate !== null &&
+			draftFromDate <= draftToDate &&
+			(draftFromDate !== data.fromDate || draftToDate !== data.toDate)
+	);
 
 	function formatPickerDate(dateStr: string): string {
 		const [y, m, d] = dateStr.split('-').map(Number);
@@ -48,6 +69,14 @@
 			day: 'numeric',
 			year: 'numeric'
 		});
+	}
+
+	function rangeLabel(d: typeof data): string {
+		if (d.rangeMode === 'custom' && d.fromDate && d.toDate) {
+			return `${formatPickerDate(d.fromDate)} → ${formatPickerDate(d.toDate)}`;
+		}
+		const days = d.rangeDays;
+		return `Last ${days} ${days === 1 ? 'day' : 'days'}`;
 	}
 
 	function setPreset(days: 7 | 30 | 90) {
@@ -60,12 +89,17 @@
 		);
 	}
 
-	function setCustomDate(which: 'from' | 'to', date: CalendarDate | undefined) {
+	function setDraftDate(which: 'from' | 'to', date: CalendarDate | undefined) {
+		const dateStr = date?.toString() ?? null;
+		if (which === 'from') draftFromDate = dateStr;
+		else draftToDate = dateStr;
+	}
+
+	function applyDraftDates() {
+		if (!canApplyDraft) return;
 		const p = new SvelteURLSearchParams();
-		const nextFrom = which === 'from' ? date?.toString() : data.fromDate;
-		const nextTo = which === 'to' ? date?.toString() : data.toDate;
-		if (nextFrom) p.set('from', nextFrom);
-		if (nextTo) p.set('to', nextTo);
+		if (draftFromDate) p.set('from', draftFromDate);
+		if (draftToDate) p.set('to', draftToDate);
 		const qs = p.toString();
 		goto(
 			qs ? resolve(`/dashboard/analytics?${qs}` as `/${string}`) : resolve('/dashboard/analytics'),
@@ -74,6 +108,8 @@
 	}
 
 	function clearCustomDates() {
+		draftFromDate = null;
+		draftToDate = null;
 		goto(resolve('/dashboard/analytics'), { replaceState: true });
 	}
 
@@ -91,6 +127,25 @@
 			? Math.max(...topItemsToShow.map((i) => i.totalRevenue), 1)
 			: Math.max(...topItemsToShow.map((i) => i.totalQty), 1)
 	);
+
+	function topItemDelta(item: {
+		name: string;
+		totalQty: number;
+		totalRevenue: number;
+	}): { kind: 'pct'; value: number } | { kind: 'new' } | { kind: 'none' } {
+		const prior = topItemsPrev.find((p) => p.name === item.name);
+		const currentMetric = topItemsSort === 'revenue' ? item.totalRevenue : item.totalQty;
+		const priorMetric = prior
+			? topItemsSort === 'revenue'
+				? prior.totalRevenue
+				: prior.totalQty
+			: 0;
+
+		if (priorMetric === 0 && currentMetric > 0) return { kind: 'new' };
+		if (priorMetric === 0) return { kind: 'none' };
+		const pct = ((currentMetric - priorMetric) / priorMetric) * 100;
+		return { kind: 'pct', value: pct };
+	}
 
 	function fmt(cents: number) {
 		return (
@@ -115,6 +170,16 @@
 		return `${Number(m)}/${Number(d)}`;
 	}
 
+	function formatLeadTime(seconds: number): string {
+		const hours = seconds / 3600;
+		const days = hours / 24;
+		if (days >= 2) return `${days.toFixed(1)} days`;
+		if (hours >= 2) return `${hours.toFixed(1)} hours`;
+		const minutes = seconds / 60;
+		if (minutes >= 2) return `${Math.round(minutes)} min`;
+		return `${Math.round(seconds)} sec`;
+	}
+
 	function getBarAriaLabel(day: StackedDay): string {
 		if (day.totalCount === 0) {
 			return `${formatTooltipDate(day.date)}: no orders`;
@@ -125,8 +190,6 @@
 				: `${day.totalCount} ${day.totalCount === 1 ? 'order' : 'orders'} (${fmt(day.totalRevenue)})`;
 		return `${formatTooltipDate(day.date)}: ${totalStr}`;
 	}
-
-	const totalStatusCount = $derived(statusBreakdown.reduce((s, r) => s + r.count, 0));
 
 	// ── Status filter (client-side recompute for current period) ─────
 	const ALL_STATUSES = [
@@ -326,17 +389,30 @@
 		cancelled: 'bg-red-300'
 	};
 
+	const statusLabel: Record<string, string> = {
+		received: 'Received',
+		confirmed: 'Confirmed',
+		preparing: 'Preparing',
+		ready: 'Ready',
+		fulfilled: 'Fulfilled',
+		cancelled: 'Cancelled',
+		scheduled: 'Scheduled',
+		pending_approval: 'Pending approval',
+		payment_failed: 'Payment failed'
+	};
+
 	const typeIcons: Record<string, string> = {
 		pickup: 'mdi:bag-personal-outline',
-		subscription: 'mdi:refresh-circle'
+		subscription: 'mdi:refresh-circle',
+		special_order: 'mdi:clipboard-edit-outline'
 	};
 
 	const typeLabels: Record<string, string> = {
 		pickup: 'Pickup',
-		subscription: 'Subscription'
+		subscription: 'Subscription',
+		special_order: 'Special order'
 	};
 
-	const totalTypeRevenue = $derived(typeBreakdown.reduce((s, r) => s + (r.revenue ?? 0), 0) || 1);
 	const maxCategoryRevenue = $derived(
 		Math.max(...(revenueByCategory ?? []).map((c) => c.totalRevenue), 1)
 	);
@@ -350,21 +426,29 @@
 	const DOW_ORDER = [1, 2, 3, 4, 5, 6, 0];
 	const DOW_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 	const HOURS = Array.from({ length: 24 }, (_, i) => i);
+	// Per-week framing for heatmap tooltips. Derived from the active range — heatmap
+	// is no longer hardcoded to 90 days.
+	const heatmapWeeks = $derived(Math.max(1, Math.round(data.rangeDays / 7)));
 
 	const heatmapLookup = $derived.by(() => {
-		const map = new SvelteMap<string, number>();
+		const map = new SvelteMap<string, { count: number; revenue: number }>();
 		for (const row of peakHoursGrid ?? []) {
-			map.set(`${row.dow}-${row.hour}`, row.count);
+			map.set(`${row.dow}-${row.hour}`, { count: row.count, revenue: row.revenue });
 		}
 		return map;
 	});
 
 	const maxHeatmapCount = $derived(Math.max(...(peakHoursGrid ?? []).map((r) => r.count), 1));
 
-	function heatmapCell(dow: number, hour: number): { count: number; opacity: number } {
-		const count = heatmapLookup.get(`${dow}-${hour}`) ?? 0;
+	function heatmapCell(
+		dow: number,
+		hour: number
+	): { count: number; revenue: number; opacity: number } {
+		const entry = heatmapLookup.get(`${dow}-${hour}`);
+		const count = entry?.count ?? 0;
+		const revenue = entry?.revenue ?? 0;
 		const opacity = count === 0 ? 0 : Math.max(0.08, count / maxHeatmapCount);
-		return { count, opacity };
+		return { count, revenue, opacity };
 	}
 
 	function fmtHour(h: number): string {
@@ -372,6 +456,65 @@
 		if (h === 12) return '12p';
 		return h < 12 ? `${h}a` : `${h - 12}p`;
 	}
+
+	function perWeekRate(count: number): string {
+		const rate = count / heatmapWeeks;
+		if (rate < 0.1) return '<0.1';
+		if (rate < 1) return rate.toFixed(1);
+		return Math.round(rate).toString();
+	}
+
+	function cellAriaLabel(
+		dow: number,
+		hour: number,
+		cell: { count: number; revenue: number },
+		di: number
+	): string {
+		if (cell.count === 0) return `${DOW_LABELS[di]} ${fmtHour(hour)}: no orders`;
+		const rate = perWeekRate(cell.count);
+		const rev = cell.revenue > 0 ? `, ${fmt(cell.revenue)}` : '';
+		return `${DOW_LABELS[di]} ${fmtHour(hour)}: ${cell.count} ${
+			cell.count === 1 ? 'order' : 'orders'
+		} (about ${rate} per week)${rev}`;
+	}
+
+	const peakCell = $derived.by<{
+		dow: number;
+		hour: number;
+		count: number;
+		revenue: number;
+	} | null>(() => {
+		if (!peakHoursGrid || peakHoursGrid.length === 0) return null;
+		let max = peakHoursGrid[0];
+		for (const row of peakHoursGrid) {
+			if (row.count > max.count) max = row;
+		}
+		return max;
+	});
+
+	const peakCellLabel = $derived.by(() => {
+		if (!peakCell) return null;
+		const dowIdx = DOW_ORDER.indexOf(peakCell.dow);
+		if (dowIdx < 0) return null;
+		return `${DOW_LABELS[dowIdx]} ${fmtHour(peakCell.hour)}`;
+	});
+
+	const legendBuckets = $derived.by<Array<{ label: string; opacity: number }>>(() => {
+		const max = maxHeatmapCount;
+		if (max <= 1) return [{ label: '1', opacity: 1 }];
+		const step = Math.max(1, Math.ceil(max / 5));
+		const buckets: Array<{ label: string; opacity: number }> = [];
+		for (let i = 0; i < 5; i++) {
+			const low = i * step + 1;
+			const high = Math.min(max, (i + 1) * step);
+			if (low > max) break;
+			const label = low === high ? `${low}` : `${low}–${high}`;
+			const opacity = Math.max(0.08, (i + 1) / 5);
+			buckets.push({ label, opacity });
+			if (high >= max) break;
+		}
+		return buckets;
+	});
 </script>
 
 <div>
@@ -422,21 +565,21 @@
 							<button
 								{...props}
 								type="button"
-								class="text-xs outline-none {data.fromDate
+								class="text-xs outline-none {draftFromDate
 									? 'text-foreground'
 									: 'text-muted-foreground'}"
 							>
-								{data.fromDate ? formatPickerDate(data.fromDate) : 'From'}
+								{draftFromDate ? formatPickerDate(draftFromDate) : 'From'}
 							</button>
 						{/snippet}
 					</Popover.Trigger>
 					<Popover.Content class="w-auto p-0" align="start">
 						<Calendar
 							type="single"
-							value={fromCalendarValue}
+							value={draftFromCalendarValue}
 							onValueChange={(date) => {
 								fromOpen = false;
-								setCustomDate('from', date as CalendarDate | undefined);
+								setDraftDate('from', date as CalendarDate | undefined);
 							}}
 						/>
 					</Popover.Content>
@@ -448,25 +591,35 @@
 							<button
 								{...props}
 								type="button"
-								class="text-xs outline-none {data.toDate
+								class="text-xs outline-none {draftToDate
 									? 'text-foreground'
 									: 'text-muted-foreground'}"
 							>
-								{data.toDate ? formatPickerDate(data.toDate) : 'To'}
+								{draftToDate ? formatPickerDate(draftToDate) : 'To'}
 							</button>
 						{/snippet}
 					</Popover.Trigger>
 					<Popover.Content class="w-auto p-0" align="start">
 						<Calendar
 							type="single"
-							value={toCalendarValue}
+							value={draftToCalendarValue}
 							onValueChange={(date) => {
 								toOpen = false;
-								setCustomDate('to', date as CalendarDate | undefined);
+								setDraftDate('to', date as CalendarDate | undefined);
 							}}
 						/>
 					</Popover.Content>
 				</Popover.Root>
+				<button
+					type="button"
+					onclick={applyDraftDates}
+					disabled={!canApplyDraft}
+					class="ml-1 rounded px-2 py-0.5 text-xs font-medium transition-colors {canApplyDraft
+						? 'bg-foreground text-background hover:bg-foreground/90'
+						: 'cursor-not-allowed bg-muted text-muted-foreground'}"
+				>
+					Apply
+				</button>
 				{#if data.rangeMode === 'custom'}
 					<button
 						type="button"
@@ -513,7 +666,7 @@
 			<div class="mb-4 flex items-center justify-between">
 				<div>
 					<h2 class="text-sm font-semibold text-gray-900">Daily revenue</h2>
-					<p class="mt-0.5 text-xs text-gray-400">Last {rangeDays} days</p>
+					<p class="mt-0.5 text-xs text-gray-400">{rangeLabel(data)}</p>
 				</div>
 				<div class="text-right">
 					<p class="text-lg font-semibold text-gray-900">
@@ -747,22 +900,14 @@
 	</Card>
 
 	<!-- ── Bottom grid ───────────────────────────────────────────── -->
-	<div class="grid gap-6 lg:grid-cols-3">
+	<div class="mb-6 grid gap-6 lg:grid-cols-3">
 		<!-- Top items -->
 		<Card class="self-start shadow-sm lg:col-span-2">
 			<CardContent>
 				<div class="mb-4 flex items-start justify-between gap-3">
 					<div>
 						<h2 class="text-sm font-semibold text-gray-900">Top items</h2>
-						<p class="mt-0.5 text-xs text-gray-400">
-							{#if data.rangeMode === 'custom'}
-								{data.fromDate ? formatPickerDate(data.fromDate) : '—'} to {data.toDate
-									? formatPickerDate(data.toDate)
-									: '—'}
-							{:else}
-								Last {rangeDays} days
-							{/if}
-						</p>
+						<p class="mt-0.5 text-xs text-gray-400">{rangeLabel(data)}</p>
 					</div>
 					{#if hasAdvancedAnalytics}
 						<Tabs
@@ -781,6 +926,7 @@
 				{:else}
 					<div class="space-y-3">
 						{#each topItemsToShow as item, i (item.name)}
+							{@const delta = topItemDelta(item)}
 							<div>
 								<div class="mb-1 flex items-center justify-between gap-2">
 									<div class="flex min-w-0 items-center gap-2">
@@ -789,9 +935,23 @@
 										>
 										<span class="truncate text-sm font-medium text-foreground">{item.name}</span>
 									</div>
-									<div class="flex shrink-0 items-center gap-3 text-xs text-muted-foreground">
-										<span>{item.totalQty} sold</span>
-										<span class="font-medium text-muted-foreground">{fmt(item.totalRevenue)}</span>
+									<div class="flex shrink-0 flex-col items-end gap-0.5">
+										<div class="flex items-center gap-3 text-xs text-muted-foreground">
+											<span>{item.totalQty} sold</span>
+											<span class="font-medium text-muted-foreground">{fmt(item.totalRevenue)}</span
+											>
+										</div>
+										{#if delta.kind === 'pct'}
+											<span
+												class="text-[11px] font-medium {delta.value >= 0
+													? 'text-emerald-600'
+													: 'text-red-500'}"
+											>
+												{delta.value >= 0 ? '+' : ''}{delta.value.toFixed(0)}% vs prev
+											</span>
+										{:else if delta.kind === 'new'}
+											<span class="text-[11px] font-medium text-emerald-600">New this period</span>
+										{/if}
 									</div>
 								</div>
 								<div class="h-1.5 w-full rounded-full bg-muted">
@@ -827,81 +987,66 @@
 
 		<!-- Right column -->
 		<div class="space-y-6">
-			<!-- Order types -->
+			<!-- Order breakdown (status + type) -->
 			<Card class="shadow-sm">
 				<CardContent>
-					<h2 class="mb-3 text-sm font-semibold text-foreground">Order types</h2>
-					{#if typeBreakdown.length === 0}
-						<p class="text-sm text-muted-foreground">No data yet.</p>
-					{:else}
-						<div class="space-y-2.5">
-							{#each typeBreakdown as row (row.type)}
-								<div>
-									<div class="mb-1 flex items-center justify-between text-xs">
-										<span class="inline-flex items-center gap-1 text-muted-foreground">
-											<Icon icon={typeIcons[row.type] ?? 'mdi:food'} class="h-3.5 w-3.5" />
-											{typeLabels[row.type] ?? row.type}
-										</span>
-										<span class="font-medium text-muted-foreground">{fmt(row.revenue ?? 0)}</span>
-									</div>
-									<div class="h-1.5 w-full rounded-full bg-muted">
-										<div
-											class="h-1.5 rounded-full bg-primary"
-											style="width: {Math.round(((row.revenue ?? 0) / totalTypeRevenue) * 100)}%"
-										></div>
-									</div>
-									<p class="mt-0.5 text-right text-xs text-muted-foreground">{row.count} orders</p>
-								</div>
-							{/each}
-						</div>
-					{/if}
-				</CardContent>
-			</Card>
+					<div class="mb-4">
+						<h2 class="text-sm font-semibold text-gray-900">Order breakdown</h2>
+						<p class="mt-0.5 text-xs text-gray-400">{rangeLabel(data)}</p>
+					</div>
 
-			<!-- Status breakdown -->
-			<Card class="shadow-sm">
-				<CardContent>
-					<h2 class="mb-3 text-sm font-semibold text-foreground">
-						Orders by status — last {rangeDays} days
-					</h2>
-					{#if statusBreakdown.length === 0}
-						<p class="text-sm text-muted-foreground">No data yet.</p>
+					{#if statusBreakdown.length === 0 && typeBreakdown.length === 0}
+						<p class="mt-3 text-sm text-muted-foreground">No data yet.</p>
 					{:else}
-						<div class="mb-3 flex h-3 w-full overflow-hidden rounded-full bg-muted">
-							{#each statusBreakdown as row (row.status)}
-								{@const widthPct = (row.count / totalStatusCount) * 100}
-								<div
-									class="group relative {statusBarColor[row.status] ??
-										'bg-muted'} transition-all hover:opacity-80"
-									style="width: {widthPct}%"
-								>
-									<div
-										class="pointer-events-none absolute bottom-full left-1/2 z-10 mb-1.5 hidden -translate-x-1/2 flex-col items-center group-hover:flex"
-									>
-										<div
-											class="rounded-md bg-gray-900 px-2 py-1 text-xs whitespace-nowrap text-white shadow-lg"
-										>
-											<p class="font-medium capitalize">{row.status}</p>
-											<p class="text-muted-foreground">
-												{row.count}
-												{row.count === 1 ? 'order' : 'orders'} ({widthPct.toFixed(1)}%)
-											</p>
+						<!-- By status -->
+						{#if statusBreakdown.length > 0}
+							<div class="mt-4">
+								<p class="mb-2 text-xs font-medium tracking-wide text-muted-foreground uppercase">
+									By status
+								</p>
+								<div class="space-y-1.5">
+									{#each statusBreakdown as row (row.status)}
+										<div class="flex items-center justify-between text-xs">
+											<StatusBadge variant={statusVariant[row.status] ?? 'subtle'}>
+												{statusLabel[row.status] ?? row.status}
+											</StatusBadge>
+											<span class="font-medium text-muted-foreground">{row.count}</span>
 										</div>
-										<div class="-mt-1 h-1.5 w-1.5 rotate-45 bg-gray-900"></div>
-									</div>
+									{/each}
 								</div>
-							{/each}
-						</div>
-						<div class="space-y-1.5">
-							{#each statusBreakdown as row (row.status)}
-								<div class="flex items-center justify-between text-xs">
-									<StatusBadge variant={statusVariant[row.status] ?? 'subtle'} class="capitalize">
-										{row.status}
-									</StatusBadge>
-									<span class="font-medium text-muted-foreground">{row.count}</span>
+							</div>
+						{/if}
+
+						<!-- Divider between subsections (only when both have data) -->
+						{#if statusBreakdown.length > 0 && typeBreakdown.length > 0}
+							<div class="my-4 border-t border-border/60"></div>
+						{/if}
+
+						<!-- By type -->
+						{#if typeBreakdown.length > 0}
+							<div>
+								<p class="mb-2 text-xs font-medium tracking-wide text-muted-foreground uppercase">
+									By type
+								</p>
+								<div class="space-y-1.5">
+									{#each typeBreakdown as row (row.type)}
+										<div class="flex items-center justify-between text-xs">
+											<span class="inline-flex items-center gap-1.5 text-foreground">
+												<Icon
+													icon={typeIcons[row.type] ?? 'mdi:food'}
+													class="h-3.5 w-3.5 text-muted-foreground"
+												/>
+												{typeLabels[row.type] ?? row.type}
+											</span>
+											<span class="flex items-center gap-3 text-muted-foreground">
+												<span>{row.count} {row.count === 1 ? 'order' : 'orders'}</span>
+												<span class="font-medium">{fmt(row.revenue ?? 0)}</span>
+											</span>
+										</div>
+									{/each}
 								</div>
-							{/each}
-						</div>
+							</div>
+						{/if}
 					{/if}
 				</CardContent>
 			</Card>
@@ -924,14 +1069,35 @@
 			</div>
 
 			<!-- Peak hours heatmap -->
-			<Card class="mb-6 shadow-sm">
-				<CardHeader class="border-b pb-3">
-					<CardTitle class="text-sm font-semibold">Peak hours — last 90 days</CardTitle>
-				</CardHeader>
-				<CardContent class="pt-4">
+			<Card class="mb-6 overflow-visible shadow-sm">
+				<CardContent>
+					<div class="mb-4">
+						<h2 class="text-sm font-semibold text-gray-900">Peak hours</h2>
+						<p class="mt-0.5 text-xs text-gray-400">{rangeLabel(data)}</p>
+					</div>
 					{#if (peakHoursGrid ?? []).length === 0}
 						<p class="text-sm text-muted-foreground">Not enough order data yet.</p>
 					{:else}
+						{#if peakCell && peakCellLabel}
+							<div
+								class="mb-3 flex flex-wrap items-baseline gap-x-2 gap-y-1 text-xs text-muted-foreground"
+							>
+								<span
+									>Peak: <strong class="font-semibold text-emerald-600">{peakCellLabel}</strong
+									></span
+								>
+								<span class="text-muted-foreground/60">·</span>
+								<span
+									>{peakCell.count}
+									{peakCell.count === 1 ? 'order' : 'orders'}</span
+								>
+								{#if peakCell.revenue > 0}
+									<span class="text-muted-foreground/60">·</span>
+									<span>{fmt(peakCell.revenue)}</span>
+								{/if}
+							</div>
+						{/if}
+
 						<div class="overflow-x-auto">
 							<div class="min-w-130">
 								<!-- Hour labels -->
@@ -948,47 +1114,75 @@
 								<!-- Grid rows -->
 								{#each DOW_ORDER as dow, di (dow)}
 									<div class="mb-0.5 flex items-center gap-1">
-										<div class="w-10 shrink-0 text-right text-[10px] text-muted-foreground">
+										<div
+											class="sticky left-0 z-10 w-10 shrink-0 bg-card pr-1 text-right text-[10px] text-muted-foreground"
+										>
 											{DOW_LABELS[di]}
 										</div>
 										<div class="flex flex-1 gap-0.5">
 											{#each HOURS as h (h)}
 												{@const cell = heatmapCell(dow, h)}
-												<div class="group relative flex-1">
+												{@const isSixHourMark = h > 0 && h % 6 === 0}
+												{@const ariaLabel = cellAriaLabel(dow, h, cell, di)}
+												<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+												<div
+													class="group relative flex-1 focus-within:outline-none"
+													tabindex={cell.count > 0 ? 0 : -1}
+													role={cell.count > 0 ? 'button' : undefined}
+													aria-label={ariaLabel}
+												>
 													<div
-														class="h-5 w-full rounded-sm"
-														style="background-color: oklch(0.612 0.17 152.75 / {cell.opacity});"
+														class="h-5 w-full rounded-sm {cell.count === 0
+															? 'bg-muted/30'
+															: ''} {isSixHourMark
+															? 'border-l border-muted-foreground/15'
+															: ''} {di === 5 ? 'border-t border-muted-foreground/15' : ''}"
+														style={cell.count > 0
+															? `background-color: oklch(0.612 0.17 152.75 / ${cell.opacity});`
+															: ''}
 													></div>
 													{#if cell.count > 0}
 														{#if di < 3}
 															<!-- top rows: tooltip below to avoid clipping -->
 															<div
-																class="pointer-events-none absolute top-full left-1/2 z-10 mt-1.5 hidden -translate-x-1/2 flex-col items-center group-hover:flex"
+																class="pointer-events-none absolute top-full left-1/2 z-10 mt-1.5 hidden -translate-x-1/2 flex-col items-center group-focus-within:flex group-hover:flex"
 															>
 																<div class="-mb-1 h-1.5 w-1.5 rotate-45 bg-gray-900"></div>
 																<div
-																	class="rounded-md bg-gray-900 px-2 py-1 text-xs whitespace-nowrap text-white shadow-lg"
+																	class="rounded-md bg-gray-900 px-2.5 py-1.5 text-xs whitespace-nowrap text-white shadow-lg"
 																>
-																	<p>{DOW_LABELS[di]} {fmtHour(h)}</p>
-																	<p class="text-muted-foreground">
+																	<p class="font-semibold">{DOW_LABELS[di]} {fmtHour(h)}</p>
+																	<p class="text-gray-300">
 																		{cell.count}
 																		{cell.count === 1 ? 'order' : 'orders'}
+																		<span class="text-gray-400"
+																			>(~{perWeekRate(cell.count)}/wk)</span
+																		>
 																	</p>
+																	{#if cell.revenue > 0}
+																		<p class="text-gray-300">{fmt(cell.revenue)}</p>
+																	{/if}
 																</div>
 															</div>
 														{:else}
 															<!-- bottom rows: tooltip above -->
 															<div
-																class="pointer-events-none absolute bottom-full left-1/2 z-10 mb-1.5 hidden -translate-x-1/2 flex-col items-center group-hover:flex"
+																class="pointer-events-none absolute bottom-full left-1/2 z-10 mb-1.5 hidden -translate-x-1/2 flex-col items-center group-focus-within:flex group-hover:flex"
 															>
 																<div
-																	class="rounded-md bg-gray-900 px-2 py-1 text-xs whitespace-nowrap text-white shadow-lg"
+																	class="rounded-md bg-gray-900 px-2.5 py-1.5 text-xs whitespace-nowrap text-white shadow-lg"
 																>
-																	<p>{DOW_LABELS[di]} {fmtHour(h)}</p>
-																	<p class="text-muted-foreground">
+																	<p class="font-semibold">{DOW_LABELS[di]} {fmtHour(h)}</p>
+																	<p class="text-gray-300">
 																		{cell.count}
 																		{cell.count === 1 ? 'order' : 'orders'}
+																		<span class="text-gray-400"
+																			>(~{perWeekRate(cell.count)}/wk)</span
+																		>
 																	</p>
+																	{#if cell.revenue > 0}
+																		<p class="text-gray-300">{fmt(cell.revenue)}</p>
+																	{/if}
 																</div>
 																<div class="-mt-1 h-1.5 w-1.5 rotate-45 bg-gray-900"></div>
 															</div>
@@ -1001,18 +1195,23 @@
 								{/each}
 								<!-- Legend -->
 								<div
-									class="mt-3 flex items-center justify-end gap-2 text-[10px] text-muted-foreground"
+									class="mt-3 flex flex-wrap items-center justify-end gap-x-2 gap-y-1 text-[10px] text-muted-foreground"
 								>
-									<span>Fewer</span>
-									<div class="flex gap-0.5">
-										{#each [0.08, 0.25, 0.45, 0.65, 1] as op (op)}
+									<span class="mr-1">Orders per hour:</span>
+									<div class="flex items-center gap-1">
+										<div class="h-3 w-4 rounded-sm bg-muted/30" aria-hidden="true"></div>
+										<span>0</span>
+									</div>
+									{#each legendBuckets as bucket (bucket.label)}
+										<div class="flex items-center gap-1">
 											<div
 												class="h-3 w-4 rounded-sm"
-												style="background-color: oklch(0.612 0.17 152.75 / {op});"
+												style="background-color: oklch(0.612 0.17 152.75 / {bucket.opacity});"
+												aria-hidden="true"
 											></div>
-										{/each}
-									</div>
-									<span>More</span>
+											<span>{bucket.label}</span>
+										</div>
+									{/each}
 								</div>
 							</div>
 						</div>
@@ -1021,13 +1220,14 @@
 			</Card>
 
 			<!-- Customer retention + Revenue by category -->
-			<div class="grid gap-6 lg:grid-cols-3">
+			<div class="mb-6 grid gap-6 lg:grid-cols-3">
 				<!-- Customer retention -->
 				<Card class="shadow-sm">
-					<CardHeader class="border-b pb-3">
-						<CardTitle class="text-sm font-semibold">Customer retention</CardTitle>
-					</CardHeader>
-					<CardContent class="pt-4">
+					<CardContent>
+						<div class="mb-4">
+							<h2 class="text-sm font-semibold text-gray-900">Customer retention</h2>
+							<p class="mt-0.5 text-xs text-gray-400">{rangeLabel(data)}</p>
+						</div>
 						{#if !customerRetention || customerRetention.total === 0}
 							<p class="text-sm text-muted-foreground">Not enough customer data yet.</p>
 						{:else}
@@ -1078,10 +1278,11 @@
 
 				<!-- Revenue by category -->
 				<Card class="shadow-sm lg:col-span-2">
-					<CardHeader class="border-b pb-3">
-						<CardTitle class="text-sm font-semibold">Revenue by category</CardTitle>
-					</CardHeader>
-					<CardContent class="pt-4">
+					<CardContent>
+						<div class="mb-4">
+							<h2 class="text-sm font-semibold text-gray-900">Revenue by category</h2>
+							<p class="mt-0.5 text-xs text-gray-400">{rangeLabel(data)}</p>
+						</div>
 						{#if !revenueByCategory || revenueByCategory.length === 0}
 							<p class="text-sm text-muted-foreground">No order data yet.</p>
 						{:else}
@@ -1127,6 +1328,95 @@
 					</CardContent>
 				</Card>
 			</div>
+
+			<!-- Operational metrics: 3 small cards -->
+			<div class="grid gap-6 sm:grid-cols-3">
+				<!-- Busiest pickup window -->
+				<Card class="shadow-sm">
+					<CardContent>
+						<div class="mb-4">
+							<h2 class="text-sm font-semibold text-gray-900">Busiest pickup window</h2>
+							<p class="mt-0.5 text-xs text-gray-400">{rangeLabel(data)}</p>
+						</div>
+						{#if !busiestWindow}
+							<p class="text-sm text-muted-foreground">No pickup-window orders this period.</p>
+						{:else}
+							<div class="space-y-1">
+								<p
+									class="truncate text-lg font-semibold text-foreground"
+									title={busiestWindow.name}
+								>
+									{busiestWindow.name}
+								</p>
+								<p class="text-xs text-muted-foreground">
+									{busiestWindow.orderCount}
+									{busiestWindow.orderCount === 1 ? 'order' : 'orders'} · {fmt(
+										busiestWindow.totalRevenue
+									)}
+								</p>
+							</div>
+						{/if}
+					</CardContent>
+				</Card>
+
+				<!-- Average lead time -->
+				<Card class="shadow-sm">
+					<CardContent>
+						<div class="mb-4">
+							<h2 class="text-sm font-semibold text-gray-900">Avg scheduled lead time</h2>
+							<p class="mt-0.5 text-xs text-gray-400">{rangeLabel(data)}</p>
+						</div>
+						{#if !leadTime || leadTime.sampleSize === 0}
+							<p class="text-sm text-muted-foreground">Not enough data yet.</p>
+						{:else}
+							<p class="text-2xl font-bold text-foreground">
+								{formatLeadTime(leadTime.avgLeadSeconds)}
+							</p>
+							<p class="mt-1 text-xs text-muted-foreground">
+								Across {leadTime.sampleSize}
+								{leadTime.sampleSize === 1 ? 'order' : 'orders'} with a scheduled pickup
+							</p>
+						{/if}
+					</CardContent>
+				</Card>
+
+				<!-- Cancellation trend -->
+				<Card class="shadow-sm">
+					<CardContent>
+						<div class="mb-4">
+							<h2 class="text-sm font-semibold text-gray-900">Cancellations</h2>
+							<p class="mt-0.5 text-xs text-gray-400">{rangeLabel(data)}</p>
+						</div>
+						{#if !cancellationTrend}
+							<p class="text-sm text-muted-foreground">No data yet.</p>
+						{:else}
+							{@const trend = cancellationTrend}
+							<p class="text-2xl font-bold text-foreground">{trend.current}</p>
+							<p class="mt-1 text-xs">
+								{#if trend.prior === 0 && trend.current > 0}
+									<span class="text-amber-600">{trend.current} this period</span>
+									<span class="text-muted-foreground"> (none prior)</span>
+								{:else if trend.prior === 0 && trend.current === 0}
+									<span class="text-muted-foreground">No cancellations this period</span>
+								{:else}
+									{@const delta = trend.current - trend.prior}
+									{@const pct = Math.round((delta / trend.prior) * 100)}
+									<span
+										class={delta > 0
+											? 'text-red-600'
+											: delta < 0
+												? 'text-emerald-600'
+												: 'text-muted-foreground'}
+									>
+										{delta > 0 ? '+' : ''}{pct}% vs prev
+									</span>
+									<span class="text-muted-foreground"> ({trend.prior} prior)</span>
+								{/if}
+							</p>
+						{/if}
+					</CardContent>
+				</Card>
+			</div>
 		</div>
 
 		<!-- ── Upsell card ───────────────────────────────────────────── -->
@@ -1146,7 +1436,7 @@
 							which items actually drive revenue.
 						</p>
 						<ul class="mb-6 space-y-2 text-left">
-							{#each [{ icon: 'mdi:clock-outline', label: 'Peak hours heatmap — find your busiest day/time combinations' }, { icon: 'mdi:account-group-outline', label: 'Customer retention — new vs. returning, return rate over time' }, { icon: 'mdi:trophy-outline', label: 'Top items by revenue vs. volume — they rank differently' }] as feat (feat.label)}
+							{#each [{ icon: 'mdi:clock-outline', label: 'Peak hours heatmap — find your busiest day/time combinations' }, { icon: 'mdi:account-group-outline', label: 'Customer retention — new vs. returning, return rate over time' }, { icon: 'mdi:trophy-outline', label: 'Top items by revenue vs. volume — they rank differently' }, { icon: 'mdi:calendar-star', label: 'Busiest pickup window — see which window drives the most orders' }, { icon: 'mdi:timer-sand', label: 'Average lead time — how far ahead customers are planning' }, { icon: 'mdi:close-octagon-outline', label: 'Cancellation trend — are losses growing or shrinking?' }, { icon: 'mdi:chart-donut', label: 'Revenue by category — see which categories drive the most revenue' }, { icon: 'mdi:download-outline', label: 'CSV export — download orders and items for accounting or BI' }] as feat (feat.label)}
 								<li class="flex items-start gap-2.5 text-sm text-muted-foreground">
 									<Icon icon={feat.icon} class="mt-0.5 h-4 w-4 shrink-0 text-primary/70" />
 									{feat.label}

@@ -43,7 +43,7 @@ const PATHS = {
 };
 
 function render(color: string): string {
-	return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 353 202" fill="${color}" fill-opacity="0.18"><g transform="translate(20, 30) scale(1.9) rotate(-10)"><path d="${PATHS.wheat}"/></g><g transform="translate(140, 30) scale(2.0) rotate(8)"><path d="${PATHS.bread}"/></g><g transform="translate(260, 30) scale(1.9) rotate(-5)"><path d="${PATHS.cupcake}"/></g><g transform="translate(80, 120) scale(2.0) rotate(12)"><path d="${PATHS.basket}"/></g><g transform="translate(200, 120) scale(1.9) rotate(-15)"><path d="${PATHS.plant}"/></g><g transform="translate(320, 120) scale(2.0) rotate(5)"><path d="${PATHS.coffee}"/></g></svg>`;
+	return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 353 202" fill="${color}" fill-opacity="0.18"><g transform="translate(20, 30) scale(2.5) rotate(-10)"><path d="${PATHS.wheat}"/></g><g transform="translate(158, 38) scale(1.9) rotate(8)"><path d="${PATHS.bread}"/></g><g transform="translate(268, 28) scale(2.5) rotate(-5)"><path d="${PATHS.cupcake}"/></g><g transform="translate(88, 130) scale(1.7) rotate(12)"><path d="${PATHS.basket}"/></g><g transform="translate(190, 135) scale(2.1) rotate(-15)"><path d="${PATHS.plant}"/></g><g transform="translate(310, 130) scale(1.8) rotate(5)"><path d="${PATHS.coffee}"/></g></svg>`;
 }
 
 export const authPattern: AuthPattern = {

@@ -27,6 +27,7 @@ export function subscriptionCancellationImmediateEmail({
 		previewText: `Your Order Local ${planName} subscription has been cancelled`,
 		content,
 		displayName: 'Order Local',
-		primaryColor: '#16a34a'
+		primaryColor: '#16a34a',
+		useOrderLocalPattern: true
 	});
 }

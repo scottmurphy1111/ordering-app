@@ -25,6 +25,7 @@ export function pauseResumedEmail({
 		previewText: `Your Order Local ${planName} subscription is active again`,
 		content,
 		displayName: 'Order Local',
-		primaryColor: '#16a34a'
+		primaryColor: '#16a34a',
+		useOrderLocalPattern: true
 	});
 }
