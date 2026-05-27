@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { PageData, ActionData } from './$types';
+	import type { PageData } from './$types';
 	import { enhance } from '$app/forms';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
@@ -8,16 +8,11 @@
 	import { Alert } from '$lib/components/ui/alert';
 	import { confirmDialog } from '$lib/confirm.svelte';
 	import { toast } from '$lib/toast';
+	import { enhanceWithToasts } from '$lib/forms/enhance-with-toasts';
 
-	let { data, form: _form }: { data: PageData; form: ActionData } = $props();
-	const form = $derived(
-		_form as {
-			sendError?: string;
-			sendSuccess?: boolean;
-			declineError?: string;
-			declineSuccess?: boolean;
-		} | null
-	);
+	let { data }: { data: PageData } = $props();
+	let sendQuoteError = $state<string | null>(null);
+	let declineError = $state<string | null>(null);
 
 	const req = $derived(data.request);
 	const quotes = $derived(data.quotes);
@@ -63,23 +58,6 @@
 	const canDecline = $derived(isPending || isQuoted);
 
 	const linkedOrder = $derived(data.linkedOrder ?? null);
-
-	$effect(() => {
-		if (form?.sendSuccess) {
-			toast.success('Quote sent', { description: `Sent to ${req.customerEmail}` });
-		}
-	});
-
-	$effect(() => {
-		if (form?.declineSuccess) {
-			toast.success('Request declined', {
-				action: {
-					label: 'Back to list',
-					onClick: () => goto(resolve('/dashboard/special-orders'))
-				}
-			});
-		}
-	});
 </script>
 
 <div class="max-w-2xl">
@@ -95,11 +73,11 @@
 		<h1 class="text-2xl font-bold text-foreground">{req.customerName}</h1>
 	</div>
 
-	{#if form?.sendError}
-		<Alert severity="error" class="mb-4">{form.sendError}</Alert>
+	{#if sendQuoteError}
+		<Alert severity="error" class="mb-4">{sendQuoteError}</Alert>
 	{/if}
-	{#if form?.declineError}
-		<Alert severity="error" class="mb-4">{form.declineError}</Alert>
+	{#if declineError}
+		<Alert severity="error" class="mb-4">{declineError}</Alert>
 	{/if}
 
 	<div class="space-y-5">
@@ -278,13 +256,23 @@
 				<form
 					method="post"
 					action="?/sendQuote"
-					use:enhance={() => {
-						submittingAction = 'sendQuote';
-						return async ({ update }) => {
+					use:enhance={enhanceWithToasts({
+						preserveValues: true,
+						// successMessage omitted — we use onSuccess to fire a toast with description.
+						onStart: () => {
+							submittingAction = 'sendQuote';
+							sendQuoteError = null;
+						},
+						onEnd: () => {
 							submittingAction = null;
-							await update();
-						};
-					}}
+						},
+						onSuccess: () => {
+							toast.success('Quote sent', { description: `Sent to ${req.customerEmail}` });
+						},
+						onError: (msg) => {
+							sendQuoteError = msg;
+						}
+					})}
 					class="space-y-4"
 				>
 					<div class="grid gap-4 sm:grid-cols-2">
@@ -343,13 +331,27 @@
 							method="post"
 							action="?/decline"
 							class="w-full"
-							use:enhance={() => {
-								submittingAction = 'decline';
-								return async ({ update }) => {
+							use:enhance={enhanceWithToasts({
+								// successMessage omitted — onSuccess fires a toast with an action.
+								onStart: () => {
+									submittingAction = 'decline';
+									declineError = null;
+								},
+								onEnd: () => {
 									submittingAction = null;
-									await update();
-								};
-							}}
+								},
+								onSuccess: () => {
+									toast.success('Request declined', {
+										action: {
+											label: 'Back to list',
+											onClick: () => goto(resolve('/dashboard/special-orders'))
+										}
+									});
+								},
+								onError: (msg) => {
+									declineError = msg;
+								}
+							})}
 						>
 							<div class="flex items-center gap-2">
 								<textarea

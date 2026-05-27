@@ -3,9 +3,10 @@
 	import { goto, invalidateAll } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { toast } from '$lib/toast';
+	import { enhanceWithToasts } from '$lib/forms/enhance-with-toasts';
 	import { onMount } from 'svelte';
 	import { confirmDialog } from '$lib/confirm.svelte';
-	import type { PageData, ActionData } from './$types';
+	import type { PageData } from './$types';
 	import Icon from '@iconify/svelte';
 	import CatalogTabs from '$lib/components/CatalogTabs.svelte';
 	import Sortable from 'sortablejs';
@@ -39,7 +40,7 @@
 		SheetDescription
 	} from '$lib/components/ui/sheet';
 
-	let { data, form }: { data: PageData; form: ActionData } = $props();
+	let { data }: { data: PageData } = $props();
 
 	// ── Drawer state ──────────────────────────────────────────────
 	type DrawerCategory = {
@@ -54,6 +55,8 @@
 	let drawerCategory = $state<DrawerCategory | null>(null);
 	let drawerIsActive = $state(true);
 	let drawerError = $state<string | null>(null);
+	// Row-action errors (table dropdowns, delete buttons) — page-level Alert.
+	let rowActionError = $state<string | null>(null);
 	let isSubmittingDrawer = $state(false);
 	let submittingDeleteId = $state<number | null>(null);
 
@@ -104,16 +107,25 @@
 
 	function handleDrawerEnhance() {
 		isSubmittingDrawer = true;
+		drawerError = null;
 		return async ({
 			result,
 			update
 		}: {
-			result: { type: string; data?: Record<string, unknown> };
+			result: { type: string; data?: Record<string, unknown>; error?: { message?: string } };
 			update: (opts?: { reset?: boolean }) => Promise<void>;
 		}) => {
 			isSubmittingDrawer = false;
 			if (result.type === 'failure') {
-				drawerError = (result.data?.error as string) ?? 'Something went wrong.';
+				const msg = (result.data?.error as string) ?? 'Something went wrong.';
+				drawerError = msg;
+				toast.error(msg);
+				return;
+			}
+			if (result.type === 'error') {
+				const msg = result.error?.message ?? 'Something went wrong. Please try again.';
+				drawerError = msg;
+				toast.error(msg);
 				return;
 			}
 			drawerError = null;
@@ -250,8 +262,8 @@
 		{/if}
 	</div>
 
-	{#if form?.error}
-		<Alert severity="error" class="mb-4">{form.error}</Alert>
+	{#if rowActionError}
+		<Alert severity="error" class="mb-4">{rowActionError}</Alert>
 	{/if}
 	{#if saveError}
 		<Alert severity="error" class="mb-4">{saveError}</Alert>
@@ -316,14 +328,15 @@
 							<form
 								method="post"
 								action="?/setStatus"
-								use:enhance={() => {
-									return async ({ result, update }) => {
-										await update({ reset: false });
-										if (result.type === 'success') {
-											toast.success(val === 'true' ? 'Category activated' : 'Category hidden');
-										}
-									};
-								}}
+								use:enhance={enhanceWithToasts({
+									successMessage: val === 'true' ? 'Category activated' : 'Category hidden',
+									onStart: () => {
+										rowActionError = null;
+									},
+									onError: (msg) => {
+										rowActionError = msg;
+									}
+								})}
 								class="w-full"
 							>
 								<input type="hidden" name="id" value={cat.id} />
@@ -392,14 +405,19 @@
 								<form
 									method="post"
 									action="?/delete"
-									use:enhance={() => {
-										submittingDeleteId = cat.id;
-										return async ({ result, update }) => {
+									use:enhance={enhanceWithToasts({
+										successMessage: 'Category deleted',
+										onStart: () => {
+											submittingDeleteId = cat.id;
+											rowActionError = null;
+										},
+										onEnd: () => {
 											submittingDeleteId = null;
-											await update();
-											if (result.type === 'success') toast.success('Category deleted');
-										};
-									}}
+										},
+										onError: (msg) => {
+											rowActionError = msg;
+										}
+									})}
 								>
 									<input type="hidden" name="id" value={cat.id} />
 									<Button
@@ -525,14 +543,19 @@
 										<form
 											method="post"
 											action="?/delete"
-											use:enhance={() => {
-												submittingDeleteId = cat.id;
-												return async ({ result, update }) => {
+											use:enhance={enhanceWithToasts({
+												successMessage: 'Category deleted',
+												onStart: () => {
+													submittingDeleteId = cat.id;
+													rowActionError = null;
+												},
+												onEnd: () => {
 													submittingDeleteId = null;
-													await update();
-													if (result.type === 'success') toast.success('Category deleted');
-												};
-											}}
+												},
+												onError: (msg) => {
+													rowActionError = msg;
+												}
+											})}
 										>
 											<input type="hidden" name="id" value={cat.id} />
 											<Button

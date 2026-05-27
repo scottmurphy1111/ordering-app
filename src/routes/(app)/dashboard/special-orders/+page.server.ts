@@ -94,35 +94,40 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 
 export const actions: Actions = {
 	decline: async ({ request, locals }) => {
-		requireStaff(locals);
-		const vendorId = locals.vendorId!;
+		try {
+			requireStaff(locals);
+			const vendorId = locals.vendorId!;
 
-		const formData = await request.formData();
-		const id = Number(formData.get('id'));
-		const reason = formData.get('reason')?.toString().trim() || null;
+			const formData = await request.formData();
+			const id = Number(formData.get('id'));
+			const reason = formData.get('reason')?.toString().trim() || null;
 
-		if (!id) return fail(400, { error: 'Missing request ID.' });
+			if (!id) return fail(400, { error: 'Missing request ID.' });
 
-		const existing = await db.query.specialOrderRequests.findFirst({
-			where: and(eq(specialOrderRequests.id, id), eq(specialOrderRequests.vendorId, vendorId)),
-			columns: { id: true, state: true }
-		});
+			const existing = await db.query.specialOrderRequests.findFirst({
+				where: and(eq(specialOrderRequests.id, id), eq(specialOrderRequests.vendorId, vendorId)),
+				columns: { id: true, state: true }
+			});
 
-		if (!existing) return fail(404, { error: 'Request not found.' });
-		if (existing.state !== 'pending')
-			return fail(400, { error: 'Only pending requests can be declined.' });
+			if (!existing) return fail(404, { error: 'Request not found.' });
+			if (existing.state !== 'pending')
+				return fail(400, { error: 'Only pending requests can be declined.' });
 
-		await db
-			.update(specialOrderRequests)
-			.set({
-				state: 'declined',
-				declinedReason: reason,
-				declinedBy: 'vendor',
-				declinedAt: new Date(),
-				updatedAt: new Date()
-			})
-			.where(and(eq(specialOrderRequests.id, id), eq(specialOrderRequests.vendorId, vendorId)));
+			await db
+				.update(specialOrderRequests)
+				.set({
+					state: 'declined',
+					declinedReason: reason,
+					declinedBy: 'vendor',
+					declinedAt: new Date(),
+					updatedAt: new Date()
+				})
+				.where(and(eq(specialOrderRequests.id, id), eq(specialOrderRequests.vendorId, vendorId)));
 
-		return { declineSuccess: true };
+			return { declineSuccess: true };
+		} catch (err) {
+			console.error('[decline] error:', err);
+			return fail(500, { error: 'Something went wrong on our end. Please try again.' });
+		}
 	}
 };

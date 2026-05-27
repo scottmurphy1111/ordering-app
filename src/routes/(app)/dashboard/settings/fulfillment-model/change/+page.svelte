@@ -2,16 +2,18 @@
 	import { resolve } from '$app/paths';
 	import { enhance } from '$app/forms';
 	import Icon from '@iconify/svelte';
-	import type { PageData, ActionData } from './$types';
+	import type { PageData } from './$types';
 	import { Button } from '$lib/components/ui/button';
 	import { Alert } from '$lib/components/ui/alert';
 	import { FULFILLMENT_MODELS, fulfillmentModelLabel } from '$lib/utils/fulfillment-model-labels';
 
-	let { data, form: _form }: { data: PageData; form: ActionData } = $props();
-	const form = $derived(_form as { error?: string } | null);
+	import { enhanceWithToasts } from '$lib/forms/enhance-with-toasts';
+
+	let { data }: { data: PageData } = $props();
 
 	const targetModels = $derived(FULFILLMENT_MODELS.filter((m) => m.value !== data.currentModel));
 	let submitting = $state(false);
+	let commitError = $state<string | null>(null);
 </script>
 
 <div class="max-w-2xl">
@@ -26,8 +28,8 @@
 		<h1 class="text-2xl font-bold text-foreground">Change fulfillment model</h1>
 	</div>
 
-	{#if form?.error}
-		<Alert severity="error" class="mb-4">{form.error}</Alert>
+	{#if commitError}
+		<Alert severity="error" class="mb-4">{commitError}</Alert>
 	{/if}
 
 	{#if data.target === null}
@@ -119,17 +121,19 @@
 		<form
 			method="post"
 			action="?/commit"
-			use:enhance={() => {
-				submitting = true;
-				return async ({ result, update }) => {
-					if (result.type === 'redirect') {
-						window.location.href = result.location;
-						return;
-					}
+			use:enhance={enhanceWithToasts({
+				// successMessage omitted — server returns a redirect, no success toast needed here.
+				onStart: () => {
+					submitting = true;
+					commitError = null;
+				},
+				onEnd: () => {
 					submitting = false;
-					await update();
-				};
-			}}
+				},
+				onError: (msg) => {
+					commitError = msg;
+				}
+			})}
 			class="flex items-center gap-4"
 		>
 			<input type="hidden" name="target" value={data.target} />

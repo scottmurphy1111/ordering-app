@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { PageData, ActionData } from './$types';
+	import type { PageData } from './$types';
 	import { untrack } from 'svelte';
 	import { enhance } from '$app/forms';
 	import { resolve } from '$app/paths';
@@ -7,12 +7,17 @@
 	import Icon from '@iconify/svelte';
 	import { Button } from '$lib/components/ui/button';
 	import { Switch } from '$lib/components/ui/switch';
+	import { Alert } from '$lib/components/ui/alert';
 	import { CATEGORY_DISPLAY, GROUP_LABELS, type CategoryDisplay } from '$lib/notification-meta';
 	import type { EmailCategory } from '$lib/server/email';
-	import { toast } from '$lib/toast';
+	import { enhanceWithToasts } from '$lib/forms/enhance-with-toasts';
 
-	let { data, form: _form }: { data: PageData; form: ActionData } = $props();
+	let { data }: { data: PageData } = $props();
 	let submittingAction = $state<'savePrefs' | 'markAllRead' | null>(null);
+
+	// Per-form save errors.
+	let prefsSaveError = $state<string | null>(null);
+	let markReadError = $state<string | null>(null);
 
 	type GroupedCategory = { category: EmailCategory; meta: CategoryDisplay };
 	const grouped = Object.entries(CATEGORY_DISPLAY).reduce<Record<string, GroupedCategory[]>>(
@@ -82,18 +87,26 @@
 	<section class="mb-12">
 		<div class="mb-3 flex items-center justify-between">
 			<h2 class="text-base font-semibold text-foreground">Recent activity</h2>
+			{#if markReadError}
+				<Alert severity="error" class="mb-2">{markReadError}</Alert>
+			{/if}
 			{#if hasUnread}
 				<form
 					method="POST"
 					action="?/markAllRead"
-					use:enhance={() => {
-						submittingAction = 'markAllRead';
-						return async ({ result, update }) => {
+					use:enhance={enhanceWithToasts({
+						successMessage: 'Marked all as read',
+						onStart: () => {
+							submittingAction = 'markAllRead';
+							markReadError = null;
+						},
+						onEnd: () => {
 							submittingAction = null;
-							await update();
-							if (result.type === 'success') toast.success('Marked all as read');
-						};
-					}}
+						},
+						onError: (msg) => {
+							markReadError = msg;
+						}
+					})}
 				>
 					<Button
 						type="submit"
@@ -165,17 +178,26 @@
 			state) cannot be turned off.
 		</p>
 
+		{#if prefsSaveError}
+			<Alert severity="error" class="mt-6">{prefsSaveError}</Alert>
+		{/if}
 		<form
 			method="POST"
 			action="?/savePrefs"
-			use:enhance={() => {
-				submittingAction = 'savePrefs';
-				return async ({ result, update }) => {
+			use:enhance={enhanceWithToasts({
+				successMessage: 'Notification preferences saved',
+				preserveValues: true,
+				onStart: () => {
+					submittingAction = 'savePrefs';
+					prefsSaveError = null;
+				},
+				onEnd: () => {
 					submittingAction = null;
-					await update();
-					if (result.type === 'success') toast.success('Notification preferences saved');
-				};
-			}}
+				},
+				onError: (msg) => {
+					prefsSaveError = msg;
+				}
+			})}
 			class="mt-6 space-y-8"
 		>
 			<input type="hidden" name="emailOptOuts" value={optOutsSerialized} />

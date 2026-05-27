@@ -45,108 +45,131 @@ export const load: PageServerLoad = async ({ locals }) => {
 
 export const actions: Actions = {
 	saveHours: async ({ request, locals }) => {
-		const vendorId = locals.vendorId!;
-		const formData = await request.formData();
+		try {
+			const vendorId = locals.vendorId!;
+			const formData = await request.formData();
 
-		const rows: Array<{
-			vendorId: number;
-			dayOfWeek: (typeof DAYS_OF_WEEK)[number];
-			openTime: string;
-			closeTime: string;
-		}> = [];
+			const rows: Array<{
+				vendorId: number;
+				dayOfWeek: (typeof DAYS_OF_WEEK)[number];
+				openTime: string;
+				closeTime: string;
+			}> = [];
 
-		for (const day of DAYS_OF_WEEK) {
-			const enabled = formData.get(`${day}_enabled`) === 'on';
-			if (!enabled) continue;
+			for (const day of DAYS_OF_WEEK) {
+				const enabled = formData.get(`${day}_enabled`) === 'on';
+				if (!enabled) continue;
 
-			const openRaw = formData.get(`${day}_open`)?.toString().trim();
-			const closeRaw = formData.get(`${day}_close`)?.toString().trim();
+				const openRaw = formData.get(`${day}_open`)?.toString().trim();
+				const closeRaw = formData.get(`${day}_close`)?.toString().trim();
 
-			if (!openRaw || !closeRaw) continue;
+				if (!openRaw || !closeRaw) continue;
 
-			// Validate HH:MM format
-			const timeRe = /^\d{2}:\d{2}$/;
-			if (!timeRe.test(openRaw) || !timeRe.test(closeRaw)) {
-				return fail(400, { error: `Invalid time format for ${day}.` });
+				// Validate HH:MM format
+				const timeRe = /^\d{2}:\d{2}$/;
+				if (!timeRe.test(openRaw) || !timeRe.test(closeRaw)) {
+					return fail(400, { error: `Invalid time format for ${day}.` });
+				}
+
+				rows.push({
+					vendorId,
+					dayOfWeek: day,
+					openTime: openRaw + ':00',
+					closeTime: closeRaw + ':00'
+				});
 			}
 
-			rows.push({
-				vendorId,
-				dayOfWeek: day,
-				openTime: openRaw + ':00',
-				closeTime: closeRaw + ':00'
-			});
-		}
+			// Wipe + replace (neon-http has no transactions; unique constraints protect against duplicates)
+			await db.delete(vendorHours).where(eq(vendorHours.vendorId, vendorId));
+			if (rows.length > 0) {
+				await db.insert(vendorHours).values(rows);
+			}
 
-		// Wipe + replace (neon-http has no transactions; unique constraints protect against duplicates)
-		await db.delete(vendorHours).where(eq(vendorHours.vendorId, vendorId));
-		if (rows.length > 0) {
-			await db.insert(vendorHours).values(rows);
+			return { saveSuccess: true };
+		} catch (err) {
+			console.error('[saveHours] error:', err);
+			return fail(500, { error: 'Something went wrong on our end. Please try again.' });
 		}
-
-		return { saveSuccess: true };
 	},
 
 	addException: async ({ request, locals }) => {
-		const vendorId = locals.vendorId!;
-		const formData = await request.formData();
+		try {
+			const vendorId = locals.vendorId!;
+			const formData = await request.formData();
 
-		const date = formData.get('date')?.toString().trim();
-		if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
-			return fail(400, { addError: 'A valid date is required (YYYY-MM-DD).' });
+			const date = formData.get('date')?.toString().trim();
+			if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+				return fail(400, { error: 'A valid date is required (YYYY-MM-DD).' });
+			}
+
+			const isClosed = formData.get('isClosed') === 'on';
+			const openRaw = formData.get('openTime')?.toString().trim() || null;
+			const closeRaw = formData.get('closeTime')?.toString().trim() || null;
+			const note = formData.get('note')?.toString().trim() || null;
+
+			if (!isClosed && (!openRaw || !closeRaw)) {
+				return fail(400, {
+					error: 'Open and close times are required when not marking as closed.'
+				});
+			}
+
+			const openTime = openRaw ? openRaw + ':00' : null;
+			const closeTime = closeRaw ? closeRaw + ':00' : null;
+
+			await db
+				.insert(vendorHoursExceptions)
+				.values({ vendorId, date, isClosed, openTime, closeTime, note })
+				.onConflictDoUpdate({
+					target: [vendorHoursExceptions.vendorId, vendorHoursExceptions.date],
+					set: { isClosed, openTime, closeTime, note }
+				});
+
+			return { addSuccess: true };
+		} catch (err) {
+			console.error('[addException] error:', err);
+			return fail(500, { error: 'Something went wrong on our end. Please try again.' });
 		}
-
-		const isClosed = formData.get('isClosed') === 'on';
-		const openRaw = formData.get('openTime')?.toString().trim() || null;
-		const closeRaw = formData.get('closeTime')?.toString().trim() || null;
-		const note = formData.get('note')?.toString().trim() || null;
-
-		if (!isClosed && (!openRaw || !closeRaw)) {
-			return fail(400, {
-				addError: 'Open and close times are required when not marking as closed.'
-			});
-		}
-
-		const openTime = openRaw ? openRaw + ':00' : null;
-		const closeTime = closeRaw ? closeRaw + ':00' : null;
-
-		await db
-			.insert(vendorHoursExceptions)
-			.values({ vendorId, date, isClosed, openTime, closeTime, note })
-			.onConflictDoUpdate({
-				target: [vendorHoursExceptions.vendorId, vendorHoursExceptions.date],
-				set: { isClosed, openTime, closeTime, note }
-			});
-
-		return { addSuccess: true };
 	},
 
 	removeException: async ({ request, locals }) => {
-		const vendorId = locals.vendorId!;
-		const formData = await request.formData();
-		const id = Number(formData.get('exceptionId'));
-		if (!id) return fail(400, { removeError: 'Missing exception ID.' });
+		try {
+			const vendorId = locals.vendorId!;
+			const formData = await request.formData();
+			const id = Number(formData.get('exceptionId'));
+			if (!id) return fail(400, { error: 'Missing exception ID.' });
 
-		await db
-			.delete(vendorHoursExceptions)
-			.where(and(eq(vendorHoursExceptions.id, id), eq(vendorHoursExceptions.vendorId, vendorId)));
+			await db
+				.delete(vendorHoursExceptions)
+				.where(and(eq(vendorHoursExceptions.id, id), eq(vendorHoursExceptions.vendorId, vendorId)));
 
-		return { removeSuccess: true };
+			return { removeSuccess: true };
+		} catch (err) {
+			console.error('[removeException] error:', err);
+			return fail(500, { error: 'Something went wrong on our end. Please try again.' });
+		}
 	},
 
 	// Re-fetch vendor timezone from vendor table (not locals — safer after timezone changes elsewhere)
 	updateTimezone: async ({ request, locals }) => {
-		const vendorId = locals.vendorId!;
-		const formData = await request.formData();
-		const timezone = formData.get('timezone')?.toString().trim() || 'America/New_York';
-
 		try {
-			new Intl.DateTimeFormat('en-US', { timeZone: timezone });
-		} catch {
-			return fail(400, { tzError: 'Invalid timezone.' });
-		}
+			const vendorId = locals.vendorId!;
+			const formData = await request.formData();
+			const timezone = formData.get('timezone')?.toString().trim() || 'America/New_York';
 
-		await db.update(vendor).set({ timezone, updatedAt: new Date() }).where(eq(vendor.id, vendorId));
-		return { tzSuccess: true };
+			try {
+				new Intl.DateTimeFormat('en-US', { timeZone: timezone });
+			} catch {
+				return fail(400, { error: 'Invalid timezone.' });
+			}
+
+			await db
+				.update(vendor)
+				.set({ timezone, updatedAt: new Date() })
+				.where(eq(vendor.id, vendorId));
+			return { tzSuccess: true };
+		} catch (err) {
+			console.error('[updateTimezone] error:', err);
+			return fail(500, { error: 'Something went wrong on our end. Please try again.' });
+		}
 	}
 };

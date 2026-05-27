@@ -69,31 +69,40 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 
 export const actions: Actions = {
 	commit: async ({ request, locals }) => {
-		const vendorId = locals.vendorId!;
-		const formData = await request.formData();
-		const target = formData.get('target')?.toString() ?? '';
+		try {
+			const vendorId = locals.vendorId!;
+			const formData = await request.formData();
+			const target = formData.get('target')?.toString() ?? '';
 
-		if (!VALID_MODELS.includes(target)) {
-			return fail(400, { error: 'Invalid fulfillment model.' });
+			if (!VALID_MODELS.includes(target)) {
+				return fail(400, { error: 'Invalid fulfillment model.' });
+			}
+
+			const record = await db.query.vendor.findFirst({
+				where: eq(vendor.id, vendorId),
+				columns: { fulfillmentModel: true }
+			});
+
+			if (record?.fulfillmentModel === target) {
+				return fail(400, { error: 'Already using that fulfillment model.' });
+			}
+
+			await db
+				.update(vendor)
+				.set({
+					fulfillmentModel: target as typeof vendor.$inferSelect.fulfillmentModel,
+					updatedAt: new Date()
+				})
+				.where(eq(vendor.id, vendorId));
+
+			throw redirect(303, '/dashboard/settings/general?fulfillmentChanged=1');
+		} catch (err) {
+			// Re-throw SvelteKit redirects so the navigation completes normally.
+			if (err && typeof err === 'object' && 'status' in err && 'location' in err) {
+				throw err;
+			}
+			console.error('[commit] error:', err);
+			return fail(500, { error: 'Something went wrong on our end. Please try again.' });
 		}
-
-		const record = await db.query.vendor.findFirst({
-			where: eq(vendor.id, vendorId),
-			columns: { fulfillmentModel: true }
-		});
-
-		if (record?.fulfillmentModel === target) {
-			return fail(400, { error: 'Already using that fulfillment model.' });
-		}
-
-		await db
-			.update(vendor)
-			.set({
-				fulfillmentModel: target as typeof vendor.$inferSelect.fulfillmentModel,
-				updatedAt: new Date()
-			})
-			.where(eq(vendor.id, vendorId));
-
-		throw redirect(303, '/dashboard/settings/general?fulfillmentChanged=1');
 	}
 };

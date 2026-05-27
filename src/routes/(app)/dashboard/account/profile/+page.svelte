@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
-	import type { PageData, ActionData } from './$types';
+	import type { PageData } from './$types';
 	import Icon from '@iconify/svelte';
 	import { Button } from '$lib/components/ui/button';
 	import { Input } from '$lib/components/ui/input';
@@ -9,9 +9,13 @@
 	import { Alert } from '$lib/components/ui/alert';
 	import { signOut } from '$lib/auth-client';
 	import { confirmDialog } from '$lib/confirm.svelte';
-	import { toast } from '$lib/toast';
+	import { enhanceWithToasts } from '$lib/forms/enhance-with-toasts';
 
-	let { data, form }: { data: PageData; form: ActionData } = $props();
+	let { data }: { data: PageData } = $props();
+
+	// Per-form error states (kept separate so an error in one form doesn't bleed into the other).
+	let profileSaveError = $state<string | null>(null);
+	let avatarSaveError = $state<string | null>(null);
 
 	const memberSince = $derived(
 		new Date(data.user.createdAt).toLocaleDateString('en-US', {
@@ -79,8 +83,8 @@
 				<CardTitle>Avatar</CardTitle>
 			</CardHeader>
 			<CardContent>
-				{#if avatarError}
-					<Alert severity="error" class="mb-4">{avatarError}</Alert>
+				{#if avatarError || avatarSaveError}
+					<Alert severity="error" class="mb-4">{avatarError || avatarSaveError}</Alert>
 				{/if}
 				<div class="flex items-center gap-4">
 					<div
@@ -115,14 +119,19 @@
 							<form
 								method="post"
 								action="?/removeAvatar"
-								use:enhance={() => {
-									submittingAction = 'removeAvatar';
-									return async ({ result, update }) => {
+								use:enhance={enhanceWithToasts({
+									successMessage: 'Avatar removed',
+									onStart: () => {
+										submittingAction = 'removeAvatar';
+										avatarSaveError = null;
+									},
+									onEnd: () => {
 										submittingAction = null;
-										await update();
-										if (result.type === 'success') toast.success('Avatar removed');
-									};
-								}}
+									},
+									onError: (msg) => {
+										avatarSaveError = msg;
+									}
+								})}
 							>
 								<Button
 									type="submit"
@@ -151,22 +160,28 @@
 				<CardTitle>Personal information</CardTitle>
 			</CardHeader>
 			<CardContent>
-				{#if form?.profileError}
-					<Alert severity="error" class="mb-4">{form.profileError}</Alert>
+				{#if profileSaveError}
+					<Alert severity="error" class="mb-4">{profileSaveError}</Alert>
 				{/if}
 
 				<form
 					id="profile-form"
 					method="post"
 					action="?/updateProfile"
-					use:enhance={() => {
-						submittingAction = 'updateProfile';
-						return async ({ result, update }) => {
+					use:enhance={enhanceWithToasts({
+						successMessage: 'Profile saved',
+						preserveValues: true,
+						onStart: () => {
+							submittingAction = 'updateProfile';
+							profileSaveError = null;
+						},
+						onEnd: () => {
 							submittingAction = null;
-							await update();
-							if (result.type === 'success') toast.success('Profile saved');
-						};
-					}}
+						},
+						onError: (msg) => {
+							profileSaveError = msg;
+						}
+					})}
 					class="space-y-4"
 				>
 					<div>

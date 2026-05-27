@@ -52,7 +52,7 @@
 	} from '$lib/components/ui/sheet';
 	import CatalogItemForm from '$lib/components/CatalogItemForm.svelte';
 	import ModifierGroupsManager from '$lib/components/ModifierGroupsManager.svelte';
-	import { toast } from '$lib/toast';
+	import { enhanceWithToasts } from '$lib/forms/enhance-with-toasts';
 	import { Alert } from '$lib/components/ui/alert';
 	import { Skeleton } from '$lib/components/ui/skeleton';
 
@@ -64,6 +64,9 @@
 
 	let mounted = $state(false);
 	let submittingDeleteId = $state<number | null>(null);
+	// Page-level row-action error (table row actions live in dropdowns / inline buttons;
+	// inline Alert at top of page is the cleanest place to surface failures).
+	let rowActionError = $state<string | null>(null);
 	onMount(() => {
 		mounted = true;
 	});
@@ -528,6 +531,9 @@
 	{#if sortSaveError}
 		<Alert severity="error" class="mb-4">{sortSaveError}</Alert>
 	{/if}
+	{#if rowActionError}
+		<Alert severity="error" class="mb-4">{rowActionError}</Alert>
+	{/if}
 
 	{#if sortMode}
 		<!-- ── Drag-and-drop reorder — grouped by category ─────────── -->
@@ -637,19 +643,20 @@
 							<form
 								method="post"
 								action="?/setStatus"
-								use:enhance={() => {
-									return async ({ result, update }) => {
-										await update({ reset: false });
-										if (result.type === 'success') {
-											const messages: Record<string, string> = {
-												available: 'Item marked as available',
-												sold_out: 'Item marked as sold out',
-												hidden: 'Item hidden'
-											};
-											toast.success(messages[val]);
-										}
-									};
-								}}
+								use:enhance={enhanceWithToasts({
+									successMessage:
+										val === 'available'
+											? 'Item marked as available'
+											: val === 'sold_out'
+												? 'Item marked as sold out'
+												: 'Item hidden',
+									onStart: () => {
+										rowActionError = null;
+									},
+									onError: (msg) => {
+										rowActionError = msg;
+									}
+								})}
 								class="w-full"
 							>
 								<input type="hidden" name="id" value={item.id} />
@@ -751,14 +758,19 @@
 								<form
 									method="post"
 									action="?/delete"
-									use:enhance={() => {
-										submittingDeleteId = item.id;
-										return async ({ result, update }) => {
+									use:enhance={enhanceWithToasts({
+										successMessage: 'Item deleted',
+										onStart: () => {
+											submittingDeleteId = item.id;
+											rowActionError = null;
+										},
+										onEnd: () => {
 											submittingDeleteId = null;
-											await update();
-											if (result.type === 'success') toast.success('Item deleted');
-										};
-									}}
+										},
+										onError: (msg) => {
+											rowActionError = msg;
+										}
+									})}
 								>
 									<input type="hidden" name="id" value={item.id} />
 									<Button
@@ -924,14 +936,19 @@
 										<form
 											method="post"
 											action="?/delete"
-											use:enhance={() => {
-												submittingDeleteId = item.id;
-												return async ({ result, update }) => {
+											use:enhance={enhanceWithToasts({
+												successMessage: 'Item deleted',
+												onStart: () => {
+													submittingDeleteId = item.id;
+													rowActionError = null;
+												},
+												onEnd: () => {
 													submittingDeleteId = null;
-													await update();
-													if (result.type === 'success') toast.success('Item deleted');
-												};
-											}}
+												},
+												onError: (msg) => {
+													rowActionError = msg;
+												}
+											})}
 										>
 											<input type="hidden" name="id" value={item.id} />
 											<Button

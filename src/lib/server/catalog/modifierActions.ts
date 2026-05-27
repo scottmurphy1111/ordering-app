@@ -53,7 +53,7 @@ export async function addModifierGroup(
 export async function updateModifierGroup(formData: FormData, vendorId: number) {
 	const modifierId = parseInt(formData.get('modifierId')?.toString() ?? '');
 	const name = formData.get('modifierName')?.toString().trim();
-	if (!modifierId || !name) return fail(400, { modifierError: 'Invalid request' });
+	if (!modifierId || !name) return fail(400, { error: 'Invalid request' });
 
 	// Authorize and find which item this group is attached to (for duplicate scope).
 	const target = await db
@@ -63,7 +63,7 @@ export async function updateModifierGroup(formData: FormData, vendorId: number) 
 		.where(and(eq(modifiers.id, modifierId), eq(modifiers.vendorId, vendorId)))
 		.limit(1);
 
-	if (target.length === 0) return fail(403, { modifierError: 'Not found' });
+	if (target.length === 0) return fail(403, { error: 'Not found' });
 
 	// Self-excluded duplicate check: another modifier on the same item with the same name?
 	const collision = await db
@@ -82,7 +82,7 @@ export async function updateModifierGroup(formData: FormData, vendorId: number) 
 
 	if (collision.length > 0) {
 		return fail(400, {
-			modifierError: `A modifier group named "${name}" already exists on this item.`
+			error: `A modifier group named "${name}" already exists on this item.`
 		});
 	}
 
@@ -139,15 +139,14 @@ export async function addModifierOption(
 export async function updateModifierOption(formData: FormData, vendorId: number) {
 	const optionId = parseInt(formData.get('optionId')?.toString() ?? '');
 	const name = formData.get('optionName')?.toString().trim();
-	if (!optionId || !name) return fail(400, { modifierError: 'Invalid request' });
+	if (!optionId || !name) return fail(400, { error: 'Invalid request' });
 
 	// Authorize: option's modifier must belong to this vendor.
 	const option = await db.query.modifierOptions.findFirst({
 		where: eq(modifierOptions.id, optionId),
 		with: { modifier: { columns: { id: true, vendorId: true } } }
 	});
-	if (!option || option.modifier.vendorId !== vendorId)
-		return fail(403, { modifierError: 'Not found' });
+	if (!option || option.modifier.vendorId !== vendorId) return fail(403, { error: 'Not found' });
 
 	// Self-excluded duplicate check (case-insensitive) within the same group.
 	const collision = await db
@@ -164,7 +163,7 @@ export async function updateModifierOption(formData: FormData, vendorId: number)
 
 	if (collision.length > 0) {
 		return fail(400, {
-			modifierError: `An option named "${name}" already exists in this group.`
+			error: `An option named "${name}" already exists in this group.`
 		});
 	}
 

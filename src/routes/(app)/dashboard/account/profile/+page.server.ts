@@ -25,20 +25,30 @@ export const load: PageServerLoad = async ({ locals }) => {
 
 export const actions: Actions = {
 	updateProfile: async ({ request, locals }) => {
-		const userId = locals.user!.id;
-		const formData = await request.formData();
-		const name = formData.get('name')?.toString().trim();
+		try {
+			const userId = locals.user!.id;
+			const formData = await request.formData();
+			const name = formData.get('name')?.toString().trim();
 
-		if (!name) return fail(400, { profileError: 'Name is required.' });
-		if (name.length > 100) return fail(400, { profileError: 'Name is too long.' });
+			if (!name) return fail(400, { error: 'Name is required.' });
+			if (name.length > 100) return fail(400, { error: 'Name is too long.' });
 
-		await db.update(user).set({ name }).where(eq(user.id, userId));
-		return { profileSuccess: true };
+			await db.update(user).set({ name }).where(eq(user.id, userId));
+			return { profileSuccess: true };
+		} catch (err) {
+			console.error('[updateProfile] error:', err);
+			return fail(500, { error: 'Something went wrong on our end. Please try again.' });
+		}
 	},
 
 	removeAvatar: async ({ locals }) => {
-		const userId = locals.user!.id;
-		await db.update(user).set({ image: null, updatedAt: new Date() }).where(eq(user.id, userId));
-		return { avatarRemoved: true };
+		try {
+			const userId = locals.user!.id;
+			await db.update(user).set({ image: null, updatedAt: new Date() }).where(eq(user.id, userId));
+			return { avatarRemoved: true };
+		} catch (err) {
+			console.error('[removeAvatar] error:', err);
+			return fail(500, { error: 'Something went wrong on our end. Please try again.' });
+		}
 	}
 };

@@ -195,13 +195,17 @@ export const hybridBakeryWithMarket: ArchetypeFixture = {
 
 	branding: {
 		tagline: 'Baked fresh daily since 2018',
-		logoUrl: '/seed-assets/logo.svg',
-		bannerUrl: '/seed-assets/banner.svg',
+		logoUrl: '/seed-assets/logo-hybrid-bakery.svg',
+		bannerUrl: null,
 		faviconUrl: '/seed-assets/favicon.svg',
-		backgroundImageUrl: '/seed-assets/background.svg',
-		backgroundColor: '#3d2817',
-		accentColor: '#c9a86a',
-		foregroundColor: '#f4e8d0'
+		backgroundImageUrl: null,
+		backgroundPatternSlug: 'tiny-chevrons',
+		backgroundColor: '#2a3a26',
+		accentColor: '#a8b884',
+		foregroundColor: '#eef2e6',
+		fontPair: 'fraunces-dm-sans',
+		showName: false,
+		showLogo: true
 	},
 
 	settings: {

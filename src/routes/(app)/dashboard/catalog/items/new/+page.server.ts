@@ -33,14 +33,23 @@ export const load: PageServerLoad = async ({ locals }) => {
 
 export const actions: Actions = {
 	default: async ({ request, locals }) => {
-		const vendorId = locals.vendorId!;
-		const formData = await request.formData();
 		try {
-			const item = await createCatalogItem(vendorId, formData);
-			throw redirect(303, `/dashboard/catalog/items/${item.id}`);
-		} catch (e) {
-			if (e instanceof CatalogItemError) return fail(e.status, { error: e.message });
-			throw e;
+			const vendorId = locals.vendorId!;
+			const formData = await request.formData();
+			try {
+				const item = await createCatalogItem(vendorId, formData);
+				throw redirect(303, `/dashboard/catalog/items/${item.id}`);
+			} catch (e) {
+				if (e instanceof CatalogItemError) return fail(e.status, { error: e.message });
+				throw e;
+			}
+		} catch (err) {
+			// Re-throw SvelteKit redirects so the navigation completes normally.
+			if (err && typeof err === 'object' && 'status' in err && 'location' in err) {
+				throw err;
+			}
+			console.error('[default] error:', err);
+			return fail(500, { error: 'Something went wrong on our end. Please try again.' });
 		}
 	}
 };

@@ -59,104 +59,149 @@ export const load: PageServerLoad = async ({ locals, params }) => {
 	};
 };
 
+function isRedirect(err: unknown): boolean {
+	return !!err && typeof err === 'object' && 'status' in err && 'location' in err;
+}
+
 export const actions: Actions = {
 	update: async ({ request, locals, params }) => {
-		const vendorId = locals.vendorId!;
-		const itemId = parseInt(params.itemId);
-		const formData = await request.formData();
 		try {
-			await updateCatalogItem(vendorId, itemId, formData);
-			return { success: true };
-		} catch (e) {
-			if (e instanceof CatalogItemError) return fail(e.status, { error: e.message });
-			throw e;
+			const vendorId = locals.vendorId!;
+			const itemId = parseInt(params.itemId);
+			const formData = await request.formData();
+			try {
+				await updateCatalogItem(vendorId, itemId, formData);
+				return { success: true };
+			} catch (e) {
+				if (e instanceof CatalogItemError) return fail(e.status, { error: e.message });
+				throw e;
+			}
+		} catch (err) {
+			console.error('[update] error:', err);
+			return fail(500, { error: 'Something went wrong on our end. Please try again.' });
 		}
 	},
 
 	delete: async ({ locals, params }) => {
-		const vendorId = locals.vendorId!;
-		const itemId = parseInt(params.itemId);
+		try {
+			const vendorId = locals.vendorId!;
+			const itemId = parseInt(params.itemId);
 
-		await db
-			.delete(catalogItems)
-			.where(and(eq(catalogItems.id, itemId), eq(catalogItems.vendorId, vendorId)));
+			await db
+				.delete(catalogItems)
+				.where(and(eq(catalogItems.id, itemId), eq(catalogItems.vendorId, vendorId)));
 
-		throw redirect(303, '/dashboard/catalog/items');
+			throw redirect(303, '/dashboard/catalog/items');
+		} catch (err) {
+			if (isRedirect(err)) throw err;
+			console.error('[delete] error:', err);
+			return fail(500, { error: 'Something went wrong on our end. Please try again.' });
+		}
 	},
 
 	addModifier: async ({ request, locals, params }) => {
-		const vendorId = locals.vendorId!;
-		const formData = await request.formData();
-		const itemIdFromForm = parseInt(formData.get('itemId')?.toString() ?? '');
-		const itemId = isNaN(itemIdFromForm) ? parseInt(params.itemId) : itemIdFromForm;
-		const name = formData.get('modifierName')?.toString().trim();
-		if (!name) return fail(400, { modifierError: 'Group name is required' });
-		const isRequired = formData.get('isRequired') === 'on';
-		const maxSelections = parseInt(formData.get('maxSelections')?.toString() ?? '1') || 1;
 		try {
-			await addModifierGroup(vendorId, itemId, name, isRequired, maxSelections);
-			return { success: true };
-		} catch (e) {
-			if (e instanceof ModifierActionError) return fail(e.status, { modifierError: e.message });
-			throw e;
+			const vendorId = locals.vendorId!;
+			const formData = await request.formData();
+			const itemIdFromForm = parseInt(formData.get('itemId')?.toString() ?? '');
+			const itemId = isNaN(itemIdFromForm) ? parseInt(params.itemId) : itemIdFromForm;
+			const name = formData.get('modifierName')?.toString().trim();
+			if (!name) return fail(400, { error: 'Group name is required' });
+			const isRequired = formData.get('isRequired') === 'on';
+			const maxSelections = parseInt(formData.get('maxSelections')?.toString() ?? '1') || 1;
+			try {
+				await addModifierGroup(vendorId, itemId, name, isRequired, maxSelections);
+				return { success: true };
+			} catch (e) {
+				if (e instanceof ModifierActionError) return fail(e.status, { error: e.message });
+				throw e;
+			}
+		} catch (err) {
+			console.error('[addModifier] error:', err);
+			return fail(500, { error: 'Something went wrong on our end. Please try again.' });
 		}
 	},
 
 	updateModifier: async ({ request, locals }) => {
-		const vendorId = locals.vendorId!;
-		const formData = await request.formData();
-		return updateModifierGroup(formData, vendorId);
+		try {
+			const vendorId = locals.vendorId!;
+			const formData = await request.formData();
+			return updateModifierGroup(formData, vendorId);
+		} catch (err) {
+			console.error('[updateModifier] error:', err);
+			return fail(500, { error: 'Something went wrong on our end. Please try again.' });
+		}
 	},
 
 	deleteModifier: async ({ request, locals }) => {
-		const vendorId = locals.vendorId!;
-		const formData = await request.formData();
-		const modifierId = parseInt(formData.get('modifierId')?.toString() ?? '');
-		if (!modifierId) return fail(400, { modifierError: 'Invalid request' });
 		try {
-			await deleteModifierGroup(vendorId, modifierId);
-			return { success: true };
-		} catch (e) {
-			if (e instanceof ModifierActionError) return fail(e.status, { modifierError: e.message });
-			throw e;
+			const vendorId = locals.vendorId!;
+			const formData = await request.formData();
+			const modifierId = parseInt(formData.get('modifierId')?.toString() ?? '');
+			if (!modifierId) return fail(400, { error: 'Invalid request' });
+			try {
+				await deleteModifierGroup(vendorId, modifierId);
+				return { success: true };
+			} catch (e) {
+				if (e instanceof ModifierActionError) return fail(e.status, { error: e.message });
+				throw e;
+			}
+		} catch (err) {
+			console.error('[deleteModifier] error:', err);
+			return fail(500, { error: 'Something went wrong on our end. Please try again.' });
 		}
 	},
 
 	addOption: async ({ request, locals }) => {
-		const vendorId = locals.vendorId!;
-		const formData = await request.formData();
-		const modifierId = parseInt(formData.get('modifierId')?.toString() ?? '');
-		const name = formData.get('optionName')?.toString().trim();
-		if (!modifierId || !name) return fail(400, { modifierError: 'Invalid request' });
-		const priceAdjStr = formData.get('priceAdjustment')?.toString() ?? '0';
-		const priceAdjustment = Math.round(parseFloat(priceAdjStr || '0') * 100);
-		const isDefault = formData.get('isDefault') === 'on';
 		try {
-			await addModifierOption(vendorId, modifierId, name, priceAdjustment, isDefault);
-			return { success: true };
-		} catch (e) {
-			if (e instanceof ModifierActionError) return fail(e.status, { modifierError: e.message });
-			throw e;
+			const vendorId = locals.vendorId!;
+			const formData = await request.formData();
+			const modifierId = parseInt(formData.get('modifierId')?.toString() ?? '');
+			const name = formData.get('optionName')?.toString().trim();
+			if (!modifierId || !name) return fail(400, { error: 'Invalid request' });
+			const priceAdjStr = formData.get('priceAdjustment')?.toString() ?? '0';
+			const priceAdjustment = Math.round(parseFloat(priceAdjStr || '0') * 100);
+			const isDefault = formData.get('isDefault') === 'on';
+			try {
+				await addModifierOption(vendorId, modifierId, name, priceAdjustment, isDefault);
+				return { success: true };
+			} catch (e) {
+				if (e instanceof ModifierActionError) return fail(e.status, { error: e.message });
+				throw e;
+			}
+		} catch (err) {
+			console.error('[addOption] error:', err);
+			return fail(500, { error: 'Something went wrong on our end. Please try again.' });
 		}
 	},
 
 	updateOption: async ({ request, locals }) => {
-		const vendorId = locals.vendorId!;
-		const formData = await request.formData();
-		return updateModifierOption(formData, vendorId);
+		try {
+			const vendorId = locals.vendorId!;
+			const formData = await request.formData();
+			return updateModifierOption(formData, vendorId);
+		} catch (err) {
+			console.error('[updateOption] error:', err);
+			return fail(500, { error: 'Something went wrong on our end. Please try again.' });
+		}
 	},
 
 	deleteOption: async ({ request, locals }) => {
-		const vendorId = locals.vendorId!;
-		const formData = await request.formData();
-		const optionId = parseInt(formData.get('optionId')?.toString() ?? '');
-		if (!optionId) return fail(400, { modifierError: 'Invalid request' });
 		try {
-			await deleteModifierOption(vendorId, optionId);
-			return { success: true };
-		} catch (e) {
-			if (e instanceof ModifierActionError) return fail(e.status, { modifierError: e.message });
-			throw e;
+			const vendorId = locals.vendorId!;
+			const formData = await request.formData();
+			const optionId = parseInt(formData.get('optionId')?.toString() ?? '');
+			if (!optionId) return fail(400, { error: 'Invalid request' });
+			try {
+				await deleteModifierOption(vendorId, optionId);
+				return { success: true };
+			} catch (e) {
+				if (e instanceof ModifierActionError) return fail(e.status, { error: e.message });
+				throw e;
+			}
+		} catch (err) {
+			console.error('[deleteOption] error:', err);
+			return fail(500, { error: 'Something went wrong on our end. Please try again.' });
 		}
 	}
 };

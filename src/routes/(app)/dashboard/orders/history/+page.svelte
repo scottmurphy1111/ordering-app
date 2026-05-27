@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import { confirmDialog } from '$lib/confirm.svelte';
-	import type { PageData, ActionData } from './$types';
+	import type { PageData } from './$types';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import Icon from '@iconify/svelte';
@@ -15,8 +15,10 @@
 	import OrdersFilterTabs from '$lib/components/OrdersFilterTabs.svelte';
 	import { SvelteURLSearchParams } from 'svelte/reactivity';
 	import { Alert } from '$lib/components/ui/alert';
+	import { enhanceWithToasts } from '$lib/forms/enhance-with-toasts';
 
-	let { data, form }: { data: PageData; form: ActionData } = $props();
+	let { data }: { data: PageData } = $props();
+	let refundError = $state<string | null>(null);
 
 	let fromOpen = $state(false);
 	let toOpen = $state(false);
@@ -142,8 +144,8 @@
 		<OrdersTabs />
 	</div>
 
-	{#if form?.error}
-		<Alert severity="error" class="mb-4">{form.error}</Alert>
+	{#if refundError}
+		<Alert severity="error" class="mb-4">{refundError}</Alert>
 	{/if}
 
 	<!-- Row 1: Search -->
@@ -393,13 +395,19 @@
 							<form
 								method="post"
 								action="?/refund"
-								use:enhance={() => {
-									submittingRefundId = order.id;
-									return async ({ update }) => {
+								use:enhance={enhanceWithToasts({
+									successMessage: 'Refund issued',
+									onStart: () => {
+										submittingRefundId = order.id;
+										refundError = null;
+									},
+									onEnd: () => {
 										submittingRefundId = null;
-										await update();
-									};
-								}}
+									},
+									onError: (msg) => {
+										refundError = msg;
+									}
+								})}
 								class="flex"
 							>
 								<input type="hidden" name="id" value={order.id} />

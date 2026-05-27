@@ -27,56 +27,66 @@ export const load: PageServerLoad = async ({ locals, params }) => {
 
 export const actions: Actions = {
 	update: async ({ request, locals, params }) => {
-		const vendorId = locals.vendorId!;
-		const categoryId = parseInt(params.categoryId);
-		const formData = await request.formData();
+		try {
+			const vendorId = locals.vendorId!;
+			const categoryId = parseInt(params.categoryId);
+			const formData = await request.formData();
 
-		const name = formData.get('name')?.toString().trim();
-		const description = formData.get('description')?.toString().trim() || null;
-		const sortOrder = parseInt(formData.get('sortOrder')?.toString() ?? '0') || 0;
-		const isActive = formData.get('isActive') === 'on';
+			const name = formData.get('name')?.toString().trim();
+			const description = formData.get('description')?.toString().trim() || null;
+			const sortOrder = parseInt(formData.get('sortOrder')?.toString() ?? '0') || 0;
+			const isActive = formData.get('isActive') === 'on';
 
-		if (!name) return fail(400, { error: 'Name is required' });
+			if (!name) return fail(400, { error: 'Name is required' });
 
-		await db
-			.update(catalogCategories)
-			.set({ name, description, sortOrder, isActive })
-			.where(and(eq(catalogCategories.id, categoryId), eq(catalogCategories.vendorId, vendorId)));
+			await db
+				.update(catalogCategories)
+				.set({ name, description, sortOrder, isActive })
+				.where(and(eq(catalogCategories.id, categoryId), eq(catalogCategories.vendorId, vendorId)));
 
-		return { success: true };
+			return { success: true };
+		} catch (err) {
+			console.error('[update] error:', err);
+			return fail(500, { error: 'Something went wrong on our end. Please try again.' });
+		}
 	},
 
 	assignItems: async ({ request, locals, params }) => {
-		const vendorId = locals.vendorId!;
-		const categoryId = parseInt(params.categoryId);
-		const formData = await request.formData();
+		try {
+			const vendorId = locals.vendorId!;
+			const categoryId = parseInt(params.categoryId);
+			const formData = await request.formData();
 
-		const selectedIds = formData.getAll('itemId').map((v) => parseInt(v.toString()));
+			const selectedIds = formData.getAll('itemId').map((v) => parseInt(v.toString()));
 
-		const allItems = await db.query.catalogItems.findMany({
-			where: eq(catalogItems.vendorId, vendorId),
-			columns: { id: true, categoryId: true }
-		});
+			const allItems = await db.query.catalogItems.findMany({
+				where: eq(catalogItems.vendorId, vendorId),
+				columns: { id: true, categoryId: true }
+			});
 
-		await Promise.all(
-			allItems.map((item) => {
-				const shouldBeInCategory = selectedIds.includes(item.id);
-				const isCurrentlyInCategory = item.categoryId === categoryId;
+			await Promise.all(
+				allItems.map((item) => {
+					const shouldBeInCategory = selectedIds.includes(item.id);
+					const isCurrentlyInCategory = item.categoryId === categoryId;
 
-				if (shouldBeInCategory && !isCurrentlyInCategory) {
-					return db
-						.update(catalogItems)
-						.set({ categoryId })
-						.where(and(eq(catalogItems.id, item.id), eq(catalogItems.vendorId, vendorId)));
-				} else if (!shouldBeInCategory && isCurrentlyInCategory) {
-					return db
-						.update(catalogItems)
-						.set({ categoryId: null })
-						.where(and(eq(catalogItems.id, item.id), eq(catalogItems.vendorId, vendorId)));
-				}
-			})
-		);
+					if (shouldBeInCategory && !isCurrentlyInCategory) {
+						return db
+							.update(catalogItems)
+							.set({ categoryId })
+							.where(and(eq(catalogItems.id, item.id), eq(catalogItems.vendorId, vendorId)));
+					} else if (!shouldBeInCategory && isCurrentlyInCategory) {
+						return db
+							.update(catalogItems)
+							.set({ categoryId: null })
+							.where(and(eq(catalogItems.id, item.id), eq(catalogItems.vendorId, vendorId)));
+					}
+				})
+			);
 
-		return { success: true };
+			return { success: true };
+		} catch (err) {
+			console.error('[assignItems] error:', err);
+			return fail(500, { error: 'Something went wrong on our end. Please try again.' });
+		}
 	}
 };

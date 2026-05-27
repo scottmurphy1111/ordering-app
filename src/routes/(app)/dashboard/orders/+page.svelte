@@ -3,7 +3,7 @@
 	import { confirmDialog } from '$lib/confirm.svelte';
 	import { invalidate, goto } from '$app/navigation';
 	import { onMount } from 'svelte';
-	import type { PageData, ActionData } from './$types';
+	import type { PageData } from './$types';
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
 	import { formatDistanceToNow } from 'date-fns';
@@ -19,8 +19,10 @@
 	import { SvelteURLSearchParams, SvelteMap } from 'svelte/reactivity';
 	import { Alert } from '$lib/components/ui/alert';
 	import OrderStatusStepper from '$lib/components/OrderStatusStepper.svelte';
+	import { enhanceWithToasts } from '$lib/forms/enhance-with-toasts';
 
-	let { data, form }: { data: PageData; form: ActionData } = $props();
+	let { data }: { data: PageData } = $props();
+	let rowActionError = $state<string | null>(null);
 	let mounted = $state(false);
 	let soundEnabled = $state(true);
 	let prevOrderCount = $state(-1);
@@ -284,8 +286,8 @@
 		</div>
 	</div>
 
-	{#if form?.error}
-		<Alert severity="error" class="mb-4">{form.error}</Alert>
+	{#if rowActionError}
+		<Alert severity="error" class="mb-4">{rowActionError}</Alert>
 	{/if}
 
 	<!-- Orders / Production view toggle -->
@@ -764,13 +766,19 @@
 					<form
 						method="post"
 						action="?/cancel"
-						use:enhance={() => {
-							submittingRowAction = { id: order.id, action: 'cancel' };
-							return async ({ update }) => {
+						use:enhance={enhanceWithToasts({
+							successMessage: 'Order cancelled',
+							onStart: () => {
+								submittingRowAction = { id: order.id, action: 'cancel' };
+								rowActionError = null;
+							},
+							onEnd: () => {
 								submittingRowAction = null;
-								await update();
-							};
-						}}
+							},
+							onError: (msg) => {
+								rowActionError = msg;
+							}
+						})}
 						autocomplete="off"
 						class="flex"
 					>
@@ -799,13 +807,19 @@
 					<form
 						method="post"
 						action="?/refund"
-						use:enhance={() => {
-							submittingRowAction = { id: order.id, action: 'refund' };
-							return async ({ update }) => {
+						use:enhance={enhanceWithToasts({
+							successMessage: 'Refund issued',
+							onStart: () => {
+								submittingRowAction = { id: order.id, action: 'refund' };
+								rowActionError = null;
+							},
+							onEnd: () => {
 								submittingRowAction = null;
-								await update();
-							};
-						}}
+							},
+							onError: (msg) => {
+								rowActionError = msg;
+							}
+						})}
 						autocomplete="off"
 						class="flex"
 					>

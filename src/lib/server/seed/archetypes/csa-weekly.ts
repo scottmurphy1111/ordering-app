@@ -91,13 +91,17 @@ export const csaWeekly: ArchetypeFixture = {
 
 	branding: {
 		tagline: 'Grown with care, picked with purpose',
-		logoUrl: '/seed-assets/logo.svg',
-		bannerUrl: '/seed-assets/banner.svg',
+		logoUrl: '/seed-assets/logo-csa.svg',
+		bannerUrl: null,
 		faviconUrl: '/seed-assets/favicon.svg',
-		backgroundImageUrl: '/seed-assets/background.svg',
+		backgroundImageUrl: null,
+		backgroundPatternSlug: 'subtle-dots',
 		backgroundColor: '#1a3a1e',
 		accentColor: '#7ab648',
-		foregroundColor: '#eef5e8'
+		foregroundColor: '#eef5e8',
+		fontPair: 'lora-nunito-sans',
+		showName: false,
+		showLogo: true
 	},
 
 	settings: {

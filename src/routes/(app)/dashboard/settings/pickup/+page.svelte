@@ -30,6 +30,7 @@
 	import { Tabs, TabsList, TabsTrigger } from '$lib/components/ui/tabs';
 	import { Tooltip, TooltipTrigger, TooltipContent } from '$lib/components/ui/tooltip';
 	import { toast } from '$lib/toast';
+	import { enhanceWithToasts } from '$lib/forms/enhance-with-toasts';
 
 	let { data, form: _form }: { data: PageData; form: ActionData } = $props();
 
@@ -39,6 +40,7 @@
 	let addError = $state<string | null>(null);
 	let editingId = $state<number | null>(null);
 	let editError = $state<string | null>(null);
+	let rowActionError = $state<string | null>(null);
 	let submittingCreateLocation = $state(false);
 	let submittingUpdateLocation = $state(false);
 	let submittingToggleLocationId = $state<number | null>(null);
@@ -75,12 +77,20 @@
 			result,
 			update
 		}: {
-			result: { type: string; data?: Record<string, unknown> };
+			result: { type: string; data?: Record<string, unknown>; error?: { message?: string } };
 			update: (opts?: { reset?: boolean }) => Promise<void>;
 		}) => {
 			submittingCreateLocation = false;
 			if (result.type === 'failure') {
-				addError = (result.data?.error as string) ?? 'Something went wrong.';
+				const msg = (result.data?.error as string) ?? 'Something went wrong.';
+				addError = msg;
+				toast.error(msg);
+				return;
+			}
+			if (result.type === 'error') {
+				const msg = result.error?.message ?? 'Something went wrong. Please try again.';
+				addError = msg;
+				toast.error(msg);
 				return;
 			}
 			showAddForm = false;
@@ -97,12 +107,20 @@
 			result,
 			update
 		}: {
-			result: { type: string; data?: Record<string, unknown> };
+			result: { type: string; data?: Record<string, unknown>; error?: { message?: string } };
 			update: (opts?: { reset?: boolean }) => Promise<void>;
 		}) => {
 			submittingUpdateLocation = false;
 			if (result.type === 'failure') {
-				editError = (result.data?.error as string) ?? 'Something went wrong.';
+				const msg = (result.data?.error as string) ?? 'Something went wrong.';
+				editError = msg;
+				toast.error(msg);
+				return;
+			}
+			if (result.type === 'error') {
+				const msg = result.error?.message ?? 'Something went wrong. Please try again.';
+				editError = msg;
+				toast.error(msg);
 				return;
 			}
 			editingId = null;
@@ -418,12 +436,23 @@
 			result,
 			update
 		}: {
-			result: { type: string; data?: Record<string, unknown> };
+			result:
+				| { type: 'success' | 'redirect'; data?: Record<string, unknown> }
+				| { type: 'failure'; data?: Record<string, unknown> }
+				| { type: 'error'; error?: { message?: string } };
 			update: (opts?: { reset?: boolean }) => Promise<void>;
 		}) => {
 			submittingCreateTemplate = false;
 			if (result.type === 'failure') {
-				addTemplateError = (result.data?.templateError as string) ?? 'Something went wrong.';
+				const msg = (result.data?.error as string) ?? 'Something went wrong.';
+				addTemplateError = msg;
+				toast.error(msg);
+				return;
+			}
+			if (result.type === 'error') {
+				const msg = result.error?.message ?? 'Something went wrong. Please try again.';
+				addTemplateError = msg;
+				toast.error(msg);
 				return;
 			}
 			showAddTemplateForm = false;
@@ -464,12 +493,23 @@
 			result,
 			update
 		}: {
-			result: { type: string; data?: Record<string, unknown> };
+			result:
+				| { type: 'success' | 'redirect'; data?: Record<string, unknown> }
+				| { type: 'failure'; data?: Record<string, unknown> }
+				| { type: 'error'; error?: { message?: string } };
 			update: (opts?: { reset?: boolean }) => Promise<void>;
 		}) => {
 			submittingUpdateTemplate = false;
 			if (result.type === 'failure') {
-				editTemplateError = (result.data?.templateError as string) ?? 'Something went wrong.';
+				const msg = (result.data?.error as string) ?? 'Something went wrong.';
+				editTemplateError = msg;
+				toast.error(msg);
+				return;
+			}
+			if (result.type === 'error') {
+				const msg = result.error?.message ?? 'Something went wrong. Please try again.';
+				editTemplateError = msg;
+				toast.error(msg);
 				return;
 			}
 			editingTemplateId = null;
@@ -499,11 +539,23 @@
 			result,
 			update
 		}: {
-			result: { type: string; data?: Record<string, unknown> };
+			result:
+				| { type: 'success' | 'redirect'; data?: Record<string, unknown> }
+				| { type: 'failure'; data?: Record<string, unknown> }
+				| { type: 'error'; error?: { message?: string } };
 			update: (opts?: { reset?: boolean }) => Promise<void>;
 		}) => {
 			if (result.type === 'failure') {
-				occurrenceError = (result.data?.occurrenceError as string) ?? 'Something went wrong.';
+				const msg = (result.data?.error as string) ?? 'Something went wrong.';
+				occurrenceError = msg;
+				toast.error(msg);
+				occurrenceSavingId = null;
+				return;
+			}
+			if (result.type === 'error') {
+				const msg = result.error?.message ?? 'Something went wrong. Please try again.';
+				occurrenceError = msg;
+				toast.error(msg);
 				occurrenceSavingId = null;
 				return;
 			}
@@ -524,6 +576,10 @@
 			Define where and when customers can pick up their orders.
 		</p>
 	</div>
+
+	{#if rowActionError}
+		<Alert severity="error" class="mb-4">{rowActionError}</Alert>
+	{/if}
 
 	<!-- ── Pickup locations section (Phase 2) ─────────────────────────────── -->
 	<div>
@@ -786,17 +842,21 @@
 										<form
 											method="post"
 											action="?/toggleActive"
-											use:enhance={() => {
-												submittingToggleLocationId = loc.id;
-												const wasActive = loc.isActive;
-												return async ({ result, update }) => {
+											use:enhance={enhanceWithToasts({
+												onStart: () => {
+													submittingToggleLocationId = loc.id;
+													rowActionError = null;
+												},
+												onEnd: () => {
 													submittingToggleLocationId = null;
-													await update();
-													if (result.type === 'success') {
-														toast.success(wasActive ? 'Location disabled' : 'Location enabled');
-													}
-												};
-											}}
+												},
+												onSuccess: () => {
+													toast.success(loc.isActive ? 'Location enabled' : 'Location disabled');
+												},
+												onError: (msg) => {
+													rowActionError = msg;
+												}
+											})}
 										>
 											<input type="hidden" name="id" value={loc.id} />
 											<Button
@@ -1505,19 +1565,23 @@
 											<form
 												method="post"
 												action="?/toggleTemplateActive"
-												use:enhance={() => {
-													submittingToggleTemplateId = tmpl.id;
-													const wasActive = tmpl.isActive;
-													return async ({ result, update }) => {
+												use:enhance={enhanceWithToasts({
+													onStart: () => {
+														submittingToggleTemplateId = tmpl.id;
+														rowActionError = null;
+													},
+													onEnd: () => {
 														submittingToggleTemplateId = null;
-														await update();
-														if (result.type === 'success') {
-															toast.success(
-																wasActive ? 'Pickup window disabled' : 'Pickup window enabled'
-															);
-														}
-													};
-												}}
+													},
+													onSuccess: () => {
+														toast.success(
+															tmpl.isActive ? 'Pickup window enabled' : 'Pickup window disabled'
+														);
+													},
+													onError: (msg) => {
+														rowActionError = msg;
+													}
+												})}
 											>
 												<input type="hidden" name="id" value={tmpl.id} />
 												<Button
@@ -1539,14 +1603,19 @@
 											<form
 												method="post"
 												action="?/deleteTemplate"
-												use:enhance={() => {
-													submittingDeleteTemplateId = tmpl.id;
-													return async ({ result, update }) => {
+												use:enhance={enhanceWithToasts({
+													successMessage: 'Pickup window deleted',
+													onStart: () => {
+														submittingDeleteTemplateId = tmpl.id;
+														rowActionError = null;
+													},
+													onEnd: () => {
 														submittingDeleteTemplateId = null;
-														await update();
-														if (result.type === 'success') toast.success('Pickup window deleted');
-													};
-												}}
+													},
+													onError: (msg) => {
+														rowActionError = msg;
+													}
+												})}
 											>
 												<input type="hidden" name="id" value={tmpl.id} />
 												<Tooltip>
@@ -1698,19 +1767,23 @@
 										<form
 											method="post"
 											action="?/toggleTemplateActive"
-											use:enhance={() => {
-												submittingToggleTemplateId = tmpl.id;
-												const wasActive = tmpl.isActive;
-												return async ({ result, update }) => {
+											use:enhance={enhanceWithToasts({
+												onStart: () => {
+													submittingToggleTemplateId = tmpl.id;
+													rowActionError = null;
+												},
+												onEnd: () => {
 													submittingToggleTemplateId = null;
-													await update();
-													if (result.type === 'success') {
-														toast.success(
-															wasActive ? 'Pickup window disabled' : 'Pickup window enabled'
-														);
-													}
-												};
-											}}
+												},
+												onSuccess: () => {
+													toast.success(
+														tmpl.isActive ? 'Pickup window enabled' : 'Pickup window disabled'
+													);
+												},
+												onError: (msg) => {
+													rowActionError = msg;
+												}
+											})}
 										>
 											<input type="hidden" name="id" value={tmpl.id} />
 											<Button
@@ -1732,14 +1805,19 @@
 										<form
 											method="post"
 											action="?/deleteTemplate"
-											use:enhance={() => {
-												submittingDeleteTemplateId = tmpl.id;
-												return async ({ result, update }) => {
+											use:enhance={enhanceWithToasts({
+												successMessage: 'Pickup window deleted',
+												onStart: () => {
+													submittingDeleteTemplateId = tmpl.id;
+													rowActionError = null;
+												},
+												onEnd: () => {
 													submittingDeleteTemplateId = null;
-													await update();
-													if (result.type === 'success') toast.success('Pickup window deleted');
-												};
-											}}
+												},
+												onError: (msg) => {
+													rowActionError = msg;
+												}
+											})}
 										>
 											<input type="hidden" name="id" value={tmpl.id} />
 											<Tooltip>

@@ -5,11 +5,14 @@
 	import { resolve } from '$app/paths';
 	import Icon from '@iconify/svelte';
 	import { Button } from '$lib/components/ui/button';
+	import { Alert } from '$lib/components/ui/alert';
 	import CatalogItemForm from '$lib/components/CatalogItemForm.svelte';
 	import ModifierGroupsManager from '$lib/components/ModifierGroupsManager.svelte';
+	import { enhanceWithToasts } from '$lib/forms/enhance-with-toasts';
 
 	let { data }: { data: PageData } = $props();
 	let submitting = $state(false);
+	let deleteError = $state<string | null>(null);
 
 	const itemModifiers = $derived(
 		data.item.modifiers
@@ -46,20 +49,25 @@
 	<!-- ── Danger zone ───────────────────────────────────────── -->
 	<div class="mt-6 rounded-xl border border-destructive/20 bg-background p-4">
 		<h2 class="mb-2 text-sm font-semibold text-destructive">Danger zone</h2>
+		{#if deleteError}
+			<Alert severity="error" class="mb-3">{deleteError}</Alert>
+		{/if}
 		<form
 			method="post"
 			action="?/delete"
-			use:enhance={() => {
-				submitting = true;
-				return async ({ result, update }) => {
-					if (result.type === 'redirect') {
-						window.location.href = result.location;
-						return;
-					}
+			use:enhance={enhanceWithToasts({
+				// successMessage omitted — server returns a redirect.
+				onStart: () => {
+					submitting = true;
+					deleteError = null;
+				},
+				onEnd: () => {
 					submitting = false;
-					await update();
-				};
-			}}
+				},
+				onError: (msg) => {
+					deleteError = msg;
+				}
+			})}
 		>
 			<Button
 				type="submit"

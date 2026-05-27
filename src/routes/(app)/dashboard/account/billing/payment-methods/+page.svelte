@@ -4,6 +4,7 @@
 	import { resolve } from '$app/paths';
 	import Icon from '@iconify/svelte';
 	import type { PageData, ActionData } from './$types';
+	import { enhanceWithToasts } from '$lib/forms/enhance-with-toasts';
 	import { confirmDialog } from '$lib/confirm.svelte';
 	import { Button } from '$lib/components/ui/button';
 	import StatusBadge from '$lib/components/StatusBadge.svelte';
@@ -17,16 +18,13 @@
 	let submittingRemoveId = $state<string | null>(null);
 	let submittingSetDefaultId = $state<string | null>(null);
 
-	// Form-driven toasts (fire after user-initiated submits — Toaster is long-mounted by then).
+	// Per-form save errors.
+	let cardActionError = $state<string | null>(null);
+
+	// Legacy: "saved" comes from the add-card flow, which currently sets a flag
+	// on form data rather than redirecting back. Keep the effect for now.
 	$effect(() => {
 		if ((form as { saved?: boolean } | null)?.saved) toast.success('Card saved');
-	});
-	$effect(() => {
-		if ((form as { defaultUpdated?: boolean } | null)?.defaultUpdated)
-			toast.success('Default card updated');
-	});
-	$effect(() => {
-		if ((form as { removed?: boolean } | null)?.removed) toast.success('Card removed');
 	});
 
 	// URL-param toast: read once at script init, fire from onMount after the
@@ -93,8 +91,8 @@
 		<p class="mt-1 text-sm text-gray-500">Cards saved to your account for subscription charges.</p>
 	</div>
 
-	{#if form?.error}
-		<Alert severity="error" class="mb-4">{form.error}</Alert>
+	{#if cardActionError}
+		<Alert severity="error" class="mb-4">{cardActionError}</Alert>
 	{/if}
 
 	<Card class="shadow-sm">
@@ -160,13 +158,19 @@
 									<form
 										method="post"
 										action="?/setDefault"
-										use:enhance={() => {
-											submittingSetDefaultId = method.id;
-											return async ({ update }) => {
+										use:enhance={enhanceWithToasts({
+											successMessage: 'Default card updated',
+											onStart: () => {
+												submittingSetDefaultId = method.id;
+												cardActionError = null;
+											},
+											onEnd: () => {
 												submittingSetDefaultId = null;
-												await update();
-											};
-										}}
+											},
+											onError: (msg) => {
+												cardActionError = msg;
+											}
+										})}
 									>
 										<input type="hidden" name="paymentMethodId" value={method.id} />
 										<Button
@@ -188,13 +192,19 @@
 								<form
 									method="post"
 									action="?/remove"
-									use:enhance={() => {
-										submittingRemoveId = method.id;
-										return async ({ update }) => {
+									use:enhance={enhanceWithToasts({
+										successMessage: 'Card removed',
+										onStart: () => {
+											submittingRemoveId = method.id;
+											cardActionError = null;
+										},
+										onEnd: () => {
 											submittingRemoveId = null;
-											await update();
-										};
-									}}
+										},
+										onError: (msg) => {
+											cardActionError = msg;
+										}
+									})}
 								>
 									<input type="hidden" name="paymentMethodId" value={method.id} />
 									<Button

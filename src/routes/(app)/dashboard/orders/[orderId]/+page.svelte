@@ -14,13 +14,15 @@
 		DialogTitle,
 		DialogFooter
 	} from '$lib/components/ui/dialog';
-	import type { PageData, ActionData } from './$types';
+	import type { PageData } from './$types';
 	import { actionConfig } from '$lib/utils/order-lifecycle';
 	import OrderStatusStepper from '$lib/components/OrderStatusStepper.svelte';
 	import { SvelteDate } from 'svelte/reactivity';
 	import { toast } from '$lib/toast';
+	import { enhanceWithToasts } from '$lib/forms/enhance-with-toasts';
 
-	let { data, form }: { data: PageData; form: ActionData } = $props();
+	let { data }: { data: PageData } = $props();
+	let actionError = $state<string | null>(null);
 
 	const order = $derived(data.order);
 
@@ -49,16 +51,27 @@
 
 	function approveEnhance() {
 		approvePending = true;
+		actionError = null;
 		return async ({
 			result,
 			update
 		}: {
-			result: { type: string };
+			result: { type: string; data?: Record<string, unknown>; error?: { message?: string } };
 			update: (opts?: { reset?: boolean }) => Promise<void>;
 		}) => {
 			await update({ reset: false });
 			approvePending = false;
-			if (result.type === 'success') toast.success('Quote sent');
+			if (result.type === 'success') {
+				toast.success('Quote sent');
+			} else if (result.type === 'failure') {
+				const msg = (result.data?.error as string) ?? 'Something went wrong.';
+				actionError = msg;
+				toast.error(msg);
+			} else if (result.type === 'error') {
+				const msg = result.error?.message ?? 'Something went wrong. Please try again.';
+				actionError = msg;
+				toast.error(msg);
+			}
 		};
 	}
 
@@ -82,32 +95,54 @@
 
 	function proposeEnhance() {
 		proposePending = true;
+		actionError = null;
 		return async ({
 			result,
 			update
 		}: {
-			result: { type: string };
+			result: { type: string; data?: Record<string, unknown>; error?: { message?: string } };
 			update: (opts?: { reset?: boolean }) => Promise<void>;
 		}) => {
 			await update({ reset: false });
 			proposePending = false;
-			proposeOpen = false;
-			if (result.type === 'success') toast.success('Alternate proposed');
+			if (result.type === 'success') {
+				proposeOpen = false;
+				toast.success('Alternate proposed');
+			} else if (result.type === 'failure') {
+				const msg = (result.data?.error as string) ?? 'Something went wrong.';
+				actionError = msg;
+				toast.error(msg);
+			} else if (result.type === 'error') {
+				const msg = result.error?.message ?? 'Something went wrong. Please try again.';
+				actionError = msg;
+				toast.error(msg);
+			}
 		};
 	}
 
 	function withdrawEnhance() {
 		withdrawPending = true;
+		actionError = null;
 		return async ({
 			result,
 			update
 		}: {
-			result: { type: string };
+			result: { type: string; data?: Record<string, unknown>; error?: { message?: string } };
 			update: (opts?: { reset?: boolean }) => Promise<void>;
 		}) => {
 			await update({ reset: false });
 			withdrawPending = false;
-			if (result.type === 'success') toast.success('Proposal withdrawn');
+			if (result.type === 'success') {
+				toast.success('Proposal withdrawn');
+			} else if (result.type === 'failure') {
+				const msg = (result.data?.error as string) ?? 'Something went wrong.';
+				actionError = msg;
+				toast.error(msg);
+			} else if (result.type === 'error') {
+				const msg = result.error?.message ?? 'Something went wrong. Please try again.';
+				actionError = msg;
+				toast.error(msg);
+			}
 		};
 	}
 
@@ -151,8 +186,8 @@
 		</a>
 	{/if}
 
-	{#if form?.error}
-		<Alert severity="error" class="mb-4">{form.error}</Alert>
+	{#if actionError}
+		<Alert severity="error" class="mb-4">{actionError}</Alert>
 	{/if}
 
 	<!-- Header -->
@@ -326,14 +361,19 @@
 					<form
 						method="post"
 						action="?/decline"
-						use:enhance={() => {
-							submittingAction = 'decline';
-							return async ({ result, update }) => {
+						use:enhance={enhanceWithToasts({
+							successMessage: 'Quote declined',
+							onStart: () => {
+								submittingAction = 'decline';
+								actionError = null;
+							},
+							onEnd: () => {
 								submittingAction = null;
-								await update();
-								if (result.type === 'success') toast.success('Quote declined');
-							};
-						}}
+							},
+							onError: (msg) => {
+								actionError = msg;
+							}
+						})}
 						autocomplete="off"
 					>
 						<input type="hidden" name="id" value={order.id} />
@@ -574,15 +614,19 @@
 					<form
 						method="post"
 						action="?/updateStatus"
-						use:enhance={() => {
-							submittingAction = 'updateStatus';
-							const target = nextStatus[order.status];
-							return async ({ result, update }) => {
+						use:enhance={enhanceWithToasts({
+							successMessage: `Order marked as ${nextStatus[order.status]}`,
+							onStart: () => {
+								submittingAction = 'updateStatus';
+								actionError = null;
+							},
+							onEnd: () => {
 								submittingAction = null;
-								await update();
-								if (result.type === 'success') toast.success(`Order marked as ${target}`);
-							};
-						}}
+							},
+							onError: (msg) => {
+								actionError = msg;
+							}
+						})}
 						autocomplete="off"
 					>
 						<input type="hidden" name="id" value={order.id} />
@@ -602,14 +646,19 @@
 					<form
 						method="post"
 						action="?/cancel"
-						use:enhance={() => {
-							submittingAction = 'cancel';
-							return async ({ result, update }) => {
+						use:enhance={enhanceWithToasts({
+							successMessage: 'Order cancelled',
+							onStart: () => {
+								submittingAction = 'cancel';
+								actionError = null;
+							},
+							onEnd: () => {
 								submittingAction = null;
-								await update();
-								if (result.type === 'success') toast.success('Order cancelled');
-							};
-						}}
+							},
+							onError: (msg) => {
+								actionError = msg;
+							}
+						})}
 						autocomplete="off"
 					>
 						<input type="hidden" name="id" value={order.id} />
@@ -637,14 +686,19 @@
 					<form
 						method="post"
 						action="?/refund"
-						use:enhance={() => {
-							submittingAction = 'refund';
-							return async ({ result, update }) => {
+						use:enhance={enhanceWithToasts({
+							successMessage: 'Refund issued',
+							onStart: () => {
+								submittingAction = 'refund';
+								actionError = null;
+							},
+							onEnd: () => {
 								submittingAction = null;
-								await update();
-								if (result.type === 'success') toast.success('Refund issued');
-							};
-						}}
+							},
+							onError: (msg) => {
+								actionError = msg;
+							}
+						})}
 						autocomplete="off"
 					>
 						<input type="hidden" name="id" value={order.id} />

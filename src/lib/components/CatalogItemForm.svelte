@@ -145,13 +145,23 @@
 			result,
 			update
 		}: {
-			result: { type: string; data?: Record<string, unknown> };
+			result: {
+				type: string;
+				data?: Record<string, unknown>;
+				error?: { message?: string };
+			};
 			update: (opts?: { reset?: boolean }) => Promise<void>;
 		}) => {
 			isSubmitting = false;
 
 			if (result.type === 'failure') {
 				internalError = (result.data?.error as string) ?? 'Something went wrong.';
+				toast.error(internalError);
+				return;
+			}
+			if (result.type === 'error') {
+				internalError = result.error?.message ?? 'Something went wrong. Please try again.';
+				toast.error(internalError);
 				return;
 			}
 

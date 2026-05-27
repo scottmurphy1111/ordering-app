@@ -54,59 +54,79 @@ export const load: PageServerLoad = async (event) => {
 
 export const actions: Actions = {
 	create: async ({ request, locals }) => {
-		const vendorId = locals.vendorId!;
-		const formData = await request.formData();
-		const name = formData.get('name')?.toString().trim();
-		const description = formData.get('description')?.toString().trim() || null;
-		const isActive = formData.get('isActive') === 'on';
+		try {
+			const vendorId = locals.vendorId!;
+			const formData = await request.formData();
+			const name = formData.get('name')?.toString().trim();
+			const description = formData.get('description')?.toString().trim() || null;
+			const isActive = formData.get('isActive') === 'on';
 
-		if (!name) return fail(400, { error: 'Category name is required' });
+			if (!name) return fail(400, { error: 'Category name is required' });
 
-		await db.insert(catalogCategories).values({ vendorId, name, description, isActive });
-		return { success: true };
+			await db.insert(catalogCategories).values({ vendorId, name, description, isActive });
+			return { success: true };
+		} catch (err) {
+			console.error('[create] error:', err);
+			return fail(500, { error: 'Something went wrong on our end. Please try again.' });
+		}
 	},
 
 	update: async ({ request, locals }) => {
-		const vendorId = locals.vendorId!;
-		const formData = await request.formData();
-		const id = parseInt(formData.get('id')?.toString() ?? '');
-		const name = formData.get('name')?.toString().trim();
-		const description = formData.get('description')?.toString().trim() || null;
-		const isActive = formData.get('isActive') === 'on';
+		try {
+			const vendorId = locals.vendorId!;
+			const formData = await request.formData();
+			const id = parseInt(formData.get('id')?.toString() ?? '');
+			const name = formData.get('name')?.toString().trim();
+			const description = formData.get('description')?.toString().trim() || null;
+			const isActive = formData.get('isActive') === 'on';
 
-		if (isNaN(id)) return fail(400, { error: 'Invalid ID' });
-		if (!name) return fail(400, { error: 'Name is required' });
+			if (isNaN(id)) return fail(400, { error: 'Invalid ID' });
+			if (!name) return fail(400, { error: 'Name is required' });
 
-		await db
-			.update(catalogCategories)
-			.set({ name, description, isActive })
-			.where(and(eq(catalogCategories.id, id), eq(catalogCategories.vendorId, vendorId)));
-		return { success: true };
+			await db
+				.update(catalogCategories)
+				.set({ name, description, isActive })
+				.where(and(eq(catalogCategories.id, id), eq(catalogCategories.vendorId, vendorId)));
+			return { success: true };
+		} catch (err) {
+			console.error('[update] error:', err);
+			return fail(500, { error: 'Something went wrong on our end. Please try again.' });
+		}
 	},
 
 	delete: async ({ request, locals }) => {
-		const vendorId = locals.vendorId!;
-		const formData = await request.formData();
-		const id = parseInt(formData.get('id')?.toString() ?? '');
-		if (isNaN(id)) return fail(400, { error: 'Invalid ID' });
+		try {
+			const vendorId = locals.vendorId!;
+			const formData = await request.formData();
+			const id = parseInt(formData.get('id')?.toString() ?? '');
+			if (isNaN(id)) return fail(400, { error: 'Invalid ID' });
 
-		await db
-			.delete(catalogCategories)
-			.where(and(eq(catalogCategories.id, id), eq(catalogCategories.vendorId, vendorId)));
-		return { success: true };
+			await db
+				.delete(catalogCategories)
+				.where(and(eq(catalogCategories.id, id), eq(catalogCategories.vendorId, vendorId)));
+			return { success: true };
+		} catch (err) {
+			console.error('[delete] error:', err);
+			return fail(500, { error: 'Something went wrong on our end. Please try again.' });
+		}
 	},
 
 	setStatus: async ({ request, locals }) => {
-		const vendorId = locals.vendorId!;
-		const formData = await request.formData();
-		const id = parseInt(formData.get('id')?.toString() ?? '');
-		const isActive = formData.get('isActive') === 'true';
-		if (isNaN(id)) return fail(400, { error: 'Invalid ID' });
+		try {
+			const vendorId = locals.vendorId!;
+			const formData = await request.formData();
+			const id = parseInt(formData.get('id')?.toString() ?? '');
+			const isActive = formData.get('isActive') === 'true';
+			if (isNaN(id)) return fail(400, { error: 'Invalid ID' });
 
-		await db
-			.update(catalogCategories)
-			.set({ isActive })
-			.where(and(eq(catalogCategories.id, id), eq(catalogCategories.vendorId, vendorId)));
-		return { success: true };
+			await db
+				.update(catalogCategories)
+				.set({ isActive })
+				.where(and(eq(catalogCategories.id, id), eq(catalogCategories.vendorId, vendorId)));
+			return { success: true };
+		} catch (err) {
+			console.error('[setStatus] error:', err);
+			return fail(500, { error: 'Something went wrong on our end. Please try again.' });
+		}
 	}
 };

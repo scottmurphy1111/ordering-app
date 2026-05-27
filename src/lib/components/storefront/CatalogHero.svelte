@@ -54,7 +54,7 @@
 					<img
 						src={vendor.logoUrl}
 						alt={vendor.name}
-						class="h-14 w-auto max-w-32 shrink-0 object-contain {vendor.bannerUrl
+						class="max-h-16 w-auto max-w-64 shrink-0 object-contain sm:max-h-20 sm:max-w-80 {vendor.bannerUrl
 							? 'drop-shadow'
 							: ''}"
 					/>

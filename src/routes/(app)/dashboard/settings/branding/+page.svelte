@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import { untrack } from 'svelte';
-	import type { PageData, ActionData } from './$types';
+	import type { PageData } from './$types';
 	import Icon from '@iconify/svelte';
 	import { Button } from '$lib/components/ui/button';
 	import { Input } from '$lib/components/ui/input';
@@ -20,11 +20,12 @@
 	import { Dialog, DialogContent, DialogHeader, DialogTitle } from '$lib/components/ui/dialog';
 	import { invalidateAll } from '$app/navigation';
 	import { toast } from '$lib/toast';
+	import { enhanceWithToasts } from '$lib/forms/enhance-with-toasts';
 	import { FONT_PAIRS, googleFontsUrl, type FontPairSlug } from '$lib/storefront/font-pairs';
 	import { BACKGROUND_PATTERNS, patternDataUriSoft } from '$lib/storefront/background-patterns';
 	import AiImageGenerator from '$lib/components/AiImageGenerator.svelte';
 
-	let { data, form }: { data: PageData; form: ActionData } = $props();
+	let { data }: { data: PageData } = $props();
 
 	let backgroundColor = $state('');
 	let accentColor = $state('');
@@ -49,6 +50,14 @@
 	let bannerState = $state<UploadState>({ uploading: false, error: '' });
 	let bgState = $state<UploadState>({ uploading: false, error: '' });
 	let submittingAction = $state<string | null>(null);
+
+	// Per-form save errors (separate so an error in one form doesn't bleed into others).
+	let identitySaveError = $state<string | null>(null);
+	let fontSaveError = $state<string | null>(null);
+	let colorsSaveError = $state<string | null>(null);
+	let logoSaveError = $state<string | null>(null);
+	let bannerSaveError = $state<string | null>(null);
+	let backgroundSaveError = $state<string | null>(null);
 
 	const removeLabel = $derived.by(() => {
 		const hasImage = !!data.branding.backgroundImageUrl;
@@ -113,10 +122,6 @@
 		<p class="mt-0.5 text-sm text-muted-foreground">Customize your storefront's appearance.</p>
 	</div>
 
-	{#if form?.error}
-		<Alert severity="error" class="mb-4">{form.error}</Alert>
-	{/if}
-
 	<div class="space-y-6">
 		<!-- ── Identity ─────────────────────────────────────────────────────────── -->
 		<Card class="shadow-sm">
@@ -125,17 +130,26 @@
 				<CardDescription>How your business appears in the storefront header.</CardDescription>
 			</CardHeader>
 			<CardContent>
+				{#if identitySaveError}
+					<Alert severity="error" class="mb-4">{identitySaveError}</Alert>
+				{/if}
 				<form
 					method="post"
 					action="?/saveIdentity"
-					use:enhance={() => {
-						submittingAction = 'saveIdentity';
-						return async ({ result, update }) => {
+					use:enhance={enhanceWithToasts({
+						successMessage: 'Identity saved',
+						preserveValues: true,
+						onStart: () => {
+							submittingAction = 'saveIdentity';
+							identitySaveError = null;
+						},
+						onEnd: () => {
 							submittingAction = null;
-							await update({ invalidateAll: true });
-							if (result.type === 'success') toast.success('Identity saved');
-						};
-					}}
+						},
+						onError: (msg) => {
+							identitySaveError = msg;
+						}
+					})}
 					class="space-y-4"
 				>
 					<div>
@@ -192,17 +206,26 @@
 				<CardDescription>Choose a font pairing that matches your brand's feel.</CardDescription>
 			</CardHeader>
 			<CardContent>
+				{#if fontSaveError}
+					<Alert severity="error" class="mb-4">{fontSaveError}</Alert>
+				{/if}
 				<form
 					method="post"
 					action="?/saveFontPair"
-					use:enhance={() => {
-						submittingAction = 'saveFontPair';
-						return async ({ result, update }) => {
+					use:enhance={enhanceWithToasts({
+						successMessage: 'Typography saved',
+						preserveValues: true,
+						onStart: () => {
+							submittingAction = 'saveFontPair';
+							fontSaveError = null;
+						},
+						onEnd: () => {
 							submittingAction = null;
-							await update({ invalidateAll: true });
-							if (result.type === 'success') toast.success('Typography saved');
-						};
-					}}
+						},
+						onError: (msg) => {
+							fontSaveError = msg;
+						}
+					})}
 					class="space-y-4"
 				>
 					<div class="grid grid-cols-1 gap-3 md:grid-cols-2">
@@ -257,18 +280,27 @@
 			</CardHeader>
 			<CardContent>
 				<p class="mb-4 text-xs text-muted-foreground">Sets the colors on your public storefront.</p>
+				{#if colorsSaveError}
+					<Alert severity="error" class="mb-4">{colorsSaveError}</Alert>
+				{/if}
 				<form
 					id="colors-form"
 					method="post"
 					action="?/saveColors"
-					use:enhance={() => {
-						submittingAction = 'saveColors';
-						return async ({ result, update }) => {
+					use:enhance={enhanceWithToasts({
+						successMessage: 'Colors saved',
+						preserveValues: true,
+						onStart: () => {
+							submittingAction = 'saveColors';
+							colorsSaveError = null;
+						},
+						onEnd: () => {
 							submittingAction = null;
-							await update({ reset: false });
-							if (result.type === 'success') toast.success('Colors saved');
-						};
-					}}
+						},
+						onError: (msg) => {
+							colorsSaveError = msg;
+						}
+					})}
 					class="space-y-5"
 				>
 					<div class="grid grid-cols-1 gap-6 sm:grid-cols-3">
@@ -465,6 +497,9 @@
 						/>
 					</div>
 				{/if}
+				{#if logoSaveError}
+					<Alert severity="error" class="mb-3">{logoSaveError}</Alert>
+				{/if}
 				{#if logoState.error}
 					<p class="text-sm text-red-600">{logoState.error}</p>
 				{/if}
@@ -495,14 +530,19 @@
 						<form
 							method="post"
 							action="?/removeLogo"
-							use:enhance={() => {
-								submittingAction = 'removeLogo';
-								return async ({ result, update }) => {
+							use:enhance={enhanceWithToasts({
+								successMessage: 'Logo removed',
+								onStart: () => {
+									submittingAction = 'removeLogo';
+									logoSaveError = null;
+								},
+								onEnd: () => {
 									submittingAction = null;
-									await update();
-									if (result.type === 'success') toast.success('Logo removed');
-								};
-							}}
+								},
+								onError: (msg) => {
+									logoSaveError = msg;
+								}
+							})}
 						>
 							<Button
 								type="submit"
@@ -549,6 +589,9 @@
 						<img src={data.branding.bannerUrl} alt="Banner" class="h-36 w-full object-cover" />
 					</div>
 				{/if}
+				{#if bannerSaveError}
+					<Alert severity="error" class="mb-3">{bannerSaveError}</Alert>
+				{/if}
 				{#if bannerState.error}
 					<p class="text-sm text-red-600">{bannerState.error}</p>
 				{/if}
@@ -580,14 +623,19 @@
 						<form
 							method="post"
 							action="?/removeBanner"
-							use:enhance={() => {
-								submittingAction = 'removeBanner';
-								return async ({ result, update }) => {
+							use:enhance={enhanceWithToasts({
+								successMessage: 'Banner removed',
+								onStart: () => {
+									submittingAction = 'removeBanner';
+									bannerSaveError = null;
+								},
+								onEnd: () => {
 									submittingAction = null;
-									await update();
-									if (result.type === 'success') toast.success('Banner removed');
-								};
-							}}
+								},
+								onError: (msg) => {
+									bannerSaveError = msg;
+								}
+							})}
 						>
 							<Button
 								type="submit"
@@ -650,6 +698,9 @@
 						/>
 					</div>
 				{/if}
+				{#if backgroundSaveError}
+					<Alert severity="error" class="mb-3">{backgroundSaveError}</Alert>
+				{/if}
 				{#if bgState.error}
 					<p class="text-sm text-red-600">{bgState.error}</p>
 				{/if}
@@ -688,14 +739,19 @@
 						<form
 							method="post"
 							action="?/removeBackground"
-							use:enhance={() => {
-								submittingAction = 'removeBackground';
-								return async ({ result, update }) => {
+							use:enhance={enhanceWithToasts({
+								successMessage: 'Background removed',
+								onStart: () => {
+									submittingAction = 'removeBackground';
+									backgroundSaveError = null;
+								},
+								onEnd: () => {
 									submittingAction = null;
-									await update();
-									if (result.type === 'success') toast.success('Background removed');
-								};
-							}}
+								},
+								onError: (msg) => {
+									backgroundSaveError = msg;
+								}
+							})}
 						>
 							<Button
 								type="submit"
@@ -736,14 +792,19 @@
 						<form
 							method="post"
 							action="?/selectPattern"
-							use:enhance={() => {
-								submittingAction = `pattern:${pattern.slug}`;
-								return async ({ result, update }) => {
+							use:enhance={enhanceWithToasts({
+								successMessage: 'Background updated',
+								onStart: () => {
+									submittingAction = `pattern:${pattern.slug}`;
+									backgroundSaveError = null;
+								},
+								onEnd: () => {
 									submittingAction = null;
-									await update({ invalidateAll: true });
-									if (result.type === 'success') toast.success('Background updated');
-								};
-							}}
+								},
+								onError: (msg) => {
+									backgroundSaveError = msg;
+								}
+							})}
 						>
 							<input type="hidden" name="slug" value={pattern.slug} />
 							<button

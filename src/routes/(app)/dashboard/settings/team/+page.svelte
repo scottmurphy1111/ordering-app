@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import { confirmDialog } from '$lib/confirm.svelte';
-	import type { PageData, ActionData } from './$types';
+	import type { PageData } from './$types';
 	import Icon from '@iconify/svelte';
 	import { Button } from '$lib/components/ui/button';
 	import StatusBadge from '$lib/components/StatusBadge.svelte';
@@ -23,15 +23,9 @@
 		TableCell
 	} from '$lib/components/ui/table';
 	import { Alert } from '$lib/components/ui/alert';
-	import { toast } from '$lib/toast';
+	import { enhanceWithToasts } from '$lib/forms/enhance-with-toasts';
 
-	let { data, form }: { data: PageData; form: ActionData } = $props();
-
-	$effect(() => {
-		if ((form as { addSuccess?: boolean } | null)?.addSuccess) {
-			toast.success('Member added');
-		}
-	});
+	let { data }: { data: PageData } = $props();
 
 	let showAddForm = $state(false);
 	let showInviteForm = $state(false);
@@ -40,6 +34,11 @@
 	let copiedToken = $state<string | null>(null);
 	let submittingRemoveMemberId = $state<string | null>(null);
 	let submittingCancelInviteId = $state<string | null>(null);
+
+	// Per-form save errors.
+	let addMemberError = $state<string | null>(null);
+	let inviteError = $state<string | null>(null);
+	let memberActionError = $state<string | null>(null);
 
 	async function copyLink(url: string, id: string) {
 		await navigator.clipboard.writeText(url);
@@ -68,14 +67,14 @@
 	</div>
 
 	<div>
-		{#if form?.addError}
-			<Alert severity="error" class="mb-4">{form.addError}</Alert>
+		{#if addMemberError}
+			<Alert severity="error" class="mb-4">{addMemberError}</Alert>
 		{/if}
-		{#if form?.error}
-			<Alert severity="error" class="mb-4">{form.error}</Alert>
+		{#if memberActionError}
+			<Alert severity="error" class="mb-4">{memberActionError}</Alert>
 		{/if}
-		{#if form?.inviteError}
-			<Alert severity="error" class="mb-4">{form.inviteError}</Alert>
+		{#if inviteError}
+			<Alert severity="error" class="mb-4">{inviteError}</Alert>
 		{/if}
 
 		{#if data.currentRole === 'owner' || data.currentRole === 'admin' || data.isInternal}
@@ -110,11 +109,18 @@
 						<form
 							method="post"
 							action="?/addMember"
-							use:enhance={() =>
-								({ update }) => {
-									update();
+							use:enhance={enhanceWithToasts({
+								successMessage: 'Member added',
+								onStart: () => {
+									addMemberError = null;
+								},
+								onSuccess: () => {
 									showAddForm = false;
-								}}
+								},
+								onError: (msg) => {
+									addMemberError = msg;
+								}
+							})}
 						>
 							<h2 class="mb-3 text-sm font-semibold text-foreground">Add member by email</h2>
 							<div class="flex flex-wrap gap-2">
@@ -156,18 +162,18 @@
 						<form
 							method="post"
 							action="?/sendInvite"
-							use:enhance={() => {
-								return async ({ result, update }) => {
-									await update();
-									if (
-										result.type === 'success' &&
-										(result.data as { inviteSuccess?: boolean })?.inviteSuccess
-									) {
-										showInviteForm = false;
-										toast.success('Invite sent');
-									}
-								};
-							}}
+							use:enhance={enhanceWithToasts({
+								successMessage: 'Invite sent',
+								onStart: () => {
+									inviteError = null;
+								},
+								onSuccess: () => {
+									showInviteForm = false;
+								},
+								onError: (msg) => {
+									inviteError = msg;
+								}
+							})}
 						>
 							<h2 class="mb-1 text-sm font-semibold text-foreground">Invite by email</h2>
 							<p class="mb-3 text-xs text-muted-foreground">
@@ -232,12 +238,15 @@
 										<form
 											method="post"
 											action="?/changeRole"
-											use:enhance={() => {
-												return async ({ result, update }) => {
-													await update();
-													if (result.type === 'success') toast.success('Role updated');
-												};
-											}}
+											use:enhance={enhanceWithToasts({
+												successMessage: 'Role updated',
+												onStart: () => {
+													memberActionError = null;
+												},
+												onError: (msg) => {
+													memberActionError = msg;
+												}
+											})}
 										>
 											<input type="hidden" name="userId" value={member.userId} />
 											<select
@@ -275,14 +284,19 @@
 											<form
 												method="post"
 												action="?/removeMember"
-												use:enhance={() => {
-													submittingRemoveMemberId = member.userId;
-													return async ({ result, update }) => {
+												use:enhance={enhanceWithToasts({
+													successMessage: 'Member removed',
+													onStart: () => {
+														submittingRemoveMemberId = member.userId;
+														memberActionError = null;
+													},
+													onEnd: () => {
 														submittingRemoveMemberId = null;
-														await update();
-														if (result.type === 'success') toast.success('Member removed');
-													};
-												}}
+													},
+													onError: (msg) => {
+														memberActionError = msg;
+													}
+												})}
 											>
 												<input type="hidden" name="userId" value={member.userId} />
 												<Button
@@ -368,14 +382,19 @@
 												<form
 													method="post"
 													action="?/cancelInvite"
-													use:enhance={() => {
-														submittingCancelInviteId = invite.id;
-														return async ({ result, update }) => {
+													use:enhance={enhanceWithToasts({
+														successMessage: 'Invite cancelled',
+														onStart: () => {
+															submittingCancelInviteId = invite.id;
+															memberActionError = null;
+														},
+														onEnd: () => {
 															submittingCancelInviteId = null;
-															await update();
-															if (result.type === 'success') toast.success('Invite cancelled');
-														};
-													}}
+														},
+														onError: (msg) => {
+															memberActionError = msg;
+														}
+													})}
 												>
 													<input type="hidden" name="id" value={invite.id} />
 													<Button

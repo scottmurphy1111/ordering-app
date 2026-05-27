@@ -90,13 +90,17 @@ export const storefrontFlorist: ArchetypeFixture = {
 
 	branding: {
 		tagline: 'Fresh flowers, every day',
-		logoUrl: '/seed-assets/logo.svg',
-		bannerUrl: '/seed-assets/banner.svg',
+		logoUrl: '/seed-assets/logo-florist.svg',
+		bannerUrl: null,
 		faviconUrl: '/seed-assets/favicon.svg',
-		backgroundImageUrl: '/seed-assets/background.svg',
+		backgroundImageUrl: null,
+		backgroundPatternSlug: 'plus-signs',
 		backgroundColor: '#1b2e22',
 		accentColor: '#8db87c',
-		foregroundColor: '#edf5ec'
+		foregroundColor: '#edf5ec',
+		fontPair: 'libre-baskerville-source-sans',
+		showName: false,
+		showLogo: true
 	},
 
 	settings: {

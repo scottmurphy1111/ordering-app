@@ -102,13 +102,17 @@ export const storefrontBakery: ArchetypeFixture = {
 
 	branding: {
 		tagline: 'Baked fresh, every morning',
-		logoUrl: '/seed-assets/logo.svg',
-		bannerUrl: '/seed-assets/banner.svg',
+		logoUrl: '/seed-assets/logo-bakery.svg',
+		bannerUrl: null,
 		faviconUrl: '/seed-assets/favicon.svg',
-		backgroundImageUrl: '/seed-assets/background.svg',
+		backgroundImageUrl: null,
+		backgroundPatternSlug: 'fine-grid',
 		backgroundColor: '#2c1810',
 		accentColor: '#d4956a',
-		foregroundColor: '#fdf4ec'
+		foregroundColor: '#fdf4ec',
+		fontPair: 'playfair-inter',
+		showName: false,
+		showLogo: true
 	},
 
 	settings: {

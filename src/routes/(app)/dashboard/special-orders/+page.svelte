@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { PageData, ActionData } from './$types';
+	import type { PageData } from './$types';
 	import { enhance } from '$app/forms';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
@@ -8,10 +8,10 @@
 	import { Alert } from '$lib/components/ui/alert';
 	import { confirmDialog } from '$lib/confirm.svelte';
 	import FilterPills from '$lib/components/FilterPills.svelte';
-	import { toast } from '$lib/toast';
+	import { enhanceWithToasts } from '$lib/forms/enhance-with-toasts';
 
-	let { data, form: _form }: { data: PageData; form: ActionData } = $props();
-	const form = $derived(_form as { error?: string; declineSuccess?: boolean } | null);
+	let { data }: { data: PageData } = $props();
+	let declineError = $state<string | null>(null);
 
 	let expandedId = $state<number | null>(null);
 	let submittingDeclineId = $state<number | null>(null);
@@ -43,12 +43,6 @@
 		{ label: 'Expired', value: 'expired', count: data.expiredCount },
 		{ label: 'All', value: 'all', count: data.totalCount }
 	]);
-
-	$effect(() => {
-		if (form?.declineSuccess) {
-			toast.success('Request declined');
-		}
-	});
 </script>
 
 <div>
@@ -59,8 +53,8 @@
 		</div>
 	</div>
 
-	{#if form?.error}
-		<Alert severity="error" class="mb-4">{form.error}</Alert>
+	{#if declineError}
+		<Alert severity="error" class="mb-4">{declineError}</Alert>
 	{/if}
 
 	<div class="mb-4">
@@ -259,13 +253,19 @@
 									<form
 										method="post"
 										action="?/decline"
-										use:enhance={() => {
-											submittingDeclineId = req.id;
-											return async ({ update }) => {
+										use:enhance={enhanceWithToasts({
+											successMessage: 'Request declined',
+											onStart: () => {
+												submittingDeclineId = req.id;
+												declineError = null;
+											},
+											onEnd: () => {
 												submittingDeclineId = null;
-												await update();
-											};
-										}}
+											},
+											onError: (msg) => {
+												declineError = msg;
+											}
+										})}
 									>
 										<input type="hidden" name="id" value={req.id} />
 										<div class="flex items-center gap-2">

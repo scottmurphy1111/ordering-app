@@ -516,7 +516,7 @@
 	<title>Your Cart — {data.vendor.name}</title>
 </svelte:head>
 
-<main class="mx-auto max-w-lg px-4 py-8">
+<main class="mx-auto max-w-lg space-y-4 px-4 py-8">
 	<div class="mb-6">
 		<h1 class="text-2xl font-bold text-neutral-900" style="font-family: var(--font-heading);">
 			Your Cart

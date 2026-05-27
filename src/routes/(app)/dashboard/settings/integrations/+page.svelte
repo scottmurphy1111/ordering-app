@@ -3,7 +3,7 @@
 	import { confirmDialog } from '$lib/confirm.svelte';
 	import { resolve } from '$app/paths';
 	import Icon from '@iconify/svelte';
-	import type { PageData, ActionData } from './$types';
+	import type { PageData } from './$types';
 	import { Button } from '$lib/components/ui/button';
 	import StatusBadge from '$lib/components/StatusBadge.svelte';
 	import { Input } from '$lib/components/ui/input';
@@ -11,17 +11,25 @@
 	import { Card, CardContent, CardFooter } from '$lib/components/ui/card';
 	import { Alert } from '$lib/components/ui/alert';
 	import { toast } from '$lib/toast';
+	import { enhanceWithToasts } from '$lib/forms/enhance-with-toasts';
 
-	let { data, form }: { data: PageData; form: ActionData } = $props();
+	let { data }: { data: PageData } = $props();
 
 	let editingPublishable = $state(false);
 	let editingSecret = $state(false);
 	let showPk = $state(false);
 	let showSk = $state(false);
-	let lastSubmitted: 'pk' | 'sk' | null = $state(null);
 	let submittingAction = $state<
 		'saveStripePublishableKey' | 'saveStripeSecretKey' | 'clearStripeKey' | null
 	>(null);
+
+	// Per-form save errors.
+	let pkSaveError = $state<string | null>(null);
+	let skSaveError = $state<string | null>(null);
+	let clearSaveError = $state<string | null>(null);
+
+	// Captured before update() resolves so onSuccess can pick the right toast copy.
+	let skWasConnected = $state(false);
 </script>
 
 <div>
@@ -88,19 +96,24 @@
 					id="save-pk-form"
 					method="post"
 					action="?/saveStripePublishableKey"
-					use:enhance={() => {
-						lastSubmitted = 'pk';
-						submittingAction = 'saveStripePublishableKey';
-						return async ({ result, update }) => {
+					use:enhance={enhanceWithToasts({
+						successMessage: 'Stripe settings updated',
+						preserveValues: true,
+						onStart: () => {
+							submittingAction = 'saveStripePublishableKey';
+							pkSaveError = null;
+						},
+						onEnd: () => {
 							submittingAction = null;
-							if (result.type === 'success') {
-								editingPublishable = false;
-								showPk = false;
-							}
-							await update({ reset: false });
-							if (result.type === 'success') toast.success('Stripe settings updated');
-						};
-					}}
+						},
+						onSuccess: () => {
+							editingPublishable = false;
+							showPk = false;
+						},
+						onError: (msg) => {
+							pkSaveError = msg;
+						}
+					})}
 				>
 					<Label for="publishable-key-input" class="mb-1 block text-xs">Publishable key</Label>
 					<div class="flex items-start gap-2">
@@ -167,8 +180,8 @@
 							</Button>
 						{/if}
 					</div>
-					{#if form?.error && lastSubmitted === 'pk'}
-						<Alert severity="error" class="mt-2">{form.error}</Alert>
+					{#if pkSaveError}
+						<Alert severity="error" class="mt-2">{pkSaveError}</Alert>
 					{/if}
 				</form>
 
@@ -177,23 +190,27 @@
 					id="save-sk-form"
 					method="post"
 					action="?/saveStripeSecretKey"
-					use:enhance={() => {
-						lastSubmitted = 'sk';
-						submittingAction = 'saveStripeSecretKey';
-						// Capture before await — data.hasStripeKey flips to true after update().
-						const wasConnected = data.hasStripeKey;
-						return async ({ result, update }) => {
+					use:enhance={enhanceWithToasts({
+						preserveValues: true,
+						// successMessage omitted — onSuccess fires a dynamic toast text using
+						// skWasConnected captured in onStart (before update() runs).
+						onStart: () => {
+							submittingAction = 'saveStripeSecretKey';
+							skSaveError = null;
+							skWasConnected = data.hasStripeKey;
+						},
+						onEnd: () => {
 							submittingAction = null;
-							if (result.type === 'success') {
-								editingSecret = false;
-								showSk = false;
-							}
-							await update({ reset: false });
-							if (result.type === 'success') {
-								toast.success(wasConnected ? 'Stripe settings updated' : 'Stripe connected');
-							}
-						};
-					}}
+						},
+						onSuccess: () => {
+							toast.success(skWasConnected ? 'Stripe settings updated' : 'Stripe connected');
+							editingSecret = false;
+							showSk = false;
+						},
+						onError: (msg) => {
+							skSaveError = msg;
+						}
+					})}
 				>
 					<Label for="secret-key-input" class="mb-1 block text-xs">Secret key</Label>
 					<div class="flex items-start gap-2">
@@ -260,8 +277,8 @@
 							</Button>
 						{/if}
 					</div>
-					{#if form?.error && lastSubmitted === 'sk'}
-						<Alert severity="error" class="mt-2">{form.error}</Alert>
+					{#if skSaveError}
+						<Alert severity="error" class="mt-2">{skSaveError}</Alert>
 					{/if}
 				</form>
 
@@ -287,22 +304,33 @@
 				{/if}
 			</div>
 
+			{#if clearSaveError}
+				<Alert severity="error" class="mt-2">{clearSaveError}</Alert>
+			{/if}
 			<form
 				id="disconnect-stripe-form"
 				method="post"
 				action="?/clearStripeKey"
-				use:enhance={() => {
-					submittingAction = 'clearStripeKey';
-					return async ({ result, update }) => {
+				use:enhance={enhanceWithToasts({
+					successMessage: 'Stripe keys removed',
+					preserveValues: true,
+					onStart: () => {
+						submittingAction = 'clearStripeKey';
+						clearSaveError = null;
+					},
+					onEnd: () => {
 						submittingAction = null;
+					},
+					onSuccess: () => {
 						editingSecret = true;
 						editingPublishable = false;
 						showSk = false;
 						showPk = false;
-						await update({ reset: false });
-						if (result.type === 'success') toast.success('Stripe keys removed');
-					};
-				}}
+					},
+					onError: (msg) => {
+						clearSaveError = msg;
+					}
+				})}
 			></form>
 
 			<!-- Webhook status -->

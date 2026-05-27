@@ -1,4 +1,4 @@
-import { mixHex } from './contrast';
+import { getReadableTextColor, mixHex } from './contrast';
 
 /**
  * Curated tileable background patterns. Each pattern is rendered as inline
@@ -105,11 +105,18 @@ export const BACKGROUND_PATTERNS: BackgroundPattern[] = [
 
 /**
  * Build a data URI using a *tinted* color: `foreground` mixed partway into
- * `background` in sRGB space. Reads as "the surface has a texture" rather
- * than "bright specks on the surface." The pattern's existing opacity values
- * still apply on top of the already-desaturated tone.
+ * a contrast-aware target in sRGB space. Reads as "the surface has a texture"
+ * rather than "bright specks on the surface." The pattern's existing opacity
+ * values still apply on top of the already-desaturated tone.
  *
- * `mixRatio` defaults to 0.5 (half-way between foreground and background).
+ * Mix target adapts to background luminance so the pattern stays visible on
+ * both dark- and light-theme palettes:
+ *   - Dark background → mix toward `background` (foreground stays lighter
+ *     than the surface, the existing behavior).
+ *   - Light background → mix toward `#000000` (foreground darkens to contrast
+ *     against the light surface).
+ *
+ * `mixRatio` defaults to 0.5 (half-way between foreground and target).
  * Higher → closer to the full foreground color; lower → more subtle.
  */
 export function patternDataUriSoft(
@@ -118,7 +125,10 @@ export function patternDataUriSoft(
 	background: string,
 	mixRatio = 0.5
 ): string {
-	const tinted = mixHex(foreground, background, mixRatio);
+	// getReadableTextColor returns the text color that would be readable on this
+	// background, which is also the right tint direction for the pattern.
+	const mixTarget = getReadableTextColor(background) === '#ffffff' ? background : '#000000';
+	const tinted = mixHex(foreground, mixTarget, mixRatio);
 	const svg = pattern.render(tinted);
 	return `url('data:image/svg+xml;utf8,${encodeURIComponent(svg)}')`;
 }

@@ -144,6 +144,31 @@
 	// Tracks which billing action is currently in flight. Set when a form submits,
 	// cleared when the action completes (failure path only — success paths navigate away).
 	let submittingAction = $state<string | null>(null);
+	let billingError = $state<string | null>(null);
+
+	type BillingResult =
+		| { type: 'success' | 'redirect'; data?: Record<string, unknown> }
+		| { type: 'failure'; data?: Record<string, unknown> }
+		| { type: 'error'; error?: { message?: string } };
+
+	// Centralized handler for failure / error results across billing forms.
+	// Sets the page-level alert AND fires a toast. Returns true if a non-success
+	// result was handled (caller should `return` to skip success path).
+	function handleBillingResult(result: BillingResult): boolean {
+		if (result.type === 'failure') {
+			const msg = (result.data?.error as string) ?? 'Something went wrong.';
+			billingError = msg;
+			toast.error(msg);
+			return true;
+		}
+		if (result.type === 'error') {
+			const msg = result.error?.message ?? 'Something went wrong. Please try again.';
+			billingError = msg;
+			toast.error(msg);
+			return true;
+		}
+		return false;
+	}
 
 	// --- Refund account credit modal ---
 	let pendingRefundCreditOpen = $state(false);
@@ -352,8 +377,8 @@
 		</Alert>
 	{/if}
 
-	{#if form?.error}
-		<Alert severity="error" class="mb-4">{form.error}</Alert>
+	{#if billingError || form?.error}
+		<Alert severity="error" class="mb-4">{billingError ?? form?.error}</Alert>
 	{/if}
 
 	<!-- Current plan + Account utilities: two-column grid on large screens. -->
@@ -467,12 +492,17 @@
 							action="?/resumeSubscription"
 							use:enhance={() => {
 								submittingAction = 'resume';
+								billingError = null;
 								return async ({ result, update }) => {
 									if (result.type === 'redirect') {
 										window.location.href = result.location;
 										return;
 									}
 									submittingAction = null;
+									if (handleBillingResult(result as BillingResult)) {
+										await update({ invalidateAll: true });
+										return;
+									}
 									await update({ invalidateAll: true });
 								};
 							}}
@@ -500,12 +530,14 @@
 							action="?/reactivate"
 							use:enhance={() => {
 								submittingAction = 'reactivate';
+								billingError = null;
 								return async ({ result, update }) => {
 									if (result.type === 'success') {
 										window.location.href = resolve('/dashboard/account/billing') + '?reactivated=1';
 										return;
 									}
 									submittingAction = null;
+									handleBillingResult(result as BillingResult);
 									await update({ invalidateAll: true });
 								};
 							}}
@@ -1044,9 +1076,11 @@
 					action={isActivate ? '?/activateAddon' : '?/deactivateAddon'}
 					use:enhance={() => {
 						submittingAction = 'addon';
-						return async ({ update }) => {
+						billingError = null;
+						return async ({ result, update }) => {
 							submittingAction = null;
 							pendingAddon = null;
+							handleBillingResult(result as BillingResult);
 							await update({ invalidateAll: true });
 						};
 					}}
@@ -1179,6 +1213,7 @@
 					action={cancelChoice === 'immediate_refund' ? '?/cancelImmediate' : '?/downgrade'}
 					use:enhance={() => {
 						submittingAction = 'cancel';
+						billingError = null;
 						const wasImmediate = cancelChoice === 'immediate_refund';
 						return async ({ result, update }) => {
 							pendingCancelOpen = false;
@@ -1189,6 +1224,7 @@
 								return;
 							}
 							submittingAction = null;
+							handleBillingResult(result as BillingResult);
 							await update({ invalidateAll: true });
 						};
 					}}
@@ -1363,6 +1399,7 @@
 					action="?/switchInterval"
 					use:enhance={() => {
 						submittingAction = 'switchInterval';
+						billingError = null;
 						const wasSwitchingToAnnual = target === 'annual';
 						const choiceAtSubmit = intervalSwitchChoice;
 						return async ({ result, update }) => {
@@ -1377,6 +1414,7 @@
 								return;
 							}
 							submittingAction = null;
+							handleBillingResult(result as BillingResult);
 							await update({ invalidateAll: true });
 						};
 					}}
@@ -1500,6 +1538,7 @@
 					action="?/pauseSubscription"
 					use:enhance={() => {
 						submittingAction = 'pause';
+						billingError = null;
 						return async ({ result, update }) => {
 							closePauseModal();
 							if (result.type === 'redirect') {
@@ -1507,6 +1546,7 @@
 								return;
 							}
 							submittingAction = null;
+							handleBillingResult(result as BillingResult);
 							await update({ invalidateAll: true });
 						};
 					}}
@@ -1740,6 +1780,7 @@
 					action={isUpgrade ? '?/upgrade' : '?/downgrade'}
 					use:enhance={() => {
 						submittingAction = 'planChange';
+						billingError = null;
 						return async ({ result, update }) => {
 							const wasUpgrade = isUpgrade;
 							pendingPlanChange = null;
@@ -1752,6 +1793,7 @@
 								return;
 							}
 							submittingAction = null;
+							handleBillingResult(result as BillingResult);
 							await update({ invalidateAll: true });
 						};
 					}}
@@ -1834,6 +1876,7 @@
 					action="?/refundAccountCredit"
 					use:enhance={() => {
 						submittingAction = 'refundCredit';
+						billingError = null;
 						return async ({ result, update }) => {
 							pendingRefundCreditOpen = false;
 							if (result.type === 'success') {
@@ -1841,6 +1884,7 @@
 								return;
 							}
 							submittingAction = null;
+							handleBillingResult(result as BillingResult);
 							await update({ invalidateAll: true });
 						};
 					}}

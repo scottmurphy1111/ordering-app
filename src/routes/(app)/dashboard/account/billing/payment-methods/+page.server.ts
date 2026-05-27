@@ -67,61 +67,71 @@ export const load: PageServerLoad = async ({ locals }) => {
 
 export const actions: Actions = {
 	setDefault: async ({ request, locals }) => {
-		requireStaff(locals);
-		const vendorId = locals.vendorId!;
-		const formData = await request.formData();
-		const paymentMethodId = formData.get('paymentMethodId')?.toString();
-		if (!paymentMethodId) return fail(400, { error: 'Missing payment method.' });
+		try {
+			requireStaff(locals);
+			const vendorId = locals.vendorId!;
+			const formData = await request.formData();
+			const paymentMethodId = formData.get('paymentMethodId')?.toString();
+			if (!paymentMethodId) return fail(400, { error: 'Missing payment method.' });
 
-		const vendorRecord = await db.query.vendor.findFirst({
-			where: eq(vendor.id, vendorId),
-			columns: { stripeCustomerId: true, stripeSubscriptionId: true }
-		});
-		if (!vendorRecord?.stripeCustomerId) return fail(400, { error: 'No billing account found.' });
+			const vendorRecord = await db.query.vendor.findFirst({
+				where: eq(vendor.id, vendorId),
+				columns: { stripeCustomerId: true, stripeSubscriptionId: true }
+			});
+			if (!vendorRecord?.stripeCustomerId) return fail(400, { error: 'No billing account found.' });
 
-		const stripe = getOrderLocalStripe();
-		await stripe.customers.update(vendorRecord.stripeCustomerId, {
-			invoice_settings: { default_payment_method: paymentMethodId }
-		});
-		if (vendorRecord.stripeSubscriptionId) {
-			await stripe.subscriptions.update(
-				vendorRecord.stripeSubscriptionId,
-				{ default_payment_method: paymentMethodId },
-				{ idempotencyKey: `sub-update:${vendorId}:pm-swap:${paymentMethodId}` }
-			);
+			const stripe = getOrderLocalStripe();
+			await stripe.customers.update(vendorRecord.stripeCustomerId, {
+				invoice_settings: { default_payment_method: paymentMethodId }
+			});
+			if (vendorRecord.stripeSubscriptionId) {
+				await stripe.subscriptions.update(
+					vendorRecord.stripeSubscriptionId,
+					{ default_payment_method: paymentMethodId },
+					{ idempotencyKey: `sub-update:${vendorId}:pm-swap:${paymentMethodId}` }
+				);
+			}
+			return { success: true, defaultUpdated: true };
+		} catch (err) {
+			console.error('[setDefault] error:', err);
+			return fail(500, { error: 'Something went wrong on our end. Please try again.' });
 		}
-		return { success: true, defaultUpdated: true };
 	},
 
 	remove: async ({ request, locals }) => {
-		requireStaff(locals);
-		const vendorId = locals.vendorId!;
-		const formData = await request.formData();
-		const paymentMethodId = formData.get('paymentMethodId')?.toString();
-		if (!paymentMethodId) return fail(400, { error: 'Missing payment method.' });
-
-		const vendorRecord = await db.query.vendor.findFirst({
-			where: eq(vendor.id, vendorId),
-			columns: { stripeCustomerId: true }
-		});
-		if (!vendorRecord?.stripeCustomerId) return fail(400, { error: 'No billing account found.' });
-
-		const stripe = getOrderLocalStripe();
-		const existing = await stripe.paymentMethods.list({
-			customer: vendorRecord.stripeCustomerId,
-			type: 'card'
-		});
-		if (existing.data.length <= 1) {
-			return fail(400, {
-				error: "Can't remove your only card. Add another first, then remove this one."
-			});
-		}
-
 		try {
-			await stripe.paymentMethods.detach(paymentMethodId);
-		} catch (e: unknown) {
-			return fail(400, { error: e instanceof Error ? e.message : 'Failed to remove card.' });
+			requireStaff(locals);
+			const vendorId = locals.vendorId!;
+			const formData = await request.formData();
+			const paymentMethodId = formData.get('paymentMethodId')?.toString();
+			if (!paymentMethodId) return fail(400, { error: 'Missing payment method.' });
+
+			const vendorRecord = await db.query.vendor.findFirst({
+				where: eq(vendor.id, vendorId),
+				columns: { stripeCustomerId: true }
+			});
+			if (!vendorRecord?.stripeCustomerId) return fail(400, { error: 'No billing account found.' });
+
+			const stripe = getOrderLocalStripe();
+			const existing = await stripe.paymentMethods.list({
+				customer: vendorRecord.stripeCustomerId,
+				type: 'card'
+			});
+			if (existing.data.length <= 1) {
+				return fail(400, {
+					error: "Can't remove your only card. Add another first, then remove this one."
+				});
+			}
+
+			try {
+				await stripe.paymentMethods.detach(paymentMethodId);
+			} catch (e: unknown) {
+				return fail(400, { error: e instanceof Error ? e.message : 'Failed to remove card.' });
+			}
+			return { success: true, removed: true };
+		} catch (err) {
+			console.error('[remove] error:', err);
+			return fail(500, { error: 'Something went wrong on our end. Please try again.' });
 		}
-		return { success: true, removed: true };
 	}
 };

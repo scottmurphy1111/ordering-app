@@ -38,7 +38,11 @@
 			class="flex items-center gap-3 transition-opacity hover:opacity-85"
 		>
 			{#if showLogo && logoUrl}
-				<img src={logoUrl} alt={vendorName} class="h-8 w-auto max-w-24 shrink-0 object-contain" />
+				<img
+					src={logoUrl}
+					alt={vendorName}
+					class="max-h-10 w-auto max-w-48 shrink-0 object-contain sm:max-h-12 sm:max-w-64"
+				/>
 			{/if}
 			{#if showName}
 				<span

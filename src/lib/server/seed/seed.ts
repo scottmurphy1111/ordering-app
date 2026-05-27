@@ -261,9 +261,13 @@ async function _seed(vendorId: number, fixture: ArchetypeFixture): Promise<void>
 			bannerUrl: fixture.branding.bannerUrl,
 			faviconUrl: fixture.branding.faviconUrl,
 			backgroundImageUrl: fixture.branding.backgroundImageUrl,
+			backgroundPatternSlug: fixture.branding.backgroundPatternSlug,
 			backgroundColor: fixture.branding.backgroundColor,
 			accentColor: fixture.branding.accentColor,
 			foregroundColor: fixture.branding.foregroundColor,
+			fontPair: fixture.branding.fontPair,
+			showName: fixture.branding.showName,
+			showLogo: fixture.branding.showLogo,
 			settings: fixture.settings,
 			lastOrderNumber: fixture.orderCounter,
 			updatedAt: new Date()

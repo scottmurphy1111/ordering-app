@@ -2,7 +2,7 @@
 	import { untrack } from 'svelte';
 	import { enhance } from '$app/forms';
 	import { resolve } from '$app/paths';
-	import type { PageData, ActionData } from './$types';
+	import type { PageData } from './$types';
 	import { Button } from '$lib/components/ui/button';
 	import { Input } from '$lib/components/ui/input';
 	import { Label } from '$lib/components/ui/label';
@@ -24,13 +24,17 @@
 	import { US_TIMEZONES, getAllTimezones, getTimezoneLabel } from '$lib/utils/timezones';
 	import { Alert } from '$lib/components/ui/alert';
 	import Icon from '@iconify/svelte';
-	import { toast } from '$lib/toast';
+	import { enhanceWithToasts } from '$lib/forms/enhance-with-toasts';
 
-	let { data, form: _form }: { data: PageData; form: ActionData } = $props();
-	const form = $derived(_form as ActionData | null);
+	let { data }: { data: PageData } = $props();
 	let submittingAction = $state<
 		'saveBusinessProfile' | 'saveCheckout' | 'saveSpecialRequests' | null
 	>(null);
+
+	// Per-form error states (separate so an error in one form doesn't bleed into another).
+	let profileSaveError = $state<string | null>(null);
+	let checkoutSaveError = $state<string | null>(null);
+	let specialRequestsSaveError = $state<string | null>(null);
 
 	const address = $derived(
 		data.info?.address as {
@@ -82,21 +86,27 @@
 	{#if data.fulfillmentChanged}
 		<Alert severity="success" class="mb-4">Fulfillment model updated.</Alert>
 	{/if}
-	{#if form?.error}
-		<Alert severity="error" class="mb-4">{form.error}</Alert>
+	{#if profileSaveError}
+		<Alert severity="error" class="mb-4">{profileSaveError}</Alert>
 	{/if}
 
 	<form
 		method="post"
 		action="?/saveBusinessProfile"
-		use:enhance={() => {
-			submittingAction = 'saveBusinessProfile';
-			return async ({ result, update }) => {
+		use:enhance={enhanceWithToasts({
+			successMessage: 'Business info saved',
+			preserveValues: true,
+			onStart: () => {
+				submittingAction = 'saveBusinessProfile';
+				profileSaveError = null;
+			},
+			onEnd: () => {
 				submittingAction = null;
-				await update({ reset: false });
-				if (result.type === 'success') toast.success('Business info saved');
-			};
-		}}
+			},
+			onError: (msg) => {
+				profileSaveError = msg;
+			}
+		})}
 		class="space-y-6"
 	>
 		<Card class="shadow-sm">
@@ -292,17 +302,26 @@
 	</form>
 
 	<!-- Checkout settings — tipping + ASAP -->
+	{#if checkoutSaveError}
+		<Alert severity="error" class="mt-6">{checkoutSaveError}</Alert>
+	{/if}
 	<form
 		method="post"
 		action="?/saveCheckout"
-		use:enhance={() => {
-			submittingAction = 'saveCheckout';
-			return async ({ result, update }) => {
+		use:enhance={enhanceWithToasts({
+			successMessage: 'Checkout settings saved',
+			preserveValues: true,
+			onStart: () => {
+				submittingAction = 'saveCheckout';
+				checkoutSaveError = null;
+			},
+			onEnd: () => {
 				submittingAction = null;
-				await update({ reset: false });
-				if (result.type === 'success') toast.success('Checkout settings saved');
-			};
-		}}
+			},
+			onError: (msg) => {
+				checkoutSaveError = msg;
+			}
+		})}
 		class="mt-6"
 	>
 		<Card class="shadow-sm">
@@ -357,17 +376,26 @@
 	</form>
 
 	<!-- Special requests -->
+	{#if specialRequestsSaveError}
+		<Alert severity="error" class="mt-6">{specialRequestsSaveError}</Alert>
+	{/if}
 	<form
 		method="post"
 		action="?/saveSpecialRequests"
-		use:enhance={() => {
-			submittingAction = 'saveSpecialRequests';
-			return async ({ result, update }) => {
+		use:enhance={enhanceWithToasts({
+			successMessage: 'Special requests saved',
+			preserveValues: true,
+			onStart: () => {
+				submittingAction = 'saveSpecialRequests';
+				specialRequestsSaveError = null;
+			},
+			onEnd: () => {
 				submittingAction = null;
-				await update({ reset: false });
-				if (result.type === 'success') toast.success('Special requests saved');
-			};
-		}}
+			},
+			onError: (msg) => {
+				specialRequestsSaveError = msg;
+			}
+		})}
 		class="mt-6"
 	>
 		<Card class="shadow-sm">

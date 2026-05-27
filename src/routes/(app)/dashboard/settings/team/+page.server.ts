@@ -64,147 +64,172 @@ export const load: PageServerLoad = async ({ locals }) => {
 
 export const actions: Actions = {
 	addMember: async ({ request, locals }) => {
-		requireOwner(locals);
-		const vendorId = locals.vendorId!;
-		const formData = await request.formData();
-		const email = formData.get('email')?.toString().trim().toLowerCase();
-		const role = formData.get('role')?.toString() as Role;
+		try {
+			requireOwner(locals);
+			const vendorId = locals.vendorId!;
+			const formData = await request.formData();
+			const email = formData.get('email')?.toString().trim().toLowerCase();
+			const role = formData.get('role')?.toString() as Role;
 
-		if (!email) return fail(400, { addError: 'Email is required' });
-		if (!ROLES.includes(role)) return fail(400, { addError: 'Invalid role' });
+			if (!email) return fail(400, { error: 'Email is required' });
+			if (!ROLES.includes(role)) return fail(400, { error: 'Invalid role' });
 
-		const foundUser = await db.query.user.findFirst({ where: eq(user.email, email) });
-		if (!foundUser) return fail(404, { addError: `No account found for ${email}` });
+			const foundUser = await db.query.user.findFirst({ where: eq(user.email, email) });
+			if (!foundUser) return fail(404, { error: `No account found for ${email}` });
 
-		const existing = await db.query.vendorUsers.findFirst({
-			where: and(eq(vendorUsers.vendorId, vendorId), eq(vendorUsers.userId, foundUser.id))
-		});
-		if (existing) return fail(409, { addError: `${email} is already a member` });
+			const existing = await db.query.vendorUsers.findFirst({
+				where: and(eq(vendorUsers.vendorId, vendorId), eq(vendorUsers.userId, foundUser.id))
+			});
+			if (existing) return fail(409, { error: `${email} is already a member` });
 
-		await db.insert(vendorUsers).values({ vendorId, userId: foundUser.id, role });
-		return { addSuccess: true };
+			await db.insert(vendorUsers).values({ vendorId, userId: foundUser.id, role });
+			return { addSuccess: true };
+		} catch (err) {
+			console.error('[addMember] error:', err);
+			return fail(500, { error: 'Something went wrong on our end. Please try again.' });
+		}
 	},
 
 	sendInvite: async ({ request, locals }) => {
-		requireOwner(locals);
-		const vendorId = locals.vendorId!;
-		const currentUserId = locals.user!.id;
-		const formData = await request.formData();
-		const email = formData.get('email')?.toString().trim().toLowerCase();
-		const role = formData.get('role')?.toString() as Role;
+		try {
+			requireOwner(locals);
+			const vendorId = locals.vendorId!;
+			const currentUserId = locals.user!.id;
+			const formData = await request.formData();
+			const email = formData.get('email')?.toString().trim().toLowerCase();
+			const role = formData.get('role')?.toString() as Role;
 
-		if (!email) return fail(400, { inviteError: 'Email is required' });
-		if (!ROLES.includes(role)) return fail(400, { inviteError: 'Invalid role' });
+			if (!email) return fail(400, { error: 'Email is required' });
+			if (!ROLES.includes(role)) return fail(400, { error: 'Invalid role' });
 
-		const existingUser = await db.query.user.findFirst({ where: eq(user.email, email) });
-		if (existingUser) {
-			const existingMember = await db.query.vendorUsers.findFirst({
-				where: and(eq(vendorUsers.vendorId, vendorId), eq(vendorUsers.userId, existingUser.id))
+			const existingUser = await db.query.user.findFirst({ where: eq(user.email, email) });
+			if (existingUser) {
+				const existingMember = await db.query.vendorUsers.findFirst({
+					where: and(eq(vendorUsers.vendorId, vendorId), eq(vendorUsers.userId, existingUser.id))
+				});
+				if (existingMember) return fail(409, { error: `${email} is already a member` });
+			}
+
+			await db
+				.delete(vendorInvitations)
+				.where(and(eq(vendorInvitations.vendorId, vendorId), eq(vendorInvitations.email, email)));
+
+			const token = crypto.randomUUID();
+			const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+
+			await db.insert(vendorInvitations).values({
+				id: token,
+				vendorId,
+				email,
+				role,
+				invitedByUserId: currentUserId,
+				expiresAt
 			});
-			if (existingMember) return fail(409, { inviteError: `${email} is already a member` });
+
+			const inviteUrl = `${env.ORIGIN}/invite/${token}`;
+
+			const vendorRecord = await db.query.vendor.findFirst({
+				where: eq(vendor.id, vendorId),
+				columns: { name: true, backgroundColor: true }
+			});
+			const inviterName = locals.user!.name ?? locals.user!.email;
+
+			if (vendorRecord) {
+				await sendEmail({
+					to: email,
+					subject: `You're invited to join ${vendorRecord.name}`,
+					html: inviteEmail({
+						vendorName: vendorRecord.name,
+						primaryColor: vendorRecord.backgroundColor ?? undefined,
+						invitedByName: inviterName,
+						role,
+						inviteUrl
+					}),
+					category: 'invite'
+				}).catch(console.error);
+			}
+
+			return { inviteSuccess: true, inviteUrl, inviteEmail: email };
+		} catch (err) {
+			console.error('[sendInvite] error:', err);
+			return fail(500, { error: 'Something went wrong on our end. Please try again.' });
 		}
-
-		await db
-			.delete(vendorInvitations)
-			.where(and(eq(vendorInvitations.vendorId, vendorId), eq(vendorInvitations.email, email)));
-
-		const token = crypto.randomUUID();
-		const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-
-		await db.insert(vendorInvitations).values({
-			id: token,
-			vendorId,
-			email,
-			role,
-			invitedByUserId: currentUserId,
-			expiresAt
-		});
-
-		const inviteUrl = `${env.ORIGIN}/invite/${token}`;
-
-		const vendorRecord = await db.query.vendor.findFirst({
-			where: eq(vendor.id, vendorId),
-			columns: { name: true, backgroundColor: true }
-		});
-		const inviterName = locals.user!.name ?? locals.user!.email;
-
-		if (vendorRecord) {
-			await sendEmail({
-				to: email,
-				subject: `You're invited to join ${vendorRecord.name}`,
-				html: inviteEmail({
-					vendorName: vendorRecord.name,
-					primaryColor: vendorRecord.backgroundColor ?? undefined,
-					invitedByName: inviterName,
-					role,
-					inviteUrl
-				}),
-				category: 'invite'
-			}).catch(console.error);
-		}
-
-		return { inviteSuccess: true, inviteUrl, inviteEmail: email };
 	},
 
 	cancelInvite: async ({ request, locals }) => {
-		requireOwner(locals);
-		const vendorId = locals.vendorId!;
-		const formData = await request.formData();
-		const id = formData.get('id')?.toString();
+		try {
+			requireOwner(locals);
+			const vendorId = locals.vendorId!;
+			const formData = await request.formData();
+			const id = formData.get('id')?.toString();
 
-		if (!id) return fail(400, { error: 'Invalid' });
+			if (!id) return fail(400, { error: 'Invalid' });
 
-		await db
-			.delete(vendorInvitations)
-			.where(and(eq(vendorInvitations.id, id), eq(vendorInvitations.vendorId, vendorId)));
+			await db
+				.delete(vendorInvitations)
+				.where(and(eq(vendorInvitations.id, id), eq(vendorInvitations.vendorId, vendorId)));
 
-		return { success: true };
+			return { success: true };
+		} catch (err) {
+			console.error('[cancelInvite] error:', err);
+			return fail(500, { error: 'Something went wrong on our end. Please try again.' });
+		}
 	},
 
 	changeRole: async ({ request, locals }) => {
-		requireOwner(locals);
-		const vendorId = locals.vendorId!;
-		const formData = await request.formData();
-		const userId = formData.get('userId')?.toString();
-		const role = formData.get('role')?.toString() as Role;
+		try {
+			requireOwner(locals);
+			const vendorId = locals.vendorId!;
+			const formData = await request.formData();
+			const userId = formData.get('userId')?.toString();
+			const role = formData.get('role')?.toString() as Role;
 
-		if (!userId || !ROLES.includes(role)) return fail(400, { error: 'Invalid' });
+			if (!userId || !ROLES.includes(role)) return fail(400, { error: 'Invalid' });
 
-		await db
-			.update(vendorUsers)
-			.set({ role })
-			.where(and(eq(vendorUsers.vendorId, vendorId), eq(vendorUsers.userId, userId)));
+			await db
+				.update(vendorUsers)
+				.set({ role })
+				.where(and(eq(vendorUsers.vendorId, vendorId), eq(vendorUsers.userId, userId)));
 
-		return { success: true };
+			return { success: true };
+		} catch (err) {
+			console.error('[changeRole] error:', err);
+			return fail(500, { error: 'Something went wrong on our end. Please try again.' });
+		}
 	},
 
 	removeMember: async ({ request, locals }) => {
-		requireOwner(locals);
-		const vendorId = locals.vendorId!;
-		const currentUserId = locals.user!.id;
-		const formData = await request.formData();
-		const userId = formData.get('userId')?.toString();
+		try {
+			requireOwner(locals);
+			const vendorId = locals.vendorId!;
+			const currentUserId = locals.user!.id;
+			const formData = await request.formData();
+			const userId = formData.get('userId')?.toString();
 
-		if (!userId) return fail(400, { error: 'Invalid' });
-		if (userId === currentUserId) return fail(400, { error: "You can't remove yourself" });
+			if (!userId) return fail(400, { error: 'Invalid' });
+			if (userId === currentUserId) return fail(400, { error: "You can't remove yourself" });
 
-		const targetMember = await db.query.vendorUsers.findFirst({
-			where: and(eq(vendorUsers.vendorId, vendorId), eq(vendorUsers.userId, userId))
-		});
-		if (targetMember?.role === 'owner') {
-			const ownerCount = await db
-				.select()
-				.from(vendorUsers)
-				.where(and(eq(vendorUsers.vendorId, vendorId), eq(vendorUsers.role, 'owner')));
-			if (ownerCount.length <= 1) {
-				return fail(400, { error: 'Cannot remove the last owner' });
+			const targetMember = await db.query.vendorUsers.findFirst({
+				where: and(eq(vendorUsers.vendorId, vendorId), eq(vendorUsers.userId, userId))
+			});
+			if (targetMember?.role === 'owner') {
+				const ownerCount = await db
+					.select()
+					.from(vendorUsers)
+					.where(and(eq(vendorUsers.vendorId, vendorId), eq(vendorUsers.role, 'owner')));
+				if (ownerCount.length <= 1) {
+					return fail(400, { error: 'Cannot remove the last owner' });
+				}
 			}
+
+			await db
+				.delete(vendorUsers)
+				.where(and(eq(vendorUsers.vendorId, vendorId), eq(vendorUsers.userId, userId)));
+
+			return { success: true };
+		} catch (err) {
+			console.error('[removeMember] error:', err);
+			return fail(500, { error: 'Something went wrong on our end. Please try again.' });
 		}
-
-		await db
-			.delete(vendorUsers)
-			.where(and(eq(vendorUsers.vendorId, vendorId), eq(vendorUsers.userId, userId)));
-
-		return { success: true };
 	}
 };

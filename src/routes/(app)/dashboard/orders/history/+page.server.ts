@@ -92,88 +92,93 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 
 export const actions: Actions = {
 	refund: async ({ request, locals }) => {
-		const vendorId = locals.vendorId!;
-		const formData = await request.formData();
-		const id = parseInt(formData.get('id')?.toString() ?? '');
-		if (isNaN(id)) return fail(400, { error: 'Invalid' });
-
-		const [orderRow, vendorRecord] = await Promise.all([
-			db.query.orders.findFirst({
-				where: and(eq(orders.id, id), eq(orders.vendorId, vendorId))
-			}),
-			db.query.vendor.findFirst({
-				where: eq(vendor.id, vendorId),
-				columns: {
-					stripeSecretKey: true,
-					name: true,
-					email: true,
-					backgroundColor: true,
-					subscriptionTier: true
-				}
-			})
-		]);
-
-		if (!orderRow) return fail(404, { error: 'Order not found' });
-		if (orderRow.status !== 'cancelled')
-			return fail(400, { error: 'Order must be cancelled before refunding' });
-		if (orderRow.paymentStatus !== 'paid') return fail(400, { error: 'Order has not been paid' });
-		if (!orderRow.stripePaymentIntentId)
-			return fail(400, { error: 'No payment found for this order' });
-		if (!vendorRecord?.stripeSecretKey)
-			return fail(500, { error: 'Stripe not configured for this vendor' });
-
-		const stripe = new Stripe(vendorRecord.stripeSecretKey);
-
-		let paymentIntentId = orderRow.stripePaymentIntentId;
-		if (paymentIntentId.startsWith('cs_')) {
-			try {
-				const session = await stripe.checkout.sessions.retrieve(paymentIntentId);
-				if (!session.payment_intent)
-					return fail(400, { error: 'No payment intent found on this session' });
-				paymentIntentId =
-					typeof session.payment_intent === 'string'
-						? session.payment_intent
-						: session.payment_intent.id;
-			} catch (e: unknown) {
-				return fail(502, {
-					error: e instanceof Error ? e.message : 'Could not resolve Stripe session'
-				});
-			}
-		}
-
 		try {
-			await stripe.refunds.create(
-				{ payment_intent: paymentIntentId },
-				{ idempotencyKey: `refund:${vendorId}:order:${paymentIntentId}` }
-			);
-		} catch (e: unknown) {
-			return fail(502, { error: e instanceof Error ? e.message : 'Stripe refund failed' });
-		}
+			const vendorId = locals.vendorId!;
+			const formData = await request.formData();
+			const id = parseInt(formData.get('id')?.toString() ?? '');
+			if (isNaN(id)) return fail(400, { error: 'Invalid' });
 
-		const [refundedOrder] = await db
-			.update(orders)
-			.set({ paymentStatus: 'refunded', updatedAt: new Date() })
-			.where(eq(orders.id, id))
-			.returning();
-
-		if (refundedOrder?.customerEmail && vendorRecord) {
-			await sendEmail({
-				to: refundedOrder.customerEmail,
-				subject: `Refund processed for order ${refundedOrder.orderNumber} — ${vendorRecord.name}`,
-				html: orderRefundedEmail({
-					vendorName: vendorRecord.name,
-					primaryColor: vendorRecord.backgroundColor ?? undefined,
-					vendorSubscriptionTier: vendorRecord.subscriptionTier ?? undefined,
-					orderNumber: refundedOrder.orderNumber,
-					customerName: refundedOrder.customerName ?? 'there',
-					total: refundedOrder.total
+			const [orderRow, vendorRecord] = await Promise.all([
+				db.query.orders.findFirst({
+					where: and(eq(orders.id, id), eq(orders.vendorId, vendorId))
 				}),
-				fromName: vendorRecord.name,
-				replyTo: vendorRecord.email ?? undefined,
-				category: 'order_refunded'
-			}).catch(console.error);
-		}
+				db.query.vendor.findFirst({
+					where: eq(vendor.id, vendorId),
+					columns: {
+						stripeSecretKey: true,
+						name: true,
+						email: true,
+						backgroundColor: true,
+						subscriptionTier: true
+					}
+				})
+			]);
 
-		return { success: true };
+			if (!orderRow) return fail(404, { error: 'Order not found' });
+			if (orderRow.status !== 'cancelled')
+				return fail(400, { error: 'Order must be cancelled before refunding' });
+			if (orderRow.paymentStatus !== 'paid') return fail(400, { error: 'Order has not been paid' });
+			if (!orderRow.stripePaymentIntentId)
+				return fail(400, { error: 'No payment found for this order' });
+			if (!vendorRecord?.stripeSecretKey)
+				return fail(500, { error: 'Stripe not configured for this vendor' });
+
+			const stripe = new Stripe(vendorRecord.stripeSecretKey);
+
+			let paymentIntentId = orderRow.stripePaymentIntentId;
+			if (paymentIntentId.startsWith('cs_')) {
+				try {
+					const session = await stripe.checkout.sessions.retrieve(paymentIntentId);
+					if (!session.payment_intent)
+						return fail(400, { error: 'No payment intent found on this session' });
+					paymentIntentId =
+						typeof session.payment_intent === 'string'
+							? session.payment_intent
+							: session.payment_intent.id;
+				} catch (e: unknown) {
+					return fail(502, {
+						error: e instanceof Error ? e.message : 'Could not resolve Stripe session'
+					});
+				}
+			}
+
+			try {
+				await stripe.refunds.create(
+					{ payment_intent: paymentIntentId },
+					{ idempotencyKey: `refund:${vendorId}:order:${paymentIntentId}` }
+				);
+			} catch (e: unknown) {
+				return fail(502, { error: e instanceof Error ? e.message : 'Stripe refund failed' });
+			}
+
+			const [refundedOrder] = await db
+				.update(orders)
+				.set({ paymentStatus: 'refunded', updatedAt: new Date() })
+				.where(eq(orders.id, id))
+				.returning();
+
+			if (refundedOrder?.customerEmail && vendorRecord) {
+				await sendEmail({
+					to: refundedOrder.customerEmail,
+					subject: `Refund processed for order ${refundedOrder.orderNumber} — ${vendorRecord.name}`,
+					html: orderRefundedEmail({
+						vendorName: vendorRecord.name,
+						primaryColor: vendorRecord.backgroundColor ?? undefined,
+						vendorSubscriptionTier: vendorRecord.subscriptionTier ?? undefined,
+						orderNumber: refundedOrder.orderNumber,
+						customerName: refundedOrder.customerName ?? 'there',
+						total: refundedOrder.total
+					}),
+					fromName: vendorRecord.name,
+					replyTo: vendorRecord.email ?? undefined,
+					category: 'order_refunded'
+				}).catch(console.error);
+			}
+
+			return { success: true };
+		} catch (err) {
+			console.error('[refund] error:', err);
+			return fail(500, { error: 'Something went wrong on our end. Please try again.' });
+		}
 	}
 };

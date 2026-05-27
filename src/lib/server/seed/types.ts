@@ -119,13 +119,17 @@ export interface SeedPickupLocation {
 
 export interface SeedBranding {
 	tagline: string;
-	logoUrl: string;
-	bannerUrl: string;
+	logoUrl: string | null;
+	bannerUrl: string | null;
 	faviconUrl: string;
-	backgroundImageUrl: string;
+	backgroundImageUrl: string | null;
+	backgroundPatternSlug: string | null;
 	backgroundColor: string;
 	accentColor: string;
 	foregroundColor: string;
+	fontPair: string;
+	showName: boolean;
+	showLogo: boolean;
 }
 
 export interface SeedSettings {

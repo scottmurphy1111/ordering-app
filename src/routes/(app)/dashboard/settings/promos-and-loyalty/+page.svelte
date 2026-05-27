@@ -3,7 +3,7 @@
 	import { resolve } from '$app/paths';
 	import { untrack } from 'svelte';
 	import Icon from '@iconify/svelte';
-	import type { PageData, ActionData } from './$types';
+	import type { PageData } from './$types';
 	import { Button } from '$lib/components/ui/button';
 	import { Input } from '$lib/components/ui/input';
 	import { Label } from '$lib/components/ui/label';
@@ -25,9 +25,14 @@
 	} from '$lib/components/ui/table';
 	import { confirmDialog } from '$lib/confirm.svelte';
 	import { Alert } from '$lib/components/ui/alert';
-	import { toast } from '$lib/toast';
+	import { enhanceWithToasts } from '$lib/forms/enhance-with-toasts';
 
-	let { data, form }: { data: PageData; form: ActionData } = $props();
+	let { data }: { data: PageData } = $props();
+
+	// Per-form save errors.
+	let createSaveError = $state<string | null>(null);
+	let promoActionError = $state<string | null>(null);
+	let loyaltySaveError = $state<string | null>(null);
 
 	// Promo codes state
 	let showForm = $state(false);
@@ -64,8 +69,8 @@
 		</p>
 	</div>
 
-	{#if form?.error}
-		<Alert severity="error" class="mb-4">{form.error}</Alert>
+	{#if promoActionError}
+		<Alert severity="error" class="mb-4">{promoActionError}</Alert>
 	{/if}
 
 	<!-- ── PROMO CODES ──────────────────────────────────────────────────────── -->
@@ -86,20 +91,28 @@
 	{#if showForm}
 		<Card class="mb-6 shadow-sm">
 			<CardContent class="pt-6 pb-2">
+				{#if createSaveError}
+					<Alert severity="error" class="mb-4">{createSaveError}</Alert>
+				{/if}
 				<form
 					method="POST"
 					action="?/create"
-					use:enhance={() => {
-						submittingCreate = true;
-						return async ({ update, result }) => {
+					use:enhance={enhanceWithToasts({
+						successMessage: 'Promo created',
+						onStart: () => {
+							submittingCreate = true;
+							createSaveError = null;
+						},
+						onEnd: () => {
 							submittingCreate = false;
-							await update({ reset: false });
-							if (result.type === 'success') {
-								showForm = false;
-								toast.success('Promo created');
-							}
-						};
-					}}
+						},
+						onSuccess: () => {
+							showForm = false;
+						},
+						onError: (msg) => {
+							createSaveError = msg;
+						}
+					})}
 					class="space-y-4"
 				>
 					<h3 class="font-semibold text-foreground">New promo code</h3>
@@ -240,17 +253,19 @@
 									<form
 										method="POST"
 										action="?/toggle"
-										use:enhance={() => {
-											submittingTogglePromoId = promo.id;
-											const wasActive = promo.isActive;
-											return async ({ result, update }) => {
+										use:enhance={enhanceWithToasts({
+											successMessage: promo.isActive ? 'Promo disabled' : 'Promo enabled',
+											onStart: () => {
+												submittingTogglePromoId = promo.id;
+												promoActionError = null;
+											},
+											onEnd: () => {
 												submittingTogglePromoId = null;
-												await update({ reset: false });
-												if (result.type === 'success') {
-													toast.success(wasActive ? 'Promo disabled' : 'Promo enabled');
-												}
-											};
-										}}
+											},
+											onError: (msg) => {
+												promoActionError = msg;
+											}
+										})}
 									>
 										<input type="hidden" name="id" value={promo.id} />
 										<input type="hidden" name="isActive" value={String(!promo.isActive)} />
@@ -274,14 +289,19 @@
 									<form
 										method="POST"
 										action="?/delete"
-										use:enhance={() => {
-											submittingDeletePromoId = promo.id;
-											return async ({ result, update }) => {
+										use:enhance={enhanceWithToasts({
+											successMessage: 'Promo removed',
+											onStart: () => {
+												submittingDeletePromoId = promo.id;
+												promoActionError = null;
+											},
+											onEnd: () => {
 												submittingDeletePromoId = null;
-												await update();
-												if (result.type === 'success') toast.success('Promo removed');
-											};
-										}}
+											},
+											onError: (msg) => {
+												promoActionError = msg;
+											}
+										})}
 									>
 										<input type="hidden" name="id" value={promo.id} />
 										<Button
@@ -398,18 +418,27 @@
 		</Card>
 
 		<!-- Config form -->
+		{#if loyaltySaveError}
+			<Alert severity="error" class="mb-4">{loyaltySaveError}</Alert>
+		{/if}
 		<form
 			id="loyalty-form"
 			method="POST"
 			action="?/saveLoyalty"
-			use:enhance={() => {
-				submittingSaveLoyalty = true;
-				return async ({ result, update }) => {
+			use:enhance={enhanceWithToasts({
+				successMessage: 'Loyalty settings saved',
+				preserveValues: true,
+				onStart: () => {
+					submittingSaveLoyalty = true;
+					loyaltySaveError = null;
+				},
+				onEnd: () => {
 					submittingSaveLoyalty = false;
-					await update({ reset: false });
-					if (result.type === 'success') toast.success('Loyalty settings saved');
-				};
-			}}
+				},
+				onError: (msg) => {
+					loyaltySaveError = msg;
+				}
+			})}
 		>
 			<input type="hidden" name="type" value={programType} />
 			<input type="hidden" name="stampsPerOrder" value={stampsPerOrder} />
@@ -492,14 +521,19 @@
 							<form
 								method="POST"
 								action="?/disableLoyalty"
-								use:enhance={() => {
-									submittingDisableLoyalty = true;
-									return async ({ result, update }) => {
+								use:enhance={enhanceWithToasts({
+									successMessage: 'Loyalty disabled',
+									onStart: () => {
+										submittingDisableLoyalty = true;
+										loyaltySaveError = null;
+									},
+									onEnd: () => {
 										submittingDisableLoyalty = false;
-										await update();
-										if (result.type === 'success') toast.success('Loyalty disabled');
-									};
-								}}
+									},
+									onError: (msg) => {
+										loyaltySaveError = msg;
+									}
+								})}
 							>
 								<Button
 									type="submit"
@@ -598,14 +632,19 @@
 							<form
 								method="POST"
 								action="?/disableLoyalty"
-								use:enhance={() => {
-									submittingDisableLoyalty = true;
-									return async ({ result, update }) => {
+								use:enhance={enhanceWithToasts({
+									successMessage: 'Loyalty disabled',
+									onStart: () => {
+										submittingDisableLoyalty = true;
+										loyaltySaveError = null;
+									},
+									onEnd: () => {
 										submittingDisableLoyalty = false;
-										await update();
-										if (result.type === 'success') toast.success('Loyalty disabled');
-									};
-								}}
+									},
+									onError: (msg) => {
+										loyaltySaveError = msg;
+									}
+								})}
 							>
 								<Button
 									type="submit"

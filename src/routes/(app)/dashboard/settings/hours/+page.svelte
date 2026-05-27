@@ -1,16 +1,20 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
-	import type { PageData, ActionData } from './$types';
+	import type { PageData } from './$types';
 	import { Button } from '$lib/components/ui/button';
 	import { Card, CardHeader, CardTitle, CardContent } from '$lib/components/ui/card';
 	import { Alert } from '$lib/components/ui/alert';
 	import Icon from '@iconify/svelte';
 	import { untrack } from 'svelte';
 	import { confirmDialog } from '$lib/confirm.svelte';
-	import { toast } from '$lib/toast';
+	import { enhanceWithToasts } from '$lib/forms/enhance-with-toasts';
 
-	let { data, form: _form }: { data: PageData; form: ActionData } = $props();
-	const form = $derived(_form as ActionData | null);
+	let { data }: { data: PageData } = $props();
+
+	// Per-form save errors (separate so an error in one form doesn't bleed into others).
+	let hoursSaveError = $state<string | null>(null);
+	let addExceptionError = $state<string | null>(null);
+	let removeExceptionError = $state<string | null>(null);
 	let submittingSaveHours = $state(false);
 	let submittingAddException = $state(false);
 	let submittingRemoveExceptionId = $state<number | null>(null);
@@ -124,8 +128,11 @@
 		</div>
 	</div>
 
-	{#if form?.error}
-		<Alert severity="error" class="mb-6">{form.error}</Alert>
+	{#if hoursSaveError}
+		<Alert severity="error" class="mb-6">{hoursSaveError}</Alert>
+	{/if}
+	{#if removeExceptionError}
+		<Alert severity="error" class="mb-6">{removeExceptionError}</Alert>
 	{/if}
 
 	<!-- Weekly hours card -->
@@ -137,14 +144,19 @@
 			<form
 				method="post"
 				action="?/saveHours"
-				use:enhance={() => {
-					submittingSaveHours = true;
-					return async ({ result, update }) => {
+				use:enhance={enhanceWithToasts({
+					successMessage: 'Hours saved',
+					onStart: () => {
+						submittingSaveHours = true;
+						hoursSaveError = null;
+					},
+					onEnd: () => {
 						submittingSaveHours = false;
-						await update();
-						if (result.type === 'success') toast.success('Hours saved');
-					};
-				}}
+					},
+					onError: (msg) => {
+						hoursSaveError = msg;
+					}
+				})}
 				class="divide-y divide-border"
 			>
 				{#each DAYS as day (day)}
@@ -220,9 +232,9 @@
 			<CardTitle>Date exceptions</CardTitle>
 		</CardHeader>
 		<CardContent class="p-0">
-			{#if form?.addError}
+			{#if addExceptionError}
 				<div class="px-6 pt-4">
-					<Alert severity="error">{form.addError}</Alert>
+					<Alert severity="error">{addExceptionError}</Alert>
 				</div>
 			{/if}
 
@@ -263,14 +275,19 @@
 										<form
 											method="post"
 											action="?/removeException"
-											use:enhance={() => {
-												submittingRemoveExceptionId = exc.id;
-												return async ({ result, update }) => {
+											use:enhance={enhanceWithToasts({
+												successMessage: 'Exception removed',
+												onStart: () => {
+													submittingRemoveExceptionId = exc.id;
+													removeExceptionError = null;
+												},
+												onEnd: () => {
 													submittingRemoveExceptionId = null;
-													await update();
-													if (result.type === 'success') toast.success('Exception removed');
-												};
-											}}
+												},
+												onError: (msg) => {
+													removeExceptionError = msg;
+												}
+											})}
 										>
 											<input type="hidden" name="exceptionId" value={exc.id} />
 											<Button
@@ -317,15 +334,19 @@
 				<form
 					method="post"
 					action="?/addException"
-					use:enhance={({ formElement }) => {
-						submittingAddException = true;
-						return async ({ result, update }) => {
+					use:enhance={enhanceWithToasts({
+						successMessage: 'Exception added',
+						onStart: () => {
+							submittingAddException = true;
+							addExceptionError = null;
+						},
+						onEnd: () => {
 							submittingAddException = false;
-							if (result.type === 'success') formElement.reset();
-							await update();
-							if (result.type === 'success') toast.success('Exception added');
-						};
-					}}
+						},
+						onError: (msg) => {
+							addExceptionError = msg;
+						}
+					})}
 					class="flex flex-col gap-3"
 				>
 					<div class="flex flex-wrap items-end gap-3">

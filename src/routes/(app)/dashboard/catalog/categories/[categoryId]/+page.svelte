@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import { SvelteMap } from 'svelte/reactivity';
-	import type { PageData, ActionData } from './$types';
+	import type { PageData } from './$types';
 	import Icon from '@iconify/svelte';
 	import { resolve } from '$app/paths';
 	import { Button } from '$lib/components/ui/button';
@@ -12,9 +12,12 @@
 	import { Label } from '$lib/components/ui/label';
 	import { Card, CardContent, CardFooter } from '$lib/components/ui/card';
 	import { Alert } from '$lib/components/ui/alert';
-	import { toast } from '$lib/toast';
+	import { enhanceWithToasts } from '$lib/forms/enhance-with-toasts';
 
-	let { data, form }: { data: PageData; form: ActionData } = $props();
+	let { data }: { data: PageData } = $props();
+
+	let updateError = $state<string | null>(null);
+	let assignError = $state<string | null>(null);
 	let submittingAction = $state<'update' | 'assignItems' | null>(null);
 
 	let isActiveOverride = $state<boolean | null>(null);
@@ -52,8 +55,11 @@
 		<h1 class="text-2xl font-bold text-foreground">{data.category.name}</h1>
 	</div>
 
-	{#if form?.error}
-		<Alert severity="error">{form.error}</Alert>
+	{#if updateError}
+		<Alert severity="error" class="mb-3">{updateError}</Alert>
+	{/if}
+	{#if assignError}
+		<Alert severity="error" class="mb-3">{assignError}</Alert>
 	{/if}
 
 	<!-- Category details -->
@@ -62,14 +68,20 @@
 			id="details-form"
 			method="post"
 			action="?/update"
-			use:enhance={() => {
-				submittingAction = 'update';
-				return async ({ result, update }) => {
+			use:enhance={enhanceWithToasts({
+				successMessage: 'Category saved',
+				preserveValues: true,
+				onStart: () => {
+					submittingAction = 'update';
+					updateError = null;
+				},
+				onEnd: () => {
 					submittingAction = null;
-					await update({ reset: false });
-					if (result.type === 'success') toast.success('Category saved');
-				};
-			}}
+				},
+				onError: (msg) => {
+					updateError = msg;
+				}
+			})}
 		>
 			<CardContent class="space-y-4 pt-6">
 				<h2 class="font-semibold text-foreground">Details</h2>
@@ -140,15 +152,23 @@
 					id="assign-form"
 					method="post"
 					action="?/assignItems"
-					use:enhance={() => {
-						submittingAction = 'assignItems';
-						return async ({ result, update }) => {
+					use:enhance={enhanceWithToasts({
+						successMessage: 'Assignments saved',
+						preserveValues: true,
+						onStart: () => {
+							submittingAction = 'assignItems';
+							assignError = null;
+						},
+						onEnd: () => {
 							submittingAction = null;
-							if (result.type === 'success') resetOverrides();
-							await update({ reset: false });
-							if (result.type === 'success') toast.success('Assignments saved');
-						};
-					}}
+						},
+						onSuccess: () => {
+							resetOverrides();
+						},
+						onError: (msg) => {
+							assignError = msg;
+						}
+					})}
 				>
 					<div class="space-y-2">
 						{#each data.items as item (item.id)}

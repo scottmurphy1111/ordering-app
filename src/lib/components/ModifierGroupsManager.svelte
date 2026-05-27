@@ -7,6 +7,7 @@
 	import { Checkbox } from '$lib/components/ui/checkbox';
 	import { Alert } from '$lib/components/ui/alert';
 	import Sortable from 'sortablejs';
+	import { enhanceWithToasts } from '$lib/forms/enhance-with-toasts';
 
 	interface ModifierOption {
 		id: number;
@@ -112,18 +113,19 @@
 		<form
 			method="post"
 			action="?/addModifier"
-			use:enhance={() => {
-				return ({ result, update }) => {
-					if (result.type === 'success') {
-						showAddGroup = false;
-						modifierError = null;
-					} else if (result.type === 'failure') {
-						modifierError =
-							(result.data?.modifierError as string | undefined) ?? 'Failed to add group';
-					}
-					return update({ reset: false });
-				};
-			}}
+			use:enhance={enhanceWithToasts({
+				successMessage: 'Group added',
+				preserveValues: true,
+				onStart: () => {
+					modifierError = null;
+				},
+				onSuccess: () => {
+					showAddGroup = false;
+				},
+				onError: (msg) => {
+					modifierError = msg;
+				}
+			})}
 			class="mb-4 space-y-3 rounded-xl border bg-muted/50 p-4"
 		>
 			<input type="hidden" name="itemId" value={itemId} />
@@ -182,18 +184,19 @@
 					<form
 						method="post"
 						action="?/updateModifier"
-						use:enhance={() => {
-							return ({ result, update }) => {
-								if (result.type === 'success') {
-									editingModifier = null;
-									modifierError = null;
-								} else if (result.type === 'failure') {
-									modifierError =
-										(result.data?.modifierError as string | undefined) ?? 'Failed to update group';
-								}
-								return update({ reset: false });
-							};
-						}}
+						use:enhance={enhanceWithToasts({
+							successMessage: 'Group updated',
+							preserveValues: true,
+							onStart: () => {
+								modifierError = null;
+							},
+							onSuccess: () => {
+								editingModifier = null;
+							},
+							onError: (msg) => {
+								modifierError = msg;
+							}
+						})}
 						class="flex items-end gap-3 border-b bg-muted/50 px-4 py-3"
 					>
 						<input type="hidden" name="modifierId" value={mod.id} />
@@ -269,13 +272,19 @@
 							<form
 								method="post"
 								action="?/deleteModifier"
-								use:enhance={() => {
-									submittingDelete = { kind: 'modifier', id: mod.id };
-									return async ({ update }) => {
+								use:enhance={enhanceWithToasts({
+									successMessage: 'Group deleted',
+									onStart: () => {
+										submittingDelete = { kind: 'modifier', id: mod.id };
+										modifierError = null;
+									},
+									onEnd: () => {
 										submittingDelete = null;
-										await update();
-									};
-								}}
+									},
+									onError: (msg) => {
+										modifierError = msg;
+									}
+								})}
 							>
 								<input type="hidden" name="modifierId" value={mod.id} />
 								<Button
@@ -309,19 +318,19 @@
 							<form
 								method="post"
 								action="?/updateOption"
-								use:enhance={() => {
-									return ({ result, update }) => {
-										if (result.type === 'success') {
-											editingOption = null;
-											modifierError = null;
-										} else if (result.type === 'failure') {
-											modifierError =
-												(result.data?.modifierError as string | undefined) ??
-												'Failed to update option';
-										}
-										return update({ reset: false });
-									};
-								}}
+								use:enhance={enhanceWithToasts({
+									successMessage: 'Option updated',
+									preserveValues: true,
+									onStart: () => {
+										modifierError = null;
+									},
+									onSuccess: () => {
+										editingOption = null;
+									},
+									onError: (msg) => {
+										modifierError = msg;
+									}
+								})}
 								class="space-y-2 bg-muted/50 px-4 py-3"
 							>
 								<input type="hidden" name="optionId" value={opt.id} />
@@ -406,13 +415,19 @@
 									<form
 										method="post"
 										action="?/deleteOption"
-										use:enhance={() => {
-											submittingDelete = { kind: 'option', id: opt.id };
-											return async ({ update }) => {
+										use:enhance={enhanceWithToasts({
+											successMessage: 'Option deleted',
+											onStart: () => {
+												submittingDelete = { kind: 'option', id: opt.id };
+												modifierError = null;
+											},
+											onEnd: () => {
 												submittingDelete = null;
-												await update();
-											};
-										}}
+											},
+											onError: (msg) => {
+												modifierError = msg;
+											}
+										})}
 									>
 										<input type="hidden" name="optionId" value={opt.id} />
 										<Button
@@ -446,17 +461,15 @@
 					<form
 						method="post"
 						action="?/addOption"
-						use:enhance={() => {
-							return ({ result, update }) => {
-								if (result.type === 'success') {
-									modifierError = null;
-								} else if (result.type === 'failure') {
-									modifierError =
-										(result.data?.modifierError as string | undefined) ?? 'Failed to add option';
-								}
-								return update({ reset: true });
-							};
-						}}
+						use:enhance={enhanceWithToasts({
+							successMessage: 'Option added',
+							onStart: () => {
+								modifierError = null;
+							},
+							onError: (msg) => {
+								modifierError = msg;
+							}
+						})}
 						class="space-y-2 border-t bg-muted/50 px-4 py-3"
 					>
 						<input type="hidden" name="modifierId" value={mod.id} />
