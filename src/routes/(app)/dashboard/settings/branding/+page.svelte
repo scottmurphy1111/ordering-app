@@ -449,14 +449,14 @@
 					<!-- Category pills -->
 					<div class="flex gap-2 border-b px-4 py-2.5" style="background-color: {foregroundColor};">
 						<span
-							class="rounded-full px-3 py-1 text-xs font-semibold"
+							class="flex items-center rounded-full px-3 py-1 text-xs font-semibold"
 							style="background-color: {accentColor}; color: {foregroundColor};"
 						>
 							All
 						</span>
-						{#each ['Burgers', 'Drinks', 'Sides'] as cat (cat)}
+						{#each ['Category1', 'Category2', 'Category3'] as cat (cat)}
 							<span
-								class="rounded-full border px-3 py-1 text-xs font-medium"
+								class="flex items-center rounded-full border px-3 py-1 text-xs font-medium"
 								style="border-color: {accentColor}; color: {accentColor};"
 							>
 								{cat}
@@ -465,13 +465,17 @@
 					</div>
 					<!-- Catalog items -->
 					<div class="divide-y" style="background-color: {foregroundColor};">
-						{#each [{ name: 'Classic Burger', desc: 'Beef patty, lettuce, tomato, pickles', price: '$14.00', color: '#fef3c7' }, { name: 'Crispy Chicken', desc: 'Buttermilk fried, house slaw', price: '$13.50', color: '#dbeafe' }, { name: 'Garden Salad', desc: 'Mixed greens, house vinaigrette', price: '$10.00', color: '#dcfce7' }, { name: 'Lemonade', desc: 'Fresh squeezed, mint', price: '$4.50', color: '#fef9c3' }] as item (item.name)}
+						{#each [{ name: 'Sample item one', desc: 'A short product description', price: '$12.00' }, { name: 'Sample item two', desc: 'A short product description', price: '$9.50' }, { name: 'Sample item three', desc: 'A short product description', price: '$6.00' }] as item (item.name)}
 							<div class="flex items-center justify-between gap-3 px-4 py-3">
 								<div class="flex items-center gap-3">
 									<div
-										class="h-12 w-12 shrink-0 rounded-lg"
-										style="background-color: {item.color};"
-									></div>
+										class="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-muted"
+									>
+										<Icon
+											icon="mdi:image-outline"
+											class="h-5 w-5 text-muted-foreground opacity-60"
+										/>
+									</div>
 									<div>
 										<p class="text-sm font-semibold" style="color: {accentColor};">{item.name}</p>
 										<p

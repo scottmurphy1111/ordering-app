@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { SvelteDate, SvelteSet } from 'svelte/reactivity';
+	import { SvelteDate, SvelteMap, SvelteSet } from 'svelte/reactivity';
 	import type { PageData } from './$types';
 	import { cart, itemUnitPrice } from '$lib/cart.svelte';
 	import { goto } from '$app/navigation';
@@ -149,38 +149,105 @@
 		return out;
 	});
 
-	const eventPickerOptions = $derived.by<PickerOption[]>(() => {
+	type PickupDate = {
+		/** ISO date key in vendor timezone, e.g. '2026-06-14' — used as stable id. */
+		dateKey: string;
+		/** Short weekday label, e.g. 'Sat'. */
+		weekdayLabel: string;
+		/** Short date label, e.g. 'Jun 14'. */
+		dateLabel: string;
+		/** Windows on this date, in start-time order. */
+		windows: typeof data.availableWindows;
+	};
+
+	const pickupDates = $derived.by<PickupDate[]>(() => {
 		if (fulfillmentModel !== 'pickup_only' && fulfillmentModel !== 'hybrid') return [];
-		const out: PickerOption[] = [];
+
+		const byDate = new SvelteMap<string, typeof data.availableWindows>();
 		for (const win of data.availableWindows) {
 			const start = new Date(win.startsAt);
-			const dateLabel = start.toLocaleDateString('en-US', {
-				timeZone: vendorTimezone,
-				weekday: 'short',
-				month: 'short',
-				day: 'numeric'
-			});
-			const timeLabel = start.toLocaleTimeString('en-US', {
-				timeZone: vendorTimezone,
-				hour: 'numeric',
-				minute: '2-digit'
-			});
+			// en-CA produces YYYY-MM-DD — stable map key and lexicographically sortable.
+			const dateKey = start.toLocaleDateString('en-CA', { timeZone: vendorTimezone });
+			const existing = byDate.get(dateKey);
+			if (existing) {
+				existing.push(win);
+			} else {
+				byDate.set(dateKey, [win]);
+			}
+		}
+
+		const out: PickupDate[] = [];
+		for (const [dateKey, windows] of byDate) {
+			const first = new Date(windows[0].startsAt);
 			out.push({
-				id: `event-${win.id}`,
-				kind: 'event',
-				label: `${dateLabel} · ${timeLabel}`,
-				sublabel: win.location?.name ?? win.name,
-				windowId: win.id
+				dateKey,
+				weekdayLabel: first.toLocaleDateString('en-US', {
+					timeZone: vendorTimezone,
+					weekday: 'short'
+				}),
+				dateLabel: first.toLocaleDateString('en-US', {
+					timeZone: vendorTimezone,
+					month: 'short',
+					day: 'numeric'
+				}),
+				windows
 			});
 		}
+		out.sort((a, b) => a.dateKey.localeCompare(b.dateKey));
 		return out;
 	});
 
-	const pickerOptions = $derived([...storefrontPickerOptions, ...eventPickerOptions]);
+	const hasStorefrontOptions = $derived(storefrontPickerOptions.length > 0);
+	const hasEventDates = $derived(pickupDates.length > 0);
+	const hasAnyPickupOption = $derived(hasStorefrontOptions || hasEventDates);
 
-	const showGroupHeaders = $derived(
-		storefrontPickerOptions.length > 0 && eventPickerOptions.length > 0
-	);
+	const showGroupHeaders = $derived(hasStorefrontOptions && hasEventDates);
+
+	// Currently selected date in the chip strip (the event side).
+	let selectedDateKey = $state<string | null>(null);
+
+	const selectedDate = $derived(pickupDates.find((d) => d.dateKey === selectedDateKey) ?? null);
+
+	const selectedDateWindows = $derived(selectedDate?.windows ?? []);
+	const selectedDateHasMultiple = $derived(selectedDateWindows.length > 1);
+
+	/** True when the selected date's windows span more than one location. */
+	const selectedDateMultiLocation = $derived.by(() => {
+		const locs = new Set(selectedDateWindows.map((w) => w.location?.name ?? '__none__'));
+		return locs.size > 1;
+	});
+
+	// Pre-select the nearest date on initial load; auto-commit if single-window.
+	$effect(() => {
+		if (pickupDates.length > 0 && selectedDateKey === null) {
+			const first = pickupDates[0];
+			selectedDateKey = first.dateKey;
+			if (first.windows.length === 1 && !pickupChoice) {
+				pickupChoice = { kind: 'event', windowId: first.windows[0].id };
+			}
+		}
+	});
+
+	function selectDate(dateKey: string) {
+		selectedDateKey = dateKey;
+		const date = pickupDates.find((d) => d.dateKey === dateKey);
+		if (!date) return;
+		if (date.windows.length === 1) {
+			pickupChoice = { kind: 'event', windowId: date.windows[0].id };
+		} else {
+			// Multi-window: clear stale event choice if it doesn't belong to this date.
+			if (pickupChoice?.kind === 'event') {
+				const stillValid = date.windows.some(
+					(w) => w.id === (pickupChoice as { windowId: number }).windowId
+				);
+				if (!stillValid) pickupChoice = null;
+			}
+		}
+	}
+
+	function selectWindow(windowId: number) {
+		pickupChoice = { kind: 'event', windowId };
+	}
 
 	const currentPickupMode = $derived<'pickup_event' | 'storefront_hours' | 'custom_date' | null>(
 		pickupChoice?.kind === 'event'
@@ -368,7 +435,7 @@
 				checkoutError = 'Please select a date within the next year.';
 				return;
 			}
-		} else if (!isSubscriptionCart && pickerOptions.length > 0 && !pickupChoice) {
+		} else if (!isSubscriptionCart && hasAnyPickupOption && !pickupChoice) {
 			checkoutError = 'Please select a pickup time.';
 			return;
 		} else if (
@@ -854,17 +921,123 @@
 					{/if}
 				{/snippet}
 
+				{#snippet windowCard(
+					win: (typeof data.availableWindows)[number],
+					isSelected: boolean,
+					showLocation: boolean
+				)}
+					{@const startLabel = fmtWindowTime(new Date(win.startsAt))}
+					{@const endLabel = fmtWindowTime(new Date(win.endsAt))}
+					{@const isFull = win.remainingCapacity !== null && win.remainingCapacity <= 0}
+					{@const isLow =
+						win.remainingCapacity !== null &&
+						win.remainingCapacity > 0 &&
+						win.remainingCapacity <= 5}
+					<label
+						class="flex cursor-pointer items-start gap-3 rounded-lg border p-3 transition-all {isSelected
+							? ''
+							: 'hover:bg-muted/30'}"
+						style={isSelected
+							? 'box-shadow: 0 0 0 2px var(--accent-color); border-color: transparent;'
+							: ''}
+					>
+						<input
+							type="radio"
+							name="pickupWindow"
+							checked={isSelected}
+							onchange={() => selectWindow(win.id)}
+							class="sr-only"
+						/>
+						<div
+							class="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full border-2 transition-colors"
+							style={isSelected
+								? 'border-color: var(--accent-color); background-color: var(--accent-color);'
+								: 'border-color: #d1d5db;'}
+						>
+							{#if isSelected}
+								<div
+									class="h-1.5 w-1.5 rounded-full"
+									style="background-color: var(--accent-foreground);"
+								></div>
+							{/if}
+						</div>
+						<div class="min-w-0 flex-1">
+							<p class="text-sm font-medium text-foreground">{startLabel} – {endLabel}</p>
+							{#if showLocation && win.location}
+								<p class="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground">
+									<Icon icon="mdi:map-marker-outline" class="h-3 w-3 shrink-0" />
+									{win.location.name}
+								</p>
+							{/if}
+							{#if win.notes}
+								<p class="mt-0.5 text-xs text-muted-foreground">{win.notes}</p>
+							{/if}
+							{#if isFull}
+								<span
+									class="mt-1 inline-block rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-500"
+									>Full</span
+								>
+							{:else if isLow}
+								<span
+									class="mt-1 inline-block rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-600"
+									>{win.remainingCapacity} left</span
+								>
+							{/if}
+						</div>
+					</label>
+				{/snippet}
+
+				{#snippet singleWindowConfirm(win: (typeof data.availableWindows)[number])}
+					{@const startLabel = fmtWindowTime(new Date(win.startsAt))}
+					{@const endLabel = fmtWindowTime(new Date(win.endsAt))}
+					{@const isLow =
+						win.remainingCapacity !== null &&
+						win.remainingCapacity > 0 &&
+						win.remainingCapacity <= 5}
+					<div
+						class="flex items-start gap-3 rounded-lg border p-3"
+						style="box-shadow: 0 0 0 2px var(--accent-color); border-color: transparent;"
+					>
+						<Icon
+							icon="mdi:check-circle"
+							class="mt-0.5 h-5 w-5 shrink-0"
+							style="color: var(--accent-color);"
+						/>
+						<div class="min-w-0 flex-1">
+							<p class="text-sm font-medium text-foreground">{startLabel} – {endLabel}</p>
+							{#if win.location}
+								<p class="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground">
+									<Icon icon="mdi:map-marker-outline" class="h-3 w-3 shrink-0" />
+									{win.location.name}
+								</p>
+							{/if}
+							{#if win.notes}
+								<p class="mt-0.5 text-xs text-muted-foreground">{win.notes}</p>
+							{/if}
+							{#if isLow}
+								<span
+									class="mt-1 inline-block rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-600"
+									>{win.remainingCapacity} left</span
+								>
+							{/if}
+						</div>
+					</div>
+					<p class="mt-1.5 px-1 text-xs text-muted-foreground">
+						One pickup that day — selected automatically.
+					</p>
+				{/snippet}
+
 				<Card class="shadow-sm">
 					<CardContent class="p-4">
 						<p class="mb-2 text-sm font-semibold text-foreground">Pickup time</p>
 
-						{#if pickerOptions.length === 0}
+						{#if !hasAnyPickupOption}
 							<p class="text-sm text-muted-foreground">
 								No pickup options are currently available. Check back soon.
 							</p>
 						{:else}
 							<div class="space-y-4">
-								{#if storefrontPickerOptions.length > 0}
+								{#if hasStorefrontOptions}
 									<div class="space-y-2">
 										{#if showGroupHeaders}
 											<p
@@ -878,18 +1051,72 @@
 										{/each}
 									</div>
 								{/if}
-								{#if eventPickerOptions.length > 0}
-									<div class="space-y-2">
+
+								{#if hasStorefrontOptions && hasEventDates}
+									<div class="flex items-center gap-3 py-1">
+										<div class="h-px flex-1 bg-border"></div>
+										<span class="text-xs text-muted-foreground">or</span>
+										<div class="h-px flex-1 bg-border"></div>
+									</div>
+								{/if}
+
+								{#if hasEventDates}
+									<div class="space-y-3">
 										{#if showGroupHeaders}
 											<p
 												class="text-xs font-semibold tracking-wide text-muted-foreground uppercase"
 											>
-												Pick up at an event
+												Choose a pickup event
 											</p>
 										{/if}
-										{#each eventPickerOptions as option (option.id)}
-											{@render pickerOptionRow(option)}
-										{/each}
+
+										<!-- Date chip strip. padding-right keeps the last chip from sitting flush
+                         to the right edge, implying scrollability without visible chrome. -->
+										<div
+											class="-mx-1 flex gap-2 overflow-x-auto px-1 py-1.5"
+											style="scrollbar-width: thin; padding-right: 2rem;"
+										>
+											{#each pickupDates as date (date.dateKey)}
+												{@const isSelected = selectedDateKey === date.dateKey}
+												<button
+													type="button"
+													onclick={() => selectDate(date.dateKey)}
+													class="flex shrink-0 flex-col items-center rounded-lg border px-3.5 py-2.5 transition-all"
+													style={isSelected
+														? 'box-shadow: 0 0 0 2px var(--accent-color); border-color: transparent; background-color: color-mix(in srgb, var(--accent-color) 10%, transparent);'
+														: 'border-color: #e5e7eb;'}
+												>
+													<span
+														class="text-xs"
+														style={isSelected ? 'color: var(--accent-color);' : 'color: #6b7280;'}
+														>{date.weekdayLabel}</span
+													>
+													<span
+														class="text-sm font-medium"
+														style={isSelected ? 'color: var(--accent-color);' : ''}
+														>{date.dateLabel}</span
+													>
+												</button>
+											{/each}
+										</div>
+
+										{#if selectedDate}
+											{#if selectedDateHasMultiple}
+												<p class="text-sm text-muted-foreground">
+													{selectedDateWindows.length} pickups on {selectedDate.weekdayLabel}
+													{selectedDate.dateLabel} — pick one:
+												</p>
+												<div class="space-y-2">
+													{#each selectedDateWindows as win (win.id)}
+														{@const isWinSelected =
+															pickupChoice?.kind === 'event' && pickupChoice.windowId === win.id}
+														{@render windowCard(win, isWinSelected, selectedDateMultiLocation)}
+													{/each}
+												</div>
+											{:else if selectedDateWindows.length === 1}
+												{@render singleWindowConfirm(selectedDateWindows[0])}
+											{/if}
+										{/if}
 									</div>
 								{/if}
 							</div>
