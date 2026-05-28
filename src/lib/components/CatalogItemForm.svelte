@@ -35,6 +35,7 @@
 		status: 'available' | 'sold_out' | 'hidden' | 'draft';
 		isSubscription?: boolean | null;
 		billingInterval?: string | null;
+		fulfillmentNote?: string | null;
 		pickupType?: PickupType | null;
 		customDateLeadDays?: number | null;
 		availabilityMode?: AvailabilityMode | null;
@@ -84,6 +85,7 @@
 	// Subscription
 	let isSubscription = $state(untrack(() => item?.isSubscription ?? false));
 	let billingInterval = $state(untrack(() => item?.billingInterval ?? 'monthly'));
+	let fulfillmentNote = $state(untrack(() => item?.fulfillmentNote ?? ''));
 
 	// Pickup type
 	let pickupType = $state<PickupType>(
@@ -496,6 +498,20 @@
 					</TabsList>
 				</Tabs>
 				<input type="hidden" name="billingInterval" value={billingInterval} />
+			</div>
+			<div>
+				<p class="mb-1 text-xs font-medium text-muted-foreground">Drop-off / delivery info</p>
+				<p class="mb-2 text-xs text-muted-foreground">
+					Optional. Explain how customers receive this — e.g. doorstep delivery schedule. You'll
+					arrange details with each customer directly.
+				</p>
+				<Textarea
+					name="fulfillmentNote"
+					bind:value={fulfillmentNote}
+					maxlength={500}
+					rows={3}
+					placeholder="e.g. Delivered to your door every Wednesday morning. We'll confirm your address after you subscribe."
+				/>
 			</div>
 		{/if}
 	</div>

@@ -10,6 +10,7 @@ import {
 } from '../db/catalog';
 import { orders, orderItems } from '../db/orders';
 import { pickupLocations, pickupWindowTemplates } from '../db/pickup';
+import { materializeTemplate } from '$lib/server/pickup/materialize';
 import { vendorHours, vendorHoursExceptions } from '../db/vendor-hours';
 import { promoCodes } from '../db/promos';
 import { vendor, vendorInvitations } from '../db/vendor';
@@ -120,13 +121,39 @@ async function _seed(vendorId: number, fixture: ArchetypeFixture): Promise<void>
 	}
 
 	// ── Pickup locations ────────────────────────────────────────────────────────
+	// Capture inserted IDs by name so templates can reference their location.
+	const locationIdByName = new Map<string, number>();
 	for (const loc of fixture.locations) {
-		await db.insert(pickupLocations).values({ vendorId, ...loc });
+		const [inserted] = await db
+			.insert(pickupLocations)
+			.values({ vendorId, ...loc })
+			.returning({ id: pickupLocations.id });
+		locationIdByName.set(loc.name, inserted.id);
 	}
 
 	// ── Pickup templates ────────────────────────────────────────────────────────
 	for (const tmpl of fixture.templates) {
-		await db.insert(pickupWindowTemplates).values({ vendorId, ...tmpl });
+		const { locationName, ...tmplData } = tmpl;
+		let locationId: number | null = null;
+		if (locationName) {
+			const resolved = locationIdByName.get(locationName);
+			if (resolved === undefined) {
+				throw new Error(
+					`Seed template "${tmpl.name}" references location "${locationName}" which was not found for this vendor. Check the archetype fixture.`
+				);
+			}
+			locationId = resolved;
+		}
+		const [insertedTemplate] = await db
+			.insert(pickupWindowTemplates)
+			.values({ vendorId, ...tmplData, locationId })
+			.returning({ id: pickupWindowTemplates.id });
+
+		// Generate concrete pickup_windows occurrences immediately, so a freshly
+		// seeded vendor has bookable pickup times on their live catalog without
+		// having to open and re-save the template in settings. Mirrors what the
+		// pickup settings save action does. Idempotent + skips inactive templates.
+		await materializeTemplate(insertedTemplate.id);
 	}
 
 	// ── Orders + order_items ────────────────────────────────────────────────────

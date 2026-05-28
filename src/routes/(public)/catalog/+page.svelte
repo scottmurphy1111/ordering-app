@@ -88,6 +88,9 @@
 		price: number;
 		discountedPrice: number | null;
 		images: unknown;
+		isSubscription?: boolean | null;
+		billingInterval?: string | null;
+		fulfillmentNote?: string | null;
 		pickupType: PickupType;
 		customDateLeadDays?: number | null;
 		availabilityMode?: AvailabilityMode | null;
@@ -100,6 +103,9 @@
 			basePrice: effectivePrice(item as { price: number; discountedPrice: number | null }),
 			selectedModifiers: [] as CartModifier[],
 			imageUrl,
+			isSubscription: item.isSubscription ?? undefined,
+			billingInterval: item.billingInterval ?? undefined,
+			fulfillmentNote: item.fulfillmentNote ?? undefined,
 			pickupType: item.pickupType,
 			customDateLeadDays: item.customDateLeadDays ?? undefined,
 			availabilityMode: item.availabilityMode ?? undefined

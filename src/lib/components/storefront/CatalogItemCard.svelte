@@ -32,7 +32,39 @@
 	const imgs = $derived(item.images as { url: string; isPrimary?: boolean }[] | null);
 	const primaryImage = $derived(imgs?.find((i) => i.isPrimary)?.url ?? imgs?.[0]?.url ?? null);
 	const hasModifiers = $derived(item.modifiers.length > 0);
+
+	// Inline expand/collapse for the description. Only one layout renders per
+	// card (image XOR compact), so a single descEl bind is unambiguous.
+	let descExpanded = $state(false);
+	let descIsTruncated = $state(false);
+	let descEl = $state<HTMLParagraphElement | null>(null);
+
+	$effect(() => {
+		const el = descEl;
+		// Only meaningful while clamped — once expanded, scrollHeight === clientHeight,
+		// which would falsely clear the flag. Preserve truncation knowledge while expanded.
+		if (!el || descExpanded) return;
+		descIsTruncated = el.scrollHeight > el.clientHeight + 1;
+	});
 </script>
+
+{#snippet descriptionBlock(clampClass: string)}
+	{#if item.description}
+		<p bind:this={descEl} class="mt-1 text-sm text-neutral-600 {descExpanded ? '' : clampClass}">
+			{item.description}
+		</p>
+		{#if descIsTruncated || descExpanded}
+			<button
+				type="button"
+				onclick={() => (descExpanded = !descExpanded)}
+				class="mt-0.5 text-xs font-medium transition-opacity hover:opacity-75"
+				style="color: var(--accent-color);"
+			>
+				{descExpanded ? 'less' : 'more'}
+			</button>
+		{/if}
+	{/if}
+{/snippet}
 
 {#if primaryImage}
 	<!-- Image variant: image left, content right -->
@@ -49,9 +81,7 @@
 				<h3 class="font-semibold text-neutral-900" style="font-family: var(--font-heading);">
 					{item.name}
 				</h3>
-				{#if item.description}
-					<p class="mt-1 line-clamp-2 text-sm text-neutral-600">{item.description}</p>
-				{/if}
+				{@render descriptionBlock('line-clamp-2')}
 				{#if Array.isArray(item.tags) && item.tags.length > 0}
 					<div class="mt-2 flex flex-wrap gap-1">
 						{#each item.tags as tag (tag)}
@@ -126,9 +156,7 @@
 			<h3 class="font-semibold text-neutral-900" style="font-family: var(--font-heading);">
 				{item.name}
 			</h3>
-			{#if item.description}
-				<p class="mt-0.5 line-clamp-1 text-sm text-neutral-600">{item.description}</p>
-			{/if}
+			{@render descriptionBlock('line-clamp-1')}
 			{#if Array.isArray(item.tags) && item.tags.length > 0}
 				<div class="mt-1 flex flex-wrap gap-1">
 					{#each item.tags as tag (tag)}

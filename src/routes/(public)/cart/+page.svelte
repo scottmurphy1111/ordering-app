@@ -397,6 +397,13 @@
 		isSubscriptionCart && new Set(cart.items.map((i) => i.billingInterval)).size > 1
 	);
 
+	// Dedupe fulfillment notes from subscription items so identical notes show once.
+	const subscriptionFulfillmentNotes = $derived(
+		isSubscriptionCart
+			? [...new Set(cart.items.map((i) => i.fulfillmentNote).filter((n): n is string => !!n))]
+			: []
+	);
+
 	const subtotal = $derived(cart.subtotal);
 	const tax = $derived(isSubscriptionCart ? 0 : Math.round(subtotal * TAX_RATE));
 	const tipCents = $derived.by(() => {
@@ -1313,6 +1320,16 @@
 							Recurring subscription — billed {subscriptionInterval}
 						</p>
 					</div>
+					{#if subscriptionFulfillmentNotes.length > 0}
+						<div class="mb-2 space-y-1.5 border-b pb-2">
+							{#each subscriptionFulfillmentNotes as note (note)}
+								<div class="flex items-start gap-2 text-purple-700">
+									<Icon icon="mdi:truck-delivery-outline" class="mt-0.5 h-3.5 w-3.5 shrink-0" />
+									<p class="text-xs leading-relaxed">{note}</p>
+								</div>
+							{/each}
+						</div>
+					{/if}
 				{:else if isCustomDateCart}
 					<div
 						class="mb-0.5 flex items-center justify-between border-b pb-1.5 text-muted-foreground"

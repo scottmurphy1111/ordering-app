@@ -82,7 +82,8 @@ export const csaWeekly: ArchetypeFixture = {
 			windowStart: '09:00:00',
 			windowEnd: '12:00:00',
 			isActive: true,
-			exdates: ['2026-12-27']
+			exdates: ['2026-12-27'],
+			locationName: 'River Valley Farm Stand'
 		}
 	],
 

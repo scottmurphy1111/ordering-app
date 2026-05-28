@@ -1,5 +1,7 @@
 <script lang="ts">
-	import { enhance } from '$app/forms';
+	import { enhance, applyAction, deserialize } from '$app/forms';
+	import { invalidateAll } from '$app/navigation';
+	import type { ActionResult } from '@sveltejs/kit';
 	import { confirmDialog } from '$lib/confirm.svelte';
 	import Icon from '@iconify/svelte';
 	import type { PageData, ActionData } from './$types';
@@ -55,6 +57,34 @@
 		if (t.deletedAt) return 'bg-destructive/10 text-red-600';
 		if (!t.isActive) return 'bg-yellow-100 text-yellow-700';
 		return 'bg-success/10 text-success';
+	}
+
+	// Submit a form action via fetch — used when the originating <form> may be
+	// unmounted (e.g. reseed/restore live inside a DropdownMenuContent which
+	// bits-ui unmounts when the dropdown closes during the confirm dialog await,
+	// detaching the form node and causing "form is not connected").
+	async function submitVendorAction(
+		action: string,
+		fields: Record<string, string>,
+		loading: { id: number; action: 'restore' | 'archive' | 'delete' | 'reseed' }
+	) {
+		submittingVendorAction = loading;
+		try {
+			const body = new FormData();
+			for (const [k, v] of Object.entries(fields)) body.append(k, v);
+
+			const res = await fetch(`?/${action}`, { method: 'POST', body });
+			const result: ActionResult = deserialize(await res.text());
+
+			if (result.type === 'success' || result.type === 'redirect') {
+				await invalidateAll();
+			}
+			await applyAction(result);
+		} catch (err) {
+			console.error(`[${action}] submit error:`, err);
+		} finally {
+			submittingVendorAction = null;
+		}
 	}
 </script>
 
@@ -167,42 +197,30 @@
 												<DropdownMenuContent align="end">
 													{#each compatibleArchetypes(t.fulfillmentModel ?? '') as archetype (archetype.key)}
 														<DropdownMenuItem>
-															<form
-																method="post"
-																action="?/reseed"
-																use:enhance={() => {
-																	submittingVendorAction = { id: t.id, action: 'reseed' };
-																	return async ({ update }) => {
-																		submittingVendorAction = null;
-																		await update();
-																	};
-																}}
-																class="w-full"
-															>
-																<input type="hidden" name="id" value={t.id} />
-																<input type="hidden" name="archetypeKey" value={archetype.key} />
-																<button
-																	type="submit"
-																	disabled={submittingVendorAction !== null}
-																	onclick={async (e) => {
-																		e.preventDefault();
-																		const form = (e.currentTarget as HTMLButtonElement).form;
-																		if (
-																			await confirmDialog(
-																				`Reseed "${t.name}" as "${archetype.label}"? This wipes all current vendor data.`
-																			)
+															<button
+																type="button"
+																disabled={submittingVendorAction !== null}
+																onclick={async () => {
+																	if (
+																		await confirmDialog(
+																			`Reseed "${t.name}" as "${archetype.label}"? This wipes all current vendor data.`
 																		)
-																			form?.requestSubmit();
-																	}}
-																	class="w-full cursor-pointer text-left text-sm disabled:opacity-50"
-																>
-																	{#if submittingVendorAction?.id === t.id && submittingVendorAction?.action === 'reseed'}
-																		Reseeding...
-																	{:else}
-																		{archetype.label}
-																	{/if}
-																</button>
-															</form>
+																	) {
+																		await submitVendorAction(
+																			'reseed',
+																			{ id: String(t.id), archetypeKey: archetype.key },
+																			{ id: t.id, action: 'reseed' }
+																		);
+																	}
+																}}
+																class="w-full cursor-pointer text-left text-sm disabled:opacity-50"
+															>
+																{#if submittingVendorAction?.id === t.id && submittingVendorAction?.action === 'reseed'}
+																	Reseeding...
+																{:else}
+																	{archetype.label}
+																{/if}
+															</button>
 														</DropdownMenuItem>
 													{/each}
 												</DropdownMenuContent>
@@ -210,37 +228,28 @@
 										{/if}
 										{#if t.deletedAt || !t.isActive}
 											<!-- Restore -->
-											<form
-												method="post"
-												action="?/restore"
-												use:enhance={() => {
-													submittingVendorAction = { id: t.id, action: 'restore' };
-													return async ({ update }) => {
-														submittingVendorAction = null;
-														await update();
-													};
+											<Button
+												type="button"
+												onclick={async () => {
+													if (await confirmDialog('Restore this vendor?')) {
+														await submitVendorAction(
+															'restore',
+															{ id: String(t.id) },
+															{ id: t.id, action: 'restore' }
+														);
+													}
 												}}
+												disabled={submittingVendorAction !== null}
+												variant="outline"
+												class="w-full md:w-auto"
 											>
-												<input type="hidden" name="id" value={t.id} />
-												<Button
-													type="submit"
-													onclick={async (e) => {
-														e.preventDefault();
-														const form = (e.currentTarget as HTMLButtonElement).form;
-														if (await confirmDialog('Restore this vendor?')) form?.requestSubmit();
-													}}
-													disabled={submittingVendorAction !== null}
-													variant="outline"
-													class="w-full md:w-auto"
-												>
-													{#if submittingVendorAction?.id === t.id && submittingVendorAction?.action === 'restore'}
-														<Icon icon="mdi:loading" class="h-4 w-4 animate-spin" />
-														Restoring...
-													{:else}
-														Restore
-													{/if}
-												</Button>
-											</form>
+												{#if submittingVendorAction?.id === t.id && submittingVendorAction?.action === 'restore'}
+													<Icon icon="mdi:loading" class="h-4 w-4 animate-spin" />
+													Restoring...
+												{:else}
+													Restore
+												{/if}
+											</Button>
 										{:else}
 											<!-- Archive -->
 											<form

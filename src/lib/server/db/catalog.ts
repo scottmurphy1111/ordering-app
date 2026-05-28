@@ -61,6 +61,7 @@ export const catalogItems = pgTable(
 
 		isSubscription: boolean('is_subscription').default(false),
 		billingInterval: varchar('billing_interval', { length: 20 }),
+		fulfillmentNote: text('fulfillment_note'),
 
 		pickupType: pickupTypeEnum('pickup_type').default('windowed').notNull(),
 		customDateLeadDays: integer('custom_date_lead_days').default(14),

@@ -37,6 +37,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 				categoryId: true,
 				isSubscription: true,
 				billingInterval: true,
+				fulfillmentNote: true,
 				status: true,
 				pickupType: true,
 				customDateLeadDays: true,

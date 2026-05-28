@@ -172,7 +172,8 @@ export const hybridBakeryWithMarket: ArchetypeFixture = {
 			windowStart: '07:00:00',
 			windowEnd: '10:00:00',
 			isActive: true,
-			exdates: ['2026-12-25', '2026-12-26']
+			exdates: ['2026-12-25', '2026-12-26'],
+			locationName: 'Main Storefront'
 		},
 		{
 			name: 'Saturday Market Pickup',
@@ -180,7 +181,8 @@ export const hybridBakeryWithMarket: ArchetypeFixture = {
 			windowStart: '08:00:00',
 			windowEnd: '13:00:00',
 			isActive: true,
-			exdates: ['2026-12-27']
+			exdates: ['2026-12-27'],
+			locationName: 'Saturday Farmers Market Booth'
 		}
 	],
 

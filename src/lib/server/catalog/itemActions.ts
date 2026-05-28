@@ -31,6 +31,9 @@ function parseItemFormData(formData: FormData) {
 	const billingInterval = isSubscription
 		? formData.get('billingInterval')?.toString() || 'monthly'
 		: null;
+	const fulfillmentNote = isSubscription
+		? formData.get('fulfillmentNote')?.toString().trim() || null
+		: null;
 	const pickupType = (formData.get('pickupType')?.toString() || 'windowed') as
 		| 'windowed'
 		| 'custom_date';
@@ -76,6 +79,7 @@ function parseItemFormData(formData: FormData) {
 		sortOrder,
 		isSubscription,
 		billingInterval,
+		fulfillmentNote,
 		pickupType,
 		customDateLeadDays,
 		availabilityMode
@@ -130,6 +134,7 @@ export async function updateCatalogItem(
 		sortOrder,
 		isSubscription,
 		billingInterval,
+		fulfillmentNote,
 		pickupType,
 		customDateLeadDays,
 		availabilityMode
@@ -149,6 +154,7 @@ export async function updateCatalogItem(
 			sortOrder,
 			isSubscription,
 			billingInterval,
+			fulfillmentNote,
 			pickupType,
 			customDateLeadDays,
 			availabilityMode,

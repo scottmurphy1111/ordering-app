@@ -20,6 +20,7 @@ export type CartItem = {
 	imageUrl?: string;
 	isSubscription?: boolean;
 	billingInterval?: string; // 'monthly' | 'yearly'
+	fulfillmentNote?: string;
 	pickupType: PickupType;
 	customDateLeadDays?: number;
 	availabilityMode?: AvailabilityMode;

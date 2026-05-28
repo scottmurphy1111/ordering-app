@@ -73,6 +73,9 @@
 			basePrice,
 			selectedModifiers,
 			imageUrl: primaryImage?.url,
+			isSubscription: data.item.isSubscription ?? undefined,
+			billingInterval: data.item.billingInterval ?? undefined,
+			fulfillmentNote: data.item.fulfillmentNote ?? undefined,
 			pickupType: data.item.pickupType,
 			customDateLeadDays: data.item.customDateLeadDays ?? undefined,
 			availabilityMode: (data.item.availabilityMode as AvailabilityMode | null) ?? undefined
@@ -157,6 +160,14 @@
 				<StatusBadge tone="bg-purple-50 text-purple-700" class="text-xs">Special order</StatusBadge>
 			{/if}
 		</div>
+		{#if data.item.isSubscription && data.item.fulfillmentNote}
+			<div
+				class="mt-3 flex items-start gap-2 rounded-lg border border-purple-200 bg-purple-50 px-3 py-2"
+			>
+				<Icon icon="mdi:truck-delivery-outline" class="mt-0.5 h-4 w-4 shrink-0 text-purple-700" />
+				<p class="text-xs leading-relaxed text-purple-900">{data.item.fulfillmentNote}</p>
+			</div>
+		{/if}
 		{#if Array.isArray(data.item.tags) && data.item.tags.length > 0}
 			<div class="mt-2 flex flex-wrap gap-1">
 				{#each data.item.tags as tag (tag)}

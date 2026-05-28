@@ -57,6 +57,10 @@ export interface SeedTemplate {
 	windowEnd: string;
 	isActive: boolean;
 	exdates: string[];
+	/** Name of the pickup location this template's windows occur at. Must match a
+	 *  location `name` in the same fixture. Optional — templates without it produce
+	 *  windows with no location. */
+	locationName?: string;
 }
 
 export interface SeedOrderLineItem {
