@@ -7,7 +7,7 @@
 	import { invalidateAll } from '$app/navigation';
 
 	interface Props {
-		type: 'banner' | 'background';
+		type: 'heroImage';
 		/** Tailwind aspect-ratio class for the preview thumbnail. */
 		aspect: 'aspect-video' | 'aspect-[21/9]';
 	}
@@ -20,21 +20,9 @@
 	let previewUrl = $state<string | null>(null);
 	let errorMessage = $state<string | null>(null);
 
-	const placeholder = $derived(
-		type === 'banner'
-			? 'e.g. a cozy artisan bakery with sourdough loaves'
-			: 'e.g. blurred wildflowers in a sunlit field'
-	);
-
-	const labelHeading = $derived(
-		type === 'banner' ? 'Generate banner with AI' : 'Generate background with AI'
-	);
-
-	const helpText = $derived(
-		type === 'banner'
-			? 'Describe your business or the feeling you want. Takes about 3 seconds.'
-			: 'Describe the mood, palette, or theme. Takes about 3 seconds.'
-	);
+	const placeholder = 'e.g. a cozy artisan bakery with sourdough loaves';
+	const labelHeading = 'Generate hero image with AI';
+	const helpText = 'Describe your business or the feeling you want. Takes about 3 seconds.';
 
 	async function generate() {
 		if (generating) return;
@@ -112,7 +100,7 @@
 			<div class="flex flex-col gap-2 md:flex-row">
 				<form
 					method="post"
-					action="?/acceptGenerated{type === 'banner' ? 'Banner' : 'Background'}"
+					action="?/acceptGeneratedHeroImage"
 					use:enhance={() => {
 						accepting = true;
 						return async ({ result, update }) => {
@@ -135,7 +123,7 @@
 							Saving...
 						{:else}
 							<Icon icon="mdi:check" class="h-4 w-4" />
-							Use this {type}
+							Use this hero image
 						{/if}
 					</Button>
 				</form>

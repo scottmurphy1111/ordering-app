@@ -109,7 +109,7 @@
 						class="add-btn rounded-lg px-3 py-1.5 text-xs font-medium transition-all {isAdding
 							? 'pulsing'
 							: ''} {wasJustAdded ? 'added' : ''}"
-						style="background-color: var(--background-color); color: var(--foreground-color);"
+						style="background-color: var(--accent-color); color: var(--accent-foreground);"
 					>
 						{wasJustAdded ? '✓ Added' : '+ Add'}
 					</button>
@@ -171,7 +171,7 @@
 					class="add-btn rounded-lg px-3 py-1.5 text-xs font-medium transition-all {isAdding
 						? 'pulsing'
 						: ''} {wasJustAdded ? 'added' : ''}"
-					style="background-color: var(--background-color); color: var(--foreground-color);"
+					style="background-color: var(--accent-color); color: var(--accent-foreground);"
 				>
 					{wasJustAdded ? '✓ Added' : '+ Add'}
 				</button>
@@ -201,6 +201,7 @@
 	}
 	.add-btn.added {
 		background-color: var(--accent-color) !important;
-		color: var(--foreground-color) !important;
+		color: var(--accent-foreground) !important;
+		opacity: 0.85;
 	}
 </style>

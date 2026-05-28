@@ -196,16 +196,15 @@ export const hybridBakeryWithMarket: ArchetypeFixture = {
 	branding: {
 		tagline: 'Baked fresh daily since 2018',
 		logoUrl: '/seed-assets/logo-hybrid-bakery.svg',
-		bannerUrl: null,
+		heroImageUrl: '/seed-assets/hero-placeholder.webp',
 		faviconUrl: '/seed-assets/favicon.svg',
-		backgroundImageUrl: null,
-		backgroundPatternSlug: 'tiny-chevrons',
 		backgroundColor: '#2a3a26',
 		accentColor: '#a8b884',
 		foregroundColor: '#eef2e6',
 		fontPair: 'fraunces-dm-sans',
-		showName: false,
-		showLogo: true
+		headerMode: 'logo',
+		heroDisplayMode: 'headline_tagline',
+		heroHeadline: 'Welcome to Two Loaves'
 	},
 
 	settings: {

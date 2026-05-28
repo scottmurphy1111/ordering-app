@@ -12,7 +12,7 @@ export async function POST(event: RequestEvent) {
 	if (!locals.vendorId) throw error(400, 'No vendor selected');
 
 	const formData = await request.formData();
-	const file = formData.get('backgroundImage');
+	const file = formData.get('heroImage');
 
 	if (!(file instanceof File)) throw error(400, 'No file uploaded');
 
@@ -21,38 +21,19 @@ export async function POST(event: RequestEvent) {
 	if (file.size > 5 * 1024 * 1024) throw error(400, 'File too large (max 5MB)');
 
 	try {
-		const imageUrl = await uploadToR2(
+		const heroImageUrl = await uploadToR2(
 			file,
-			`${locals.vendor!.slug}/backgrounds/background-${locals.vendorId}`
+			`${locals.vendor!.slug}/hero-images/hero-image-${locals.vendorId}`
 		);
 
 		await db
 			.update(vendor)
-			.set({ backgroundImageUrl: imageUrl, backgroundPatternSlug: null, updatedAt: new Date() })
+			.set({ heroImageUrl, updatedAt: new Date() })
 			.where(eq(vendor.id, locals.vendorId));
 
-		return json({ success: true, imageUrl });
+		return json({ success: true, heroImageUrl });
 	} catch (err) {
-		console.error('Background image upload error:', err);
-		throw error(500, 'Failed to upload background image');
-	}
-}
-
-export async function DELETE(event: RequestEvent) {
-	const { locals } = event;
-
-	if (!locals.user) throw error(401, 'Unauthorized');
-	if (!locals.vendorId) throw error(400, 'No vendor selected');
-
-	try {
-		await db
-			.update(vendor)
-			.set({ backgroundImageUrl: null, updatedAt: new Date() })
-			.where(eq(vendor.id, locals.vendorId));
-
-		return json({ success: true });
-	} catch (err) {
-		console.error('Background image removal error:', err);
-		throw error(500, 'Failed to remove background image');
+		console.error('Hero image upload error:', err);
+		throw error(500, 'Failed to upload hero image');
 	}
 }

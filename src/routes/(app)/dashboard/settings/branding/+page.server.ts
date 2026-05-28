@@ -4,7 +4,6 @@ import { db } from '$lib/server/db';
 import { eq } from 'drizzle-orm';
 import { vendor } from '$lib/server/db/schema';
 import { FONT_PAIRS } from '$lib/storefront/font-pairs';
-import { findPatternBySlug } from '$lib/storefront/background-patterns';
 import { deleteFromR2 } from '$lib/server/r2';
 import { env } from '$env/dynamic/private';
 
@@ -14,16 +13,14 @@ export const load: PageServerLoad = async ({ locals }) => {
 		where: eq(vendor.id, vendorId),
 		columns: {
 			logoUrl: true,
-			bannerUrl: true,
-			backgroundImageUrl: true,
-			backgroundPatternSlug: true,
+			heroImageUrl: true,
 			backgroundColor: true,
 			accentColor: true,
 			foregroundColor: true,
 			tagline: true,
-			showName: true,
-			showTagline: true,
-			showLogo: true,
+			headerMode: true,
+			heroDisplayMode: true,
+			heroHeadline: true,
 			fontPair: true
 		}
 	});
@@ -31,16 +28,14 @@ export const load: PageServerLoad = async ({ locals }) => {
 	return {
 		branding: record ?? {
 			logoUrl: null,
-			bannerUrl: null,
-			backgroundImageUrl: null,
-			backgroundPatternSlug: null,
+			heroImageUrl: null,
 			backgroundColor: '#000000',
 			accentColor: '#374151',
 			foregroundColor: '#ffffff',
 			tagline: null,
-			showName: true,
-			showTagline: true,
-			showLogo: true,
+			headerMode: 'logo' as const,
+			heroDisplayMode: 'headline_tagline' as const,
+			heroHeadline: null,
 			fontPair: 'fraunces-dm-sans'
 		}
 	};
@@ -95,30 +90,16 @@ export const actions: Actions = {
 		}
 	},
 
-	removeBanner: async ({ locals }) => {
+	removeHeroImage: async ({ locals }) => {
 		try {
 			const vendorId = locals.vendorId!;
 			await db
 				.update(vendor)
-				.set({ bannerUrl: null, updatedAt: new Date() })
+				.set({ heroImageUrl: null, updatedAt: new Date() })
 				.where(eq(vendor.id, vendorId));
-			return { success: true, message: 'Banner removed' };
+			return { success: true, message: 'Hero image removed' };
 		} catch (err) {
-			console.error('[removeBanner] error:', err);
-			return fail(500, { error: 'Something went wrong on our end. Please try again.' });
-		}
-	},
-
-	removeBackground: async ({ locals }) => {
-		try {
-			const vendorId = locals.vendorId!;
-			await db
-				.update(vendor)
-				.set({ backgroundImageUrl: null, backgroundPatternSlug: null, updatedAt: new Date() })
-				.where(eq(vendor.id, vendorId));
-			return { success: true, message: 'Background removed' };
-		} catch (err) {
-			console.error('[removeBackground] error:', err);
+			console.error('[removeHeroImage] error:', err);
 			return fail(500, { error: 'Something went wrong on our end. Please try again.' });
 		}
 	},
@@ -129,21 +110,45 @@ export const actions: Actions = {
 			const formData = await request.formData();
 
 			const tagline = formData.get('tagline')?.toString().trim() ?? '';
-			const showName = formData.get('showName') === 'on';
-			const showTagline = formData.get('showTagline') === 'on';
-			const showLogo = formData.get('showLogo') === 'on';
+			const headerModeRaw = formData.get('headerMode')?.toString();
+			const heroDisplayModeRaw = formData.get('heroDisplayMode')?.toString();
+			const heroHeadline = formData.get('heroHeadline')?.toString().trim() ?? '';
 
 			if (tagline.length > 255) {
 				return fail(400, { error: 'Tagline must be 255 characters or less.' });
+			}
+
+			if (headerModeRaw !== 'logo' && headerModeRaw !== 'name') {
+				return fail(400, { error: 'Choose Logo or Business name for the header.' });
+			}
+			const headerMode = headerModeRaw;
+
+			if (
+				heroDisplayModeRaw !== 'none' &&
+				heroDisplayModeRaw !== 'headline' &&
+				heroDisplayModeRaw !== 'headline_tagline'
+			) {
+				return fail(400, { error: 'Choose what to show on the hero.' });
+			}
+			const heroDisplayMode = heroDisplayModeRaw;
+
+			if (heroHeadline.length > 80) {
+				return fail(400, { error: 'Headline must be 80 characters or less.' });
+			}
+			if (
+				(heroDisplayMode === 'headline' || heroDisplayMode === 'headline_tagline') &&
+				!heroHeadline
+			) {
+				return fail(400, { error: 'Add a headline before showing it on your storefront.' });
 			}
 
 			await db
 				.update(vendor)
 				.set({
 					tagline: tagline || null,
-					showName,
-					showTagline,
-					showLogo,
+					headerMode,
+					heroDisplayMode,
+					heroHeadline: heroHeadline || null,
 					updatedAt: new Date()
 				})
 				.where(eq(vendor.id, vendorId));
@@ -155,7 +160,7 @@ export const actions: Actions = {
 		}
 	},
 
-	acceptGeneratedBanner: async ({ request, locals }) => {
+	acceptGeneratedHeroImage: async ({ request, locals }) => {
 		try {
 			const vendorId = locals.vendorId!;
 			const formData = await request.formData();
@@ -167,99 +172,24 @@ export const actions: Actions = {
 
 			const existing = await db.query.vendor.findFirst({
 				where: eq(vendor.id, vendorId),
-				columns: { bannerUrl: true }
+				columns: { heroImageUrl: true }
 			});
-			if (existing?.bannerUrl) {
+			if (existing?.heroImageUrl) {
 				try {
-					await deleteFromR2(existing.bannerUrl);
+					await deleteFromR2(existing.heroImageUrl);
 				} catch (err) {
-					console.warn('[acceptGeneratedBanner] failed to delete old banner:', err);
+					console.warn('[acceptGeneratedHeroImage] failed to delete old hero image:', err);
 				}
 			}
 
 			await db
 				.update(vendor)
-				.set({ bannerUrl: url, updatedAt: new Date() })
+				.set({ heroImageUrl: url, updatedAt: new Date() })
 				.where(eq(vendor.id, vendorId));
 
-			return { success: true, message: 'Banner saved' };
+			return { success: true, message: 'Hero image saved' };
 		} catch (err) {
-			console.error('[acceptGeneratedBanner] error:', err);
-			return fail(500, { error: 'Something went wrong on our end. Please try again.' });
-		}
-	},
-
-	acceptGeneratedBackground: async ({ request, locals }) => {
-		try {
-			const vendorId = locals.vendorId!;
-			const formData = await request.formData();
-			const url = formData.get('url')?.toString().trim();
-
-			if (!url || !url.startsWith(env.R2_PUBLIC_URL ?? '')) {
-				return fail(400, { error: 'Invalid image URL' });
-			}
-
-			const existing = await db.query.vendor.findFirst({
-				where: eq(vendor.id, vendorId),
-				columns: { backgroundImageUrl: true }
-			});
-			if (existing?.backgroundImageUrl) {
-				try {
-					await deleteFromR2(existing.backgroundImageUrl);
-				} catch (err) {
-					console.warn('[acceptGeneratedBackground] failed to delete old background:', err);
-				}
-			}
-
-			await db
-				.update(vendor)
-				.set({ backgroundImageUrl: url, backgroundPatternSlug: null, updatedAt: new Date() })
-				.where(eq(vendor.id, vendorId));
-
-			return { success: true, message: 'Background saved' };
-		} catch (err) {
-			console.error('[acceptGeneratedBackground] error:', err);
-			return fail(500, { error: 'Something went wrong on our end. Please try again.' });
-		}
-	},
-
-	selectPattern: async ({ request, locals }) => {
-		try {
-			const vendorId = locals.vendorId!;
-			const formData = await request.formData();
-			const slug = formData.get('slug')?.toString().trim();
-
-			const pattern = findPatternBySlug(slug);
-			if (!pattern) {
-				return fail(400, { error: 'Unknown pattern' });
-			}
-
-			// Any non-null backgroundImageUrl is an R2-hosted asset — delete it
-			// before switching to a pattern (patterns are purely slug-based, no URL).
-			const existing = await db.query.vendor.findFirst({
-				where: eq(vendor.id, vendorId),
-				columns: { backgroundImageUrl: true }
-			});
-			if (existing?.backgroundImageUrl) {
-				try {
-					await deleteFromR2(existing.backgroundImageUrl);
-				} catch (err) {
-					console.warn('[selectPattern] failed to delete old background image:', err);
-				}
-			}
-
-			await db
-				.update(vendor)
-				.set({
-					backgroundImageUrl: null,
-					backgroundPatternSlug: pattern.slug,
-					updatedAt: new Date()
-				})
-				.where(eq(vendor.id, vendorId));
-
-			return { success: true, message: 'Pattern applied' };
-		} catch (err) {
-			console.error('[selectPattern] error:', err);
+			console.error('[acceptGeneratedHeroImage] error:', err);
 			return fail(500, { error: 'Something went wrong on our end. Please try again.' });
 		}
 	},

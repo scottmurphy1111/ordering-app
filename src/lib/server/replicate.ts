@@ -64,14 +64,14 @@ async function streamToBuffer(stream: ReadableStream<Uint8Array>): Promise<Buffe
 }
 
 /**
- * Builds a Flux-schnell prompt for a banner image.
+ * Builds a Flux-schnell prompt for a hero image.
  *
  * Generated at 21:9; the endpoint crops+resizes to exactly 1600×600.
  * The template prefix sets quality constraints (no text, photographic, cinematic)
  * and the vendor's free-text fills in the subject matter. Empty input falls back to
  * a generic phrase using the vendor name.
  */
-export function buildBannerPrompt(vendorInput: string, vendorName: string): string {
+export function buildHeroImagePrompt(vendorInput: string, vendorName: string): string {
 	const cleanInput = vendorInput.trim();
 	const subject = cleanInput || `a small artisanal food business called ${vendorName}`;
 
@@ -81,22 +81,5 @@ export function buildBannerPrompt(vendorInput: string, vendorName: string): stri
 		'Warm natural lighting, soft focus background, shallow depth of field.',
 		'No text, no watermarks, no logos.',
 		'21:9 ultra-wide aspect ratio.'
-	].join(' ');
-}
-
-/**
- * Builds a Flux-schnell prompt for a storefront background image.
- * Background images are decorative — they sit behind content and should not compete.
- */
-export function buildBackgroundPrompt(vendorInput: string, vendorName: string): string {
-	const cleanInput = vendorInput.trim();
-	const subject = cleanInput || `a small artisanal food business called ${vendorName}`;
-
-	return [
-		`Decorative background photograph related to ${subject}.`,
-		'Soft, muted tones. Blurred or shallow-depth composition.',
-		'Out of focus, low contrast — designed to sit behind content without distracting.',
-		'No text, no watermarks, no logos, no people, no faces.',
-		'Wide aspect ratio, atmospheric.'
 	].join(' ');
 }

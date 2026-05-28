@@ -163,7 +163,10 @@ export const actions: Actions = {
 				type,
 				fulfillmentModel: fulfillmentModel as 'storefront' | 'pickup_only' | 'hybrid',
 				address: {},
-				timezone
+				timezone,
+				heroImageUrl: '/seed-assets/hero-placeholder.webp',
+				heroHeadline: `Welcome to ${name}`,
+				tagline: 'A short line about what you do'
 			})
 			.returning({ id: vendor.id });
 

@@ -91,16 +91,15 @@ export const storefrontFlorist: ArchetypeFixture = {
 	branding: {
 		tagline: 'Fresh flowers, every day',
 		logoUrl: '/seed-assets/logo-florist.svg',
-		bannerUrl: null,
+		heroImageUrl: '/seed-assets/hero-placeholder.webp',
 		faviconUrl: '/seed-assets/favicon.svg',
-		backgroundImageUrl: null,
-		backgroundPatternSlug: 'plus-signs',
 		backgroundColor: '#1b2e22',
 		accentColor: '#8db87c',
 		foregroundColor: '#edf5ec',
 		fontPair: 'libre-baskerville-source-sans',
-		showName: false,
-		showLogo: true
+		headerMode: 'logo',
+		heroDisplayMode: 'headline_tagline',
+		heroHeadline: 'Welcome to Wildbloom Florals'
 	},
 
 	settings: {

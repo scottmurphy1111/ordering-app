@@ -107,7 +107,7 @@
 				href={resolve('/cart' as `/${string}`)}
 				onclick={handleCheckout}
 				class="mt-4 block rounded-lg px-4 py-3 text-center text-sm font-semibold transition-opacity hover:opacity-90"
-				style="background-color: var(--background-color); color: var(--foreground-color);"
+				style="background-color: var(--accent-color); color: var(--accent-foreground);"
 			>
 				Checkout
 			</a>

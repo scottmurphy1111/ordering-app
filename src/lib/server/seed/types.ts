@@ -120,16 +120,15 @@ export interface SeedPickupLocation {
 export interface SeedBranding {
 	tagline: string;
 	logoUrl: string | null;
-	bannerUrl: string | null;
+	heroImageUrl: string | null;
 	faviconUrl: string;
-	backgroundImageUrl: string | null;
-	backgroundPatternSlug: string | null;
 	backgroundColor: string;
 	accentColor: string;
 	foregroundColor: string;
 	fontPair: string;
-	showName: boolean;
-	showLogo: boolean;
+	headerMode: 'logo' | 'name';
+	heroDisplayMode: 'none' | 'headline' | 'headline_tagline';
+	heroHeadline: string | null;
 }
 
 export interface SeedSettings {

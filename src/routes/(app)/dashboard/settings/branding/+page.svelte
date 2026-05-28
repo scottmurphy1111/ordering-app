@@ -6,7 +6,6 @@
 	import { Button } from '$lib/components/ui/button';
 	import { Input } from '$lib/components/ui/input';
 	import { Label } from '$lib/components/ui/label';
-	import { Checkbox } from '$lib/components/ui/checkbox';
 	import {
 		Card,
 		CardHeader,
@@ -22,7 +21,6 @@
 	import { toast } from '$lib/toast';
 	import { enhanceWithToasts } from '$lib/forms/enhance-with-toasts';
 	import { FONT_PAIRS, googleFontsUrl, type FontPairSlug } from '$lib/storefront/font-pairs';
-	import { BACKGROUND_PATTERNS, patternDataUriSoft } from '$lib/storefront/background-patterns';
 	import AiImageGenerator from '$lib/components/AiImageGenerator.svelte';
 
 	let { data }: { data: PageData } = $props();
@@ -41,14 +39,19 @@
 		untrack(() => (data.branding.fontPair as FontPairSlug) ?? 'fraunces-dm-sans')
 	);
 
+	let headerMode = $state<'logo' | 'name'>(untrack(() => data.branding.headerMode ?? 'logo'));
+	let heroDisplayMode = $state<'none' | 'headline' | 'headline_tagline'>(
+		untrack(() => data.branding.heroDisplayMode ?? 'headline_tagline')
+	);
+	let heroHeadline = $state<string>(untrack(() => data.branding.heroHeadline ?? ''));
+
 	// ── Upload helpers ─────────────────────────────────────────────────────────
 	type UploadState = { uploading: boolean; error: string };
 
 	let previewOpen = $state(false);
 
 	let logoState = $state<UploadState>({ uploading: false, error: '' });
-	let bannerState = $state<UploadState>({ uploading: false, error: '' });
-	let bgState = $state<UploadState>({ uploading: false, error: '' });
+	let heroImageState = $state<UploadState>({ uploading: false, error: '' });
 	let submittingAction = $state<string | null>(null);
 
 	// Per-form save errors (separate so an error in one form doesn't bleed into others).
@@ -56,21 +59,10 @@
 	let fontSaveError = $state<string | null>(null);
 	let colorsSaveError = $state<string | null>(null);
 	let logoSaveError = $state<string | null>(null);
-	let bannerSaveError = $state<string | null>(null);
-	let backgroundSaveError = $state<string | null>(null);
-
-	const removeLabel = $derived.by(() => {
-		const hasImage = !!data.branding.backgroundImageUrl;
-		const hasPattern = !!data.branding.backgroundPatternSlug;
-		if (hasImage && hasPattern) return 'Remove background';
-		if (hasImage) return 'Remove image';
-		if (hasPattern) return 'Remove pattern';
-		return 'Remove';
-	});
+	let heroImageSaveError = $state<string | null>(null);
 
 	let logoInput = $state<HTMLInputElement | null>(null);
-	let bannerInput = $state<HTMLInputElement | null>(null);
-	let bgInput = $state<HTMLInputElement | null>(null);
+	let heroImageInput = $state<HTMLInputElement | null>(null);
 
 	async function uploadImage(
 		file: File,
@@ -167,24 +159,71 @@
 						</p>
 					</div>
 
-					<div class="space-y-3 border-t pt-4">
-						<p class="text-sm font-medium">Storefront header visibility</p>
+					<div class="space-y-2 border-t pt-4">
+						<p class="text-sm font-medium">Header displays</p>
 						<p class="text-xs text-muted-foreground">
-							Useful if your banner image already includes your name or logo.
+							The header shows the logo when set, or your business name as text.
 						</p>
+						<label class="flex cursor-pointer items-center gap-2">
+							<input type="radio" name="headerMode" value="logo" bind:group={headerMode} />
+							<span class="text-sm">Logo</span>
+						</label>
+						<label class="flex cursor-pointer items-center gap-2">
+							<input type="radio" name="headerMode" value="name" bind:group={headerMode} />
+							<span class="text-sm">Business name</span>
+						</label>
+					</div>
 
-						<label class="flex cursor-pointer items-start gap-3">
-							<Checkbox name="showName" checked={data.branding.showName} class="mt-0.5" />
-							<span class="text-sm">Show business name</span>
-						</label>
-						<label class="flex cursor-pointer items-start gap-3">
-							<Checkbox name="showTagline" checked={data.branding.showTagline} class="mt-0.5" />
-							<span class="text-sm">Show tagline</span>
-						</label>
-						<label class="flex cursor-pointer items-start gap-3">
-							<Checkbox name="showLogo" checked={data.branding.showLogo} class="mt-0.5" />
-							<span class="text-sm">Show logo</span>
-						</label>
+					<div class="space-y-3 border-t pt-4">
+						<div class="space-y-1.5">
+							<Label class="mb-1 block" for="heroHeadline">Hero headline</Label>
+							<Input
+								id="heroHeadline"
+								name="heroHeadline"
+								type="text"
+								maxlength={80}
+								bind:value={heroHeadline}
+								placeholder="Welcome to your shop"
+							/>
+							<p class="mt-1 text-xs text-muted-foreground">{heroHeadline.length}/80 characters</p>
+						</div>
+
+						<div class="space-y-2">
+							<p class="text-sm font-medium">Hero displays</p>
+							<label class="flex cursor-pointer items-center gap-2">
+								<input
+									type="radio"
+									name="heroDisplayMode"
+									value="none"
+									bind:group={heroDisplayMode}
+								/>
+								<span class="text-sm">Nothing (image only)</span>
+							</label>
+							<label class="flex cursor-pointer items-center gap-2">
+								<input
+									type="radio"
+									name="heroDisplayMode"
+									value="headline"
+									bind:group={heroDisplayMode}
+									disabled={!heroHeadline.trim()}
+								/>
+								<span class="text-sm {!heroHeadline.trim() ? 'text-muted-foreground' : ''}"
+									>Headline only</span
+								>
+							</label>
+							<label class="flex cursor-pointer items-center gap-2">
+								<input
+									type="radio"
+									name="heroDisplayMode"
+									value="headline_tagline"
+									bind:group={heroDisplayMode}
+									disabled={!heroHeadline.trim()}
+								/>
+								<span class="text-sm {!heroHeadline.trim() ? 'text-muted-foreground' : ''}"
+									>Headline and tagline</span
+								>
+							</label>
+						</div>
 					</div>
 
 					<Button type="submit" disabled={submittingAction !== null}>
@@ -566,74 +605,85 @@
 			</CardContent>
 		</Card>
 
-		<!-- ── Banner image ──────────────────────────────────────────────────────── -->
+		<!-- ── Hero image ──────────────────────────────────────────────────────── -->
 		<Card class="shadow-sm">
 			<CardHeader class="border-b">
-				<CardTitle>Banner image</CardTitle>
+				<CardTitle>Hero image</CardTitle>
 				<CardDescription
 					>Full-bleed hero image shown at the top of your catalog page.</CardDescription
 				>
 				<CardAction>
 					<span
-						class="rounded-full px-2.5 py-0.5 text-xs font-medium {data.branding.bannerUrl
+						class="rounded-full px-2.5 py-0.5 text-xs font-medium {data.branding.heroImageUrl
 							? 'bg-success/10 text-success'
 							: 'bg-muted text-muted-foreground'}"
 					>
-						{data.branding.bannerUrl ? 'Active' : 'Not set'}
+						{data.branding.heroImageUrl ? 'Active' : 'Not set'}
 					</span>
 				</CardAction>
 			</CardHeader>
 			<CardContent class="space-y-4">
-				{#if data.branding.bannerUrl}
+				{#if data.branding.heroImageUrl}
 					<div class="overflow-hidden rounded-lg border">
-						<img src={data.branding.bannerUrl} alt="Banner" class="h-36 w-full object-cover" />
+						<img
+							src={data.branding.heroImageUrl}
+							alt="Storefront hero"
+							class="h-36 w-full object-cover"
+						/>
 					</div>
 				{/if}
-				{#if bannerSaveError}
-					<Alert severity="error" class="mb-3">{bannerSaveError}</Alert>
+				{#if heroImageSaveError}
+					<Alert severity="error" class="mb-3">{heroImageSaveError}</Alert>
 				{/if}
-				{#if bannerState.error}
-					<p class="text-sm text-red-600">{bannerState.error}</p>
+				{#if heroImageState.error}
+					<p class="text-sm text-red-600">{heroImageState.error}</p>
 				{/if}
 				<div class="flex items-center gap-3">
 					<input
 						type="file"
 						accept="image/jpeg,image/png,image/webp"
-						bind:this={bannerInput}
+						bind:this={heroImageInput}
 						onchange={(e) => {
 							const f = (e.target as HTMLInputElement).files?.[0];
 							if (f)
-								uploadImage(f, '/api/upload-banner', 'banner', bannerState, 5, 'Banner updated');
+								uploadImage(
+									f,
+									'/api/upload-hero-image',
+									'heroImage',
+									heroImageState,
+									5,
+									'Hero image updated'
+								);
 						}}
 						class="hidden"
 					/>
 					<Button
 						type="button"
-						onclick={() => bannerInput?.click()}
-						disabled={bannerState.uploading}
+						onclick={() => heroImageInput?.click()}
+						disabled={heroImageState.uploading}
 						variant="default"
 					>
-						{bannerState.uploading
+						{heroImageState.uploading
 							? 'Uploading…'
-							: data.branding.bannerUrl
-								? 'Replace banner'
-								: 'Upload banner'}
+							: data.branding.heroImageUrl
+								? 'Replace hero image'
+								: 'Upload hero image'}
 					</Button>
-					{#if data.branding.bannerUrl}
+					{#if data.branding.heroImageUrl}
 						<form
 							method="post"
-							action="?/removeBanner"
+							action="?/removeHeroImage"
 							use:enhance={enhanceWithToasts({
-								successMessage: 'Banner removed',
+								successMessage: 'Hero image removed',
 								onStart: () => {
-									submittingAction = 'removeBanner';
-									bannerSaveError = null;
+									submittingAction = 'removeHeroImage';
+									heroImageSaveError = null;
 								},
 								onEnd: () => {
 									submittingAction = null;
 								},
 								onError: (msg) => {
-									bannerSaveError = msg;
+									heroImageSaveError = msg;
 								}
 							})}
 						>
@@ -643,7 +693,7 @@
 								variant="ghost"
 								class="text-red-500 hover:bg-red-50 hover:text-red-600"
 							>
-								{#if submittingAction === 'removeBanner'}
+								{#if submittingAction === 'removeHeroImage'}
 									<Icon icon="mdi:loading" class="h-4 w-4 animate-spin" />
 									Removing...
 								{:else}
@@ -663,184 +713,7 @@
 					<div class="h-px flex-1 bg-border"></div>
 				</div>
 
-				<AiImageGenerator type="banner" aspect="aspect-video" />
-			</CardContent>
-		</Card>
-
-		<!-- ── Background image ──────────────────────────────────────────────────── -->
-		<Card class="shadow-sm">
-			<CardHeader class="border-b">
-				<CardTitle>Background image</CardTitle>
-				<CardDescription
-					>Subtle full-page texture behind your catalog and cart. Works best with low-contrast
-					images (wood, marble, linen).</CardDescription
-				>
-				<CardAction>
-					<span
-						class="rounded-full px-2.5 py-0.5 text-xs font-medium {data.branding
-							.backgroundImageUrl || data.branding.backgroundPatternSlug
-							? 'bg-success/10 text-success'
-							: 'bg-muted text-muted-foreground'}"
-					>
-						{data.branding.backgroundImageUrl || data.branding.backgroundPatternSlug
-							? 'Active'
-							: 'Not set'}
-					</span>
-				</CardAction>
-			</CardHeader>
-			<CardContent class="space-y-4">
-				{#if data.branding.backgroundImageUrl}
-					<div class="overflow-hidden rounded-lg border">
-						<img
-							src={data.branding.backgroundImageUrl}
-							alt="Background"
-							class="h-28 w-full object-cover opacity-60"
-						/>
-					</div>
-				{/if}
-				{#if backgroundSaveError}
-					<Alert severity="error" class="mb-3">{backgroundSaveError}</Alert>
-				{/if}
-				{#if bgState.error}
-					<p class="text-sm text-red-600">{bgState.error}</p>
-				{/if}
-				<div class="flex items-center gap-3">
-					<input
-						type="file"
-						accept="image/jpeg,image/png,image/webp"
-						bind:this={bgInput}
-						onchange={(e) => {
-							const f = (e.target as HTMLInputElement).files?.[0];
-							if (f)
-								uploadImage(
-									f,
-									'/api/upload-background-image',
-									'backgroundImage',
-									bgState,
-									5,
-									'Background updated'
-								);
-						}}
-						class="hidden"
-					/>
-					<Button
-						type="button"
-						onclick={() => bgInput?.click()}
-						disabled={bgState.uploading}
-						variant="default"
-					>
-						{bgState.uploading
-							? 'Uploading…'
-							: data.branding.backgroundImageUrl
-								? 'Replace background'
-								: 'Upload background'}
-					</Button>
-					{#if data.branding.backgroundImageUrl || data.branding.backgroundPatternSlug}
-						<form
-							method="post"
-							action="?/removeBackground"
-							use:enhance={enhanceWithToasts({
-								successMessage: 'Background removed',
-								onStart: () => {
-									submittingAction = 'removeBackground';
-									backgroundSaveError = null;
-								},
-								onEnd: () => {
-									submittingAction = null;
-								},
-								onError: (msg) => {
-									backgroundSaveError = msg;
-								}
-							})}
-						>
-							<Button
-								type="submit"
-								disabled={submittingAction !== null}
-								variant="ghost"
-								class="text-red-500 hover:bg-red-50 hover:text-red-600"
-							>
-								{#if submittingAction === 'removeBackground'}
-									<Icon icon="mdi:loading" class="h-4 w-4 animate-spin" />
-									Removing...
-								{:else}
-									{removeLabel}
-								{/if}
-							</Button>
-						</form>
-					{/if}
-				</div>
-				<p class="text-xs text-muted-foreground">
-					JPG, PNG, or WebP · max 5MB · tileable textures work best
-				</p>
-
-				<div class="my-4 flex items-center gap-2">
-					<div class="h-px flex-1 bg-border"></div>
-					<span class="text-xs text-muted-foreground">or</span>
-					<div class="h-px flex-1 bg-border"></div>
-				</div>
-
-				<AiImageGenerator type="background" aspect="aspect-[21/9]" />
-
-				<div class="my-4 flex items-center gap-2">
-					<div class="h-px flex-1 bg-border"></div>
-					<span class="text-xs text-muted-foreground">or pick a pattern</span>
-					<div class="h-px flex-1 bg-border"></div>
-				</div>
-
-				<div class="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
-					{#each BACKGROUND_PATTERNS as pattern (pattern.slug)}
-						<form
-							method="post"
-							action="?/selectPattern"
-							use:enhance={enhanceWithToasts({
-								successMessage: 'Background updated',
-								onStart: () => {
-									submittingAction = `pattern:${pattern.slug}`;
-									backgroundSaveError = null;
-								},
-								onEnd: () => {
-									submittingAction = null;
-								},
-								onError: (msg) => {
-									backgroundSaveError = msg;
-								}
-							})}
-						>
-							<input type="hidden" name="slug" value={pattern.slug} />
-							<button
-								type="submit"
-								disabled={submittingAction !== null}
-								aria-label="Select pattern: {pattern.label}"
-								class="group relative block aspect-square w-full overflow-hidden rounded-md border-2 transition-colors {data
-									.branding.backgroundPatternSlug === pattern.slug
-									? 'border-foreground'
-									: 'border-border hover:border-foreground/40'}"
-								style="background-color: {data.branding
-									.backgroundColor}; background-image: {patternDataUriSoft(
-									pattern,
-									data.branding.foregroundColor ?? '#ffffff',
-									data.branding.backgroundColor ?? '#000000'
-								)}; background-repeat: repeat; background-size: {pattern.tileSize};"
-							>
-								<span class="sr-only">{pattern.label}</span>
-								{#if data.branding.backgroundPatternSlug === pattern.slug}
-									<span
-										class="absolute top-2 right-2 flex h-6 w-6 items-center justify-center rounded-full bg-white shadow-sm"
-										aria-hidden="true"
-									>
-										<Icon icon="mdi:check" class="h-4 w-4 text-foreground" />
-									</span>
-								{/if}
-								{#if submittingAction === `pattern:${pattern.slug}`}
-									<span class="absolute inset-0 flex items-center justify-center bg-background/60">
-										<Icon icon="mdi:loading" class="h-5 w-5 animate-spin" />
-									</span>
-								{/if}
-							</button>
-							<p class="mt-1 text-center text-xs text-muted-foreground">{pattern.label}</p>
-						</form>
-					{/each}
-				</div>
+				<AiImageGenerator type="heroImage" aspect="aspect-video" />
 			</CardContent>
 		</Card>
 	</div>

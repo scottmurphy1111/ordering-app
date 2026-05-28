@@ -35,8 +35,7 @@
 	<StorefrontHeader
 		vendorName={data.vendor.name}
 		logoUrl={data.vendor.logoUrl}
-		showLogo={data.vendor.showLogo}
-		showName={data.vendor.showName}
+		headerMode={data.vendor.headerMode}
 	/>
 
 	<div class="flex-1">

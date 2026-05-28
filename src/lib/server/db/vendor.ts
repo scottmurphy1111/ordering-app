@@ -32,6 +32,14 @@ export const fulfillmentModelEnum = pgEnum('fulfillment_model', [
 	'hybrid'
 ]);
 
+export const headerModeEnum = pgEnum('header_mode', ['logo', 'name']);
+
+export const heroDisplayModeEnum = pgEnum('hero_display_mode', [
+	'none',
+	'headline',
+	'headline_tagline'
+]);
+
 export const vendor = pgTable(
 	'vendors',
 	{
@@ -56,19 +64,20 @@ export const vendor = pgTable(
 
 		// Branding & rich visuals
 		logoUrl: text('logo_url'),
-		bannerUrl: text('banner_url'),
+		heroImageUrl: text('hero_image_url'),
 		faviconUrl: text('favicon_url'),
-		backgroundImageUrl: text('background_image_url'),
-		backgroundPatternSlug: varchar('background_pattern_slug', { length: 32 }),
 		backgroundColor: varchar('background_color', { length: 7 }).default('#000000'),
 		accentColor: varchar('accent_color', { length: 7 }).default('#374151'),
 		foregroundColor: varchar('foreground_color', { length: 7 }).default('#ffffff'),
 
-		// Display toggles for storefront header — vendors can hide elements
-		// they don't want shown (e.g. logo already embedded in banner).
-		showName: boolean('show_name').default(true).notNull(),
-		showTagline: boolean('show_tagline').default(true).notNull(),
-		showLogo: boolean('show_logo').default(true).notNull(),
+		// Header surface: mutually exclusive — show the logo OR the business name.
+		// 'logo' falls back to name rendering when logoUrl is null.
+		headerMode: headerModeEnum('header_mode').default('logo').notNull(),
+
+		// Hero surface: text overlay options on top of the heroImageUrl.
+		// 'none' = image only; 'headline' = headline only; 'headline_tagline' = both.
+		heroDisplayMode: heroDisplayModeEnum('hero_display_mode').default('headline_tagline').notNull(),
+		heroHeadline: varchar('hero_headline', { length: 80 }),
 
 		// When false, the storefront hides the Custom Orders section
 		// and the /request route redirects to /catalog. Existing requests

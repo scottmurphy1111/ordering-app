@@ -757,11 +757,11 @@
 				{#snippet pickerOptionRow(option: PickerOption)}
 					{@const isSelected = isOptionSelected(option, pickupChoice)}
 					<label
-						class="flex cursor-pointer items-start gap-3 rounded-lg border p-3 transition-colors {isSelected
+						class="flex cursor-pointer items-start gap-3 rounded-lg border p-3 transition-all {isSelected
 							? ''
 							: 'hover:bg-muted/30'}"
 						style={isSelected
-							? 'background-color: color-mix(in srgb, var(--background-color) 8%, transparent); border-color: var(--background-color);'
+							? 'box-shadow: 0 0 0 2px var(--accent-color); border-color: transparent;'
 							: ''}
 					>
 						<input
@@ -774,11 +774,14 @@
 						<div
 							class="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full border-2 transition-colors"
 							style={isSelected
-								? 'border-color: var(--background-color); background-color: var(--background-color);'
+								? 'border-color: var(--accent-color); background-color: var(--accent-color);'
 								: 'border-color: #d1d5db;'}
 						>
 							{#if isSelected}
-								<div class="h-1.5 w-1.5 rounded-full bg-white"></div>
+								<div
+									class="h-1.5 w-1.5 rounded-full"
+									style="background-color: var(--accent-foreground);"
+								></div>
 							{/if}
 						</div>
 						<div class="min-w-0 flex-1">
@@ -1019,9 +1022,9 @@
 								customTipDollars = '';
 							}}
 							style={tipPercent === 0
-								? 'background-color: var(--background-color); color: var(--foreground-color); border-color: var(--background-color);'
+								? 'box-shadow: 0 0 0 2px var(--accent-color); border-color: transparent; color: var(--accent-color);'
 								: ''}
-							class="rounded-lg border px-3 py-1.5 text-sm font-medium transition-colors {tipPercent ===
+							class="rounded-lg border px-3 py-1.5 text-sm font-medium transition-all {tipPercent ===
 							0
 								? ''
 								: ' text-muted-foreground hover:bg-muted/50'}">No tip</button
@@ -1034,9 +1037,9 @@
 									customTipDollars = '';
 								}}
 								style={tipPercent === pct
-									? 'background-color: var(--background-color); color: var(--foreground-color); border-color: var(--background-color);'
+									? 'box-shadow: 0 0 0 2px var(--accent-color); border-color: transparent; color: var(--accent-color);'
 									: ''}
-								class="rounded-lg border px-3 py-1.5 text-sm font-medium transition-colors {tipPercent ===
+								class="rounded-lg border px-3 py-1.5 text-sm font-medium transition-all {tipPercent ===
 								pct
 									? ''
 									: ' text-muted-foreground hover:bg-muted/50'}">{pct}%</button
@@ -1048,9 +1051,9 @@
 								tipPercent = 'custom';
 							}}
 							style={tipPercent === 'custom'
-								? 'background-color: var(--background-color); color: var(--foreground-color); border-color: var(--background-color);'
+								? 'box-shadow: 0 0 0 2px var(--accent-color); border-color: transparent; color: var(--accent-color);'
 								: ''}
-							class="rounded-lg border px-3 py-1.5 text-sm font-medium transition-colors {tipPercent ===
+							class="rounded-lg border px-3 py-1.5 text-sm font-medium transition-all {tipPercent ===
 							'custom'
 								? ''
 								: ' text-muted-foreground hover:bg-muted/50'}">Custom</button
@@ -1185,7 +1188,7 @@
 			type="button"
 			onclick={checkout}
 			disabled={loading || cart.items.length === 0 || isPaused || hasIncompatibleItems}
-			style="background-color: var(--background-color); color: var(--foreground-color);"
+			style="background-color: var(--accent-color); color: var(--accent-foreground);"
 			class="w-full rounded-xl px-6 py-4 text-base font-semibold shadow-sm transition-opacity hover:opacity-90 disabled:opacity-50"
 		>
 			{#if loading}

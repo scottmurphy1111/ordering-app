@@ -103,16 +103,15 @@ export const storefrontBakery: ArchetypeFixture = {
 	branding: {
 		tagline: 'Baked fresh, every morning',
 		logoUrl: '/seed-assets/logo-bakery.svg',
-		bannerUrl: null,
+		heroImageUrl: '/seed-assets/hero-placeholder.webp',
 		faviconUrl: '/seed-assets/favicon.svg',
-		backgroundImageUrl: null,
-		backgroundPatternSlug: 'fine-grid',
 		backgroundColor: '#2c1810',
 		accentColor: '#d4956a',
 		foregroundColor: '#fdf4ec',
 		fontPair: 'playfair-inter',
-		showName: false,
-		showLogo: true
+		headerMode: 'logo',
+		heroDisplayMode: 'headline_tagline',
+		heroHeadline: 'Welcome to Hearth & Crumb'
 	},
 
 	settings: {

@@ -1,10 +1,10 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 280 80" fill="currentColor">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 380 80" width="380" height="80">
   <!-- Wheat sheaf mark -->
   <g transform="translate(8 12)">
-    <path d="M28 8 L28 56 M28 8 L20 16 M28 8 L36 16 M28 20 L18 26 M28 20 L38 26 M28 32 L18 38 M28 32 L38 38 M28 44 L20 50 M28 44 L36 50" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+    <path d="M28 8 L28 56 M28 8 L20 16 M28 8 L36 16 M28 20 L18 26 M28 20 L38 26 M28 32 L18 38 M28 32 L38 38 M28 44 L20 50 M28 44 L36 50" stroke="#eef5e8" stroke-width="2.5" fill="none" stroke-linecap="round"/>
   </g>
   <!-- Wordmark -->
-  <text x="70" y="40" font-family="Georgia, 'Times New Roman', serif" font-size="26" font-weight="600" letter-spacing="-0.5">Cedarwood Farm</text>
+  <text x="70" y="40" font-family="Georgia, 'Times New Roman', serif" font-size="26" font-weight="600" letter-spacing="-0.5" fill="#eef5e8">Cedarwood Farm</text>
   <!-- Tagline -->
-  <text x="70" y="58" font-family="'Helvetica Neue', Arial, sans-serif" font-size="9" letter-spacing="3" font-weight="500">CSA · WEEKLY HARVEST</text>
+  <text x="70" y="58" font-family="'Helvetica Neue', Arial, sans-serif" font-size="9" letter-spacing="3" font-weight="500" fill="#eef5e8">CSA · WEEKLY HARVEST</text>
 </svg>

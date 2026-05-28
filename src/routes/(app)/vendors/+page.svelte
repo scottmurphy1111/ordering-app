@@ -128,7 +128,7 @@
 								<div class="min-w-0">
 									<p class="font-medium text-foreground">{t.name}</p>
 									<p class="mt-0.5 text-xs text-muted-foreground">
-										getorderlocal.com/{t.slug} · {businessTypeLabel(t.type)} · {t.role
+										{t.slug}.getorderlocal.com · {businessTypeLabel(t.type)} · {t.role
 											.charAt(0)
 											.toUpperCase() + t.role.slice(1)}
 									</p>
@@ -193,7 +193,6 @@
 							>URL slug</label
 						>
 						<div class="flex items-center gap-1.5">
-							<span class="text-sm text-muted-foreground">getorderlocal.com/</span>
 							<Input
 								id="slug"
 								name="slug"
@@ -203,6 +202,8 @@
 								placeholder="my-awesome-shop"
 								class="flex-1"
 							/>
+							<span class="text-sm whitespace-nowrap text-muted-foreground">.getorderlocal.com</span
+							>
 						</div>
 					</div>
 

@@ -1,13 +1,13 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 280 80" fill="currentColor">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 380 80" width="380" height="80">
   <!-- Two loaves mark -->
   <g transform="translate(8 12)">
-    <ellipse cx="22" cy="28" rx="14" ry="8" fill="none" stroke="currentColor" stroke-width="2.5"/>
-    <ellipse cx="32" cy="44" rx="14" ry="8" fill="none" stroke="currentColor" stroke-width="2.5"/>
-    <path d="M14 28 L18 24 M22 28 L26 24 M30 28 L34 24" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/>
-    <path d="M24 44 L28 40 M32 44 L36 40 M40 44 L44 40" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+    <ellipse cx="22" cy="28" rx="14" ry="8" fill="none" stroke="#eef2e6" stroke-width="2.5"/>
+    <ellipse cx="32" cy="44" rx="14" ry="8" fill="none" stroke="#eef2e6" stroke-width="2.5"/>
+    <path d="M14 28 L18 24 M22 28 L26 24 M30 28 L34 24" stroke="#eef2e6" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+    <path d="M24 44 L28 40 M32 44 L36 40 M40 44 L44 40" stroke="#eef2e6" stroke-width="1.5" fill="none" stroke-linecap="round"/>
   </g>
   <!-- Wordmark -->
-  <text x="70" y="40" font-family="Georgia, 'Times New Roman', serif" font-size="26" font-weight="600" letter-spacing="-0.5">Two Loaves</text>
+  <text x="70" y="40" font-family="Georgia, 'Times New Roman', serif" font-size="26" font-weight="600" letter-spacing="-0.5" fill="#eef2e6">Two Loaves</text>
   <!-- Tagline -->
-  <text x="70" y="58" font-family="'Helvetica Neue', Arial, sans-serif" font-size="9" letter-spacing="3" font-weight="500">BAKERY · MARKET BOOTH</text>
+  <text x="70" y="58" font-family="'Helvetica Neue', Arial, sans-serif" font-size="9" letter-spacing="3" font-weight="500" fill="#eef2e6">BAKERY · MARKET BOOTH</text>
 </svg>

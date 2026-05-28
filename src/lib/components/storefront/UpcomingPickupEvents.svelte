@@ -41,14 +41,15 @@
 
 {#if visible.length > 0}
 	<section class="space-y-3">
-		<div class="flex items-baseline justify-between">
+		<div class="flex items-baseline justify-between gap-3">
 			<h2 class="text-sm font-semibold tracking-wide text-muted-foreground uppercase">
 				Upcoming pickup events
 			</h2>
 			{#if hasMore}
 				<a
 					href={resolve('/cart' as `/${string}`)}
-					class="text-xs font-medium text-primary hover:underline"
+					class="text-xs font-medium hover:underline"
+					style="color: var(--accent-color);"
 				>
 					See all
 				</a>

@@ -128,16 +128,15 @@ export const farmersMarketBooth: ArchetypeFixture = {
 	branding: {
 		tagline: 'Small batch. Big flavor.',
 		logoUrl: '/seed-assets/logo-market-booth.svg',
-		bannerUrl: null,
+		heroImageUrl: '/seed-assets/hero-placeholder.webp',
 		faviconUrl: '/seed-assets/favicon.svg',
-		backgroundImageUrl: null,
-		backgroundPatternSlug: 'cross-hatch',
 		backgroundColor: '#3a1f0a',
 		accentColor: '#e8971a',
 		foregroundColor: '#fdf3e2',
 		fontPair: 'space-grotesk-space-grotesk',
-		showName: false,
-		showLogo: true
+		headerMode: 'logo',
+		heroDisplayMode: 'headline_tagline',
+		heroHeadline: 'Welcome to Wildberry Preserves'
 	},
 
 	settings: {
