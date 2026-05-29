@@ -267,22 +267,19 @@
 					})}
 					class="space-y-4"
 				>
+					<input type="hidden" name="fontPair" value={selectedFontPair} />
+
 					<div class="grid grid-cols-1 gap-3 md:grid-cols-2">
 						{#each Object.values(FONT_PAIRS) as pair (pair.slug)}
-							<label
-								class="cursor-pointer rounded-lg border-2 p-4 transition-colors hover:border-foreground/40 {selectedFontPair ===
+							<button
+								type="button"
+								onclick={() => (selectedFontPair = pair.slug)}
+								aria-pressed={selectedFontPair === pair.slug}
+								class="cursor-pointer rounded-lg border-2 p-4 text-left hover:border-foreground/40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground {selectedFontPair ===
 								pair.slug
 									? 'border-foreground'
 									: 'border-border'}"
 							>
-								<input
-									type="radio"
-									name="fontPair"
-									value={pair.slug}
-									checked={selectedFontPair === pair.slug}
-									onchange={() => (selectedFontPair = pair.slug)}
-									class="sr-only"
-								/>
 								<div class="space-y-1.5">
 									<p class="text-xs font-medium text-muted-foreground">{pair.label}</p>
 									<p
@@ -296,7 +293,7 @@
 									</p>
 									<p class="text-xs text-muted-foreground">{pair.description}</p>
 								</div>
-							</label>
+							</button>
 						{/each}
 					</div>
 

@@ -56,7 +56,7 @@ export const load: PageServerLoad = async ({ locals, depends }) => {
 		db
 			.select({
 				total: sql<number>`count(*)`,
-				revenue: sql<number>`coalesce(sum(total), 0)`,
+				revenue: sql<number>`coalesce(sum(total) filter (where payment_status = 'paid'), 0)`,
 				pending: sql<number>`count(*) filter (where status in ('received','confirmed','preparing'))`
 			})
 			.from(orders)

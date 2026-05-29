@@ -609,7 +609,12 @@
 				<Alert severity="error" class="mb-3">{editError}</Alert>
 			{/if}
 			<Card class="mb-4 shadow-sm">
-				<form method="post" action="?/updateLocation" use:enhance={handleEditEnhance}>
+				<form
+					method="post"
+					class="space-y-4"
+					action="?/updateLocation"
+					use:enhance={handleEditEnhance}
+				>
 					<input type="hidden" name="id" value={editingId} />
 					<CardHeader>
 						<CardTitle>Edit location</CardTitle>
@@ -710,7 +715,12 @@
 				<Alert severity="error" class="mb-3">{addError}</Alert>
 			{/if}
 			<Card class="mb-4 shadow-sm">
-				<form method="post" action="?/createLocation" use:enhance={handleAddEnhance}>
+				<form
+					class="space-y-4"
+					method="post"
+					action="?/createLocation"
+					use:enhance={handleAddEnhance}
+				>
 					<CardHeader>
 						<CardTitle>New location</CardTitle>
 					</CardHeader>
@@ -920,7 +930,12 @@
 				<Alert severity="error" class="mb-3">{editTemplateError}</Alert>
 			{/if}
 			<Card class="mb-4 shadow-sm">
-				<form method="post" action="?/updateTemplate" use:enhance={handleEditTemplateEnhance}>
+				<form
+					class="space-y-4"
+					method="post"
+					action="?/updateTemplate"
+					use:enhance={handleEditTemplateEnhance}
+				>
 					<input type="hidden" name="id" value={editingTemplateId} />
 					<CardHeader>
 						<CardTitle>Edit pickup window</CardTitle>
@@ -1229,7 +1244,12 @@
 				<Alert severity="error" class="mb-3">{addTemplateError}</Alert>
 			{/if}
 			<Card class="mb-4 shadow-sm">
-				<form method="post" action="?/createTemplate" use:enhance={handleAddTemplateEnhance}>
+				<form
+					class="space-y-4"
+					method="post"
+					action="?/createTemplate"
+					use:enhance={handleAddTemplateEnhance}
+				>
 					<CardHeader>
 						<CardTitle>New pickup window</CardTitle>
 					</CardHeader>

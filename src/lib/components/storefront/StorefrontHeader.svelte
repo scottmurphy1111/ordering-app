@@ -27,7 +27,7 @@
 
 <header
 	class="sticky top-0 z-50 w-full"
-	style="background-color: var(--background-color); color: var(--foreground-color); border-bottom: 3px solid color-mix(in srgb, var(--foreground-color) 12%, transparent);"
+	style="background-color: var(--background-color); color: var(--foreground-color); border-bottom: 1px solid color-mix(in srgb, var(--foreground-color) 12%, transparent);"
 >
 	<div class="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3 sm:px-6 sm:py-4">
 		<!-- Wordmark zone -->
@@ -57,10 +57,10 @@
 				href={resolve('/catalog' as `/${string}`)}
 				class="text-sm font-medium transition-opacity hover:opacity-100 {isActive('/catalog')
 					? 'opacity-100'
-					: 'opacity-70'}"
+					: 'opacity-75'}"
 				style="color: {isActive('/catalog')
 					? 'var(--accent-color)'
-					: 'var(--foreground-color)'}; border-bottom: 2px solid {isActive('/catalog')
+					: 'var(--accent-color)'}; border-bottom: 2px solid {isActive('/catalog')
 					? 'var(--foreground-color)'
 					: 'transparent'}; padding-bottom: 2px;"
 			>
@@ -70,10 +70,10 @@
 				href={resolve('/store-info' as `/${string}`)}
 				class="text-sm font-medium transition-opacity hover:opacity-100 {isActive('/store-info')
 					? 'opacity-100'
-					: 'opacity-70'}"
+					: 'opacity-75'}"
 				style="color: {isActive('/store-info')
 					? 'var(--accent-color)'
-					: 'var(--foreground-color)'}; border-bottom: 2px solid {isActive('/store-info')
+					: 'var(--accent-color)'}; border-bottom: 2px solid {isActive('/store-info')
 					? 'var(--foreground-color)'
 					: 'transparent'}; padding-bottom: 2px;"
 			>
@@ -85,7 +85,7 @@
 		<a
 			href={resolve('/cart' as `/${string}`)}
 			class="flex items-center gap-2 rounded-full p-2 transition-opacity hover:opacity-85"
-			style="color: var(--accent-color);"
+			style="color: var(--foreground-color);"
 			aria-label="View cart"
 		>
 			<Icon icon="mdi:basket-outline" class="h-6 w-6" />
