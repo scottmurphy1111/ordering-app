@@ -11,6 +11,7 @@
 	import StatusBadge from '$lib/components/StatusBadge.svelte';
 	import { Button } from '$lib/components/ui/button';
 	import { Input } from '$lib/components/ui/input';
+	import { Card, CardContent } from '$lib/components/ui/card';
 	import { Skeleton } from '$lib/components/ui/skeleton';
 	import OrdersTabs from '$lib/components/OrdersTabs.svelte';
 	import OrdersSummaryBar from '$lib/components/OrdersSummaryBar.svelte';
@@ -303,7 +304,7 @@
 					)
 				)}
 		>
-			<TabsList>
+			<TabsList class="bg-stone-200" aria-label="Orders view">
 				<TabsTrigger value="orders">
 					<Icon icon="mdi:format-list-bulleted" class="h-3.5 w-3.5" />
 					Orders
@@ -342,15 +343,17 @@
 	{#if data.view === 'production'}
 		<!-- ── Production view ──────────────────────────────────────────────── -->
 		{#if data.productionGroups.length === 0}
-			<div class="flex flex-col items-center py-16 text-center">
-				<div class="flex h-16 w-16 items-center justify-center rounded-2xl bg-gray-100">
-					<Icon icon="mdi:clipboard-list-outline" class="h-8 w-8 text-gray-400" />
-				</div>
-				<h2 class="mt-4 text-base font-semibold text-gray-900">Nothing to prep yet</h2>
-				<p class="mt-1 max-w-xs text-sm text-gray-500">
-					Once customers place orders for upcoming pickup windows, you'll see what to prep here.
-				</p>
-			</div>
+			<Card>
+				<CardContent class="flex flex-col items-center py-12 text-center">
+					<div class="flex h-14 w-14 items-center justify-center rounded-2xl bg-muted">
+						<Icon icon="mdi:clipboard-list-outline" class="h-7 w-7 text-muted-foreground/50" />
+					</div>
+					<h3 class="mt-4 text-base font-semibold text-foreground">Nothing to prep yet</h3>
+					<p class="mt-1 max-w-sm text-sm text-muted-foreground">
+						Once customers place orders for upcoming pickup windows, you'll see what to prep here.
+					</p>
+				</CardContent>
+			</Card>
 		{:else}
 			<!-- Production toolbar: grouping toggle + print -->
 			<div class="production-toolbar mb-4 flex items-center justify-between print:hidden">
@@ -533,21 +536,23 @@
 			</div>
 		{:else if data.windowGroups.length === 0 && data.freeFormOrders.length === 0}
 			<!-- No orders at all -->
-			<div class="flex flex-col items-center py-16 text-center">
-				<div class="flex h-16 w-16 items-center justify-center rounded-2xl bg-gray-100">
-					<Icon icon="mdi:clipboard-list-outline" class="h-8 w-8 text-gray-400" />
-				</div>
-				<h2 class="mt-4 text-base font-semibold text-gray-900">
-					No {data.statusFilter
-						? (statusLabels[data.statusFilter] ?? data.statusFilter).toLowerCase() + ' '
-						: ''}orders
-				</h2>
-				<p class="mt-1 text-sm text-gray-500">
-					{data.statusFilter
-						? `Orders with "${statusLabels[data.statusFilter] ?? data.statusFilter}" status will appear here.`
-						: 'Orders will appear here when customers place them.'}
-				</p>
-			</div>
+			<Card>
+				<CardContent class="flex flex-col items-center py-12 text-center">
+					<div class="flex h-14 w-14 items-center justify-center rounded-2xl bg-muted">
+						<Icon icon="mdi:clipboard-list-outline" class="h-7 w-7 text-muted-foreground/50" />
+					</div>
+					<h3 class="mt-4 text-base font-semibold text-foreground">
+						No {data.statusFilter
+							? (statusLabels[data.statusFilter] ?? data.statusFilter).toLowerCase() + ' '
+							: ''}orders
+					</h3>
+					<p class="mt-1 max-w-sm text-sm text-muted-foreground">
+						{data.statusFilter
+							? `Orders with "${statusLabels[data.statusFilter] ?? data.statusFilter}" status will appear here.`
+							: 'Orders will appear here when customers place them.'}
+					</p>
+				</CardContent>
+			</Card>
 		{:else}
 			{@const hasWindowGroups = data.windowGroups.length > 0}
 			{@const hasFreeForm = data.freeFormOrders.length > 0}
@@ -559,16 +564,17 @@
 				data.freeFormOrders.some(matchesSearch)}
 
 			{#if !anySearchMatch}
-				<div class="flex flex-col items-center py-16 text-center">
-					<div class="flex h-16 w-16 items-center justify-center rounded-2xl bg-gray-100">
-						<Icon icon="mdi:magnify" class="h-8 w-8 text-gray-400" />
-					</div>
-					<h2 class="mt-4 text-base font-semibold text-gray-900">No results</h2>
-					<p class="mt-1 text-sm text-gray-500">No orders match "{searchQuery}".</p>
-					<Button variant="link" onclick={() => (searchQuery = '')} class="mt-3 h-auto p-0 text-xs"
-						>Clear search</Button
-					>
-				</div>
+				<Card>
+					<CardContent class="flex flex-col items-center py-12 text-center">
+						<h3 class="text-base font-semibold text-foreground">No results</h3>
+						<p class="mt-1 text-sm text-muted-foreground">No orders match "{searchQuery}".</p>
+						<Button
+							variant="link"
+							onclick={() => (searchQuery = '')}
+							class="mt-3 h-auto p-0 text-xs">Clear search</Button
+						>
+					</CardContent>
+				</Card>
 			{:else}
 				<div class="space-y-6">
 					<!-- Window groups (soonest first) -->

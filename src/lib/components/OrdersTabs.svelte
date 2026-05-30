@@ -13,7 +13,7 @@
 </script>
 
 <Tabs value={activeValue} onValueChange={handleValueChange}>
-	<TabsList>
+	<TabsList class="bg-stone-200" aria-label="Orders view">
 		<TabsTrigger value="live">
 			<span class="relative flex h-1.5 w-1.5 shrink-0">
 				{#if activeValue === 'live'}

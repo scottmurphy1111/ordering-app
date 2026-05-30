@@ -15,7 +15,7 @@
 </script>
 
 <Tabs value={activeValue} onValueChange={handleValueChange}>
-	<TabsList>
+	<TabsList class="bg-stone-200" aria-label="Catalog view">
 		<TabsTrigger value="items">
 			<Icon icon="mdi:package-outline" class="h-3.5 w-3.5" />
 			Items

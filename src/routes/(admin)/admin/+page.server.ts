@@ -1,7 +1,7 @@
 import type { PageServerLoad } from './$types';
 import { db } from '$lib/server/db';
 import { systemEvents } from '$lib/server/db/system-events';
-import { eq, isNull, and, gte, count, desc, like } from 'drizzle-orm';
+import { eq, ne, isNull, and, gte, count, desc, like } from 'drizzle-orm';
 import { vendor } from '$lib/server/db/schema';
 
 export const load: PageServerLoad = async () => {
@@ -36,7 +36,7 @@ export const load: PageServerLoad = async () => {
 				and(
 					isNull(vendor.deletedAt),
 					eq(vendor.isActive, true),
-					eq(vendor.subscriptionStatus, 'active')
+					ne(vendor.subscriptionTier, 'starter')
 				)
 			),
 		db

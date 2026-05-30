@@ -6,6 +6,7 @@
 	import { SvelteSet } from 'svelte/reactivity';
 	import Icon from '@iconify/svelte';
 	import { Button } from '$lib/components/ui/button';
+	import { Card, CardContent } from '$lib/components/ui/card';
 	import { Switch } from '$lib/components/ui/switch';
 	import { Alert } from '$lib/components/ui/alert';
 	import { CATEGORY_DISPLAY, GROUP_LABELS, type CategoryDisplay } from '$lib/notification-meta';
@@ -127,13 +128,17 @@
 		</div>
 
 		{#if data.entries.length === 0}
-			<div class="rounded-xl border border-dashed bg-muted/30 px-6 py-10 text-center">
-				<Icon icon="mdi:bell-outline" class="mx-auto h-8 w-8 text-muted-foreground/60" />
-				<p class="mt-3 text-sm text-muted-foreground">No notifications yet.</p>
-				<p class="mt-1 text-xs text-muted-foreground/80">
-					Account updates, billing events, and customer requests will appear here.
-				</p>
-			</div>
+			<Card>
+				<CardContent class="flex flex-col items-center py-12 text-center">
+					<div class="flex h-14 w-14 items-center justify-center rounded-2xl bg-muted">
+						<Icon icon="mdi:bell-outline" class="h-7 w-7 text-muted-foreground/50" />
+					</div>
+					<h3 class="mt-4 text-base font-semibold text-foreground">No notifications yet</h3>
+					<p class="mt-1 max-w-sm text-sm text-muted-foreground">
+						Account updates, billing events, and customer requests will appear here.
+					</p>
+				</CardContent>
+			</Card>
 		{:else}
 			<ul class="space-y-2">
 				{#each data.entries as entry (entry.id)}

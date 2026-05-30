@@ -8,6 +8,7 @@
 	import StatusBadge from '$lib/components/StatusBadge.svelte';
 	import { Button } from '$lib/components/ui/button';
 	import { Input } from '$lib/components/ui/input';
+	import { Card, CardContent } from '$lib/components/ui/card';
 	import * as Popover from '$lib/components/ui/popover';
 	import { Calendar } from '$lib/components/ui/calendar';
 	import { parseDate, type CalendarDate } from '@internationalized/date';
@@ -269,25 +270,25 @@
 	</div>
 
 	{#if data.orders.length === 0}
-		<div class="rounded-xl border border-dashed p-12 text-center">
-			<Icon
-				icon="mdi:receipt-text-outline"
-				class="mx-auto mb-3 h-10 w-10 text-muted-foreground/40"
-			/>
-			<p class="text-sm font-medium text-muted-foreground">
+		<Card>
+			<CardContent class="flex flex-col items-center py-12 text-center">
 				{#if hasFilters}
-					No orders match your current filters.
+					<h3 class="text-base font-semibold text-foreground">No matches</h3>
+					<p class="mt-1 text-sm text-muted-foreground">No orders match your current filters.</p>
+					<Button variant="link" onclick={clearFilters} class="mt-3 h-auto p-0 text-xs">
+						Clear filters
+					</Button>
 				{:else}
-					No historical orders yet. Completed and cancelled orders older than 24 hours will appear
-					here.
+					<div class="flex h-14 w-14 items-center justify-center rounded-2xl bg-muted">
+						<Icon icon="mdi:receipt-text-outline" class="h-7 w-7 text-muted-foreground/50" />
+					</div>
+					<h3 class="mt-4 text-base font-semibold text-foreground">No historical orders yet</h3>
+					<p class="mt-1 max-w-sm text-sm text-muted-foreground">
+						Completed and cancelled orders older than 24 hours will appear here.
+					</p>
 				{/if}
-			</p>
-			{#if hasFilters}
-				<Button variant="link" onclick={clearFilters} class="mt-3 h-auto p-0 text-xs">
-					Clear filters
-				</Button>
-			{/if}
-		</div>
+			</CardContent>
+		</Card>
 	{:else}
 		<div class="space-y-2">
 			{#each data.orders as order (order.id)}

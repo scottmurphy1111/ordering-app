@@ -42,6 +42,11 @@
 					class="max-h-10 w-auto max-w-48 shrink-0 object-contain sm:max-h-12 sm:max-w-64"
 				/>
 			{:else}
+				<Icon
+					icon="mdi:storefront-outline"
+					class="h-5 w-5 shrink-0 sm:h-6 sm:w-6"
+					style="color: var(--foreground-color);"
+				/>
 				<span
 					class="truncate text-base font-semibold sm:text-lg"
 					style="font-family: var(--font-heading); color: var(--foreground-color);"

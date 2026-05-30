@@ -5,6 +5,7 @@
 	import { resolve } from '$app/paths';
 	import Icon from '@iconify/svelte';
 	import { Button } from '$lib/components/ui/button';
+	import { Card, CardContent } from '$lib/components/ui/card';
 	import { Alert } from '$lib/components/ui/alert';
 	import { confirmDialog } from '$lib/confirm.svelte';
 	import FilterPills from '$lib/components/FilterPills.svelte';
@@ -48,7 +49,7 @@
 <div>
 	<div class="mb-6 flex items-center justify-between">
 		<div>
-			<h1 class="text-2xl font-bold text-gray-900">Special requests</h1>
+			<h1 class="text-2xl font-bold text-gray-900">Special Orders</h1>
 			<p class="mt-0.5 text-sm text-gray-500">Special requests from your customers.</p>
 		</div>
 	</div>
@@ -66,35 +67,39 @@
 	</div>
 
 	{#if data.requests.length === 0}
-		<div class="rounded-xl border border-gray-200 bg-white p-12 text-center">
-			<Icon icon="mdi:message-question-outline" class="mx-auto mb-3 h-8 w-8 text-gray-300" />
-			<h3 class="mb-1 text-base font-semibold text-gray-900">
-				{data.stateFilter === 'pending'
-					? 'No pending requests'
-					: data.stateFilter === 'quoted'
-						? 'No quoted requests'
-						: data.stateFilter === 'accepted'
-							? 'No accepted requests'
-							: data.stateFilter === 'declined'
-								? 'No declined requests'
-								: data.stateFilter === 'expired'
-									? 'No expired requests'
-									: 'No requests yet'}
-			</h3>
-			<p class="text-sm text-gray-500">
-				{data.stateFilter === 'pending'
-					? 'New customer requests will appear here.'
-					: data.stateFilter === 'quoted'
-						? 'Requests you have sent quotes for will appear here.'
-						: data.stateFilter === 'accepted'
-							? 'Requests where the customer accepted and paid will appear here.'
-							: data.stateFilter === 'declined'
-								? 'Declined requests will appear here.'
-								: data.stateFilter === 'expired'
-									? 'Requests whose quotes expired without a response will appear here.'
-									: 'Special requests from your storefront will appear here.'}
-			</p>
-		</div>
+		<Card>
+			<CardContent class="flex flex-col items-center py-12 text-center">
+				<div class="flex h-14 w-14 items-center justify-center rounded-2xl bg-muted">
+					<Icon icon="mdi:message-question-outline" class="h-7 w-7 text-muted-foreground/50" />
+				</div>
+				<h3 class="mt-4 text-base font-semibold text-foreground">
+					{data.stateFilter === 'pending'
+						? 'No pending requests'
+						: data.stateFilter === 'quoted'
+							? 'No quoted requests'
+							: data.stateFilter === 'accepted'
+								? 'No accepted requests'
+								: data.stateFilter === 'declined'
+									? 'No declined requests'
+									: data.stateFilter === 'expired'
+										? 'No expired requests'
+										: 'No requests yet'}
+				</h3>
+				<p class="mt-1 max-w-sm text-sm text-muted-foreground">
+					{data.stateFilter === 'pending'
+						? 'New customer requests will appear here.'
+						: data.stateFilter === 'quoted'
+							? 'Requests you have sent quotes for will appear here.'
+							: data.stateFilter === 'accepted'
+								? 'Requests where the customer accepted and paid will appear here.'
+								: data.stateFilter === 'declined'
+									? 'Declined requests will appear here.'
+									: data.stateFilter === 'expired'
+										? 'Requests whose quotes expired without a response will appear here.'
+										: 'Special requests from your storefront will appear here.'}
+				</p>
+			</CardContent>
+		</Card>
 	{:else}
 		<div class="space-y-3">
 			{#each data.requests as req (req.id)}

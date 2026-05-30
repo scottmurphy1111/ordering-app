@@ -21,6 +21,7 @@
 	import { toast } from '$lib/toast';
 	import { enhanceWithToasts } from '$lib/forms/enhance-with-toasts';
 	import { FONT_PAIRS, googleFontsUrl, type FontPairSlug } from '$lib/storefront/font-pairs';
+	import { getReadableTextColor } from '$lib/storefront/contrast';
 	import AiImageGenerator from '$lib/components/AiImageGenerator.svelte';
 
 	let { data }: { data: PageData } = $props();
@@ -28,6 +29,8 @@
 	let backgroundColor = $state('');
 	let accentColor = $state('');
 	let foregroundColor = $state('');
+
+	const accentForeground = $derived(getReadableTextColor(accentColor));
 
 	$effect(() => {
 		backgroundColor = data.branding.backgroundColor ?? '#000000';
@@ -425,87 +428,67 @@
 				<DialogHeader class="px-5 pt-5 pb-3">
 					<DialogTitle>Color preview</DialogTitle>
 				</DialogHeader>
-				<div class="mx-5 mb-5 overflow-hidden rounded-xl border shadow-sm">
-					<!-- Catalog header -->
-					<div class="px-4 py-3" style="background-color: {backgroundColor};">
-						<div class="flex items-center gap-2.5">
-							<div
-								class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-xs font-bold"
-								style="background-color: {accentColor}; color: {foregroundColor};"
-							>
-								MR
-							</div>
-							<div>
-								<p class="text-sm font-bold" style="color: {foregroundColor};">My Shop</p>
-								<p class="text-xs opacity-70" style="color: {foregroundColor};">
-									Order ahead · pickup
-								</p>
-							</div>
+				<div class="mx-5 mb-5 space-y-3">
+					<!-- 1. Header strip — background-color bar, foreground-color text/icon -->
+					<div
+						class="flex items-center justify-between rounded-lg px-4 py-3"
+						style="background-color: {backgroundColor};"
+					>
+						<div class="flex items-center gap-2">
+							<Icon
+								icon="mdi:storefront-outline"
+								class="h-5 w-5"
+								style="color: {foregroundColor};"
+							/>
+							<span class="text-sm font-bold" style="color: {foregroundColor};">My Shop</span>
 						</div>
+						<Icon icon="mdi:cart-outline" class="h-5 w-5" style="color: {foregroundColor};" />
 					</div>
-					<!-- Category pills -->
-					<div class="flex gap-2 border-b px-4 py-2.5" style="background-color: {foregroundColor};">
-						<span
-							class="flex items-center rounded-full px-3 py-1 text-xs font-semibold"
-							style="background-color: {accentColor}; color: {foregroundColor};"
-						>
-							All
-						</span>
-						{#each ['Category1', 'Category2', 'Category3'] as cat (cat)}
-							<span
-								class="flex items-center rounded-full border px-3 py-1 text-xs font-medium"
-								style="border-color: {accentColor}; color: {accentColor};"
-							>
-								{cat}
-							</span>
-						{/each}
-					</div>
-					<!-- Catalog items -->
-					<div class="divide-y" style="background-color: {foregroundColor};">
-						{#each [{ name: 'Sample item one', desc: 'A short product description', price: '$12.00' }, { name: 'Sample item two', desc: 'A short product description', price: '$9.50' }, { name: 'Sample item three', desc: 'A short product description', price: '$6.00' }] as item (item.name)}
-							<div class="flex items-center justify-between gap-3 px-4 py-3">
-								<div class="flex items-center gap-3">
-									<div
-										class="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-muted"
-									>
-										<Icon
-											icon="mdi:image-outline"
-											class="h-5 w-5 text-muted-foreground opacity-60"
-										/>
-									</div>
-									<div>
-										<p class="text-sm font-semibold" style="color: {accentColor};">{item.name}</p>
-										<p
-											class="mt-0.5 text-xs leading-tight"
-											style="color: {accentColor}; opacity: 0.6;"
-										>
-											{item.desc}
-										</p>
-										<p class="mt-1 text-sm font-medium" style="color: {accentColor};">
-											{item.price}
-										</p>
-									</div>
-								</div>
-								<button
-									type="button"
-									class="shrink-0 rounded-full p-1.5"
-									style="background-color: {backgroundColor};"
-								>
-									<Icon icon="mdi:plus" class="h-4 w-4" style="color: {foregroundColor};" />
-								</button>
-							</div>
-						{/each}
-					</div>
-					<!-- Cart bar -->
-					<div class="px-4 py-3" style="background-color: {backgroundColor};">
+
+					<!-- 2. Item card — white card, neutral text, + Add (accent-color bg) -->
+					<div
+						class="flex items-center justify-between gap-3 rounded-xl border border-neutral-200 bg-white p-3"
+					>
+						<div class="min-w-0">
+							<p class="text-sm font-semibold text-neutral-900">Sample item</p>
+							<p class="mt-0.5 text-xs text-neutral-600">A short description</p>
+							<p class="mt-1 text-sm font-medium text-neutral-900">$12.00</p>
+						</div>
 						<button
 							type="button"
-							class="w-full rounded-xl py-2.5 text-sm font-semibold"
-							style="background-color: {accentColor}; color: {foregroundColor};"
+							class="shrink-0 rounded-lg px-3 py-1.5 text-xs font-medium"
+							style="background-color: {accentColor}; color: {accentForeground};"
 						>
-							View cart · 2 items · $27.50
+							+ Add
 						</button>
 					</div>
+
+					<!-- 3. Item card — Options variant (outlined background-color button) -->
+					<div
+						class="flex items-center justify-between gap-3 rounded-xl border border-neutral-200 bg-white p-3"
+					>
+						<div class="min-w-0">
+							<p class="text-sm font-semibold text-neutral-900">Customizable item</p>
+							<p class="mt-0.5 text-xs text-neutral-600">Has options to choose</p>
+							<p class="mt-1 text-sm font-medium text-neutral-900">$9.50</p>
+						</div>
+						<button
+							type="button"
+							class="shrink-0 rounded-lg border px-3 py-1.5 text-xs font-medium"
+							style="border-color: {backgroundColor}; color: {backgroundColor};"
+						>
+							Options
+						</button>
+					</div>
+
+					<!-- 4. Sticky View cart CTA — accent-color pill -->
+					<button
+						type="button"
+						class="w-full rounded-xl py-3 text-sm font-semibold"
+						style="background-color: {accentColor}; color: {accentForeground};"
+					>
+						View cart · 2 items · $27.50
+					</button>
 				</div>
 			</DialogContent>
 		</Dialog>

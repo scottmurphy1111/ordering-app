@@ -57,21 +57,33 @@
 	</div>
 
 	{#if !data.hasStripeCustomer}
-		<div class="rounded-xl border border-gray-200 bg-white p-12 text-center">
-			<h3 class="mb-1 text-base font-semibold text-gray-900">No billing account yet</h3>
-			<p class="mb-4 text-sm text-gray-500">Upgrade to a paid plan to start receiving invoices.</p>
-			<Button href={resolve('/dashboard/account/billing')} class="gap-1.5">
-				<Icon icon="mdi:arrow-up-circle-outline" class="h-3.5 w-3.5" />
-				View plans
-			</Button>
-		</div>
+		<Card>
+			<CardContent class="flex flex-col items-center py-12 text-center">
+				<div class="flex h-14 w-14 items-center justify-center rounded-2xl bg-muted">
+					<Icon icon="mdi:receipt-text-outline" class="h-7 w-7 text-muted-foreground/50" />
+				</div>
+				<h3 class="mt-4 text-base font-semibold text-foreground">No billing account yet</h3>
+				<p class="mt-1 max-w-sm text-sm text-muted-foreground">
+					Upgrade to a paid plan to start receiving invoices.
+				</p>
+				<Button href={resolve('/dashboard/account/billing')} class="mt-6 gap-1.5">
+					<Icon icon="mdi:arrow-up-circle-outline" class="h-3.5 w-3.5" />
+					View plans
+				</Button>
+			</CardContent>
+		</Card>
 	{:else if data.invoices.length === 0}
-		<div class="rounded-xl border border-gray-200 bg-white p-12 text-center">
-			<h3 class="mb-1 text-base font-semibold text-gray-900">No invoices yet</h3>
-			<p class="text-sm text-gray-500">
-				Your first invoice will appear here once your billing cycle begins.
-			</p>
-		</div>
+		<Card>
+			<CardContent class="flex flex-col items-center py-12 text-center">
+				<div class="flex h-14 w-14 items-center justify-center rounded-2xl bg-muted">
+					<Icon icon="mdi:receipt-text-outline" class="h-7 w-7 text-muted-foreground/50" />
+				</div>
+				<h3 class="mt-4 text-base font-semibold text-foreground">No invoices yet</h3>
+				<p class="mt-1 max-w-sm text-sm text-muted-foreground">
+					Your first invoice will appear here once your billing cycle begins.
+				</p>
+			</CardContent>
+		</Card>
 	{:else}
 		<Card class="p-0 shadow-sm">
 			<CardContent class="p-0">

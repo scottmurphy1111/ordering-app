@@ -11,6 +11,7 @@
 	import Sortable from 'sortablejs';
 	import CatalogTabs from '$lib/components/CatalogTabs.svelte';
 	import { Button } from '$lib/components/ui/button';
+	import { Card, CardContent } from '$lib/components/ui/card';
 	import StatusBadge from '$lib/components/StatusBadge.svelte';
 	import { Input } from '$lib/components/ui/input';
 	import { Checkbox } from '$lib/components/ui/checkbox';
@@ -602,18 +603,20 @@
 				</Button>
 			</div>
 		{:else}
-			<div class="flex flex-col items-center py-16 text-center">
-				<div class="flex h-16 w-16 items-center justify-center rounded-2xl bg-muted">
-					<Icon icon="mdi:package-outline" class="h-8 w-8 text-muted-foreground/40" />
-				</div>
-				<h2 class="mt-4 text-base font-semibold text-foreground">No items yet</h2>
-				<p class="mt-1 text-sm text-muted-foreground">
-					Add your first item to start building your catalog.
-				</p>
-				<Button onclick={() => openNewDrawer()} class="mt-6 gap-1.5">
-					<Icon icon="mdi:plus" class="h-4 w-4" /> Add your first item
-				</Button>
-			</div>
+			<Card>
+				<CardContent class="flex flex-col items-center py-12 text-center">
+					<div class="flex h-14 w-14 items-center justify-center rounded-2xl bg-muted">
+						<Icon icon="mdi:package-outline" class="h-7 w-7 text-muted-foreground/50" />
+					</div>
+					<h3 class="mt-4 text-base font-semibold text-foreground">No items yet</h3>
+					<p class="mt-1 max-w-sm text-sm text-muted-foreground">
+						Add your first item to start building your catalog.
+					</p>
+					<Button onclick={() => openNewDrawer()} class="mt-6 gap-1.5">
+						<Icon icon="mdi:plus" class="h-4 w-4" /> Add your first item
+					</Button>
+				</CardContent>
+			</Card>
 		{/if}
 	{:else}
 		{#snippet statusDropdown(item: CatalogItem)}
