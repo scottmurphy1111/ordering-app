@@ -131,6 +131,12 @@
 		{/if}
 
 		<!-- ── Google Business Profile ──────────────────────────────────────────── -->
+		<!--
+			Intentional Callout pattern — NOT a <Card>. Tinted (Google blue) to signal
+			third-party integration tip distinct from the Card-surfaced configuration
+			controls above and below. Don't "fix" this into a Card; the visual
+			distinction is by design. See CLAUDE.md under Conventions → Card vs Callout.
+		-->
 		{#if vendor?.slug}
 			<div class="rounded-xl border border-blue-100 bg-blue-50 p-6">
 				<div class="flex items-start gap-4">

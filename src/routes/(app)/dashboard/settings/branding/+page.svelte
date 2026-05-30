@@ -129,6 +129,7 @@
 					<Alert severity="error" class="mb-4">{identitySaveError}</Alert>
 				{/if}
 				<form
+					id="identity-form"
 					method="post"
 					action="?/saveIdentity"
 					use:enhance={enhanceWithToasts({
@@ -228,17 +229,18 @@
 							</label>
 						</div>
 					</div>
-
-					<Button type="submit" disabled={submittingAction !== null}>
-						{#if submittingAction === 'saveIdentity'}
-							<Icon icon="mdi:loading" class="h-4 w-4 animate-spin" />
-							Saving...
-						{:else}
-							Save identity
-						{/if}
-					</Button>
 				</form>
 			</CardContent>
+			<CardFooter class="gap-2">
+				<Button type="submit" form="identity-form" disabled={submittingAction !== null}>
+					{#if submittingAction === 'saveIdentity'}
+						<Icon icon="mdi:loading" class="h-4 w-4 animate-spin" />
+						Saving...
+					{:else}
+						Save identity
+					{/if}
+				</Button>
+			</CardFooter>
 		</Card>
 
 		<!-- ── Typography ───────────────────────────────────────────────────────── -->
@@ -252,6 +254,7 @@
 					<Alert severity="error" class="mb-4">{fontSaveError}</Alert>
 				{/if}
 				<form
+					id="typography-form"
 					method="post"
 					action="?/saveFontPair"
 					use:enhance={enhanceWithToasts({
@@ -299,17 +302,18 @@
 							</button>
 						{/each}
 					</div>
-
-					<Button type="submit" disabled={submittingAction !== null}>
-						{#if submittingAction === 'saveFontPair'}
-							<Icon icon="mdi:loading" class="h-4 w-4 animate-spin" />
-							Saving...
-						{:else}
-							Save typography
-						{/if}
-					</Button>
 				</form>
 			</CardContent>
+			<CardFooter class="gap-2">
+				<Button type="submit" form="typography-form" disabled={submittingAction !== null}>
+					{#if submittingAction === 'saveFontPair'}
+						<Icon icon="mdi:loading" class="h-4 w-4 animate-spin" />
+						Saving...
+					{:else}
+						Save typography
+					{/if}
+				</Button>
+			</CardFooter>
 		</Card>
 
 		<!-- ── Color scheme ─────────────────────────────────────────────────────── -->

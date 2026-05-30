@@ -1831,6 +1831,18 @@ The customer page also legitimately uses themable tokens (`text-foreground`, `te
 </div>
 ```
 
+### Card vs Callout
+
+Two distinct container patterns. Don't conflate them:
+
+- **`<Card>`** — the default surface for configuration controls, list items, settings panels, and content blocks throughout the dashboard. Uses theme tokens (`bg-card`, `ring-1 ring-foreground/10`). Composed with `<CardContent>` + optional `<CardFooter>` for save-button bands. See `settings/integrations/+page.svelte` for the canonical composition reference.
+
+- **Callout** — a deliberately distinct tinted block for third-party integration tips or instructional content (not configuration). Currently one instance: the Google Business Profile block in `settings/resources/+page.svelte`. Visual treatment: `rounded-xl border border-{brand}-100 bg-{brand}-50 p-6` with a brand-colored icon. The tint carries integration brand identity (e.g., Google blue) and signals "this is a tip, not a setting."
+
+The rule: **if it's something the vendor configures or saves, it's a Card. If it's a tip about doing something outside this app, it can be a Callout.** When in doubt, default to Card.
+
+The Callout pattern is not currently a reusable component — only one instance exists. If a second integration tip is added (Stripe setup, Mailchimp connect, etc.), consider extracting `<Callout>` then.
+
 ---
 
 ## Badges & Status Pills

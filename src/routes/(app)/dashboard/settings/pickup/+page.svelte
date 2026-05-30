@@ -795,15 +795,20 @@
 
 		<!-- Empty state -->
 		{#if data.locations.length === 0 && !showAddForm}
-			<div class="rounded-xl border border-dashed p-8 text-center">
-				<h3 class="mb-1 text-base font-semibold text-foreground">No pickup locations yet.</h3>
-				<p class="mb-4 text-sm text-muted-foreground">
-					Add your first location to start configuring pickup windows.
-				</p>
-				<Button type="button" onclick={() => (showAddForm = true)} variant="default">
-					Add location
-				</Button>
-			</div>
+			<Card>
+				<CardContent class="flex flex-col items-center py-12 text-center">
+					<div class="flex h-14 w-14 items-center justify-center rounded-2xl bg-muted">
+						<Icon icon="mdi:map-marker-outline" class="h-7 w-7 text-muted-foreground/50" />
+					</div>
+					<h3 class="mt-4 text-base font-semibold text-foreground">No pickup locations yet</h3>
+					<p class="mt-1 max-w-sm text-sm text-muted-foreground">
+						Add your first location to start configuring pickup windows.
+					</p>
+					<Button type="button" onclick={() => (showAddForm = true)} variant="default" class="mt-6">
+						Add location
+					</Button>
+				</CardContent>
+			</Card>
 		{/if}
 
 		<!-- Locations table -->
@@ -1494,35 +1499,41 @@
 
 		<!-- Empty state -->
 		{#if data.templates.length === 0 && !showAddTemplateForm && editingTemplateId === null}
-			<div class="rounded-xl border border-dashed p-8 text-center">
-				<h3 class="mb-1 text-base font-semibold text-foreground">No pickup windows yet.</h3>
-				<p class="mb-4 text-sm text-muted-foreground">
-					Add a window to define when customers can pick up their orders.
-				</p>
-				<Button
-					type="button"
-					onclick={() => {
-						previewDays = [];
-						previewStartTime = '';
-						previewEndTime = '';
-						previewCutoffHours = 48;
-						previewRecurrenceStartDate = '';
-						previewRecurrenceEndDate = '';
-						addLocationValue = '';
-						showAddTemplateForm = true;
-					}}
-					variant="default"
-				>
-					Add window
-				</Button>
-			</div>
+			<Card>
+				<CardContent class="flex flex-col items-center py-12 text-center">
+					<div class="flex h-14 w-14 items-center justify-center rounded-2xl bg-muted">
+						<Icon icon="mdi:calendar-clock-outline" class="h-7 w-7 text-muted-foreground/50" />
+					</div>
+					<h3 class="mt-4 text-base font-semibold text-foreground">No pickup windows yet</h3>
+					<p class="mt-1 max-w-sm text-sm text-muted-foreground">
+						Add a window to define when customers can pick up their orders.
+					</p>
+					<Button
+						type="button"
+						onclick={() => {
+							previewDays = [];
+							previewStartTime = '';
+							previewEndTime = '';
+							previewCutoffHours = 48;
+							previewRecurrenceStartDate = '';
+							previewRecurrenceEndDate = '';
+							addLocationValue = '';
+							showAddTemplateForm = true;
+						}}
+						variant="default"
+						class="mt-6"
+					>
+						Add window
+					</Button>
+				</CardContent>
+			</Card>
 		{/if}
 
 		<!-- Templates grouped by location -->
 		{#if data.templates.length > 0 || (data.locations.length > 0 && !showAddTemplateForm && editingTemplateId === null)}
 			{#each data.locations as loc (loc.id)}
 				{@const locTemplates = templatesByLocation.get(loc.id) ?? []}
-				<div class="mb-6">
+				<div class="my-6">
 					<h3 class="mb-2 text-sm font-semibold text-foreground">{loc.name}</h3>
 					{#if locTemplates.length === 0}
 						<p class="mb-2 text-xs text-muted-foreground italic">

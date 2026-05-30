@@ -6,7 +6,7 @@
 	import { SvelteSet } from 'svelte/reactivity';
 	import Icon from '@iconify/svelte';
 	import { Button } from '$lib/components/ui/button';
-	import { Card, CardContent } from '$lib/components/ui/card';
+	import { Card, CardContent, CardFooter } from '$lib/components/ui/card';
 	import { Switch } from '$lib/components/ui/switch';
 	import { Alert } from '$lib/components/ui/alert';
 	import { CATEGORY_DISPLAY, GROUP_LABELS, type CategoryDisplay } from '$lib/notification-meta';
@@ -186,89 +186,91 @@
 		{#if prefsSaveError}
 			<Alert severity="error" class="mt-6">{prefsSaveError}</Alert>
 		{/if}
-		<form
-			method="POST"
-			action="?/savePrefs"
-			use:enhance={enhanceWithToasts({
-				successMessage: 'Notification preferences saved',
-				preserveValues: true,
-				onStart: () => {
-					submittingAction = 'savePrefs';
-					prefsSaveError = null;
-				},
-				onEnd: () => {
-					submittingAction = null;
-				},
-				onError: (msg) => {
-					prefsSaveError = msg;
-				}
-			})}
-			class="mt-6 space-y-8"
-		>
-			<input type="hidden" name="emailOptOuts" value={optOutsSerialized} />
-			<input type="hidden" name="marketingOptIn" value={marketingOptIn ? 'on' : ''} />
 
-			{#each Object.keys(GROUP_LABELS) as groupKey (groupKey)}
-				{@const items = grouped[groupKey] ?? []}
-				{#if items.length > 0 || groupKey === 'marketing'}
-					<div>
-						<h3 class="text-xs font-medium tracking-wider text-gray-500 uppercase">
-							{GROUP_LABELS[groupKey as keyof typeof GROUP_LABELS]}
-						</h3>
+		<Card class="mt-6">
+			<CardContent>
+				<form
+					id="prefs-form"
+					method="POST"
+					action="?/savePrefs"
+					use:enhance={enhanceWithToasts({
+						successMessage: 'Notification preferences saved',
+						preserveValues: true,
+						onStart: () => {
+							submittingAction = 'savePrefs';
+							prefsSaveError = null;
+						},
+						onEnd: () => {
+							submittingAction = null;
+						},
+						onError: (msg) => {
+							prefsSaveError = msg;
+						}
+					})}
+					class="space-y-8"
+				>
+					<input type="hidden" name="emailOptOuts" value={optOutsSerialized} />
+					<input type="hidden" name="marketingOptIn" value={marketingOptIn ? 'on' : ''} />
 
-						{#if groupKey === 'marketing'}
-							<div
-								class="mt-3 flex items-start justify-between rounded-lg border bg-background px-4 py-3"
-							>
-								<div class="pr-4">
-									<p class="text-sm font-medium text-foreground">Product updates</p>
-									<p class="mt-0.5 text-xs text-muted-foreground">
-										Occasional emails about new features and tips. Opt in below.
-									</p>
-								</div>
-								<Switch
-									checked={marketingOptIn}
-									onCheckedChange={(v) => {
-										marketingOptIn = v === true;
-									}}
-								/>
-							</div>
-						{:else}
-							<ul class="mt-3 space-y-2">
-								{#each items as { category, meta } (category)}
-									<li
-										class="flex items-start justify-between rounded-lg border bg-background px-4 py-3"
-									>
+					{#each Object.keys(GROUP_LABELS) as groupKey (groupKey)}
+						{@const items = grouped[groupKey] ?? []}
+						{#if items.length > 0 || groupKey === 'marketing'}
+							<div>
+								<h3 class="text-xs font-medium tracking-wider text-muted-foreground uppercase">
+									{GROUP_LABELS[groupKey as keyof typeof GROUP_LABELS]}
+								</h3>
+
+								{#if groupKey === 'marketing'}
+									<div class="mt-3 flex items-start justify-between bg-background py-3">
 										<div class="pr-4">
-											<p class="text-sm font-medium text-foreground">
-												{meta.label}
-												{#if meta.isCritical}
-													<span
-														class="ml-2 text-[10px] font-medium tracking-wider text-muted-foreground uppercase"
-														>Always on</span
-													>
-												{/if}
+											<p class="text-sm font-medium text-foreground">Product updates</p>
+											<p class="mt-0.5 text-xs text-muted-foreground">
+												Occasional emails about new features and tips. Opt in below.
 											</p>
-											<p class="mt-0.5 text-xs text-muted-foreground">{meta.description}</p>
 										</div>
-										{#if meta.isCritical}
-											<Switch checked disabled />
-										{:else}
-											<Switch
-												checked={categoryEnabled(category)}
-												onCheckedChange={(checked) => toggleCategory(category, !(checked === true))}
-											/>
-										{/if}
-									</li>
-								{/each}
-							</ul>
+										<Switch
+											checked={marketingOptIn}
+											onCheckedChange={(v) => {
+												marketingOptIn = v === true;
+											}}
+										/>
+									</div>
+								{:else}
+									<ul class="mt-3 space-y-2">
+										{#each items as { category, meta } (category)}
+											<li class="flex items-start justify-between bg-background py-3">
+												<div class="pr-4">
+													<p class="text-sm font-medium text-foreground">
+														{meta.label}
+														{#if meta.isCritical}
+															<span
+																class="ml-2 text-[10px] font-medium tracking-wider text-muted-foreground uppercase"
+																>Always on</span
+															>
+														{/if}
+													</p>
+													<p class="mt-0.5 text-xs text-muted-foreground">{meta.description}</p>
+												</div>
+												{#if meta.isCritical}
+													<Switch checked disabled />
+												{:else}
+													<Switch
+														checked={categoryEnabled(category)}
+														onCheckedChange={(checked) =>
+															toggleCategory(category, !(checked === true))}
+													/>
+												{/if}
+											</li>
+										{/each}
+									</ul>
+								{/if}
+							</div>
 						{/if}
-					</div>
-				{/if}
-			{/each}
-
-			<div class="flex items-center gap-3 border-t pt-6">
-				<Button type="submit" disabled={submittingAction !== null}>
+					{/each}
+				</form>
+			</CardContent>
+			<CardFooter class="gap-2">
+				<Button type="submit" form="prefs-form" disabled={submittingAction !== null}>
 					{#if submittingAction === 'savePrefs'}
 						<Icon icon="mdi:loading" class="h-4 w-4 animate-spin" />
 						Saving...
@@ -276,7 +278,7 @@
 						Save preferences
 					{/if}
 				</Button>
-			</div>
-		</form>
+			</CardFooter>
+		</Card>
 	</section>
 </div>

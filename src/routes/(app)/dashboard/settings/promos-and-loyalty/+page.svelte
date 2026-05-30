@@ -76,16 +76,12 @@
 	<!-- ── PROMO CODES ──────────────────────────────────────────────────────── -->
 	<div class="mb-4 flex items-center justify-between gap-4">
 		<h2 class="text-lg font-semibold text-foreground">Promo Codes</h2>
-		<Button
-			onclick={() => {
-				showForm = !showForm;
-			}}
-			variant="default"
-			class="gap-1.5"
-		>
-			<Icon icon={showForm ? 'mdi:close' : 'mdi:plus'} class="h-4 w-4" />
-			{showForm ? 'Cancel' : 'New code'}
-		</Button>
+		{#if !showForm}
+			<Button onclick={() => (showForm = true)} variant="default" class="gap-1.5">
+				<Icon icon="mdi:plus" class="h-4 w-4" />
+				New code
+			</Button>
+		{/if}
 	</div>
 
 	{#if showForm}
@@ -95,6 +91,7 @@
 					<Alert severity="error" class="mb-4">{createSaveError}</Alert>
 				{/if}
 				<form
+					id="promo-create-form"
 					method="POST"
 					action="?/create"
 					use:enhance={enhanceWithToasts({
@@ -194,23 +191,44 @@
 							<Input id="expiresAt" name="expiresAt" type="date" />
 						</div>
 					</div>
-					<Button type="submit" variant="default" disabled={submittingCreate}>
-						{#if submittingCreate}
-							<Icon icon="mdi:loading" class="h-4 w-4 animate-spin" />
-							Saving...
-						{:else}
-							Create code
-						{/if}
-					</Button>
 				</form>
 			</CardContent>
+			<CardFooter class="gap-3">
+				<Button
+					type="submit"
+					form="promo-create-form"
+					variant="default"
+					disabled={submittingCreate}
+				>
+					{#if submittingCreate}
+						<Icon icon="mdi:loading" class="h-4 w-4 animate-spin" />
+						Saving...
+					{:else}
+						Create code
+					{/if}
+				</Button>
+				<Button
+					type="button"
+					variant="outline"
+					onclick={() => (showForm = false)}
+					disabled={submittingCreate}
+				>
+					Cancel
+				</Button>
+			</CardFooter>
 		</Card>
 	{/if}
 
 	{#if data.codes.length === 0}
-		<div class="mb-10 rounded-xl border border-dashed p-10 text-center">
-			<p class="text-sm text-muted-foreground">No promo codes yet. Create your first one above.</p>
-		</div>
+		<Card class="mb-10">
+			<CardContent class="flex flex-col items-center py-12 text-center">
+				<div class="flex h-14 w-14 items-center justify-center rounded-2xl bg-muted">
+					<Icon icon="mdi:ticket-percent-outline" class="h-7 w-7 text-muted-foreground/50" />
+				</div>
+				<h3 class="mt-4 text-base font-semibold text-foreground">No promo codes yet</h3>
+				<p class="mt-1 max-w-sm text-sm text-muted-foreground">Create your first one above.</p>
+			</CardContent>
+		</Card>
 	{:else}
 		<Card class="mb-10 shadow-sm">
 			<CardContent class="p-0">

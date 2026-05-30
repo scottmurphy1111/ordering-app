@@ -2,7 +2,7 @@
 	import { enhance } from '$app/forms';
 	import type { PageData } from './$types';
 	import { Button } from '$lib/components/ui/button';
-	import { Card, CardHeader, CardTitle, CardContent } from '$lib/components/ui/card';
+	import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '$lib/components/ui/card';
 	import { Alert } from '$lib/components/ui/alert';
 	import Icon from '@iconify/svelte';
 	import { untrack } from 'svelte';
@@ -142,6 +142,7 @@
 		</CardHeader>
 		<CardContent class="p-0">
 			<form
+				id="hours-form"
 				method="post"
 				action="?/saveHours"
 				use:enhance={enhanceWithToasts({
@@ -211,19 +212,18 @@
 						{/if}
 					</div>
 				{/each}
-
-				<div class="flex justify-end px-6 py-4">
-					<Button type="submit" disabled={submittingSaveHours}>
-						{#if submittingSaveHours}
-							<Icon icon="mdi:loading" class="h-4 w-4 animate-spin" />
-							Saving...
-						{:else}
-							Save hours
-						{/if}
-					</Button>
-				</div>
 			</form>
 		</CardContent>
+		<CardFooter class="gap-2">
+			<Button type="submit" form="hours-form" disabled={submittingSaveHours}>
+				{#if submittingSaveHours}
+					<Icon icon="mdi:loading" class="h-4 w-4 animate-spin" />
+					Saving...
+				{:else}
+					Save hours
+				{/if}
+			</Button>
+		</CardFooter>
 	</Card>
 
 	<!-- Date exceptions card -->
