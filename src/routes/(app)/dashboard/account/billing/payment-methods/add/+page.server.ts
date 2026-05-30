@@ -34,7 +34,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 
 	const setupIntent = await stripe.setupIntents.create({
 		customer: customerId,
-		payment_method_types: ['card'],
+		automatic_payment_methods: { enabled: true },
 		usage: 'off_session'
 	});
 

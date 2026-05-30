@@ -203,13 +203,16 @@
 						{/if}
 
 						{#if mountReady}
-							<Button type="submit" disabled={submitting} class="mt-5 w-full gap-1.5">
+							<p class="mt-5 text-sm text-muted-foreground">
+								Start your {data.planName} plan with {data.interval} billing.
+							</p>
+							<Button type="submit" disabled={submitting} class="mt-2 w-full gap-1.5">
 								{#if submitting}
 									<Icon icon="mdi:loading" class="h-4 w-4 animate-spin" />
 									Processing…
 								{:else}
 									<Icon icon="mdi:lock" class="h-4 w-4" />
-									Pay {fmtCents(data.amountDueTodayCents)} and start your {data.planName} plan
+									Subscribe — {fmtCents(data.amountDueTodayCents)}
 								{/if}
 							</Button>
 						{/if}
@@ -239,12 +242,14 @@
 						</div>
 						<div class="text-right">
 							<p class="font-semibold text-foreground">
-								${data.displayPrice.monthly}<span class="text-sm font-normal text-muted-foreground"
-									>/mo</span
+								{fmtCents(data.displayPrice.monthly * 100)}<span
+									class="text-sm font-normal text-muted-foreground">/mo</span
 								>
 							</p>
 							{#if data.interval === 'annual'}
-								<p class="text-xs text-muted-foreground">Billed ${data.displayPrice.billed}/yr</p>
+								<p class="text-xs text-muted-foreground">
+									Billed {fmtCents(data.displayPrice.billed * 100)}/yr
+								</p>
 							{/if}
 						</div>
 					</div>
@@ -257,7 +262,9 @@
 						<p class="mt-1 text-xs text-muted-foreground">
 							Renews {fmtCents(data.fullCycleAmountCents)}/{data.interval === 'annual'
 								? 'year'
-								: 'month'}{data.nextChargeDate ? ` on ${fmtDate(data.nextChargeDate)}` : ''}
+								: 'month'}{#if data.nextChargeDate}
+								on <span class="font-semibold text-foreground">{fmtDate(data.nextChargeDate)}</span
+								>{/if}
 						</p>
 					</div>
 

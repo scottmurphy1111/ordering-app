@@ -418,7 +418,7 @@ export const actions: Actions = {
 			// is created. This is the standard Stripe pattern for "collect card now, bill
 			// recurring later."
 			const setupIntent = await stripe.setupIntents.create({
-				payment_method_types: ['card'],
+				automatic_payment_methods: { enabled: true },
 				usage: 'off_session',
 				metadata: { vendorId: String(vendorId), planKey, interval }
 			});
