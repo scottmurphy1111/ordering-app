@@ -21,7 +21,7 @@
 	import { Input } from '$lib/components/ui/input';
 	import { Switch } from '$lib/components/ui/switch';
 	import { Label } from '$lib/components/ui/label';
-	import { Card, CardContent } from '$lib/components/ui/card';
+	import { Card, CardContent, CardFooter } from '$lib/components/ui/card';
 	import { Alert } from '$lib/components/ui/alert';
 	import { Skeleton } from '$lib/components/ui/skeleton';
 	import {
@@ -368,25 +368,25 @@
 		<div class="block space-y-2 md:hidden">
 			{#if !mounted}
 				{#each [0, 1, 2, 3, 4] as i (i)}
-					<div class="overflow-hidden rounded-xl border border-gray-200 bg-white">
-						<div class="px-4 pt-3 pb-2">
+					<Card>
+						<CardContent>
 							<Skeleton class="h-4 w-2/3 rounded" />
 							<Skeleton class="mt-1.5 h-3 w-1/2 rounded" />
 							<Skeleton class="mt-1 h-3 w-20 rounded" />
-						</div>
-						<div class="flex items-center justify-between gap-2 border-t border-gray-100 px-4 py-2">
+						</CardContent>
+						<CardFooter class="justify-between">
 							<Skeleton class="h-6 w-20 rounded-full" />
 							<div class="flex items-center gap-1">
 								<Skeleton class="h-8 w-8 rounded-md" />
 								<Skeleton class="h-8 w-8 rounded-md" />
 							</div>
-						</div>
-					</div>
+						</CardFooter>
+					</Card>
 				{/each}
 			{:else}
 				{#each sortedCategories as cat (cat.id)}
-					<div class="overflow-hidden rounded-xl border border-gray-200 bg-white">
-						<div class="px-4 pt-3 pb-2">
+					<Card>
+						<CardContent>
 							<p class="text-sm font-medium text-foreground">{cat.name}</p>
 							{#if cat.description}
 								<p class="mt-0.5 text-xs text-muted-foreground">{cat.description}</p>
@@ -396,8 +396,8 @@
 								class="mt-1 inline-block text-xs text-muted-foreground transition-colors hover:text-primary hover:underline"
 								>{cat.itemCount} {Number(cat.itemCount) === 1 ? 'item' : 'items'}</a
 							>
-						</div>
-						<div class="flex items-center justify-between border-t border-gray-100 px-4 py-2">
+						</CardContent>
+						<CardFooter class="justify-between">
 							{@render statusDropdown(cat)}
 							<div class="flex items-center gap-1">
 								<Button
@@ -452,16 +452,14 @@
 									</Button>
 								</form>
 							</div>
-						</div>
-					</div>
+						</CardFooter>
+					</Card>
 				{/each}
 			{/if}
 		</div>
 
 		<!-- ── Desktop table ───────────────────────────────────────── -->
-		<div
-			class="hidden overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm md:block"
-		>
+		<Card class="hidden p-0 md:block">
 			<Table>
 				<TableHeader>
 					<TableRow class="hover:bg-transparent">
@@ -596,7 +594,7 @@
 					{/if}
 				</TableBody>
 			</Table>
-		</div>
+		</Card>
 	{/if}
 </div>
 

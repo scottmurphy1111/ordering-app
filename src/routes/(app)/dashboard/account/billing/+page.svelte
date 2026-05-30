@@ -912,8 +912,8 @@
 				{@const isActive = hasAddon(activeAddons, addon.key)}
 				{@const canToggle = data.hasStripeSubscription && !isPaused && !isIncluded}
 				{@const canActivate = canToggle && !isCancelScheduled}
-				<div class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
-					<div class="px-4 py-3">
+				<Card>
+					<CardContent class="flex-1">
 						<div class="mb-2 flex items-start justify-between gap-3">
 							<div class="flex items-center gap-3">
 								<div
@@ -934,21 +934,16 @@
 								<StatusBadge variant="success" class="shrink-0">Active</StatusBadge>
 							{/if}
 						</div>
-						<p class="mb-3 text-sm text-muted-foreground">{addon.description}</p>
-					</div>
+						<p class="text-sm text-muted-foreground">{addon.description}</p>
+					</CardContent>
 					{#if canActivate && !isActive}
-						<div class="flex items-center justify-start gap-3 border-t border-gray-100 px-4 py-2">
-							<Button
-								type="button"
-								onclick={() => openModal(addon, 'activate')}
-								variant="default"
-								class=""
-							>
+						<CardFooter>
+							<Button type="button" onclick={() => openModal(addon, 'activate')} variant="default">
 								Activate
 							</Button>
-						</div>
+						</CardFooter>
 					{:else if !isPaidPlan && !isIncluded && !isActive}
-						<div class="flex items-center justify-start gap-3 border-t border-gray-100 px-4 py-2">
+						<CardFooter>
 							<Tooltip>
 								<TooltipTrigger>
 									{#snippet child({ props })}
@@ -959,10 +954,9 @@
 								</TooltipTrigger>
 								<TooltipContent>Upgrade to Market or Pro to activate add-ons.</TooltipContent>
 							</Tooltip>
-						</div>
-					{/if}
-					{#if canToggle && isActive}
-						<div class="flex items-center justify-end gap-3 border-t border-gray-100 px-4 py-2">
+						</CardFooter>
+					{:else if canToggle && isActive}
+						<CardFooter class="justify-end">
 							<Button
 								type="button"
 								variant="ghost"
@@ -971,9 +965,9 @@
 							>
 								Deactivate
 							</Button>
-						</div>
+						</CardFooter>
 					{/if}
-				</div>
+				</Card>
 			{/each}
 		</div>
 	</div>

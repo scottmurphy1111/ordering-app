@@ -589,19 +589,23 @@
 		</div>
 	{:else if mounted && data.items.length === 0}
 		{#if data.search || data.selectedCategoryId}
-			<div class="rounded-xl border border-gray-200 bg-white p-12 text-center">
-				<h3 class="mb-1 text-base font-semibold text-gray-900">No results match your filters</h3>
-				<p class="mb-4 text-sm text-gray-500">Try adjusting your search or category filter.</p>
-				<Button
-					variant="link"
-					onclick={() => {
-						goto(resolve('/dashboard/catalog/items'), { replaceState: true });
-					}}
-					class="h-auto p-0"
-				>
-					Clear filters →
-				</Button>
-			</div>
+			<Card>
+				<CardContent class="flex flex-col items-center py-12 text-center">
+					<h3 class="text-base font-semibold text-foreground">No matches</h3>
+					<p class="mt-1 text-sm text-muted-foreground">
+						Try adjusting your search or category filter.
+					</p>
+					<Button
+						variant="link"
+						onclick={() => {
+							goto(resolve('/dashboard/catalog/items'), { replaceState: true });
+						}}
+						class="mt-3 h-auto p-0 text-xs"
+					>
+						Clear filters →
+					</Button>
+				</CardContent>
+			</Card>
 		{:else}
 			<Card>
 				<CardContent class="flex flex-col items-center py-12 text-center">
