@@ -263,7 +263,8 @@
 							Renews {fmtCents(data.fullCycleAmountCents)}/{data.interval === 'annual'
 								? 'year'
 								: 'month'}{#if data.nextChargeDate}
-								on <span class="font-semibold text-foreground">{fmtDate(data.nextChargeDate)}</span
+								&nbsp;on <span class="font-semibold text-foreground"
+									>{fmtDate(data.nextChargeDate)}</span
 								>{/if}
 						</p>
 					</div>
