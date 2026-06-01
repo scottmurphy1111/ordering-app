@@ -5,5 +5,8 @@ export const load: LayoutServerLoad = async ({ locals }) => {
 	if (!locals.vendor) {
 		throw error(404, 'Store not found');
 	}
-	return { vendor: locals.vendor };
+	return {
+		vendor: locals.vendor,
+		storefrontDisabled: !locals.vendor.storefrontEnabled
+	};
 };

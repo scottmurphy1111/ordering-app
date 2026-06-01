@@ -28,7 +28,7 @@
 
 	let { data }: { data: PageData } = $props();
 	let submittingAction = $state<
-		'saveBusinessProfile' | 'saveCheckout' | 'saveSpecialRequests' | null
+		'saveBusinessProfile' | 'saveCheckout' | 'saveSpecialRequests' | 'saveVisibility' | null
 	>(null);
 
 	// Per-form error states (separate so an error in one form doesn't bleed into another).
@@ -71,6 +71,13 @@
 	let acceptsRequests = $state(
 		untrack(
 			() => (data.info as unknown as { acceptsRequests?: boolean } | null)?.acceptsRequests ?? true
+		)
+	);
+
+	let storefrontEnabled = $state(
+		untrack(
+			() =>
+				(data.info as unknown as { storefrontEnabled?: boolean } | null)?.storefrontEnabled ?? true
 		)
 	);
 </script>
@@ -421,6 +428,52 @@
 			<CardFooter>
 				<Button type="submit" variant="default" disabled={submittingAction !== null}>
 					{#if submittingAction === 'saveSpecialRequests'}
+						<Icon icon="mdi:loading" class="h-4 w-4 animate-spin" />
+						Saving...
+					{:else}
+						Save changes
+					{/if}
+				</Button>
+			</CardFooter>
+		</Card>
+	</form>
+
+	<form
+		method="post"
+		action="?/saveVisibility"
+		use:enhance={enhanceWithToasts({
+			successMessage: 'Storefront visibility saved',
+			preserveValues: true,
+			onStart: () => {
+				submittingAction = 'saveVisibility';
+			},
+			onEnd: () => {
+				submittingAction = null;
+			}
+		})}
+		class="mt-6"
+	>
+		<Card class="shadow-sm">
+			<CardHeader>
+				<CardTitle>Storefront visibility</CardTitle>
+			</CardHeader>
+			<CardContent class="space-y-4">
+				<div class="flex items-start justify-between gap-4">
+					<div class="min-w-0">
+						<label for="storefrontEnabled" class="text-sm font-medium">Show my storefront</label>
+						<p class="mt-1 text-sm text-muted-foreground">
+							When on, your storefront is live and customers can browse and order. When off,
+							visitors see a brief "taking a break" message and can't place orders — you keep full
+							access to your dashboard.
+						</p>
+					</div>
+					<input type="hidden" name="storefrontEnabled" value={storefrontEnabled ? 'on' : ''} />
+					<Switch id="storefrontEnabled" bind:checked={storefrontEnabled} />
+				</div>
+			</CardContent>
+			<CardFooter>
+				<Button type="submit" variant="default" disabled={submittingAction !== null}>
+					{#if submittingAction === 'saveVisibility'}
 						<Icon icon="mdi:loading" class="h-4 w-4 animate-spin" />
 						Saving...
 					{:else}

@@ -19,7 +19,8 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 			address: true,
 			timezone: true,
 			settings: true,
-			acceptsRequests: true
+			acceptsRequests: true,
+			storefrontEnabled: true
 		}
 	});
 
@@ -125,6 +126,24 @@ export const actions: Actions = {
 			return { specialRequestsSuccess: true };
 		} catch (err) {
 			console.error('[saveSpecialRequests] error:', err);
+			return fail(500, { error: 'Something went wrong on our end. Please try again.' });
+		}
+	},
+
+	saveVisibility: async ({ request, locals }) => {
+		try {
+			const vendorId = locals.vendorId!;
+			const formData = await request.formData();
+			const storefrontEnabled = formData.get('storefrontEnabled') === 'on';
+
+			await db
+				.update(vendor)
+				.set({ storefrontEnabled, updatedAt: new Date() })
+				.where(eq(vendor.id, vendorId));
+
+			return { visibilitySuccess: true };
+		} catch (err) {
+			console.error('[saveVisibility] error:', err);
 			return fail(500, { error: 'Something went wrong on our end. Please try again.' });
 		}
 	}

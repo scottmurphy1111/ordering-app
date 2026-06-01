@@ -13,6 +13,15 @@
 	} from '$lib/components/ui/dropdown-menu';
 	import Icon from '@iconify/svelte';
 	import ConfirmModal from '$lib/components/ConfirmModal.svelte';
+	import {
+		Dialog,
+		DialogContent,
+		DialogHeader,
+		DialogTitle,
+		DialogDescription,
+		DialogFooter
+	} from '$lib/components/ui/dialog';
+	import { Button } from '$lib/components/ui/button';
 	import { Toaster } from '$lib/components/ui/sonner';
 	import { toast } from '$lib/toast';
 
@@ -128,6 +137,15 @@
 
 	let mainEl: HTMLElement | undefined = $state();
 
+	const SUPPORT_EMAIL = 'support@getorderlocal.com';
+	let supportOpen = $state(false);
+
+	function copySupportEmail() {
+		navigator.clipboard.writeText(SUPPORT_EMAIL).then(() => {
+			toast.success('Support email copied to clipboard');
+		});
+	}
+
 	afterNavigate(() => {
 		sidebarOpen = false;
 		mainEl?.scrollTo(0, 0);
@@ -231,6 +249,10 @@
 						Admin Panel
 					</DropdownMenuItem>
 				{/if}
+				<DropdownMenuItem onclick={() => (supportOpen = true)}>
+					<Icon icon="mdi:lifebuoy" class="h-4 w-4" />
+					Help & Support
+				</DropdownMenuItem>
 				<DropdownMenuSeparator />
 				<DropdownMenuItem
 					variant="destructive"
@@ -340,7 +362,7 @@
 					<a
 						href="mailto:hello@getorderlocal.com"
 						rel="external"
-						class="transition-colors hover:text-foreground">Contact</a
+						class="transition-colors hover:text-foreground">hello@getorderlocal.com</a
 					>
 				</nav>
 			</div>
@@ -351,3 +373,27 @@
 <Toaster position="top-right" richColors />
 
 <ConfirmModal />
+
+<Dialog bind:open={supportOpen}>
+	<DialogContent class="sm:max-w-md">
+		<DialogHeader>
+			<DialogTitle>Contact support</DialogTitle>
+			<DialogDescription>
+				We're happy to help — email us and we'll get back to you.
+			</DialogDescription>
+		</DialogHeader>
+		<div class="flex items-center justify-between gap-3 rounded-lg border bg-muted px-3 py-2">
+			<span class="truncate text-sm font-medium text-foreground select-all">{SUPPORT_EMAIL}</span>
+			<Button variant="ghost" onclick={copySupportEmail}>
+				<Icon icon="mdi:content-copy" class="h-4 w-4" />
+				Copy
+			</Button>
+		</div>
+		<DialogFooter>
+			<Button onclick={() => (window.location.href = `mailto:${SUPPORT_EMAIL}`)}>
+				<Icon icon="mdi:email-outline" class="h-4 w-4" />
+				Open in email app
+			</Button>
+		</DialogFooter>
+	</DialogContent>
+</Dialog>

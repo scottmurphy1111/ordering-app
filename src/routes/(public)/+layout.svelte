@@ -17,6 +17,9 @@
 </script>
 
 <svelte:head>
+	{#if data.storefrontDisabled}
+		<meta name="robots" content="noindex" />
+	{/if}
 	<link rel="stylesheet" href={fontsUrl} />
 	<!-- eslint-disable-next-line svelte/no-at-html-tags -- values are server-validated (hex-regex for colors, known-list for fonts); safe to inline as CSS custom properties -->
 	{@html `<style>
@@ -38,9 +41,25 @@
 		headerMode={data.vendor.headerMode}
 	/>
 
-	<div class="flex-1">
-		{@render children()}
-	</div>
+	{#if data.storefrontDisabled}
+		<div class="flex flex-1 items-center justify-center px-4 py-24 text-center">
+			<div class="max-w-md">
+				<h1
+					class="text-2xl font-semibold text-neutral-900"
+					style="font-family: var(--font-heading);"
+				>
+					{data.vendor.name} is taking a short break
+				</h1>
+				<p class="mt-3 text-sm text-neutral-600">
+					This shop is temporarily unavailable. Please check back soon.
+				</p>
+			</div>
+		</div>
+	{:else}
+		<div class="flex-1">
+			{@render children()}
+		</div>
+	{/if}
 
 	<footer class="border-t border-neutral-200 bg-white">
 		<div

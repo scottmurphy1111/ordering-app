@@ -102,6 +102,9 @@ export const vendor = pgTable(
 
 		// Operational status
 		isActive: boolean('is_active').default(true).notNull(),
+		// Vendor-controlled storefront visibility. Distinct from isActive (which
+		// also gates dashboard access); storefrontEnabled only hides the public storefront.
+		storefrontEnabled: boolean('storefront_enabled').default(true).notNull(),
 		isApproved: boolean('is_approved').default(true),
 		suspendedAt: timestamp('suspended_at', { withTimezone: true }),
 		suspendedReason: text('suspended_reason'),
