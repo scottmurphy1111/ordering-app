@@ -1,1 +1,0 @@
-ALTER TABLE "vendors" ADD COLUMN "accepts_requests" boolean DEFAULT true NOT NULL;

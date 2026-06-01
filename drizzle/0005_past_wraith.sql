@@ -1,2 +1,0 @@
-ALTER TABLE "pickup_window_templates" ADD COLUMN "recurrence_start_date" timestamp with time zone;--> statement-breakpoint
-ALTER TABLE "pickup_window_templates" ADD COLUMN "recurrence_end_date" timestamp with time zone;

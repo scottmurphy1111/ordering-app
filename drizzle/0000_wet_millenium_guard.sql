@@ -1,5 +1,0 @@
--- Baseline marker. No SQL to apply — this represents the DB state as of the
--- 2026-05-06 rebaseline. The DB is already at this schema; the matching row
--- in __drizzle_migrations was inserted manually (see prompt notes).
---
--- Future schema changes use the db:generate + db:migrate workflow, not db:push.
