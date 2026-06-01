@@ -18,6 +18,7 @@
 		TableCell
 	} from '$lib/components/ui/table';
 	import { lifecycleStages } from '$lib/utils/order-lifecycle';
+	import { startVisiblePolling } from '$lib/polling';
 
 	let { data }: { data: PageData } = $props();
 
@@ -38,26 +39,10 @@
 	onMount(() => {
 		mounted = true;
 		catalogUrl = data.catalogUrl ?? '';
-		let interval: ReturnType<typeof setInterval> | null = null;
-		function refresh() {
+		return startVisiblePolling(() => {
 			invalidate('app:overview');
 			lastUpdated.setTime(Date.now());
-		}
-		function start() {
-			if (!interval) interval = setInterval(refresh, 15_000);
-		}
-		function stop() {
-			if (interval) {
-				clearInterval(interval);
-				interval = null;
-			}
-		}
-		start();
-		document.addEventListener('visibilitychange', () => (document.hidden ? stop() : start()));
-		return () => {
-			stop();
-			document.removeEventListener('visibilitychange', start);
-		};
+		}, 60_000);
 	});
 
 	function copyCatalogLink() {

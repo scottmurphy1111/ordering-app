@@ -13,6 +13,7 @@ import { orderRefundedEmail } from '$lib/server/email/templates/orderRefunded';
 import { customDateOrderRecoveredEmail } from '$lib/server/email/templates/customDateOrderRecovered';
 import { specialOrderAcceptedEmail } from '$lib/server/email/templates/specialOrderAccepted';
 import { specialOrderAcceptedVendorEmail } from '$lib/server/email/templates/specialOrderAcceptedVendor';
+import { orderReceivedVendorEmail } from '$lib/server/email/templates/orderReceivedVendor';
 import { sendSms } from '$lib/server/sms';
 import type { AddonItem } from '$lib/billing';
 import { vendorUrl } from '$lib/server/vendor-origin';
@@ -242,6 +243,31 @@ async function handleEvent(event: Stripe.Event, ctx: VendorCtx) {
 						replyTo: ctx.email ?? undefined,
 						category: 'order_confirmed'
 					}).catch(console.error);
+					if (
+						ctx.email &&
+						order.type !== 'special_order' &&
+						(await shouldSendEmail(ctx.id, 'order_received_vendor'))
+					) {
+						await sendEmail({
+							to: ctx.email,
+							subject: `New order ${order.orderNumber} from ${order.customerName ?? 'a customer'} — $${(order.total / 100).toFixed(2)}`,
+							html: orderReceivedVendorEmail({
+								vendorName: ctx.name,
+								primaryColor: ctx.primaryColor,
+								vendorSubscriptionTier: ctx.subscriptionTier,
+								customerName: order.customerName ?? 'there',
+								orderNumber: order.orderNumber,
+								total: order.total,
+								items: order.items as Parameters<typeof orderReceivedVendorEmail>[0]['items'],
+								pickupMode: order.pickupMode,
+								pickupWindowSnapshot: order.pickupWindowSnapshot as PickupWindowSnapshot | null,
+								scheduledFor: order.scheduledFor,
+								vendorTimezone: ctx.timezone,
+								orderStatusUrl: `${env.ORIGIN ?? 'https://app.getorderlocal.com'}/dashboard/orders/${order.id}`
+							}),
+							category: 'order_received_vendor'
+						}).catch(console.error);
+					}
 				}
 			}
 			if (order?.customerPhone) {
@@ -411,6 +437,31 @@ async function handleEvent(event: Stripe.Event, ctx: VendorCtx) {
 					replyTo: ctx.email ?? undefined,
 					category: 'order_confirmed'
 				}).catch(console.error);
+				if (
+					ctx.email &&
+					order.type !== 'special_order' &&
+					(await shouldSendEmail(ctx.id, 'order_received_vendor'))
+				) {
+					await sendEmail({
+						to: ctx.email,
+						subject: `New order ${order.orderNumber} from ${order.customerName ?? 'a customer'} — $${(order.total / 100).toFixed(2)}`,
+						html: orderReceivedVendorEmail({
+							vendorName: ctx.name,
+							primaryColor: ctx.primaryColor,
+							vendorSubscriptionTier: ctx.subscriptionTier,
+							customerName: order.customerName ?? 'there',
+							orderNumber: order.orderNumber,
+							total: order.total,
+							items: order.items as Parameters<typeof orderReceivedVendorEmail>[0]['items'],
+							pickupMode: order.pickupMode,
+							pickupWindowSnapshot: order.pickupWindowSnapshot as PickupWindowSnapshot | null,
+							scheduledFor: order.scheduledFor,
+							vendorTimezone: ctx.timezone,
+							orderStatusUrl: `${env.ORIGIN ?? 'https://app.getorderlocal.com'}/dashboard/orders/${order.id}`
+						}),
+						category: 'order_received_vendor'
+					}).catch(console.error);
+				}
 			}
 			if (order?.customerPhone) {
 				await sendSms(

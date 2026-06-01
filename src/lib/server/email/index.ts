@@ -46,7 +46,8 @@ export type EmailCategory =
 	| 'pending_approval_reminder'
 	| 'payment_failed'
 	| 'invite'
-	| 'auth';
+	| 'auth'
+	| 'order_received_vendor';
 
 export async function sendEmail({
 	to,

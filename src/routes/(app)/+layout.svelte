@@ -27,6 +27,8 @@
 
 	import { onMount } from 'svelte';
 	import { Sheet, SheetContent } from '$lib/components/ui/sheet';
+	import { dev } from '$app/environment';
+	import { startVisiblePolling } from '$lib/polling';
 
 	let { data, children }: { data: LayoutData; children: import('svelte').Snippet } = $props();
 
@@ -92,12 +94,12 @@
 	}
 
 	onMount(() => {
+		if (dev) return; // live order alert is a production-only feature
 		pollOrders(); // seed lastKnownOrderId immediately (no alert on first load)
-		const interval = setInterval(pollOrders, 30_000);
 		if ('Notification' in window && Notification.permission === 'default') {
 			Notification.requestPermission();
 		}
-		return () => clearInterval(interval);
+		return startVisiblePolling(pollOrders, 60_000);
 	});
 
 	const showSpecialRequests = $derived(

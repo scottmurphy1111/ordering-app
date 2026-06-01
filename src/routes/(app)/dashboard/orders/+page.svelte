@@ -21,6 +21,7 @@
 	import { Alert } from '$lib/components/ui/alert';
 	import OrderStatusStepper from '$lib/components/OrderStatusStepper.svelte';
 	import { enhanceWithToasts } from '$lib/forms/enhance-with-toasts';
+	import { startVisiblePolling } from '$lib/polling';
 
 	let { data }: { data: PageData } = $props();
 	let rowActionError = $state<string | null>(null);
@@ -33,22 +34,7 @@
 	onMount(() => {
 		mounted = true;
 		soundEnabled = localStorage.getItem('ol_sound') !== 'false';
-		let interval: ReturnType<typeof setInterval> | null = null;
-		function start() {
-			if (!interval) interval = setInterval(() => invalidate('app:orders'), 15_000);
-		}
-		function stop() {
-			if (interval) {
-				clearInterval(interval);
-				interval = null;
-			}
-		}
-		start();
-		document.addEventListener('visibilitychange', () => (document.hidden ? stop() : start()));
-		return () => {
-			stop();
-			document.removeEventListener('visibilitychange', start);
-		};
+		return startVisiblePolling(() => invalidate('app:orders'), 60_000);
 	});
 
 	// Total order count across all groups (for chime detection)
