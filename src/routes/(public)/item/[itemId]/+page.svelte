@@ -153,11 +153,11 @@
 				<p class="text-xl font-bold text-foreground">${(data.item.price / 100).toFixed(2)}</p>
 			{/if}
 			{#if data.item.availabilityMode === 'storefront_only'}
-				<StatusBadge tone="bg-amber-50 text-amber-700" class="text-xs">Storefront only</StatusBadge>
+				<StatusBadge tone="bg-amber-50 text-amber-700" class="text-xs">In-store only</StatusBadge>
 			{:else if data.item.availabilityMode === 'events_only'}
-				<StatusBadge tone="bg-sky-50 text-sky-700" class="text-xs">Events only</StatusBadge>
-			{:else if data.item.availabilityMode === 'special_order'}
-				<StatusBadge tone="bg-purple-50 text-purple-700" class="text-xs">Special order</StatusBadge>
+				<StatusBadge tone="bg-sky-50 text-sky-700" class="text-xs">Pickup events</StatusBadge>
+			{:else if data.item.availabilityMode === 'unlisted'}
+				<StatusBadge tone="bg-slate-100 text-slate-700" class="text-xs">Unlisted</StatusBadge>
 			{/if}
 		</div>
 		{#if data.item.isSubscription && data.item.fulfillmentNote}

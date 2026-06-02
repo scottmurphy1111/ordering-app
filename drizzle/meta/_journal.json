@@ -22,6 +22,13 @@
       "when": 1780344323520,
       "tag": "0002_yellow_ricochet",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1780411665576,
+      "tag": "0003_nice_vector",
+      "breakpoints": true
     }
   ]
 }

@@ -326,7 +326,7 @@
 			{#each TIERS as tier (tier.key)}
 				{@const isHighlight = tier.key === highlightTier}
 				{@const tagline = persona.pricing.taglinesByTier?.[tier.key]}
-				<div class="relative flex flex-col {isHighlight ? 'lg:scale-105' : ''}">
+				<div class="relative flex h-full flex-col {isHighlight ? 'lg:scale-101' : ''}">
 					{#if isHighlight}
 						<div class="absolute -top-3 right-0 left-0 flex justify-center">
 							<Badge class="bg-primary text-primary-foreground shadow-sm">

@@ -21,7 +21,7 @@
 	type ImageEntry = { url: string; isPrimary?: boolean };
 
 	type PickupType = 'windowed' | 'custom_date';
-	type AvailabilityMode = 'always' | 'storefront_only' | 'events_only' | 'special_order';
+	type AvailabilityMode = 'always' | 'storefront_only' | 'events_only' | 'unlisted';
 
 	interface ItemData {
 		name: string;
@@ -415,13 +415,9 @@
 {#snippet fieldAvailabilityMode()}
 	{@const AVAILABILITY_OPTIONS = [
 		['always', 'Always available', 'Show to all customers regardless of how they are ordering.'],
-		[
-			'storefront_only',
-			'Storefront only',
-			'Only shown when ordering for storefront / ASAP pickup.'
-		],
-		['events_only', 'Events only', 'Only shown when ordering for a scheduled pickup event.'],
-		['special_order', 'Special order', 'Hidden from the catalog — must be ordered directly.']
+		['storefront_only', 'In-store only', 'Only shown when ordering for storefront / ASAP pickup.'],
+		['events_only', 'Pickup events', 'Only shown when ordering for a scheduled pickup event.'],
+		['unlisted', 'Unlisted', 'Hidden from your public catalog — sell it by sharing a direct link.']
 	] as const}
 	<div class="space-y-2 rounded-lg border p-4">
 		<p class="text-sm font-medium text-muted-foreground">Availability</p>
@@ -534,7 +530,7 @@
 			{/if}
 			{@render fieldTags()}
 			{@render fieldPickupType()}
-			{#if !isSubscription && pickupType !== 'custom_date'}{@render fieldAvailabilityMode()}{/if}
+			{#if !isSubscription}{@render fieldAvailabilityMode()}{/if}
 			{#if hasSubscriptionsAddon}{@render fieldSubscription()}{/if}
 		</div>
 	{:else}
@@ -547,7 +543,7 @@
 			{@render fieldTags()}
 			{@render fieldStatus()}
 			{@render fieldPickupType()}
-			{#if !isSubscription && pickupType !== 'custom_date'}{@render fieldAvailabilityMode()}{/if}
+			{#if !isSubscription}{@render fieldAvailabilityMode()}{/if}
 			{#if hasSubscriptionsAddon}{@render fieldSubscription()}{/if}
 		</div>
 	{/if}

@@ -42,9 +42,11 @@ function parseItemFormData(formData: FormData) {
 			? parseInt(formData.get('customDateLeadDays')?.toString() ?? '14') || 14
 			: null;
 	const rawAvailabilityMode = formData.get('availabilityMode')?.toString();
-	const availabilityMode = (
-		pickupType === 'custom_date' || !rawAvailabilityMode ? 'special_order' : rawAvailabilityMode
-	) as 'always' | 'storefront_only' | 'events_only' | 'special_order';
+	const availabilityMode = (rawAvailabilityMode || 'always') as
+		| 'always'
+		| 'storefront_only'
+		| 'events_only'
+		| 'unlisted';
 
 	if (customDateLeadDays !== null && (customDateLeadDays < 1 || customDateLeadDays > 365)) {
 		throw new CatalogItemError(400, 'Lead time must be between 1 and 365 days.');

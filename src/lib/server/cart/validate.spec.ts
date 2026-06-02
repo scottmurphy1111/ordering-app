@@ -26,9 +26,9 @@ describe('isCompatible — availability mode vs pickup mode', () => {
 		expect(isCompatible('events_only', 'pickup_event')).toBe(true);
 	});
 
-	it('special_order is compatible with any mode (uses custom_date path)', () => {
-		expect(isCompatible('special_order', 'pickup_event')).toBe(true);
-		expect(isCompatible('special_order', 'storefront_hours')).toBe(true);
+	it('unlisted is compatible with any mode (hidden from catalog, link-orderable)', () => {
+		expect(isCompatible('unlisted', 'pickup_event')).toBe(true);
+		expect(isCompatible('unlisted', 'storefront_hours')).toBe(true);
 	});
 
 	it('any mode is compatible when pickupMode is undefined', () => {

@@ -23,7 +23,8 @@ export const load: PageServerLoad = async ({ locals }) => {
 		db.query.catalogItems.findMany({
 			where: and(
 				eq(catalogItems.vendorId, vendorId),
-				inArray(catalogItems.status, ['available', 'sold_out'])
+				inArray(catalogItems.status, ['available', 'sold_out']),
+				ne(catalogItems.availabilityMode, 'unlisted')
 			),
 			orderBy: (i, { asc }) => [asc(i.sortOrder), asc(i.name)],
 			columns: {

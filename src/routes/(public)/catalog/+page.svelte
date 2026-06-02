@@ -120,7 +120,7 @@
 		} catch (e) {
 			if (e instanceof CartTypeMismatchError) {
 				const confirmed = await confirmDialog(
-					'Special-order items are placed separately — they have their own checkout and approval. Start a new cart for this item?',
+					'This item is picked up on a custom date and is ordered separately — start a new cart for it?',
 					{
 						title: 'Start a new cart?',
 						confirmLabel: 'Start new cart',

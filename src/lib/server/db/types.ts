@@ -41,7 +41,7 @@ export const availabilityModeEnum = pgEnum('availability_mode', [
 	'always',
 	'storefront_only',
 	'events_only',
-	'special_order'
+	'unlisted'
 ]);
 
 export const specialOrderRequestStateEnum = pgEnum('special_order_request_state', [

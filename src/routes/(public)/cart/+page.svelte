@@ -263,7 +263,7 @@
 		const out = new SvelteSet<number>();
 		for (const item of cart.items) {
 			const am = item.availabilityMode;
-			if (!am || am === 'always' || am === 'special_order') continue;
+			if (!am || am === 'always' || am === 'unlisted') continue;
 			if (am === 'storefront_only' && mode === 'pickup_event') out.add(item.itemId);
 			if (am === 'events_only' && mode === 'storefront_hours') out.add(item.itemId);
 		}

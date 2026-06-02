@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
-	import StatusBadge from '$lib/components/StatusBadge.svelte';
 
 	type Item = {
 		id: number;
@@ -33,6 +32,34 @@
 	const primaryImage = $derived(imgs?.find((i) => i.isPrimary)?.url ?? imgs?.[0]?.url ?? null);
 	const hasModifiers = $derived(item.modifiers.length > 0);
 
+	// Availability mode → card border color + top "tab". Standard items (no mode /
+	// 'both') get the plain gray border and no tab.
+	const modeTreatment = $derived.by(() => {
+		switch (item.availabilityMode) {
+			case 'events_only':
+				return {
+					label: 'Pickup events',
+					border: 'border-1 border-sky-400',
+					tab: 'bg-sky-50 text-sky-700'
+				};
+			case 'storefront_only':
+				return {
+					label: 'In-store only',
+					border: 'border-1 border-amber-300',
+					tab: 'bg-amber-50 text-amber-700'
+				};
+			case 'unlisted':
+				return {
+					label: 'Unlisted',
+					border: 'border-1 border-slate-300',
+					tab: 'bg-slate-100 text-slate-700'
+				};
+			default:
+				return null;
+		}
+	});
+	const borderClass = $derived(modeTreatment?.border ?? 'border border-neutral-200');
+
 	// Inline expand/collapse for the description. Only one layout renders per
 	// card (image XOR compact), so a single descEl bind is unambiguous.
 	let descExpanded = $state(false);
@@ -48,162 +75,131 @@
 	});
 </script>
 
-{#snippet descriptionBlock(clampClass: string)}
+{#snippet actionSlot()}
+	{#if item.status === 'sold_out'}
+		<span class="rounded-lg bg-amber-100 px-3 py-1.5 text-xs font-medium text-amber-700"
+			>Sold out</span
+		>
+	{:else if isPaused}
+		<span class="rounded-lg bg-neutral-100 px-3 py-1.5 text-xs font-medium text-neutral-400"
+			>Unavailable</span
+		>
+	{:else if hasModifiers}
+		<a
+			href={resolve(`/item/${item.id}` as `/${string}`)}
+			class="rounded-lg border px-3 py-1.5 text-xs font-medium transition-opacity hover:opacity-75"
+			style="border-color: var(--background-color); color: var(--background-color);">Pick Options</a
+		>
+	{:else}
+		<button
+			type="button"
+			onclick={onAdd}
+			class="add-btn rounded-lg bg-neutral-900 px-3 py-1.5 text-xs font-medium text-white transition-all {isAdding
+				? 'pulsing'
+				: ''} {wasJustAdded ? 'added' : ''}"
+		>
+			{wasJustAdded ? '✓ Added' : '+ Add'}
+		</button>
+	{/if}
+{/snippet}
+
+{#snippet descriptionBlock()}
 	{#if item.description}
-		<p bind:this={descEl} class="mt-1 text-sm text-neutral-600 {descExpanded ? '' : clampClass}">
-			{item.description}
-		</p>
-		{#if descIsTruncated || descExpanded}
-			<button
-				type="button"
-				onclick={() => (descExpanded = !descExpanded)}
-				class="mt-0.5 text-xs font-medium transition-opacity hover:opacity-75"
-				style="color: var(--accent-color);"
-			>
-				{descExpanded ? 'less' : 'more'}
-			</button>
+		{#if descExpanded}
+			<p bind:this={descEl} class="text-sm text-neutral-600">
+				{item.description}<button
+					type="button"
+					onclick={() => (descExpanded = false)}
+					class="ml-1 text-xs font-medium transition-opacity hover:opacity-75"
+					style="color: var(--accent-color);">less</button
+				>
+			</p>
+		{:else}
+			<div class="relative">
+				<p bind:this={descEl} class="line-clamp-2 text-sm text-neutral-600">{item.description}</p>
+				{#if descIsTruncated}
+					<button
+						type="button"
+						onclick={() => (descExpanded = true)}
+						class="absolute right-0 bottom-0 pl-6 text-xs font-medium"
+						style="color: var(--accent-color); background: linear-gradient(to right, transparent, white 1.25rem);"
+						>more</button
+					>
+				{/if}
+			</div>
 		{/if}
 	{/if}
 {/snippet}
 
+{#snippet topTab()}
+	<!-- Availability tab (special modes only), centered over the whole card,
+	     straddling its top border. Direct child of the card root. -->
+	{#if modeTreatment}
+		<span
+			class="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full px-3 py-0.5 text-xs font-semibold whitespace-nowrap {modeTreatment.tab}"
+		>
+			{modeTreatment.label}
+		</span>
+	{/if}
+{/snippet}
+
+{#snippet content()}
+	<!-- Title -->
+	<h3 class="font-semibold text-neutral-900" style="font-family: var(--font-heading);">
+		{item.name}
+	</h3>
+
+	<!-- Price -->
+	{#if item.discountedPrice}
+		<p class="mt-0.5 flex items-baseline gap-2">
+			<span class="text-lg font-bold text-neutral-900"
+				>${(item.discountedPrice / 100).toFixed(2)}</span
+			>
+			<span class="text-sm text-neutral-500 line-through">${(item.price / 100).toFixed(2)}</span>
+		</p>
+	{:else}
+		<p class="mt-0.5 text-lg font-bold text-neutral-900">${(item.price / 100).toFixed(2)}</p>
+	{/if}
+
+	<!-- Action (left-aligned, auto width) -->
+	<div class="mt-3">{@render actionSlot()}</div>
+{/snippet}
+{#snippet description()}
+	<!-- Description -->
+	{@render descriptionBlock()}
+{/snippet}
+
 {#if primaryImage}
-	<!-- Image variant: image left, content right -->
+	<!-- Image variant: image left, shared content right -->
 	<div
-		class="flex gap-4 rounded-xl border border-neutral-200 bg-white p-4 transition-shadow hover:shadow-md"
+		class="relative flex flex-col gap-4 rounded-xl bg-white p-4 transition-shadow hover:shadow-md {borderClass}"
 	>
-		<img
-			src={primaryImage}
-			alt={item.name}
-			class="h-24 w-24 shrink-0 rounded-lg object-cover sm:h-28 sm:w-28"
-		/>
-		<div class="flex min-w-0 flex-1 flex-col justify-between">
-			<div>
-				<h3 class="font-semibold text-neutral-900" style="font-family: var(--font-heading);">
-					{item.name}
-				</h3>
-				{@render descriptionBlock('line-clamp-2')}
-				{#if Array.isArray(item.tags) && item.tags.length > 0}
-					<div class="mt-2 flex flex-wrap gap-1">
-						{#each item.tags as tag (tag)}
-							<span
-								class="rounded-full px-2 py-0.5 text-xs capitalize"
-								style="background-color: color-mix(in srgb, var(--accent-color) 15%, white); color: var(--accent-color);"
-								>{tag.toLowerCase()}</span
-							>
-						{/each}
-					</div>
-				{/if}
-			</div>
-			<div class="mt-3 flex items-end justify-between">
-				<div>
-					{#if item.discountedPrice}
-						<p class="font-semibold text-neutral-900">
-							${(item.discountedPrice / 100).toFixed(2)}
-						</p>
-						<p class="text-xs text-neutral-500 line-through">${(item.price / 100).toFixed(2)}</p>
-					{:else}
-						<p class="font-semibold text-neutral-900">${(item.price / 100).toFixed(2)}</p>
-					{/if}
-					{#if item.availabilityMode === 'storefront_only'}
-						<StatusBadge tone="bg-amber-50 text-amber-700" class="mt-1 text-xs"
-							>Storefront only</StatusBadge
-						>
-					{:else if item.availabilityMode === 'events_only'}
-						<StatusBadge tone="bg-sky-50 text-sky-700" class="mt-1 text-xs">Events only</StatusBadge
-						>
-					{:else if item.availabilityMode === 'special_order'}
-						<StatusBadge tone="bg-purple-50 text-purple-700" class="mt-1 text-xs"
-							>Special order</StatusBadge
-						>
-					{/if}
-				</div>
-				{#if item.status === 'sold_out'}
-					<span class="rounded-lg bg-amber-100 px-3 py-1.5 text-xs font-medium text-amber-700"
-						>Sold out</span
-					>
-				{:else if isPaused}
-					<span class="rounded-lg bg-neutral-100 px-3 py-1.5 text-xs font-medium text-neutral-400"
-						>Unavailable</span
-					>
-				{:else if hasModifiers}
-					<a
-						href={resolve(`/item/${item.id}` as `/${string}`)}
-						class="rounded-lg border px-3 py-1.5 text-xs font-medium transition-opacity hover:opacity-75"
-						style="border-color: var(--background-color); color: var(--background-color);"
-						>Options</a
-					>
-				{:else}
-					<button
-						type="button"
-						onclick={onAdd}
-						class="add-btn rounded-lg px-3 py-1.5 text-xs font-medium transition-all {isAdding
-							? 'pulsing'
-							: ''} {wasJustAdded ? 'added' : ''}"
-						style="background-color: var(--accent-color); color: var(--accent-foreground);"
-					>
-						{wasJustAdded ? '✓ Added' : '+ Add'}
-					</button>
-				{/if}
+		{@render topTab()}
+		<div class="flex gap-4">
+			<img
+				src={primaryImage}
+				alt={item.name}
+				class="h-24 w-24 shrink-0 rounded-lg object-cover sm:h-24 sm:w-24"
+			/>
+			<div class="relative min-w-0 flex-1">
+				{@render content()}
 			</div>
 		</div>
+		{@render description()}
 	</div>
 {:else}
-	<!-- Image-less variant: compact text row -->
+	<!-- Image-less variant: same content stack at full width -->
 	<div
-		class="flex items-center justify-between gap-4 rounded-xl border border-neutral-200 bg-white px-4 py-3 transition-shadow hover:shadow-md"
+		class="relative flex flex-col gap-4 rounded-xl bg-white p-4 transition-shadow hover:shadow-md {borderClass}"
 	>
-		<div class="min-w-0 flex-1">
-			<h3 class="font-semibold text-neutral-900" style="font-family: var(--font-heading);">
-				{item.name}
-			</h3>
-			{@render descriptionBlock('line-clamp-1')}
-			{#if Array.isArray(item.tags) && item.tags.length > 0}
-				<div class="mt-1 flex flex-wrap gap-1">
-					{#each item.tags as tag (tag)}
-						<span
-							class="rounded-full px-2 py-0.5 text-xs capitalize"
-							style="background-color: color-mix(in srgb, var(--accent-color) 15%, white); color: var(--accent-color);"
-							>{tag.toLowerCase()}</span
-						>
-					{/each}
-				</div>
-			{/if}
-		</div>
-		<div class="flex shrink-0 items-center gap-3">
-			<div class="text-right">
-				{#if item.discountedPrice}
-					<p class="font-semibold text-neutral-900">${(item.discountedPrice / 100).toFixed(2)}</p>
-					<p class="text-xs text-neutral-500 line-through">${(item.price / 100).toFixed(2)}</p>
-				{:else}
-					<p class="font-semibold text-neutral-900">${(item.price / 100).toFixed(2)}</p>
-				{/if}
+		{@render topTab()}
+		<div class="flex gap-4">
+			<div class="relative min-w-0 flex-1">
+				{@render content()}
 			</div>
-			{#if item.status === 'sold_out'}
-				<span class="rounded-lg bg-amber-100 px-3 py-1.5 text-xs font-medium text-amber-700"
-					>Sold out</span
-				>
-			{:else if isPaused}
-				<span class="rounded-lg bg-neutral-100 px-3 py-1.5 text-xs font-medium text-neutral-400"
-					>Unavailable</span
-				>
-			{:else if hasModifiers}
-				<a
-					href={resolve(`/item/${item.id}` as `/${string}`)}
-					class="rounded-lg border px-3 py-1.5 text-xs font-medium transition-opacity hover:opacity-75"
-					style="border-color: var(--background-color); color: var(--background-color);">Options</a
-				>
-			{:else}
-				<button
-					type="button"
-					onclick={onAdd}
-					class="add-btn rounded-lg bg-neutral-900 px-3 py-1.5 text-xs font-medium text-white transition-all {isAdding
-						? 'pulsing'
-						: ''} {wasJustAdded ? 'added' : ''}"
-				>
-					{wasJustAdded ? '✓ Added' : '+ Add'}
-				</button>
-			{/if}
 		</div>
+
+		{@render description()}
 	</div>
 {/if}
 
