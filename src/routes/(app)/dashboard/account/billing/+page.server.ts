@@ -10,6 +10,7 @@ import {
 	type AddonItem,
 	type BillingInterval,
 	cancelImmediateRefundPreview,
+	getIncludedAddons,
 	pauseUntilTimestamp
 } from '$lib/billing';
 import { sendEmail } from '$lib/server/email';
@@ -332,7 +333,8 @@ export const actions: Actions = {
 					name: true,
 					email: true,
 					subscriptionTier: true,
-					stripeSubscriptionId: true
+					stripeSubscriptionId: true,
+					addons: true
 				}
 			});
 
@@ -365,16 +367,44 @@ export const actions: Actions = {
 							return meta === 'plan' || !meta;
 						}) ?? existingSubscription.items.data[0];
 					if (planItem) {
-						// always_invoice generates the proration invoice immediately and auto-charges
-						// it against the customer's default PM (invariant maintained by webhook
-						// promotion + load self-heal). No checkout redirect needed for paid→paid.
-						await stripe.subscriptionItems.update(planItem.id, {
-							price: priceId,
+						// Strip any purchased add-ons the TARGET tier now includes (e.g. Market's
+						// $29 SMS item when upgrading to Pro, which bundles SMS + Analytics) so the
+						// vendor isn't billed twice for an included feature. À-la-carte add-ons the
+						// target tier does NOT include (e.g. Loyalty, Subscriptions on Pro) stay.
+						const currentAddons = (record.addons ?? []) as AddonItem[];
+						const nowIncluded = getIncludedAddons(planKey);
+						const liveItemIds = new Set(existingSubscription.items.data.map((i) => i.id));
+						// Delete only included add-ons whose Stripe line item still exists (avoids a
+						// "No such subscription_item" failure on a stale id).
+						const addonItemsToDelete = currentAddons
+							.filter((a) => nowIncluded.includes(a.key) && liveItemIds.has(a.stripeItemId))
+							.map((a) => a.stripeItemId);
+						// In the DB, drop every now-included add-on from the stored array regardless
+						// of live presence — the tier covers them now.
+						const remainingAddons = currentAddons.filter((a) => !nowIncluded.includes(a.key));
+
+						// One subscriptions.update swaps the plan price AND deletes the included
+						// add-on items together, so always_invoice nets the new plan charge against
+						// the add-on credit on a SINGLE proration invoice. always_invoice generates
+						// that invoice immediately and auto-charges the customer's default PM
+						// (invariant maintained by webhook promotion + load self-heal). No checkout
+						// redirect needed for paid→paid.
+						const itemUpdates: Stripe.SubscriptionUpdateParams.Item[] = [
+							{ id: planItem.id, price: priceId },
+							...addonItemsToDelete.map((id) => ({ id, deleted: true }))
+						];
+						await stripe.subscriptions.update(record.stripeSubscriptionId, {
+							items: itemUpdates,
 							proration_behavior: 'always_invoice'
 						});
 						await db
 							.update(vendor)
-							.set({ subscriptionTier: planKey, subscriptionEndsAt: null, updatedAt: new Date() })
+							.set({
+								subscriptionTier: planKey,
+								subscriptionEndsAt: null,
+								addons: remainingAddons,
+								updatedAt: new Date()
+							})
 							.where(eq(vendor.id, vendorId));
 						const fromPlanName =
 							(record.subscriptionTier ?? 'plan').charAt(0).toUpperCase() +

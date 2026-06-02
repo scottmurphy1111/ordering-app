@@ -32,6 +32,8 @@ export type EmailCategory =
 	| 'special_order_request_received_vendor'
 	| 'special_order_accepted_vendor'
 	| 'special_order_declined_by_customer_vendor'
+	| 'special_order_balance_paid'
+	| 'special_order_balance_reminder'
 	| 'subscription_confirmed'
 	| 'subscription_tier_changed'
 	| 'subscription_interval_changed'

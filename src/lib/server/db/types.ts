@@ -15,9 +15,17 @@ export const orderStatusEnum = pgEnum('order_status', [
 
 export const paymentStatusEnum = pgEnum('payment_status', [
 	'pending',
+	'deposit_paid',
 	'paid',
 	'failed',
 	'refunded',
+	'void'
+]);
+
+export const specialOrderPaymentStatusEnum = pgEnum('special_order_payment_status', [
+	'scheduled',
+	'paid',
+	'overdue',
 	'void'
 ]);
 

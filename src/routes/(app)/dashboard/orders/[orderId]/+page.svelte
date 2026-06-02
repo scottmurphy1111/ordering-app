@@ -18,6 +18,8 @@
 	import { actionConfig } from '$lib/utils/order-lifecycle';
 	import OrderStatusStepper from '$lib/components/OrderStatusStepper.svelte';
 	import { SvelteDate } from 'svelte/reactivity';
+	import { untrack, tick } from 'svelte';
+	import { Switch } from '$lib/components/ui/switch';
 	import { toast } from '$lib/toast';
 	import { enhanceWithToasts } from '$lib/forms/enhance-with-toasts';
 
@@ -45,6 +47,43 @@
 			selectedModifiers: Array<{ name: string; priceAdjustment: number }>;
 		}>
 	);
+
+	const payments = $derived(data.payments ?? []);
+	const depositRow = $derived(payments.find((p) => p.label === 'Deposit'));
+	const balanceRow = $derived(payments.find((p) => p.label === 'Balance'));
+
+	function formatPaymentDate(d: Date | string | null) {
+		if (!d) return null;
+		return new Intl.DateTimeFormat('en-US', {
+			month: 'short',
+			day: 'numeric',
+			year: 'numeric'
+		}).format(new Date(d));
+	}
+
+	function copyBalanceLink() {
+		if (!data.balanceLink) return;
+		navigator.clipboard.writeText(data.balanceLink).then(() => {
+			toast.success('Balance link copied to clipboard');
+		});
+	}
+
+	// Effective auto-reminder state for this balance: per-order override falls back
+	// to the vendor default. Initialized once; the toggle form keeps it in sync.
+	let remindersOn = $state(
+		untrack(() => {
+			const b = data.payments?.find((p) => p.label === 'Balance');
+			return b?.remindersEnabled ?? data.balanceRemindersDefault ?? true;
+		})
+	);
+	let remindersForm: HTMLFormElement | undefined = $state();
+
+	const reminderKindLabels: Record<string, string> = {
+		upcoming_7d: '7 days before',
+		upcoming_1d: '1 day before',
+		overdue: 'Overdue',
+		manual: 'Manual'
+	};
 
 	let approvePending = $state(false);
 	let submittingAction = $state<string | null>(null);
@@ -176,16 +215,6 @@
 		<Icon icon="mdi:chevron-left" class="h-4 w-4" /> Orders
 	</a>
 
-	{#if data.originatingRequest}
-		<a
-			href={resolve(`/dashboard/special-orders/${data.originatingRequest.id}` as `/${string}`)}
-			class="mb-4 inline-flex items-center gap-1 text-sm text-muted-foreground transition-colors hover:text-foreground"
-		>
-			<Icon icon="mdi:link-variant" class="h-4 w-4" />
-			Originated from special request from {data.originatingRequest.customerName}
-		</a>
-	{/if}
-
 	{#if actionError}
 		<Alert severity="error" class="mb-4">{actionError}</Alert>
 	{/if}
@@ -204,6 +233,8 @@
 					<StatusBadge variant="danger">payment failed</StatusBadge>
 				{:else if order.paymentStatus === 'void'}
 					<StatusBadge tone="bg-gray-100 text-gray-600">void</StatusBadge>
+				{:else if order.paymentStatus === 'deposit_paid'}
+					<StatusBadge tone="bg-amber-50 text-amber-700">deposit paid</StatusBadge>
 				{:else}
 					<StatusBadge tone="bg-amber-50 text-amber-700">pending payment</StatusBadge>
 				{/if}
@@ -412,6 +443,27 @@
 		</div>
 	{/if}
 
+	<!-- Originated from a special request -->
+	{#if data.originatingRequest}
+		<Card class="mb-4">
+			<CardContent class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+				<div class="flex items-center gap-2 text-sm text-gray-700">
+					<Icon icon="mdi:link-variant" class="h-4 w-4 shrink-0 text-muted-foreground" />
+					Originated from special request from
+					<span class="font-medium text-gray-900">{data.originatingRequest.customerName}</span>
+				</div>
+				<Button
+					href={resolve(`/dashboard/special-orders/${data.originatingRequest.id}` as `/${string}`)}
+					variant="outline"
+					class="shrink-0"
+				>
+					View request
+					<Icon icon="mdi:arrow-right" class="h-3.5 w-3.5" />
+				</Button>
+			</CardContent>
+		</Card>
+	{/if}
+
 	<!-- Customer info -->
 	<Card class="mb-4">
 		<CardHeader>
@@ -505,6 +557,134 @@
 			</div>
 		</CardContent>
 	</Card>
+
+	<!-- Payments (deposit + balance) -->
+	{#if depositRow && balanceRow}
+		<Card class="mb-4">
+			<CardHeader>
+				<CardTitle class="text-xs font-semibold tracking-wide text-muted-foreground uppercase"
+					>Payments</CardTitle
+				>
+			</CardHeader>
+			<CardContent class="space-y-3">
+				<div class="flex flex-col gap-2 text-sm">
+					<span class="text-gray-700">
+						<span class="font-medium text-gray-900"
+							>Deposit {formatCents(depositRow.amountCents)}</span
+						>
+						{#if depositRow.status === 'paid'}
+							<span class="text-success"> · paid</span>
+						{:else}
+							<span class="text-gray-500"> · {depositRow.status}</span>
+						{/if}
+					</span>
+					<span class="text-gray-700">
+						<span class="font-medium text-gray-900"
+							>Balance {formatCents(balanceRow.amountCents)}</span
+						>
+						{#if balanceRow.status === 'paid'}
+							<span class="text-success"> · paid</span>
+						{:else}
+							<span class="text-amber-700">
+								· due {formatPaymentDate(balanceRow.dueAt) ?? 'later'}</span
+							>
+						{/if}
+					</span>
+				</div>
+				{#if balanceRow.status !== 'paid' && data.balanceLink}
+					<div
+						class="flex flex-col gap-2 border-t border-gray-100 pt-3 sm:flex-row sm:items-center"
+					>
+						<input
+							type="text"
+							readonly
+							value={data.balanceLink}
+							class="h-8 w-full flex-1 rounded-lg border border-gray-200 bg-gray-50 px-3 text-xs text-gray-600 focus:outline-none"
+						/>
+						<Button
+							type="button"
+							variant="outline"
+							size="default"
+							class="shrink-0"
+							onclick={copyBalanceLink}
+						>
+							<Icon icon="mdi:content-copy" class="h-3.5 w-3.5" />
+							Copy balance link
+						</Button>
+					</div>
+					<p class="text-xs text-gray-400">
+						Send this link to the customer to collect the balance.
+					</p>
+				{/if}
+
+				<!-- Automatic-reminder toggle -->
+				<div class="flex items-start justify-between gap-3 border-t border-gray-100 pt-3">
+					<div class="min-w-0">
+						<p class="text-sm font-medium text-gray-900">Automatic reminders</p>
+						<p class="mt-0.5 text-xs text-gray-400">
+							7 days and 1 day before due, plus once if overdue.
+						</p>
+					</div>
+					<form
+						method="post"
+						action="?/toggleBalanceReminders"
+						bind:this={remindersForm}
+						use:enhance={enhanceWithToasts({
+							successMessage: 'Reminder settings updated',
+							preserveValues: true,
+							onError: () => {
+								remindersOn = !remindersOn;
+							}
+						})}
+					>
+						<input type="hidden" name="id" value={balanceRow.id} />
+						<input type="hidden" name="enabled" value={remindersOn ? 'on' : ''} />
+						<Switch
+							checked={remindersOn}
+							onCheckedChange={async (v) => {
+								remindersOn = v === true;
+								await tick();
+								remindersForm?.requestSubmit();
+							}}
+							aria-label="Toggle automatic reminders"
+						/>
+					</form>
+				</div>
+
+				<!-- Manual send + reminder history -->
+				<div class="space-y-2 border-t border-gray-100 pt-3">
+					<div class="flex items-center justify-between gap-3">
+						<p class="text-sm font-medium text-gray-900">Reminders sent</p>
+						{#if balanceRow.status !== 'paid' && balanceRow.status !== 'void'}
+							<form
+								method="post"
+								action="?/sendBalanceReminder"
+								use:enhance={enhanceWithToasts({ successMessage: 'Reminder sent' })}
+							>
+								<input type="hidden" name="id" value={balanceRow.id} />
+								<Button type="submit" variant="outline" size="default" class="shrink-0">
+									<Icon icon="mdi:email-outline" class="h-3.5 w-3.5" />
+									Send reminder
+								</Button>
+							</form>
+						{/if}
+					</div>
+					{#if data.reminders.length > 0}
+						<ul class="space-y-1">
+							{#each data.reminders as r (r.id)}
+								<li class="flex items-center justify-between text-xs text-gray-500">
+									<span>{reminderKindLabels[r.kind] ?? r.kind}</span>
+									<span class="text-gray-400">{formatPaymentDate(r.sentAt)}</span>
+								</li>
+							{/each}
+						</ul>
+					{:else}
+						<p class="text-xs text-gray-400">No reminders sent yet.</p>
+					{/if}
+				</div>
+			</CardContent>
+		</Card>
+	{/if}
 
 	<!-- Notes -->
 	{#if order.notes}

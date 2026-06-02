@@ -18,7 +18,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 		}),
 		db.query.vendor.findFirst({
 			where: eq(vendor.id, vendorId),
-			columns: { notificationPrefs: true }
+			columns: { notificationPrefs: true, balanceRemindersEnabled: true }
 		})
 	]);
 
@@ -26,7 +26,8 @@ export const load: PageServerLoad = async ({ locals }) => {
 
 	return {
 		entries,
-		prefs
+		prefs,
+		balanceRemindersEnabled: vendorRow?.balanceRemindersEnabled ?? true
 	};
 };
 
@@ -53,9 +54,13 @@ export const actions: Actions = {
 
 			const marketingOptIn = marketingRaw === 'on' || marketingRaw === 'true';
 
+			const balanceRemindersRaw = formData.get('balanceRemindersEnabled');
+			const balanceRemindersEnabled =
+				balanceRemindersRaw === 'on' || balanceRemindersRaw === 'true';
+
 			await db
 				.update(vendor)
-				.set({ notificationPrefs: { emailOptOuts, marketingOptIn } })
+				.set({ notificationPrefs: { emailOptOuts, marketingOptIn }, balanceRemindersEnabled })
 				.where(eq(vendor.id, vendorId));
 
 			return { success: true };

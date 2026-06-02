@@ -196,10 +196,9 @@
 				<button
 					type="button"
 					onclick={onAdd}
-					class="add-btn rounded-lg px-3 py-1.5 text-xs font-medium transition-all {isAdding
+					class="add-btn rounded-lg bg-neutral-900 px-3 py-1.5 text-xs font-medium text-white transition-all {isAdding
 						? 'pulsing'
 						: ''} {wasJustAdded ? 'added' : ''}"
-					style="background-color: var(--accent-color); color: var(--accent-foreground);"
 				>
 					{wasJustAdded ? '✓ Added' : '+ Add'}
 				</button>

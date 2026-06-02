@@ -6,6 +6,7 @@ import Stripe from 'stripe';
 import { sendEmail } from '$lib/server/email';
 import { customDateOrderRecoveredEmail } from '$lib/server/email/templates/customDateOrderRecovered';
 import { vendorUrl } from '$lib/server/vendor-origin';
+import { reconcileSpecialOrderInstallment } from '$lib/server/special-orders/payments';
 
 type OrderRow = typeof orders.$inferSelect;
 
@@ -42,6 +43,13 @@ export async function reconcilePaymentStatus(order: OrderRow, vendorId: number):
 
 		const stripe = new Stripe(vendorRecord.stripeSecretKey);
 		const pi = await stripe.paymentIntents.retrieve(order.stripePaymentIntentId);
+
+		// Special-order installment PIs are reconciled by the installment reconciler
+		// (deposit_paid vs paid), not blanket-marked 'paid' here.
+		if (pi.metadata?.paymentPhase) {
+			if (pi.status === 'succeeded') await reconcileSpecialOrderInstallment(pi, vendorId);
+			return (await db.query.orders.findFirst({ where: eq(orders.id, order.id) })) ?? order;
+		}
 
 		if (pi.status === 'succeeded') {
 			const [updated] = await db

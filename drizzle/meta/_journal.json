@@ -8,6 +8,20 @@
       "when": 1780277317302,
       "tag": "0000_chubby_sabretooth",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1780336760210,
+      "tag": "0001_tired_junta",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1780344323520,
+      "tag": "0002_yellow_ricochet",
+      "breakpoints": true
     }
   ]
 }

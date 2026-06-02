@@ -84,6 +84,10 @@ export const vendor = pgTable(
 		// and quotes are unaffected.
 		acceptsRequests: boolean('accepts_requests').default(true).notNull(),
 
+		// Default for special-order balance auto-reminders. Per-balance
+		// special_order_payments.reminders_enabled overrides this (null = inherit).
+		balanceRemindersEnabled: boolean('balance_reminders_enabled').default(true).notNull(),
+
 		// Font pairing: heading font + body font slugs. Defaults match
 		// the current hardcoded Fraunces + DM Sans combination.
 		fontPair: varchar('font_pair', { length: 32 }).default('fraunces-dm-sans').notNull(),

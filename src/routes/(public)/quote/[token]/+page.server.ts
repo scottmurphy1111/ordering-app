@@ -3,8 +3,13 @@ import { fail, redirect } from '@sveltejs/kit';
 import Stripe from 'stripe';
 import { db } from '$lib/server/db';
 import { eq, and } from 'drizzle-orm';
-import { specialOrderQuotes, specialOrderRequests } from '$lib/server/db/special-orders';
+import {
+	specialOrderQuotes,
+	specialOrderRequests,
+	specialOrderPayments
+} from '$lib/server/db/special-orders';
 import { orders } from '$lib/server/db/schema';
+import { generateToken } from '$lib/server/tokens';
 import { orderItems } from '$lib/server/db/orders';
 import { vendor as vendorTable, vendorUsers } from '$lib/server/db/vendor';
 import { user } from '$lib/server/db/auth.schema';
@@ -55,6 +60,8 @@ export const actions: Actions = {
 				id: true,
 				requestId: true,
 				priceCents: true,
+				depositCents: true,
+				balanceDueAt: true,
 				acceptedAt: true,
 				declinedAt: true,
 				expiresAt: true
@@ -173,9 +180,40 @@ export const actions: Actions = {
 			notes: null
 		});
 
+		// Catering: split into deposit + balance when the quote sets a deposit.
+		// No deposit => single full payment (legacy behaviour, one 'Payment' row).
+		const hasDeposit = quote.depositCents != null && quote.depositCents < quote.priceCents;
+		const firstAmount = hasDeposit ? quote.depositCents! : quote.priceCents;
+
+		const [firstPayment] = await db
+			.insert(specialOrderPayments)
+			.values({
+				orderId: order.id,
+				requestId: requestRow.id,
+				vendorId,
+				label: hasDeposit ? 'Deposit' : 'Payment',
+				amountCents: firstAmount,
+				dueAt: new Date(),
+				status: 'scheduled',
+				payToken: generateToken()
+			})
+			.returning();
+		if (hasDeposit) {
+			await db.insert(specialOrderPayments).values({
+				orderId: order.id,
+				requestId: requestRow.id,
+				vendorId,
+				label: 'Balance',
+				amountCents: quote.priceCents - quote.depositCents!,
+				dueAt: quote.balanceDueAt,
+				status: 'scheduled',
+				payToken: generateToken()
+			});
+		}
+
 		const pi = await stripe.paymentIntents.create(
 			{
-				amount: quote.priceCents,
+				amount: firstAmount,
 				currency: 'usd',
 				customer: stripeCustomer.id,
 				setup_future_usage: 'off_session',
@@ -183,11 +221,17 @@ export const actions: Actions = {
 				metadata: {
 					orderId: String(order.id),
 					vendorSlug: vendorCtx.slug,
-					orderNumber: order.orderNumber
+					orderNumber: order.orderNumber,
+					paymentPhase: hasDeposit ? 'deposit' : 'full',
+					specialOrderPaymentId: String(firstPayment.id)
 				}
 			},
 			{ idempotencyKey: `pi-create:${vendorId}:quote:${token}` }
 		);
+		await db
+			.update(specialOrderPayments)
+			.set({ stripePaymentIntentId: pi.id })
+			.where(eq(specialOrderPayments.id, firstPayment.id));
 
 		await db
 			.update(orders)

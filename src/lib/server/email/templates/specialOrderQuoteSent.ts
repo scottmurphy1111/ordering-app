@@ -8,6 +8,14 @@ function escapeHtml(str: string): string {
 		.replace(/"/g, '&quot;');
 }
 
+function fmtDate(d: Date | string): string {
+	return new Intl.DateTimeFormat('en-US', {
+		month: 'long',
+		day: 'numeric',
+		year: 'numeric'
+	}).format(typeof d === 'string' ? new Date(d) : d);
+}
+
 export function specialOrderQuoteSentEmail({
 	vendorName,
 	primaryColor,
@@ -16,7 +24,10 @@ export function specialOrderQuoteSentEmail({
 	priceCents,
 	message,
 	acceptUrl,
-	declineUrl
+	declineUrl,
+	depositCents,
+	balanceCents,
+	balanceDueAt
 }: {
 	vendorName: string;
 	primaryColor?: string;
@@ -26,7 +37,26 @@ export function specialOrderQuoteSentEmail({
 	message: string | null;
 	acceptUrl: string;
 	declineUrl: string;
+	depositCents?: number | null;
+	balanceCents?: number | null;
+	balanceDueAt?: Date | string | null;
 }) {
+	const hasDeposit = depositCents != null && balanceCents != null;
+	const priceBlock = hasDeposit
+		? `
+    <div style="margin-bottom:24px;padding:20px;background:#f0fdf4;border-radius:8px;text-align:center;">
+      <p style="margin:0 0 4px;font-size:12px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:0.05em;">Deposit due on acceptance</p>
+      <p style="margin:0;font-size:32px;font-weight:700;color:#111827;">${formatCents(depositCents)}</p>
+      <p style="margin:12px 0 0;font-size:14px;color:#374151;">Balance${
+				balanceDueAt ? ` due ${fmtDate(balanceDueAt)}` : ''
+			}: <strong>${formatCents(balanceCents)}</strong></p>
+      <p style="margin:6px 0 0;font-size:13px;color:#6b7280;">Order total <strong>${formatCents(priceCents)}</strong>. You'll pay the deposit now to confirm; we'll send a link for the balance.</p>
+    </div>`
+		: `
+    <div style="margin-bottom:24px;padding:20px;background:#f0fdf4;border-radius:8px;text-align:center;">
+      <p style="margin:0 0 4px;font-size:12px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:0.05em;">Quoted price</p>
+      <p style="margin:0;font-size:32px;font-weight:700;color:#111827;">${formatCents(priceCents)}</p>
+    </div>`;
 	const messageBlock = message
 		? `
     <div style="margin-bottom:24px;padding:16px;background:#f9fafb;border-radius:8px;border-left:4px solid #e5e7eb;">
@@ -39,10 +69,7 @@ export function specialOrderQuoteSentEmail({
     <h1 style="margin:0 0 4px;font-size:24px;font-weight:700;color:#111827;">You have a quote!</h1>
     <p style="margin:0 0 24px;font-size:15px;color:#6b7280;">Hey ${escapeHtml(customerName)}, ${escapeHtml(vendorName)} has sent you a quote for your custom order request.</p>
 
-    <div style="margin-bottom:24px;padding:20px;background:#f0fdf4;border-radius:8px;text-align:center;">
-      <p style="margin:0 0 4px;font-size:12px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:0.05em;">Quoted price</p>
-      <p style="margin:0;font-size:32px;font-weight:700;color:#111827;">${formatCents(priceCents)}</p>
-    </div>
+    ${priceBlock}
 
     ${messageBlock}
 

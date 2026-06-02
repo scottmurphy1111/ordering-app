@@ -35,6 +35,15 @@
 		}).format(new Date(s + 'T12:00:00Z'));
 	}
 
+	function formatQuoteDate(d: Date | string | null) {
+		if (!d) return '';
+		return new Intl.DateTimeFormat('en-US', {
+			month: 'short',
+			day: 'numeric',
+			year: 'numeric'
+		}).format(new Date(d));
+	}
+
 	const isAccepted = $derived(!!quote?.acceptedAt || !!form?.acceptSuccess);
 	const isDeclined = $derived(!!quote?.declinedAt || !!form?.declineSuccess);
 	let submittingAction = $state<'accept' | 'decline' | null>(null);
@@ -160,6 +169,23 @@
 			<div class="mb-5 rounded-lg border border-gray-100 bg-gray-50 px-5 py-4 text-center">
 				<p class="mb-1 text-xs font-medium tracking-wide text-gray-500 uppercase">Quoted price</p>
 				<p class="text-3xl font-bold text-foreground">{formatCents(quote.priceCents)}</p>
+				{#if quote.depositCents}
+					<div class="mt-3 space-y-1 border-t border-gray-200 pt-3 text-sm">
+						<div class="flex justify-between">
+							<span class="text-gray-600">Deposit due on acceptance</span>
+							<span class="font-semibold text-foreground">{formatCents(quote.depositCents)}</span>
+						</div>
+						<div class="flex justify-between">
+							<span class="text-gray-600">Balance due {formatQuoteDate(quote.balanceDueAt)}</span>
+							<span class="text-foreground"
+								>{formatCents(quote.priceCents - quote.depositCents)}</span
+							>
+						</div>
+						<p class="pt-1 text-xs text-gray-500">
+							You'll pay the deposit now to confirm. We'll send a link for the balance.
+						</p>
+					</div>
+				{/if}
 			</div>
 
 			<!-- Quote message -->

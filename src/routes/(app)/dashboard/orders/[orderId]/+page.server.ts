@@ -1,10 +1,15 @@
 import type { PageServerLoad, Actions } from './$types';
 import { error, fail } from '@sveltejs/kit';
 import { db } from '$lib/server/db';
-import { eq, and } from 'drizzle-orm';
+import { eq, and, desc } from 'drizzle-orm';
 import { orders, orderItems } from '$lib/server/db/schema';
-import { specialOrderRequests } from '$lib/server/db/special-orders';
+import {
+	specialOrderRequests,
+	specialOrderPayments,
+	specialOrderReminders
+} from '$lib/server/db/special-orders';
 import { vendor } from '$lib/server/db/vendor';
+import { sendBalanceReminder } from '$lib/server/special-orders/reminders';
 import Stripe from 'stripe';
 import { sendEmail } from '$lib/server/email';
 import { vendorUrl } from '$lib/server/vendor-origin';
@@ -44,7 +49,43 @@ export const load: PageServerLoad = async ({ locals, params }) => {
 		originatingRequest = req ?? null;
 	}
 
-	return { order, originatingRequest };
+	// Special-order installment rows (deposit/balance/full), if any. The Balance
+	// row carries a tokenized link the vendor can copy to collect the balance.
+	const payments = await db
+		.select()
+		.from(specialOrderPayments)
+		.where(eq(specialOrderPayments.orderId, order.id))
+		.orderBy(specialOrderPayments.id);
+	const balanceRow = payments.find((p) => p.label === 'Balance');
+	const balanceLink = balanceRow
+		? vendorUrl(locals.vendor!.slug, `/balance/${balanceRow.payToken}`)
+		: null;
+
+	// Reminder history + the vendor default, only when a Balance installment exists.
+	let reminders: Array<{ id: number; kind: string; sentAt: Date; sentTo: string | null }> = [];
+	let balanceRemindersDefault = true;
+	if (balanceRow) {
+		const [reminderRows, vendorRow] = await Promise.all([
+			db
+				.select({
+					id: specialOrderReminders.id,
+					kind: specialOrderReminders.kind,
+					sentAt: specialOrderReminders.sentAt,
+					sentTo: specialOrderReminders.sentTo
+				})
+				.from(specialOrderReminders)
+				.where(eq(specialOrderReminders.paymentId, balanceRow.id))
+				.orderBy(desc(specialOrderReminders.sentAt)),
+			db.query.vendor.findFirst({
+				where: eq(vendor.id, vendorId),
+				columns: { balanceRemindersEnabled: true }
+			})
+		]);
+		reminders = reminderRows;
+		balanceRemindersDefault = vendorRow?.balanceRemindersEnabled ?? true;
+	}
+
+	return { order, originatingRequest, payments, balanceLink, reminders, balanceRemindersDefault };
 };
 
 function isRedirect(err: unknown): boolean {
@@ -114,6 +155,101 @@ export const actions: Actions = {
 		} catch (err) {
 			if (isRedirect(err)) throw err;
 			console.error('[updateStatus] error:', err);
+			return fail(500, { error: 'Something went wrong on our end. Please try again.' });
+		}
+	},
+
+	// Manual balance reminder — always sends (vendor explicitly clicked), bypassing
+	// the auto-reminder toggles. Logged as kind 'manual'.
+	sendBalanceReminder: async ({ request, locals }) => {
+		try {
+			const vendorId = locals.vendorId!;
+			const formData = await request.formData();
+			const id = parseInt(formData.get('id')?.toString() ?? '');
+			if (isNaN(id)) return fail(400, { error: 'Invalid payment.' });
+
+			const payment = await db.query.specialOrderPayments.findFirst({
+				where: and(eq(specialOrderPayments.id, id), eq(specialOrderPayments.vendorId, vendorId))
+			});
+			if (!payment || payment.label !== 'Balance')
+				return fail(400, { error: 'No balance to remind on.' });
+			if (payment.status === 'paid' || payment.status === 'void')
+				return fail(400, { error: 'This balance is already settled.' });
+			if (payment.orderId == null) return fail(400, { error: 'Balance has no order.' });
+
+			const [orderRow, vendorRow] = await Promise.all([
+				db.query.orders.findFirst({
+					where: and(eq(orders.id, payment.orderId), eq(orders.vendorId, vendorId)),
+					columns: { orderNumber: true, customerName: true, customerEmail: true }
+				}),
+				db.query.vendor.findFirst({
+					where: eq(vendor.id, vendorId),
+					columns: {
+						name: true,
+						email: true,
+						backgroundColor: true,
+						slug: true,
+						subscriptionTier: true,
+						timezone: true
+					}
+				})
+			]);
+			if (!orderRow) return fail(404, { error: 'Order not found.' });
+			if (!orderRow.customerEmail)
+				return fail(400, { error: 'This order has no customer email to send to.' });
+			if (!vendorRow) return fail(500, { error: 'Vendor not found.' });
+
+			await sendBalanceReminder({
+				payment: {
+					id: payment.id,
+					payToken: payment.payToken,
+					amountCents: payment.amountCents,
+					dueAt: payment.dueAt,
+					status: payment.status
+				},
+				order: {
+					orderNumber: orderRow.orderNumber,
+					customerName: orderRow.customerName,
+					customerEmail: orderRow.customerEmail
+				},
+				vendor: {
+					name: vendorRow.name,
+					email: vendorRow.email,
+					backgroundColor: vendorRow.backgroundColor,
+					slug: vendorRow.slug,
+					subscriptionTier: vendorRow.subscriptionTier,
+					timezone: vendorRow.timezone
+				},
+				vendorId,
+				kind: 'manual'
+			});
+
+			return { success: true };
+		} catch (err) {
+			console.error('[sendBalanceReminder] error:', err);
+			return fail(500, { error: 'Something went wrong on our end. Please try again.' });
+		}
+	},
+
+	// Per-order auto-reminder override. Writes an explicit boolean to the Balance
+	// payment's reminders_enabled (overrides the vendor default).
+	toggleBalanceReminders: async ({ request, locals }) => {
+		try {
+			const vendorId = locals.vendorId!;
+			const formData = await request.formData();
+			const id = parseInt(formData.get('id')?.toString() ?? '');
+			if (isNaN(id)) return fail(400, { error: 'Invalid payment.' });
+			const enabledRaw = formData.get('enabled');
+			const enabled = enabledRaw === 'on' || enabledRaw === 'true';
+
+			await db
+				.update(specialOrderPayments)
+				.set({ remindersEnabled: enabled })
+				.where(and(eq(specialOrderPayments.id, id), eq(specialOrderPayments.vendorId, vendorId)));
+
+			return { success: true };
+		} catch (err) {
+			console.error('[toggleBalanceReminders] error:', err);
 			return fail(500, { error: 'Something went wrong on our end. Please try again.' });
 		}
 	},

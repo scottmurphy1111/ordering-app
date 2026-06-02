@@ -36,6 +36,7 @@
 		new SvelteSet(untrack(() => data.prefs.emailOptOuts ?? []))
 	);
 	let marketingOptIn = $state(untrack(() => data.prefs.marketingOptIn));
+	let balanceRemindersEnabled = $state(untrack(() => data.balanceRemindersEnabled));
 
 	function toggleCategory(cat: string, currentlyOn: boolean) {
 		if (currentlyOn) optOuts.add(cat);
@@ -211,6 +212,11 @@
 				>
 					<input type="hidden" name="emailOptOuts" value={optOutsSerialized} />
 					<input type="hidden" name="marketingOptIn" value={marketingOptIn ? 'on' : ''} />
+					<input
+						type="hidden"
+						name="balanceRemindersEnabled"
+						value={balanceRemindersEnabled ? 'on' : ''}
+					/>
 
 					{#each Object.keys(GROUP_LABELS) as groupKey (groupKey)}
 						{@const items = grouped[groupKey] ?? []}
@@ -267,6 +273,29 @@
 							</div>
 						{/if}
 					{/each}
+
+					<div>
+						<h3 class="text-xs font-medium tracking-wider text-muted-foreground uppercase">
+							Custom orders
+						</h3>
+						<div class="mt-3 flex items-start justify-between bg-background py-3">
+							<div class="pr-4">
+								<p class="text-sm font-medium text-foreground">
+									Send automatic balance reminders to customers
+								</p>
+								<p class="mt-0.5 text-xs text-muted-foreground">
+									Customers get a reminder 7 days and 1 day before the balance is due, and once if
+									it's overdue.
+								</p>
+							</div>
+							<Switch
+								checked={balanceRemindersEnabled}
+								onCheckedChange={(v) => {
+									balanceRemindersEnabled = v === true;
+								}}
+							/>
+						</div>
+					</div>
 				</form>
 			</CardContent>
 			<CardFooter class="gap-2">

@@ -3,6 +3,7 @@ import type { PageServerLoad } from './$types';
 import { db } from '$lib/server/db';
 import { eq, and } from 'drizzle-orm';
 import { orders } from '$lib/server/db/orders';
+import { specialOrderPayments } from '$lib/server/db/special-orders';
 import Stripe from 'stripe';
 
 export const load: PageServerLoad = async ({ url, locals }) => {
@@ -26,6 +27,13 @@ export const load: PageServerLoad = async ({ url, locals }) => {
 
 	let clientSecret: string;
 	let intentType: 'payment' | 'setup';
+	// The amount Stripe will actually charge now (the PI amount) — equals
+	// order.total for a normal order, but is the deposit for a deposit order.
+	// Null for the setup-intent branch (no charge now); UI falls back to total.
+	let amountDueNowCents: number | null = null;
+	// True when the active PI already succeeded (or the order is fully paid) — the
+	// page must NOT mount Elements on a terminal intent (it hangs on the skeleton).
+	let alreadyPaid = false;
 
 	if (order.stripeSetupIntentId) {
 		// Custom-date order: retrieve the SetupIntent
@@ -39,9 +47,29 @@ export const load: PageServerLoad = async ({ url, locals }) => {
 		if (!paymentIntent.client_secret) throw error(500, 'Could not retrieve payment details');
 		clientSecret = paymentIntent.client_secret;
 		intentType = 'payment';
+		amountDueNowCents = paymentIntent.amount;
+		alreadyPaid = paymentIntent.status === 'succeeded' || order.paymentStatus === 'paid';
 	} else {
 		throw error(400, 'Payment not initialized for this order');
 	}
+
+	// Deposit/balance split for special orders. Present only when both a Deposit
+	// and a Balance installment exist; null for normal and no-deposit orders.
+	const paymentRows = await db
+		.select()
+		.from(specialOrderPayments)
+		.where(eq(specialOrderPayments.orderId, orderId))
+		.orderBy(specialOrderPayments.id);
+	const depositPayment = paymentRows.find((p) => p.label === 'Deposit');
+	const balancePayment = paymentRows.find((p) => p.label === 'Balance');
+	const deposit =
+		depositPayment && balancePayment
+			? {
+					depositCents: depositPayment.amountCents,
+					balanceCents: balancePayment.amountCents,
+					balanceDueAt: balancePayment.dueAt
+				}
+			: null;
 
 	// Create a Customer Session so the PaymentElement can redisplay saved cards.
 	// Required for PMs in any allow_redisplay state — including 'unspecified' (legacy
@@ -86,6 +114,9 @@ export const load: PageServerLoad = async ({ url, locals }) => {
 		},
 		clientSecret,
 		intentType,
+		amountDueNowCents,
+		alreadyPaid,
+		deposit,
 		publishableKey: vendorRecord.stripePublishableKey,
 		customerSessionClientSecret
 	};

@@ -5,6 +5,7 @@ import { db } from '$lib/server/db';
 import { eq, sql } from 'drizzle-orm';
 import { vendor } from '$lib/server/db/vendor';
 import { orders } from '$lib/server/db/schema';
+import { specialOrderPayments } from '$lib/server/db/special-orders';
 import { sendEmail } from '$lib/server/email';
 import { recordNotification, shouldSendEmail } from '$lib/server/notifications';
 import { orderConfirmedEmail } from '$lib/server/email/templates/orderConfirmed';
@@ -14,6 +15,7 @@ import { customDateOrderRecoveredEmail } from '$lib/server/email/templates/custo
 import { specialOrderAcceptedEmail } from '$lib/server/email/templates/specialOrderAccepted';
 import { specialOrderAcceptedVendorEmail } from '$lib/server/email/templates/specialOrderAcceptedVendor';
 import { orderReceivedVendorEmail } from '$lib/server/email/templates/orderReceivedVendor';
+import { reconcileSpecialOrderInstallment } from '$lib/server/special-orders/payments';
 import { sendSms } from '$lib/server/sms';
 import type { AddonItem } from '$lib/billing';
 import { vendorUrl } from '$lib/server/vendor-origin';
@@ -101,6 +103,14 @@ async function handleEvent(event: Stripe.Event, ctx: VendorCtx) {
 	switch (event.type) {
 		case 'payment_intent.succeeded': {
 			const intent = event.data.object as Stripe.PaymentIntent;
+
+			// Catering installments: reconcile deposit/balance/full PIs against their
+			// special_order_payments row; the order's paymentStatus is derived there
+			// (deposit_paid vs paid) — never blanket 'paid'.
+			if (intent.metadata?.paymentPhase) {
+				await reconcileSpecialOrderInstallment(intent, ctx.id);
+				break;
+			}
 
 			const existing = await db.query.orders.findFirst({
 				where: eq(orders.stripePaymentIntentId, intent.id),
@@ -291,6 +301,19 @@ async function handleEvent(event: Stripe.Event, ctx: VendorCtx) {
 		case 'payment_intent.payment_failed':
 		case 'payment_intent.canceled': {
 			const intent = event.data.object as Stripe.PaymentIntent;
+
+			// A failed BALANCE payment must not cancel a deposit-paid order — the deposit
+			// was already collected. Leave the order untouched (stays deposit_paid) and
+			// return the Balance installment to 'scheduled' so the customer can retry the
+			// balance link. Deposit/full first-payment failures fall through and cancel
+			// as before (no money was collected).
+			if (intent.metadata?.paymentPhase === 'balance') {
+				await db
+					.update(specialOrderPayments)
+					.set({ status: 'scheduled' })
+					.where(eq(specialOrderPayments.stripePaymentIntentId, intent.id));
+				break;
+			}
 
 			const existingFailed = await db.query.orders.findFirst({
 				where: eq(orders.stripePaymentIntentId, intent.id),

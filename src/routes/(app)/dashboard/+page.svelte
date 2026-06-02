@@ -337,7 +337,7 @@
 					<div class="mb-3 border-t pt-3">
 						<h4 class="mb-1.5 text-xs font-medium tracking-wide text-gray-500 uppercase">Orders</h4>
 						<div class="h-40 overflow-y-auto">
-							{#if dayData.orders.length > 0}
+							{#if dayData.orders.length > 0 || dayData.specialOrders.length > 0}
 								{@const shown = dayData.orders.slice(0, 5)}
 								{@const remaining = dayData.orders.length - shown.length}
 								<ul class="space-y-1">
@@ -348,6 +348,25 @@
 												class="flex items-center gap-2 text-xs hover:text-primary"
 											>
 												<span class="font-mono text-gray-400">{shortOrderId(o.orderNumber)}</span>
+												<span class="min-w-0 flex-1 truncate text-gray-600"
+													>{o.customerName ?? '—'}</span
+												>
+												<span class="shrink-0 font-medium text-gray-900"
+													>${(o.total / 100).toFixed(2)}</span
+												>
+											</a>
+										</li>
+									{/each}
+									{#each dayData.specialOrders as o (o.id)}
+										<li>
+											<a
+												href={resolve(`/dashboard/orders/${o.id}`)}
+												class="flex items-center gap-2 text-xs hover:text-primary"
+											>
+												<span
+													class="shrink-0 rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-medium text-amber-700"
+													>Special</span
+												>
 												<span class="min-w-0 flex-1 truncate text-gray-600"
 													>{o.customerName ?? '—'}</span
 												>
@@ -378,7 +397,7 @@
 							Production
 						</h4>
 						<div class="h-32 overflow-y-auto">
-							{#if dayData.production.length > 0}
+							{#if dayData.production.length > 0 || dayData.specialOrders.length > 0}
 								<ul class="space-y-1">
 									{#each dayData.production as p, i (i)}
 										<li class="flex items-center justify-between gap-2">
@@ -393,6 +412,26 @@
 											<span class="shrink-0 text-xs font-semibold text-foreground tabular-nums"
 												>{p.totalQuantity}×</span
 											>
+										</li>
+									{/each}
+									{#each dayData.specialOrders as o (o.id)}
+										<li class="flex items-center justify-between gap-2">
+											<div class="min-w-0 flex-1">
+												<span class="truncate text-xs text-foreground">Custom order</span>
+												<span class="block truncate text-xs text-gray-500"
+													>{o.customerName ?? '—'}</span
+												>
+											</div>
+											<span class="shrink-0 text-[10px] text-amber-700">
+												<span class="rounded-full bg-amber-100 px-1.5 py-0.5 font-medium"
+													>Special</span
+												>
+												{#if o.scheduledFor}
+													<span class="ml-1 text-gray-500"
+														>{fmtTime(o.scheduledFor, data.vendorTimezone)}</span
+													>
+												{/if}
+											</span>
 										</li>
 									{/each}
 								</ul>

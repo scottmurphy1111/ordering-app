@@ -105,11 +105,7 @@
 			{#each data.requests as req (req.id)}
 				{@const isExpanded = expandedId === req.id}
 				{@const isPending = req.state === 'pending'}
-				<Card
-					class="p-0 transition-shadow {req.state === 'pending' || req.state === 'quoted'
-						? 'hover:shadow-md'
-						: 'opacity-60'}"
-				>
+				<Card class="p-0 transition-shadow hover:shadow-md">
 					<CardContent class="p-0">
 						<!-- Clickable header zone — collapsed view -->
 						<button
@@ -312,6 +308,13 @@
 							<Button href={resolve(`/dashboard/special-orders/${req.id}`)} variant="outline">
 								<Icon icon="mdi:send-outline" class="h-3.5 w-3.5" />
 								Send quote
+							</Button>
+						</CardFooter>
+					{:else if isExpanded}
+						<CardFooter class="justify-end">
+							<Button href={resolve(`/dashboard/special-orders/${req.id}`)} variant="outline">
+								View details
+								<Icon icon="mdi:arrow-right" class="h-3.5 w-3.5" />
 							</Button>
 						</CardFooter>
 					{/if}

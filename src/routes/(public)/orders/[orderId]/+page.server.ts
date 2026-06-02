@@ -3,6 +3,7 @@ import { error, fail, redirect } from '@sveltejs/kit';
 import { db } from '$lib/server/db';
 import { eq, and } from 'drizzle-orm';
 import { orders, orderItems } from '$lib/server/db/orders';
+import { specialOrderPayments } from '$lib/server/db/special-orders';
 import { vendor } from '$lib/server/db/vendor';
 import Stripe from 'stripe';
 import { sendEmail } from '$lib/server/email';
@@ -29,7 +30,15 @@ export const load: PageServerLoad = async ({ locals, params, depends }) => {
 		where: eq(orderItems.orderId, orderId)
 	});
 
-	return { order, items };
+	// Special-order installment rows (deposit/balance), if any — drives the
+	// "Deposit paid · Balance due" summary.
+	const payments = await db
+		.select()
+		.from(specialOrderPayments)
+		.where(eq(specialOrderPayments.orderId, orderId))
+		.orderBy(specialOrderPayments.id);
+
+	return { order, items, payments };
 };
 
 export const actions: Actions = {

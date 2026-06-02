@@ -41,6 +41,7 @@ export const load: PageServerLoad = async ({ locals, depends }) => {
 		horizonWindowRows,
 		horizonOrderRows,
 		horizonProductionRows,
+		horizonSpecialOrderRows,
 		setupChecklist
 	] = await Promise.all([
 		db
@@ -126,6 +127,29 @@ export const load: PageServerLoad = async ({ locals, depends }) => {
 			.groupBy(orderItems.name, orderItems.selectedModifiers, pickupWindows.startsAt)
 			.orderBy(desc(sum(orderItems.quantity)), asc(orderItems.name)),
 
+		// Special (catering) orders in the 3-day horizon, keyed by scheduledFor
+		db
+			.select({
+				id: orders.id,
+				orderNumber: orders.orderNumber,
+				customerName: orders.customerName,
+				total: orders.total,
+				status: orders.status,
+				paymentStatus: orders.paymentStatus,
+				scheduledFor: orders.scheduledFor
+			})
+			.from(orders)
+			.where(
+				and(
+					eq(orders.vendorId, vendorId),
+					eq(orders.type, 'special_order'),
+					ne(orders.status, 'cancelled' as typeof orders.status._.data),
+					gte(orders.scheduledFor, todayStart),
+					lt(orders.scheduledFor, horizonEnd)
+				)
+			)
+			.orderBy(asc(orders.scheduledFor)),
+
 		getSetupChecklist(vendorId)
 	]);
 
@@ -150,6 +174,20 @@ export const load: PageServerLoad = async ({ locals, depends }) => {
 				customerName: r.customerName,
 				total: r.total,
 				status: r.status
+			}));
+	}
+
+	function bucketSpecialOrders(key: string) {
+		return horizonSpecialOrderRows
+			.filter((r) => r.scheduledFor && dayKey(r.scheduledFor) === key)
+			.map((r) => ({
+				id: r.id,
+				orderNumber: r.orderNumber,
+				customerName: r.customerName,
+				total: r.total,
+				status: r.status,
+				paymentStatus: r.paymentStatus,
+				scheduledFor: r.scheduledFor
 			}));
 	}
 
@@ -200,17 +238,20 @@ export const load: PageServerLoad = async ({ locals, depends }) => {
 			today: {
 				windows: bucketWindows(todayKey),
 				orders: bucketOrders(todayKey),
-				production: bucketProduction(todayKey)
+				production: bucketProduction(todayKey),
+				specialOrders: bucketSpecialOrders(todayKey)
 			},
 			tomorrow: {
 				windows: bucketWindows(tomorrowKey),
 				orders: bucketOrders(tomorrowKey),
-				production: bucketProduction(tomorrowKey)
+				production: bucketProduction(tomorrowKey),
+				specialOrders: bucketSpecialOrders(tomorrowKey)
 			},
 			dayAfter: {
 				windows: bucketWindows(dayAfterKey),
 				orders: bucketOrders(dayAfterKey),
-				production: bucketProduction(dayAfterKey)
+				production: bucketProduction(dayAfterKey),
+				specialOrders: bucketSpecialOrders(dayAfterKey)
 			},
 			dayAfterDate: dayAfterStart
 		},

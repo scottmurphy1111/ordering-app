@@ -18,12 +18,29 @@
 	const quotes = $derived(data.quotes);
 
 	let priceDollars = $state('');
+	let depositDollars = $state('');
+	let balanceDueDate = $state('');
 	let submittingAction = $state<'sendQuote' | 'decline' | null>(null);
 
 	const priceCents = $derived.by(() => {
 		const val = parseFloat(priceDollars);
 		return isNaN(val) || val <= 0 ? '' : String(Math.round(val * 100));
 	});
+
+	const depositCents = $derived.by(() => {
+		const val = parseFloat(depositDollars);
+		return isNaN(val) || val <= 0 ? '' : String(Math.round(val * 100));
+	});
+
+	// A deposit is "set" once a positive amount is entered; the balance-due date
+	// then becomes required.
+	const hasDeposit = $derived(depositCents !== '');
+
+	// The balance can't come due after the event/target date (server-enforced too).
+	// No target date → no upper bound.
+	const balanceMaxDate = $derived(
+		req.targetDate ? new Date(req.targetDate).toISOString().slice(0, 10) : undefined
+	);
 
 	function formatDate(d: Date | string) {
 		return new Intl.DateTimeFormat('en-US', {
@@ -182,7 +199,11 @@
 							<p class="text-sm font-semibold text-green-900">Customer accepted the quote</p>
 							<p class="text-xs text-green-700">
 								Order {linkedOrder.orderNumber} · {formatCents(linkedOrder.total)} ·
-								{linkedOrder.paymentStatus === 'paid' ? 'Paid' : 'Payment pending'}
+								{linkedOrder.paymentStatus === 'paid'
+									? 'Paid in full'
+									: linkedOrder.paymentStatus === 'deposit_paid'
+										? 'Deposit paid · balance due'
+										: 'Payment pending'}
 							</p>
 						</div>
 					</div>
@@ -298,8 +319,47 @@
 								<input type="hidden" name="priceCents" value={priceCents} />
 							</div>
 						</div>
-						<div class="hidden sm:block"></div>
+						<div>
+							<label for="depositInput" class="mb-1 block text-sm font-medium text-foreground">
+								Deposit <span class="font-normal text-gray-400">(optional)</span>
+							</label>
+							<div class="relative">
+								<span
+									class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-sm text-gray-400"
+									>$</span
+								>
+								<input
+									id="depositInput"
+									type="number"
+									min="0.01"
+									step="0.01"
+									placeholder="0.00"
+									bind:value={depositDollars}
+									class="h-8 w-full rounded-lg border border-gray-300 bg-white pr-3 pl-7 text-sm text-foreground placeholder:text-gray-400 focus:border-transparent focus:ring-2 focus:ring-gray-400 focus:outline-none"
+								/>
+								<input type="hidden" name="depositCents" value={depositCents} />
+							</div>
+							<p class="mt-1.5 text-xs text-gray-400">
+								Charge a deposit now; the customer pays the balance later via a link.
+							</p>
+						</div>
 					</div>
+					{#if hasDeposit}
+						<div>
+							<label for="balanceDueInput" class="mb-1 block text-sm font-medium text-foreground">
+								Balance due date *
+							</label>
+							<input
+								id="balanceDueInput"
+								type="date"
+								name="balanceDueAt"
+								required
+								max={balanceMaxDate}
+								bind:value={balanceDueDate}
+								class="h-8 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm text-foreground placeholder:text-gray-400 focus:border-transparent focus:ring-2 focus:ring-gray-400 focus:outline-none sm:w-auto"
+							/>
+						</div>
+					{/if}
 					<div>
 						<label for="messageInput" class="mb-1 block text-sm font-medium text-foreground">
 							Message to customer <span class="font-normal text-gray-400">(optional)</span>

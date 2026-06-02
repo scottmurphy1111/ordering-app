@@ -17,12 +17,20 @@
 	let paymentError = $state('');
 	const fmt = (cents: number) =>
 		new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(cents / 100);
+	const fmtDate = (d: Date | string) =>
+		new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', year: 'numeric' }).format(
+			new Date(d)
+		);
 
 	const backgroundColor = $derived(data.vendor.backgroundColor ?? '#000000');
 	const accentColor = $derived(data.vendor.accentColor ?? '#374151');
 	const foregroundColor = $derived(data.vendor.foregroundColor ?? '#ffffff');
 
 	onMount(async () => {
+		// Never mount Elements on a terminal PaymentIntent — it never initializes and
+		// the form hangs on the skeleton. Re-visits to an already-paid order show the
+		// paid state instead (see markup below).
+		if (data.alreadyPaid) return;
 		const stripeInstance = await loadStripe(data.publishableKey);
 		if (!stripeInstance) return;
 		stripe = stripeInstance;
@@ -123,56 +131,72 @@
 			<div class="space-y-4">
 				<Card class="shadow-sm">
 					<CardContent class="p-6">
-						<h2
-							class="mb-5 text-base font-semibold text-foreground"
-							style="font-family: var(--font-heading);"
-						>
-							Payment details
-						</h2>
-
-						{#if !mountReady}
-							<div class="space-y-3">
-								<Skeleton class="h-10 rounded-lg" />
-								<Skeleton class="h-10 rounded-lg" />
-								<div class="grid grid-cols-2 gap-3">
-									<Skeleton class="h-10 rounded-lg" />
-									<Skeleton class="h-10 rounded-lg" />
-								</div>
-							</div>
-						{/if}
-
-						<form onsubmit={handleSubmit}>
-							<div id="payment-element"></div>
-
-							{#if paymentError}
+						{#if data.alreadyPaid}
+							<div class="flex flex-col items-center py-6 text-center">
 								<div
-									class="mt-4 flex items-start gap-2 rounded-lg border border-destructive/20 bg-destructive/10 px-3 py-2.5 text-sm text-destructive"
+									class="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-emerald-100 text-emerald-700"
 								>
-									<Icon icon="mdi:alert-circle-outline" class="mt-0.5 h-4 w-4 shrink-0" />
-									{paymentError}
+									<Icon icon="mdi:check" class="h-6 w-6" />
+								</div>
+								<h2
+									class="text-base font-semibold text-foreground"
+									style="font-family: var(--font-heading);"
+								>
+									This order has already been paid.
+								</h2>
+							</div>
+						{:else}
+							<h2
+								class="mb-5 text-base font-semibold text-foreground"
+								style="font-family: var(--font-heading);"
+							>
+								Payment details
+							</h2>
+
+							{#if !mountReady}
+								<div class="space-y-3">
+									<Skeleton class="h-10 rounded-lg" />
+									<Skeleton class="h-10 rounded-lg" />
+									<div class="grid grid-cols-2 gap-3">
+										<Skeleton class="h-10 rounded-lg" />
+										<Skeleton class="h-10 rounded-lg" />
+									</div>
 								</div>
 							{/if}
 
-							{#if mountReady}
-								<button
-									type="submit"
-									disabled={submitting}
-									class="mt-5 flex w-full items-center justify-center gap-2 rounded-xl px-6 py-3.5 text-sm font-semibold transition-opacity disabled:opacity-60"
-									style="background-color: {backgroundColor}; color: {foregroundColor};"
-								>
-									{#if submitting}
-										<Icon icon="mdi:loading" class="h-4 w-4 animate-spin" />
-										Processing...
-									{:else if data.intentType === 'setup'}
-										<Icon icon="mdi:lock" class="h-4 w-4" />
-										Save payment method
-									{:else}
-										<Icon icon="mdi:lock" class="h-4 w-4" />
-										Pay {fmt(data.order.total)}
-									{/if}
-								</button>
-							{/if}
-						</form>
+							<form onsubmit={handleSubmit}>
+								<div id="payment-element"></div>
+
+								{#if paymentError}
+									<div
+										class="mt-4 flex items-start gap-2 rounded-lg border border-destructive/20 bg-destructive/10 px-3 py-2.5 text-sm text-destructive"
+									>
+										<Icon icon="mdi:alert-circle-outline" class="mt-0.5 h-4 w-4 shrink-0" />
+										{paymentError}
+									</div>
+								{/if}
+
+								{#if mountReady}
+									<button
+										type="submit"
+										disabled={submitting}
+										class="mt-5 flex w-full items-center justify-center gap-2 rounded-xl px-6 py-3.5 text-sm font-semibold transition-opacity disabled:opacity-60"
+										style="background-color: {backgroundColor}; color: {foregroundColor};"
+									>
+										{#if submitting}
+											<Icon icon="mdi:loading" class="h-4 w-4 animate-spin" />
+											Processing...
+										{:else if data.intentType === 'setup'}
+											<Icon icon="mdi:lock" class="h-4 w-4" />
+											Save payment method
+										{:else}
+											<Icon icon="mdi:lock" class="h-4 w-4" />
+											Pay {fmt(data.amountDueNowCents ?? data.order.total)}
+										{/if}
+									</button>
+								{/if}
+							</form>
+						{/if}
 					</CardContent>
 				</Card>
 
@@ -257,16 +281,38 @@
 									<span>{fmt(data.order.tip)}</span>
 								</div>
 							{/if}
-							<div
-								class="flex justify-between border-t pt-2 text-base font-semibold text-foreground"
-							>
-								<span>{data.intentType === 'setup' ? 'Estimated total' : 'Total'}</span>
-								<span>{fmt(data.order.total)}</span>
-							</div>
-							{#if data.intentType === 'setup'}
+							{#if data.deposit}
+								<div class="flex justify-between border-t pt-2 text-sm text-muted-foreground">
+									<span>Order total</span>
+									<span>{fmt(data.order.total)}</span>
+								</div>
+								<div class="flex justify-between text-base font-semibold text-foreground">
+									<span>Deposit due today</span>
+									<span>{fmt(data.deposit.depositCents)}</span>
+								</div>
+								<div class="flex justify-between text-sm text-muted-foreground">
+									<span>
+										Balance{data.deposit.balanceDueAt
+											? ` due ${fmtDate(data.deposit.balanceDueAt)}`
+											: ''}
+									</span>
+									<span>{fmt(data.deposit.balanceCents)}</span>
+								</div>
 								<p class="mt-1 text-xs text-muted-foreground">
-									We'll charge this amount only after we approve your order.
+									You're paying the deposit now. We'll send a link to pay the balance.
 								</p>
+							{:else}
+								<div
+									class="flex justify-between border-t pt-2 text-base font-semibold text-foreground"
+								>
+									<span>{data.intentType === 'setup' ? 'Estimated total' : 'Total'}</span>
+									<span>{fmt(data.order.total)}</span>
+								</div>
+								{#if data.intentType === 'setup'}
+									<p class="mt-1 text-xs text-muted-foreground">
+										We'll charge this amount only after we approve your order.
+									</p>
+								{/if}
 							{/if}
 						</div>
 

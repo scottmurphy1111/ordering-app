@@ -13,7 +13,11 @@
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
 	const order = $derived(data.order);
+	const payments = $derived(data.payments ?? []);
+	const depositRow = $derived(payments.find((p) => p.label === 'Deposit'));
+	const balanceRow = $derived(payments.find((p) => p.label === 'Balance'));
 	const isPaid = $derived(order.paymentStatus === 'paid');
+	const isDepositPaid = $derived(order.paymentStatus === 'deposit_paid');
 	const isCancelled = $derived(order.status === 'cancelled');
 	const isFulfilled = $derived(order.status === 'fulfilled');
 	const isDone = $derived(isFulfilled || isCancelled);
@@ -100,7 +104,7 @@
 		<!-- Payment / confirmation card -->
 		<Card
 			class="text-center shadow-sm"
-			style={isPaid
+			style={isPaid || isDepositPaid
 				? 'border-color: var(--background-color);'
 				: order.paymentStatus === 'pending'
 					? 'border-color: #fde68a;'
@@ -180,6 +184,27 @@
 							? ` Thanks for your patience, ${order.customerName}.`
 							: ''}
 					</p>
+				{:else if isDepositPaid}
+					<div class="mb-3 flex justify-center">
+						<div
+							class="flex h-14 w-14 items-center justify-center rounded-full"
+							style="background-color: color-mix(in srgb, var(--background-color) 12%, white);"
+						>
+							<Icon
+								icon="mdi:check-circle"
+								class="h-8 w-8"
+								style="color: var(--background-color);"
+							/>
+						</div>
+					</div>
+					<h1 class="text-xl font-bold text-neutral-900" style="font-family: var(--font-heading);">
+						Deposit received!
+					</h1>
+					<p class="mt-1 text-sm text-muted-foreground">
+						Your deposit is paid{balanceRow
+							? ` — the $${(balanceRow.amountCents / 100).toFixed(2)} balance is due ${balanceRow.dueAt ? new Date(balanceRow.dueAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : 'later'}`
+							: ''}. We'll send a link to pay the balance.
+					</p>
 				{:else}
 					<div class="mb-3 flex justify-center">
 						<div class="flex h-14 w-14 items-center justify-center rounded-full bg-destructive/10">
@@ -214,7 +239,7 @@
 		</Card>
 
 		<!-- Status stepper (paid, non-cancelled orders only) -->
-		{#if isPaid && !isCancelled}
+		{#if (isPaid || isDepositPaid) && !isCancelled}
 			<Card class="shadow-sm">
 				<CardContent class="p-5">
 					<div class="mb-4 flex items-center justify-between">
@@ -471,6 +496,34 @@
 					<span>{isPendingApproval ? 'Estimated total' : 'Total'}</span>
 					<span>${(order.total / 100).toFixed(2)}</span>
 				</div>
+				{#if depositRow && balanceRow}
+					<div class="mt-1.5 flex flex-col gap-0.5 border-t pt-1.5 text-xs text-muted-foreground">
+						<div class="flex justify-between">
+							<span>
+								Deposit
+								{#if depositRow.status === 'paid'}<span class="text-primary"> paid</span>{/if}
+							</span>
+							<span>${(depositRow.amountCents / 100).toFixed(2)}</span>
+						</div>
+						<div class="flex justify-between">
+							<span>
+								Balance
+								{#if balanceRow.status === 'paid'}
+									<span class="text-primary"> paid</span>
+								{:else if balanceRow.dueAt}
+									<span>
+										due {new Date(balanceRow.dueAt).toLocaleDateString(undefined, {
+											month: 'short',
+											day: 'numeric',
+											year: 'numeric'
+										})}</span
+									>
+								{/if}
+							</span>
+							<span>${(balanceRow.amountCents / 100).toFixed(2)}</span>
+						</div>
+					</div>
+				{/if}
 				{#if isPendingApproval}
 					<p class="mt-1 text-xs text-muted-foreground">
 						Your card will only be charged after the vendor approves your order.

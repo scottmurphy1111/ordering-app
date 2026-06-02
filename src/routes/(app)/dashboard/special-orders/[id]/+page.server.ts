@@ -8,13 +8,7 @@ import { requireStaff } from '$lib/server/roles';
 import { sendEmail } from '$lib/server/email';
 import { specialOrderQuoteSentEmail } from '$lib/server/email/templates/specialOrderQuoteSent';
 import { vendorUrl } from '$lib/server/vendor-origin';
-
-function generateToken(): string {
-	const bytes = crypto.getRandomValues(new Uint8Array(16));
-	return Array.from(bytes)
-		.map((b) => b.toString(16).padStart(2, '0'))
-		.join('');
-}
+import { generateToken } from '$lib/server/tokens';
 
 export const load: PageServerLoad = async ({ params, locals }) => {
 	requireStaff(locals);
@@ -67,11 +61,60 @@ export const actions: Actions = {
 			}
 			const priceCents = Math.round(Number(priceRaw));
 
+			// Optional deposit. If set, it must be a positive amount strictly less than
+			// the full price, and a future balance-due date is required.
+			const depositRaw = formData.get('depositCents')?.toString().trim();
+			const balanceDueRaw = formData.get('balanceDueAt')?.toString().trim();
+			let depositCents: number | null = null;
+			let balanceDueAt: Date | null = null;
+			if (depositRaw) {
+				const dep = Math.round(Number(depositRaw));
+				if (isNaN(dep) || dep <= 0 || dep >= priceCents) {
+					return fail(400, {
+						error: 'Deposit must be greater than $0 and less than the total price.'
+					});
+				}
+				if (!balanceDueRaw) {
+					return fail(400, { error: 'A balance due date is required when a deposit is set.' });
+				}
+				// Noon-UTC anchor so the calendar day survives timezone round-trips.
+				const due = new Date(`${balanceDueRaw}T12:00:00Z`);
+				if (isNaN(due.getTime()) || due.getTime() <= Date.now()) {
+					return fail(400, { error: 'Balance due date must be in the future.' });
+				}
+				depositCents = dep;
+				balanceDueAt = due;
+			}
+
 			const existing = await db.query.specialOrderRequests.findFirst({
 				where: and(eq(specialOrderRequests.id, id), eq(specialOrderRequests.vendorId, vendorId)),
-				columns: { id: true, state: true, customerEmail: true, customerName: true }
+				columns: {
+					id: true,
+					state: true,
+					customerEmail: true,
+					customerName: true,
+					targetDate: true
+				}
 			});
 			if (!existing) return fail(404, { error: 'Request not found.' });
+
+			// A balance due date can't fall after the event/target date — the balance
+			// must be collected on or before the event. Compare calendar days (the raw
+			// YYYY-MM-DD input vs the target's UTC day) to avoid the noon-anchor edge.
+			if (balanceDueAt && balanceDueRaw && existing.targetDate) {
+				const targetDay = new Date(existing.targetDate).toISOString().slice(0, 10);
+				if (balanceDueRaw > targetDay) {
+					const friendly = new Date(`${targetDay}T12:00:00Z`).toLocaleDateString('en-US', {
+						month: 'long',
+						day: 'numeric',
+						year: 'numeric',
+						timeZone: 'UTC'
+					});
+					return fail(400, {
+						error: `Balance due date can't be after the event date (${friendly}).`
+					});
+				}
+			}
 			if (existing.state === 'declined') {
 				return fail(400, { error: 'Cannot send a quote for a declined request.' });
 			}
@@ -85,6 +128,8 @@ export const actions: Actions = {
 					requestId: id,
 					vendorId,
 					priceCents,
+					depositCents,
+					balanceDueAt,
 					message,
 					acceptToken: token,
 					sentByUserId: locals.user?.id ?? null
@@ -107,6 +152,9 @@ export const actions: Actions = {
 					vendorSubscriptionTier: vendor.subscriptionTier ?? undefined,
 					customerName: existing.customerName,
 					priceCents: quote.priceCents,
+					...(depositCents
+						? { depositCents, balanceCents: priceCents - depositCents, balanceDueAt }
+						: {}),
 					message: quote.message,
 					acceptUrl,
 					declineUrl

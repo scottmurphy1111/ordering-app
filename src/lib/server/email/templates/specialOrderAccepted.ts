@@ -28,7 +28,10 @@ export function specialOrderAcceptedEmail({
 	notes,
 	scheduledFor,
 	vendorTimezone = 'America/New_York',
-	orderStatusUrl
+	orderStatusUrl,
+	depositCents,
+	balanceCents,
+	balanceDueAt
 }: {
 	vendorName: string;
 	primaryColor?: string;
@@ -40,7 +43,26 @@ export function specialOrderAcceptedEmail({
 	scheduledFor?: Date | string | null;
 	vendorTimezone?: string;
 	orderStatusUrl: string;
+	depositCents?: number | null;
+	balanceCents?: number | null;
+	balanceDueAt?: Date | string | null;
 }) {
+	const hasDeposit = depositCents != null && balanceCents != null;
+	const amountBlock = hasDeposit
+		? `
+    <div style="margin-bottom:24px;padding:20px;background:#f0fdf4;border-radius:8px;text-align:center;">
+      <p style="margin:0 0 4px;font-size:12px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:0.05em;">Deposit paid</p>
+      <p style="margin:0;font-size:32px;font-weight:700;color:#111827;">${formatCents(depositCents)}</p>
+      <p style="margin:12px 0 0;font-size:14px;color:#374151;">Balance${
+				balanceDueAt ? ` due ${fmtDate(balanceDueAt, vendorTimezone)}` : ''
+			}: <strong>${formatCents(balanceCents)}</strong></p>
+      <p style="margin:6px 0 0;font-size:13px;color:#6b7280;">Order total ${formatCents(priceCents)}. We'll send a link to pay the balance.</p>
+    </div>`
+		: `
+    <div style="margin-bottom:24px;padding:20px;background:#f0fdf4;border-radius:8px;text-align:center;">
+      <p style="margin:0 0 4px;font-size:12px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:0.05em;">Amount paid</p>
+      <p style="margin:0;font-size:32px;font-weight:700;color:#111827;">${formatCents(priceCents)}</p>
+    </div>`;
 	const pickupBlock = scheduledFor
 		? `
     <div style="margin-top:24px;padding:16px;background:#f0fdf4;border-radius:8px;border-left:4px solid #22c55e;">
@@ -66,10 +88,7 @@ export function specialOrderAcceptedEmail({
       <p style="margin:0;font-size:20px;font-weight:700;color:#111827;font-family:monospace;">${escapeHtml(orderNumber)}</p>
     </div>
 
-    <div style="margin-bottom:24px;padding:20px;background:#f0fdf4;border-radius:8px;text-align:center;">
-      <p style="margin:0 0 4px;font-size:12px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:0.05em;">Amount paid</p>
-      <p style="margin:0;font-size:32px;font-weight:700;color:#111827;">${formatCents(priceCents)}</p>
-    </div>
+    ${amountBlock}
 
     ${notesBlock}
     ${pickupBlock}
