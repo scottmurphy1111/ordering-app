@@ -57,6 +57,7 @@ export type Persona = {
 	closingHeadline: string;
 	closingSubhead: string;
 	closingCtaLabel: string;
+	closingImage: string;
 };
 
 export const bakersPersona: Persona = {
@@ -179,7 +180,9 @@ export const bakersPersona: Persona = {
 
 	closingHeadline: 'Your next holiday rush, organized.',
 	closingSubhead: 'Set up your pre-order page today. Free to start, no credit card required.',
-	closingCtaLabel: 'Start for free'
+	closingCtaLabel: 'Start for free',
+	closingImage:
+		'https://images.unsplash.com/photo-1509440159596-0249088772ff?w=1600&h=600&fit=crop&q=80'
 };
 
 export const makersPersona: Persona = {
@@ -302,7 +305,9 @@ export const makersPersona: Persona = {
 
 	closingHeadline: 'Your next drop, organized.',
 	closingSubhead: 'Set up your pre-order page today. Free to start, no credit card required.',
-	closingCtaLabel: 'Start for free'
+	closingCtaLabel: 'Start for free',
+	closingImage:
+		'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=1600&h=600&fit=crop&q=80'
 };
 
 export const growersPersona: Persona = {
@@ -425,5 +430,7 @@ export const growersPersona: Persona = {
 
 	closingHeadline: 'Your next market day, organized.',
 	closingSubhead: 'Set up your pre-order page today. Free to start, no credit card required.',
-	closingCtaLabel: 'Start for free'
+	closingCtaLabel: 'Start for free',
+	closingImage:
+		'https://images.unsplash.com/photo-1488459716781-31db52582fe9?w=1600&h=600&fit=crop&q=80'
 };

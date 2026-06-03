@@ -57,34 +57,28 @@
 		</a>
 
 		<!-- Nav (desktop only) -->
-		<nav class="hidden flex-1 items-center justify-center gap-8 md:flex">
-			<a
-				href={resolve('/catalog' as `/${string}`)}
-				class="text-sm font-medium transition-opacity hover:opacity-100 {isActive('/catalog')
-					? 'opacity-100'
-					: 'opacity-75'}"
-				style="color: {isActive('/catalog')
-					? 'var(--accent-color)'
-					: 'var(--accent-color)'}; border-bottom: 2px solid {isActive('/catalog')
-					? 'var(--foreground-color)'
-					: 'transparent'}; padding-bottom: 2px;"
-			>
-				Menu
-			</a>
-			<a
-				href={resolve('/store-info' as `/${string}`)}
-				class="text-sm font-medium transition-opacity hover:opacity-100 {isActive('/store-info')
-					? 'opacity-100'
-					: 'opacity-75'}"
-				style="color: {isActive('/store-info')
-					? 'var(--accent-color)'
-					: 'var(--accent-color)'}; border-bottom: 2px solid {isActive('/store-info')
-					? 'var(--foreground-color)'
-					: 'transparent'}; padding-bottom: 2px;"
-			>
-				Store Info
-			</a>
+		<nav class="hidden flex-1 items-center justify-center gap-1 md:flex">
+			{@render navLink(resolve('/catalog' as `/${string}`), 'Menu', isActive('/catalog'))}
+			{@render navLink(
+				resolve('/store-info' as `/${string}`),
+				'Store Info',
+				isActive('/store-info')
+			)}
 		</nav>
+
+		{#snippet navLink(href: string, label: string, active: boolean)}
+			<!-- href is already resolve()-d at every call site; the rule can't trace through the snippet prop -->
+			<!-- eslint-disable svelte/no-navigation-without-resolve -->
+			<a
+				{href}
+				class="nav-link"
+				class:is-active={active}
+				aria-current={active ? 'page' : undefined}
+			>
+				{label}
+			</a>
+			<!-- eslint-enable svelte/no-navigation-without-resolve -->
+		{/snippet}
 
 		<!-- Cart icon (placeholder — prompt 3 wires real behavior) -->
 		<a
@@ -97,3 +91,37 @@
 		</a>
 	</div>
 </header>
+
+<style>
+	/* Colors derive from the theme vars set at :root by the storefront layout,
+	   so the nav pills adapt per vendor. */
+	.nav-link {
+		padding: 0.4rem 0.85rem;
+		border-radius: 0.75rem;
+		font-size: 0.875rem;
+		font-weight: 500;
+		line-height: 1;
+		color: var(--accent-color);
+		opacity: 0.9;
+		transition:
+			background-color 160ms ease,
+			opacity 160ms ease,
+			box-shadow 160ms ease;
+	}
+	.nav-link:hover {
+		opacity: 1;
+		background-color: color-mix(in srgb, var(--foreground-color) 10%, transparent);
+	}
+	.nav-link:focus-visible {
+		outline: none;
+		box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-color) 55%, transparent);
+	}
+	.nav-link.is-active {
+		opacity: 1;
+		background-color: color-mix(in srgb, var(--foreground-color) 15%, transparent);
+		box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--foreground-color) 20%, transparent);
+	}
+	.nav-link.is-active:hover {
+		background-color: color-mix(in srgb, var(--foreground-color) 18%, transparent);
+	}
+</style>

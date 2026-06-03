@@ -224,7 +224,9 @@
 		<div class="flex min-w-0 flex-col gap-1.5">
 			<h1 class="font-mono text-2xl font-bold text-gray-900">{order.orderNumber}</h1>
 			<div class="flex flex-wrap items-center gap-2">
-				<StatusBadge variant="subtle" class="capitalize">{order.type}</StatusBadge>
+				<StatusBadge variant="subtle"
+					>{order.type.replace(/_/g, ' ').replace(/^./, (c) => c.toUpperCase())}</StatusBadge
+				>
 				{#if order.paymentStatus === 'paid'}
 					<StatusBadge variant="success">paid</StatusBadge>
 				{:else if order.paymentStatus === 'refunded'}
@@ -232,7 +234,7 @@
 				{:else if order.paymentStatus === 'failed'}
 					<StatusBadge variant="danger">payment failed</StatusBadge>
 				{:else if order.paymentStatus === 'void'}
-					<StatusBadge tone="bg-gray-100 text-gray-600">void</StatusBadge>
+					<StatusBadge tone="bg-stone-200 text-stone-700">void</StatusBadge>
 				{:else if order.paymentStatus === 'deposit_paid'}
 					<StatusBadge tone="bg-amber-50 text-amber-700">deposit paid</StatusBadge>
 				{:else}

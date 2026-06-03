@@ -6,6 +6,7 @@ import { fail, redirect } from '@sveltejs/kit';
 import { catalogCategories, catalogItems } from '$lib/server/db/schema';
 import { effectiveHasAddon, type AddonItem } from '$lib/billing';
 import { vendor } from '$lib/server/db/vendor';
+import { vendorOrigin } from '$lib/server/vendor-origin';
 import {
 	CatalogItemError,
 	createCatalogItem,
@@ -55,7 +56,8 @@ export const load: PageServerLoad = async (event) => {
 			tags: true,
 			isSubscription: true,
 			billingInterval: true,
-			pickupType: true
+			pickupType: true,
+			availabilityMode: true
 		},
 		with: { category: { columns: { id: true, name: true } } },
 		orderBy: [catalogItems.sortOrder, desc(catalogItems.createdAt)],
@@ -85,8 +87,9 @@ export const load: PageServerLoad = async (event) => {
 
 	const vendorRecord = await db.query.vendor.findFirst({
 		where: eq(vendor.id, vendorId),
-		columns: { subscriptionTier: true, addons: true }
+		columns: { subscriptionTier: true, addons: true, slug: true }
 	});
+	const storefrontOrigin = vendorRecord?.slug ? vendorOrigin(vendorRecord.slug) : null;
 	const canImportCsv =
 		vendorRecord?.subscriptionTier === 'pro' ||
 		vendorRecord?.subscriptionTier === 'market' ||
@@ -153,7 +156,8 @@ export const load: PageServerLoad = async (event) => {
 			addons,
 			'subscriptions'
 		),
-		drawer
+		drawer,
+		storefrontOrigin
 	};
 };
 

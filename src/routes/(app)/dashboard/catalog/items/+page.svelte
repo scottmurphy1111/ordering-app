@@ -56,6 +56,7 @@
 	import { enhanceWithToasts } from '$lib/forms/enhance-with-toasts';
 	import { Alert } from '$lib/components/ui/alert';
 	import { Skeleton } from '$lib/components/ui/skeleton';
+	import { toast } from '$lib/toast';
 
 	let { data }: { data: PageData } = $props();
 	type CatalogItem = (typeof data)['items'][number];
@@ -71,6 +72,21 @@
 	onMount(() => {
 		mounted = true;
 	});
+
+	// Direct-link sharing for unlisted items (hidden from the public catalog).
+	function itemShareUrl(itemId: number): string | null {
+		return data.storefrontOrigin ? `${data.storefrontOrigin}/item/${itemId}` : null;
+	}
+	async function copyItemLink(itemId: number) {
+		const url = itemShareUrl(itemId);
+		if (!url) return;
+		try {
+			await navigator.clipboard.writeText(url);
+			toast.success('Link copied');
+		} catch {
+			toast.error('Could not copy link');
+		}
+	}
 
 	// ── Table sorting ─────────────────────────────────────────────
 	type SortCol = 'name' | 'category' | 'price' | 'status';
@@ -742,6 +758,12 @@
 												>Custom date</span
 											>
 										{/if}
+										{#if item.availabilityMode === 'unlisted'}
+											<span
+												class="shrink-0 rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-700"
+												>Unlisted</span
+											>
+										{/if}
 									</div>
 									<p class="truncate text-xs text-gray-500">
 										{item.category?.name ?? 'Uncategorized'} · ${item.discountedPrice
@@ -754,6 +776,26 @@
 						<div class="flex items-center justify-between gap-2 border-t border-gray-100 px-4 py-2">
 							{@render statusDropdown(item)}
 							<div class="flex items-center gap-1">
+								{#if item.availabilityMode === 'unlisted' && data.storefrontOrigin}
+									<Button
+										variant="ghost"
+										size="icon"
+										onclick={() => copyItemLink(item.id)}
+										aria-label="Copy share link for {item.name}"
+									>
+										<Icon icon="mdi:link-variant" class="h-4 w-4" />
+									</Button>
+									<Button
+										variant="ghost"
+										size="icon"
+										href={itemShareUrl(item.id)}
+										target="_blank"
+										rel="noopener"
+										aria-label="View {item.name} storefront page"
+									>
+										<Icon icon="mdi:open-in-new" class="h-4 w-4" />
+									</Button>
+								{/if}
 								<Button
 									variant="ghost"
 									size="icon"
@@ -904,6 +946,12 @@
 													>Custom date</span
 												>
 											{/if}
+											{#if item.availabilityMode === 'unlisted'}
+												<span
+													class="shrink-0 rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-700"
+													>Unlisted</span
+												>
+											{/if}
 										</div>
 										{#if item.description}
 											<p class="block truncate text-xs text-gray-500">{item.description}</p>
@@ -932,6 +980,26 @@
 								</TableCell>
 								<TableCell class="w-20 px-4 py-3 text-right">
 									<div class="flex items-center justify-end gap-1">
+										{#if item.availabilityMode === 'unlisted' && data.storefrontOrigin}
+											<Button
+												variant="ghost"
+												size="icon"
+												onclick={() => copyItemLink(item.id)}
+												aria-label="Copy share link for {item.name}"
+											>
+												<Icon icon="mdi:link-variant" class="h-4 w-4" />
+											</Button>
+											<Button
+												variant="ghost"
+												size="icon"
+												href={itemShareUrl(item.id)}
+												target="_blank"
+												rel="noopener"
+												aria-label="View {item.name} storefront page"
+											>
+												<Icon icon="mdi:open-in-new" class="h-4 w-4" />
+											</Button>
+										{/if}
 										<Button
 											variant="ghost"
 											size="icon"

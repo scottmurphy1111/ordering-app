@@ -339,7 +339,11 @@
 											{order.status}
 										</span>
 									{/if}
-									<StatusBadge variant="subtle" class="capitalize">{order.type}</StatusBadge>
+									<StatusBadge variant="subtle"
+										>{order.type
+											.replace(/_/g, ' ')
+											.replace(/^./, (c) => c.toUpperCase())}</StatusBadge
+									>
 									{#if order.paymentStatus && paymentBadge[order.paymentStatus]}
 										<StatusBadge tone={paymentBadge[order.paymentStatus].cls}>
 											{paymentBadge[order.paymentStatus].label}

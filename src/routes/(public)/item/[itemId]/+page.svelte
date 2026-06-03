@@ -111,18 +111,8 @@
 </svelte:head>
 
 <main class="mx-auto max-w-lg space-y-6 px-4 py-8">
-	<!-- Image -->
-	{#if primaryImage}
-		<img
-			src={primaryImage.url}
-			alt={primaryImage.alt ?? data.item.name}
-			class="w-full rounded-xl object-cover shadow-sm"
-			style="max-height: 240px;"
-		/>
-	{/if}
-
 	<!-- Pattern B: back-link breadcrumb + item name -->
-	<div class="mb-6 flex items-center gap-3">
+	<div class="flex items-center gap-3">
 		<a
 			href={resolve('/catalog' as `/${string}`)}
 			class="inline-flex items-center gap-1 text-sm text-neutral-500 transition-colors hover:text-neutral-900"
@@ -135,8 +125,18 @@
 		</h1>
 	</div>
 
+	<!-- Image -->
+	{#if primaryImage}
+		<img
+			src={primaryImage.url}
+			alt={primaryImage.alt ?? data.item.name}
+			class="w-full rounded-xl object-cover shadow-sm"
+			style="max-height: 240px;"
+		/>
+	{/if}
+
 	{#if data.item.description}
-		<p class="-mt-3 mb-4 text-sm text-neutral-600">{data.item.description}</p>
+		<p class="mb-4 text-sm text-neutral-600">{data.item.description}</p>
 	{/if}
 
 	<!-- Item info -->

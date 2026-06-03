@@ -48,9 +48,9 @@
 					</span>
 				{:else}
 					<div
-						class="flex h-10 w-10 items-center justify-center rounded-full border-2 transition-colors {achieved
+						class="flex h-10 w-10 items-center justify-center rounded-full border transition-colors {achieved
 							? 'border-primary bg-white text-primary'
-							: 'border-gray-200 bg-white text-gray-400'}"
+							: 'border-stone-400 bg-white text-stone-500'}"
 					>
 						<Icon icon={step.icon} class="h-5 w-5" />
 					</div>
@@ -58,8 +58,8 @@
 						class="absolute top-full left-1/2 mt-1.5 -translate-x-1/2 text-center text-xs leading-tight whitespace-nowrap {active
 							? 'font-semibold text-primary'
 							: done
-								? 'font-medium text-gray-700'
-								: 'text-gray-400'}"
+								? 'font-medium text-stone-700'
+								: 'text-stone-500'}"
 					>
 						{label}
 					</span>

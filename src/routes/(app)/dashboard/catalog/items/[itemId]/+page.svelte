@@ -9,10 +9,26 @@
 	import CatalogItemForm from '$lib/components/CatalogItemForm.svelte';
 	import ModifierGroupsManager from '$lib/components/ModifierGroupsManager.svelte';
 	import { enhanceWithToasts } from '$lib/forms/enhance-with-toasts';
+	import { toast } from '$lib/toast';
 
 	let { data }: { data: PageData } = $props();
 	let submitting = $state(false);
 	let deleteError = $state<string | null>(null);
+
+	// Direct-link sharing for unlisted items (hidden from the public catalog).
+	function itemShareUrl(): string | null {
+		return data.storefrontOrigin ? `${data.storefrontOrigin}/item/${data.item.id}` : null;
+	}
+	async function copyItemLink() {
+		const url = itemShareUrl();
+		if (!url) return;
+		try {
+			await navigator.clipboard.writeText(url);
+			toast.success('Link copied');
+		} catch {
+			toast.error('Could not copy link');
+		}
+	}
 
 	const itemModifiers = $derived(
 		data.item.modifiers
@@ -22,14 +38,39 @@
 </script>
 
 <div class="max-w-xl">
-	<div class="mb-6 flex items-center gap-3">
-		<a
-			href={resolve('/dashboard/catalog/items')}
-			class="inline-flex items-center gap-1 text-sm text-muted-foreground transition-colors hover:text-foreground"
-			><Icon icon="mdi:chevron-left" class="h-4 w-4" /> Items</a
-		>
-		<span class="text-muted-foreground/40">/</span>
-		<h1 class="text-2xl font-bold text-foreground">{data.item.name}</h1>
+	<div class="mb-6 flex items-center justify-between gap-3">
+		<div class="flex min-w-0 items-center gap-3">
+			<a
+				href={resolve('/dashboard/catalog/items')}
+				class="inline-flex shrink-0 items-center gap-1 text-sm text-muted-foreground transition-colors hover:text-foreground"
+				><Icon icon="mdi:chevron-left" class="h-4 w-4" /> Items</a
+			>
+			<span class="text-muted-foreground/40">/</span>
+			<h1 class="truncate text-2xl font-bold text-foreground">{data.item.name}</h1>
+			{#if data.item.availabilityMode === 'unlisted'}
+				<span
+					class="shrink-0 rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-700"
+					>Unlisted</span
+				>
+			{/if}
+		</div>
+		{#if data.item.availabilityMode === 'unlisted' && data.storefrontOrigin}
+			<div class="flex shrink-0 items-center gap-1">
+				<Button variant="ghost" size="icon" onclick={copyItemLink} aria-label="Copy share link">
+					<Icon icon="mdi:link-variant" class="h-4 w-4" />
+				</Button>
+				<Button
+					variant="ghost"
+					size="icon"
+					href={itemShareUrl()}
+					target="_blank"
+					rel="noopener"
+					aria-label="View storefront page"
+				>
+					<Icon icon="mdi:open-in-new" class="h-4 w-4" />
+				</Button>
+			</div>
+		{/if}
 	</div>
 
 	<!-- ── Item details form ─────────────────────────────────── -->

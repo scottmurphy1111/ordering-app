@@ -431,17 +431,13 @@
 <!-- Closing CTA -->
 <section
 	class="relative overflow-hidden bg-primary px-6 py-20"
-	style="
-		background-image:
-			linear-gradient(oklch(0.55 0.16 152.75 / 0.88), oklch(0.45 0.16 152.75 / 0.88)),
-			url('https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=1600&h=600&fit=crop&q=80');
-		background-size: cover;
-		background-position: center;
-	"
+	style="background-image: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('{persona.closingImage}'); background-size: cover; background-position: center;"
 >
-	<div class="mx-auto max-w-2xl text-center">
-		<h2 class="text-3xl font-bold text-white sm:text-4xl">{persona.closingHeadline}</h2>
-		<p class="mt-4 text-lg text-primary-foreground/80">
+	<div class="mx-auto max-w-2xl rounded-xl bg-black/20 px-10 py-12 text-center backdrop-blur-sm">
+		<h2 class="text-3xl font-bold text-white text-shadow-lg sm:text-4xl">
+			{persona.closingHeadline}
+		</h2>
+		<p class="mt-4 text-lg font-semibold text-primary-foreground text-shadow-md">
 			{persona.closingSubhead}
 		</p>
 		<a

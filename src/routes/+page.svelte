@@ -55,12 +55,12 @@
 		{
 			icon: 'mdi:palette-outline',
 			title: 'Make it look like yours',
-			desc: 'Choose your colors, fonts, banners, and background patterns. Your storefront feels like your business — not a templated landing page.'
+			desc: 'Set your colors, fonts, and background patterns, and add a banner — upload your own or generate one with AI. Your storefront feels like your business, not a templated landing page.'
 		},
 		{
-			icon: 'mdi:image-auto-adjust',
-			title: 'AI-generated product photos',
-			desc: 'No professional photographer on payroll? Generate clean, consistent product shots in seconds. Tune until they match your style.'
+			icon: 'mdi:tune-variant',
+			title: 'Options and add-ons',
+			desc: 'Let customers choose sizes, flavors, and extras — each priced the way you set it. From a single jar to a customized cake, they build exactly what they want.'
 		},
 		{
 			icon: 'mdi:qrcode',
@@ -580,16 +580,20 @@
 				A presence customers recognize, wherever they find you.
 			</h2>
 		</div>
-		<div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+		<div class="grid gap-6 sm:grid-cols-2">
 			{#each storefrontFeatures as f (f.title)}
 				<div
-					class="flex h-full flex-col rounded-2xl border bg-background p-6 transition hover:border-emerald-200 hover:shadow-sm"
+					class="flex gap-4 rounded-2xl border bg-background p-6 transition hover:border-emerald-200 hover:shadow-sm"
 				>
-					<div class="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
+					<div
+						class="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10"
+					>
 						<Icon icon={f.icon} class="h-5 w-5 text-primary" aria-hidden="true" />
 					</div>
-					<h3 class="font-semibold text-foreground">{f.title}</h3>
-					<p class="mt-1.5 flex-1 text-sm leading-relaxed text-muted-foreground">{f.desc}</p>
+					<div>
+						<h3 class="font-semibold text-foreground">{f.title}</h3>
+						<p class="mt-1.5 text-sm leading-relaxed text-muted-foreground">{f.desc}</p>
+					</div>
 				</div>
 			{/each}
 		</div>
@@ -978,7 +982,9 @@
 					>
 						{faq.q}
 					</AccordionTrigger>
-					<AccordionContent class="border-t px-5 text-sm leading-relaxed text-muted-foreground">
+					<AccordionContent
+						class="border-t px-5 py-2.5 text-sm leading-relaxed text-muted-foreground"
+					>
 						{faq.a}
 					</AccordionContent>
 				</AccordionItem>
@@ -992,16 +998,15 @@
 	class="relative overflow-hidden bg-primary px-6 py-20"
 	style="
 		background-image:
-			
+			linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)),
 			url('https://images.unsplash.com/photo-1488459716781-31db52582fe9?fit=crop&q=80');
-      
 		background-size: cover;
 		background-position: center;
 	"
 >
-	<div class="mx-auto max-w-3xl rounded-xl bg-background/40 px-10 py-12 text-center">
+	<div class="mx-auto max-w-3xl rounded-xl bg-black/20 px-10 py-12 text-center backdrop-blur-sm">
 		<h2 class="text-3xl font-bold text-white text-shadow-lg sm:text-4xl">
-			Ready to take your first pre-order?
+			Ready to take your first order?
 		</h2>
 		<p class="mt-4 text-lg font-semibold text-primary-foreground text-shadow-md">
 			Set up your page today. Free, no credit card required.

@@ -11,27 +11,27 @@
 @layer base {
 	:root {
 		--background: oklch(1 0 0);
-		--foreground: oklch(0.145 0 0);
+		--foreground: oklch(0.145 0.004 80);
 		--card: oklch(1 0 0);
-		--card-foreground: oklch(0.145 0 0);
+		--card-foreground: oklch(0.145 0.004 80);
 		--popover: oklch(1 0 0);
-		--popover-foreground: oklch(0.145 0 0);
+		--popover-foreground: oklch(0.145 0.004 80);
 		--primary: oklch(0.612 0.17 152.75); /* halfway green-600 / emerald-600 */
 		--primary-foreground: oklch(1 0 0);
-		--secondary: oklch(0.97 0 0);
-		--secondary-foreground: oklch(0.205 0 0);
-		--muted: oklch(0.97 0 0);
-		--muted-foreground: oklch(0.556 0 0);
-		--accent: oklch(0.97 0 0);
-		--accent-foreground: oklch(0.205 0 0);
+		--secondary: oklch(0.97 0.008 80);
+		--secondary-foreground: oklch(0.205 0.006 80);
+		--muted: oklch(0.97 0.008 80);
+		--muted-foreground: oklch(0.556 0.013 80);
+		--accent: oklch(0.97 0.008 80);
+		--accent-foreground: oklch(0.205 0.006 80);
 		--destructive: oklch(0.577 0.245 27.325);
 		--destructive-foreground: oklch(0.985 0 0);
 		--success: oklch(
 			0.612 0.17 152.75
 		); /* matches default --primary; locked independent so --primary can theme without dragging --success */
 		--success-foreground: oklch(1 0 0);
-		--border: oklch(0.922 0 0);
-		--input: oklch(0.922 0 0);
+		--border: oklch(0.922 0.008 80);
+		--input: oklch(0.922 0.008 80);
 		--ring: oklch(0.612 0.17 152.75); /* halfway green-600 / emerald-600 */
 		--radius: 0.5rem;
 		--sidebar: oklch(0.985 0 0);

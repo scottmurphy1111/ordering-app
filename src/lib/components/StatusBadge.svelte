@@ -19,7 +19,7 @@
 		danger: 'bg-red-100 text-red-600',
 		neutral: 'bg-muted text-muted-foreground',
 		info: 'bg-blue-100 text-blue-700',
-		subtle: 'bg-gray-100 text-gray-500'
+		subtle: 'bg-stone-200 text-stone-700'
 	};
 
 	const colorClass = $derived(tone ?? variantClasses[variant]);

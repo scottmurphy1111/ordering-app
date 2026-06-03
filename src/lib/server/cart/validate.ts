@@ -52,6 +52,7 @@ export async function validateCartItems(
 			id: catalogItems.id,
 			name: catalogItems.name,
 			price: catalogItems.price,
+			discountedPrice: catalogItems.discountedPrice,
 			status: catalogItems.status,
 			pickupType: catalogItems.pickupType,
 			customDateLeadDays: catalogItems.customDateLeadDays,
@@ -75,12 +76,15 @@ export async function validateCartItems(
 			unavailable.push({ itemId: item.itemId, name: item.name });
 			continue;
 		}
-		if (item.basePrice !== row.price && !seenPriceChangeIds.has(item.itemId)) {
+		// Effective price mirrors the storefront/cart: discountedPrice when set
+		// (?? so an intentional 0 is respected), else full retail.
+		const effectivePrice = row.discountedPrice ?? row.price;
+		if (item.basePrice !== effectivePrice && !seenPriceChangeIds.has(item.itemId)) {
 			priceChanges.push({
 				itemId: item.itemId,
 				name: item.name,
 				cartPrice: item.basePrice,
-				currentPrice: row.price
+				currentPrice: effectivePrice
 			});
 			seenPriceChangeIds.add(item.itemId);
 		}
@@ -94,7 +98,7 @@ export async function validateCartItems(
 		}
 		validatedItems.push({
 			...item,
-			basePrice: row.price,
+			basePrice: effectivePrice,
 			customDateLeadDays: row.customDateLeadDays ?? undefined,
 			availabilityMode: row.availabilityMode
 		});

@@ -68,12 +68,12 @@
 	<nav
 		class="hidden w-44 shrink-0 md:sticky md:top-8 md:block md:max-h-[calc(100vh-4rem)] md:self-start md:overflow-y-auto"
 	>
-		<p class="mb-3 text-xs font-medium tracking-wider text-gray-500 uppercase">{title}</p>
+		<p class="mb-3 text-xs font-medium tracking-wider text-stone-500 uppercase">{title}</p>
 
 		{#each groups as group, i (group.label ?? `__ungrouped_${i}`)}
 			{#if group.label}
 				<p
-					class="mt-5 mb-2 px-3 text-[11px] font-medium tracking-wider text-gray-400 uppercase first:mt-0"
+					class="mt-5 mb-2 px-3 text-[11px] font-medium tracking-wider text-stone-500 uppercase first:mt-0"
 				>
 					{group.label}
 				</p>

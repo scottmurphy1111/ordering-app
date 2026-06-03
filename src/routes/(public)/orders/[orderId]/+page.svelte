@@ -221,10 +221,8 @@
 					<span class="font-mono text-sm font-semibold text-muted-foreground"
 						>{order.orderNumber}</span
 					>
-					<span
-						class="rounded-full bg-muted px-2.5 py-0.5 text-xs text-muted-foreground capitalize"
-					>
-						{order.type}
+					<span class="rounded-full bg-muted px-2.5 py-0.5 text-xs text-muted-foreground">
+						{order.type.replace(/_/g, ' ').replace(/^./, (c) => c.toUpperCase())}
 					</span>
 					{#if scheduledLabel}
 						<span
