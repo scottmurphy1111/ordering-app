@@ -1,21 +1,15 @@
 <script lang="ts">
 	import type { PageData } from './$types';
-	import { enhance } from '$app/forms';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import Icon from '@iconify/svelte';
 	import { Button } from '$lib/components/ui/button';
 	import { Card, CardContent, CardFooter } from '$lib/components/ui/card';
-	import { Alert } from '$lib/components/ui/alert';
-	import { confirmDialog } from '$lib/confirm.svelte';
 	import FilterPills from '$lib/components/FilterPills.svelte';
-	import { enhanceWithToasts } from '$lib/forms/enhance-with-toasts';
 
 	let { data }: { data: PageData } = $props();
-	let declineError = $state<string | null>(null);
 
 	let expandedId = $state<number | null>(null);
-	let submittingDeclineId = $state<number | null>(null);
 
 	function formatDate(d: Date | string) {
 		return new Intl.DateTimeFormat('en-US', {
@@ -53,10 +47,6 @@
 			<p class="mt-0.5 text-sm text-gray-500">Special requests from your customers.</p>
 		</div>
 	</div>
-
-	{#if declineError}
-		<Alert severity="error" class="mb-4">{declineError}</Alert>
-	{/if}
 
 	<div class="mb-4">
 		<FilterPills
@@ -104,7 +94,6 @@
 		<div class="space-y-3">
 			{#each data.requests as req (req.id)}
 				{@const isExpanded = expandedId === req.id}
-				{@const isPending = req.state === 'pending'}
 				<Card class="p-0 transition-shadow hover:shadow-md">
 					<CardContent class="p-0">
 						<!-- Clickable header zone — collapsed view -->
@@ -252,65 +241,7 @@
 						{/if}
 					</CardContent>
 
-					{#if isExpanded && isPending}
-						<CardFooter class="justify-between gap-3">
-							<form
-								method="post"
-								action="?/decline"
-								use:enhance={enhanceWithToasts({
-									successMessage: 'Request declined',
-									onStart: () => {
-										submittingDeclineId = req.id;
-										declineError = null;
-									},
-									onEnd: () => {
-										submittingDeclineId = null;
-									},
-									onError: (msg) => {
-										declineError = msg;
-									}
-								})}
-							>
-								<input type="hidden" name="id" value={req.id} />
-								<div class="flex items-center gap-2">
-									<textarea
-										name="reason"
-										rows="1"
-										placeholder="Reason for declining (optional)"
-										class="h-8 w-56 resize-none rounded-lg border px-3 py-1.5 text-xs placeholder:text-muted-foreground focus:ring-1 focus:ring-ring focus:outline-none"
-									></textarea>
-									<Button
-										type="submit"
-										variant="ghost"
-										class="text-red-500 hover:bg-red-50 hover:text-red-600"
-										disabled={submittingDeclineId !== null}
-										onclick={async (e) => {
-											e.preventDefault();
-											const form = (e.currentTarget as HTMLButtonElement).form;
-											if (
-												await confirmDialog(`Decline request from ${req.customerName}?`, {
-													confirmLabel: 'Decline',
-													danger: true
-												})
-											)
-												form?.requestSubmit();
-										}}
-									>
-										{#if submittingDeclineId === req.id}
-											<Icon icon="mdi:loading" class="h-4 w-4 animate-spin" />
-											Declining...
-										{:else}
-											Decline
-										{/if}
-									</Button>
-								</div>
-							</form>
-							<Button href={resolve(`/dashboard/special-orders/${req.id}`)} variant="outline">
-								<Icon icon="mdi:send-outline" class="h-3.5 w-3.5" />
-								Send quote
-							</Button>
-						</CardFooter>
-					{:else if isExpanded}
+					{#if isExpanded}
 						<CardFooter class="justify-end">
 							<Button href={resolve(`/dashboard/special-orders/${req.id}`)} variant="outline">
 								View details

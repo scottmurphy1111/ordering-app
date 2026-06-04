@@ -151,6 +151,23 @@
 		}, 2500);
 	}
 
+	// ── Sticky-bar "stuck" shadow ─────────────────────────────────────────────
+	let isStuck = $state(false);
+	let stickySentinel = $state<HTMLElement>();
+
+	onMount(() => {
+		if (!stickySentinel) return;
+		const obs = new IntersectionObserver(
+			([entry]) => {
+				isStuck = !entry.isIntersecting;
+			},
+			// root top inset ≈ header height, so it flips right as the bar pins
+			{ rootMargin: '-80px 0px 0px 0px', threshold: 0 }
+		);
+		obs.observe(stickySentinel);
+		return () => obs.disconnect();
+	});
+
 	// ── IntersectionObserver: active category nav ────────────────────────────
 	let activeCategoryId = $state<string | null>(null);
 
@@ -170,8 +187,9 @@
 	function scrollToSection(id: string) {
 		const el = document.getElementById(id);
 		if (!el) return;
-		const stickyBar = document.querySelector('.sticky') as HTMLElement | null;
-		const offset = (stickyBar?.offsetHeight ?? 0) + 16;
+		const header = document.querySelector('header.sticky') as HTMLElement | null;
+		const bar = document.getElementById('catalog-sticky-bar');
+		const offset = (header?.offsetHeight ?? 0) + (bar?.offsetHeight ?? 0) + 16;
 		window.scrollTo({
 			top: el.getBoundingClientRect().top + window.scrollY - offset,
 			behavior: 'smooth'
@@ -208,91 +226,100 @@
 <div class="mx-auto max-w-6xl px-4 py-8 sm:px-6 md:grid md:grid-cols-[1fr_320px] md:gap-8">
 	<!-- Left column: catalog content -->
 	<div class="min-w-0">
-		<!-- Search input -->
+		<!-- Sticky search + category bar -->
+		<div bind:this={stickySentinel} aria-hidden="true" class="h-px"></div>
 		{#if data.items.length > 0}
-			<div class="relative mb-6">
-				<Icon
-					icon="mdi:magnify"
-					class="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-neutral-400"
-				/>
-				<input
-					type="search"
-					placeholder="Search the menu…"
-					bind:value={searchQuery}
-					class="w-full rounded-full border border-neutral-200 bg-white py-2.5 pr-4 pl-9 text-sm text-neutral-900 transition-colors outline-none focus:border-neutral-400"
-				/>
-				{#if searchQuery}
-					<button
-						type="button"
-						onclick={() => (searchQuery = '')}
-						class="absolute top-1/2 right-3 -translate-y-1/2 text-neutral-400 hover:text-neutral-600"
-					>
-						<Icon icon="mdi:close-circle" class="h-4 w-4" />
-					</button>
-				{/if}
-			</div>
-		{/if}
-
-		<!-- Category pills (hidden while searching) -->
-		{#if !searchQuery && filteredCategorized.length > 0}
-			<nav class="-mx-4 mb-8 overflow-x-auto px-4 sm:-mx-6 sm:px-6">
-				<div class="flex gap-2 pb-2">
-					{#each filteredCategorized as category (category.id)}
-						<a
-							href="#{category.id}"
-							onclick={(e) => {
-								e.preventDefault();
-								scrollToSection(String(category.id));
-							}}
-							class="shrink-0 rounded-full px-4 py-1.5 text-sm font-medium transition-colors {activeCategoryId ===
-							String(category.id)
-								? ''
-								: 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'}"
-							style={activeCategoryId === String(category.id)
-								? 'background-color: var(--background-color); color: var(--foreground-color);'
-								: ''}
+			<div
+				id="catalog-sticky-bar"
+				class="sticky top-16 z-30 -mx-4 mb-6 bg-neutral-50 px-4 pt-4 pb-2 transition-shadow sm:-mx-6 sm:px-6 md:top-20 md:pt-6 {isStuck
+					? 'shadow-[0_6px_16px_-8px_rgba(0,0,0,0.15)] md:-mx-2 md:px-2'
+					: ''}"
+			>
+				<!-- Search input -->
+				<div class="relative">
+					<Icon
+						icon="mdi:magnify"
+						class="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-neutral-400"
+					/>
+					<input
+						type="search"
+						placeholder="Search the menu…"
+						bind:value={searchQuery}
+						class="w-full rounded-full border border-neutral-200 bg-white py-2.5 pr-4 pl-9 text-sm text-neutral-900 transition-colors outline-none focus:border-neutral-400"
+					/>
+					{#if searchQuery}
+						<button
+							type="button"
+							onclick={() => (searchQuery = '')}
+							class="absolute top-1/2 right-3 -translate-y-1/2 text-neutral-400 hover:text-neutral-600"
 						>
-							{category.name}
-						</a>
-					{/each}
-					{#if filteredUncategorized.length > 0}
-						<a
-							href="#other"
-							onclick={(e) => {
-								e.preventDefault();
-								scrollToSection('other');
-							}}
-							class="shrink-0 rounded-full px-4 py-1.5 text-sm font-medium transition-colors {activeCategoryId ===
-							'other'
-								? ''
-								: 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'}"
-							style={activeCategoryId === 'other'
-								? 'background-color: var(--background-color); color: var(--foreground-color);'
-								: ''}
-						>
-							Other
-						</a>
-					{/if}
-					{#if !isPaused && vendor.acceptsRequests}
-						<a
-							href="#special-requests"
-							onclick={(e) => {
-								e.preventDefault();
-								scrollToSection('special-requests');
-							}}
-							class="shrink-0 rounded-full px-4 py-1.5 text-sm font-medium transition-colors {activeCategoryId ===
-							'special-requests'
-								? ''
-								: 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'}"
-							style={activeCategoryId === 'special-requests'
-								? 'background-color: var(--background-color); color: var(--foreground-color);'
-								: ''}
-						>
-							Special Requests
-						</a>
+							<Icon icon="mdi:close-circle" class="h-4 w-4" />
+						</button>
 					{/if}
 				</div>
-			</nav>
+
+				<!-- Category pills (hidden while searching) -->
+				{#if !searchQuery && filteredCategorized.length > 0}
+					<nav class="mt-4 overflow-x-auto">
+						<div class="flex gap-2 pb-2">
+							{#each filteredCategorized as category (category.id)}
+								<a
+									href="#{category.id}"
+									onclick={(e) => {
+										e.preventDefault();
+										scrollToSection(String(category.id));
+									}}
+									class="shrink-0 rounded-full px-4 py-1.5 text-sm font-medium transition-colors {activeCategoryId ===
+									String(category.id)
+										? ''
+										: 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'}"
+									style={activeCategoryId === String(category.id)
+										? 'background-color: var(--background-color); color: var(--foreground-color);'
+										: ''}
+								>
+									{category.name}
+								</a>
+							{/each}
+							{#if filteredUncategorized.length > 0}
+								<a
+									href="#other"
+									onclick={(e) => {
+										e.preventDefault();
+										scrollToSection('other');
+									}}
+									class="shrink-0 rounded-full px-4 py-1.5 text-sm font-medium transition-colors {activeCategoryId ===
+									'other'
+										? ''
+										: 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'}"
+									style={activeCategoryId === 'other'
+										? 'background-color: var(--background-color); color: var(--foreground-color);'
+										: ''}
+								>
+									Other
+								</a>
+							{/if}
+							{#if !isPaused && vendor.acceptsRequests}
+								<a
+									href="#special-requests"
+									onclick={(e) => {
+										e.preventDefault();
+										scrollToSection('special-requests');
+									}}
+									class="shrink-0 rounded-full px-4 py-1.5 text-sm font-medium transition-colors {activeCategoryId ===
+									'special-requests'
+										? ''
+										: 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'}"
+									style={activeCategoryId === 'special-requests'
+										? 'background-color: var(--background-color); color: var(--foreground-color);'
+										: ''}
+								>
+									Special Requests
+								</a>
+							{/if}
+						</div>
+					</nav>
+				{/if}
+			</div>
 		{/if}
 
 		<!-- Sections -->
@@ -396,7 +423,7 @@
 
 	<!-- Right column: cart panel -->
 	<aside class="hidden md:block">
-		<div class="sticky top-20">
+		<div class="sticky top-20 pt-6">
 			<div class="rounded-xl border border-neutral-200 bg-white p-5">
 				<CartPanel />
 			</div>

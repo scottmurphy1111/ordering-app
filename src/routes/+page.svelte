@@ -405,7 +405,8 @@
 			<div
 				class="pointer-events-none absolute -inset-4 -z-10 rounded-3xl bg-primary/5 blur-2xl"
 			></div>
-			<div class="overflow-hidden rounded-2xl border bg-background shadow-2xl">
+			<div class="relative isolate overflow-hidden rounded-2xl border bg-background shadow-2xl">
+				<span class="hero-gleam" aria-hidden="true"></span>
 				<!-- Browser chrome -->
 				<div class="flex items-center gap-1.5 border-b bg-muted/60 px-3 py-2.5">
 					<div class="h-2.5 w-2.5 rounded-full bg-red-400/70"></div>
@@ -477,6 +478,7 @@
 			<div
 				class="absolute right-0 -bottom-2 z-10 w-44 overflow-hidden rounded-2xl border bg-background shadow-2xl ring-1 ring-black/5"
 			>
+				<span class="hero-gleam hero-gleam--delayed" aria-hidden="true"></span>
 				<div class="bg-gray-900 px-3 py-2.5">
 					<div class="flex items-center gap-2">
 						<div
@@ -1107,3 +1109,64 @@
 		</div>
 	</div>
 </footer>
+
+<style>
+	.hero-gleam {
+		position: absolute;
+		inset: 0;
+		z-index: 20;
+		pointer-events: none;
+		border-radius: inherit;
+		overflow: hidden;
+	}
+	.hero-gleam::after {
+		content: '';
+		position: absolute;
+		top: -60%;
+		left: -75%;
+		width: 45%;
+		height: 220%;
+		background: linear-gradient(
+			100deg,
+			transparent 0%,
+			rgba(255, 255, 255, 0) 40%,
+			rgba(255, 255, 255, 0.5) 50%,
+			rgba(255, 255, 255, 0) 60%,
+			transparent 100%
+		);
+		transform: rotate(8deg) translateX(-120%);
+		animation: hero-gleam-sweep 7.5s ease-in-out infinite;
+	}
+	/* phone gleam follows the dashboard by ~0.8s */
+	.hero-gleam--delayed::after {
+		animation: hero-gleam-sweep-phone 7.5s ease-in-out infinite 0.55s;
+	}
+	@keyframes hero-gleam-sweep {
+		0% {
+			transform: rotate(8deg) translateX(-120%);
+		}
+		24% {
+			transform: rotate(8deg) translateX(390%);
+		}
+		100% {
+			transform: rotate(8deg) translateX(390%); /* rest off-screen until next cycle */
+		}
+	}
+
+	@keyframes hero-gleam-sweep-phone {
+		0% {
+			transform: rotate(8deg) translateX(-120%);
+		}
+		17% {
+			transform: rotate(8deg) translateX(390%);
+		}
+		100% {
+			transform: rotate(8deg) translateX(390%); /* rest off-screen until next cycle */
+		}
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.hero-gleam::after {
+			animation: none;
+		}
+	}
+</style>

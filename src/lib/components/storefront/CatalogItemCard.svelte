@@ -59,75 +59,45 @@
 		}
 	});
 	const borderClass = $derived(modeTreatment?.border ?? 'border border-neutral-200');
-
-	// Inline expand/collapse for the description. Only one layout renders per
-	// card (image XOR compact), so a single descEl bind is unambiguous.
-	let descExpanded = $state(false);
-	let descIsTruncated = $state(false);
-	let descEl = $state<HTMLParagraphElement | null>(null);
-
-	$effect(() => {
-		const el = descEl;
-		// Only meaningful while clamped — once expanded, scrollHeight === clientHeight,
-		// which would falsely clear the flag. Preserve truncation knowledge while expanded.
-		if (!el || descExpanded) return;
-		descIsTruncated = el.scrollHeight > el.clientHeight + 1;
-	});
 </script>
 
 {#snippet actionSlot()}
-	{#if item.status === 'sold_out'}
-		<span class="rounded-lg bg-amber-100 px-3 py-1.5 text-xs font-medium text-amber-700"
-			>Sold out</span
-		>
-	{:else if isPaused}
-		<span class="rounded-lg bg-neutral-100 px-3 py-1.5 text-xs font-medium text-neutral-400"
-			>Unavailable</span
-		>
-	{:else if hasModifiers}
-		<a
-			href={resolve(`/item/${item.id}` as `/${string}`)}
-			class="rounded-lg border px-3 py-1.5 text-xs font-medium transition-opacity hover:opacity-75"
-			style="border-color: var(--background-color); color: var(--background-color);">Pick Options</a
-		>
-	{:else}
-		<button
-			type="button"
-			onclick={onAdd}
-			class="add-btn rounded-lg bg-neutral-900 px-3 py-1.5 text-xs font-medium text-white transition-all {isAdding
-				? 'pulsing'
-				: ''} {wasJustAdded ? 'added' : ''}"
-		>
-			{wasJustAdded ? '✓ Added' : '+ Add'}
-		</button>
-	{/if}
+	<div class="flex items-center justify-end gap-3">
+		{#if item.status === 'sold_out'}
+			<span
+				class="w-24 rounded-lg bg-amber-100 px-3 py-1.5 text-center text-xs font-medium text-amber-700"
+				>Sold out</span
+			>
+		{:else if isPaused}
+			<span
+				class="w-24 rounded-lg bg-neutral-100 px-3 py-1.5 text-center text-xs font-medium text-neutral-400"
+				>Unavailable</span
+			>
+		{:else if hasModifiers}
+			<a
+				href={resolve(`/item/${item.id}` as `/${string}`)}
+				class="w-24 rounded-lg border bg-neutral-900 px-3 py-1.5 text-center text-xs font-medium text-white transition-opacity hover:opacity-80"
+				>+ Options</a
+			>
+		{:else}
+			<button
+				type="button"
+				onclick={onAdd}
+				class="add-btn w-24 rounded-lg bg-neutral-900 px-3 py-1.5 text-center text-xs font-medium text-white transition-all {isAdding
+					? 'pulsing'
+					: ''} {wasJustAdded ? 'added' : ''}"
+			>
+				{wasJustAdded ? '✓ Added' : '+ Add'}
+			</button>
+		{/if}
+	</div>
 {/snippet}
 
 {#snippet descriptionBlock()}
 	{#if item.description}
-		{#if descExpanded}
-			<p bind:this={descEl} class="text-sm text-neutral-600">
-				{item.description}<button
-					type="button"
-					onclick={() => (descExpanded = false)}
-					class="ml-1 text-xs font-medium transition-opacity hover:opacity-75"
-					style="color: var(--accent-color);">less</button
-				>
-			</p>
-		{:else}
-			<div class="relative">
-				<p bind:this={descEl} class="line-clamp-2 text-sm text-neutral-600">{item.description}</p>
-				{#if descIsTruncated}
-					<button
-						type="button"
-						onclick={() => (descExpanded = true)}
-						class="absolute right-0 bottom-0 pl-6 text-xs font-medium"
-						style="color: var(--accent-color); background: linear-gradient(to right, transparent, white 1.25rem);"
-						>more</button
-					>
-				{/if}
-			</div>
-		{/if}
+		<div class="relative">
+			<p class="line-clamp-2 text-sm text-neutral-600">{item.description}</p>
+		</div>
 	{/if}
 {/snippet}
 
@@ -146,7 +116,7 @@
 {#snippet content()}
 	<!-- Title -->
 	<h3 class="font-semibold text-neutral-900" style="font-family: var(--font-heading);">
-		{item.name}
+		<a href={resolve(`/item/${item.id}` as `/${string}`)}>{item.name}</a>
 	</h3>
 
 	<!-- Price -->
@@ -160,15 +130,11 @@
 	{:else}
 		<p class="mt-0.5 text-lg font-bold text-neutral-900">${(item.price / 100).toFixed(2)}</p>
 	{/if}
-
-	<!-- Action (left-aligned, auto width) -->
-	<div class="mt-3">{@render actionSlot()}</div>
 {/snippet}
 {#snippet description()}
 	<!-- Description -->
 	{@render descriptionBlock()}
 {/snippet}
-
 {#if primaryImage}
 	<!-- Image variant: image left, shared content right -->
 	<div
@@ -183,9 +149,11 @@
 			/>
 			<div class="relative min-w-0 flex-1">
 				{@render content()}
+				{@render description()}
 			</div>
 		</div>
-		{@render description()}
+
+		<div>{@render actionSlot()}</div>
 	</div>
 {:else}
 	<!-- Image-less variant: same content stack at full width -->
@@ -196,10 +164,11 @@
 		<div class="flex gap-4">
 			<div class="relative min-w-0 flex-1">
 				{@render content()}
+				{@render description()}
 			</div>
 		</div>
 
-		{@render description()}
+		<div>{@render actionSlot()}</div>
 	</div>
 {/if}
 
