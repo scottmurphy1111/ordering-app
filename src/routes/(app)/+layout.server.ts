@@ -50,6 +50,7 @@ export const load: LayoutServerLoad = async ({ locals, url }) => {
 		vendorId: locals.vendorId ?? null,
 		vendorRole: locals.vendorRole ?? null,
 		hasMultipleVendors: vendorCount > 1,
+		hasNoShops: vendorCount === 0,
 		isImpersonating,
 		hasSpecialRequestHistory
 	};

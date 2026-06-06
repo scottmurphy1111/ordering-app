@@ -22,6 +22,7 @@
 		DialogFooter
 	} from '$lib/components/ui/dialog';
 	import { Button } from '$lib/components/ui/button';
+	import { Tooltip, TooltipTrigger, TooltipContent } from '$lib/components/ui/tooltip';
 	import { Toaster } from '$lib/components/ui/sonner';
 	import { toast } from '$lib/toast';
 
@@ -104,6 +105,14 @@
 
 	const showSpecialRequests = $derived(
 		(data.vendor?.acceptsRequests ?? true) || data.hasSpecialRequestHistory
+	);
+
+	// No active shop → the dashboard nav is gated (the layout guard would 303 any
+	// /dashboard/* click back to /vendors, which reads as a dead click). Disable
+	// the nav and signpost why; the account/identity controls stay functional.
+	const noActiveShop = $derived(!data.vendor);
+	const shopGateMessage = $derived(
+		data.hasNoShops ? 'Create your shop first to open your dashboard' : 'Select a shop first'
 	);
 
 	const navItems = $derived([
@@ -191,17 +200,40 @@
 	<!-- Nav -->
 	<nav class="flex-1 space-y-0.5 px-2 py-3">
 		{#each navItems as item (item.href)}
-			<a
-				href={resolve(item.href as `/${string}`)}
-				data-tour={item.tour}
-				class="flex items-center gap-2.5 rounded-md px-3 py-2 text-sm transition-colors
-					{isActive(item.href)
-					? 'bg-primary font-medium text-white'
-					: 'font-normal text-muted-foreground hover:bg-gray-800 hover:text-white'}"
-			>
-				<Icon icon={item.icon} class="h-4 w-4 shrink-0" />
-				{item.label}
-			</a>
+			{#if noActiveShop}
+				<!-- Gated: not an anchor (no navigation). Tooltip for desktop hover/focus,
+				     toast on tap so touch users get feedback too. -->
+				<Tooltip>
+					<TooltipTrigger>
+						{#snippet child({ props })}
+							<button
+								{...props}
+								type="button"
+								aria-disabled="true"
+								data-tour={item.tour}
+								onclick={() => toast.info(shopGateMessage)}
+								class="flex w-full cursor-not-allowed items-center gap-2.5 rounded-md px-3 py-2 text-left text-sm font-normal text-muted-foreground/50"
+							>
+								<Icon icon={item.icon} class="h-4 w-4 shrink-0" />
+								{item.label}
+							</button>
+						{/snippet}
+					</TooltipTrigger>
+					<TooltipContent>{shopGateMessage}</TooltipContent>
+				</Tooltip>
+			{:else}
+				<a
+					href={resolve(item.href as `/${string}`)}
+					data-tour={item.tour}
+					class="flex items-center gap-2.5 rounded-md px-3 py-2 text-sm transition-colors
+						{isActive(item.href)
+						? 'bg-primary font-medium text-white'
+						: 'font-normal text-muted-foreground hover:bg-gray-800 hover:text-white'}"
+				>
+					<Icon icon={item.icon} class="h-4 w-4 shrink-0" />
+					{item.label}
+				</a>
+			{/if}
 		{/each}
 	</nav>
 

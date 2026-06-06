@@ -7,6 +7,7 @@ import { getRequestEvent } from '$app/server';
 import { db } from '$lib/server/db';
 import { sendEmail } from '$lib/server/email';
 import { emailWrapper } from '$lib/server/email/base';
+import { welcomeVendorEmail } from '$lib/server/email/templates/welcomeVendor';
 import { dev } from '$app/environment';
 import { isProduction } from '$lib/server/is-production';
 
@@ -49,6 +50,35 @@ export const auth = betterAuth({
 	user: {
 		additionalFields: {
 			isInternal: { type: 'boolean', defaultValue: false, input: false }
+		}
+	},
+
+	// Fire the one-time founder welcome email exactly once per new user (covers
+	// first-time Google + magic-link signups; never a returning sign-in).
+	// Non-blocking: a send failure is logged, never thrown — it must not break
+	// account creation.
+	databaseHooks: {
+		user: {
+			create: {
+				after: async (user: { email: string; name?: string | null }) => {
+					try {
+						const appOrigin = env.APP_ORIGIN || 'https://app.getorderlocal.com';
+						const dashboardUrl = `${appOrigin}/vendors`;
+						const html = welcomeVendorEmail({
+							recipientName: user.name ?? undefined,
+							dashboardUrl
+						});
+						await sendEmail({
+							to: user.email,
+							subject: "Welcome to Order Local — let's get your first order",
+							html,
+							category: 'welcome'
+						});
+					} catch (err) {
+						console.error('[welcome-email] failed to send:', err);
+					}
+				}
+			}
 		}
 	},
 

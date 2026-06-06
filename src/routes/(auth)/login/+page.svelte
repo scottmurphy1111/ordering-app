@@ -2,6 +2,7 @@
 	import { PUBLIC_APP_ORIGIN } from '$env/static/public';
 	import { page } from '$app/state';
 	import { signIn, authClient } from '$lib/auth-client';
+	import Icon from '@iconify/svelte';
 	import { Button } from '$lib/components/ui/button';
 	import { Input } from '$lib/components/ui/input';
 	import { Label } from '$lib/components/ui/label';
@@ -48,9 +49,13 @@
 
 <Card>
 	<CardContent class="p-8">
-		<p class="mb-6 text-center text-sm text-muted-foreground">
-			Sign in with Google or get a magic link by email. No password needed.
-		</p>
+		<div class="mb-6 text-center">
+			<h1 class="text-xl font-bold text-foreground">Create your free account</h1>
+			<p class="mt-1.5 text-sm text-muted-foreground">
+				Continue with Google or your email — no password needed. New here or signing back in, just
+				continue below.
+			</p>
+		</div>
 
 		<!-- Google button -->
 		<Button
@@ -129,9 +134,35 @@
 					variant="default"
 					class="w-full"
 				>
-					{magicLoading ? 'Sending…' : 'Send sign-in link'}
+					{magicLoading ? 'Sending…' : 'Email me a sign-in link'}
 				</Button>
 			</form>
 		{/if}
+
+		<!-- Zero-pressure reassurance (visible at all breakpoints) -->
+		<p class="mt-6 rounded-lg bg-primary/5 px-4 py-3 text-center text-sm text-foreground">
+			Free to explore — build your storefront in minutes. No credit card, no commitment. Upgrade
+			only when you're ready to grow.
+		</p>
+
+		<!-- Trust row -->
+		<div
+			class="mt-4 flex flex-wrap items-center justify-center gap-x-4 gap-y-1.5 text-xs text-muted-foreground"
+		>
+			<span class="inline-flex items-center gap-1">
+				<Icon icon="mdi:check-circle-outline" class="h-3.5 w-3.5 text-primary" /> Free to start
+			</span>
+			<span class="inline-flex items-center gap-1">
+				<Icon icon="mdi:credit-card-off-outline" class="h-3.5 w-3.5 text-primary" /> No credit card
+			</span>
+			<span class="inline-flex items-center gap-1">
+				<Icon icon="mdi:check-circle-outline" class="h-3.5 w-3.5 text-primary" /> No commitment
+			</span>
+		</div>
+
+		<!-- Privacy trust line -->
+		<p class="mt-4 text-center text-xs text-muted-foreground">
+			We'll never sell your personal data.
+		</p>
 	</CardContent>
 </Card>

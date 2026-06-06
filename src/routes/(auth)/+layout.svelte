@@ -1,38 +1,34 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
-	import { authPattern } from '$lib/storefront/auth-pattern';
 
 	let { children } = $props();
-
-	const patternDataUri = `url("data:image/svg+xml;utf8,${encodeURIComponent(authPattern.render('#ffffff'))}")`;
-	const patternTileSize = authPattern.tileSize;
 </script>
 
 <div class="flex min-h-screen flex-col md:flex-row">
 	<aside
-		class="relative flex h-20 shrink-0 items-center justify-center overflow-hidden md:order-2 md:h-auto md:min-h-screen md:flex-1"
+		class="relative hidden shrink-0 items-center justify-center overflow-hidden md:order-2 md:flex md:h-auto md:min-h-screen md:flex-1"
 		style="
 			background-image:
-				{patternDataUri},
-				linear-gradient(135deg, oklch(0.55 0.16 152.75) 0%, oklch(0.44 0.10 152.75) 100%);
-			background-size: {patternTileSize}, cover;
-			background-repeat: repeat, no-repeat;
+				linear-gradient(rgba(0, 0, 0, 0.45), rgba(0, 0, 0, 0.55)),
+				url('/marketing/auth-aside.webp');
+			background-size: cover;
+			background-position: center;
+			background-repeat: no-repeat;
 		"
 	>
-		<a href={resolve('/')} class="text-xl font-bold tracking-tight text-white md:hidden">
-			Order<span class="text-white/85">Local</span>
-		</a>
-
-		<div class="hidden max-w-lg rounded-lg bg-white/25 p-8 text-center md:block">
+		<div class="hidden max-w-lg p-8 text-center md:block">
 			<h2
-				class="text-5xl leading-snug font-bold text-white"
-				style="text-shadow: 0 2px 5px rgba(0, 0, 0, .2);"
+				class="text-4xl leading-snug font-bold text-white"
+				style="text-shadow: 0 2px 8px rgba(0, 0, 0, 0.45);"
 			>
-				Pre-orders and pickup, built for makers, bakers and growers.
+				A clean, professional storefront for everything you sell.
 			</h2>
-			<h4 class="mt-6 text-lg leading-normal text-white/90">
-				Order Local helps bakers, growers, and small producers run pickup-based ordering without a
-				clunky e-commerce platform.
+			<h4
+				class="mt-6 text-lg leading-normal text-white/90"
+				style="text-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);"
+			>
+				Organize your products, take pre-orders, and accept payments — all from one branded page,
+				set up in minutes.
 			</h4>
 		</div>
 	</aside>
@@ -42,10 +38,18 @@
 	>
 		<a
 			href={resolve('/')}
-			class="mb-6 hidden text-2xl font-bold tracking-tight text-foreground md:block"
+			class="mb-6 block text-center text-2xl font-bold tracking-tight text-foreground md:text-left"
 		>
 			Order<span class="text-primary">Local</span>
 		</a>
+
+		<!-- Mobile value block: the desktop aside is hidden below md:, so give mobile
+		     a short outcome line above the card. The card itself carries the
+		     reassurance + trust row (shown at all breakpoints), so we don't repeat
+		     the trust row here. -->
+		<p class="mb-6 text-center text-sm font-medium text-foreground md:hidden">
+			You're one step from your storefront.
+		</p>
 
 		<div class="flex items-center justify-center">
 			<div class="w-full">

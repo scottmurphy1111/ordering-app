@@ -49,7 +49,8 @@ export type EmailCategory =
 	| 'payment_failed'
 	| 'invite'
 	| 'auth'
-	| 'order_received_vendor';
+	| 'order_received_vendor'
+	| 'welcome';
 
 export async function sendEmail({
 	to,

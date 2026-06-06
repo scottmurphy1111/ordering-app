@@ -142,6 +142,21 @@
 		</div>
 	{/if}
 
+	{#if data.vendors.length === 0 && data.canCreate && !showCreate}
+		<!-- First-run: no shop yet — make creating one the obvious next step. -->
+		<div class="mb-4 text-center">
+			<div
+				class="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10"
+			>
+				<Icon icon="mdi:storefront-outline" class="h-7 w-7 text-primary" />
+			</div>
+			<h2 class="text-base font-semibold text-foreground">Create your first shop</h2>
+			<p class="mx-auto mt-1 max-w-sm text-sm text-muted-foreground">
+				You don't have a shop yet. Create one to build your storefront and start taking orders.
+			</p>
+		</div>
+	{/if}
+
 	{#if data.canCreate && !showCreate}
 		<Button
 			onclick={() => (showCreate = true)}

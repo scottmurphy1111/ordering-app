@@ -370,15 +370,18 @@
 			>
 				Built for makers, bakers, and growers
 			</span>
+			<!-- Headline alternates the owner may swap in verbatim:
+			     "Look professional. Sell more. Get paid faster."
+			     "Give your customers a better way to order from you." -->
 			<h1
-				class="w-full max-w-[20ch] text-5xl leading-tight font-bold tracking-tight text-foreground sm:text-6xl"
+				class="w-full max-w-[24ch] text-4xl leading-tight font-bold tracking-tight text-balance text-foreground sm:text-5xl"
 			>
-				Pre-orders and pickup, done right.
+				A clean, professional storefront for everything you sell.
 			</h1>
 			<p class="mt-6 w-full max-w-lg text-lg leading-relaxed text-muted-foreground">
-				Order Local gives you a branded ordering page so customers can reserve, pay, and pick up —
-				at your booth, your shop, or by appointment. Powered by Stripe, set up in minutes, no app
-				required.
+				Order Local gives makers, bakers, and growers a branded page to organize their products,
+				take pre-orders, and accept payments — so your shop looks as good as what you sell. Powered
+				by Stripe, set up in minutes, no app required.
 			</p>
 			<div class="mt-10 flex flex-col items-center gap-3 sm:flex-row">
 				<a
@@ -1082,10 +1085,18 @@
 			</div>
 		</div>
 		<div class="mt-10 flex flex-col items-center justify-between gap-4 border-t pt-6 sm:flex-row">
-			<p class="text-xs text-muted-foreground">
-				© {new Date().getFullYear()} Order<span class="text-primary">Local</span>. All rights
-				reserved.
-			</p>
+			<div class="text-center sm:text-left">
+				<p class="text-xs text-muted-foreground">
+					© {new Date().getFullYear()} Order<span class="text-primary">Local</span>. All rights
+					reserved.
+				</p>
+				<p class="mt-1 text-xs text-muted-foreground">
+					We'll never sell your personal data. <a
+						href={resolve('/privacy')}
+						class="underline transition-colors hover:text-foreground">Privacy Policy</a
+					>
+				</p>
+			</div>
 			<div class="flex items-center gap-4">
 				<a
 					href="https://x.com/getorderlocal"
