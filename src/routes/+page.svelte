@@ -699,8 +699,8 @@
 
 <!-- Growth features -->
 <section class="scroll-mt-20 bg-background px-6 py-24">
-	<div class="mx-auto max-w-6xl">
-		<div class="mb-14 text-center">
+	<div class="mx-auto grid max-w-6xl gap-10 lg:grid-cols-[1fr_1.4fr] lg:items-start lg:gap-16">
+		<div class="lg:sticky lg:top-28">
 			<span
 				class="mb-3 inline-block rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold tracking-widest text-primary/90 uppercase"
 			>
@@ -709,8 +709,11 @@
 			<h2 class="mt-3 text-3xl font-bold text-foreground sm:text-4xl">
 				Tools to grow as your business does.
 			</h2>
+			<p class="mt-4 text-lg leading-relaxed text-muted-foreground">
+				Start simple and turn these on as you grow — no replatforming, no contracts.
+			</p>
 		</div>
-		<div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+		<div class="space-y-4">
 			{#each growthFeatures as f (f.title)}
 				<div
 					class="flex gap-4 rounded-2xl border bg-background p-6 transition hover:border-emerald-200 hover:shadow-sm"
@@ -771,7 +774,11 @@
 </section>
 
 <!-- Comparison -->
-<section class="bg-gray-900 px-6 py-24">
+<section class="relative isolate overflow-hidden bg-gray-900 px-6 py-24">
+	<div
+		class="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(ellipse_70%_60%_at_50%_-10%,rgba(22,163,74,0.18),transparent)]"
+		aria-hidden="true"
+	></div>
 	<div class="mx-auto max-w-5xl">
 		<div class="mb-14 text-center">
 			<h2 class="text-3xl font-bold text-white sm:text-4xl">Built for what you actually do.</h2>
@@ -807,23 +814,23 @@
 			class="hidden overflow-hidden rounded-2xl border bg-background md:grid md:grid-cols-[1.2fr_2fr_2fr]"
 		>
 			<!-- Header row -->
-			<div class="bg-muted/30 p-5"></div>
-			<div class="bg-muted/30 p-5">
+			<div class="bg-muted/30 px-8 py-5"></div>
+			<div class="bg-muted/30 px-8 py-5">
 				<p class="text-sm font-semibold text-muted-foreground">The all-in-one platforms</p>
 			</div>
-			<div class="bg-primary/5 p-5">
+			<div class="bg-primary/5 px-8 py-5">
 				<p class="text-sm font-semibold text-primary">Order Local</p>
 			</div>
 
 			<!-- Comparison rows -->
 			{#each comparison as row (row.label)}
-				<div class="border-t p-5">
+				<div class="border-t px-8 py-5">
 					<p class="text-sm font-semibold text-foreground">{row.label}</p>
 				</div>
-				<div class="border-t p-5">
+				<div class="border-t px-8 py-5">
 					<p class="text-sm leading-relaxed text-muted-foreground">{row.them}</p>
 				</div>
-				<div class="border-t bg-primary/5 p-5">
+				<div class="border-t bg-primary/5 px-8 py-5">
 					<p class="text-sm leading-relaxed font-medium text-foreground">{row.us}</p>
 				</div>
 			{/each}
