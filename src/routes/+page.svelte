@@ -252,6 +252,7 @@
 </script>
 
 <svelte:head>
+	<link rel="preload" as="image" href="/marketing/iStock-958138908.webp" />
 	<title>Order Local — Pre-orders and pickup for makers, bakers, and growers</title>
 	<meta
 		name="description"
@@ -399,7 +400,7 @@
 <!-- Hero -->
 <section
 	class="flex items-center bg-cover bg-center bg-no-repeat px-6 py-24 md:py-48"
-	style="background-image: linear-gradient(rgba(0, 0, 0, 0.75), rgba(0, 0, 0, 0.75)), url('/marketing/iStock-958138908.jpg');	  background-size: cover;
+	style="background-image: linear-gradient(rgba(0, 0, 0, 0.75), rgba(0, 0, 0, 0.75)), url('/marketing/iStock-958138908.webp');	  background-size: cover;
 			background-position: 70% 30%;
 			background-repeat: no-repeat;"
 >
@@ -620,7 +621,7 @@
 	<div class="mx-auto max-w-6xl">
 		<div class="mb-12 overflow-hidden rounded-2xl">
 			<img
-				src="/marketing/iStock-1369508999.jpg"
+				src="/marketing/iStock-1369508999.webp"
 				alt="Overhead view of a market stall with a variety of baked goods on display"
 				class="h-48 w-full object-cover sm:h-64 md:h-72 lg:h-96"
 				loading="lazy"
@@ -661,7 +662,7 @@
 	<div class="mx-auto max-w-6xl">
 		<div class="mb-12 overflow-hidden rounded-2xl">
 			<img
-				src="/marketing/iStock-1334132701.jpg"
+				src="/marketing/iStock-1334132701.webp"
 				alt="Florist's workspace — fresh flowers, ribbon, and tools laid out on a wooden floor"
 				class="h-48 w-full object-cover sm:h-64 md:h-72 lg:h-96"
 				loading="lazy"
@@ -738,7 +739,7 @@
 	<div class="mx-auto max-w-6xl">
 		<div class="mb-12 overflow-hidden rounded-2xl">
 			<img
-				src="/marketing/iStock-2241575917.jpg"
+				src="/marketing/iStock-2241575917.webp"
 				alt="Freshly baked brown bread in a wicker basket"
 				class="h-48 w-full object-cover sm:h-64 md:h-72 lg:h-96"
 				loading="lazy"
@@ -1048,7 +1049,7 @@
 	style="
 		background-image:
 			linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)),
-			url('/marketing/iStock-810850844.jpg');
+			url('/marketing/iStock-810850844.webp');
 		background-size: cover;
 		background-position: 50% 50%;
 	"

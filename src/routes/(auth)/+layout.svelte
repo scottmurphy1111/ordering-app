@@ -13,7 +13,7 @@
 		style="
 			background-image:
 				radial-gradient(circle at 50% 50%, rgba(0, 0, 0, 1), rgba(0, 0, 0, 0.2) 40%),
-				url('/marketing/iStock-1318889309.jpg');
+				url('/marketing/iStock-1318889309.webp');
 			background-size: cover;
 			background-position: 25% 50%;
 			background-repeat: no-repeat;
@@ -43,7 +43,7 @@
 			? `
           background-image:
             radial-gradient(circle at 50% 50%, rgba(0, 0, 0, 1), rgba(0, 0, 0, 0.2) 40%),
-            url('/marketing/iStock-1318889309.jpg');
+            url('/marketing/iStock-1318889309.webp');
           background-size: cover;
           background-position: 25% 0%;
           background-repeat: no-repeat;
