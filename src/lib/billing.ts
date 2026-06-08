@@ -17,6 +17,7 @@ export const TIERS = [
 		itemLimit: 10,
 		features: [
 			'Up to 10 catalog items',
+			'Your own web address (yourshop.getorderlocal.com)',
 			'Online ordering & payments',
 			'Multiple pickup locations',
 			'Pickup windows & cutoff times',
@@ -36,9 +37,9 @@ export const TIERS = [
 		itemLimit: 30,
 		features: [
 			'Up to 30 catalog items',
-			'Everything in Starter',
-			'CSV catalog import',
-			'Eligible for all\u00A0add-ons'
+			'Import your catalog (CSV or from Stripe)',
+			'Eligible for all add-ons (SMS, Analytics, Loyalty, Subscriptions)',
+			'Everything in Starter'
 		],
 		includedAddons: [] as readonly string[]
 	},
@@ -52,13 +53,9 @@ export const TIERS = [
 		itemLimit: null,
 		features: [
 			'Unlimited catalog items',
-			'Everything in Market',
-			'Embed on your website',
+			'SMS & Advanced Analytics add-ons included',
 			'Priority support',
-			'SMS Notifications included',
-			'Advanced Analytics included',
-			'White-label — hide OrderLocal branding',
-			'Eligible for Loyalty and Subscriptions\u00A0add-ons'
+			'Everything in Market'
 		],
 		includedAddons: ['sms_notifications', 'analytics'] as readonly string[]
 	}

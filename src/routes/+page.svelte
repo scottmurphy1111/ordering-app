@@ -9,7 +9,7 @@
 		AccordionItem,
 		AccordionTrigger
 	} from '$lib/components/ui/accordion';
-	import { TIERS, ADDONS, getTier, getIncludedAddons, type TierKey } from '$lib/billing';
+	import { TIERS, ADDONS, type TierKey } from '$lib/billing';
 
 	const loginHref = resolve('/login');
 
@@ -38,12 +38,14 @@
 			label: 'Growers',
 			path: '/for-growers' as string | undefined
 		},
-		{ icon: 'mdi:food-steak', label: 'Butchers', path: undefined },
+		{ icon: 'mdi:tent', label: 'Market booth operators', path: undefined },
 		{ icon: 'mdi:flower-outline', label: 'Florists', path: undefined },
 		{ icon: 'mdi:package-variant-closed', label: 'CSA boxes', path: undefined },
 		{ icon: 'mdi:truck-outline', label: 'Food trucks', path: undefined },
 		{ icon: 'mdi:coffee-outline', label: 'Coffee shops', path: undefined },
-		{ icon: 'mdi:tent', label: 'Market vendors', path: undefined }
+		{ icon: 'mdi:room-service-outline', label: 'Caterers', path: undefined },
+		{ icon: 'mdi:star-outline', label: 'Specialty vendors', path: undefined },
+		{ icon: 'mdi:hanger', label: 'Boutique shops', path: undefined }
 	];
 
 	const storefrontFeatures = [
@@ -65,7 +67,7 @@
 		{
 			icon: 'mdi:qrcode',
 			title: 'Reach customers everywhere',
-			desc: 'QR codes for the booth. An embeddable button for your existing site. Wherever they find you, they can order.'
+			desc: 'Your own link where customers order directly, and a QR code for the booth — so wherever they find you, they can buy.'
 		}
 	];
 
@@ -115,6 +117,45 @@
 		}
 	];
 
+	type ComparisonRow = {
+		label: string;
+		them: string;
+		us: string;
+	};
+
+	const comparison: ComparisonRow[] = [
+		{
+			label: 'Built for',
+			them: 'Shipping thousands of products nationwide',
+			us: 'Local pickup for what you make by hand'
+		},
+		{
+			label: 'Time to your first order',
+			them: 'A week of setup — themes, shipping zones, carriers, add-ons',
+			us: 'Live in an afternoon'
+		},
+		{
+			label: 'Cost to start',
+			them: 'A monthly fee from day one, whether you sell or not',
+			us: 'Free, forever, for up to 10 items'
+		},
+		{
+			label: 'The real bill',
+			them: 'The plan, plus a stack of paid apps to fill the gaps',
+			us: 'Everything you need to get up and running, included'
+		},
+		{
+			label: 'Learning curve',
+			them: 'So much to manage they give you an AI assistant to help you through it',
+			us: "Simple enough that you won't need one"
+		},
+		{
+			label: "Who it's for",
+			them: '"Merchants" managing "SKUs" and "fulfillment"',
+			us: 'Makers, bakers, and growers running a booth and a storefront'
+		}
+	];
+
 	const steps = [
 		{
 			num: '1',
@@ -153,7 +194,7 @@
 		},
 		{
 			q: 'Do my customers need to download an app?',
-			a: 'No. Customers order from any phone or laptop browser. Share your link, your QR code, or embed the catalog on your website.'
+			a: 'No. Customers order from any phone or laptop browser — just share your link or QR code.'
 		},
 		{
 			q: 'What happens when I hit 10 items on the Starter plan?',
@@ -173,31 +214,8 @@
 		}
 	];
 
-	let estimatorChecked = $state<boolean[]>(ADDONS.map(() => false));
-	let estimatorPlan = $state<TierKey>('pro');
 	let pricingInterval = $state<'monthly' | 'annual'>('monthly');
-	let openFaq = $state<string | undefined>(undefined);
 	let mobileMenuOpen = $state(false);
-
-	const estimatorBase = $derived.by(() => {
-		const tier = getTier(estimatorPlan);
-		if (!('annualMonthly' in tier)) return tier.price;
-		return pricingInterval === 'annual' ? tier.annualMonthly : tier.price;
-	});
-
-	const estimatorBundled = $derived(new Set(getIncludedAddons(estimatorPlan)));
-	const estimatorBundledNames = $derived(
-		ADDONS.filter((a) => estimatorBundled.has(a.key)).map((a) => a.name)
-	);
-
-	// Add-ons are monthly-only; their price doesn't change with the tier interval toggle.
-	// Bundled add-ons (e.g. SMS + Analytics on Pro) are excluded from the total — included with tier.
-	const estimatorTotal = $derived(
-		ADDONS.reduce((sum, addon, i) => {
-			if (estimatorBundled.has(addon.key)) return sum;
-			return sum + (estimatorChecked[i] ? addon.price : 0);
-		}, 0)
-	);
 
 	const faqJsonLd = JSON.stringify({
 		'@context': 'https://schema.org',
@@ -357,7 +375,10 @@
 
 <!-- Hero -->
 <section
-	class="relative overflow-hidden bg-gradient-to-b from-primary/5 to-background px-6 pt-24 pb-16"
+	class="flex items-center bg-cover bg-center bg-no-repeat px-6 py-24 md:py-48"
+	style="background-image: linear-gradient(rgba(0, 0, 0, 0.75), rgba(0, 0, 0, 0.75)), url('/marketing/iStock-958138908.jpg');	  background-size: cover;
+			background-position: 70% 30%;
+			background-repeat: no-repeat;"
 >
 	<div
 		class="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(ellipse_80%_50%_at_50%_-10%,rgba(22,163,74,0.08),transparent)]"
@@ -366,7 +387,7 @@
 		<!-- Text -->
 		<div class="flex flex-col items-center text-center">
 			<span
-				class="mb-4 inline-block rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold tracking-widest text-primary/90 uppercase"
+				class="mb-6 inline-block rounded-full bg-primary/90 px-3 py-1 text-xs font-semibold tracking-widest text-background/90 uppercase"
 			>
 				Built for makers, bakers, and growers
 			</span>
@@ -374,14 +395,14 @@
 			     "Look professional. Sell more. Get paid faster."
 			     "Give your customers a better way to order from you." -->
 			<h1
-				class="w-full max-w-[24ch] text-4xl leading-tight font-bold tracking-tight text-balance text-foreground sm:text-5xl"
+				class="w-full max-w-[24ch] text-4xl leading-tight font-bold tracking-tight text-balance text-background sm:text-5xl"
 			>
-				A clean, professional storefront for everything you sell.
+				The simple way to take orders from your customers.
 			</h1>
-			<p class="mt-6 w-full max-w-lg text-lg leading-relaxed text-muted-foreground">
-				Order Local gives makers, bakers, and growers a branded page to organize their products,
-				take pre-orders, and accept payments — so your shop looks as good as what you sell. Powered
-				by Stripe, set up in minutes, no app required.
+			<p class="mt-6 w-full max-w-lg text-lg leading-relaxed text-background/90">
+				Order Local gives sellers like you a branded page of their own: products organized,
+				pre-orders and payments handled, every order in one place. Set up in minutes. Powered by
+				Stripe
 			</p>
 			<div class="mt-10 flex flex-col items-center gap-3 sm:flex-row">
 				<a
@@ -398,8 +419,8 @@
 					See how it works
 				</a>
 			</div>
-			<p class="mt-4 text-xs text-muted-foreground">
-				No credit card to start · Free plan available · Keep 100% of your sales
+			<p class="mt-4 text-xs text-background/70">
+				No credit card to start · Free plan available · Keep 100% of your sales (Stripe fees apply)
 			</p>
 		</div>
 
@@ -418,16 +439,14 @@
 					<div
 						class="ml-2 flex-1 rounded-md bg-background px-2 py-0.5 text-[10px] text-muted-foreground/70"
 					>
-						myshop.getorderlocal.com/dashboard
+						sunrise-bakery.getorderlocal.com/dashboard
 					</div>
 				</div>
 				<!-- Dashboard layout -->
 				<div class="flex">
 					<!-- Sidebar -->
 					<div class="flex w-28 shrink-0 flex-col bg-gray-900 px-2 py-3">
-						<p class="mb-3 px-2 text-[10px] font-bold text-white">
-							Order<span class="text-primary">Local</span>
-						</p>
+						<p class="mb-3 px-2 text-[10px] font-bold text-white">Sunrise Bakery</p>
 						<div class="space-y-0.5">
 							<div class="rounded-md bg-primary px-2 py-1.5 text-[10px] font-medium text-white">
 								Overview
@@ -459,7 +478,7 @@
 						<div class="rounded-lg border bg-background p-2.5 shadow-sm">
 							<p class="mb-2 text-[10px] font-semibold text-foreground">Recent orders</p>
 							<div class="space-y-1.5">
-								{#each [{ num: '#142', items: 'Sourdough ×2, Honey', status: 'New', color: 'bg-blue-100 text-blue-700' }, { num: '#141', items: 'CSA Box — Large', status: 'Preparing', color: 'bg-yellow-100 text-yellow-700' }, { num: '#140', items: 'Rye loaf, Jam', status: 'Ready', color: 'bg-green-100 text-green-700' }] as order (order.num)}
+								{#each [{ num: '#142', items: 'Sourdough ×2, Honey', status: 'New', color: 'bg-blue-100 text-blue-700' }, { num: '#141', items: 'Croissants x8', status: 'Preparing', color: 'bg-yellow-100 text-yellow-700' }, { num: '#140', items: 'Rye loaf, Jam', status: 'Ready', color: 'bg-green-100 text-green-700' }] as order (order.num)}
 									<div class="flex items-center justify-between gap-2">
 										<div class="min-w-0">
 											<span class="text-[9px] font-medium text-foreground">{order.num}</span>
@@ -495,6 +514,12 @@
 						</div>
 					</div>
 				</div>
+				<!-- storefront banner -->
+				<div
+					class="h-12 w-full bg-cover bg-center"
+					style="background-image: url('https://images.unsplash.com/photo-1509440159596-0249088772ff?w=400&h=120&fit=crop&q=80')"
+					aria-hidden="true"
+				></div>
 				<div class="flex gap-1 border-b bg-muted/30 px-2 py-1.5">
 					<span class="rounded-full bg-primary px-2 py-0.5 text-[7px] font-semibold text-white"
 						>Breads</span
@@ -507,10 +532,13 @@
 					>
 				</div>
 				<div class="divide-y px-2">
-					{#each [{ name: 'Sourdough Loaf', desc: 'Saturday pickup only', price: '$12.00', color: 'bg-amber-100' }, { name: 'Rye Loaf', desc: 'Pre-sliced available', price: '$11.00', color: 'bg-orange-100' }, { name: 'Croissant ×6', desc: 'Order by Thu 8pm', price: '$18.00', color: 'bg-yellow-100' }] as item (item.name)}
+					{#each [{ name: 'Sourdough Loaf', desc: 'Saturday pickup only', price: '$12.00', img: 'https://images.unsplash.com/photo-1586444248902-2f64eddc13df?w=80&h=80&fit=crop&q=80' }, { name: 'Rye Loaf', desc: 'Pre-sliced available', price: '$11.00', img: 'https://images.unsplash.com/photo-1568254183919-78a4f43a2877?w=80&h=80&fit=crop&q=80' }, { name: 'Croissant ×6', desc: 'Order by Thu 8pm', price: '$18.00', img: 'https://images.unsplash.com/photo-1555507036-ab1f4038808a?w=80&h=80&fit=crop&q=80' }] as item (item.name)}
 						<div class="flex items-center justify-between gap-2 py-2">
 							<div class="flex items-center gap-1.5">
-								<div class="h-8 w-8 shrink-0 rounded-lg {item.color}"></div>
+								<div
+									class="h-8 w-8 shrink-0 rounded-lg bg-cover bg-center"
+									style="background-image: url('{item.img}')"
+								></div>
 								<div>
 									<p class="text-[8px] font-semibold text-foreground">{item.name}</p>
 									<p class="text-[7px] leading-tight text-muted-foreground">{item.desc}</p>
@@ -569,8 +597,8 @@
 	<div class="mx-auto max-w-6xl">
 		<div class="mb-12 overflow-hidden rounded-2xl">
 			<img
-				src="https://images.unsplash.com/photo-1567306295427-94503f8300d7?w=1600&h=600&fit=crop&q=80"
-				alt="Vibrant produce on display at a farmers market — green tomatillos, peppers, and herbs"
+				src="/marketing/iStock-1369508999.jpg"
+				alt="Overhead view of a market stall with a variety of baked goods on display"
 				class="h-48 w-full object-cover sm:h-64 md:h-72 lg:h-96"
 				loading="lazy"
 			/>
@@ -610,7 +638,7 @@
 	<div class="mx-auto max-w-6xl">
 		<div class="mb-12 overflow-hidden rounded-2xl">
 			<img
-				src="https://images.unsplash.com/photo-1628927124199-a8a2a5394392?w=1600&h=600&fit=crop&q=80"
+				src="/marketing/iStock-1334132701.jpg"
 				alt="Florist's workspace — fresh flowers, ribbon, and tools laid out on a wooden floor"
 				class="h-48 w-full object-cover sm:h-64 md:h-72 lg:h-96"
 				loading="lazy"
@@ -629,13 +657,17 @@
 		<div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
 			{#each operationsFeatures as f (f.title)}
 				<div
-					class="flex h-full flex-col rounded-2xl border bg-background p-6 transition hover:border-emerald-200 hover:shadow-sm"
+					class="flex gap-4 rounded-2xl border bg-background p-6 transition hover:border-emerald-200 hover:shadow-sm"
 				>
-					<div class="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
+					<div
+						class="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10"
+					>
 						<Icon icon={f.icon} class="h-5 w-5 text-primary" aria-hidden="true" />
 					</div>
-					<h3 class="font-semibold text-foreground">{f.title}</h3>
-					<p class="mt-1.5 flex-1 text-sm leading-relaxed text-muted-foreground">{f.desc}</p>
+					<div>
+						<h3 class="font-semibold text-foreground">{f.title}</h3>
+						<p class="mt-1.5 text-sm leading-relaxed text-muted-foreground">{f.desc}</p>
+					</div>
 				</div>
 			{/each}
 		</div>
@@ -658,13 +690,17 @@
 		<div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
 			{#each growthFeatures as f (f.title)}
 				<div
-					class="flex h-full flex-col rounded-2xl border bg-background p-6 transition hover:border-emerald-200 hover:shadow-sm"
+					class="flex gap-4 rounded-2xl border bg-background p-6 transition hover:border-emerald-200 hover:shadow-sm"
 				>
-					<div class="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
+					<div
+						class="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10"
+					>
 						<Icon icon={f.icon} class="h-5 w-5 text-primary" aria-hidden="true" />
 					</div>
-					<h3 class="font-semibold text-foreground">{f.title}</h3>
-					<p class="mt-1.5 flex-1 text-sm leading-relaxed text-muted-foreground">{f.desc}</p>
+					<div>
+						<h3 class="font-semibold text-foreground">{f.title}</h3>
+						<p class="mt-1.5 text-sm leading-relaxed text-muted-foreground">{f.desc}</p>
+					</div>
 				</div>
 			{/each}
 		</div>
@@ -673,12 +709,12 @@
 
 <!-- How it works -->
 <section id="how-it-works" class="scroll-mt-20 bg-muted/50 px-6 py-24">
-	<div class="mx-auto max-w-4xl">
+	<div class="mx-auto max-w-6xl">
 		<div class="mb-12 overflow-hidden rounded-2xl">
 			<img
-				src="https://images.unsplash.com/photo-1608198093002-ad4e005484ec?w=1600&h=400&fit=crop&q=80"
+				src="/marketing/iStock-2241575917.jpg"
 				alt="Freshly baked brown bread in a wicker basket"
-				class="h-48 w-full object-cover sm:h-52 md:h-64 lg:h-72"
+				class="h-48 w-full object-cover sm:h-64 md:h-72 lg:h-96"
 				loading="lazy"
 			/>
 		</div>
@@ -689,7 +725,7 @@
 				Get started
 			</span>
 			<h2 class="mt-3 text-3xl font-bold text-foreground sm:text-4xl">
-				Up and running before your next market day.
+				Create your store — up and running in minutes.
 			</h2>
 		</div>
 		<div class="relative grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
@@ -708,6 +744,71 @@
 				</div>
 			{/each}
 		</div>
+	</div>
+</section>
+
+<!-- Comparison -->
+<section class="bg-emerald-50/40 px-6 py-24">
+	<div class="mx-auto max-w-5xl">
+		<div class="mb-14 text-center">
+			<h2 class="text-3xl font-bold text-foreground sm:text-4xl">
+				Built for what you actually do.
+			</h2>
+			<p class="mx-auto mt-3 max-w-2xl text-lg text-muted-foreground">
+				The big platforms are built to ship parcels worldwide. Order Local is built for the way you
+				really sell — by hand, to people nearby, for pickup.
+			</p>
+		</div>
+
+		<!-- Mobile: vertical stack of per-row cards -->
+		<div class="space-y-4 md:hidden">
+			{#each comparison as row (row.label)}
+				<div class="rounded-2xl border bg-background p-6">
+					<p class="text-sm font-semibold text-foreground">{row.label}</p>
+					<div class="mt-4 space-y-4">
+						<div>
+							<p class="text-xs font-medium tracking-wide text-muted-foreground/70 uppercase">
+								The all-in-one platforms
+							</p>
+							<p class="mt-1 text-sm leading-relaxed text-muted-foreground">{row.them}</p>
+						</div>
+						<div class="rounded-xl bg-primary/5 p-3">
+							<p class="text-xs font-medium tracking-wide text-primary/90 uppercase">Order Local</p>
+							<p class="mt-1 text-sm leading-relaxed font-medium text-foreground">{row.us}</p>
+						</div>
+					</div>
+				</div>
+			{/each}
+		</div>
+
+		<!-- Desktop: 3-column comparison grid -->
+		<div class="hidden overflow-hidden rounded-2xl border md:grid md:grid-cols-[1.2fr_2fr_2fr]">
+			<!-- Header row -->
+			<div class="bg-muted/30 p-5"></div>
+			<div class="bg-muted/30 p-5">
+				<p class="text-sm font-semibold text-muted-foreground">The all-in-one platforms</p>
+			</div>
+			<div class="bg-primary/5 p-5">
+				<p class="text-sm font-semibold text-primary">Order Local</p>
+			</div>
+
+			<!-- Comparison rows -->
+			{#each comparison as row (row.label)}
+				<div class="border-t p-5">
+					<p class="text-sm font-semibold text-foreground">{row.label}</p>
+				</div>
+				<div class="border-t p-5">
+					<p class="text-sm leading-relaxed text-muted-foreground">{row.them}</p>
+				</div>
+				<div class="border-t bg-primary/5 p-5">
+					<p class="text-sm leading-relaxed font-medium text-foreground">{row.us}</p>
+				</div>
+			{/each}
+		</div>
+
+		<p class="mt-10 text-center text-sm text-muted-foreground">
+			You don't need a bigger toolbox. You need the right one.
+		</p>
 	</div>
 </section>
 
@@ -860,105 +961,25 @@
 		<div class="grid gap-5 sm:grid-cols-2">
 			{#each ADDONS as addon (addon.key)}
 				<div
-					class="flex flex-col gap-3 rounded-2xl border bg-background p-6 hover:border-emerald-200 hover:shadow-sm"
+					class="flex gap-4 rounded-2xl border bg-background p-6 transition hover:border-emerald-200 hover:shadow-sm"
 				>
-					<div class="flex items-start justify-between">
-						<div class="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
-							<Icon icon={addon.icon} class="h-5 w-5 text-primary" aria-hidden="true" />
-						</div>
-						<span
-							class="rounded-full border bg-background px-2.5 py-0.5 text-xs font-semibold text-muted-foreground"
-							>${addon.price}/mo</span
-						>
+					<div
+						class="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10"
+					>
+						<Icon icon={addon.icon} class="h-5 w-5 text-primary" aria-hidden="true" />
 					</div>
 					<div>
-						<h3 class="font-semibold text-foreground">{addon.name}</h3>
-						<p class="mt-1 text-sm leading-relaxed text-muted-foreground">{addon.description}</p>
+						<div class="flex flex-wrap items-center gap-2">
+							<h3 class="font-semibold text-foreground">{addon.name}</h3>
+							<span
+								class="rounded-full border bg-background px-2.5 py-0.5 text-xs font-semibold text-muted-foreground"
+								>${addon.price}/mo</span
+							>
+						</div>
+						<p class="mt-1.5 text-sm leading-relaxed text-muted-foreground">{addon.description}</p>
 					</div>
 				</div>
 			{/each}
-		</div>
-
-		<!-- Cost estimator -->
-		<div
-			class="mx-auto mt-12 max-w-lg rounded-2xl border bg-background p-6 hover:border-emerald-200 hover:shadow-sm"
-		>
-			<h3 class="mb-4 text-base font-semibold text-foreground">Estimate your cost</h3>
-
-			<!-- Base plan selector -->
-			<div class="mb-5">
-				<p class="mb-2 text-xs font-medium tracking-wide text-muted-foreground uppercase">
-					Base plan
-				</p>
-				<div class="flex gap-2">
-					{#each TIERS as tier (tier.key)}
-						<button
-							type="button"
-							onclick={() => (estimatorPlan = tier.key)}
-							class="flex-1 rounded-lg border px-3 py-2 text-xs font-medium transition-colors {estimatorPlan ===
-							tier.key
-								? 'border-primary bg-primary/10 text-primary'
-								: 'border-border text-muted-foreground hover:border-primary/40 hover:text-foreground'}"
-						>
-							{tier.name}
-						</button>
-					{/each}
-				</div>
-			</div>
-
-			<div class="space-y-3">
-				{#each ADDONS as addon, i (addon.key)}
-					{@const isBundled = estimatorBundled.has(addon.key)}
-					<label
-						class="flex items-center justify-between gap-3 {isBundled
-							? 'cursor-default'
-							: 'cursor-pointer'}"
-					>
-						<span class="flex items-center gap-2 text-sm text-foreground">
-							<input
-								type="checkbox"
-								class="h-4 w-4 rounded text-primary accent-primary focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none"
-								checked={isBundled || estimatorChecked[i]}
-								disabled={isBundled || estimatorPlan === 'starter'}
-								onchange={(e) => {
-									if (!isBundled)
-										estimatorChecked[i] = (e.currentTarget as HTMLInputElement).checked;
-								}}
-							/>
-							{addon.name}
-						</span>
-						<span
-							class="text-sm font-medium {isBundled ? 'text-primary' : 'text-muted-foreground'}"
-						>
-							{isBundled ? 'Included' : `$${addon.price}/mo`}
-						</span>
-					</label>
-				{/each}
-			</div>
-			{#if estimatorPlan === 'starter'}
-				<p class="mt-3 text-xs text-amber-600">Add-ons require Market or Pro plan.</p>
-			{/if}
-			<div class="mt-5 border-t pt-4">
-				<div class="flex items-baseline justify-between">
-					<span class="text-sm text-muted-foreground">Estimated total</span>
-					<span class="text-lg font-bold text-foreground">
-						{estimatorPlan === 'starter' && estimatorTotal === 0
-							? 'Free'
-							: `$${estimatorBase + estimatorTotal}`}
-						{#if estimatorPlan !== 'starter' || estimatorTotal > 0}
-							<span class="text-sm font-normal text-muted-foreground"> / month</span>
-						{/if}
-					</span>
-				</div>
-				<p class="mt-1 text-xs text-muted-foreground">
-					Includes {estimatorPlan === 'starter' ? 'Free' : `$${estimatorBase}`}
-					{getTier(estimatorPlan).name} base ({pricingInterval === 'annual'
-						? 'billed annually'
-						: 'billed monthly'}){#if estimatorBundledNames.length > 0}, {estimatorBundledNames.join(
-							' and '
-						)} included with Pro{/if}{#if estimatorTotal > 0}, plus selected add-ons{/if}.
-				</p>
-			</div>
 		</div>
 	</div>
 </section>
@@ -969,14 +990,7 @@
 		<div class="mb-12 text-center">
 			<h2 class="text-3xl font-bold text-foreground sm:text-4xl">Frequently asked questions</h2>
 		</div>
-		<Accordion
-			type="single"
-			bind:value={openFaq}
-			class="space-y-3"
-			onValueChange={(v: string | undefined) => {
-				if (v !== undefined) track('faq_open', { question: faqs[+v]?.q });
-			}}
-		>
+		<Accordion type="multiple" class="space-y-3">
 			{#each faqs as faq, i (faq.q)}
 				<AccordionItem
 					value={String(i)}
@@ -1000,16 +1014,16 @@
 
 <!-- Closing CTA -->
 <section
-	class="relative overflow-hidden bg-primary px-6 py-20"
+	class="relative overflow-hidden bg-primary px-6 py-32 md:py-48"
 	style="
 		background-image:
-			linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)),
-			url('https://images.unsplash.com/photo-1488459716781-31db52582fe9?fit=crop&q=80');
+			linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)),
+			url('/marketing/iStock-810850844.jpg');
 		background-size: cover;
-		background-position: center;
+		background-position: 50% 50%;
 	"
 >
-	<div class="mx-auto max-w-3xl rounded-xl bg-black/20 px-10 py-12 text-center backdrop-blur-sm">
+	<div class="mx-auto max-w-3xl rounded-xl px-10 py-12 text-center">
 		<h2 class="text-3xl font-bold text-white text-shadow-lg sm:text-4xl">
 			Ready to take your first order?
 		</h2>
