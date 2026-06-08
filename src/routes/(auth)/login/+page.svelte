@@ -47,7 +47,7 @@
 	}
 </script>
 
-<Card>
+<Card class="bg-background/90 md:bg-background">
 	<CardContent class="p-8">
 		<div class="mb-6 text-center">
 			<h1 class="text-xl font-bold text-foreground">Create your free account</h1>

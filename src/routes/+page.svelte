@@ -1,5 +1,7 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
+	import { pushState } from '$app/navigation';
+	import { page } from '$app/state';
 	import Icon from '@iconify/svelte';
 	import { track } from '$lib/analytics';
 	import { Badge } from '$lib/components/ui/badge';
@@ -217,6 +219,27 @@
 	let pricingInterval = $state<'monthly' | 'annual'>('monthly');
 	let mobileMenuOpen = $state(false);
 
+	function openMobileMenu() {
+		mobileMenuOpen = true;
+		// Add a history entry (SvelteKit shallow routing) so the device/browser back
+		// button closes the menu instead of navigating away. Raw history.pushState is
+		// avoided here because it interferes with SvelteKit's own history tracking.
+		pushState('', { mobileMenu: true });
+	}
+
+	function closeMobileMenu() {
+		mobileMenuOpen = false;
+		// Pop the entry we added on open so history stays clean.
+		if (page.state.mobileMenu) history.back();
+	}
+
+	// Back button pops the pushed entry, clearing page.state.mobileMenu → close the
+	// menu. Open state is kept local (not derived from page.state) so that paging
+	// back past the entry later never re-opens the menu.
+	$effect(() => {
+		if (!page.state.mobileMenu) mobileMenuOpen = false;
+	});
+
 	const faqJsonLd = JSON.stringify({
 		'@context': 'https://schema.org',
 		'@type': 'FAQPage',
@@ -298,7 +321,7 @@
 				aria-label="Open navigation menu"
 				aria-expanded={mobileMenuOpen}
 				aria-controls="mobile-menu"
-				onclick={() => (mobileMenuOpen = true)}
+				onclick={openMobileMenu}
 				class="rounded-md p-2 text-zinc-700 transition-colors hover:bg-muted focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none md:hidden"
 			>
 				<Icon icon="mdi:menu" class="h-5 w-5" />
@@ -316,7 +339,7 @@
 		tabindex="-1"
 		class="fixed inset-0 z-50 flex flex-col bg-white md:hidden"
 		onkeydown={(e) => {
-			if (e.key === 'Escape') mobileMenuOpen = false;
+			if (e.key === 'Escape') closeMobileMenu();
 		}}
 	>
 		<div class="flex items-center justify-between border-b px-6 py-4">
@@ -326,7 +349,7 @@
 			<button
 				type="button"
 				aria-label="Close navigation menu"
-				onclick={() => (mobileMenuOpen = false)}
+				onclick={closeMobileMenu}
 				class="rounded-md p-2 text-zinc-700 hover:bg-muted focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none"
 			>
 				<Icon icon="mdi:close" class="h-5 w-5" />
@@ -634,7 +657,7 @@
 </section>
 
 <!-- Operations features -->
-<section class="scroll-mt-20 bg-emerald-50/40 px-6 py-24">
+<section class="scroll-mt-20 bg-emerald-100/30 px-6 py-24">
 	<div class="mx-auto max-w-6xl">
 		<div class="mb-12 overflow-hidden rounded-2xl">
 			<img
@@ -708,7 +731,7 @@
 </section>
 
 <!-- How it works -->
-<section id="how-it-works" class="scroll-mt-20 bg-muted/50 px-6 py-24">
+<section id="how-it-works" class="scroll-mt-20 bg-muted px-6 py-24">
 	<div class="mx-auto max-w-6xl">
 		<div class="mb-12 overflow-hidden rounded-2xl">
 			<img
@@ -748,13 +771,11 @@
 </section>
 
 <!-- Comparison -->
-<section class="bg-emerald-50/40 px-6 py-24">
+<section class="bg-gray-900 px-6 py-24">
 	<div class="mx-auto max-w-5xl">
 		<div class="mb-14 text-center">
-			<h2 class="text-3xl font-bold text-foreground sm:text-4xl">
-				Built for what you actually do.
-			</h2>
-			<p class="mx-auto mt-3 max-w-2xl text-lg text-muted-foreground">
+			<h2 class="text-3xl font-bold text-white sm:text-4xl">Built for what you actually do.</h2>
+			<p class="mx-auto mt-3 max-w-2xl text-lg text-gray-300">
 				The big platforms are built to ship parcels worldwide. Order Local is built for the way you
 				really sell — by hand, to people nearby, for pickup.
 			</p>
@@ -782,7 +803,9 @@
 		</div>
 
 		<!-- Desktop: 3-column comparison grid -->
-		<div class="hidden overflow-hidden rounded-2xl border md:grid md:grid-cols-[1.2fr_2fr_2fr]">
+		<div
+			class="hidden overflow-hidden rounded-2xl border bg-background md:grid md:grid-cols-[1.2fr_2fr_2fr]"
+		>
 			<!-- Header row -->
 			<div class="bg-muted/30 p-5"></div>
 			<div class="bg-muted/30 p-5">
@@ -806,7 +829,7 @@
 			{/each}
 		</div>
 
-		<p class="mt-10 text-center text-sm text-muted-foreground">
+		<p class="mt-10 text-center text-sm text-gray-300">
 			You don't need a bigger toolbox. You need the right one.
 		</p>
 	</div>
@@ -943,7 +966,7 @@
 </section>
 
 <!-- Add-ons -->
-<section class="bg-emerald-50/40 px-6 py-24">
+<section class="bg-emerald-100/30 px-6 py-24">
 	<div class="mx-auto max-w-6xl">
 		<div class="mb-14 text-center">
 			<span

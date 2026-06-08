@@ -1,5 +1,6 @@
 import { dev } from '$app/environment';
 import { injectAnalytics } from '@vercel/analytics/sveltekit';
+import { injectSpeedInsights } from '@vercel/speed-insights/sveltekit';
 
 // Marketing-site pages only. Vercel Web Analytics otherwise counts every route
 // — authed /dashboard and /admin, plus every vendor storefront — which dilutes
@@ -15,3 +16,11 @@ injectAnalytics({
 		return TRACKED_PATHS.has(path) ? event : null;
 	}
 });
+
+// Speed Insights = real-user performance (Core Web Vitals), reported per route.
+// Tracked on ALL routes (unlike Analytics above, which is marketing-only) so
+// dashboard + storefront performance is visible — that's where slow loads cost
+// vendors orders. Auto-detects environment: no-ops in dev, collects only in
+// production. `route` is set automatically by the /sveltekit import. If the Hobby
+// data-point quota gets tight post-launch, add a beforeSend filter (see below).
+injectSpeedInsights();
