@@ -7,15 +7,28 @@ making changes. Follow it exactly.
 
 ## Standing instructions
 
-### Zero real users until further notice
+### Live in production — migrations required
 
-Order Local has no production users and won't until Scott explicitly says
-otherwise. Schema changes, column drops, data wipes, enum reshapes, and
-restructures are freely available with no migration ceremony. Default action
-when a model needs to change: drop the column, recreate the schema, reseed.
-Do not write data migrations, backfill steps, or "preserve historical rows"
-fallbacks unless explicitly asked. This standing instruction is in effect
-until Scott updates this section to say otherwise.
+Order Local is **live in production with real vendors and data.** Treat the
+production database as sacred: no drop-and-recreate, no reseed, no destructive
+column/enum reshapes against prod without a migration that preserves existing
+data. Prefer additive, backward-compatible schema changes; write a backfill
+when a change needs one. (This reverses the earlier "zero real users" stance.)
+
+Schema changes flow through **versioned migrations — never `db:push`:**
+
+1. Edit the schema source only (`src/lib/server/db/*.ts`). Never hand-write a
+   `drizzle/NNNN_*.sql` file — `db:generate` produces it with correct metadata.
+2. Scott runs `bun run db:generate` to produce the migration, then
+   `bun run db:migrate` against the **dev** database.
+3. Test against dev.
+4. **Only after testing,** sync **prod**: `bun run db:migrate` against the
+   production `DATABASE_URL`. This is a deliberate final step — the prod
+   migration belongs in the **last prompt of a feature**, not run per-phase.
+
+`db:push` is retired; it bypasses versioned migrations and desyncs dev/prod.
+The same generated migration file applies to dev and later prod, keeping them
+in lockstep.
 
 ### Production domains and addressing
 
@@ -2605,8 +2618,9 @@ Skeleton count matches expected result count.
 
 - The schema lives in `src/lib/server/db/schema/`. The single source of truth
   for the data model.
-- Drizzle migrations are applied via `bun run db:migrate` (or `db:push` if the
-  project is push-based — check `drizzle.config.ts`).
+- Schema changes flow through versioned migrations, never `db:push`: edit the
+  schema source, then `bun run db:generate` and `bun run db:migrate` (dev first,
+  prod last, after testing). See "Live in production — migrations required".
 - Never write raw SQL in routes. Always go through Drizzle.
 - Server-only code lives under `src/lib/server/`. Never import from
   `$lib/server/*` in client-side code.

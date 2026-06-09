@@ -23,19 +23,19 @@
 			number: 3,
 			title: 'Add your bank account',
 			description:
-				'To receive payouts, connect a bank account under Settings → Bank accounts and scheduling in your Stripe dashboard. Payouts typically arrive within 2 business days.'
+				'To receive payouts, add a bank account in your Stripe dashboard under Settings → Business → Bank accounts and currencies. Your first payout typically arrives about 7–14 days after your first live payment; after that, payouts follow your account schedule (often within ~2 business days).'
 		},
 		{
 			number: 4,
-			title: 'Get your secret API key',
+			title: 'Get your API keys',
 			description:
-				"In your Stripe dashboard, go to Developers → API keys. You'll see a Publishable key and a Secret key. Copy the Secret key — it starts with sk_live_ for live mode or sk_test_ for test mode."
+				"In your Stripe dashboard, go to Developers → API keys. You'll need two keys: the Publishable key (starts with pk_) and the Secret key (starts with sk_) — copy both. Each has a test version (pk_test_ / sk_test_) and a live version (pk_live_ / sk_live_); click Reveal to see the secret key."
 		},
 		{
 			number: 5,
-			title: 'Paste it into OrderLocal',
+			title: 'Add your keys to OrderLocal',
 			description:
-				'Go back to Integrations, click"Connect Stripe", and paste your secret key. We\'ll verify it immediately. Use sk_test_ keys while testing and swap to sk_live_ when you\'re ready to go live.'
+				"Back on the Integrations page, add your keys one at a time. In the Publishable key row, click Add, paste your publishable key, and click Save. Then in the Secret key row, click Add, paste your secret key, and click Save — OrderLocal verifies the connection in the background. When the status turns to a green Connected badge (and Webhooks shows Auto-configured), you're all set. If it doesn't turn green, something went wrong connecting — reach out to us and we'll help you sort it out."
 		}
 	];
 </script>
@@ -121,10 +121,16 @@
 			<div>
 				<p class="text-sm font-semibold text-yellow-800">Test mode vs. live mode</p>
 				<p class="mt-1 text-sm leading-relaxed text-yellow-700">
-					During development, use a <span class="font-mono font-medium">sk_test_</span> key — no
-					real charges will be made. When you're ready to accept real payments, swap it for your
-					<span class="font-mono font-medium">sk_live_</span> key. You can toggle between modes in the
-					top-left of your Stripe dashboard.
+					While building your storefront, use your test keys —
+					<span class="font-mono font-medium">pk_test_</span> and
+					<span class="font-mono font-medium">sk_test_</span> — so no real charges are made. When
+					you're ready for real payments, swap in your live keys (<span
+						class="font-mono font-medium">pk_live_</span
+					>
+					and
+					<span class="font-mono font-medium">sk_live_</span>). Switch between test and live mode
+					with the toggle in the top-right of your Stripe dashboard — newer accounts may show a
+					Sandbox or account switcher instead.
 				</p>
 			</div>
 		</div>

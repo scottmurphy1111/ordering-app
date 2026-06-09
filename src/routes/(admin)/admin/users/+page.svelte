@@ -123,9 +123,7 @@
 									{/if}
 								</TableCell>
 								<TableCell class="px-4 py-3">
-									<div
-										class="flex flex-col items-stretch gap-1 md:flex-row md:items-center md:justify-end"
-									>
+									<div class="flex items-center justify-end gap-1">
 										<!-- Toggle super admin -->
 										<form method="post" action="?/toggleInternal" use:enhance>
 											<input type="hidden" name="id" value={u.id} />

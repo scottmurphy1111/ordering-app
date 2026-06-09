@@ -176,9 +176,7 @@
 									</StatusBadge>
 								</TableCell>
 								<TableCell class="px-4 py-3">
-									<div
-										class="flex flex-col items-stretch gap-1 md:flex-row md:items-center md:justify-end"
-									>
+									<div class="flex items-center justify-end gap-1">
 										{#if !t.deletedAt && compatibleArchetypes(t.fulfillmentModel ?? '').length > 0}
 											<!-- Reseed -->
 											<DropdownMenu>
@@ -187,10 +185,10 @@
 														<Button
 															{...props}
 															variant="ghost"
-															size="xs"
-															class="w-full text-muted-foreground md:w-auto"
+															size="default"
+															class="w-auto text-muted-foreground hover:text-foreground"
 														>
-															Reseed…
+															Reseed
 														</Button>
 													{/snippet}
 												</DropdownMenuTrigger>
