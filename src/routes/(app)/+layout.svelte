@@ -386,8 +386,8 @@
 			{@render children()}
 		</div>
 		<footer class="border-t px-6 py-4 print:hidden">
-			<div class="mx-auto flex max-w-5xl items-center justify-between gap-4">
-				<p class="text-xs text-muted-foreground">
+			<div class="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-x-4 gap-y-2">
+				<p class="text-xs whitespace-nowrap text-muted-foreground">
 					© {new Date().getFullYear()} Order<span class="text-primary">Local</span>
 				</p>
 				<nav class="flex gap-4 text-xs text-muted-foreground">

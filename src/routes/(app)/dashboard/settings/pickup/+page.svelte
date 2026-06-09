@@ -7,7 +7,14 @@
 	import { SvelteMap } from 'svelte/reactivity';
 	import { Button } from '$lib/components/ui/button';
 	import StatusBadge from '$lib/components/StatusBadge.svelte';
-	import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '$lib/components/ui/card';
+	import { Card, CardContent, CardFooter } from '$lib/components/ui/card';
+	import {
+		Dialog,
+		DialogContent,
+		DialogHeader,
+		DialogTitle,
+		DialogFooter
+	} from '$lib/components/ui/dialog';
 	import { Input } from '$lib/components/ui/input';
 	import { Textarea } from '$lib/components/ui/textarea';
 	import {
@@ -583,7 +590,7 @@
 
 	<!-- ── Pickup locations section (Phase 2) ─────────────────────────────── -->
 	<div>
-		<div class="mb-3 flex items-center justify-between">
+		<div class="mb-3 flex items-start justify-between gap-4">
 			<div>
 				<h2 class="text-base font-semibold text-foreground">Pickup locations</h2>
 				<p class="mt-0.5 text-xs text-muted-foreground">
@@ -595,6 +602,10 @@
 					type="button"
 					onclick={() => {
 						showAddForm = true;
+						editingId = null;
+						showAddTemplateForm = false;
+						editingTemplateId = null;
+						addError = null;
 					}}
 					variant="outline"
 				>
@@ -604,22 +615,28 @@
 		</div>
 
 		<!-- Edit form -->
-		{#if editingId !== null && editingLocation !== null}
-			{#if editError}
-				<Alert severity="error" class="mb-3">{editError}</Alert>
-			{/if}
-			<Card class="mb-4 shadow-sm">
-				<form
-					method="post"
-					class="space-y-4"
-					action="?/updateLocation"
-					use:enhance={handleEditEnhance}
-				>
-					<input type="hidden" name="id" value={editingId} />
-					<CardHeader>
-						<CardTitle>Edit location</CardTitle>
-					</CardHeader>
-					<CardContent class="space-y-4">
+		<Dialog
+			open={editingId !== null && editingLocation !== null}
+			onOpenChange={(o) => {
+				if (!o) {
+					editingId = null;
+					editError = null;
+				}
+			}}
+		>
+			<DialogContent class="max-h-[90vh] overflow-y-auto sm:max-w-lg">
+				<DialogHeader>
+					<DialogTitle>Edit location</DialogTitle>
+				</DialogHeader>
+				{#if editError}<Alert severity="error">{editError}</Alert>{/if}
+				{#if editingLocation !== null}
+					<form
+						method="post"
+						class="space-y-4"
+						action="?/updateLocation"
+						use:enhance={handleEditEnhance}
+					>
+						<input type="hidden" name="id" value={editingId} />
 						<div>
 							<label class="mb-1 block text-sm font-medium text-muted-foreground" for="edit-name">
 								Name *
@@ -684,92 +701,94 @@
 							/>
 							<p class="mt-1 text-xs text-muted-foreground">Shown to customers at checkout.</p>
 						</div>
-					</CardContent>
-					<CardFooter class="gap-3">
-						<Button type="submit" variant="default" disabled={submittingUpdateLocation}>
-							{#if submittingUpdateLocation}
-								<Icon icon="mdi:loading" class="h-4 w-4 animate-spin" />
-								Saving...
-							{:else}
-								Save changes
-							{/if}
-						</Button>
-						<Button
-							type="button"
-							onclick={() => {
-								editingId = null;
-								editError = null;
-							}}
-							variant="outline"
-						>
-							Cancel
-						</Button>
-					</CardFooter>
-				</form>
-			</Card>
-		{/if}
+						<DialogFooter class="gap-3">
+							<Button type="submit" variant="default" disabled={submittingUpdateLocation}>
+								{#if submittingUpdateLocation}
+									<Icon icon="mdi:loading" class="h-4 w-4 animate-spin" />
+									Saving...
+								{:else}
+									Save changes
+								{/if}
+							</Button>
+							<Button
+								type="button"
+								onclick={() => {
+									editingId = null;
+									editError = null;
+								}}
+								variant="outline"
+							>
+								Cancel
+							</Button>
+						</DialogFooter>
+					</form>
+				{/if}
+			</DialogContent>
+		</Dialog>
 
 		<!-- Add form -->
-		{#if showAddForm}
-			{#if addError}
-				<Alert severity="error" class="mb-3">{addError}</Alert>
-			{/if}
-			<Card class="mb-4 shadow-sm">
+		<Dialog
+			open={showAddForm}
+			onOpenChange={(o) => {
+				showAddForm = o;
+				if (!o) addError = null;
+			}}
+		>
+			<DialogContent class="max-h-[90vh] overflow-y-auto sm:max-w-lg">
+				<DialogHeader>
+					<DialogTitle>New location</DialogTitle>
+				</DialogHeader>
+				{#if addError}<Alert severity="error">{addError}</Alert>{/if}
 				<form
 					class="space-y-4"
 					method="post"
 					action="?/createLocation"
 					use:enhance={handleAddEnhance}
 				>
-					<CardHeader>
-						<CardTitle>New location</CardTitle>
-					</CardHeader>
-					<CardContent class="space-y-4">
-						<div>
-							<label class="mb-1 block text-sm font-medium text-muted-foreground" for="add-name">
-								Name *
-							</label>
-							<Input
-								id="add-name"
-								name="name"
-								type="text"
-								required
-								maxlength={100}
-								placeholder="e.g. Saturday Farmers Market"
-							/>
-						</div>
-						<div>
-							<p class="mb-2 text-sm font-medium text-muted-foreground">
-								Address <span class="font-normal text-muted-foreground">(optional)</span>
-							</p>
-							<div class="space-y-2">
-								<Input name="street" type="text" placeholder="Street" maxlength={100} />
-								<div class="grid grid-cols-3 gap-2">
-									<Input name="city" type="text" placeholder="City" maxlength={100} />
-									<Input name="state" type="text" placeholder="State" maxlength={50} />
-									<Input name="zip" type="text" placeholder="ZIP" maxlength={20} />
-								</div>
+					<div>
+						<label class="mb-1 block text-sm font-medium text-muted-foreground" for="add-name">
+							Name *
+						</label>
+						<Input
+							id="add-name"
+							name="name"
+							type="text"
+							required
+							maxlength={100}
+							placeholder="e.g. Saturday Farmers Market"
+						/>
+					</div>
+					<div>
+						<p class="mb-2 text-sm font-medium text-muted-foreground">
+							Address <span class="font-normal text-muted-foreground">(optional)</span>
+						</p>
+						<div class="space-y-2">
+							<Input name="street" type="text" placeholder="Street" maxlength={100} />
+							<div class="grid grid-cols-3 gap-2">
+								<Input name="city" type="text" placeholder="City" maxlength={100} />
+								<Input name="state" type="text" placeholder="State" maxlength={50} />
+								<Input name="zip" type="text" placeholder="ZIP" maxlength={20} />
 							</div>
 						</div>
-						<div>
-							<label class="mb-1 block text-sm font-medium text-muted-foreground" for="add-notes">
-								Notes
-							</label>
-							<Textarea
-								id="add-notes"
-								name="notes"
-								maxlength={500}
-								placeholder="e.g. Green tent, Row C, near the main entrance"
-								class="min-h-18"
-							/>
-							<p class="mt-1 text-xs text-muted-foreground">Shown to customers at checkout.</p>
-						</div>
-						<label class="flex cursor-pointer items-center gap-2 text-sm text-muted-foreground">
-							<Checkbox name="isActive" checked={true} />
-							Active
+					</div>
+					<div>
+						<label class="mb-1 block text-sm font-medium text-muted-foreground" for="add-notes">
+							Notes
 						</label>
-					</CardContent>
-					<CardFooter class="gap-3">
+						<Textarea
+							id="add-notes"
+							name="notes"
+							maxlength={500}
+							placeholder="e.g. Green tent, Row C, near the main entrance"
+							class="min-h-18"
+						/>
+						<p class="mt-1 text-xs text-muted-foreground">Shown to customers at checkout.</p>
+					</div>
+					<label class="flex cursor-pointer items-center gap-2 text-sm text-muted-foreground">
+						<Checkbox name="isActive" checked={true} />
+						Active
+					</label>
+					<DialogFooter class="gap-3">
 						<Button type="submit" variant="default" disabled={submittingCreateLocation}>
 							{#if submittingCreateLocation}
 								<Icon icon="mdi:loading" class="h-4 w-4 animate-spin" />
@@ -788,10 +807,10 @@
 						>
 							Cancel
 						</Button>
-					</CardFooter>
+					</DialogFooter>
 				</form>
-			</Card>
-		{/if}
+			</DialogContent>
+		</Dialog>
 
 		<!-- Empty state -->
 		{#if data.locations.length === 0 && !showAddForm}
@@ -804,7 +823,18 @@
 					<p class="mt-1 max-w-sm text-sm text-muted-foreground">
 						Add your first location to start configuring pickup windows.
 					</p>
-					<Button type="button" onclick={() => (showAddForm = true)} variant="default" class="mt-6">
+					<Button
+						type="button"
+						onclick={() => {
+							showAddForm = true;
+							editingId = null;
+							showAddTemplateForm = false;
+							editingTemplateId = null;
+							addError = null;
+						}}
+						variant="default"
+						class="mt-6"
+					>
 						Add location
 					</Button>
 				</CardContent>
@@ -818,35 +848,35 @@
 					<TableHeader>
 						<TableRow>
 							<TableHead>Name</TableHead>
-							<TableHead class="hidden md:table-cell">Address</TableHead>
+							<TableHead>Address</TableHead>
 							<TableHead>Status</TableHead>
-							<TableHead class="text-right">Actions</TableHead>
+							<TableHead></TableHead>
 						</TableRow>
 					</TableHeader>
 					<TableBody>
 						{#each data.locations as loc (loc.id)}
 							<TableRow>
-								<TableCell class="font-medium">{loc.name}</TableCell>
-								<TableCell class="hidden text-sm text-muted-foreground md:table-cell">
+								<TableCell class="align-top font-medium">{loc.name}</TableCell>
+								<TableCell class="align-top text-sm text-muted-foreground md:table-cell">
 									{formatAddress(loc.address)}
 								</TableCell>
-								<TableCell>
+								<TableCell class="align-top">
 									{#if loc.isActive}
 										<StatusBadge variant="success">Active</StatusBadge>
 									{:else}
 										<StatusBadge variant="neutral">Inactive</StatusBadge>
 									{/if}
 								</TableCell>
-								<TableCell class="text-right">
-									<div
-										class="flex flex-col items-stretch gap-1 md:flex-row md:items-center md:justify-end md:gap-3"
-									>
+								<TableCell class="align-top">
+									<div class="flex items-end justify-start gap-2 md:items-center md:justify-end">
 										<Button
 											type="button"
 											onclick={() => {
 												editingId = loc.id;
 												showAddForm = false;
 												editError = null;
+												showAddTemplateForm = false;
+												editingTemplateId = null;
 											}}
 											variant="ghost"
 											class="text-xs text-muted-foreground hover:text-foreground"
@@ -902,7 +932,7 @@
 
 	<!-- ── Pickup windows section (Phase 3) ───────────────────────────────── -->
 	<div class="mt-10">
-		<div class="mb-3 flex items-center justify-between">
+		<div class="mb-3 flex items-start justify-between gap-4">
 			<div>
 				<h2 class="text-base font-semibold text-foreground">Pickup windows</h2>
 				<p class="mt-0.5 text-xs text-muted-foreground">
@@ -921,6 +951,10 @@
 						previewRecurrenceEndDate = '';
 						addLocationValue = '';
 						showAddTemplateForm = true;
+						showAddForm = false;
+						editingId = null;
+						editingTemplateId = null;
+						addTemplateError = null;
 					}}
 					variant="outline"
 				>
@@ -930,22 +964,36 @@
 		</div>
 
 		<!-- Edit template form -->
-		{#if editingTemplateId !== null && editingTemplate !== null}
-			{#if editTemplateError}
-				<Alert severity="error" class="mb-3">{editTemplateError}</Alert>
-			{/if}
-			<Card class="mb-4 shadow-sm">
-				<form
-					class="space-y-4"
-					method="post"
-					action="?/updateTemplate"
-					use:enhance={handleEditTemplateEnhance}
-				>
-					<input type="hidden" name="id" value={editingTemplateId} />
-					<CardHeader>
-						<CardTitle>Edit pickup window</CardTitle>
-					</CardHeader>
-					<CardContent class="space-y-4">
+		<Dialog
+			open={editingTemplateId !== null && editingTemplate !== null}
+			onOpenChange={(o) => {
+				if (!o) {
+					editingTemplateId = null;
+					editTemplateError = null;
+					previewDays = [];
+					previewStartTime = '';
+					previewEndTime = '';
+					previewRecurrenceStartDate = '';
+					previewRecurrenceEndDate = '';
+					previewTemplateKind = 'weekly';
+					editExdates = [];
+					addExdateInput = '';
+				}
+			}}
+		>
+			<DialogContent class="max-h-[90vh] overflow-y-auto sm:max-w-xl">
+				<DialogHeader>
+					<DialogTitle>Edit pickup window</DialogTitle>
+				</DialogHeader>
+				{#if editTemplateError}<Alert severity="error">{editTemplateError}</Alert>{/if}
+				{#if editingTemplate !== null}
+					<form
+						class="space-y-4"
+						method="post"
+						action="?/updateTemplate"
+						use:enhance={handleEditTemplateEnhance}
+					>
+						<input type="hidden" name="id" value={editingTemplateId} />
 						<!-- Hidden field carries templateKind to the form action -->
 						<input type="hidden" name="templateKind" value={previewTemplateKind} />
 						<!-- Name -->
@@ -1210,263 +1258,258 @@
 						</div>
 						<!-- Live preview -->
 						{@render occurrencePreviewBlock()}
-					</CardContent>
-					<CardFooter class="gap-3">
-						<Button type="submit" variant="default" disabled={submittingUpdateTemplate}>
-							{#if submittingUpdateTemplate}
-								<Icon icon="mdi:loading" class="h-4 w-4 animate-spin" />
-								Saving...
-							{:else}
-								Save changes
-							{/if}
-						</Button>
-						<Button
-							type="button"
-							onclick={() => {
-								editingTemplateId = null;
-								editTemplateError = null;
-								previewDays = [];
-								previewStartTime = '';
-								previewEndTime = '';
-								previewRecurrenceStartDate = '';
-								previewRecurrenceEndDate = '';
-								previewTemplateKind = 'weekly';
-								editExdates = [];
-								addExdateInput = '';
-							}}
-							variant="outline"
-						>
-							Cancel
-						</Button>
-					</CardFooter>
-				</form>
-			</Card>
-		{/if}
+						<DialogFooter class="gap-3">
+							<Button type="submit" variant="default" disabled={submittingUpdateTemplate}>
+								{#if submittingUpdateTemplate}
+									<Icon icon="mdi:loading" class="h-4 w-4 animate-spin" />
+									Saving...
+								{:else}
+									Save changes
+								{/if}
+							</Button>
+							<Button
+								type="button"
+								onclick={() => {
+									editingTemplateId = null;
+									editTemplateError = null;
+									previewDays = [];
+									previewStartTime = '';
+									previewEndTime = '';
+									previewRecurrenceStartDate = '';
+									previewRecurrenceEndDate = '';
+									previewTemplateKind = 'weekly';
+									editExdates = [];
+									addExdateInput = '';
+								}}
+								variant="outline"
+							>
+								Cancel
+							</Button>
+						</DialogFooter>
+					</form>
+				{/if}
+			</DialogContent>
+		</Dialog>
 
 		<!-- Add template form -->
-		{#if showAddTemplateForm}
-			{#if addTemplateError}
-				<Alert severity="error" class="mb-3">{addTemplateError}</Alert>
-			{/if}
-			<Card class="mb-4 shadow-sm">
+		<Dialog
+			open={showAddTemplateForm}
+			onOpenChange={(o) => {
+				showAddTemplateForm = o;
+				if (!o) {
+					addLocationValue = '';
+					addTemplateError = null;
+					previewDays = [];
+					previewStartTime = '';
+					previewEndTime = '';
+					previewRecurrenceStartDate = '';
+					previewRecurrenceEndDate = '';
+					previewTemplateKind = 'weekly';
+				}
+			}}
+		>
+			<DialogContent class="max-h-[90vh] overflow-y-auto sm:max-w-xl">
+				<DialogHeader>
+					<DialogTitle>New pickup window</DialogTitle>
+				</DialogHeader>
+				{#if addTemplateError}<Alert severity="error">{addTemplateError}</Alert>{/if}
 				<form
 					class="space-y-4"
 					method="post"
 					action="?/createTemplate"
 					use:enhance={handleAddTemplateEnhance}
 				>
-					<CardHeader>
-						<CardTitle>New pickup window</CardTitle>
-					</CardHeader>
-					<CardContent class="space-y-4">
-						<!-- Name -->
+					<!-- Name -->
+					<div>
+						<label class="mb-1 block text-sm font-medium text-muted-foreground" for="tmpl-name">
+							Name *
+						</label>
+						<Input
+							id="tmpl-name"
+							name="name"
+							type="text"
+							required
+							maxlength={100}
+							placeholder="e.g. Saturday morning market"
+						/>
+					</div>
+					<!-- Location -->
+					<div>
+						<label class="mb-1 block text-sm font-medium text-muted-foreground" for="tmpl-location">
+							Location
+						</label>
+						<Select type="single" name="locationId" bind:value={addLocationValue}>
+							<SelectTrigger id="tmpl-location" class="w-full">
+								<SelectValue>
+									{data.locations.find((l) => String(l.id) === addLocationValue)?.name ??
+										'(no location)'}
+								</SelectValue>
+							</SelectTrigger>
+							<SelectContent>
+								<SelectItem value="">(no location)</SelectItem>
+								{#each data.locations.filter((l) => l.isActive) as loc (loc.id)}
+									<SelectItem value={String(loc.id)}>{loc.name}</SelectItem>
+								{/each}
+							</SelectContent>
+						</Select>
+					</div>
+					<!-- Hidden field carries templateKind to the form action -->
+					<input type="hidden" name="templateKind" value={previewTemplateKind} />
+					<!-- Template kind toggle -->
+					<div>
+						<p class="mb-2 text-sm font-medium text-muted-foreground">Repeats</p>
+						<Tabs
+							value={previewTemplateKind}
+							onValueChange={(v) => (previewTemplateKind = v as 'weekly' | 'daily')}
+							aria-label="Choose recurrence type"
+						>
+							<TabsList class="w-full md:w-auto">
+								<TabsTrigger value="weekly">
+									<Icon icon="mdi:calendar-week" class="h-3.5 w-3.5" />
+									Weekly
+								</TabsTrigger>
+								<TabsTrigger value="daily">
+									<Icon icon="mdi:calendar-today" class="h-3.5 w-3.5" />
+									Daily
+								</TabsTrigger>
+							</TabsList>
+						</Tabs>
+					</div>
+					<!-- Days (weekly only) -->
+					{#if previewTemplateKind === 'weekly'}
 						<div>
-							<label class="mb-1 block text-sm font-medium text-muted-foreground" for="tmpl-name">
-								Name *
+							<p class="mb-2 text-sm font-medium text-muted-foreground">Days *</p>
+							<div class="flex flex-wrap gap-2">
+								{#each DAY_ORDER as day (day)}
+									<label
+										class="flex cursor-pointer items-center gap-1.5 rounded-md border px-3 py-1.5 text-sm transition-colors {previewDays.includes(
+											day
+										)
+											? 'border-ring bg-primary/5 text-foreground'
+											: 'border-input bg-background text-muted-foreground hover:bg-muted/50'}"
+									>
+										<Checkbox
+											name="days"
+											value={day}
+											checked={previewDays.includes(day)}
+											onCheckedChange={(v) => {
+												if (v) previewDays = [...previewDays, day];
+												else previewDays = previewDays.filter((d) => d !== day);
+											}}
+											class="sr-only"
+										/>
+										{DAY_LABELS[day]}
+									</label>
+								{/each}
+							</div>
+						</div>
+					{:else}
+						<p class="text-xs text-muted-foreground">
+							Window opens every day. Set a low cutoff (e.g., 0 hours) so customers can order until
+							the window closes.
+						</p>
+					{/if}
+					<!-- Times -->
+					<div class="grid grid-cols-2 gap-4">
+						<div>
+							<label class="mb-1 block text-sm font-medium text-muted-foreground" for="tmpl-start">
+								Start time *
 							</label>
 							<Input
-								id="tmpl-name"
-								name="name"
-								type="text"
+								id="tmpl-start"
+								name="windowStart"
+								type="time"
 								required
-								maxlength={100}
-								placeholder="e.g. Saturday morning market"
+								value={previewStartTime}
+								oninput={(e) => (previewStartTime = (e.target as HTMLInputElement).value)}
 							/>
+							<p class="mt-1 text-xs text-muted-foreground">Pickup opens.</p>
 						</div>
-						<!-- Location -->
+						<div>
+							<label class="mb-1 block text-sm font-medium text-muted-foreground" for="tmpl-end">
+								End time *
+							</label>
+							<Input
+								id="tmpl-end"
+								name="windowEnd"
+								type="time"
+								required
+								value={previewEndTime}
+								oninput={(e) => (previewEndTime = (e.target as HTMLInputElement).value)}
+							/>
+							<p class="mt-1 text-xs text-muted-foreground">Pickup closes.</p>
+						</div>
+					</div>
+					<!-- Cutoff + max orders -->
+					<div class="grid grid-cols-2 gap-4">
+						<div>
+							<label class="mb-1 block text-sm font-medium text-muted-foreground" for="tmpl-cutoff">
+								Order cutoff (hours) *
+							</label>
+							<Input
+								id="tmpl-cutoff"
+								name="cutoffHours"
+								type="number"
+								required
+								min={1}
+								value={previewCutoffHours}
+								oninput={(e) =>
+									(previewCutoffHours = parseInt((e.target as HTMLInputElement).value) || 48)}
+							/>
+							<p class="mt-1 text-xs text-muted-foreground">
+								Hours before pickup customers must order.
+							</p>
+						</div>
+						<div>
+							<label class="mb-1 block text-sm font-medium text-muted-foreground" for="tmpl-max">
+								Max orders per window
+							</label>
+							<Input id="tmpl-max" name="maxOrders" type="number" min={1} placeholder="Unlimited" />
+						</div>
+					</div>
+					<!-- Date bounds (optional) -->
+					<div class="grid grid-cols-2 gap-4">
 						<div>
 							<label
 								class="mb-1 block text-sm font-medium text-muted-foreground"
-								for="tmpl-location"
+								for="tmpl-rec-start"
 							>
-								Location
+								Starts on
 							</label>
-							<Select type="single" name="locationId" bind:value={addLocationValue}>
-								<SelectTrigger id="tmpl-location" class="w-full">
-									<SelectValue>
-										{data.locations.find((l) => String(l.id) === addLocationValue)?.name ??
-											'(no location)'}
-									</SelectValue>
-								</SelectTrigger>
-								<SelectContent>
-									<SelectItem value="">(no location)</SelectItem>
-									{#each data.locations.filter((l) => l.isActive) as loc (loc.id)}
-										<SelectItem value={String(loc.id)}>{loc.name}</SelectItem>
-									{/each}
-								</SelectContent>
-							</Select>
+							<Input
+								id="tmpl-rec-start"
+								name="recurrenceStartDate"
+								type="date"
+								value={previewRecurrenceStartDate}
+								oninput={(e) => (previewRecurrenceStartDate = (e.target as HTMLInputElement).value)}
+							/>
+							<p class="mt-1 text-xs text-muted-foreground">Leave blank for no start date.</p>
 						</div>
-						<!-- Hidden field carries templateKind to the form action -->
-						<input type="hidden" name="templateKind" value={previewTemplateKind} />
-						<!-- Template kind toggle -->
 						<div>
-							<p class="mb-2 text-sm font-medium text-muted-foreground">Repeats</p>
-							<Tabs
-								value={previewTemplateKind}
-								onValueChange={(v) => (previewTemplateKind = v as 'weekly' | 'daily')}
-								aria-label="Choose recurrence type"
+							<label
+								class="mb-1 block text-sm font-medium text-muted-foreground"
+								for="tmpl-rec-end"
 							>
-								<TabsList class="w-full md:w-auto">
-									<TabsTrigger value="weekly">
-										<Icon icon="mdi:calendar-week" class="h-3.5 w-3.5" />
-										Weekly
-									</TabsTrigger>
-									<TabsTrigger value="daily">
-										<Icon icon="mdi:calendar-today" class="h-3.5 w-3.5" />
-										Daily
-									</TabsTrigger>
-								</TabsList>
-							</Tabs>
+								Ends on
+							</label>
+							<Input
+								id="tmpl-rec-end"
+								name="recurrenceEndDate"
+								type="date"
+								value={previewRecurrenceEndDate}
+								oninput={(e) => (previewRecurrenceEndDate = (e.target as HTMLInputElement).value)}
+							/>
+							<p class="mt-1 text-xs text-muted-foreground">Leave blank for no end date.</p>
 						</div>
-						<!-- Days (weekly only) -->
-						{#if previewTemplateKind === 'weekly'}
-							<div>
-								<p class="mb-2 text-sm font-medium text-muted-foreground">Days *</p>
-								<div class="flex flex-wrap gap-2">
-									{#each DAY_ORDER as day (day)}
-										<label
-											class="flex cursor-pointer items-center gap-1.5 rounded-md border px-3 py-1.5 text-sm transition-colors {previewDays.includes(
-												day
-											)
-												? 'border-ring bg-primary/5 text-foreground'
-												: 'border-input bg-background text-muted-foreground hover:bg-muted/50'}"
-										>
-											<Checkbox
-												name="days"
-												value={day}
-												checked={previewDays.includes(day)}
-												onCheckedChange={(v) => {
-													if (v) previewDays = [...previewDays, day];
-													else previewDays = previewDays.filter((d) => d !== day);
-												}}
-												class="sr-only"
-											/>
-											{DAY_LABELS[day]}
-										</label>
-									{/each}
-								</div>
-							</div>
-						{:else}
-							<p class="text-xs text-muted-foreground">
-								Window opens every day. Set a low cutoff (e.g., 0 hours) so customers can order
-								until the window closes.
-							</p>
-						{/if}
-						<!-- Times -->
-						<div class="grid grid-cols-2 gap-4">
-							<div>
-								<label
-									class="mb-1 block text-sm font-medium text-muted-foreground"
-									for="tmpl-start"
-								>
-									Start time *
-								</label>
-								<Input
-									id="tmpl-start"
-									name="windowStart"
-									type="time"
-									required
-									value={previewStartTime}
-									oninput={(e) => (previewStartTime = (e.target as HTMLInputElement).value)}
-								/>
-								<p class="mt-1 text-xs text-muted-foreground">Pickup opens.</p>
-							</div>
-							<div>
-								<label class="mb-1 block text-sm font-medium text-muted-foreground" for="tmpl-end">
-									End time *
-								</label>
-								<Input
-									id="tmpl-end"
-									name="windowEnd"
-									type="time"
-									required
-									value={previewEndTime}
-									oninput={(e) => (previewEndTime = (e.target as HTMLInputElement).value)}
-								/>
-								<p class="mt-1 text-xs text-muted-foreground">Pickup closes.</p>
-							</div>
-						</div>
-						<!-- Cutoff + max orders -->
-						<div class="grid grid-cols-2 gap-4">
-							<div>
-								<label
-									class="mb-1 block text-sm font-medium text-muted-foreground"
-									for="tmpl-cutoff"
-								>
-									Order cutoff (hours) *
-								</label>
-								<Input
-									id="tmpl-cutoff"
-									name="cutoffHours"
-									type="number"
-									required
-									min={1}
-									value={previewCutoffHours}
-									oninput={(e) =>
-										(previewCutoffHours = parseInt((e.target as HTMLInputElement).value) || 48)}
-								/>
-								<p class="mt-1 text-xs text-muted-foreground">
-									Hours before pickup customers must order.
-								</p>
-							</div>
-							<div>
-								<label class="mb-1 block text-sm font-medium text-muted-foreground" for="tmpl-max">
-									Max orders per window
-								</label>
-								<Input
-									id="tmpl-max"
-									name="maxOrders"
-									type="number"
-									min={1}
-									placeholder="Unlimited"
-								/>
-							</div>
-						</div>
-						<!-- Date bounds (optional) -->
-						<div class="grid grid-cols-2 gap-4">
-							<div>
-								<label
-									class="mb-1 block text-sm font-medium text-muted-foreground"
-									for="tmpl-rec-start"
-								>
-									Starts on
-								</label>
-								<Input
-									id="tmpl-rec-start"
-									name="recurrenceStartDate"
-									type="date"
-									value={previewRecurrenceStartDate}
-									oninput={(e) =>
-										(previewRecurrenceStartDate = (e.target as HTMLInputElement).value)}
-								/>
-								<p class="mt-1 text-xs text-muted-foreground">Leave blank for no start date.</p>
-							</div>
-							<div>
-								<label
-									class="mb-1 block text-sm font-medium text-muted-foreground"
-									for="tmpl-rec-end"
-								>
-									Ends on
-								</label>
-								<Input
-									id="tmpl-rec-end"
-									name="recurrenceEndDate"
-									type="date"
-									value={previewRecurrenceEndDate}
-									oninput={(e) => (previewRecurrenceEndDate = (e.target as HTMLInputElement).value)}
-								/>
-								<p class="mt-1 text-xs text-muted-foreground">Leave blank for no end date.</p>
-							</div>
-						</div>
-						<!-- Active -->
-						<label class="flex cursor-pointer items-center gap-2 text-sm text-muted-foreground">
-							<Checkbox name="isActive" checked={true} />
-							Active
-						</label>
-						<!-- Live preview -->
-						{@render occurrencePreviewBlock()}
-					</CardContent>
-					<CardFooter class="gap-3">
+					</div>
+					<!-- Active -->
+					<label class="flex cursor-pointer items-center gap-2 text-sm text-muted-foreground">
+						<Checkbox name="isActive" checked={true} />
+						Active
+					</label>
+					<!-- Live preview -->
+					{@render occurrencePreviewBlock()}
+					<DialogFooter class="gap-3">
 						<Button type="submit" variant="default" disabled={submittingCreateTemplate}>
 							{#if submittingCreateTemplate}
 								<Icon icon="mdi:loading" class="h-4 w-4 animate-spin" />
@@ -1492,13 +1535,13 @@
 						>
 							Cancel
 						</Button>
-					</CardFooter>
+					</DialogFooter>
 				</form>
-			</Card>
-		{/if}
+			</DialogContent>
+		</Dialog>
 
 		<!-- Empty state -->
-		{#if data.templates.length === 0 && !showAddTemplateForm && editingTemplateId === null}
+		{#if data.locations.length === 0 && data.templates.length === 0}
 			<Card>
 				<CardContent class="flex flex-col items-center py-12 text-center">
 					<div class="flex h-14 w-14 items-center justify-center rounded-2xl bg-muted">
@@ -1519,6 +1562,10 @@
 							previewRecurrenceEndDate = '';
 							addLocationValue = '';
 							showAddTemplateForm = true;
+							showAddForm = false;
+							editingId = null;
+							editingTemplateId = null;
+							addTemplateError = null;
 						}}
 						variant="default"
 						class="mt-6"
@@ -1529,8 +1576,8 @@
 			</Card>
 		{/if}
 
-		<!-- Templates grouped by location -->
-		{#if data.templates.length > 0 || (data.locations.length > 0 && !showAddTemplateForm && editingTemplateId === null)}
+		<!-- Windows grouped by location -->
+		{#if data.locations.length > 0 || data.templates.length > 0}
 			{#each data.locations as loc (loc.id)}
 				{@const locTemplates = templatesByLocation.get(loc.id) ?? []}
 				<div class="my-6">
@@ -1540,383 +1587,42 @@
 							No windows configured for this location.
 						</p>
 					{:else}
-						<div class="mb-2 overflow-hidden rounded-xl border bg-background">
-							{#each locTemplates as tmpl, i (tmpl.id)}
-								{@const tmplDateRange = formatDateRange(
-									tmpl.recurrenceStartDate,
-									tmpl.recurrenceEndDate,
-									data.timezone
-								)}
-								<div class={i > 0 ? 'border-t' : ''}>
-									<div
-										class="flex flex-col gap-2 px-4 py-3 md:flex-row md:items-center md:justify-between"
-									>
-										<div class="flex items-center gap-2">
-											<span class="text-sm text-foreground">
-												{formatTime(tmpl.windowStart)}–{formatTime(tmpl.windowEnd)}
-												· {formatRecurrence(tmpl.recurrence)}
-												· Cutoff {tmpl.cutoffHours}h · {tmpl.maxOrders
-													? `Max ${tmpl.maxOrders}`
-													: 'No cap'}{tmplDateRange ? ` · ${tmplDateRange}` : ''}
-											</span>
-											{#if !tmpl.isActive}
-												<StatusBadge tone="bg-gray-100 text-gray-500" class="text-xs"
-													>Deactivated</StatusBadge
-												>
-											{/if}
-										</div>
-										<div class="flex shrink-0 items-baseline gap-3 md:pl-4">
-											<Button
-												type="button"
-												onclick={() => {
-													editingTemplateId = tmpl.id;
-													editLocationValue = String(tmpl.locationId ?? '');
-													showAddTemplateForm = false;
-													editTemplateError = null;
-													previewTemplateKind = getTemplateKind(tmpl.recurrence);
-													previewDays = getRruleDays(tmpl.recurrence);
-													previewStartTime = tmpl.windowStart;
-													previewEndTime = tmpl.windowEnd;
-													previewCutoffHours = tmpl.cutoffHours;
-													previewRecurrenceStartDate = tmpl.recurrenceStartDate
-														? toDateInputValue(tmpl.recurrenceStartDate, data.timezone)
-														: '';
-													previewRecurrenceEndDate = tmpl.recurrenceEndDate
-														? toDateInputValue(tmpl.recurrenceEndDate, data.timezone)
-														: '';
-													editExdates = (tmpl.exdates as string[] | null) ?? [];
-													addExdateInput = '';
-												}}
-												size="xs"
-												variant="ghost"
-												class="text-xs text-muted-foreground hover:text-foreground"
-											>
-												Edit
-											</Button>
-											<form
-												method="post"
-												action="?/toggleTemplateActive"
-												use:enhance={enhanceWithToasts({
-													onStart: () => {
-														submittingToggleTemplateId = tmpl.id;
-														rowActionError = null;
-													},
-													onEnd: () => {
-														submittingToggleTemplateId = null;
-													},
-													onSuccess: () => {
-														toast.success(
-															tmpl.isActive ? 'Pickup window enabled' : 'Pickup window disabled'
-														);
-													},
-													onError: (msg) => {
-														rowActionError = msg;
-													}
-												})}
-											>
-												<input type="hidden" name="id" value={tmpl.id} />
-												<Button
-													type="submit"
-													variant="ghost"
-													size="xs"
-													disabled={submittingToggleTemplateId !== null}
-													class={tmpl.isActive
-														? 'text-xs text-muted-foreground hover:text-destructive'
-														: 'text-xs text-muted-foreground hover:text-foreground'}
-												>
-													{#if submittingToggleTemplateId === tmpl.id}
-														<Icon icon="mdi:loading" class="h-3.5 w-3.5 animate-spin" />
-													{:else}
-														{tmpl.isActive ? 'Deactivate' : 'Activate'}
-													{/if}
-												</Button>
-											</form>
-											<form
-												method="post"
-												action="?/deleteTemplate"
-												use:enhance={enhanceWithToasts({
-													successMessage: 'Pickup window deleted',
-													onStart: () => {
-														submittingDeleteTemplateId = tmpl.id;
-														rowActionError = null;
-													},
-													onEnd: () => {
-														submittingDeleteTemplateId = null;
-													},
-													onError: (msg) => {
-														rowActionError = msg;
-													}
-												})}
-											>
-												<input type="hidden" name="id" value={tmpl.id} />
-												<Tooltip>
-													<TooltipTrigger>
-														{#snippet child({ props })}
-															<span {...props} class="inline-block">
-																<Button
-																	type="button"
-																	variant="ghost"
-																	size="xs"
-																	class="text-xs text-muted-foreground hover:text-destructive"
-																	disabled={submittingDeleteTemplateId !== null || !tmpl.canDelete}
-																	onclick={async (e) => {
-																		const form = (e.currentTarget as HTMLButtonElement).form;
-																		if (
-																			await confirmDialog(
-																				`Delete "${tmpl.name}"? This template and its future un-booked occurrences will be removed permanently.`,
-																				{ title: 'Delete template', confirmLabel: 'Delete' }
-																			)
-																		)
-																			form?.requestSubmit();
-																	}}
-																>
-																	{#if submittingDeleteTemplateId === tmpl.id}
-																		<Icon icon="mdi:loading" class="h-3.5 w-3.5 animate-spin" />
-																		Deleting...
-																	{:else}
-																		Delete
-																	{/if}
-																</Button>
-															</span>
-														{/snippet}
-													</TooltipTrigger>
-													{#if !tmpl.canDelete}
-														<TooltipContent>
-															Can't delete — {tmpl.futureCommitmentCount}
-															{tmpl.futureCommitmentCount === 1 ? 'order is' : 'orders are'} attached
-															to upcoming pickups. Deactivate instead.
-														</TooltipContent>
-													{/if}
-												</Tooltip>
-											</form>
-										</div>
-									</div>
-									<div class="border-t border-dashed px-4 pt-2 pb-3">
-										{#if (data.upcomingByTemplate[tmpl.id] ?? []).length === 0}
-											{#if isSeasonEnded(tmpl.recurrenceEndDate)}
-												<p class="text-xs text-muted-foreground italic">
-													Season ended {new Intl.DateTimeFormat('en-US', {
-														timeZone: data.timezone,
-														month: 'short',
-														day: 'numeric'
-													}).format(tmpl.recurrenceEndDate!)}.
-												</p>
-											{:else}
-												<p class="text-xs text-muted-foreground italic">No upcoming occurrences.</p>
-											{/if}
-										{:else}
-											<div class="space-y-2">
-												{#each data.upcomingByTemplate[tmpl.id] as occ (occ.id)}
-													{@render occurrenceRow(occ, tmpl)}
-												{/each}
-											</div>
-										{/if}
-									</div>
-								</div>
-							{/each}
-						</div>
+						{#each locTemplates as tmpl (tmpl.id)}
+							{@render windowCard(tmpl)}
+						{/each}
 					{/if}
-					{#if !showAddTemplateForm && editingTemplateId === null}
-						<Button
-							variant="ghost"
-							onclick={() => {
-								previewDays = [];
-								previewStartTime = '';
-								previewEndTime = '';
-								previewCutoffHours = 48;
-								previewRecurrenceStartDate = '';
-								previewRecurrenceEndDate = '';
-								addLocationValue = String(loc.id);
-								showAddTemplateForm = true;
-							}}
-							class="h-auto p-0 text-xs text-muted-foreground hover:bg-transparent hover:text-foreground"
-						>
-							+ Add window for this location
-						</Button>
-					{/if}
+					<Button
+						type="button"
+						variant="ghost"
+						onclick={() => {
+							previewDays = [];
+							previewStartTime = '';
+							previewEndTime = '';
+							previewCutoffHours = 48;
+							previewRecurrenceStartDate = '';
+							previewRecurrenceEndDate = '';
+							addLocationValue = String(loc.id);
+							showAddTemplateForm = true;
+							showAddForm = false;
+							editingId = null;
+							editingTemplateId = null;
+							addTemplateError = null;
+						}}
+						class="h-auto p-0 text-xs text-muted-foreground hover:bg-transparent hover:text-foreground"
+					>
+						+ Add window for this location
+					</Button>
 				</div>
 			{/each}
 
 			<!-- Unassigned group -->
-			{@const unassigned = (templatesByLocation.get(null) ?? []) as typeof data.templates}
+			{@const unassigned = templatesByLocation.get(null) ?? []}
 			{#if unassigned.length > 0}
-				<div class="mb-6">
+				<div class="my-6">
 					<h3 class="mb-2 text-sm font-medium text-muted-foreground italic">Unassigned</h3>
-					<div class="overflow-hidden rounded-xl border bg-background">
-						{#each unassigned as tmpl, i (tmpl.id)}
-							{@const tmplDateRange = formatDateRange(
-								tmpl.recurrenceStartDate,
-								tmpl.recurrenceEndDate,
-								data.timezone
-							)}
-							<div class={i > 0 ? 'border-t' : ''}>
-								<div
-									class="flex flex-col gap-2 px-4 py-3 md:flex-row md:items-center md:justify-between"
-								>
-									<div class="flex items-center gap-2">
-										<span class="text-sm text-foreground">
-											{formatTime(tmpl.windowStart)}–{formatTime(tmpl.windowEnd)}
-											· {formatRecurrence(tmpl.recurrence)}
-											· Cutoff {tmpl.cutoffHours}h · {tmpl.maxOrders
-												? `Max ${tmpl.maxOrders}`
-												: 'No cap'}{tmplDateRange ? ` · ${tmplDateRange}` : ''}
-										</span>
-										{#if !tmpl.isActive}
-											<StatusBadge tone="bg-gray-100 text-gray-500" class="text-xs"
-												>Deactivated</StatusBadge
-											>
-										{/if}
-									</div>
-									<div class="flex shrink-0 items-baseline gap-3 md:pl-4">
-										<Button
-											type="button"
-											onclick={() => {
-												editingTemplateId = tmpl.id;
-												editLocationValue = String(tmpl.locationId ?? '');
-												showAddTemplateForm = false;
-												editTemplateError = null;
-												previewTemplateKind = getTemplateKind(tmpl.recurrence);
-												previewDays = getRruleDays(tmpl.recurrence);
-												previewStartTime = tmpl.windowStart;
-												previewEndTime = tmpl.windowEnd;
-												previewCutoffHours = tmpl.cutoffHours;
-												previewRecurrenceStartDate = tmpl.recurrenceStartDate
-													? toDateInputValue(tmpl.recurrenceStartDate, data.timezone)
-													: '';
-												previewRecurrenceEndDate = tmpl.recurrenceEndDate
-													? toDateInputValue(tmpl.recurrenceEndDate, data.timezone)
-													: '';
-												editExdates = (tmpl.exdates as string[] | null) ?? [];
-												addExdateInput = '';
-											}}
-											variant="ghost"
-											class="text-xs text-muted-foreground hover:text-foreground"
-											size="xs"
-										>
-											Edit
-										</Button>
-										<form
-											method="post"
-											action="?/toggleTemplateActive"
-											use:enhance={enhanceWithToasts({
-												onStart: () => {
-													submittingToggleTemplateId = tmpl.id;
-													rowActionError = null;
-												},
-												onEnd: () => {
-													submittingToggleTemplateId = null;
-												},
-												onSuccess: () => {
-													toast.success(
-														tmpl.isActive ? 'Pickup window enabled' : 'Pickup window disabled'
-													);
-												},
-												onError: (msg) => {
-													rowActionError = msg;
-												}
-											})}
-										>
-											<input type="hidden" name="id" value={tmpl.id} />
-											<Button
-												type="submit"
-												variant="ghost"
-												size="xs"
-												disabled={submittingToggleTemplateId !== null}
-												class={tmpl.isActive
-													? 'text-xs text-muted-foreground hover:text-destructive'
-													: 'text-xs text-muted-foreground hover:text-foreground'}
-											>
-												{#if submittingToggleTemplateId === tmpl.id}
-													<Icon icon="mdi:loading" class="h-3.5 w-3.5 animate-spin" />
-												{:else}
-													{tmpl.isActive ? 'Deactivate' : 'Activate'}
-												{/if}
-											</Button>
-										</form>
-										<form
-											method="post"
-											action="?/deleteTemplate"
-											use:enhance={enhanceWithToasts({
-												successMessage: 'Pickup window deleted',
-												onStart: () => {
-													submittingDeleteTemplateId = tmpl.id;
-													rowActionError = null;
-												},
-												onEnd: () => {
-													submittingDeleteTemplateId = null;
-												},
-												onError: (msg) => {
-													rowActionError = msg;
-												}
-											})}
-										>
-											<input type="hidden" name="id" value={tmpl.id} />
-											<Tooltip>
-												<TooltipTrigger>
-													{#snippet child({ props })}
-														<span {...props} class="inline-block">
-															<Button
-																type="button"
-																variant="ghost"
-																size="xs"
-																class="text-xs text-muted-foreground hover:text-destructive"
-																disabled={submittingDeleteTemplateId !== null || !tmpl.canDelete}
-																onclick={async (e) => {
-																	const form = (e.currentTarget as HTMLButtonElement).form;
-																	if (
-																		await confirmDialog(
-																			`Delete "${tmpl.name}"? This template and its future un-booked occurrences will be removed permanently.`,
-																			{ title: 'Delete template', confirmLabel: 'Delete' }
-																		)
-																	)
-																		form?.requestSubmit();
-																}}
-															>
-																{#if submittingDeleteTemplateId === tmpl.id}
-																	<Icon icon="mdi:loading" class="h-3.5 w-3.5 animate-spin" />
-																	Deleting...
-																{:else}
-																	Delete
-																{/if}
-															</Button>
-														</span>
-													{/snippet}
-												</TooltipTrigger>
-												{#if !tmpl.canDelete}
-													<TooltipContent>
-														Can't delete — {tmpl.futureCommitmentCount}
-														{tmpl.futureCommitmentCount === 1 ? 'order is' : 'orders are'} attached to
-														upcoming pickups. Deactivate instead.
-													</TooltipContent>
-												{/if}
-											</Tooltip>
-										</form>
-									</div>
-								</div>
-								<div class="border-t border-dashed px-4 pt-2 pb-3">
-									{#if (data.upcomingByTemplate[tmpl.id] ?? []).length === 0}
-										{#if isSeasonEnded(tmpl.recurrenceEndDate)}
-											<p class="text-xs text-muted-foreground italic">
-												Season ended {new Intl.DateTimeFormat('en-US', {
-													timeZone: data.timezone,
-													month: 'short',
-													day: 'numeric'
-												}).format(tmpl.recurrenceEndDate!)}.
-											</p>
-										{:else}
-											<p class="text-xs text-muted-foreground italic">No upcoming occurrences.</p>
-										{/if}
-									{:else}
-										<div class="space-y-2">
-											{#each data.upcomingByTemplate[tmpl.id] as occ (occ.id)}
-												{@render occurrenceRow(occ, tmpl)}
-											{/each}
-										</div>
-									{/if}
-								</div>
-							</div>
-						{/each}
-					</div>
+					{#each unassigned as tmpl (tmpl.id)}
+						{@render windowCard(tmpl)}
+					{/each}
 				</div>
 			{/if}
 		{/if}
@@ -2125,4 +1831,174 @@
 			</div>
 		{/if}
 	</div>
+{/snippet}
+
+{#snippet windowCard(tmpl: (typeof data.templates)[number])}
+	{@const tmplDateRange = formatDateRange(
+		tmpl.recurrenceStartDate,
+		tmpl.recurrenceEndDate,
+		data.timezone
+	)}
+	<Card class="mb-3">
+		<CardContent class="space-y-1.5">
+			<div class="flex flex-wrap items-center gap-2">
+				<span class="text-sm text-foreground">
+					{formatTime(tmpl.windowStart)}–{formatTime(tmpl.windowEnd)}
+					· {formatRecurrence(tmpl.recurrence)}
+					· Cutoff {tmpl.cutoffHours}h · {tmpl.maxOrders
+						? `Max ${tmpl.maxOrders}`
+						: 'No cap'}{tmplDateRange ? ` · ${tmplDateRange}` : ''}
+				</span>
+				{#if !tmpl.isActive}
+					<StatusBadge tone="bg-gray-100 text-gray-500" class="text-xs">Deactivated</StatusBadge>
+				{/if}
+			</div>
+			<div class="space-y-2 border-t border-dashed pt-3">
+				{#if (data.upcomingByTemplate[tmpl.id] ?? []).length === 0}
+					{#if isSeasonEnded(tmpl.recurrenceEndDate)}
+						<p class="text-xs text-muted-foreground italic">
+							Season ended {new Intl.DateTimeFormat('en-US', {
+								timeZone: data.timezone,
+								month: 'short',
+								day: 'numeric'
+							}).format(tmpl.recurrenceEndDate!)}.
+						</p>
+					{:else}
+						<p class="text-xs text-muted-foreground italic">No upcoming occurrences.</p>
+					{/if}
+				{:else}
+					<div class="space-y-2">
+						{#each data.upcomingByTemplate[tmpl.id] as occ (occ.id)}
+							{@render occurrenceRow(occ, tmpl)}
+						{/each}
+					</div>
+				{/if}
+			</div>
+		</CardContent>
+		<CardFooter class="flex flex-wrap items-center justify-end gap-2">
+			<Button
+				type="button"
+				onclick={() => {
+					editingTemplateId = tmpl.id;
+					editLocationValue = String(tmpl.locationId ?? '');
+					showAddTemplateForm = false;
+					editTemplateError = null;
+					showAddForm = false;
+					editingId = null;
+					previewTemplateKind = getTemplateKind(tmpl.recurrence);
+					previewDays = getRruleDays(tmpl.recurrence);
+					previewStartTime = tmpl.windowStart;
+					previewEndTime = tmpl.windowEnd;
+					previewCutoffHours = tmpl.cutoffHours;
+					previewRecurrenceStartDate = tmpl.recurrenceStartDate
+						? toDateInputValue(tmpl.recurrenceStartDate, data.timezone)
+						: '';
+					previewRecurrenceEndDate = tmpl.recurrenceEndDate
+						? toDateInputValue(tmpl.recurrenceEndDate, data.timezone)
+						: '';
+					editExdates = (tmpl.exdates as string[] | null) ?? [];
+					addExdateInput = '';
+				}}
+				size="xs"
+				variant="ghost"
+				class="text-xs text-muted-foreground hover:text-foreground"
+			>
+				Edit
+			</Button>
+			<form
+				method="post"
+				action="?/toggleTemplateActive"
+				use:enhance={enhanceWithToasts({
+					onStart: () => {
+						submittingToggleTemplateId = tmpl.id;
+						rowActionError = null;
+					},
+					onEnd: () => {
+						submittingToggleTemplateId = null;
+					},
+					onSuccess: () => {
+						toast.success(tmpl.isActive ? 'Pickup window enabled' : 'Pickup window disabled');
+					},
+					onError: (msg) => {
+						rowActionError = msg;
+					}
+				})}
+			>
+				<input type="hidden" name="id" value={tmpl.id} />
+				<Button
+					type="submit"
+					variant="ghost"
+					size="xs"
+					disabled={submittingToggleTemplateId !== null}
+					class={tmpl.isActive
+						? 'text-xs text-muted-foreground hover:text-destructive'
+						: 'text-xs text-muted-foreground hover:text-foreground'}
+				>
+					{#if submittingToggleTemplateId === tmpl.id}
+						<Icon icon="mdi:loading" class="h-3.5 w-3.5 animate-spin" />
+					{:else}
+						{tmpl.isActive ? 'Deactivate' : 'Activate'}
+					{/if}
+				</Button>
+			</form>
+			<form
+				method="post"
+				action="?/deleteTemplate"
+				use:enhance={enhanceWithToasts({
+					successMessage: 'Pickup window deleted',
+					onStart: () => {
+						submittingDeleteTemplateId = tmpl.id;
+						rowActionError = null;
+					},
+					onEnd: () => {
+						submittingDeleteTemplateId = null;
+					},
+					onError: (msg) => {
+						rowActionError = msg;
+					}
+				})}
+			>
+				<input type="hidden" name="id" value={tmpl.id} />
+				<Tooltip>
+					<TooltipTrigger>
+						{#snippet child({ props })}
+							<span {...props} class="inline-block">
+								<Button
+									type="button"
+									variant="ghost"
+									size="xs"
+									class="text-xs text-muted-foreground hover:text-destructive"
+									disabled={submittingDeleteTemplateId !== null || !tmpl.canDelete}
+									onclick={async (e) => {
+										const form = (e.currentTarget as HTMLButtonElement).form;
+										if (
+											await confirmDialog(
+												`Delete "${tmpl.name}"? This template and its future un-booked occurrences will be removed permanently.`,
+												{ title: 'Delete template', confirmLabel: 'Delete' }
+											)
+										)
+											form?.requestSubmit();
+									}}
+								>
+									{#if submittingDeleteTemplateId === tmpl.id}
+										<Icon icon="mdi:loading" class="h-3.5 w-3.5 animate-spin" />
+										Deleting...
+									{:else}
+										Delete
+									{/if}
+								</Button>
+							</span>
+						{/snippet}
+					</TooltipTrigger>
+					{#if !tmpl.canDelete}
+						<TooltipContent>
+							Can't delete — {tmpl.futureCommitmentCount}
+							{tmpl.futureCommitmentCount === 1 ? 'order is' : 'orders are'} attached to upcoming pickups.
+							Deactivate instead.
+						</TooltipContent>
+					{/if}
+				</Tooltip>
+			</form>
+		</CardFooter>
+	</Card>
 {/snippet}

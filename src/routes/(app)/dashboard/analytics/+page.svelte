@@ -663,24 +663,55 @@
 	<!-- ── Daily revenue chart ──────────────────────────────────── -->
 	<Card class="mb-6 overflow-visible shadow-sm">
 		<CardContent>
-			<div class="mb-4 flex items-center justify-between">
-				<div>
-					<h2 class="text-sm font-semibold text-gray-900">Daily revenue</h2>
-					<p class="mt-0.5 text-xs text-gray-400">{rangeLabel(data)}</p>
+			<div class="mb-4 flex items-start justify-between">
+				<div class="flex flex-col gap-2">
+					<div class="flex flex-col gap-1">
+						<h2 class="text-sm font-semibold text-gray-900">
+							{chartMode === 'revenue' ? 'Daily revenue' : 'Daily orders'}
+						</h2>
+						<p class="mt-0.5 text-xs text-gray-400">{rangeLabel(data)}</p>
+					</div>
 				</div>
-				<div class="text-right">
-					<p class="text-lg font-semibold text-gray-900">
-						{chartMode === 'revenue' ? fmt(filteredRevenue) : filteredCount.toLocaleString()}
-					</p>
-					<p class="text-xs text-gray-400">
-						{#if isDefaultState}
-							{chartMode === 'revenue' ? 'total this period' : 'orders this period'}
-						{:else if isolatedStatus}
-							{isolatedStatus} only
-						{:else}
-							{activeStatuses.size}/{ALL_STATUSES.length} statuses
-						{/if}
-					</p>
+				<div class="flex flex-col items-end gap-2 text-right">
+					<div>
+						<p class="text-lg font-semibold text-gray-900">
+							{chartMode === 'revenue' ? fmt(filteredRevenue) : filteredCount.toLocaleString()}
+						</p>
+						<p class="text-xs text-gray-400">
+							{#if isDefaultState}
+								{chartMode === 'revenue' ? 'total this period' : 'orders this period'}
+							{:else if isolatedStatus}
+								{isolatedStatus} only
+							{:else}
+								{activeStatuses.size}/{ALL_STATUSES.length} statuses
+							{/if}
+						</p>
+					</div>
+					<!-- Metric toggle -->
+					<div class="flex">
+						<div class="flex items-center gap-1 rounded-md border bg-background p-0.5">
+							<button
+								type="button"
+								onclick={() => (chartMode = 'revenue')}
+								class="rounded px-2 py-0.5 text-xs transition-colors {chartMode === 'revenue'
+									? 'bg-foreground text-background'
+									: 'text-muted-foreground hover:text-foreground'}"
+								aria-pressed={chartMode === 'revenue'}
+							>
+								$ Revenue
+							</button>
+							<button
+								type="button"
+								onclick={() => (chartMode = 'count')}
+								class="rounded px-2 py-0.5 text-xs transition-colors {chartMode === 'count'
+									? 'bg-foreground text-background'
+									: 'text-muted-foreground hover:text-foreground'}"
+								aria-pressed={chartMode === 'count'}
+							>
+								# Orders
+							</button>
+						</div>
+					</div>
 				</div>
 			</div>
 
@@ -842,29 +873,6 @@
 
 			<!-- Chart controls: toggle + status pills + reset -->
 			<div class="mt-3 flex flex-col gap-2 md:flex-row md:items-center md:justify-end">
-				<div class="flex items-center gap-1 rounded-md border bg-background p-0.5">
-					<button
-						type="button"
-						onclick={() => (chartMode = 'revenue')}
-						class="rounded px-2 py-0.5 text-xs transition-colors {chartMode === 'revenue'
-							? 'bg-foreground text-background'
-							: 'text-muted-foreground hover:text-foreground'}"
-						aria-pressed={chartMode === 'revenue'}
-					>
-						$ Revenue
-					</button>
-					<button
-						type="button"
-						onclick={() => (chartMode = 'count')}
-						class="rounded px-2 py-0.5 text-xs transition-colors {chartMode === 'count'
-							? 'bg-foreground text-background'
-							: 'text-muted-foreground hover:text-foreground'}"
-						aria-pressed={chartMode === 'count'}
-					>
-						# Orders
-					</button>
-				</div>
-
 				<div class="flex flex-wrap items-center gap-1.5 md:ml-2">
 					{#each ALL_STATUSES as status (status)}
 						{@const active = activeStatuses.has(status)}

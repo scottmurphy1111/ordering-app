@@ -81,6 +81,9 @@
 							<TableHead class="hidden px-4 py-2.5 text-muted-foreground md:table-cell"
 								>Joined</TableHead
 							>
+							<TableHead class="hidden px-4 py-2.5 text-muted-foreground lg:table-cell"
+								>Last login</TableHead
+							>
 							<TableHead class="px-4 py-2.5 text-muted-foreground">Status</TableHead>
 							<TableHead class="px-4 py-2.5"></TableHead>
 						</TableRow>
@@ -103,6 +106,9 @@
 								</TableCell>
 								<TableCell class="hidden px-4 py-3 text-sm text-muted-foreground md:table-cell">
 									{new Date(u.createdAt).toLocaleDateString()}
+								</TableCell>
+								<TableCell class="hidden px-4 py-3 text-sm text-muted-foreground lg:table-cell">
+									{u.lastLoginAt ? new Date(u.lastLoginAt).toLocaleDateString() : '—'}
 								</TableCell>
 								<TableCell class="px-4 py-3">
 									{#if u.bannedAt}

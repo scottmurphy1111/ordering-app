@@ -12,7 +12,7 @@
 		class="relative hidden shrink-0 items-center justify-center overflow-hidden md:order-2 md:flex md:h-auto md:min-h-screen md:flex-1"
 		style="
 			background-image:
-				radial-gradient(circle at 50% 50%, rgba(0, 0, 0, 1), rgba(0, 0, 0, 0.2) 40%),
+				radial-gradient(circle at 50% 50%, rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.2) 20%),
 				url('/marketing/iStock-1318889309.webp');
 			background-size: cover;
 			background-position: 25% 50%;
@@ -37,14 +37,14 @@
 	</aside>
 
 	<main
-		class="flex flex-1 flex-col justify-center px-8 py-10 md:order-1 md:max-w-120 md:px-12 md:py-16"
+		class="flex flex-1 flex-col justify-center px-8 pt-16 pb-10 md:order-1 md:max-w-120 md:px-12 md:py-16"
 		style={// On mobile, we want to show the background image, but on desktop, the aside takes care of it.
 		!isMedium.current
 			? `
+        background-color: var(--background);
           background-image:
-            radial-gradient(circle at 50% 50%, rgba(0, 0, 0, 1), rgba(0, 0, 0, 0.2) 40%),
             url('/marketing/iStock-1318889309.webp');
-          background-size: cover;
+          background-size: contain;
           background-position: 25% 0%;
           background-repeat: no-repeat;
         `
@@ -52,7 +52,7 @@
 	>
 		<a
 			href={resolve('/')}
-			class="mb-6 block text-center text-2xl font-bold tracking-tight text-white [text-shadow:0_1px_4px_rgba(0,0,0,0.4)] md:text-left md:text-foreground md:[text-shadow:none]"
+			class="mb-2 block text-center text-2xl font-bold tracking-tight text-white [text-shadow:0_1px_4px_rgba(0,0,0,0.4)] md:text-left md:text-foreground md:text-shadow-none"
 		>
 			Order<span class="text-primary">Local</span>
 		</a>
@@ -74,7 +74,7 @@
 		</div>
 
 		<p
-			class="mt-12 text-center text-xs text-white/80 [text-shadow:0_1px_3px_rgba(0,0,0,0.4)] md:text-muted-foreground md:[text-shadow:none]"
+			class="mt-12 text-center text-xs text-foreground/80 md:text-muted-foreground md:text-shadow-none"
 		>
 			By signing in, you agree to our
 			<a href={resolve('/terms')} class="underline hover:text-white md:hover:text-foreground"

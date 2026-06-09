@@ -18,10 +18,12 @@ export const load: PageServerLoad = async ({ locals }) => {
 			emailVerified: userTable.emailVerified,
 			bannedAt: userTable.bannedAt,
 			createdAt: userTable.createdAt,
-			vendorCount: sql<number>`count(distinct ${vendorUsers.vendorId})::int`
+			vendorCount: sql<number>`count(distinct ${vendorUsers.vendorId})::int`,
+			lastLoginAt: sql<Date | null>`max(${session.createdAt})`
 		})
 		.from(userTable)
 		.leftJoin(vendorUsers, eq(vendorUsers.userId, userTable.id))
+		.leftJoin(session, eq(session.userId, userTable.id))
 		.groupBy(userTable.id)
 		.orderBy(userTable.createdAt);
 

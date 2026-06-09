@@ -401,7 +401,7 @@
 <section
 	class="flex items-center bg-cover bg-center bg-no-repeat px-6 py-24 md:py-48"
 	style="background-image: linear-gradient(rgba(0, 0, 0, 0.75), rgba(0, 0, 0, 0.75)), url('/marketing/iStock-958138908.webp');	  background-size: cover;
-			background-position: 70% 30%;
+			background-position: 60% 40%;
 			background-repeat: no-repeat;"
 >
 	<div
@@ -617,13 +617,13 @@
 </div>
 
 <!-- Storefront features -->
-<section id="features" class="scroll-mt-20 bg-background px-6 py-24">
+<section id="features" class="scroll-mt-20 bg-background px-6 pb-24 md:py-24">
 	<div class="mx-auto max-w-6xl">
-		<div class="mb-12 overflow-hidden rounded-2xl">
+		<div class="-mx-6 mb-12 overflow-hidden md:mx-auto md:rounded-2xl">
 			<img
 				src="/marketing/iStock-1369508999.webp"
 				alt="Overhead view of a market stall with a variety of baked goods on display"
-				class="h-48 w-full object-cover sm:h-64 md:h-72 lg:h-96"
+				class="h-64 w-full object-cover md:h-72 lg:h-96"
 				loading="lazy"
 			/>
 		</div>
@@ -658,13 +658,13 @@
 </section>
 
 <!-- Operations features -->
-<section class="scroll-mt-20 bg-emerald-100/30 px-6 py-24">
+<section class="scroll-mt-20 bg-emerald-100/30 px-6 pb-24 md:py-24">
 	<div class="mx-auto max-w-6xl">
-		<div class="mb-12 overflow-hidden rounded-2xl">
+		<div class="-mx-6 mb-12 overflow-hidden md:mx-auto md:rounded-2xl">
 			<img
 				src="/marketing/iStock-1334132701.webp"
 				alt="Florist's workspace — fresh flowers, ribbon, and tools laid out on a wooden floor"
-				class="h-48 w-full object-cover sm:h-64 md:h-72 lg:h-96"
+				class="h-64 w-full object-cover md:h-72 lg:h-96"
 				loading="lazy"
 			/>
 		</div>
@@ -701,7 +701,7 @@
 <!-- Growth features -->
 <section class="scroll-mt-20 bg-background px-6 py-24">
 	<div class="mx-auto grid max-w-6xl gap-10 lg:grid-cols-[1fr_1.4fr] lg:items-start lg:gap-16">
-		<div class="lg:sticky lg:top-28">
+		<div class="lg:top-28">
 			<span
 				class="mb-3 inline-block rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold tracking-widest text-primary/90 uppercase"
 			>
@@ -735,13 +735,13 @@
 </section>
 
 <!-- How it works -->
-<section id="how-it-works" class="scroll-mt-20 bg-muted px-6 py-24">
+<section id="how-it-works" class="scroll-mt-20 bg-muted px-6 pb-24 md:py-24">
 	<div class="mx-auto max-w-6xl">
-		<div class="mb-12 overflow-hidden rounded-2xl">
+		<div class="-mx-6 mb-12 overflow-hidden md:mx-auto md:rounded-2xl">
 			<img
 				src="/marketing/iStock-2241575917.webp"
 				alt="Freshly baked brown bread in a wicker basket"
-				class="h-48 w-full object-cover sm:h-64 md:h-72 lg:h-96"
+				class="h-64 w-full object-cover md:h-72 lg:h-96"
 				loading="lazy"
 			/>
 		</div>
@@ -1003,7 +1003,7 @@
 						<div class="flex flex-wrap items-center gap-2">
 							<h3 class="font-semibold text-foreground">{addon.name}</h3>
 							<span
-								class="rounded-full border bg-background px-2.5 py-0.5 text-xs font-semibold text-muted-foreground"
+								class="rounded-full border bg-background px-1.5 py-0.5 text-xs font-semibold text-muted-foreground"
 								>${addon.price}/mo</span
 							>
 						</div>

@@ -17,7 +17,6 @@
 		SelectSeparator
 	} from '$lib/components/ui/select';
 	import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '$lib/components/ui/card';
-	import { Checkbox } from '$lib/components/ui/checkbox';
 	import { Switch } from '$lib/components/ui/switch';
 	import { BUSINESS_TYPES } from '$lib/utils/business-type-labels';
 	import { FULFILLMENT_MODELS, fulfillmentModelLabel } from '$lib/utils/fulfillment-model-labels';
@@ -80,6 +79,9 @@
 				(data.info as unknown as { storefrontEnabled?: boolean } | null)?.storefrontEnabled ?? true
 		)
 	);
+
+	let enableTips = $state(untrack(() => savedCheckout.enableTips ?? false));
+	let asapPickupEnabled = $state(untrack(() => savedCheckout.asapPickupEnabled ?? false));
 </script>
 
 <div class="max-w-2xl">
@@ -123,7 +125,11 @@
 			<CardContent class="space-y-6">
 				<!-- Business identity -->
 				<div class="space-y-4">
-					<h3 class="text-sm font-medium text-gray-500">Business identity</h3>
+					<h3
+						class="flex w-full items-center py-1.5 text-xs font-medium text-muted-foreground uppercase"
+					>
+						<Icon icon="mdi:briefcase-outline" class="mr-1 inline-block" />Business identity
+					</h3>
 					<div class="grid gap-4 sm:grid-cols-2">
 						<div>
 							<Label class="mb-1 block" for="name">Business name *</Label>
@@ -182,8 +188,12 @@
 				</div>
 
 				<!-- Contact -->
-				<div class="space-y-4">
-					<h3 class="text-sm font-medium text-gray-500">Contact</h3>
+				<div class="space-y-4 border-t pt-4">
+					<h3
+						class="flex w-full items-center py-1.5 text-xs font-medium text-muted-foreground uppercase"
+					>
+						<Icon icon="mdi:phone-outline" class="mr-1 inline-block" />Contact
+					</h3>
 					<div class="grid gap-4 sm:grid-cols-2">
 						<div>
 							<Label class="mb-1 block" for="phone">Phone</Label>
@@ -228,8 +238,12 @@
 				</div>
 
 				<!-- Address -->
-				<div class="space-y-4">
-					<h3 class="text-sm font-medium text-gray-500">Address</h3>
+				<div class="space-y-4 border-t pt-4">
+					<h3
+						class="flex w-full items-center py-1.5 text-xs font-medium text-muted-foreground uppercase"
+					>
+						<Icon icon="mdi:map-marker-outline" class="mr-1 inline-block" />Address
+					</h3>
 					<div>
 						<Label class="mb-1 block" for="street">Street</Label>
 						<Input
@@ -334,40 +348,38 @@
 		<Card class="shadow-sm">
 			<CardHeader>
 				<CardTitle>Checkout</CardTitle>
+				<p class="text-xs text-muted-foreground">Control what customers see at checkout.</p>
 			</CardHeader>
 			<CardContent class="space-y-5">
-				<p class="text-xs text-muted-foreground">Control what customers see at checkout.</p>
-				<label class="flex cursor-pointer items-start gap-3">
-					<Checkbox name="enableTips" checked={savedCheckout.enableTips ?? false} class="mt-0.5" />
-					<div>
-						<span class="text-sm font-medium text-muted-foreground">Accept tips at checkout</span>
-						<p class="mt-0.5 text-xs text-muted-foreground/70">
+				<div class="flex items-start justify-between gap-4">
+					<div class="min-w-0">
+						<label for="enableTips" class="text-sm font-medium">Accept tips at checkout</label>
+						<p class="mt-1 text-xs text-muted-foreground">
 							Show a tip selector to customers in the cart. Most bakeries, farms, and makers leave
 							this off.
 						</p>
 					</div>
-				</label>
-				<label class="flex cursor-pointer items-start gap-3">
-					<Checkbox
-						name="asapPickupEnabled"
-						checked={savedCheckout.asapPickupEnabled ?? false}
-						class="mt-0.5"
-					/>
-					<div>
-						<span class="text-sm font-medium text-muted-foreground">Allow ASAP pickup</span>
+					<input type="hidden" name="enableTips" value={enableTips ? 'on' : ''} />
+					<Switch id="enableTips" bind:checked={enableTips} />
+				</div>
+				<div class="flex items-start justify-between gap-4">
+					<div class="min-w-0">
+						<label for="asapPickupEnabled" class="text-sm font-medium">Allow ASAP pickup</label>
 						{#if data.info?.fulfillmentModel === 'pickup_only'}
-							<p class="mt-0.5 text-xs text-muted-foreground/70">
+							<p class="mt-1 text-xs text-muted-foreground">
 								Most pickup-only vendors leave this off — orders are handed off at scheduled pickup
 								events.
 							</p>
 						{:else}
-							<p class="mt-0.5 text-xs text-muted-foreground/70">
+							<p class="mt-1 text-xs text-muted-foreground">
 								Most storefront vendors leave this on — it's how customers order for same-day
 								pickup.
 							</p>
 						{/if}
 					</div>
-				</label>
+					<input type="hidden" name="asapPickupEnabled" value={asapPickupEnabled ? 'on' : ''} />
+					<Switch id="asapPickupEnabled" bind:checked={asapPickupEnabled} />
+				</div>
 			</CardContent>
 			<CardFooter>
 				<Button type="submit" variant="default" disabled={submittingAction !== null}>
@@ -415,7 +427,7 @@
 						<label for="acceptsRequests" class="text-sm font-medium">
 							Accept special requests
 						</label>
-						<p class="mt-1 text-sm text-muted-foreground">
+						<p class="mt-1 text-xs text-muted-foreground">
 							When on, customers see a "Special Requests" section on your storefront where they can
 							request something not on the catalog. You'll receive an email and can respond with a
 							quote.
@@ -461,7 +473,7 @@
 				<div class="flex items-start justify-between gap-4">
 					<div class="min-w-0">
 						<label for="storefrontEnabled" class="text-sm font-medium">Show my storefront</label>
-						<p class="mt-1 text-sm text-muted-foreground">
+						<p class="mt-1 text-xs text-muted-foreground">
 							When on, your storefront is live and customers can browse and order. When off,
 							visitors see a brief "taking a break" message and can't place orders — you keep full
 							access to your dashboard.

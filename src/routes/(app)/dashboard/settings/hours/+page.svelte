@@ -40,6 +40,16 @@
 		sunday: 'Sunday'
 	};
 
+	const DAY_LABELS_SHORT: Record<Day, string> = {
+		monday: 'Mon',
+		tuesday: 'Tue',
+		wednesday: 'Wed',
+		thursday: 'Thu',
+		friday: 'Fri',
+		saturday: 'Sat',
+		sunday: 'Sun'
+	};
+
 	type DayState = { enabled: boolean; openTime: string; closeTime: string };
 
 	function buildDayStates(hours: typeof data.hours): Record<Day, DayState> {
@@ -161,7 +171,7 @@
 				class="divide-y divide-border"
 			>
 				{#each DAYS as day (day)}
-					<div class="flex items-center gap-4 px-6 py-3">
+					<div class="flex flex-wrap items-center gap-x-4 gap-y-2 px-6 py-3 sm:flex-nowrap">
 						<!-- Enable toggle -->
 						<button
 							type="button"
@@ -188,11 +198,14 @@
 						{/if}
 
 						<!-- Day label -->
-						<span class="w-28 text-sm font-medium text-foreground">{DAY_LABELS[day]}</span>
+						<span class="w-12 shrink-0 text-sm font-medium text-foreground sm:w-28">
+							<span class="sm:hidden">{DAY_LABELS_SHORT[day]}</span>
+							<span class="hidden sm:inline">{DAY_LABELS[day]}</span>
+						</span>
 
 						{#if dayStates[day].enabled}
 							<!-- Time inputs -->
-							<div class="flex flex-1 items-center gap-2">
+							<div class="flex w-full items-center gap-2 sm:w-auto sm:flex-1">
 								<input
 									type="time"
 									name="{day}_open"

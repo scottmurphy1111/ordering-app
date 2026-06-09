@@ -19,7 +19,6 @@
 	const highlightTier = 'pro';
 
 	let mobileMenuOpen = $state(false);
-	let openFaq = $state<string | undefined>(undefined);
 
 	const faqJsonLd = $derived(
 		JSON.stringify({
@@ -400,15 +399,7 @@
 		<div class="mb-12 text-center">
 			<h2 class="text-3xl font-bold text-foreground sm:text-4xl">{persona.faqHeadline}</h2>
 		</div>
-		<Accordion
-			type="single"
-			bind:value={openFaq}
-			class="space-y-3"
-			onValueChange={(v: string | undefined) => {
-				if (v !== undefined)
-					track('faq_open', { question: persona.faqs[+v]?.q, page: persona.trackPage });
-			}}
-		>
+		<Accordion type="multiple" class="space-y-3">
 			{#each persona.faqs as faq, i (faq.q)}
 				<AccordionItem
 					value={String(i)}
@@ -419,7 +410,9 @@
 					>
 						{faq.q}
 					</AccordionTrigger>
-					<AccordionContent class="border-t px-5 text-sm leading-relaxed text-muted-foreground">
+					<AccordionContent
+						class="border-t px-5 py-2.5 text-sm leading-relaxed text-muted-foreground"
+					>
 						{faq.a}
 					</AccordionContent>
 				</AccordionItem>
