@@ -209,7 +209,7 @@
 	<!-- Existing modifier groups -->
 	<div use:sortableGroups class="space-y-3">
 		{#each sortedGroups as mod (mod.id)}
-			<Card data-group-id={mod.id} class="overflow-hidden transition-colors hover:bg-muted/30">
+			<Card data-group-id={mod.id} class="overflow-hidden transition-colors">
 				<!-- Group header -->
 				<CardHeader class="flex flex-row items-center justify-between gap-3 space-y-0">
 					{#if editingModifier === mod.id}
