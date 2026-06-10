@@ -242,7 +242,9 @@
 										<p class="text-sm font-medium text-foreground">{item.name}</p>
 										{#if item.selectedModifiers.length}
 											<p class="mt-0.5 text-xs text-muted-foreground">
-												{item.selectedModifiers.map((m) => m.name).join(', ')}
+												{item.selectedModifiers
+													.map((m) => ((m.quantity ?? 1) > 1 ? `${m.name} ×${m.quantity}` : m.name))
+													.join(', ')}
 											</p>
 										{/if}
 									</div>
@@ -250,7 +252,10 @@
 										{fmt(
 											item.quantity *
 												(item.basePrice +
-													item.selectedModifiers.reduce((s, m) => s + m.priceAdjustment, 0))
+													item.selectedModifiers.reduce(
+														(s, m) => s + m.priceAdjustment * (m.quantity ?? 1),
+														0
+													))
 										)}
 									</p>
 								</li>

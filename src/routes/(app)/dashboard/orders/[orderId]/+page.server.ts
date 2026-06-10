@@ -514,7 +514,11 @@ export const actions: Actions = {
 							name: string;
 							quantity: number;
 							basePrice: number;
-							selectedModifiers?: Array<{ name: string; priceAdjustment: number }>;
+							selectedModifiers?: Array<{
+								name: string;
+								priceAdjustment: number;
+								quantity?: number;
+							}>;
 						}>) ?? [];
 					const emailItems =
 						snapshotItems.length > 0

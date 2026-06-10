@@ -11,7 +11,10 @@ import { generateOrderNumber } from '$lib/server/order-number';
 import { computeMaxLeadDays } from '$lib/utils/lead-days';
 
 function itemUnitPrice(item: CartItem): number {
-	return item.basePrice + item.selectedModifiers.reduce((s, m) => s + m.priceAdjustment, 0);
+	return (
+		item.basePrice +
+		item.selectedModifiers.reduce((s, m) => s + m.priceAdjustment * (m.quantity ?? 1), 0)
+	);
 }
 
 // Mirrors wallClockToUtc in expand.ts — converts YYYY-MM-DD to noon UTC in the vendor's timezone.

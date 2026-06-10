@@ -1,9 +1,12 @@
 import { browser } from '$app/environment';
 
 export type CartModifier = {
+	modifierId: number;
+	optionId: number;
 	group: string;
 	name: string;
 	priceAdjustment: number; // cents
+	quantity: number;
 };
 
 export type PickupType = 'windowed' | 'custom_date';
@@ -38,11 +41,15 @@ export class CartTypeMismatchError extends Error {
 
 /** Unit price for one of this item (base + all modifiers) */
 export function itemUnitPrice(item: CartItem): number {
-	return item.basePrice + item.selectedModifiers.reduce((s, m) => s + m.priceAdjustment, 0);
+	return (
+		item.basePrice +
+		item.selectedModifiers.reduce((s, m) => s + m.priceAdjustment * (m.quantity ?? 1), 0)
+	);
 }
 
 function storageKey(slug: string) {
-	return `cart:${slug}`;
+	// v2: CartModifier gained optionId/quantity; old carts can't be server-validated, so drop them.
+	return `cart:v2:${slug}`;
 }
 
 function loadItems(slug: string): CartItem[] {

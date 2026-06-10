@@ -36,7 +36,7 @@ export function customDateOrderRecoveredEmail({
 		name: string;
 		quantity: number;
 		basePrice: number;
-		selectedModifiers?: Array<{ name: string; priceAdjustment: number }>;
+		selectedModifiers?: Array<{ name: string; priceAdjustment: number; quantity?: number }>;
 	}>;
 	subtotal: number;
 	tax: number;

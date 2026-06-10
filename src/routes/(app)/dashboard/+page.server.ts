@@ -196,7 +196,9 @@ export const load: PageServerLoad = async ({ locals, depends }) => {
 		for (const r of horizonProductionRows) {
 			if (dayKey(r.windowStartsAt) !== key) continue;
 			const modifiers = Array.isArray(r.selectedModifiers)
-				? (r.selectedModifiers as Array<{ name: string }>).map((m) => m.name)
+				? (r.selectedModifiers as Array<{ name: string; quantity?: number }>).map((m) =>
+						(m.quantity ?? 1) > 1 ? `${m.name} ×${m.quantity}` : m.name
+					)
 				: [];
 			const mapKey = `${r.itemName}||${[...modifiers].sort().join('|')}`;
 			const existing = map.get(mapKey);

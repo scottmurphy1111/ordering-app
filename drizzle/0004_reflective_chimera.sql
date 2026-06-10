@@ -1,0 +1,1 @@
+ALTER TABLE "modifier_options" ADD COLUMN "max_quantity" integer DEFAULT 1 NOT NULL;

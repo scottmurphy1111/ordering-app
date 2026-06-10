@@ -99,6 +99,7 @@ export const modifierOptions = pgTable('modifier_options', {
 	name: varchar('name', { length: 255 }).notNull(),
 	priceAdjustment: integer('price_adjustment').default(0),
 	isDefault: boolean('is_default').default(false),
+	maxQuantity: integer('max_quantity').default(1).notNull(),
 	sortOrder: integer('sort_order').default(0)
 });
 

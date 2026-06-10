@@ -161,7 +161,9 @@ export const load: PageServerLoad = async ({ locals, url, depends }) => {
 			productionMap.get(wid)!.items.push({
 				name: row.itemName,
 				modifiers: Array.isArray(row.selectedModifiers)
-					? (row.selectedModifiers as Array<{ name: string }>).map((m) => m.name)
+					? (row.selectedModifiers as Array<{ name: string; quantity?: number }>).map((m) =>
+							(m.quantity ?? 1) > 1 ? `${m.name} ×${m.quantity}` : m.name
+						)
 					: [],
 				totalQuantity: parseInt(row.totalQuantity ?? '0')
 			});

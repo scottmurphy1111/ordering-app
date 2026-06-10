@@ -42,7 +42,8 @@ export const load: PageServerLoad = async ({ locals, params }) => {
 				id: opt.id,
 				name: opt.name,
 				priceAdjustment: opt.priceAdjustment ?? 0,
-				isDefault: opt.isDefault ?? false
+				isDefault: opt.isDefault ?? false,
+				maxQuantity: opt.maxQuantity ?? 1
 			}))
 		}));
 

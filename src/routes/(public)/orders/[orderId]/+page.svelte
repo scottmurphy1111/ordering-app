@@ -446,7 +446,9 @@
 							<p class="text-sm font-medium text-foreground">{item.name}</p>
 							{#if Array.isArray(item.selectedModifiers) && (item.selectedModifiers as { name: string }[]).length > 0}
 								<p class="mt-0.5 text-xs text-muted-foreground">
-									{(item.selectedModifiers as { name: string }[]).map((m) => m.name).join(', ')}
+									{(item.selectedModifiers as { name: string; quantity?: number }[])
+										.map((m) => ((m.quantity ?? 1) > 1 ? `${m.name} ×${m.quantity}` : m.name))
+										.join(', ')}
 								</p>
 							{/if}
 						</div>

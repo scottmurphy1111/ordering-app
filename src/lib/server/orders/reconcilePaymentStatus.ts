@@ -72,7 +72,11 @@ export async function reconcilePaymentStatus(order: OrderRow, vendorId: number):
 							name: string;
 							quantity: number;
 							basePrice: number;
-							selectedModifiers?: Array<{ name: string; priceAdjustment: number }>;
+							selectedModifiers?: Array<{
+								name: string;
+								priceAdjustment: number;
+								quantity?: number;
+							}>;
 						}>,
 						subtotal: updated.subtotal,
 						tax: updated.tax,

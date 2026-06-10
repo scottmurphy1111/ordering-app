@@ -403,6 +403,14 @@
 								<Button
 									variant="ghost"
 									size="icon"
+									href={resolve(`/dashboard/catalog/categories/${cat.id}` as `/${string}`)}
+									aria-label="View {cat.name} details"
+								>
+									<Icon icon="mdi:eye-outline" class="h-4 w-4" />
+								</Button>
+								<Button
+									variant="ghost"
+									size="icon"
 									onclick={() => openEditDrawer(cat)}
 									aria-label="Edit category"
 								>
@@ -536,6 +544,14 @@
 								</TableCell>
 								<TableCell class="w-20 px-4 py-3 text-right">
 									<div class="flex items-center justify-end gap-1">
+										<Button
+											variant="ghost"
+											size="icon"
+											href={resolve(`/dashboard/catalog/categories/${cat.id}` as `/${string}`)}
+											aria-label="View {cat.name} details"
+										>
+											<Icon icon="mdi:eye-outline" class="h-4 w-4" />
+										</Button>
 										<Button
 											variant="ghost"
 											size="icon"

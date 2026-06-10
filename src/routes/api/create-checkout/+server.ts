@@ -25,7 +25,10 @@ function getStripe(secretKey: string) {
 }
 
 function itemUnitPrice(item: CartItem): number {
-	return item.basePrice + item.selectedModifiers.reduce((s, m) => s + m.priceAdjustment, 0);
+	return (
+		item.basePrice +
+		item.selectedModifiers.reduce((s, m) => s + m.priceAdjustment * (m.quantity ?? 1), 0)
+	);
 }
 
 export const POST: RequestHandler = async ({ request }) => {
@@ -221,7 +224,7 @@ export const POST: RequestHandler = async ({ request }) => {
 				recurring: { interval: stripeInterval as 'month' | 'year' },
 				product_data: {
 					name: item.selectedModifiers.length
-						? `${item.name} (${item.selectedModifiers.map((m) => m.name).join(', ')})`
+						? `${item.name} (${item.selectedModifiers.map((m) => ((m.quantity ?? 1) > 1 ? `${m.name} ×${m.quantity}` : m.name)).join(', ')})`
 						: item.name
 				}
 			}
@@ -251,7 +254,7 @@ export const POST: RequestHandler = async ({ request }) => {
 				unit_amount: itemUnitPrice(item),
 				product_data: {
 					name: item.selectedModifiers.length
-						? `${item.name} (${item.selectedModifiers.map((m) => m.name).join(', ')})`
+						? `${item.name} (${item.selectedModifiers.map((m) => ((m.quantity ?? 1) > 1 ? `${m.name} ×${m.quantity}` : m.name)).join(', ')})`
 						: item.name
 				}
 			}

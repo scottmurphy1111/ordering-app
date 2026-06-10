@@ -8,6 +8,7 @@
 	import { Alert } from '$lib/components/ui/alert';
 	import CatalogItemForm from '$lib/components/CatalogItemForm.svelte';
 	import ModifierGroupsManager from '$lib/components/ModifierGroupsManager.svelte';
+	import { Card, CardContent, CardFooter } from '$lib/components/ui/card';
 	import { enhanceWithToasts } from '$lib/forms/enhance-with-toasts';
 	import { toast } from '$lib/toast';
 
@@ -88,46 +89,50 @@
 	</div>
 
 	<!-- ── Danger zone ───────────────────────────────────────── -->
-	<div class="mt-6 rounded-xl border border-destructive/20 bg-background p-4">
-		<h2 class="mb-2 text-sm font-semibold text-destructive">Danger zone</h2>
-		{#if deleteError}
-			<Alert severity="error" class="mb-3">{deleteError}</Alert>
-		{/if}
-		<form
-			method="post"
-			action="?/delete"
-			use:enhance={enhanceWithToasts({
-				// successMessage omitted — server returns a redirect.
-				onStart: () => {
-					submitting = true;
-					deleteError = null;
-				},
-				onEnd: () => {
-					submitting = false;
-				},
-				onError: (msg) => {
-					deleteError = msg;
-				}
-			})}
-		>
-			<Button
-				type="submit"
-				disabled={submitting}
-				onclick={async (e) => {
-					e.preventDefault();
-					const form = (e.currentTarget as HTMLButtonElement).form;
-					if (await confirmDialog('Delete this item? This cannot be undone.'))
-						form?.requestSubmit();
-				}}
-				variant="destructive"
+	<Card class="mt-6 border-destructive/20">
+		<CardContent class="space-y-3">
+			<h2 class="text-sm font-semibold">Danger zone</h2>
+			{#if deleteError}
+				<Alert severity="error">{deleteError}</Alert>
+			{/if}
+		</CardContent>
+		<CardFooter>
+			<form
+				method="post"
+				action="?/delete"
+				use:enhance={enhanceWithToasts({
+					// successMessage omitted — server returns a redirect.
+					onStart: () => {
+						submitting = true;
+						deleteError = null;
+					},
+					onEnd: () => {
+						submitting = false;
+					},
+					onError: (msg) => {
+						deleteError = msg;
+					}
+				})}
 			>
-				{#if submitting}
-					<Icon icon="mdi:loading" class="h-4 w-4 animate-spin" />
-					Deleting...
-				{:else}
-					Delete item
-				{/if}
-			</Button>
-		</form>
-	</div>
+				<Button
+					type="submit"
+					disabled={submitting}
+					onclick={async (e) => {
+						e.preventDefault();
+						const form = (e.currentTarget as HTMLButtonElement).form;
+						if (await confirmDialog('Delete this item? This cannot be undone.'))
+							form?.requestSubmit();
+					}}
+					variant="destructive"
+				>
+					{#if submitting}
+						<Icon icon="mdi:loading" class="h-4 w-4 animate-spin" />
+						Deleting...
+					{:else}
+						Delete item
+					{/if}
+				</Button>
+			</form>
+		</CardFooter>
+	</Card>
 </div>

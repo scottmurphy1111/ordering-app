@@ -108,7 +108,8 @@ export async function addModifierOption(
 	modifierId: number,
 	name: string,
 	priceAdjustment: number,
-	isDefault: boolean
+	isDefault: boolean,
+	maxQuantity: number
 ): Promise<void> {
 	// Verify modifier belongs to vendor
 	const mod = await db.query.modifiers.findFirst({
@@ -133,7 +134,9 @@ export async function addModifierOption(
 		throw new ModifierActionError(409, `An option named "${name}" already exists in this group`);
 	}
 
-	await db.insert(modifierOptions).values({ modifierId, name, priceAdjustment, isDefault });
+	await db
+		.insert(modifierOptions)
+		.values({ modifierId, name, priceAdjustment, isDefault, maxQuantity });
 }
 
 export async function updateModifierOption(formData: FormData, vendorId: number) {
@@ -170,10 +173,11 @@ export async function updateModifierOption(formData: FormData, vendorId: number)
 	const priceAdjustmentRaw = formData.get('priceAdjustment')?.toString() ?? '0';
 	const priceAdjustment = Math.round(parseFloat(priceAdjustmentRaw) * 100) || 0;
 	const isDefault = formData.get('isDefault') === 'on';
+	const maxQuantity = Math.max(1, parseInt(formData.get('maxQuantity')?.toString() ?? '1') || 1);
 
 	await db
 		.update(modifierOptions)
-		.set({ name, priceAdjustment, isDefault })
+		.set({ name, priceAdjustment, isDefault, maxQuantity })
 		.where(eq(modifierOptions.id, optionId));
 
 	return { success: true as const };

@@ -628,7 +628,7 @@
 {#if variant === 'card'}
 	<Card class="shadow-sm">
 		<form method="post" action={formAction} use:enhance={handleEnhance}>
-			<CardContent class="pt-6 pb-2">
+			<CardContent class="py-2">
 				{@render formFields()}
 			</CardContent>
 			<CardFooter class="gap-3">

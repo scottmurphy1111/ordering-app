@@ -300,8 +300,19 @@ export const actions: Actions = {
 			const priceAdjStr = formData.get('priceAdjustment')?.toString() ?? '0';
 			const priceAdjustment = Math.round(parseFloat(priceAdjStr || '0') * 100);
 			const isDefault = formData.get('isDefault') === 'on';
+			const maxQuantity = Math.max(
+				1,
+				parseInt(formData.get('maxQuantity')?.toString() ?? '1') || 1
+			);
 			try {
-				await addModifierOption(vendorId, modifierId, name, priceAdjustment, isDefault);
+				await addModifierOption(
+					vendorId,
+					modifierId,
+					name,
+					priceAdjustment,
+					isDefault,
+					maxQuantity
+				);
 				return { success: true };
 			} catch (e) {
 				if (e instanceof ModifierActionError) return fail(e.status, { error: e.message });

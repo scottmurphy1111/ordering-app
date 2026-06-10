@@ -44,7 +44,7 @@
 			name: string;
 			quantity: number;
 			basePrice: number;
-			selectedModifiers: Array<{ name: string; priceAdjustment: number }>;
+			selectedModifiers: Array<{ name: string; priceAdjustment: number; quantity?: number }>;
 		}>
 	);
 
@@ -513,7 +513,9 @@
 							<p class="text-sm font-medium">{item.name}</p>
 							{#if item.selectedModifiers?.length}
 								<p class="mt-0.5 text-xs text-gray-500">
-									{item.selectedModifiers.map((m) => m.name).join(',')}
+									{item.selectedModifiers
+										.map((m) => ((m.quantity ?? 1) > 1 ? `${m.name} ×${m.quantity}` : m.name))
+										.join(', ')}
 								</p>
 							{/if}
 						</div>
@@ -522,7 +524,10 @@
 							<p class="text-xs text-gray-400">
 								{formatCents(
 									(item.basePrice +
-										(item.selectedModifiers?.reduce((s, m) => s + m.priceAdjustment, 0) ?? 0)) *
+										(item.selectedModifiers?.reduce(
+											(s, m) => s + m.priceAdjustment * (m.quantity ?? 1),
+											0
+										) ?? 0)) *
 										item.quantity
 								)}
 							</p>

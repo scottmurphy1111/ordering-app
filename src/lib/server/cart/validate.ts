@@ -1,5 +1,10 @@
 import { db } from '$lib/server/db';
-import { catalogItems } from '$lib/server/db/catalog';
+import {
+	catalogItems,
+	catalogItemModifiers,
+	modifiers,
+	modifierOptions
+} from '$lib/server/db/catalog';
 import { and, eq, inArray } from 'drizzle-orm';
 import type { CartItem, PickupType } from '$lib/cart.svelte';
 import { isCompatible, type AvailabilityMode } from './compat';
@@ -63,6 +68,52 @@ export async function validateCartItems(
 
 	const lookup = new Map(rows.map((r) => [r.id, r]));
 
+	// Authoritative modifier options for these items. Price, name, and caps live in the
+	// catalog and are NEVER trusted from the client cart. Vendor-scoped via the group join.
+	type ValidOption = {
+		modifierId: number;
+		groupName: string;
+		maxSelections: number;
+		name: string;
+		priceAdjustment: number;
+		maxQuantity: number;
+	};
+	const optionsByItem = new Map<number, Map<number, ValidOption>>();
+	if (itemIds.length > 0) {
+		const modRows = await db
+			.select({
+				catalogItemId: catalogItemModifiers.catalogItemId,
+				modifierId: modifiers.id,
+				groupName: modifiers.name,
+				maxSelections: modifiers.maxSelections,
+				optionId: modifierOptions.id,
+				optionName: modifierOptions.name,
+				priceAdjustment: modifierOptions.priceAdjustment,
+				maxQuantity: modifierOptions.maxQuantity
+			})
+			.from(catalogItemModifiers)
+			.innerJoin(modifiers, eq(modifiers.id, catalogItemModifiers.modifierId))
+			.innerJoin(modifierOptions, eq(modifierOptions.modifierId, modifiers.id))
+			.where(
+				and(inArray(catalogItemModifiers.catalogItemId, itemIds), eq(modifiers.vendorId, vendorId))
+			);
+		for (const r of modRows) {
+			let m = optionsByItem.get(r.catalogItemId);
+			if (!m) {
+				m = new Map<number, ValidOption>();
+				optionsByItem.set(r.catalogItemId, m);
+			}
+			m.set(r.optionId, {
+				modifierId: r.modifierId,
+				groupName: r.groupName,
+				maxSelections: r.maxSelections ?? 1,
+				name: r.optionName,
+				priceAdjustment: r.priceAdjustment ?? 0,
+				maxQuantity: r.maxQuantity
+			});
+		}
+	}
+
 	const unavailable: UnavailableItem[] = [];
 	const priceChanges: PriceChange[] = [];
 	const validatedItems: CartItem[] = [];
@@ -96,11 +147,36 @@ export async function validateCartItems(
 			});
 			seenMismatchIds.add(item.itemId);
 		}
+		// Re-derive modifiers from the catalog: authoritative price/name, quantity clamped to
+		// [1, maxQuantity], options not attached to this item dropped, group maxSelections and
+		// duplicate optionIds enforced. The charge can only ever reflect real, offered options.
+		const validOptions = optionsByItem.get(item.itemId) ?? new Map<number, ValidOption>();
+		const distinctByGroup = new Map<number, number>();
+		const seenOptionIds = new Set<number>();
+		const rebuiltModifiers: CartItem['selectedModifiers'] = [];
+		for (const m of item.selectedModifiers) {
+			const opt = validOptions.get(m.optionId);
+			if (!opt || seenOptionIds.has(m.optionId)) continue;
+			const used = distinctByGroup.get(opt.modifierId) ?? 0;
+			if (used >= opt.maxSelections) continue;
+			const qty = Math.min(Math.max(1, Math.floor(m.quantity ?? 1)), opt.maxQuantity);
+			rebuiltModifiers.push({
+				modifierId: opt.modifierId,
+				optionId: m.optionId,
+				group: opt.groupName,
+				name: opt.name,
+				priceAdjustment: opt.priceAdjustment,
+				quantity: qty
+			});
+			distinctByGroup.set(opt.modifierId, used + 1);
+			seenOptionIds.add(m.optionId);
+		}
 		validatedItems.push({
 			...item,
 			basePrice: effectivePrice,
 			customDateLeadDays: row.customDateLeadDays ?? undefined,
-			availabilityMode: row.availabilityMode
+			availabilityMode: row.availabilityMode,
+			selectedModifiers: rebuiltModifiers
 		});
 	}
 

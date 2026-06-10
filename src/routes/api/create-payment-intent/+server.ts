@@ -20,7 +20,10 @@ import { generateOrderNumber } from '$lib/server/order-number';
 import { vendorHours, vendorHoursExceptions } from '$lib/server/db/vendor-hours';
 
 function itemUnitPrice(item: CartItem): number {
-	return item.basePrice + item.selectedModifiers.reduce((s, m) => s + m.priceAdjustment, 0);
+	return (
+		item.basePrice +
+		item.selectedModifiers.reduce((s, m) => s + m.priceAdjustment * (m.quantity ?? 1), 0)
+	);
 }
 
 export const POST: RequestHandler = async ({ request }) => {

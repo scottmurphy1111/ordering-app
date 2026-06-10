@@ -60,7 +60,9 @@
 						</div>
 						{#if item.selectedModifiers.length > 0}
 							<p class="mt-0.5 line-clamp-2 text-xs text-neutral-500">
-								{item.selectedModifiers.map((m) => m.name).join(', ')}
+								{item.selectedModifiers
+									.map((m) => ((m.quantity ?? 1) > 1 ? `${m.name} ×${m.quantity}` : m.name))
+									.join(', ')}
 							</p>
 						{/if}
 						<div class="mt-2 flex items-center justify-between">

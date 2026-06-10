@@ -799,6 +799,14 @@
 								<Button
 									variant="ghost"
 									size="icon"
+									href={resolve(`/dashboard/catalog/items/${item.id}`)}
+									aria-label="View {item.name} details"
+								>
+									<Icon icon="mdi:eye-outline" class="h-4 w-4" />
+								</Button>
+								<Button
+									variant="ghost"
+									size="icon"
 									onclick={() => openEditDrawer(item)}
 									aria-label="Edit item"
 								>
@@ -1000,6 +1008,14 @@
 												<Icon icon="mdi:open-in-new" class="h-4 w-4" />
 											</Button>
 										{/if}
+										<Button
+											variant="ghost"
+											size="icon"
+											href={resolve(`/dashboard/catalog/items/${item.id}`)}
+											aria-label="View {item.name} details"
+										>
+											<Icon icon="mdi:eye-outline" class="h-4 w-4" />
+										</Button>
 										<Button
 											variant="ghost"
 											size="icon"

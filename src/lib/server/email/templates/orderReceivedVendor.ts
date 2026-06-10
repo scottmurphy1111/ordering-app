@@ -117,7 +117,7 @@ export function orderReceivedVendorEmail({
 		name: string;
 		quantity: number;
 		basePrice: number;
-		selectedModifiers?: Array<{ name: string; priceAdjustment: number }>;
+		selectedModifiers?: Array<{ name: string; priceAdjustment: number; quantity?: number }>;
 	}>;
 	pickupMode?: 'pickup_event' | 'storefront_hours' | 'custom_date';
 	pickupWindowSnapshot?: PickupWindowSnapshot | null;

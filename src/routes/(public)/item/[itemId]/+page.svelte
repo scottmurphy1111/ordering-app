@@ -25,44 +25,73 @@
 	);
 	const primaryImage = $derived(images.find((i) => i.isPrimary) ?? images[0]);
 
-	function computeDefaults(): Record<number, number[]> {
-		const initial: Record<number, number[]> = {};
+	function computeDefaults(): Record<number, Record<number, number>> {
+		const initial: Record<number, Record<number, number>> = {};
 		for (const group of modifierGroups) {
-			initial[group.id] = group.options.filter((o) => o.isDefault).map((o) => o.id);
+			initial[group.id] = Object.fromEntries(
+				group.options.filter((o) => o.isDefault).map((o) => [o.id, 1])
+			);
 		}
 		return initial;
 	}
 
-	let selections = $state<Record<number, number[]>>(computeDefaults());
+	// groupId -> { optionId -> quantity }. An option is "selected" when its quantity > 0.
+	let selections = $state<Record<number, Record<number, number>>>(computeDefaults());
 
-	function toggleOption(groupId: number, optionId: number, maxSelections: number) {
-		const current = selections[groupId] ?? [];
-		if (current.includes(optionId)) {
-			selections[groupId] = current.filter((id) => id !== optionId);
-		} else if (maxSelections === 1) {
-			selections[groupId] = [optionId];
-		} else if (current.length < maxSelections) {
-			selections[groupId] = [...current, optionId];
+	function distinctCount(groupId: number): number {
+		return Object.values(selections[groupId] ?? {}).filter((q) => q > 0).length;
+	}
+
+	// Set an option's quantity (0 removes it). Enforces the group's maxSelections (distinct
+	// options) and single-select replace; per-option maxQuantity is clamped by the caller.
+	function setOptionQty(group: (typeof modifierGroups)[number], optionId: number, nextQty: number) {
+		const current = { ...(selections[group.id] ?? {}) };
+		const wasSelected = (current[optionId] ?? 0) > 0;
+		const qty = Math.max(0, nextQty);
+		if (qty <= 0) {
+			delete current[optionId];
+		} else {
+			if (!wasSelected) {
+				if (group.maxSelections === 1) {
+					for (const key of Object.keys(current)) delete current[Number(key)];
+				} else if (distinctCount(group.id) >= group.maxSelections) {
+					return; // at the distinct-option cap
+				}
+			}
+			current[optionId] = qty;
 		}
+		selections = { ...selections, [group.id]: current };
 	}
 
 	const selectedModifiers = $derived<CartModifier[]>(
 		modifierGroups.flatMap((group) =>
-			(selections[group.id] ?? []).flatMap((id) => {
-				const opt = group.options.find((o) => o.id === id);
+			Object.entries(selections[group.id] ?? {}).flatMap(([idStr, qty]) => {
+				if (qty <= 0) return [];
+				const opt = group.options.find((o) => o.id === Number(idStr));
 				return opt
-					? [{ group: group.name, name: opt.name, priceAdjustment: opt.priceAdjustment }]
+					? [
+							{
+								modifierId: group.id,
+								optionId: opt.id,
+								group: group.name,
+								name: opt.name,
+								priceAdjustment: opt.priceAdjustment,
+								quantity: qty
+							}
+						]
 					: [];
 			})
 		)
 	);
 
 	const totalPrice = $derived(
-		basePrice + selectedModifiers.reduce((s, m) => s + m.priceAdjustment, 0)
+		basePrice + selectedModifiers.reduce((s, m) => s + m.priceAdjustment * m.quantity, 0)
 	);
 
 	const canAdd = $derived(
-		modifierGroups.every((g) => !g.required || (selections[g.id] ?? []).length > 0)
+		modifierGroups.every(
+			(g) => !g.required || Object.values(selections[g.id] ?? {}).some((q) => q > 0)
+		)
 	);
 
 	async function addToCart() {
@@ -183,7 +212,8 @@
 
 	<!-- Modifier groups -->
 	{#each modifierGroups as group (group.id)}
-		{@const chosen = selections[group.id] ?? []}
+		{@const sel = selections[group.id] ?? {}}
+		{@const distinct = Object.values(sel).filter((q) => q > 0).length}
 		{@const isMulti = group.maxSelections > 1}
 		<div class="rounded-xl border bg-background p-4 shadow-sm">
 			<div class="mb-3 flex items-center justify-between">
@@ -199,7 +229,7 @@
 				</div>
 				<div class="flex items-center gap-2">
 					{#if isMulti}
-						<span class="text-xs text-muted-foreground">{chosen.length}/{group.maxSelections}</span>
+						<span class="text-xs text-muted-foreground">{distinct}/{group.maxSelections}</span>
 					{/if}
 					{#if group.required}
 						<span class="rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-600"
@@ -214,42 +244,92 @@
 			</div>
 			<div class="space-y-2">
 				{#each group.options as option (option.id)}
-					{@const isSelected = chosen.includes(option.id)}
-					{@const isDisabled = isMulti && !isSelected && chosen.length >= group.maxSelections}
-					<label
-						style={isSelected
-							? 'border-color: var(--background-color); background-color: color-mix(in srgb, var(--background-color) 6%, white);'
-							: ''}
-						class="flex cursor-pointer items-center justify-between rounded-lg border px-3 py-2.5 transition-colors
-								{isSelected ? '' : ' hover:bg-muted/50'}
-								{isDisabled ? 'cursor-not-allowed opacity-50' : ''}"
-					>
-						<div class="flex items-center gap-3">
-							<input
-								type="checkbox"
-								checked={isSelected}
-								disabled={isDisabled}
-								onchange={() => toggleOption(group.id, option.id, group.maxSelections)}
-								style="accent-color: var(--background-color);"
-								class="h-4 w-4 rounded"
-							/>
-							<span class="text-sm text-foreground">{option.name}</span>
-							{#if option.isDefault}
-								<span
-									class="rounded-full px-1.5 py-0.5 text-xs font-medium"
-									style="background-color: color-mix(in srgb, var(--accent-color) 15%, white); color: var(--accent-color);"
-									>Default</span
+					{@const qty = sel[option.id] ?? 0}
+					{@const isSelected = qty > 0}
+					{@const isStepper = (option.maxQuantity ?? 1) > 1}
+					{@const atCap = isMulti && !isSelected && distinct >= group.maxSelections}
+					{#if isStepper}
+						<div
+							style={isSelected
+								? 'border-color: var(--background-color); background-color: color-mix(in srgb, var(--background-color) 6%, white);'
+								: ''}
+							class="flex items-center justify-between rounded-lg border px-3 py-2.5 transition-colors"
+						>
+							<div class="flex items-center gap-3">
+								<span class="text-sm text-foreground">{option.name}</span>
+								{#if option.isDefault}
+									<span
+										class="rounded-full px-1.5 py-0.5 text-xs font-medium"
+										style="background-color: color-mix(in srgb, var(--accent-color) 15%, white); color: var(--accent-color);"
+										>Default</span
+									>
+								{/if}
+								{#if option.priceAdjustment !== 0}
+									<span class="text-sm text-muted-foreground">
+										{option.priceAdjustment > 0 ? '+' : '−'}${(
+											Math.abs(option.priceAdjustment) / 100
+										).toFixed(2)} ea
+									</span>
+								{/if}
+							</div>
+							<div class="flex items-center gap-2">
+								<button
+									type="button"
+									aria-label="Remove one {option.name}"
+									disabled={qty <= 0}
+									onclick={() => setOptionQty(group, option.id, qty - 1)}
+									class="flex size-7 items-center justify-center rounded-md border text-foreground transition-colors hover:bg-muted/50 disabled:opacity-40"
 								>
-							{/if}
+									−
+								</button>
+								<span class="w-5 text-center text-sm text-foreground tabular-nums">{qty}</span>
+								<button
+									type="button"
+									aria-label="Add one {option.name}"
+									disabled={qty >= (option.maxQuantity ?? 1) || atCap}
+									onclick={() => setOptionQty(group, option.id, qty + 1)}
+									class="flex size-7 items-center justify-center rounded-md border text-foreground transition-colors hover:bg-muted/50 disabled:opacity-40"
+								>
+									+
+								</button>
+							</div>
 						</div>
-						{#if option.priceAdjustment !== 0}
-							<span class="text-sm text-muted-foreground">
-								{option.priceAdjustment > 0 ? '+' : '−'}${(
-									Math.abs(option.priceAdjustment) / 100
-								).toFixed(2)}
-							</span>
-						{/if}
-					</label>
+					{:else}
+						<label
+							style={isSelected
+								? 'border-color: var(--background-color); background-color: color-mix(in srgb, var(--background-color) 6%, white);'
+								: ''}
+							class="flex cursor-pointer items-center justify-between rounded-lg border px-3 py-2.5 transition-colors
+									{isSelected ? '' : ' hover:bg-muted/50'}
+									{atCap ? 'cursor-not-allowed opacity-50' : ''}"
+						>
+							<div class="flex items-center gap-3">
+								<input
+									type="checkbox"
+									checked={isSelected}
+									disabled={atCap}
+									onchange={() => setOptionQty(group, option.id, isSelected ? 0 : 1)}
+									style="accent-color: var(--background-color);"
+									class="h-4 w-4 rounded"
+								/>
+								<span class="text-sm text-foreground">{option.name}</span>
+								{#if option.isDefault}
+									<span
+										class="rounded-full px-1.5 py-0.5 text-xs font-medium"
+										style="background-color: color-mix(in srgb, var(--accent-color) 15%, white); color: var(--accent-color);"
+										>Default</span
+									>
+								{/if}
+							</div>
+							{#if option.priceAdjustment !== 0}
+								<span class="text-sm text-muted-foreground">
+									{option.priceAdjustment > 0 ? '+' : '−'}${(
+										Math.abs(option.priceAdjustment) / 100
+									).toFixed(2)}
+								</span>
+							{/if}
+						</label>
+					{/if}
 				{/each}
 			</div>
 		</div>

@@ -8,12 +8,15 @@
 	import { Alert } from '$lib/components/ui/alert';
 	import Sortable from 'sortablejs';
 	import { enhanceWithToasts } from '$lib/forms/enhance-with-toasts';
+	import { toast } from '$lib/toast';
+	import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '$lib/components/ui/card';
 
 	interface ModifierOption {
 		id: number;
 		name: string;
 		priceAdjustment: number | null;
 		isDefault: boolean | null;
+		maxQuantity?: number | null;
 		sortOrder?: number | null;
 	}
 
@@ -56,8 +59,10 @@
 						body: JSON.stringify({ order })
 					});
 					if (!res.ok) throw new Error();
+					toast.success('Group order saved');
 				} catch {
 					modifierError = 'Failed to save group order. Reload to revert.';
+					toast.error('Failed to save group order. Reload to revert.');
 				}
 			}
 		});
@@ -82,23 +87,40 @@
 						body: JSON.stringify({ order })
 					});
 					if (!res.ok) throw new Error();
+					toast.success('Option order saved');
 				} catch {
 					modifierError = 'Failed to save option order. Reload to revert.';
+					toast.error('Failed to save option order. Reload to revert.');
 				}
 			}
 		});
 		return { destroy: () => s.destroy() };
 	}
+
+	// Keep focus inside the drawer's focus trap. When a modifier action removes the focused
+	// control, focus would otherwise fall to <body> and bits-ui's focus scope yanks it to the
+	// first focusable element (the top), scrolling the panel up. Anchoring focus to the panel
+	// root (preventScroll) before the removal keeps focus in-scope and the scroll intact.
+	let rootEl = $state<HTMLElement>();
+	function keepFocusInPanel() {
+		rootEl?.focus({ preventScroll: true });
+	}
 </script>
 
-<div>
-	<div class="mb-3 flex items-center justify-between">
+<div bind:this={rootEl} tabindex="-1" class="outline-none">
+	<div class="mb-3 flex items-start justify-between">
 		<div>
 			<h2 class="text-base font-semibold text-foreground">Modifier groups</h2>
 			<p class="mt-0.5 text-xs text-muted-foreground">e.g. Size, Add-ons, Frosting, Pack size</p>
 		</div>
 		{#if !showAddGroup}
-			<Button onclick={() => (showAddGroup = true)} variant="outline">+ Add group</Button>
+			<Button
+				onclick={() => {
+					keepFocusInPanel();
+					showAddGroup = true;
+				}}
+				variant="outline">+ Add group</Button
+			>
 		{/if}
 	</div>
 
@@ -117,6 +139,7 @@
 				successMessage: 'Group added',
 				preserveValues: true,
 				onStart: () => {
+					keepFocusInPanel();
 					modifierError = null;
 				},
 				onSuccess: () => {
@@ -126,42 +149,53 @@
 					modifierError = msg;
 				}
 			})}
-			class="mb-4 space-y-3 rounded-xl border bg-muted/50 p-4"
 		>
-			<input type="hidden" name="itemId" value={itemId} />
-			<p class="text-sm font-medium text-foreground">New modifier group</p>
-			<div>
-				<label class="mb-1 block text-xs font-medium text-muted-foreground" for="modifierName"
-					>Group name *</label
-				>
-				<Input
-					id="modifierName"
-					name="modifierName"
-					type="text"
-					required
-					placeholder="e.g. Size, Add-ons"
-				/>
-			</div>
-			<div class="grid grid-cols-2 gap-3">
-				<div>
-					<label class="mb-1 block text-xs font-medium text-muted-foreground" for="maxSelections"
-						>Max selections</label
+			<Card class="mb-4">
+				<CardHeader>
+					<CardTitle class="text-sm">New modifier group</CardTitle>
+				</CardHeader>
+				<CardContent class="space-y-3">
+					<input type="hidden" name="itemId" value={itemId} />
+					<div>
+						<label class="mb-1 block text-xs font-medium text-muted-foreground" for="modifierName"
+							>Group name *</label
+						>
+						<Input
+							id="modifierName"
+							name="modifierName"
+							type="text"
+							required
+							placeholder="e.g. Size, Add-ons"
+						/>
+					</div>
+					<div class="grid grid-cols-2 gap-3">
+						<div>
+							<label
+								class="mb-1 block text-xs font-medium text-muted-foreground"
+								for="maxSelections">Max selections</label
+							>
+							<Input id="maxSelections" name="maxSelections" type="number" min={1} value="1" />
+						</div>
+						<div class="flex items-end pb-2">
+							<label class="flex cursor-pointer items-center gap-2 text-sm text-muted-foreground">
+								<Checkbox name="isRequired" />
+								Required
+							</label>
+						</div>
+					</div>
+				</CardContent>
+				<CardFooter class="justify-start gap-2">
+					<Button type="submit" variant="default">Add group</Button>
+					<Button
+						type="button"
+						onclick={() => {
+							keepFocusInPanel();
+							showAddGroup = false;
+						}}
+						variant="outline">Cancel</Button
 					>
-					<Input id="maxSelections" name="maxSelections" type="number" min={1} value="1" />
-				</div>
-				<div class="flex items-end pb-2">
-					<label class="flex cursor-pointer items-center gap-2 text-sm text-muted-foreground">
-						<Checkbox name="isRequired" />
-						Required
-					</label>
-				</div>
-			</div>
-			<div class="flex gap-2">
-				<Button type="submit" variant="default">Add group</Button>
-				<Button type="button" onclick={() => (showAddGroup = false)} variant="outline"
-					>Cancel</Button
-				>
-			</div>
+				</CardFooter>
+			</Card>
 		</form>
 	{/if}
 
@@ -175,70 +209,73 @@
 	<!-- Existing modifier groups -->
 	<div use:sortableGroups class="space-y-3">
 		{#each sortedGroups as mod (mod.id)}
-			<div
-				data-group-id={mod.id}
-				class="overflow-hidden rounded-xl border bg-background shadow-sm transition-colors hover:bg-muted/30"
-			>
+			<Card data-group-id={mod.id} class="overflow-hidden transition-colors hover:bg-muted/30">
 				<!-- Group header -->
-				{#if editingModifier === mod.id}
-					<form
-						method="post"
-						action="?/updateModifier"
-						use:enhance={enhanceWithToasts({
-							successMessage: 'Group updated',
-							preserveValues: true,
-							onStart: () => {
-								modifierError = null;
-							},
-							onSuccess: () => {
-								editingModifier = null;
-							},
-							onError: (msg) => {
-								modifierError = msg;
-							}
-						})}
-						class="flex items-end gap-3 border-b bg-muted/50 px-4 py-3"
-					>
-						<input type="hidden" name="modifierId" value={mod.id} />
-						<div class="flex-1">
-							<label
-								class="mb-1 block text-xs font-medium text-muted-foreground"
-								for="edit-modifier-name-{mod.id}">Group name</label
-							>
-							<Input
-								id="edit-modifier-name-{mod.id}"
-								name="modifierName"
-								type="text"
-								required
-								value={mod.name}
-							/>
-						</div>
-						<div class="w-20">
-							<label
-								class="mb-1 block text-xs font-medium text-muted-foreground"
-								for="edit-max-selections-{mod.id}">Max</label
-							>
-							<Input
-								id="edit-max-selections-{mod.id}"
-								name="maxSelections"
-								type="number"
-								min={1}
-								value={mod.maxSelections}
-							/>
-						</div>
-						<label
-							class="flex cursor-pointer items-center gap-1.5 pb-1.5 text-sm text-muted-foreground"
+				<CardHeader class="flex flex-row items-center justify-between gap-3 space-y-0">
+					{#if editingModifier === mod.id}
+						<form
+							method="post"
+							action="?/updateModifier"
+							use:enhance={enhanceWithToasts({
+								successMessage: 'Group updated',
+								preserveValues: true,
+								onStart: () => {
+									keepFocusInPanel();
+									modifierError = null;
+								},
+								onSuccess: () => {
+									editingModifier = null;
+								},
+								onError: (msg) => {
+									modifierError = msg;
+								}
+							})}
+							class="flex w-full items-end gap-3"
 						>
-							<Checkbox name="isRequired" checked={mod.isRequired ?? false} />
-							Required
-						</label>
-						<Button type="submit" variant="default">Save</Button>
-						<Button type="button" onclick={() => (editingModifier = null)} variant="outline"
-							>Cancel</Button
-						>
-					</form>
-				{:else}
-					<div class="flex items-center justify-between gap-3 border-b px-4 py-3">
+							<input type="hidden" name="modifierId" value={mod.id} />
+							<div class="flex-1">
+								<label
+									class="mb-1 block text-xs font-medium text-muted-foreground"
+									for="edit-modifier-name-{mod.id}">Group name</label
+								>
+								<Input
+									id="edit-modifier-name-{mod.id}"
+									name="modifierName"
+									type="text"
+									required
+									value={mod.name}
+								/>
+							</div>
+							<div class="w-20">
+								<label
+									class="mb-1 block text-xs font-medium text-muted-foreground"
+									for="edit-max-selections-{mod.id}">Max</label
+								>
+								<Input
+									id="edit-max-selections-{mod.id}"
+									name="maxSelections"
+									type="number"
+									min={1}
+									value={mod.maxSelections}
+								/>
+							</div>
+							<label
+								class="flex cursor-pointer items-center gap-1.5 pb-1.5 text-sm text-muted-foreground"
+							>
+								<Checkbox name="isRequired" checked={mod.isRequired ?? false} />
+								Required
+							</label>
+							<Button type="submit" variant="default">Save</Button>
+							<Button
+								type="button"
+								onclick={() => {
+									keepFocusInPanel();
+									editingModifier = null;
+								}}
+								variant="outline">Cancel</Button
+							>
+						</form>
+					{:else}
 						<div class="flex items-center gap-2">
 							<button
 								type="button"
@@ -263,7 +300,10 @@
 						<div class="flex items-center gap-2">
 							<Button
 								type="button"
-								onclick={() => (editingModifier = mod.id)}
+								onclick={() => {
+									keepFocusInPanel();
+									editingModifier = mod.id;
+								}}
 								variant="ghost"
 								class="h-auto p-0 text-xs text-muted-foreground hover:text-muted-foreground"
 							>
@@ -275,6 +315,7 @@
 								use:enhance={enhanceWithToasts({
 									successMessage: 'Group deleted',
 									onStart: () => {
+										keepFocusInPanel();
 										submittingDelete = { kind: 'modifier', id: mod.id };
 										modifierError = null;
 									},
@@ -308,224 +349,269 @@
 								</Button>
 							</form>
 						</div>
-					</div>
-				{/if}
+					{/if}
+				</CardHeader>
 
 				<!-- Options list -->
-				<div use:sortableOptions class="divide-y divide-border">
-					{#each mod.options as opt (opt.id)}
-						{#if editingOption === opt.id}
-							<form
-								method="post"
-								action="?/updateOption"
-								use:enhance={enhanceWithToasts({
-									successMessage: 'Option updated',
-									preserveValues: true,
-									onStart: () => {
-										modifierError = null;
-									},
-									onSuccess: () => {
-										editingOption = null;
-									},
-									onError: (msg) => {
-										modifierError = msg;
-									}
-								})}
-								class="space-y-2 bg-muted/50 px-4 py-3"
-							>
-								<input type="hidden" name="optionId" value={opt.id} />
-								<div class="grid grid-cols-[1fr_auto_auto_auto] items-end gap-2">
-									<div>
+				<CardContent class="space-y-2">
+					<div use:sortableOptions class="space-y-2">
+						{#each mod.options as opt (opt.id)}
+							{#if editingOption === opt.id}
+								<form
+									method="post"
+									action="?/updateOption"
+									use:enhance={enhanceWithToasts({
+										successMessage: 'Option updated',
+										preserveValues: true,
+										onStart: () => {
+											keepFocusInPanel();
+											modifierError = null;
+										},
+										onSuccess: () => {
+											editingOption = null;
+										},
+										onError: (msg) => {
+											modifierError = msg;
+										}
+									})}
+									class="space-y-2"
+								>
+									<input type="hidden" name="optionId" value={opt.id} />
+									<div class="grid grid-cols-[1fr_auto_auto_auto] items-end gap-2">
+										<div>
+											<label
+												class="mb-1 block text-xs font-medium text-muted-foreground"
+												for="edit-option-name-{opt.id}">Option name *</label
+											>
+											<Input
+												id="edit-option-name-{opt.id}"
+												name="optionName"
+												type="text"
+												required
+												value={opt.name}
+											/>
+										</div>
+										<div class="w-24">
+											<label
+												class="mb-1 block text-xs font-medium text-muted-foreground"
+												for="edit-price-adj-{opt.id}">Price adj. ($)</label
+											>
+											<Input
+												id="edit-price-adj-{opt.id}"
+												name="priceAdjustment"
+												type="number"
+												step={0.01}
+												value={((opt.priceAdjustment ?? 0) / 100).toFixed(2)}
+											/>
+										</div>
+										<div class="w-20">
+											<label
+												class="mb-1 block text-xs font-medium text-muted-foreground"
+												for="edit-max-qty-{opt.id}">Max qty</label
+											>
+											<Input
+												id="edit-max-qty-{opt.id}"
+												name="maxQuantity"
+												type="number"
+												min={1}
+												value={opt.maxQuantity ?? 1}
+											/>
+										</div>
 										<label
-											class="mb-1 block text-xs font-medium text-muted-foreground"
-											for="edit-option-name-{opt.id}">Option name *</label
+											class="flex cursor-pointer items-center gap-1 pb-1.5 text-xs text-muted-foreground"
 										>
-										<Input
-											id="edit-option-name-{opt.id}"
-											name="optionName"
-											type="text"
-											required
-											value={opt.name}
-										/>
+											<Checkbox name="isDefault" checked={opt.isDefault ?? false} />
+											Default
+										</label>
+										<div class="flex gap-1 pb-0.5">
+											<Button type="submit" variant="default">Save</Button>
+											<Button
+												type="button"
+												onclick={() => {
+													keepFocusInPanel();
+													editingOption = null;
+												}}
+												variant="outline"
+											>
+												Cancel
+											</Button>
+										</div>
 									</div>
-									<div class="w-24">
-										<label
-											class="mb-1 block text-xs font-medium text-muted-foreground"
-											for="edit-price-adj-{opt.id}">Price adj. ($)</label
+								</form>
+							{:else}
+								<div data-option-id={opt.id} class="flex items-center justify-between gap-3">
+									<div class="flex min-w-0 items-center gap-2">
+										<button
+											type="button"
+											class="option-drag-handle cursor-grab text-muted-foreground hover:text-foreground active:cursor-grabbing"
+											aria-label="Drag to reorder option"
 										>
-										<Input
-											id="edit-price-adj-{opt.id}"
-											name="priceAdjustment"
-											type="number"
-											step={0.01}
-											value={((opt.priceAdjustment ?? 0) / 100).toFixed(2)}
-										/>
+											<Icon icon="mdi:drag-vertical" class="h-4 w-4" />
+										</button>
+										<span class="truncate text-sm text-foreground">{opt.name}</span>
+										{#if opt.isDefault}
+											<span class="rounded-full bg-blue-50 px-2 py-0.5 text-xs text-blue-600"
+												>Default</span
+											>
+										{/if}
 									</div>
-									<label
-										class="flex cursor-pointer items-center gap-1 pb-1.5 text-xs text-muted-foreground"
-									>
-										<Checkbox name="isDefault" checked={opt.isDefault ?? false} />
-										Default
-									</label>
-									<div class="flex gap-1 pb-0.5">
-										<Button type="submit" variant="default">Save</Button>
-										<Button type="button" onclick={() => (editingOption = null)} variant="outline">
-											<Icon icon="mdi:close" class="h-3.5 w-3.5" />
-										</Button>
-									</div>
-								</div>
-							</form>
-						{:else}
-							<div
-								data-option-id={opt.id}
-								class="flex items-center justify-between gap-3 px-4 py-2.5"
-							>
-								<div class="flex min-w-0 items-center gap-2">
-									<button
-										type="button"
-										class="option-drag-handle cursor-grab text-muted-foreground hover:text-foreground active:cursor-grabbing"
-										aria-label="Drag to reorder option"
-									>
-										<Icon icon="mdi:drag-vertical" class="h-4 w-4" />
-									</button>
-									<span class="truncate text-sm text-foreground">{opt.name}</span>
-									{#if opt.isDefault}
-										<span class="rounded-full bg-blue-50 px-2 py-0.5 text-xs text-blue-600"
-											>Default</span
-										>
-									{/if}
-								</div>
-								<div class="flex shrink-0 items-center gap-3">
-									<span class="text-sm text-muted-foreground">
-										{(opt.priceAdjustment ?? 0) === 0
-											? 'No charge'
-											: (opt.priceAdjustment ?? 0) > 0
-												? `+$${((opt.priceAdjustment ?? 0) / 100).toFixed(2)}`
-												: `-$${(Math.abs(opt.priceAdjustment ?? 0) / 100).toFixed(2)}`}
-									</span>
-									<Button
-										type="button"
-										onclick={() => (editingOption = opt.id)}
-										variant="ghost"
-										size="icon"
-										class="text-muted-foreground hover:text-foreground"
-									>
-										<Icon icon="mdi:pencil-outline" class="h-3.5 w-3.5" />
-									</Button>
-									<form
-										method="post"
-										action="?/deleteOption"
-										use:enhance={enhanceWithToasts({
-											successMessage: 'Option deleted',
-											onStart: () => {
-												submittingDelete = { kind: 'option', id: opt.id };
-												modifierError = null;
-											},
-											onEnd: () => {
-												submittingDelete = null;
-											},
-											onError: (msg) => {
-												modifierError = msg;
-											}
-										})}
-									>
-										<input type="hidden" name="optionId" value={opt.id} />
+									<div class="flex shrink-0 items-center gap-3">
+										<span class="text-sm text-muted-foreground">
+											{(opt.priceAdjustment ?? 0) === 0
+												? 'No charge'
+												: (opt.priceAdjustment ?? 0) > 0
+													? `+$${((opt.priceAdjustment ?? 0) / 100).toFixed(2)}`
+													: `-$${(Math.abs(opt.priceAdjustment ?? 0) / 100).toFixed(2)}`}
+										</span>
 										<Button
-											type="submit"
-											disabled={submittingDelete !== null}
-											onclick={async (e) => {
-												e.preventDefault();
-												const form = (e.currentTarget as HTMLButtonElement).form;
-												if (await confirmDialog(`Delete option "${opt.name}"?`))
-													form?.requestSubmit();
+											type="button"
+											onclick={() => {
+												keepFocusInPanel();
+												editingOption = opt.id;
 											}}
 											variant="ghost"
 											size="icon"
-											class="text-red-400 hover:bg-red-50 hover:text-red-600"
+											class="text-muted-foreground hover:text-foreground"
 										>
-											{#if submittingDelete?.kind === 'option' && submittingDelete?.id === opt.id}
-												<Icon icon="mdi:loading" class="h-3.5 w-3.5 animate-spin" />
-											{:else}
-												<Icon icon="mdi:trash-can-outline" class="h-3.5 w-3.5" />
-											{/if}
+											<Icon icon="mdi:pencil-outline" class="h-3.5 w-3.5" />
 										</Button>
-									</form>
+										<form
+											method="post"
+											action="?/deleteOption"
+											use:enhance={enhanceWithToasts({
+												successMessage: 'Option deleted',
+												onStart: () => {
+													keepFocusInPanel();
+													submittingDelete = { kind: 'option', id: opt.id };
+													modifierError = null;
+												},
+												onEnd: () => {
+													submittingDelete = null;
+												},
+												onError: (msg) => {
+													modifierError = msg;
+												}
+											})}
+										>
+											<input type="hidden" name="optionId" value={opt.id} />
+											<Button
+												type="submit"
+												disabled={submittingDelete !== null}
+												onclick={async (e) => {
+													e.preventDefault();
+													const form = (e.currentTarget as HTMLButtonElement).form;
+													if (await confirmDialog(`Delete option "${opt.name}"?`))
+														form?.requestSubmit();
+												}}
+												variant="ghost"
+												size="icon"
+												class="text-red-400 hover:bg-red-50 hover:text-red-600"
+											>
+												{#if submittingDelete?.kind === 'option' && submittingDelete?.id === opt.id}
+													<Icon icon="mdi:loading" class="h-3.5 w-3.5 animate-spin" />
+												{:else}
+													<Icon icon="mdi:trash-can-outline" class="h-3.5 w-3.5" />
+												{/if}
+											</Button>
+										</form>
+									</div>
+								</div>
+							{/if}
+						{/each}
+					</div>
+					{#if addingOptionTo === mod.id}
+						<form
+							method="post"
+							action="?/addOption"
+							use:enhance={enhanceWithToasts({
+								successMessage: 'Option added',
+								onStart: () => {
+									keepFocusInPanel();
+									modifierError = null;
+								},
+								onError: (msg) => {
+									modifierError = msg;
+								}
+							})}
+							class="space-y-2"
+						>
+							<input type="hidden" name="modifierId" value={mod.id} />
+							<div class="grid grid-cols-[1fr_auto_auto_auto] items-end gap-2">
+								<div>
+									<label
+										class="mb-1 block text-xs font-medium text-muted-foreground"
+										for="option-name-{mod.id}">Option name *</label
+									>
+									<Input
+										id="option-name-{mod.id}"
+										name="optionName"
+										type="text"
+										required
+										placeholder="e.g. Large"
+									/>
+								</div>
+								<div class="w-24">
+									<label
+										class="mb-1 block text-xs font-medium text-muted-foreground"
+										for="price-adj-{mod.id}">Price adj. ($)</label
+									>
+									<Input
+										id="price-adj-{mod.id}"
+										name="priceAdjustment"
+										type="number"
+										step={0.01}
+										value="0"
+										placeholder="0.00"
+									/>
+								</div>
+								<div class="w-20">
+									<label
+										class="mb-1 block text-xs font-medium text-muted-foreground"
+										for="max-qty-{mod.id}">Max qty</label
+									>
+									<Input id="max-qty-{mod.id}" name="maxQuantity" type="number" min={1} value="1" />
+								</div>
+								<label
+									class="flex cursor-pointer items-center gap-1 pb-1.5 text-xs text-muted-foreground"
+								>
+									<Checkbox name="isDefault" />
+									Default
+								</label>
+								<div class="flex gap-1 pb-0.5">
+									<Button type="submit" variant="default">Save</Button>
+									<Button
+										type="button"
+										onclick={() => {
+											keepFocusInPanel();
+											addingOptionTo = null;
+										}}
+										variant="outline"
+									>
+										Cancel
+									</Button>
 								</div>
 							</div>
-						{/if}
-					{/each}
-				</div>
+						</form>
+					{/if}
+				</CardContent>
 
-				<!-- Add option -->
-				{#if addingOptionTo === mod.id}
-					<form
-						method="post"
-						action="?/addOption"
-						use:enhance={enhanceWithToasts({
-							successMessage: 'Option added',
-							onStart: () => {
-								modifierError = null;
-							},
-							onError: (msg) => {
-								modifierError = msg;
-							}
-						})}
-						class="space-y-2 border-t bg-muted/50 px-4 py-3"
-					>
-						<input type="hidden" name="modifierId" value={mod.id} />
-						<div class="grid grid-cols-[1fr_auto_auto_auto] items-end gap-2">
-							<div>
-								<label
-									class="mb-1 block text-xs font-medium text-muted-foreground"
-									for="option-name-{mod.id}">Option name *</label
-								>
-								<Input
-									id="option-name-{mod.id}"
-									name="optionName"
-									type="text"
-									required
-									placeholder="e.g. Large"
-								/>
-							</div>
-							<div class="w-24">
-								<label
-									class="mb-1 block text-xs font-medium text-muted-foreground"
-									for="price-adj-{mod.id}">Price adj. ($)</label
-								>
-								<Input
-									id="price-adj-{mod.id}"
-									name="priceAdjustment"
-									type="number"
-									step={0.01}
-									value="0"
-									placeholder="0.00"
-								/>
-							</div>
-							<label
-								class="flex cursor-pointer items-center gap-1 pb-1.5 text-xs text-muted-foreground"
-							>
-								<Checkbox name="isDefault" />
-								Default
-							</label>
-							<div class="flex gap-1 pb-0.5">
-								<Button type="submit" variant="default">Add</Button>
-								<Button type="button" onclick={() => (addingOptionTo = null)} variant="outline">
-									<Icon icon="mdi:close" class="h-3.5 w-3.5" />
-								</Button>
-							</div>
-						</div>
-					</form>
-				{:else}
-					<Button
-						type="button"
-						onclick={() => (addingOptionTo = mod.id)}
-						variant="ghost"
-						class="w-full justify-start rounded-none border-t px-4 py-2 text-xs text-muted-foreground hover:bg-muted/50 hover:text-muted-foreground"
-					>
-						+ Add option
-					</Button>
+				<!-- Add option trigger -->
+				{#if addingOptionTo !== mod.id}
+					<CardFooter class="justify-start">
+						<Button
+							type="button"
+							onclick={() => {
+								keepFocusInPanel();
+								addingOptionTo = mod.id;
+							}}
+							variant="default"
+							class=""
+						>
+							+ Add option
+						</Button>
+					</CardFooter>
 				{/if}
-			</div>
+			</Card>
 		{/each}
 	</div>
 </div>
