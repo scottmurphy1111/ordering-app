@@ -10,13 +10,14 @@ import {
 	not,
 	ne,
 	inArray,
+	gt,
 	gte,
 	isNotNull,
 	isNull,
 	sql,
 	sum
 } from 'drizzle-orm';
-import { orders, orderItems } from '$lib/server/db/schema';
+import { orders, orderItems, catalogItems, productionLastViewed } from '$lib/server/db/schema';
 import { vendor } from '$lib/server/db/vendor';
 import { pickupWindows, pickupLocations } from '$lib/server/db/pickup';
 import Stripe from 'stripe';
@@ -95,8 +96,46 @@ export const load: PageServerLoad = async ({ locals, url, depends }) => {
 	const scheduledCount = Number(scheduledRow[0]?.count ?? 0);
 	const todayRevenue = Number(todayRevenueRow[0]?.total ?? 0);
 
+	// ── New-orders badge ───────────────────────────────────────────────────────
+	// Count prep-needing orders created since this user last opened the Production view.
+	// "Prep-needing" = would appear in production: a future window, or a future custom date.
+	const userId = locals.user?.id;
+	let productionLastViewedAt: Date | null = null;
+	if (userId) {
+		const lv = await db
+			.select({ lastViewedAt: productionLastViewed.lastViewedAt })
+			.from(productionLastViewed)
+			.where(
+				and(eq(productionLastViewed.vendorId, vendorId), eq(productionLastViewed.userId, userId))
+			)
+			.limit(1);
+		productionLastViewedAt = lv[0]?.lastViewedAt ?? null;
+	}
+	let newOrderCount = 0;
+	if (userId && productionLastViewedAt && view !== 'production') {
+		const nc = await db
+			.select({ count: sql<number>`count(*)` })
+			.from(orders)
+			.where(
+				and(
+					eq(orders.vendorId, vendorId),
+					ne(orders.status, 'cancelled' as typeof orders.status._.data),
+					gt(orders.createdAt, productionLastViewedAt),
+					or(
+						inArray(orders.pickupWindowId, activeWindowIds),
+						and(eq(orders.pickupType, 'custom_date'), gte(orders.scheduledFor, todayStart))
+					)!
+				)
+			);
+		newOrderCount = Number(nc[0]?.count ?? 0);
+	}
+
 	// ── Production view ────────────────────────────────────────────────────────
 	if (view === 'production') {
+		// "New" = created since this user last opened production (productionLastViewedAt, read
+		// above, before the upsert below). No baseline yet → far-future sentinel → nothing is new.
+		const newSince = productionLastViewedAt ?? new Date(8640000000000000);
+
 		// Aggregate orderItems by (window, item name), excluding cancelled orders.
 		// INNER JOIN on pickupWindows naturally excludes free-form orders (null FK).
 		const productionRows = await db
@@ -109,7 +148,8 @@ export const load: PageServerLoad = async ({ locals, url, depends }) => {
 				itemName: orderItems.name,
 				selectedModifiers: orderItems.selectedModifiers,
 				totalQuantity: sum(orderItems.quantity),
-				orderCount: sql<number>`count(distinct ${orders.id})`
+				orderCount: sql<number>`count(distinct ${orders.id})`,
+				hasNew: sql<boolean>`coalesce(bool_or(${orders.createdAt} > ${newSince}), false)`
 			})
 			.from(orderItems)
 			.innerJoin(orders, eq(orderItems.orderId, orders.id))
@@ -139,7 +179,7 @@ export const load: PageServerLoad = async ({ locals, url, depends }) => {
 			{
 				window: WindowGroupKey;
 				orderCount: number;
-				items: Array<{ name: string; modifiers: string[]; totalQuantity: number }>;
+				items: Array<{ name: string; modifiers: string[]; totalQuantity: number; hasNew: boolean }>;
 			}
 		>();
 
@@ -165,8 +205,70 @@ export const load: PageServerLoad = async ({ locals, url, depends }) => {
 							(m.quantity ?? 1) > 1 ? `${m.name} ×${m.quantity}` : m.name
 						)
 					: [],
-				totalQuantity: parseInt(row.totalQuantity ?? '0')
+				totalQuantity: parseInt(row.totalQuantity ?? '0'),
+				hasNew: row.hasNew ?? false
 			});
+		}
+
+		// ── Custom-date production (no pickup window) ──────────────────────────────
+		// Custom-date orders carry scheduledFor + the item's lead time, not a pickup
+		// window, so the window query above misses them entirely. Pull them separately;
+		// the client dates each item to scheduledFor − leadDays (clamped to today, with
+		// past dates flagged overdue). ASAP orders have no plan date and stay excluded.
+		const scheduledRows = await db
+			.select({
+				scheduledFor: orders.scheduledFor,
+				leadDays: catalogItems.customDateLeadDays,
+				itemName: orderItems.name,
+				selectedModifiers: orderItems.selectedModifiers,
+				totalQuantity: sum(orderItems.quantity),
+				orderCount: sql<number>`count(distinct ${orders.id})`,
+				hasNew: sql<boolean>`coalesce(bool_or(${orders.createdAt} > ${newSince}), false)`
+			})
+			.from(orderItems)
+			.innerJoin(orders, eq(orderItems.orderId, orders.id))
+			.leftJoin(catalogItems, eq(orderItems.catalogItemId, catalogItems.id))
+			.where(
+				and(
+					eq(orders.vendorId, vendorId),
+					eq(orders.pickupType, 'custom_date'),
+					isNotNull(orders.scheduledFor),
+					ne(orders.status, 'cancelled' as typeof orders.status._.data),
+					gte(orders.scheduledFor, todayStart)
+				)
+			)
+			.groupBy(
+				orders.scheduledFor,
+				catalogItems.customDateLeadDays,
+				orderItems.name,
+				orderItems.selectedModifiers
+			)
+			.orderBy(asc(orders.scheduledFor), desc(sum(orderItems.quantity)), asc(orderItems.name));
+
+		const scheduledProduction = scheduledRows.map((row) => ({
+			scheduledFor: row.scheduledFor!,
+			leadDays: row.leadDays ?? 0,
+			itemName: row.itemName,
+			modifiers: Array.isArray(row.selectedModifiers)
+				? (row.selectedModifiers as Array<{ name: string; quantity?: number }>).map((m) =>
+						(m.quantity ?? 1) > 1 ? `${m.name} ×${m.quantity}` : m.name
+					)
+				: [],
+			totalQuantity: parseInt(row.totalQuantity ?? '0'),
+			orderCount: Number(row.orderCount),
+			hasNew: row.hasNew ?? false
+		}));
+
+		// Opening the Production view marks everything seen → clears the badge next load.
+		if (userId) {
+			const now = new Date();
+			await db
+				.insert(productionLastViewed)
+				.values({ vendorId, userId, lastViewedAt: now })
+				.onConflictDoUpdate({
+					target: [productionLastViewed.vendorId, productionLastViewed.userId],
+					set: { lastViewedAt: now }
+				});
 		}
 
 		return {
@@ -176,7 +278,9 @@ export const load: PageServerLoad = async ({ locals, url, depends }) => {
 			statusCounts,
 			scheduledCount,
 			todayRevenue,
-			productionGroups: Array.from(productionMap.values())
+			productionGroups: Array.from(productionMap.values()),
+			scheduledProduction,
+			newOrderCount: 0
 		};
 	}
 
@@ -263,7 +367,8 @@ export const load: PageServerLoad = async ({ locals, url, depends }) => {
 		scheduledCount,
 		todayRevenue,
 		windowGroups,
-		freeFormOrders
+		freeFormOrders,
+		newOrderCount
 	};
 };
 

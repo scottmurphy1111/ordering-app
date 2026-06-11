@@ -421,7 +421,7 @@
 			<h1
 				class="w-full max-w-[24ch] text-4xl leading-tight font-bold tracking-tight text-balance text-background sm:text-5xl"
 			>
-				The simple way to take orders from your customers.
+				The simple way to take pre-orders from your customers.
 			</h1>
 			<p class="mt-6 w-full max-w-lg text-lg leading-relaxed text-background/90">
 				Order Local gives sellers like you a branded page of their own: products organized,
@@ -438,7 +438,7 @@
 				</a>
 				<a
 					href="#how-it-works"
-					class="w-full rounded-xl border bg-background px-8 py-3.5 text-base font-semibold text-muted-foreground transition-colors hover:bg-muted/50 sm:w-auto"
+					class="w-full rounded-xl border bg-background px-8 py-3.5 text-base font-semibold text-muted-foreground transition-colors hover:bg-muted/90 sm:w-auto"
 				>
 					See how it works
 				</a>

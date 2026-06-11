@@ -183,6 +183,22 @@ export const vendorUsers = pgTable(
 	(table) => [primaryKey({ columns: [table.vendorId, table.userId] })]
 );
 
+// Per-user, per-vendor marker of when this user last opened the Production view.
+// Drives the Production tab "new orders" badge and the per-item "New" markers.
+export const productionLastViewed = pgTable(
+	'production_last_viewed',
+	{
+		vendorId: integer('vendor_id')
+			.notNull()
+			.references(() => vendor.id, { onDelete: 'cascade' }),
+		userId: text('user_id')
+			.notNull()
+			.references(() => user.id, { onDelete: 'cascade' }),
+		lastViewedAt: timestamp('last_viewed_at', { withTimezone: true }).defaultNow().notNull()
+	},
+	(table) => [primaryKey({ columns: [table.vendorId, table.userId] })]
+);
+
 // Pending invitations
 export const vendorInvitations = pgTable('vendor_invitations', {
 	id: text('id').primaryKey(),

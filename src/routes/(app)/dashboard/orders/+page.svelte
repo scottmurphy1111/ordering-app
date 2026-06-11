@@ -204,7 +204,14 @@
 		dateLabel: string;
 		windowCount: number;
 		totalUnits: number;
-		items: Array<{ name: string; modifiers: string[]; totalQuantity: number }>;
+		items: Array<{
+			name: string;
+			modifiers: string[];
+			totalQuantity: number;
+			pickupLabel?: string;
+			overdue?: boolean;
+			hasNew?: boolean;
+		}>;
 	};
 
 	const productionDays = $derived.by<ProductionDay[]>(() => {
@@ -234,15 +241,64 @@
 				);
 				if (existing) {
 					existing.totalQuantity += item.totalQuantity;
+					existing.hasNew = existing.hasNew || item.hasNew;
 				} else {
 					day.items.push({
 						name: item.name,
 						modifiers: item.modifiers,
-						totalQuantity: item.totalQuantity
+						totalQuantity: item.totalQuantity,
+						hasNew: item.hasNew
 					});
 				}
 				day.totalUnits += item.totalQuantity;
 			}
+		}
+
+		// Fold in custom-date production (no pickup window): date each item to its
+		// prep-start day = scheduledFor − leadDays, clamped to today (earlier dates are
+		// flagged overdue). Day key matches the windowed path (UTC date slice).
+		const todayKey = new Date().toISOString().slice(0, 10);
+		const dayLabelFmt = new Intl.DateTimeFormat('en-US', {
+			timeZone: vendorTimezone,
+			weekday: 'long',
+			month: 'long',
+			day: 'numeric'
+		});
+		const pickupLabelFmt = new Intl.DateTimeFormat('en-US', {
+			timeZone: vendorTimezone,
+			weekday: 'short',
+			month: 'short',
+			day: 'numeric'
+		});
+		for (const sp of data.scheduledProduction) {
+			// Non-mutating date shift (scheduledFor is noon-UTC anchored, so subtracting
+			// whole days keeps it noon-UTC). Avoids a mutated Date per svelte/prefer-svelte-reactivity.
+			const baseMs = new Date(sp.scheduledFor).getTime();
+			let dateKey = new Date(baseMs - sp.leadDays * 86_400_000).toISOString().slice(0, 10);
+			let overdue = false;
+			if (dateKey < todayKey) {
+				dateKey = todayKey;
+				overdue = true;
+			}
+			if (!dayMap.has(dateKey)) {
+				dayMap.set(dateKey, {
+					dateKey,
+					dateLabel: dayLabelFmt.format(new Date(`${dateKey}T12:00:00Z`)),
+					windowCount: 0,
+					totalUnits: 0,
+					items: []
+				});
+			}
+			const day = dayMap.get(dateKey)!;
+			day.items.push({
+				name: sp.itemName,
+				modifiers: sp.modifiers,
+				totalQuantity: sp.totalQuantity,
+				pickupLabel: pickupLabelFmt.format(new Date(sp.scheduledFor)),
+				overdue,
+				hasNew: sp.hasNew
+			});
+			day.totalUnits += sp.totalQuantity;
 		}
 
 		for (const day of dayMap.values()) {
@@ -298,6 +354,13 @@
 				<TabsTrigger value="production">
 					<Icon icon="mdi:clipboard-list-outline" class="h-3.5 w-3.5" />
 					Production
+					{#if data.newOrderCount > 0}
+						<span
+							class="ml-1 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-green-600 px-1 text-[10px] font-semibold text-white"
+						>
+							{data.newOrderCount}
+						</span>
+					{/if}
 				</TabsTrigger>
 			</TabsList>
 		</Tabs>
@@ -325,7 +388,7 @@
 
 	{#if data.view === 'production'}
 		<!-- ── Production view ──────────────────────────────────────────────── -->
-		{#if data.productionGroups.length === 0}
+		{#if data.productionGroups.length === 0 && data.scheduledProduction.length === 0}
 			<Card>
 				<CardContent class="flex flex-col items-center py-12 text-center">
 					<div class="flex h-14 w-14 items-center justify-center rounded-2xl bg-muted">
@@ -392,8 +455,9 @@
 								<p class="text-sm font-semibold text-gray-900">{day.dateLabel}</p>
 								<p class="mt-0.5 text-xs text-gray-500">
 									{day.totalUnits}
-									{day.totalUnits === 1 ? 'item' : 'items'} to prep · {day.windowCount}
-									pickup {day.windowCount === 1 ? 'window' : 'windows'}
+									{day.totalUnits === 1 ? 'item' : 'items'} to prep{#if day.windowCount > 0}
+										· {day.windowCount}
+										pickup {day.windowCount === 1 ? 'window' : 'windows'}{/if}
 								</p>
 							</div>
 							<table class="w-full">
@@ -401,9 +465,28 @@
 									{#each day.items as item, i (i)}
 										<tr>
 											<td class="px-4 py-3 text-sm text-gray-900">
-												{item.name}{#if item.modifiers.length > 0}<span class="text-gray-500">
+												{#if item.hasNew}<span
+														class="mr-1.5 inline-flex items-center rounded-full bg-green-600 px-2 py-0.5 text-xs font-semibold text-white"
+														>New</span
+													>{/if}{item.name}{#if item.modifiers.length > 0}<span
+														class="text-gray-500"
+													>
 														— {item.modifiers.join(', ')}</span
 													>{/if}
+												{#if item.pickupLabel}
+													<span
+														class="ml-1 inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600"
+													>
+														picking up {item.pickupLabel}
+													</span>
+												{/if}
+												{#if item.overdue}
+													<span
+														class="ml-1 inline-flex items-center rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700"
+													>
+														overdue
+													</span>
+												{/if}
 											</td>
 											<td class="px-4 py-3 text-right">
 												<span class="font-mono text-sm font-semibold text-gray-900">
@@ -438,7 +521,12 @@
 									{#each group.items as item, i (i)}
 										<tr>
 											<td class="px-4 py-3 text-sm text-gray-900">
-												{item.name}{#if item.modifiers.length > 0}<span class="text-gray-500">
+												{#if item.hasNew}<span
+														class="mr-1.5 inline-flex items-center rounded-full bg-green-600 px-2 py-0.5 text-xs font-semibold text-white"
+														>New</span
+													>{/if}{item.name}{#if item.modifiers.length > 0}<span
+														class="text-gray-500"
+													>
 														— {item.modifiers.join(', ')}</span
 													>{/if}
 											</td>

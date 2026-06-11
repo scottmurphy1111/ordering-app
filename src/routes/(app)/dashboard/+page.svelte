@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { SvelteDate } from 'svelte/reactivity';
+	import { SvelteDate, SvelteSet } from 'svelte/reactivity';
 	import { invalidate } from '$app/navigation';
 	import type { PageData } from './$types';
 	import { resolve } from '$app/paths';
@@ -24,6 +24,13 @@
 
 	const lastUpdated = new SvelteDate();
 	let mounted = $state(false);
+
+	// Per-day collapse state for the Next-3-days cards (ephemeral; resets on reload).
+	const collapsedDays = new SvelteSet<string>();
+	function toggleDay(label: string) {
+		if (collapsedDays.has(label)) collapsedDays.delete(label);
+		else collapsedDays.add(label);
+	}
 	let copied = $state(false);
 	let catalogUrl = $state('');
 
@@ -278,174 +285,209 @@
 	{#snippet dayCard(label: string, dayData: typeof data.horizon.today)}
 		<Card class="shadow-sm">
 			<CardContent>
-				<div class="mb-3">
+				<div class="mb-3 flex items-center justify-between gap-2">
 					<h3 class="text-sm font-semibold text-foreground">{label}</h3>
+					<button
+						type="button"
+						onclick={() => toggleDay(label)}
+						aria-expanded={!collapsedDays.has(label)}
+						aria-label={collapsedDays.has(label) ? `Expand ${label}` : `Collapse ${label}`}
+						class="rounded p-0.5 text-gray-400 transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
+					>
+						<Icon
+							icon={collapsedDays.has(label) ? 'mdi:chevron-down' : 'mdi:chevron-up'}
+							class="h-4 w-4"
+						/>
+					</button>
 				</div>
 
-				{#if !mounted}
-					<div class="mb-3">
-						<Skeleton class="mb-1.5 h-3 w-16 rounded" />
-						<div class="h-16 space-y-1">
-							<Skeleton class="h-3 w-3/4 rounded" />
-							<Skeleton class="h-3 w-1/2 rounded" />
+				{#if !collapsedDays.has(label)}
+					{#if !mounted}
+						<div class="mb-3">
+							<Skeleton class="mb-1.5 h-3 w-16 rounded" />
+							<div class="h-16 space-y-1">
+								<Skeleton class="h-3 w-3/4 rounded" />
+								<Skeleton class="h-3 w-1/2 rounded" />
+							</div>
 						</div>
-					</div>
-					<div class="mb-3 border-t pt-3">
-						<Skeleton class="mb-1.5 h-3 w-16 rounded" />
-						<div class="h-40 space-y-1.5">
-							<Skeleton class="h-3 w-full rounded" />
-							<Skeleton class="h-3 w-full rounded" />
-							<Skeleton class="h-3 w-full rounded" />
-							<Skeleton class="h-3 w-4/5 rounded" />
+						<div class="mb-3 border-t pt-3">
+							<Skeleton class="mb-1.5 h-3 w-16 rounded" />
+							<div class="h-40 space-y-1.5">
+								<Skeleton class="h-3 w-full rounded" />
+								<Skeleton class="h-3 w-full rounded" />
+								<Skeleton class="h-3 w-full rounded" />
+								<Skeleton class="h-3 w-4/5 rounded" />
+							</div>
 						</div>
-					</div>
-					<div class="border-t pt-3">
-						<Skeleton class="mb-1.5 h-3 w-20 rounded" />
-						<div class="h-32 space-y-1.5">
-							<Skeleton class="h-3 w-full rounded" />
-							<Skeleton class="h-3 w-3/4 rounded" />
-							<Skeleton class="h-3 w-full rounded" />
+						<div class="border-t pt-3">
+							<Skeleton class="mb-1.5 h-3 w-20 rounded" />
+							<div class="h-32 space-y-1.5">
+								<Skeleton class="h-3 w-full rounded" />
+								<Skeleton class="h-3 w-3/4 rounded" />
+								<Skeleton class="h-3 w-full rounded" />
+							</div>
 						</div>
-					</div>
-				{:else}
-					<!-- Pickup windows -->
-					<div class="mb-3">
-						<h4 class="mb-1.5 text-xs font-medium tracking-wide text-gray-500 uppercase">
-							Windows
-						</h4>
-						<div class="h-16 overflow-y-auto">
-							{#if dayData.windows.length > 0}
-								<ul class="space-y-1">
-									{#each dayData.windows as w (w.id)}
-										<li>
-											<span class="text-xs text-foreground"
-												>{fmtTimeRange(w.startsAt, w.endsAt, data.vendorTimezone)}</span
-											>
-											{#if w.locationName}
-												<span class="block text-xs text-gray-500">{w.locationName}</span>
-											{/if}
-										</li>
-									{/each}
-								</ul>
-							{:else}
-								<p class="text-xs text-gray-400">No pickup windows</p>
-							{/if}
-						</div>
-					</div>
-
-					<!-- Orders -->
-					<div class="mb-3 border-t pt-3">
-						<h4 class="mb-1.5 text-xs font-medium tracking-wide text-gray-500 uppercase">Orders</h4>
-						<div class="h-40 overflow-y-auto">
-							{#if dayData.orders.length > 0 || dayData.specialOrders.length > 0}
-								{@const shown = dayData.orders.slice(0, 5)}
-								{@const remaining = dayData.orders.length - shown.length}
-								<ul class="space-y-1">
-									{#each shown as o (o.id)}
-										<li>
-											<a
-												href={resolve(`/dashboard/orders/${o.id}`)}
-												class="flex items-center gap-2 text-xs hover:text-primary"
-											>
-												<span class="font-mono text-gray-400">{shortOrderId(o.orderNumber)}</span>
-												<span class="min-w-0 flex-1 truncate text-gray-600"
-													>{o.customerName ?? '—'}</span
+					{:else}
+						<!-- Pickup windows -->
+						<div class="mb-3">
+							<h4 class="mb-1.5 text-xs font-medium tracking-wide text-gray-500 uppercase">
+								Windows
+							</h4>
+							<div class="max-h-24 overflow-y-auto">
+								{#if dayData.windows.length > 0}
+									<ul class="space-y-1">
+										{#each dayData.windows as w (w.id)}
+											<li>
+												<span class="text-xs text-foreground"
+													>{fmtTimeRange(w.startsAt, w.endsAt, data.vendorTimezone)}</span
 												>
-												<span class="shrink-0 font-medium text-gray-900"
-													>${(o.total / 100).toFixed(2)}</span
-												>
-											</a>
-										</li>
-									{/each}
-									{#each dayData.specialOrders as o (o.id)}
-										<li>
-											<a
-												href={resolve(`/dashboard/orders/${o.id}`)}
-												class="flex items-center gap-2 text-xs hover:text-primary"
-											>
-												<span
-													class="shrink-0 rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-medium text-amber-700"
-													>Special</span
-												>
-												<span class="min-w-0 flex-1 truncate text-gray-600"
-													>{o.customerName ?? '—'}</span
-												>
-												<span class="shrink-0 font-medium text-gray-900"
-													>${(o.total / 100).toFixed(2)}</span
-												>
-											</a>
-										</li>
-									{/each}
-								</ul>
-								{#if remaining > 0}
-									<a
-										href={resolve('/dashboard/orders')}
-										class="mt-1.5 inline-block text-xs text-primary hover:underline"
-									>
-										+{remaining} more
-									</a>
+												{#if w.locationName}
+													<span class="block text-xs text-gray-500">{w.locationName}</span>
+												{/if}
+											</li>
+										{/each}
+									</ul>
+								{:else}
+									<p class="text-xs text-gray-400">No pickup windows</p>
 								{/if}
-							{:else}
-								<p class="text-xs text-gray-400">No orders</p>
-							{/if}
+							</div>
 						</div>
-					</div>
 
-					<!-- Production -->
-					<div class="border-t pt-3">
-						<h4 class="mb-1.5 text-xs font-medium tracking-wide text-gray-500 uppercase">
-							Production
-						</h4>
-						<div class="h-32 overflow-y-auto">
-							{#if dayData.production.length > 0 || dayData.specialOrders.length > 0}
-								<ul class="space-y-1">
-									{#each dayData.production as p, i (i)}
-										<li class="flex items-center justify-between gap-2">
-											<div class="min-w-0 flex-1">
-												<span class="truncate text-xs text-foreground">{p.itemName}</span>
-												{#if p.modifiers.length > 0}
-													<span class="block truncate text-xs text-gray-500"
-														>{p.modifiers.join(', ')}</span
-													>
-												{/if}
-											</div>
-											<span class="shrink-0 text-xs font-semibold text-foreground tabular-nums"
-												>{p.totalQuantity}×</span
-											>
-										</li>
-									{/each}
-									{#each dayData.specialOrders as o (o.id)}
-										<li class="flex items-center justify-between gap-2">
-											<div class="min-w-0 flex-1">
-												<span class="truncate text-xs text-foreground">Custom order</span>
-												<span class="block truncate text-xs text-gray-500"
-													>{o.customerName ?? '—'}</span
+						<!-- Orders -->
+						<div class="mb-3 border-t pt-3">
+							<h4 class="mb-1.5 text-xs font-medium tracking-wide text-gray-500 uppercase">
+								Orders
+							</h4>
+							<div class="max-h-44 overflow-y-auto">
+								{#if dayData.orders.length > 0 || dayData.specialOrders.length > 0 || dayData.customDateOrders.length > 0}
+									{@const shown = dayData.orders.slice(0, 5)}
+									{@const remaining = dayData.orders.length - shown.length}
+									<ul class="space-y-1">
+										{#each shown as o (o.id)}
+											<li>
+												<a
+													href={resolve(`/dashboard/orders/${o.id}`)}
+													class="flex items-center gap-2 text-xs hover:text-primary"
 												>
-											</div>
-											<span class="shrink-0 text-[10px] text-amber-700">
-												<span class="rounded-full bg-amber-100 px-1.5 py-0.5 font-medium"
-													>Special</span
-												>
-												{#if o.scheduledFor}
-													<span class="ml-1 text-gray-500"
-														>{fmtTime(o.scheduledFor, data.vendorTimezone)}</span
+													<span class="font-mono text-gray-400">{shortOrderId(o.orderNumber)}</span>
+													<span class="min-w-0 flex-1 truncate text-gray-600"
+														>{o.customerName ?? '—'}</span
 													>
-												{/if}
-											</span>
-										</li>
-									{/each}
-								</ul>
-								<a
-									href={resolve('/dashboard/orders?view=production')}
-									class="mt-2 inline-flex items-center gap-1 text-xs text-primary hover:underline"
-								>
-									View production <Icon icon="mdi:arrow-right" class="h-3 w-3" />
-								</a>
-							{:else}
-								<p class="text-xs text-gray-400">Nothing to prep</p>
-							{/if}
+													<span class="shrink-0 font-medium text-gray-900"
+														>${(o.total / 100).toFixed(2)}</span
+													>
+												</a>
+											</li>
+										{/each}
+										{#each dayData.specialOrders as o (o.id)}
+											<li>
+												<a
+													href={resolve(`/dashboard/orders/${o.id}`)}
+													class="flex items-center gap-2 text-xs hover:text-primary"
+												>
+													<span
+														class="shrink-0 rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-medium text-amber-700"
+														>Special</span
+													>
+													<span class="min-w-0 flex-1 truncate text-gray-600"
+														>{o.customerName ?? '—'}</span
+													>
+													<span class="shrink-0 font-medium text-gray-900"
+														>${(o.total / 100).toFixed(2)}</span
+													>
+												</a>
+											</li>
+										{/each}
+										{#each dayData.customDateOrders as o (o.id)}
+											<li>
+												<a
+													href={resolve(`/dashboard/orders/${o.id}`)}
+													class="flex items-center gap-2 text-xs hover:text-primary"
+												>
+													<span class="font-mono text-gray-400">{shortOrderId(o.orderNumber)}</span>
+													<span class="truncate text-gray-600">{o.customerName ?? '—'}</span>
+													<span
+														class="rounded-full bg-slate-100 px-1.5 py-0.5 text-[10px] font-medium text-slate-700"
+														>Custom date</span
+													>
+													<span class="ml-auto justify-end font-medium text-gray-900"
+														>${(o.total / 100).toFixed(2)}</span
+													>
+												</a>
+											</li>
+										{/each}
+									</ul>
+									{#if remaining > 0}
+										<a
+											href={resolve('/dashboard/orders')}
+											class="mt-1.5 inline-block text-xs text-primary hover:underline"
+										>
+											+{remaining} more
+										</a>
+									{/if}
+								{:else}
+									<p class="text-xs text-gray-400">No orders</p>
+								{/if}
+							</div>
 						</div>
-					</div>
+
+						<!-- Production -->
+						<div class="border-t pt-3">
+							<h4 class="mb-1.5 text-xs font-medium tracking-wide text-gray-500 uppercase">
+								Production
+							</h4>
+							<div class="max-h-36 overflow-y-auto">
+								{#if dayData.production.length > 0 || dayData.specialOrders.length > 0}
+									<ul class="space-y-1">
+										{#each dayData.production as p, i (i)}
+											<li class="flex items-center justify-between gap-2">
+												<div class="min-w-0 flex-1">
+													<span class="truncate text-xs text-foreground">{p.itemName}</span>
+													{#if p.modifiers.length > 0}
+														<span class="block truncate text-xs text-gray-500"
+															>{p.modifiers.join(', ')}</span
+														>
+													{/if}
+													{#if p.pickupLabel}
+														<span class="block truncate text-xs text-slate-500">
+															picking up {p.pickupLabel}{#if p.overdue}
+																·
+																<span class="font-medium text-red-600">overdue</span>{/if}
+														</span>
+													{/if}
+												</div>
+												<span class="shrink-0 text-xs font-semibold text-foreground tabular-nums"
+													>{p.totalQuantity}×</span
+												>
+											</li>
+										{/each}
+										{#each dayData.specialOrders as o (o.id)}
+											<li class="flex items-center justify-between gap-2">
+												<div class="min-w-0 flex-1">
+													<span class="truncate text-xs text-foreground">Custom order</span>
+													<span class="block truncate text-xs text-gray-500"
+														>{o.customerName ?? '—'}</span
+													>
+												</div>
+												<span class="shrink-0 text-[10px] text-amber-700">
+													<span class="rounded-full bg-amber-100 px-1.5 py-0.5 font-medium"
+														>Special</span
+													>
+													{#if o.scheduledFor}
+														<span class="ml-1 text-gray-500"
+															>{fmtTime(o.scheduledFor, data.vendorTimezone)}</span
+														>
+													{/if}
+												</span>
+											</li>
+										{/each}
+									</ul>
+								{:else}
+									<p class="text-xs text-gray-400">Nothing to prep</p>
+								{/if}
+							</div>
+						</div>
+					{/if}
 				{/if}
 			</CardContent>
 		</Card>
@@ -581,8 +623,16 @@
 
 		<!-- 3-day horizon grid -->
 		<section>
-			<h2 class="mb-3 text-base font-semibold text-foreground">Next 3 days</h2>
-			<div class="grid grid-cols-1 gap-4 md:grid-cols-3">
+			<div class="mb-3 flex items-center justify-between gap-3">
+				<h2 class="text-base font-semibold text-foreground">Next 3 days</h2>
+				<a
+					href={resolve('/dashboard/orders?view=production')}
+					class="inline-flex shrink-0 items-center gap-1 text-sm text-primary hover:underline"
+				>
+					View full production <Icon icon="mdi:arrow-right" class="h-3.5 w-3.5" />
+				</a>
+			</div>
+			<div class="grid grid-cols-1 items-start gap-4 md:grid-cols-3">
 				{@render dayCard('Today', data.horizon.today)}
 				{@render dayCard('Tomorrow', data.horizon.tomorrow)}
 				{@render dayCard(
