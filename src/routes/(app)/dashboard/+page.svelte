@@ -231,7 +231,7 @@
 		<div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
 			<a
 				href={resolve('/dashboard/catalog/items?drawer=new')}
-				class="flex items-start gap-3 rounded-xl border p-4 transition-all hover:border-stone-300 hover:shadow-sm"
+				class="flex items-start gap-3 rounded-xl border bg-background p-4 transition-all hover:border-stone-300 hover:shadow-sm"
 			>
 				<div
 					class="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10"
@@ -245,7 +245,7 @@
 			</a>
 			<a
 				href={resolve('/dashboard/catalog/categories')}
-				class="flex items-start gap-3 rounded-xl border p-4 transition-all hover:border-stone-300 hover:shadow-sm"
+				class="flex items-start gap-3 rounded-xl border bg-background p-4 transition-all hover:border-stone-300 hover:shadow-sm"
 			>
 				<div
 					class="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10"
@@ -259,7 +259,7 @@
 			</a>
 			<a
 				href={resolve('/dashboard/orders')}
-				class="flex items-start gap-3 rounded-xl border p-4 transition-all hover:border-stone-300 hover:shadow-sm"
+				class="flex items-start gap-3 rounded-xl border bg-background p-4 transition-all hover:border-stone-300 hover:shadow-sm"
 			>
 				<div
 					class="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10"

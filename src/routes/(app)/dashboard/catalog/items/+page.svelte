@@ -322,8 +322,9 @@
 	const TEMPLATE_CSV = [
 		'name,price,description,category,discounted_price,tags,available',
 		'"Sourdough Loaf",8.00,"Naturally leavened, 24-hour cold ferment",Breads,,"sourdough,popular",true',
-		'"Honey Lavender Soap",12.00,"Cold-process bar soap with local honey",Soaps,,handmade,true',
-		'"Microgreens Mix",6.50,"Pea, radish, and sunflower",Vegetables,,"fresh,weekly",true'
+		'"Honey Lavender Soap",12.00,"Cold-process bar soap with local honey",Soaps,9.00,handmade,true',
+		'"Microgreens Mix",6.50,"Pea, radish, and sunflower",Vegetables,,"fresh,weekly",true',
+		'"Holiday Gift Box",35.00,"Assorted seasonal jams, ready in December",Seasonal,,"gift,seasonal",false'
 	].join('\n');
 
 	function downloadTemplate() {
@@ -382,8 +383,8 @@
 	}
 
 	async function importSelected() {
-		const items = discoveredItems.filter((i) => selected.has(i.stripeProductId));
-		if (!items.length) return;
+		const productIds = [...selected];
+		if (!productIds.length) return;
 		importing2 = true;
 		discoverError = null;
 
@@ -391,7 +392,7 @@
 			const res = await fetch('/api/discover-stripe-items', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ items })
+				body: JSON.stringify({ productIds })
 			});
 			const json = await res.json();
 			if (!res.ok) {
@@ -433,7 +434,9 @@
 							{/snippet}
 						</DropdownMenuTrigger>
 						<DropdownMenuContent align="end">
-							<DropdownMenuItem onclick={openDiscover}>
+							<DropdownMenuItem
+								onclick={() => (data.canImportCsv ? openDiscover() : (showImportUpsell = true))}
+							>
 								<Icon icon="mdi:lightning-bolt" class="h-4 w-4 text-primary" /> Discover from Stripe
 							</DropdownMenuItem>
 							<DropdownMenuItem
@@ -479,7 +482,7 @@
 
 	<!-- Filters -->
 	<form method="get" class="mb-5 flex min-w-0 gap-2">
-		<div class="relative min-w-0 flex-1">
+		<div class="relative w-full flex-1">
 			<Icon
 				icon="mdi:magnify"
 				class="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground"
@@ -491,7 +494,11 @@
 				value={params.get('search') ?? ''}
 				placeholder="Search items..."
 				oninput={(e) => onSearchInput((e.target as HTMLInputElement).value)}
-				class="pl-9 {params.get('search') ? 'pr-8' : 'pr-4'}"
+				class="border-foreground/10 bg-background pl-9 focus:border-foreground/20 focus:ring-1 focus:ring-foreground/20 {params.get(
+					'search'
+				)
+					? 'pr-8'
+					: 'pr-4'}"
 			/>
 			{#if params.get('search')}
 				<button
@@ -522,7 +529,9 @@
 					);
 				}}
 			>
-				<SelectTrigger class="w-44 shrink-0 border-gray-200">
+				<SelectTrigger
+					class="w-44 shrink-0 border-foreground/10 bg-background focus:border-foreground/20 focus:ring-1 focus:ring-foreground/20"
+				>
 					<SelectValue>
 						{data.categories.find((c) => String(c.id) === (params.get('categoryId') ?? ''))?.name ??
 							(params.get('categoryId') === 'uncategorized' ? '— Uncategorized' : 'All categories')}
@@ -1101,16 +1110,16 @@
 	<DialogContent class="max-w-sm">
 		<DialogHeader>
 			<DialogTitle>Upgrade required</DialogTitle>
-			<DialogDescription class="sr-only">Upgrade to import items via CSV</DialogDescription>
+			<DialogDescription class="sr-only">Upgrade to import items</DialogDescription>
 		</DialogHeader>
 		<div class="space-y-3">
 			<div class="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
 				<Icon icon="mdi:upload" class="h-6 w-6 text-primary" />
 			</div>
 			<p class="text-sm text-muted-foreground">
-				CSV import is available on the <span class="font-semibold text-foreground"
+				Importing items is available on the <span class="font-semibold text-foreground"
 					>Market and Pro plans</span
-				>. Upgrade to bulk-import catalog items from a spreadsheet.
+				>. Upgrade to import items from a spreadsheet or your connected Stripe catalog.
 			</p>
 		</div>
 		<DialogFooter class="flex gap-2 sm:flex-row">
@@ -1160,7 +1169,8 @@
 						Separate multiple tags with <code class="rounded bg-muted px-1">,</code> (use quotes for
 						tags containing commas:
 						<code class="rounded bg-muted px-1">"sourdough,popular"</code>). Existing items are
-						updated by name. New categories are created automatically. Max 500 rows.
+						matched by name — only the columns you include are updated. New categories are created
+						automatically. Max 500 rows.
 					</p>
 					<p class="text-xs text-muted-foreground">
 						Images aren't imported via CSV — add them per-item after import.

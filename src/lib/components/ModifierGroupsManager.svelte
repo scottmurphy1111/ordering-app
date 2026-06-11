@@ -201,7 +201,9 @@
 
 	<!-- Empty state -->
 	{#if sortedGroups.length === 0 && !showAddGroup}
-		<div class="rounded-xl border border-dashed p-8 text-center text-sm text-muted-foreground">
+		<div
+			class="rounded-xl border border-dashed bg-muted/50 p-8 text-sm text-muted-foreground focus:border-foreground/20 focus:ring-1 focus:ring-foreground/20"
+		>
 			No modifier groups yet. Add one to let customers customize this item.
 		</div>
 	{/if}

@@ -1,0 +1,2 @@
+ALTER TABLE "catalog_items" ADD COLUMN "stripe_object_id" text;--> statement-breakpoint
+CREATE INDEX "catalog_items_vendor_stripe_object_idx" ON "catalog_items" USING btree ("vendor_id","stripe_object_id");

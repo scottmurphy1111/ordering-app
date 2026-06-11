@@ -162,7 +162,7 @@
 				name="q"
 				value={data.search}
 				placeholder="Search by order #, customer name, email, or phone…"
-				class="pr-4 pl-9"
+				class="border-foreground/10 bg-background pr-4 pl-9 focus:border-foreground/20 focus:ring-1 focus:ring-foreground/20"
 				oninput={(e) => debounceSubmit((e.target as HTMLInputElement).closest('form')!)}
 			/>
 		</div>

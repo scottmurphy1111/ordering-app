@@ -52,6 +52,7 @@ export const catalogItems = pgTable(
 
 		images: jsonb('images').default([]),
 		videoUrl: text('video_url'),
+		stripeObjectId: text('stripe_object_id'),
 
 		allergens: jsonb('allergens').default([]),
 		nutrition: jsonb('nutrition'),
@@ -75,7 +76,8 @@ export const catalogItems = pgTable(
 	(table) => [
 		index('catalog_items_vendor_idx').on(table.vendorId),
 		index('catalog_items_category_idx').on(table.categoryId),
-		index('catalog_items_vendor_name_idx').on(table.vendorId, table.name)
+		index('catalog_items_vendor_name_idx').on(table.vendorId, table.name),
+		index('catalog_items_vendor_stripe_object_idx').on(table.vendorId, table.stripeObjectId)
 	]
 );
 

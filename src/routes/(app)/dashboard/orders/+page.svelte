@@ -302,12 +302,9 @@
 			</TabsList>
 		</Tabs>
 		{#if data.view !== 'production'}
-			<a
-				href={resolve(cancelledToggleUrl as `/${string}`)}
-				class="text-xs text-gray-500 underline-offset-2 hover:text-gray-700 hover:underline"
-			>
+			<Button href={resolve(cancelledToggleUrl as `/${string}`)} variant="ghost">
 				{data.view === 'orders' && data.showCancelled ? 'Hide cancelled' : 'Show cancelled'}
-			</a>
+			</Button>
 		{/if}
 	</div>
 
@@ -463,7 +460,7 @@
 		<!-- ── Orders view ───────────────────────────────────────────────────── -->
 
 		<!-- Row 1: Search -->
-		<div class="relative mb-3">
+		<div class="relative mb-3 w-full">
 			<Icon
 				icon="mdi:magnify"
 				class="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-gray-400"
@@ -472,7 +469,7 @@
 				type="search"
 				bind:value={searchQuery}
 				placeholder="Search by order #, customer name, or phone…"
-				class="pr-4 pl-9"
+				class="border-foreground/10 bg-background pr-4 pl-9 focus:border-foreground/20 focus:ring-1 focus:ring-foreground/20"
 			/>
 		</div>
 

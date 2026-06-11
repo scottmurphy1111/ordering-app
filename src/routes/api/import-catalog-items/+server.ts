@@ -8,6 +8,9 @@ import { vendor } from '$lib/server/db/vendor';
 // CSV columns (case-insensitive header matching):
 //   name*, price*, description, category, discounted_price, tags, available
 // * required
+//
+// On update (existing item matched by name), only columns PRESENT in the CSV header
+// are changed — omitting a column leaves that field untouched (safe-merge).
 
 type RowResult = {
 	row: number;
@@ -16,46 +19,71 @@ type RowResult = {
 	error?: string;
 };
 
-function parseCSV(text: string): Record<string, string>[] {
-	const lines = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
-	if (lines.length < 2) return [];
+// Proper CSV tokenizer: handles quoted fields, escaped quotes (""), and newlines
+// inside quoted fields. Returns the normalized header list plus row objects keyed by header.
+function parseCSV(text: string): { headers: string[]; rows: Record<string, string>[] } {
+	const normalized = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+	const records: string[][] = [];
+	let field = '';
+	let record: string[] = [];
+	let inQuotes = false;
 
-	function parseLine(line: string): string[] {
-		const fields: string[] = [];
-		let current = '';
-		let inQuotes = false;
-		for (let i = 0; i < line.length; i++) {
-			const ch = line[i];
+	for (let i = 0; i < normalized.length; i++) {
+		const ch = normalized[i];
+		if (inQuotes) {
 			if (ch === '"') {
-				if (inQuotes && line[i + 1] === '"') {
-					current += '"';
+				if (normalized[i + 1] === '"') {
+					field += '"';
 					i++;
-				} else inQuotes = !inQuotes;
-			} else if (ch === ',' && !inQuotes) {
-				fields.push(current.trim());
-				current = '';
+				} else {
+					inQuotes = false;
+				}
 			} else {
-				current += ch;
+				field += ch;
 			}
+		} else if (ch === '"') {
+			inQuotes = true;
+		} else if (ch === ',') {
+			record.push(field);
+			field = '';
+		} else if (ch === '\n') {
+			record.push(field);
+			records.push(record);
+			record = [];
+			field = '';
+		} else {
+			field += ch;
 		}
-		fields.push(current.trim());
-		return fields;
+	}
+	// Flush the final field/record when the file doesn't end in a newline.
+	if (field.length > 0 || record.length > 0) {
+		record.push(field);
+		records.push(record);
 	}
 
-	const headers = parseLine(lines[0]).map((h) => h.toLowerCase().replace(/\s+/g, '_'));
-	const rows: Record<string, string>[] = [];
+	if (records.length === 0) return { headers: [], rows: [] };
 
-	for (let i = 1; i < lines.length; i++) {
-		const line = lines[i].trim();
-		if (!line) continue;
-		const values = parseLine(line);
+	const headers = records[0].map((h) => h.trim().toLowerCase().replace(/\s+/g, '_'));
+	const rows: Record<string, string>[] = [];
+	for (let r = 1; r < records.length; r++) {
+		const values = records[r];
+		// Skip blank lines.
+		if (values.length === 1 && values[0].trim() === '') continue;
 		const row: Record<string, string> = {};
 		headers.forEach((h, idx) => {
-			row[h] = values[idx] ?? '';
+			row[h] = (values[idx] ?? '').trim();
 		});
 		rows.push(row);
 	}
-	return rows;
+	return { headers, rows };
+}
+
+// Normalize a money string to integer cents, or null if not a clean amount.
+// Strips currency symbols, spaces, and thousands separators; requires up to 2 decimals.
+function parsePriceToCents(raw: string): number | null {
+	const cleaned = raw.replace(/[$\s]/g, '').replace(/,/g, '');
+	if (cleaned === '' || !/^\d+(\.\d{1,2})?$/.test(cleaned)) return null;
+	return Math.round(parseFloat(cleaned) * 100);
 }
 
 export const POST: RequestHandler = async ({ request, locals }) => {
@@ -81,10 +109,15 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 	if (file.size > 1_000_000) throw error(400, 'File too large (max 1 MB)');
 
 	const text = await file.text();
-	const rows = parseCSV(text);
+	const { headers, rows } = parseCSV(text);
 
+	if (!headers.includes('name') || !headers.includes('price')) {
+		throw error(400, 'CSV must include "name" and "price" columns');
+	}
 	if (rows.length === 0) throw error(400, 'CSV is empty or has no data rows');
 	if (rows.length > 500) throw error(400, 'Too many rows (max 500 per import)');
+
+	const headerSet = new Set(headers);
 
 	const existingCategories = await db.query.catalogCategories.findMany({
 		where: eq(catalogCategories.vendorId, vendorId),
@@ -115,25 +148,16 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 			skipped++;
 			continue;
 		}
-		if (!priceStr || isNaN(parseFloat(priceStr))) {
+		const price = priceStr ? parsePriceToCents(priceStr) : null;
+		if (price === null) {
 			results.push({ row: rowNum, name, status: 'skipped', error: 'Missing or invalid price' });
-			skipped++;
-			continue;
-		}
-
-		const price = Math.round(parseFloat(priceStr) * 100);
-		if (price < 0) {
-			results.push({ row: rowNum, name, status: 'skipped', error: 'Price cannot be negative' });
 			skipped++;
 			continue;
 		}
 
 		const description = row['description']?.trim() || null;
 		const discountedPriceStr = row['discounted_price']?.trim();
-		const discountedPrice =
-			discountedPriceStr && !isNaN(parseFloat(discountedPriceStr))
-				? Math.round(parseFloat(discountedPriceStr) * 100)
-				: null;
+		const discountedPrice = discountedPriceStr ? parsePriceToCents(discountedPriceStr) : null;
 		const tagsRaw = row['tags']?.trim();
 		const tags = tagsRaw
 			? tagsRaw
@@ -167,18 +191,23 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 
 		try {
 			if (existingId) {
-				await db
-					.update(catalogItems)
-					.set({
-						description,
-						price,
-						discountedPrice,
-						categoryId,
-						tags,
-						status,
-						updatedAt: new Date()
-					})
-					.where(eq(catalogItems.id, existingId));
+				// Safe-merge: only overwrite columns actually present in the CSV header.
+				const updates: Partial<{
+					description: string | null;
+					price: number;
+					discountedPrice: number | null;
+					categoryId: number | null;
+					tags: string[];
+					status: 'available' | 'hidden';
+					updatedAt: Date;
+				}> = { price, updatedAt: new Date() };
+				if (headerSet.has('description')) updates.description = description;
+				if (headerSet.has('discounted_price')) updates.discountedPrice = discountedPrice;
+				if (headerSet.has('category')) updates.categoryId = categoryId;
+				if (headerSet.has('tags')) updates.tags = tags;
+				if (headerSet.has('available')) updates.status = status;
+
+				await db.update(catalogItems).set(updates).where(eq(catalogItems.id, existingId));
 				results.push({ row: rowNum, name, status: 'updated' });
 				updated++;
 			} else {

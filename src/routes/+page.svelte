@@ -139,7 +139,7 @@
 		{
 			label: 'Cost to start',
 			them: 'A monthly fee from day one, whether you sell or not',
-			us: 'Free, forever, for up to 10 items'
+			us: 'Free to start, up to 10 items'
 		},
 		{
 			label: 'The real bill',

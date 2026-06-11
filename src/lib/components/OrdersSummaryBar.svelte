@@ -34,13 +34,13 @@
 		       Min cell width 12rem (192px) is calibrated so the longest sublabel
 		       ("of paid orders fulfilled" at ~24ch) never wraps.
 	-->
-	<div class="mb-5 rounded-xl border bg-muted/40 px-4 py-3">
+	<div class="mb-5 rounded-xl bg-background px-4 py-3 ring-1 ring-foreground/10">
 		<!-- Mobile: stacked rows, label left, value right -->
 		<div class="flex flex-col md:hidden">
 			{#each stats as stat, i (stat.label)}
 				<div
 					class="flex items-baseline justify-between gap-3 py-2.5 {i > 0
-						? 'border-t border-border/60'
+						? 'border-t border-foreground/10'
 						: ''}"
 				>
 					<span class="text-xs text-muted-foreground">{stat.label}</span>
