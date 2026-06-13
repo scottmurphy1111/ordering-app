@@ -1430,7 +1430,7 @@
 >
 	<SheetContent
 		side="right"
-		class="flex flex-col gap-0 p-0 data-[side=right]:w-full data-[side=right]:sm:max-w-none data-[side=right]:md:max-w-[720px]"
+		class="flex flex-col gap-0 p-0 data-[side=right]:w-full data-[side=right]:sm:max-w-none data-[side=right]:md:max-w-180"
 	>
 		<SheetHeader class="shrink-0 border-b px-6 py-4">
 			<SheetTitle>{drawerMode === 'new' ? 'New item' : 'Edit item'}</SheetTitle>

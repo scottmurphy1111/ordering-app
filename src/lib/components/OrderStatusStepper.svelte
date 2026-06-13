@@ -6,12 +6,14 @@
 		status,
 		variant = 'full',
 		colorScheme = 'themed',
-		labelOverrides = {}
+		labelOverrides = {},
+		activeLabelOnly = false
 	}: {
 		status: string;
 		variant?: 'full' | 'mini';
 		colorScheme?: 'branding' | 'themed';
 		labelOverrides?: Partial<Record<(typeof lifecycleStages)[number]['value'], string>>;
+		activeLabelOnly?: boolean;
 	} = $props();
 
 	const stepIndex = $derived(lifecycleStages.findIndex((s) => s.value === status));
@@ -26,7 +28,7 @@
 			{@const achieved = done || active}
 			{@const label = labelOverrides[step.value] ?? step.label}
 			<!-- circle wrapper: fixed-width to circle size; label absolutely below so it doesn't push siblings -->
-			<div class="relative w-10 shrink-0">
+			<div class="relative w-10 shrink-0" title={label}>
 				{#if colorScheme === 'branding'}
 					<div
 						class="flex h-10 w-10 items-center justify-center rounded-full border-2 transition-colors"
@@ -37,7 +39,10 @@
 						<Icon icon={step.icon} class="h-5 w-5" />
 					</div>
 					<span
-						class="absolute top-full left-1/2 mt-1.5 -translate-x-1/2 text-center text-xs leading-tight whitespace-nowrap"
+						class="absolute top-full left-1/2 mt-1.5 -translate-x-1/2 text-center text-xs leading-tight whitespace-nowrap {activeLabelOnly &&
+						!active
+							? 'hidden'
+							: ''}"
 						style={active
 							? 'color: var(--background-color); font-weight: 600;'
 							: done
@@ -59,7 +64,7 @@
 							? 'font-semibold text-primary'
 							: done
 								? 'font-medium text-stone-700'
-								: 'text-stone-500'}"
+								: 'text-stone-500'} {activeLabelOnly && !active ? 'hidden' : ''}"
 					>
 						{label}
 					</span>

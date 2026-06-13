@@ -9,8 +9,8 @@ export const storefrontBakery: ArchetypeFixture = {
 	label: 'Storefront bakery',
 	description:
 		'Brick-and-mortar bakery open daily for walk-in and online ordering. Customers order ahead and pick up at the counter during operating hours. Most useful with the Loyalty Program addon to reward regulars.',
-	fulfillmentModel: 'storefront',
-	allowedFulfillmentModels: ['storefront', 'hybrid'],
+	fulfillmentModel: 'hybrid',
+	allowedFulfillmentModels: ['hybrid'],
 	vendorType: 'bakery',
 
 	categories: [

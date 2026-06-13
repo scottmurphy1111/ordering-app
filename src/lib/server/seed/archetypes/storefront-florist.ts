@@ -9,8 +9,8 @@ export const storefrontFlorist: ArchetypeFixture = {
 	label: 'Storefront florist',
 	description:
 		'Retail florist open for walk-in and online order-ahead pickup. Customers browse and order same-day or schedule ahead for custom arrangements. Promo Codes and Loyalty Program addons fit this pattern well for holidays and repeat customers.',
-	fulfillmentModel: 'storefront',
-	allowedFulfillmentModels: ['storefront', 'hybrid'],
+	fulfillmentModel: 'hybrid',
+	allowedFulfillmentModels: ['hybrid'],
 	vendorType: 'florist',
 
 	categories: [

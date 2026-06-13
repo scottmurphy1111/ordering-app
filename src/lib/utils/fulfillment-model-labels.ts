@@ -1,11 +1,5 @@
 export const FULFILLMENT_MODELS = [
 	{
-		value: 'storefront',
-		label: 'Storefront',
-		description:
-			'You have a physical location with regular operating hours. Customers walk in and order in-store or place online orders for same-day or near-term pickup during open hours. Occasional preorder events (holiday pies, wedding cakes) are possible alongside walk-in retail.'
-	},
-	{
 		value: 'pickup_only',
 		label: 'Pickup only',
 		description:

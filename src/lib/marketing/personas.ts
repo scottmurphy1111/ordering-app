@@ -65,7 +65,7 @@ export const bakersPersona: Persona = {
 	label: 'Bakers',
 	trackPage: 'for-bakers',
 
-	metaTitle: 'Online Ordering for Bakers — Pre-Orders, Pickup, and Custom Cakes | Order Local',
+	metaTitle: 'Online Ordering for Bakers — Pre-Orders, Pickup, and Custom Cakes | Order Local, LLC',
 	metaDescription:
 		'Take bakery pre-orders online. Set holiday windows, custom modifiers, pickup cutoffs, and order limits per window. Powered by Stripe. No commissions. Free to start.',
 

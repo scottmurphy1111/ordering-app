@@ -271,7 +271,7 @@
 						</div>
 					{:else if order.status === 'preparing'}
 						<p class="mt-4 text-center text-xs text-muted-foreground">
-							Hang tight — your order is in production.
+							Hang tight — your order is being prepared.
 						</p>
 					{:else if order.status === 'received'}
 						<p class="mt-4 text-center text-xs text-muted-foreground">

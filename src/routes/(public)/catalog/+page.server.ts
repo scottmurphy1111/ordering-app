@@ -10,7 +10,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 	const vendor = locals.vendor!;
 
 	const fulfillmentModel = vendor.fulfillmentModel;
-	const fetchHours = fulfillmentModel === 'storefront' || fulfillmentModel === 'hybrid';
+	const fetchHours = fulfillmentModel === 'hybrid';
 	const fetchEvents = fulfillmentModel === 'pickup_only' || fulfillmentModel === 'hybrid';
 
 	const now = new Date();

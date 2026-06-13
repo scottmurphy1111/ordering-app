@@ -142,11 +142,7 @@ export const actions: Actions = {
 			return fail(400, { error: 'Invalid timezone.' });
 		}
 
-		if (
-			fulfillmentModel !== 'storefront' &&
-			fulfillmentModel !== 'pickup_only' &&
-			fulfillmentModel !== 'hybrid'
-		) {
+		if (fulfillmentModel !== 'pickup_only' && fulfillmentModel !== 'hybrid') {
 			return fail(400, { error: 'Please select a fulfillment model.' });
 		}
 
@@ -161,7 +157,7 @@ export const actions: Actions = {
 				name,
 				slug,
 				type,
-				fulfillmentModel: fulfillmentModel as 'storefront' | 'pickup_only' | 'hybrid',
+				fulfillmentModel: fulfillmentModel as 'pickup_only' | 'hybrid',
 				address: {},
 				timezone,
 				heroImageUrl: '/seed-assets/hero-placeholder.webp',

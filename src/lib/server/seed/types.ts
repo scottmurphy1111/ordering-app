@@ -1,7 +1,7 @@
 // Pure type definitions for archetype fixtures — no db imports, no SvelteKit aliases.
 // Safe to import from Bun CLI scripts and SvelteKit server code alike.
 
-export type FulfillmentModelValue = 'storefront' | 'pickup_only' | 'hybrid';
+export type FulfillmentModelValue = 'pickup_only' | 'hybrid';
 
 export type VendorType =
 	| 'bakery'

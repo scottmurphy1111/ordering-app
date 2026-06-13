@@ -448,8 +448,7 @@
 	{@const STATUS_OPTIONS = [
 		['available', 'Available'],
 		['sold_out', 'Sold out'],
-		['hidden', 'Hidden'],
-		['draft', 'Draft']
+		['hidden', 'Hidden']
 	] as const}
 	<div>
 		<label class="mb-1 block text-sm font-medium text-muted-foreground" for="status">Status</label>

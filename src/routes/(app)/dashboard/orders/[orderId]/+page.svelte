@@ -15,7 +15,7 @@
 		DialogFooter
 	} from '$lib/components/ui/dialog';
 	import type { PageData } from './$types';
-	import { actionConfig } from '$lib/utils/order-lifecycle';
+	import { actionConfig, nextStatus } from '$lib/utils/order-lifecycle';
 	import OrderStatusStepper from '$lib/components/OrderStatusStepper.svelte';
 	import { SvelteDate } from 'svelte/reactivity';
 	import { untrack, tick } from 'svelte';
@@ -27,13 +27,6 @@
 	let actionError = $state<string | null>(null);
 
 	const order = $derived(data.order);
-
-	const nextStatus: Record<string, string> = {
-		received: 'confirmed',
-		confirmed: 'preparing',
-		preparing: 'ready',
-		ready: 'fulfilled'
-	};
 
 	function formatCents(cents: number) {
 		return `$${(cents / 100).toFixed(2)}`;
@@ -248,13 +241,13 @@
 				{#if order.scheduledFor}
 					<p class="mt-1.5 flex items-center gap-1.5 text-sm font-medium text-foreground">
 						<Icon icon="mdi:storefront-outline" class="h-4 w-4 shrink-0" />
-						Storefront pickup — scheduled for {new Date(order.scheduledFor).toLocaleString([], {
+						Scheduled for {new Date(order.scheduledFor).toLocaleString([], {
 							weekday: 'short',
 							month: 'short',
 							day: 'numeric',
 							hour: 'numeric',
 							minute: '2-digit'
-						})}
+						})} — in person at the store
 					</p>
 				{:else}
 					<p class="mt-1.5 flex items-center gap-1.5 text-sm font-medium text-amber-600">
@@ -262,6 +255,31 @@
 						ASAP pickup — customer arriving during open hours
 					</p>
 				{/if}
+			{:else if order.pickupType === 'custom_date' && order.scheduledFor}
+				<p class="mt-1.5 flex items-center gap-1.5 text-sm font-medium text-amber-600">
+					<Icon icon="mdi:calendar-clock" class="h-4 w-4 shrink-0" />
+					Requested for {new Date(order.scheduledFor).toLocaleDateString([], {
+						weekday: 'short',
+						month: 'short',
+						day: 'numeric'
+					})}
+				</p>
+			{:else if data.pickupWindow}
+				<p class="mt-1.5 flex items-center gap-1.5 text-sm font-medium text-foreground">
+					<Icon icon="mdi:calendar-clock" class="h-4 w-4 shrink-0" />
+					Pickup {new Date(data.pickupWindow.startsAt).toLocaleString([], {
+						weekday: 'short',
+						month: 'short',
+						day: 'numeric',
+						hour: 'numeric',
+						minute: '2-digit'
+					})}–{new Date(data.pickupWindow.endsAt).toLocaleTimeString([], {
+						hour: 'numeric',
+						minute: '2-digit'
+					})}{data.pickupWindow.name || data.pickupWindow.location?.name
+						? ` at ${data.pickupWindow.name ?? data.pickupWindow.location?.name}`
+						: ''}
+				</p>
 			{:else if order.scheduledFor}
 				<p class="mt-1.5 flex items-center gap-1.5 text-sm font-medium text-amber-600">
 					<Icon icon="mdi:calendar-clock" class="h-4 w-4 shrink-0" />
@@ -275,7 +293,7 @@
 				</p>
 			{/if}
 		</div>
-		<p class="text-xl font-semibold text-gray-900">{formatCents(order.total)}</p>
+		<!-- <p class="text-xl font-semibold text-gray-900">{formatCents(order.total)}</p> -->
 	</div>
 
 	<!-- Lifecycle stepper -->
@@ -441,7 +459,12 @@
 		{/if}
 	{:else}
 		<div class="mb-6">
-			<OrderStatusStepper status={order.status} variant="full" colorScheme="themed" />
+			<OrderStatusStepper
+				status={order.status}
+				variant="full"
+				colorScheme="themed"
+				activeLabelOnly
+			/>
 		</div>
 	{/if}
 
@@ -508,7 +531,7 @@
 		<CardContent>
 			<div class="divide-y">
 				{#each items as item, i (i)}
-					<div class="flex items-start justify-between py-3">
+					<div class="flex items-start justify-between">
 						<div>
 							<p class="text-sm font-medium">{item.name}</p>
 							{#if item.selectedModifiers?.length}

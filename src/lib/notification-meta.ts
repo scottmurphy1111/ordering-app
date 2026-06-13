@@ -118,5 +118,5 @@ export const GROUP_LABELS: Record<CategoryDisplay['group'], string> = {
 	subscription: 'Subscription & billing',
 	account: 'Account status',
 	special_orders: 'Custom orders',
-	marketing: 'Product updates from Order Local'
+	marketing: 'Product updates from Order Local, LLC'
 };

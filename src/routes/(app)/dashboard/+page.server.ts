@@ -1,7 +1,7 @@
 import type { PageServerLoad } from './$types';
 import { db } from '$lib/server/db';
 import { vendorUrl } from '$lib/server/vendor-origin';
-import { eq, sql, and, gte, lt, ne, asc, desc, sum } from 'drizzle-orm';
+import { eq, sql, and, gte, lt, ne, not, inArray, asc, desc, sum } from 'drizzle-orm';
 import {
 	catalogItems,
 	catalogCategories,
@@ -16,19 +16,48 @@ export const load: PageServerLoad = async ({ locals, depends }) => {
 	depends('app:overview');
 	const vendorId = locals.vendorId!;
 
-	const todayStart = new Date();
-	todayStart.setHours(0, 0, 0, 0);
-	const tomorrowStart = new Date(todayStart);
-	tomorrowStart.setDate(tomorrowStart.getDate() + 1);
-	const dayAfterStart = new Date(tomorrowStart);
-	dayAfterStart.setDate(dayAfterStart.getDate() + 1);
-	const horizonEnd = new Date(dayAfterStart);
-	horizonEnd.setDate(horizonEnd.getDate() + 1);
+	const tz = locals.vendor?.timezone ?? 'America/New_York';
 
-	const dayKey = (d: Date | string): string => {
-		const date = typeof d === 'string' ? new Date(d) : d;
-		return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+	// Day key (YYYY-MM-DD) in the vendor's timezone. The server runs in UTC, so the old
+	// server-local keys mis-dated everything in the evening (UTC already the next day).
+	const dayKey = (d: Date | string): string =>
+		new Intl.DateTimeFormat('en-CA', {
+			timeZone: tz,
+			year: 'numeric',
+			month: '2-digit',
+			day: '2-digit'
+		}).format(typeof d === 'string' ? new Date(d) : d);
+
+	// Vendor-local midnight (as a UTC instant) for the day `offset` days from today.
+	const zonedMidnight = (offset: number): Date => {
+		const ymd = dayKey(new Date(Date.now() + offset * 86_400_000));
+		const guess = new Date(`${ymd}T00:00:00Z`);
+		const parts = new Intl.DateTimeFormat('en-US', {
+			timeZone: tz,
+			hourCycle: 'h23',
+			year: 'numeric',
+			month: '2-digit',
+			day: '2-digit',
+			hour: '2-digit',
+			minute: '2-digit',
+			second: '2-digit'
+		}).formatToParts(guess);
+		const get = (t: string) => Number(parts.find((p) => p.type === t)?.value);
+		const localAsUTC = Date.UTC(
+			get('year'),
+			get('month') - 1,
+			get('day'),
+			get('hour'),
+			get('minute'),
+			get('second')
+		);
+		return new Date(2 * guess.getTime() - localAsUTC);
 	};
+
+	const todayStart = zonedMidnight(0);
+	const tomorrowStart = zonedMidnight(1);
+	const dayAfterStart = zonedMidnight(2);
+	const horizonEnd = zonedMidnight(3);
 
 	const todayKey = dayKey(todayStart);
 	const tomorrowKey = dayKey(tomorrowStart);
@@ -119,7 +148,7 @@ export const load: PageServerLoad = async ({ locals, depends }) => {
 			.where(
 				and(
 					eq(orders.vendorId, vendorId),
-					ne(orders.status, 'cancelled' as typeof orders.status._.data),
+					not(inArray(orders.status, ['ready', 'fulfilled', 'cancelled'])),
 					gte(pickupWindows.endsAt, todayStart),
 					lt(pickupWindows.startsAt, horizonEnd)
 				)
@@ -143,7 +172,7 @@ export const load: PageServerLoad = async ({ locals, depends }) => {
 				and(
 					eq(orders.vendorId, vendorId),
 					eq(orders.type, 'special_order'),
-					ne(orders.status, 'cancelled' as typeof orders.status._.data),
+					not(inArray(orders.status, ['ready', 'fulfilled', 'cancelled'])),
 					gte(orders.scheduledFor, todayStart),
 					lt(orders.scheduledFor, horizonEnd)
 				)
@@ -251,9 +280,8 @@ export const load: PageServerLoad = async ({ locals, depends }) => {
 			if (!r.scheduledFor) continue;
 			const sched = new Date(r.scheduledFor);
 			const lead = r.leadDays ?? 0;
-			// Prep-start day = scheduledFor − leadDays (local date parts, matching dayKey).
-			const start = new Date(sched.getFullYear(), sched.getMonth(), sched.getDate() - lead);
-			const startKey = dayKey(start);
+			// Prep-start day = scheduledFor minus leadDays, keyed in the vendor's timezone.
+			const startKey = dayKey(new Date(sched.getTime() - lead * 86_400_000));
 			const overdue = startKey < todayKey;
 			const bucketKey = overdue ? todayKey : startKey;
 			if (bucketKey !== key) continue;
@@ -306,7 +334,7 @@ export const load: PageServerLoad = async ({ locals, depends }) => {
 				and(
 					eq(orders.vendorId, vendorId),
 					eq(orders.pickupType, 'custom_date'),
-					ne(orders.status, 'cancelled' as typeof orders.status._.data),
+					not(inArray(orders.status, ['ready', 'fulfilled', 'cancelled'])),
 					gte(orders.scheduledFor, todayStart)
 				)
 			)

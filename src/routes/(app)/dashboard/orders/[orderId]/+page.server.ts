@@ -3,6 +3,7 @@ import { error, fail } from '@sveltejs/kit';
 import { db } from '$lib/server/db';
 import { eq, and, desc } from 'drizzle-orm';
 import { orders, orderItems } from '$lib/server/db/schema';
+import { pickupWindows } from '$lib/server/db/pickup';
 import {
 	specialOrderRequests,
 	specialOrderPayments,
@@ -12,6 +13,7 @@ import { vendor } from '$lib/server/db/vendor';
 import { sendBalanceReminder } from '$lib/server/special-orders/reminders';
 import Stripe from 'stripe';
 import { sendEmail } from '$lib/server/email';
+import { nextStatus } from '$lib/utils/order-lifecycle';
 import { vendorUrl } from '$lib/server/vendor-origin';
 import { orderReadyEmail } from '$lib/server/email/templates/orderReady';
 import { orderCancelledEmail } from '$lib/server/email/templates/orderCancelled';
@@ -34,6 +36,16 @@ export const load: PageServerLoad = async ({ locals, params }) => {
 	if (!order) throw error(404, 'Order not found');
 
 	order = await reconcilePaymentStatus(order, vendorId);
+
+	// Pickup window context (windowed orders only; null for custom-date and
+	// storefront-hours orders, which carry scheduledFor instead).
+	const pickupWindow = order.pickupWindowId
+		? ((await db.query.pickupWindows.findFirst({
+				where: eq(pickupWindows.id, order.pickupWindowId),
+				columns: { id: true, name: true, startsAt: true, endsAt: true },
+				with: { location: { columns: { name: true } } }
+			})) ?? null)
+		: null;
 
 	let originatingRequest: {
 		id: number;
@@ -85,7 +97,15 @@ export const load: PageServerLoad = async ({ locals, params }) => {
 		balanceRemindersDefault = vendorRow?.balanceRemindersEnabled ?? true;
 	}
 
-	return { order, originatingRequest, payments, balanceLink, reminders, balanceRemindersDefault };
+	return {
+		order,
+		pickupWindow,
+		originatingRequest,
+		payments,
+		balanceLink,
+		reminders,
+		balanceRemindersDefault
+	};
 };
 
 function isRedirect(err: unknown): boolean {
@@ -100,6 +120,17 @@ export const actions: Actions = {
 			const id = parseInt(formData.get('id')?.toString() ?? '');
 			const status = formData.get('status')?.toString();
 			if (isNaN(id) || !status) return fail(400, { error: 'Invalid' });
+
+			// Guard: only allow advancing to the valid next status for this order.
+			const [current] = await db
+				.select({ status: orders.status })
+				.from(orders)
+				.where(and(eq(orders.id, id), eq(orders.vendorId, vendorId)))
+				.limit(1);
+			if (!current) return fail(404, { error: 'Order not found' });
+			if (nextStatus[current.status] !== status) {
+				return fail(400, { error: 'Invalid status change' });
+			}
 
 			const [order] = await db
 				.update(orders)

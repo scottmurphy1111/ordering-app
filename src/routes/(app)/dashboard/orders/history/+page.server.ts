@@ -1,14 +1,12 @@
 import type { PageServerLoad, Actions } from './$types';
 import { fail } from '@sveltejs/kit';
 import { db } from '$lib/server/db';
-import { eq, and, or, desc, lt, gte, lte, ilike, sql } from 'drizzle-orm';
+import { eq, and, or, desc, gte, lte, ilike, sql } from 'drizzle-orm';
 import { orders } from '$lib/server/db/schema';
 import { vendor } from '$lib/server/db/vendor';
 import Stripe from 'stripe';
 import { sendEmail } from '$lib/server/email';
 import { orderRefundedEmail } from '$lib/server/email/templates/orderRefunded';
-
-const HISTORY_CUTOFF_MS = 24 * 60 * 60 * 1000;
 
 export const load: PageServerLoad = async ({ locals, url }) => {
 	const vendorId = locals.vendorId!;
@@ -17,9 +15,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 	const to = url.searchParams.get('to') ?? '';
 	const statusFilter = url.searchParams.get('status') ?? '';
 
-	const cutoff = new Date(Date.now() - HISTORY_CUTOFF_MS);
-
-	const whereConditions = [eq(orders.vendorId, vendorId), lt(orders.updatedAt, cutoff)];
+	const whereConditions = [eq(orders.vendorId, vendorId)];
 
 	if (statusFilter === 'fulfilled' || statusFilter === 'cancelled') {
 		whereConditions.push(eq(orders.status, statusFilter as typeof orders.status._.data));
@@ -63,6 +59,8 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 				createdAt: true,
 				updatedAt: true,
 				scheduledFor: true,
+				pickupType: true,
+				pickupMode: true,
 				stripePaymentIntentId: true
 			},
 			with: { items: { columns: { name: true, quantity: true } } }

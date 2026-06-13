@@ -119,7 +119,7 @@ export const load: PageServerLoad = async ({ locals, url, depends }) => {
 			.where(
 				and(
 					eq(orders.vendorId, vendorId),
-					ne(orders.status, 'cancelled' as typeof orders.status._.data),
+					not(inArray(orders.status, ['ready', 'fulfilled', 'cancelled'])),
 					gt(orders.createdAt, productionLastViewedAt),
 					or(
 						inArray(orders.pickupWindowId, activeWindowIds),
@@ -158,7 +158,7 @@ export const load: PageServerLoad = async ({ locals, url, depends }) => {
 			.where(
 				and(
 					eq(orders.vendorId, vendorId),
-					ne(orders.status, 'cancelled' as typeof orders.status._.data),
+					not(inArray(orders.status, ['ready', 'fulfilled', 'cancelled'])),
 					gte(pickupWindows.endsAt, todayStart)
 				)
 			)
@@ -233,7 +233,7 @@ export const load: PageServerLoad = async ({ locals, url, depends }) => {
 					eq(orders.vendorId, vendorId),
 					eq(orders.pickupType, 'custom_date'),
 					isNotNull(orders.scheduledFor),
-					ne(orders.status, 'cancelled' as typeof orders.status._.data),
+					not(inArray(orders.status, ['ready', 'fulfilled', 'cancelled'])),
 					gte(orders.scheduledFor, todayStart)
 				)
 			)
@@ -248,6 +248,44 @@ export const load: PageServerLoad = async ({ locals, url, depends }) => {
 		const scheduledProduction = scheduledRows.map((row) => ({
 			scheduledFor: row.scheduledFor!,
 			leadDays: row.leadDays ?? 0,
+			itemName: row.itemName,
+			modifiers: Array.isArray(row.selectedModifiers)
+				? (row.selectedModifiers as Array<{ name: string; quantity?: number }>).map((m) =>
+						(m.quantity ?? 1) > 1 ? `${m.name} ×${m.quantity}` : m.name
+					)
+				: [],
+			totalQuantity: parseInt(row.totalQuantity ?? '0'),
+			orderCount: Number(row.orderCount),
+			hasNew: row.hasNew ?? false
+		}));
+
+		// Storefront-hours orders also have no pickup window, so the window query misses
+		// them. They have no lead time — prep day is the pickup day (scheduledFor).
+		const storefrontRows = await db
+			.select({
+				scheduledFor: orders.scheduledFor,
+				itemName: orderItems.name,
+				selectedModifiers: orderItems.selectedModifiers,
+				totalQuantity: sum(orderItems.quantity),
+				orderCount: sql<number>`count(distinct ${orders.id})`,
+				hasNew: sql<boolean>`coalesce(bool_or(${orders.createdAt} > ${newSince}), false)`
+			})
+			.from(orderItems)
+			.innerJoin(orders, eq(orderItems.orderId, orders.id))
+			.where(
+				and(
+					eq(orders.vendorId, vendorId),
+					eq(orders.pickupMode, 'storefront_hours'),
+					isNotNull(orders.scheduledFor),
+					not(inArray(orders.status, ['ready', 'fulfilled', 'cancelled'])),
+					gte(orders.scheduledFor, todayStart)
+				)
+			)
+			.groupBy(orders.scheduledFor, orderItems.name, orderItems.selectedModifiers)
+			.orderBy(asc(orders.scheduledFor), desc(sum(orderItems.quantity)), asc(orderItems.name));
+
+		const storefrontProduction = storefrontRows.map((row) => ({
+			scheduledFor: row.scheduledFor!,
 			itemName: row.itemName,
 			modifiers: Array.isArray(row.selectedModifiers)
 				? (row.selectedModifiers as Array<{ name: string; quantity?: number }>).map((m) =>
@@ -280,6 +318,7 @@ export const load: PageServerLoad = async ({ locals, url, depends }) => {
 			todayRevenue,
 			productionGroups: Array.from(productionMap.values()),
 			scheduledProduction,
+			storefrontProduction,
 			newOrderCount: 0
 		};
 	}

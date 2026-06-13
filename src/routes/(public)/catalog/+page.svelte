@@ -25,9 +25,7 @@
 	const vendor = $derived(data.vendor);
 	const isPaused = $derived(!!data.vendor.subscriptionPausedAt);
 	const fulfillmentModel = $derived(data.vendor.fulfillmentModel);
-	const showOpenStatus = $derived(
-		fulfillmentModel === 'storefront' || fulfillmentModel === 'hybrid'
-	);
+	const showOpenStatus = $derived(fulfillmentModel === 'hybrid');
 	const showUpcomingEvents = $derived(
 		fulfillmentModel === 'pickup_only' || fulfillmentModel === 'hybrid'
 	);

@@ -130,7 +130,7 @@
 		| { id: string; kind: 'event'; label: string; sublabel: string; windowId: number };
 
 	const storefrontPickerOptions = $derived.by<PickerOption[]>(() => {
-		if (fulfillmentModel !== 'storefront' && fulfillmentModel !== 'hybrid') return [];
+		if (fulfillmentModel !== 'hybrid') return [];
 		const out: PickerOption[] = [];
 		if (asapAvailable) {
 			out.push({

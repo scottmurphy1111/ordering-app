@@ -68,6 +68,14 @@ export const catalogItems = pgTable(
 		customDateLeadDays: integer('custom_date_lead_days').default(14),
 		availabilityMode: availabilityModeEnum('availability_mode').notNull().default('always'),
 
+		// Fulfillment channels (Phase 1). Additive + inert until Phase 3 reads them.
+		// Defaults are the most-common-case so gap-created items are sellable; the
+		// backfill script overwrites existing rows with precise per-row values.
+		allowStoreHours: boolean('allow_store_hours').default(true).notNull(),
+		allowPickupEvents: boolean('allow_pickup_events').default(true).notNull(),
+		allowCustomDate: boolean('allow_custom_date').default(false).notNull(),
+		isUnlisted: boolean('is_unlisted').default(false).notNull(),
+
 		status: itemStatusEnum('status').default('available').notNull(),
 		sortOrder: integer('sort_order').default(0),
 		createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),

@@ -4,7 +4,6 @@ import { db } from '$lib/server/db';
 import { eq, and, count } from 'drizzle-orm';
 import { vendor } from '$lib/server/db/vendor';
 import { catalogItems } from '$lib/server/db/catalog';
-import { pickupWindowTemplates } from '$lib/server/db/pickup';
 import { vendorHours } from '$lib/server/db/vendor-hours';
 import { FULFILLMENT_MODELS } from '$lib/utils/fulfillment-model-labels';
 import type { FulfillmentModelValue } from '$lib/utils/fulfillment-model-labels';
@@ -19,7 +18,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		columns: { fulfillmentModel: true }
 	});
 
-	const currentModel = record?.fulfillmentModel ?? 'storefront';
+	const currentModel = record?.fulfillmentModel ?? 'hybrid';
 	const targetParam = url.searchParams.get('to');
 	const target =
 		targetParam && VALID_MODELS.includes(targetParam) && targetParam !== currentModel
@@ -30,7 +29,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		return { currentModel, target: null, orphans: null };
 	}
 
-	const [storefrontOnly, eventsOnly, hoursRows, windowTemplates] = await Promise.all([
+	const [storefrontOnly, hoursRows] = await Promise.all([
 		db
 			.select({ count: count() })
 			.from(catalogItems)
@@ -40,19 +39,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 					eq(catalogItems.availabilityMode, 'storefront_only')
 				)
 			),
-		db
-			.select({ count: count() })
-			.from(catalogItems)
-			.where(
-				and(eq(catalogItems.vendorId, vendorId), eq(catalogItems.availabilityMode, 'events_only'))
-			),
-		db.select({ count: count() }).from(vendorHours).where(eq(vendorHours.vendorId, vendorId)),
-		db
-			.select({ count: count() })
-			.from(pickupWindowTemplates)
-			.where(
-				and(eq(pickupWindowTemplates.vendorId, vendorId), eq(pickupWindowTemplates.isActive, true))
-			)
+		db.select({ count: count() }).from(vendorHours).where(eq(vendorHours.vendorId, vendorId))
 	]);
 
 	return {
@@ -60,9 +47,9 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		target,
 		orphans: {
 			storefrontItems: target === 'pickup_only' ? (storefrontOnly[0]?.count ?? 0) : 0,
-			eventsItems: target === 'storefront' ? (eventsOnly[0]?.count ?? 0) : 0,
+			eventsItems: 0,
 			hoursRows: target === 'pickup_only' ? (hoursRows[0]?.count ?? 0) : 0,
-			windowTemplates: target === 'storefront' ? (windowTemplates[0]?.count ?? 0) : 0
+			windowTemplates: 0
 		}
 	};
 };

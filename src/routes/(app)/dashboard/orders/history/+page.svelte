@@ -358,13 +358,24 @@
 								{#if order.scheduledFor}
 									<p class="mt-1 flex items-center gap-1 text-xs text-amber-700">
 										<Icon icon="mdi:calendar-clock" class="h-3.5 w-3.5 shrink-0" />
-										Scheduled: {new Date(order.scheduledFor).toLocaleString([], {
-											weekday: 'short',
-											month: 'short',
-											day: 'numeric',
-											hour: 'numeric',
-											minute: '2-digit'
-										})}
+										{#if order.pickupType === 'custom_date'}
+											Requested for {new Date(order.scheduledFor).toLocaleDateString([], {
+												weekday: 'short',
+												month: 'short',
+												day: 'numeric'
+											})}
+										{:else}
+											Scheduled: {new Date(order.scheduledFor).toLocaleString([], {
+												weekday: 'short',
+												month: 'short',
+												day: 'numeric',
+												hour: 'numeric',
+												minute: '2-digit'
+											})}
+											{#if order.pickupMode === 'storefront_hours'}
+												· in person at the store
+											{/if}
+										{/if}
 									</p>
 								{/if}
 								{#if order.items && order.items.length > 0}

@@ -70,9 +70,8 @@
 		</div>
 
 		{#if data.orphans}
-			{@const { storefrontItems, eventsItems, hoursRows, windowTemplates } = data.orphans}
-			{@const hasOrphans =
-				storefrontItems > 0 || eventsItems > 0 || hoursRows > 0 || windowTemplates > 0}
+			{@const { storefrontItems, hoursRows } = data.orphans}
+			{@const hasOrphans = storefrontItems > 0 || hoursRows > 0}
 
 			{#if hasOrphans}
 				<div class="mb-6 space-y-2 rounded-xl border border-amber-200 bg-amber-50 p-4">
@@ -86,27 +85,11 @@
 								match any pickup event. Update their availability after switching.
 							</li>
 						{/if}
-						{#if eventsItems > 0}
-							<li class="flex items-start gap-1.5">
-								<Icon icon="mdi:alert-outline" class="mt-0.5 h-3.5 w-3.5 shrink-0" />
-								{eventsItems}
-								{eventsItems === 1 ? 'item is' : 'items are'} set to "Events only" — they won't be available
-								on the storefront. Update their availability after switching.
-							</li>
-						{/if}
 						{#if hoursRows > 0}
 							<li class="flex items-start gap-1.5">
 								<Icon icon="mdi:information-outline" class="mt-0.5 h-3.5 w-3.5 shrink-0" />
 								Your operating hours will be preserved but won't affect the customer storefront in pickup-only
 								mode.
-							</li>
-						{/if}
-						{#if windowTemplates > 0}
-							<li class="flex items-start gap-1.5">
-								<Icon icon="mdi:information-outline" class="mt-0.5 h-3.5 w-3.5 shrink-0" />
-								{windowTemplates} active pickup
-								{windowTemplates === 1 ? 'schedule' : 'schedules'} will be preserved but won't appear
-								on the storefront-only view.
 							</li>
 						{/if}
 					</ul>

@@ -4,6 +4,7 @@ import { db } from '$lib/server/db';
 import { eq, sql } from 'drizzle-orm';
 import { vendor, vendorUsers } from '$lib/server/db/vendor';
 import { ARCHETYPES, archetypesForFulfillmentModel } from '$lib/server/seed/archetypes/index';
+import type { FulfillmentModelValue } from '$lib/server/seed/types';
 import { reseedVendor } from '$lib/server/seed/seed';
 
 export const load: PageServerLoad = async ({ locals }) => {
@@ -83,7 +84,9 @@ export const actions: Actions = {
 		});
 		if (!vendorRow) return fail(404, { error: 'Vendor not found' });
 
-		const compatible = archetypesForFulfillmentModel(vendorRow.fulfillmentModel);
+		const compatible = archetypesForFulfillmentModel(
+			vendorRow.fulfillmentModel as FulfillmentModelValue
+		);
 		if (!compatible.some((a) => a.key === archetypeKey)) {
 			return fail(400, {
 				error: `Archetype "${archetypeKey}" is not compatible with this vendor's fulfillment model.`

@@ -8,8 +8,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 	const vendorId = locals.vendorId!;
 	const vendor = locals.vendor!;
 
-	const fetchHours =
-		vendor.fulfillmentModel === 'storefront' || vendor.fulfillmentModel === 'hybrid';
+	const fetchHours = vendor.fulfillmentModel === 'hybrid';
 
 	const [availableWindows, hours, exceptions] = await Promise.all([
 		getAvailableWindows(vendorId),
