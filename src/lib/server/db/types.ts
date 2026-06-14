@@ -37,13 +37,6 @@ export const pickupModeEnum = pgEnum('pickup_mode', [
 	'custom_date'
 ]);
 
-export const availabilityModeEnum = pgEnum('availability_mode', [
-	'always',
-	'storefront_only',
-	'events_only',
-	'unlisted'
-]);
-
 export const specialOrderRequestStateEnum = pgEnum('special_order_request_state', [
 	'pending',
 	'quoted',

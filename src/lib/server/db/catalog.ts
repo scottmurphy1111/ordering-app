@@ -12,7 +12,7 @@ import {
 	primaryKey
 } from 'drizzle-orm/pg-core';
 import { vendor } from './vendor';
-import { pickupTypeEnum, availabilityModeEnum } from './types';
+import { pickupTypeEnum } from './types';
 
 export const itemStatusEnum = pgEnum('item_status', ['draft', 'available', 'sold_out', 'hidden']);
 
@@ -66,7 +66,6 @@ export const catalogItems = pgTable(
 
 		pickupType: pickupTypeEnum('pickup_type').default('windowed').notNull(),
 		customDateLeadDays: integer('custom_date_lead_days').default(14),
-		availabilityMode: availabilityModeEnum('availability_mode').notNull().default('always'),
 
 		// Fulfillment channels (Phase 1). Additive + inert until Phase 3 reads them.
 		// Defaults are the most-common-case so gap-created items are sellable; the

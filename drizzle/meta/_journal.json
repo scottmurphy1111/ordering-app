@@ -57,6 +57,13 @@
       "when": 1781349997036,
       "tag": "0007_familiar_hex",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1781398891070,
+      "tag": "0008_funny_goliath",
+      "breakpoints": true
     }
   ]
 }
