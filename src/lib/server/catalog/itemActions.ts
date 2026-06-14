@@ -34,23 +34,27 @@ function parseItemFormData(formData: FormData) {
 	const fulfillmentNote = isSubscription
 		? formData.get('fulfillmentNote')?.toString().trim() || null
 		: null;
-	const pickupType = (formData.get('pickupType')?.toString() || 'windowed') as
-		| 'windowed'
-		| 'custom_date';
-	const customDateLeadDays =
-		pickupType === 'custom_date'
-			? parseInt(formData.get('customDateLeadDays')?.toString() ?? '14') || 14
-			: null;
-	const rawAvailabilityMode = formData.get('availabilityMode')?.toString();
-	const availabilityMode = (rawAvailabilityMode || 'always') as
-		| 'always'
-		| 'storefront_only'
-		| 'events_only'
-		| 'unlisted';
+	// New fulfillment channels (Phase 2). Custom date is exclusive.
+	const allowCustomDate = formData.get('allowCustomDate') === 'on';
+	const allowStoreHours = !allowCustomDate && formData.get('allowStoreHours') === 'on';
+	const allowPickupEvents = !allowCustomDate && formData.get('allowPickupEvents') === 'on';
+	const isUnlisted = formData.get('isUnlisted') === 'on';
+
+	if (!allowStoreHours && !allowPickupEvents && !allowCustomDate) {
+		throw new CatalogItemError(400, 'Pick at least one way customers can order this item.');
+	}
+
+	// Derive the still-used pickupType / customDateLeadDays from the channel booleans.
+	// (availabilityMode is retired; pickupType remains the cart type-lock + order-routing key.)
+	const customDateLeadDays = allowCustomDate
+		? parseInt(formData.get('customDateLeadDays')?.toString() ?? '14') || 14
+		: null;
 
 	if (customDateLeadDays !== null && (customDateLeadDays < 1 || customDateLeadDays > 365)) {
 		throw new CatalogItemError(400, 'Lead time must be between 1 and 365 days.');
 	}
+
+	const pickupType: 'windowed' | 'custom_date' = allowCustomDate ? 'custom_date' : 'windowed';
 
 	if (!name) throw new CatalogItemError(400, 'Name is required');
 	if (!priceStr || isNaN(parseFloat(priceStr)))
@@ -84,7 +88,10 @@ function parseItemFormData(formData: FormData) {
 		fulfillmentNote,
 		pickupType,
 		customDateLeadDays,
-		availabilityMode
+		allowStoreHours,
+		allowPickupEvents,
+		allowCustomDate,
+		isUnlisted
 	};
 }
 
@@ -139,7 +146,10 @@ export async function updateCatalogItem(
 		fulfillmentNote,
 		pickupType,
 		customDateLeadDays,
-		availabilityMode
+		allowStoreHours,
+		allowPickupEvents,
+		allowCustomDate,
+		isUnlisted
 	} = parseItemFormData(formData);
 
 	await db
@@ -159,7 +169,10 @@ export async function updateCatalogItem(
 			fulfillmentNote,
 			pickupType,
 			customDateLeadDays,
-			availabilityMode,
+			allowStoreHours,
+			allowPickupEvents,
+			allowCustomDate,
+			isUnlisted,
 			updatedAt: new Date()
 		})
 		.where(and(eq(catalogItems.id, itemId), eq(catalogItems.vendorId, vendorId)));

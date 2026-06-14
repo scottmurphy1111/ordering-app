@@ -14,6 +14,7 @@
 		SelectValue
 	} from '$lib/components/ui/select';
 	import { Switch } from '$lib/components/ui/switch';
+	import { Checkbox } from '$lib/components/ui/checkbox';
 	import { Tabs, TabsList, TabsTrigger } from '$lib/components/ui/tabs';
 	import { Alert } from '$lib/components/ui/alert';
 	import { toast } from '$lib/toast';
@@ -21,7 +22,6 @@
 	type ImageEntry = { url: string; isPrimary?: boolean };
 
 	type PickupType = 'windowed' | 'custom_date';
-	type AvailabilityMode = 'always' | 'storefront_only' | 'events_only' | 'unlisted';
 
 	interface ItemData {
 		name: string;
@@ -38,7 +38,10 @@
 		fulfillmentNote?: string | null;
 		pickupType?: PickupType | null;
 		customDateLeadDays?: number | null;
-		availabilityMode?: AvailabilityMode | null;
+		allowStoreHours?: boolean | null;
+		allowPickupEvents?: boolean | null;
+		allowCustomDate?: boolean | null;
+		isUnlisted?: boolean | null;
 	}
 
 	interface Props {
@@ -46,6 +49,7 @@
 		formAction: string;
 		item?: ItemData;
 		categories: { id: number; name: string }[];
+		fulfillmentModel: 'pickup_only' | 'hybrid';
 		hasSubscriptionsAddon: boolean;
 		onSuccess?: (item: { id: number; name: string }, opts: { addAnother: boolean }) => void;
 		onCancel?: () => void;
@@ -59,6 +63,7 @@
 		formAction,
 		item,
 		categories,
+		fulfillmentModel,
 		hasSubscriptionsAddon,
 		onSuccess,
 		onCancel,
@@ -87,16 +92,18 @@
 	let billingInterval = $state(untrack(() => item?.billingInterval ?? 'monthly'));
 	let fulfillmentNote = $state(untrack(() => item?.fulfillmentNote ?? ''));
 
-	// Pickup type
-	let pickupType = $state<PickupType>(
-		untrack(() => (item?.pickupType as PickupType | null | undefined) ?? 'windowed')
+	// Fulfillment channels (Phase 2). New items default to the most-common case:
+	// pickup events on; store hours on only for hybrid vendors.
+	let allowStoreHours = $state(
+		untrack(() => item?.allowStoreHours ?? fulfillmentModel === 'hybrid')
 	);
+	let allowPickupEvents = $state(untrack(() => item?.allowPickupEvents ?? true));
+	let allowCustomDate = $state(untrack(() => item?.allowCustomDate ?? false));
 	let customDateLeadDays = $state(untrack(() => item?.customDateLeadDays ?? 14));
+	let isUnlisted = $state(untrack(() => item?.isUnlisted ?? false));
 
-	// Availability mode
-	let availabilityMode = $state<AvailabilityMode>(
-		untrack(() => (item?.availabilityMode as AvailabilityMode | null | undefined) ?? 'always')
-	);
+	// At least one ordering channel must be selected.
+	const channelSelected = $derived(allowStoreHours || allowPickupEvents || allowCustomDate);
 
 	// Internal feedback
 	let internalError = $state<string | null>(null);
@@ -361,86 +368,116 @@
 	</div>
 {/snippet}
 
-{#snippet fieldPickupType()}
+{#snippet fieldChannels()}
 	<div class="space-y-3 rounded-lg border p-4">
-		<p class="text-sm font-medium text-muted-foreground">Pickup type</p>
-		<Tabs
-			value={pickupType}
-			onValueChange={(v) => (pickupType = v as PickupType)}
-			aria-label="Choose pickup type"
-		>
-			<TabsList>
-				<TabsTrigger value="windowed">Windowed</TabsTrigger>
-				<TabsTrigger value="custom_date">
-					<Icon icon="mdi:calendar-edit" class="h-3.5 w-3.5" />
-					Custom date
-				</TabsTrigger>
-			</TabsList>
-		</Tabs>
-		<input type="hidden" name="pickupType" value={pickupType} />
-		<p class="text-xs text-gray-500">
-			{#if pickupType === 'windowed'}
-				Customer picks a pickup window at checkout. Use this for items you sell at scheduled pickup
-				times — including today's inventory if you have a daily window configured.
-			{:else}
-				Customer picks a future date. You review and approve each order before payment is charged.
-				Use this for wedding cakes, custom catering, and special-order goods.
-			{/if}
-		</p>
-		{#if pickupType === 'custom_date'}
-			<div>
-				<label
-					class="mb-1.5 block text-sm font-medium text-muted-foreground"
-					for="customDateLeadDays"
-				>
-					Lead time (days)
-				</label>
-				<Input
-					id="customDateLeadDays"
-					name="customDateLeadDays"
-					type="number"
-					min={1}
-					max={365}
-					required
-					value={customDateLeadDays}
-					oninput={(e) =>
-						(customDateLeadDays = parseInt((e.target as HTMLInputElement).value) || 14)}
+		<p class="text-sm font-medium text-muted-foreground">How can customers order this?</p>
+
+		{#if fulfillmentModel === 'hybrid'}
+			<label class="flex items-start gap-2.5">
+				<Checkbox
+					checked={allowStoreHours}
+					disabled={allowCustomDate}
+					onCheckedChange={(v) => (allowStoreHours = v === true)}
+					aria-label="Store hours"
 				/>
-				<p class="mt-1.5 text-xs text-gray-400">Minimum days between order and fulfillment.</p>
-			</div>
+				<span class="text-sm">
+					<span class="font-medium text-foreground">Store hours</span>
+					<span class="block text-xs text-muted-foreground">
+						Order for pickup during your open hours — right away or scheduled for later.
+					</span>
+				</span>
+			</label>
 		{/if}
+
+		<label class="flex items-start gap-2.5">
+			<Checkbox
+				checked={allowPickupEvents}
+				disabled={allowCustomDate}
+				onCheckedChange={(v) => (allowPickupEvents = v === true)}
+				aria-label="Pickup events"
+			/>
+			<span class="text-sm">
+				<span class="font-medium text-foreground">Pickup events</span>
+				<span class="block text-xs text-muted-foreground">
+					Order against your scheduled pickup events.
+				</span>
+			</span>
+		</label>
+
+		{#if !isSubscription}
+			<label class="flex items-start gap-2.5">
+				<Checkbox
+					checked={allowCustomDate}
+					onCheckedChange={(v) => {
+						allowCustomDate = v === true;
+						if (v === true) {
+							allowStoreHours = false;
+							allowPickupEvents = false;
+						}
+					}}
+					aria-label="Custom date"
+				/>
+				<span class="text-sm">
+					<span class="font-medium text-foreground">Custom date</span>
+					<span class="block text-xs text-muted-foreground">
+						Customer requests a future date; you approve before payment is charged. For wedding
+						cakes, catering, and special orders. Can't be combined with the other channels.
+					</span>
+				</span>
+			</label>
+
+			{#if allowCustomDate}
+				<div>
+					<label
+						class="mb-1.5 block text-sm font-medium text-muted-foreground"
+						for="customDateLeadDays"
+					>
+						Lead time (days)
+					</label>
+					<Input
+						id="customDateLeadDays"
+						name="customDateLeadDays"
+						type="number"
+						min={1}
+						max={365}
+						required
+						value={customDateLeadDays}
+						oninput={(e) =>
+							(customDateLeadDays = parseInt((e.target as HTMLInputElement).value) || 14)}
+					/>
+					<p class="mt-1.5 text-xs text-gray-400">Minimum days between order and fulfillment.</p>
+				</div>
+			{/if}
+		{/if}
+
+		{#if !channelSelected}
+			<p class="text-xs font-medium text-destructive">
+				Pick at least one way customers can order this item.
+			</p>
+		{/if}
+
+		<input type="hidden" name="allowStoreHours" value={allowStoreHours ? 'on' : ''} />
+		<input type="hidden" name="allowPickupEvents" value={allowPickupEvents ? 'on' : ''} />
+		<input type="hidden" name="allowCustomDate" value={allowCustomDate ? 'on' : ''} />
 	</div>
 {/snippet}
 
-{#snippet fieldAvailabilityMode()}
-	{@const AVAILABILITY_OPTIONS = [
-		['always', 'Always available', 'Show to all customers regardless of how they are ordering.'],
-		['storefront_only', 'In-store only', 'Only shown when ordering for storefront / ASAP pickup.'],
-		['events_only', 'Pickup events', 'Only shown when ordering for a scheduled pickup event.'],
-		['unlisted', 'Unlisted', 'Hidden from your public catalog — sell it by sharing a direct link.']
-	] as const}
-	<div class="space-y-2 rounded-lg border p-4">
-		<p class="text-sm font-medium text-muted-foreground">Availability</p>
-		<Select
-			type="single"
-			name="availabilityMode"
-			value={availabilityMode}
-			onValueChange={(v) => (availabilityMode = v as AvailabilityMode)}
-		>
-			<SelectTrigger class="w-full">
-				<SelectValue>
-					{AVAILABILITY_OPTIONS.find(([v]) => v === availabilityMode)?.[1] ?? 'Always available'}
-				</SelectValue>
-			</SelectTrigger>
-			<SelectContent>
-				{#each AVAILABILITY_OPTIONS as [val, label] (val)}
-					<SelectItem value={val}>{label}</SelectItem>
-				{/each}
-			</SelectContent>
-		</Select>
-		<p class="text-xs text-muted-foreground">
-			{AVAILABILITY_OPTIONS.find(([v]) => v === availabilityMode)?.[2] ?? ''}
-		</p>
+{#snippet fieldUnlisted()}
+	<div class="rounded-lg border p-4">
+		<label class="flex items-start gap-2.5">
+			<Checkbox
+				checked={isUnlisted}
+				onCheckedChange={(v) => (isUnlisted = v === true)}
+				aria-label="Unlisted"
+			/>
+			<span class="text-sm">
+				<span class="font-medium text-foreground">Unlisted</span>
+				<span class="block text-xs text-muted-foreground">
+					Hidden from your public catalog — sell it by sharing a direct link.
+				</span>
+			</span>
+		</label>
+		<input type="hidden" name="isUnlisted" value={isUnlisted ? 'on' : ''} />
 	</div>
 {/snippet}
 
@@ -528,8 +565,8 @@
 				{@render fieldStatus()}
 			{/if}
 			{@render fieldTags()}
-			{@render fieldPickupType()}
-			{#if !isSubscription}{@render fieldAvailabilityMode()}{/if}
+			{@render fieldChannels()}
+			{@render fieldUnlisted()}
 			{#if hasSubscriptionsAddon}{@render fieldSubscription()}{/if}
 		</div>
 	{:else}
@@ -541,8 +578,8 @@
 			{#if categories.length > 0}{@render fieldCategory()}{/if}
 			{@render fieldTags()}
 			{@render fieldStatus()}
-			{@render fieldPickupType()}
-			{#if !isSubscription}{@render fieldAvailabilityMode()}{/if}
+			{@render fieldChannels()}
+			{@render fieldUnlisted()}
 			{#if hasSubscriptionsAddon}{@render fieldSubscription()}{/if}
 		</div>
 	{/if}
@@ -556,7 +593,7 @@
 	{#if mode === 'edit'}
 		<Button
 			type="submit"
-			disabled={uploading || isSubmitting}
+			disabled={uploading || isSubmitting || !channelSelected}
 			variant="default"
 			class={fullWidth ? 'w-full md:w-auto' : ''}
 		>
@@ -570,7 +607,7 @@
 	{:else if onSuccess}
 		<Button
 			type="submit"
-			disabled={uploading || isSubmitting}
+			disabled={uploading || isSubmitting || !channelSelected}
 			variant="default"
 			class={fullWidth ? 'w-full md:w-auto' : ''}
 		>
@@ -584,7 +621,7 @@
 		<Button
 			type="submit"
 			data-add-another="1"
-			disabled={uploading || isSubmitting}
+			disabled={uploading || isSubmitting || !channelSelected}
 			variant="outline"
 			class={fullWidth ? 'w-full md:w-auto' : ''}
 		>
@@ -598,7 +635,7 @@
 	{:else}
 		<Button
 			type="submit"
-			disabled={uploading || isSubmitting}
+			disabled={uploading || isSubmitting || !channelSelected}
 			variant="default"
 			class={fullWidth ? 'w-full md:w-auto' : ''}
 		>

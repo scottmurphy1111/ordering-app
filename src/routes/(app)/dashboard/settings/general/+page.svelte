@@ -62,7 +62,7 @@
 	const savedCheckout = $derived(
 		(
 			data.info as unknown as {
-				settings?: { enableTips?: boolean; asapPickupEnabled?: boolean };
+				settings?: { enableTips?: boolean };
 			} | null
 		)?.settings ?? {}
 	);
@@ -81,7 +81,6 @@
 	);
 
 	let enableTips = $state(untrack(() => savedCheckout.enableTips ?? false));
-	let asapPickupEnabled = $state(untrack(() => savedCheckout.asapPickupEnabled ?? false));
 </script>
 
 <div class="max-w-2xl">
@@ -322,7 +321,7 @@
 		</Card>
 	</form>
 
-	<!-- Checkout settings — tipping + ASAP -->
+	<!-- Checkout settings — tipping -->
 	{#if checkoutSaveError}
 		<Alert severity="error" class="mt-6">{checkoutSaveError}</Alert>
 	{/if}
@@ -361,24 +360,6 @@
 					</div>
 					<input type="hidden" name="enableTips" value={enableTips ? 'on' : ''} />
 					<Switch id="enableTips" bind:checked={enableTips} />
-				</div>
-				<div class="flex items-start justify-between gap-4">
-					<div class="min-w-0">
-						<label for="asapPickupEnabled" class="text-sm font-medium">Allow ASAP pickup</label>
-						{#if data.info?.fulfillmentModel === 'pickup_only'}
-							<p class="mt-1 text-xs text-muted-foreground">
-								Most pickup-only vendors leave this off — orders are handed off at scheduled pickup
-								events.
-							</p>
-						{:else}
-							<p class="mt-1 text-xs text-muted-foreground">
-								Most storefront vendors leave this on — it's how customers order for same-day
-								pickup.
-							</p>
-						{/if}
-					</div>
-					<input type="hidden" name="asapPickupEnabled" value={asapPickupEnabled ? 'on' : ''} />
-					<Switch id="asapPickupEnabled" bind:checked={asapPickupEnabled} />
 				</div>
 			</CardContent>
 			<CardFooter>

@@ -14,9 +14,9 @@ export const TIERS = [
 		key: 'starter',
 		name: 'Starter',
 		price: 0,
-		itemLimit: 10,
+		itemLimit: 5,
 		features: [
-			'Up to 10 catalog items',
+			'Up to 5 catalog items',
 			'Your own web address (yourshop.getorderlocal.com)',
 			'Online ordering & payments',
 			'Multiple pickup locations',
@@ -28,18 +28,29 @@ export const TIERS = [
 		includedAddons: [] as readonly string[]
 	},
 	{
+		key: 'growth',
+		name: 'Growth',
+		price: 24,
+		annualMonthly: 19,
+		annualTotal: 228,
+		annualSavings: 60,
+		itemLimit: 20,
+		features: ['Up to 20 catalog items', 'Everything in Starter'],
+		includedAddons: [] as readonly string[]
+	},
+	{
 		key: 'market',
 		name: 'Market',
 		price: 49,
 		annualMonthly: 39,
 		annualTotal: 468,
 		annualSavings: 120,
-		itemLimit: 30,
+		itemLimit: 50,
 		features: [
-			'Up to 30 catalog items',
+			'Up to 50 catalog items',
 			'Import your catalog (CSV or from Stripe)',
 			'Eligible for all add-ons (SMS, Analytics, Loyalty, Subscriptions)',
-			'Everything in Starter'
+			'Everything in Growth'
 		],
 		includedAddons: [] as readonly string[]
 	},

@@ -148,7 +148,6 @@ export const farmersMarketBooth: ArchetypeFixture = {
 		allowPickup: true,
 		minimumOrderAmount: 0,
 		estimatedPrepTimeMinutes: 0,
-		asapPickupEnabled: false,
 		loyalty: {
 			enabled: false,
 			type: 'stamps',

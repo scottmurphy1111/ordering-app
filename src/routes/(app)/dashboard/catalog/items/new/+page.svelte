@@ -23,6 +23,7 @@
 		mode="new"
 		formAction=""
 		categories={data.categories}
+		fulfillmentModel={data.fulfillmentModel}
 		hasSubscriptionsAddon={data.hasSubscriptionsAddon}
 	/>
 </div>

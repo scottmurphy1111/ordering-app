@@ -36,7 +36,9 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 			.where(
 				and(
 					eq(catalogItems.vendorId, vendorId),
-					eq(catalogItems.availabilityMode, 'storefront_only')
+					eq(catalogItems.allowStoreHours, true),
+					eq(catalogItems.allowPickupEvents, false),
+					eq(catalogItems.allowCustomDate, false)
 				)
 			),
 		db.select({ count: count() }).from(vendorHours).where(eq(vendorHours.vendorId, vendorId))

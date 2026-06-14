@@ -145,6 +145,8 @@ export const bakersPersona: Persona = {
 		headline: 'Simple pricing. No commissions.',
 		subhead: "Keep 100% of your sales. Pay only Stripe's standard processing fee.",
 		taglinesByTier: {
+			starter: 'Try it out and take your first bakery orders.',
+			growth: 'Room to grow as your pre-order list fills up.',
 			market: 'For growing bakeries taking regular pre-orders.',
 			pro: 'For established bakeries running multiple windows.'
 		}
@@ -174,7 +176,7 @@ export const bakersPersona: Persona = {
 		},
 		{
 			q: 'What plan do I need for pickup windows and cutoff times?',
-			a: 'Pickup windows, cutoff times, and multiple pickup locations are available on every plan, including the free Starter plan. Catalog limits (10 items on Starter, 30 on Market $49/mo, unlimited on Pro $99/mo) determine which plan fits your operation. Modifiers work on all plans too.'
+			a: 'Pickup windows, cutoff times, and multiple pickup locations are available on every plan, including the free Starter plan. Catalog limits (5 items on Starter, 20 on Growth $24/mo, 50 on Market $49/mo, unlimited on Pro $99/mo) determine which plan fits your operation. Modifiers work on all plans too.'
 		}
 	],
 
@@ -270,6 +272,8 @@ export const makersPersona: Persona = {
 		headline: 'Simple pricing. No commissions.',
 		subhead: "Keep 100% of your sales. Pay only Stripe's standard processing fee.",
 		taglinesByTier: {
+			starter: 'Try it out and take your first maker orders.',
+			growth: 'Room to grow as your drops pick up.',
 			market: 'For makers running regular drops or seasonal batches.',
 			pro: 'For established makers selling across multiple channels.'
 		}
@@ -299,7 +303,7 @@ export const makersPersona: Persona = {
 		},
 		{
 			q: 'What plan do I need for variants and pickup windows?',
-			a: 'Pickup windows, cutoff times, and variants/modifiers are available on every plan, including the free Starter plan. Catalog limits (10 items on Starter, 30 on Market $49/mo, unlimited on Pro $99/mo) determine which plan fits the size of your catalog.'
+			a: 'Pickup windows, cutoff times, and variants/modifiers are available on every plan, including the free Starter plan. Catalog limits (5 items on Starter, 20 on Growth $24/mo, 50 on Market $49/mo, unlimited on Pro $99/mo) determine which plan fits the size of your catalog.'
 		}
 	],
 
@@ -395,6 +399,8 @@ export const growersPersona: Persona = {
 		headline: 'Simple pricing. No commissions.',
 		subhead: "Keep 100% of your sales. Pay only Stripe's standard processing fee.",
 		taglinesByTier: {
+			starter: 'Try it out and take your first market orders.',
+			growth: 'Room to grow as your market days fill up.',
 			market: 'For growers selling at one or two markets a week.',
 			pro: 'For established growers across multiple markets and CSAs.'
 		}
@@ -424,7 +430,7 @@ export const growersPersona: Persona = {
 		},
 		{
 			q: 'What plan do I need for multiple markets or a CSA?',
-			a: 'Multiple pickup locations come standard on every plan, including the free Starter plan. Recurring CSA shares require the Subscriptions add-on (available on Market $49/mo and Pro $99/mo). Pick the tier based on your catalog size — 10 items on Starter, 30 on Market, unlimited on Pro.'
+			a: 'Multiple pickup locations come standard on every plan, including the free Starter plan. Recurring CSA shares require the Subscriptions add-on (available on Market $49/mo and Pro $99/mo). Pick the tier based on your catalog size — 5 items on Starter, 20 on Growth, 50 on Market, unlimited on Pro.'
 		}
 	],
 

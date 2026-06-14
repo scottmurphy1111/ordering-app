@@ -48,14 +48,14 @@
 			>
 			<span class="text-muted-foreground/40">/</span>
 			<h1 class="truncate text-2xl font-bold text-foreground">{data.item.name}</h1>
-			{#if data.item.availabilityMode === 'unlisted'}
+			{#if data.item.isUnlisted}
 				<span
 					class="shrink-0 rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-700"
 					>Unlisted</span
 				>
 			{/if}
 		</div>
-		{#if data.item.availabilityMode === 'unlisted' && data.storefrontOrigin}
+		{#if data.item.isUnlisted && data.storefrontOrigin}
 			<div class="flex shrink-0 items-center gap-1">
 				<Button variant="ghost" size="icon" onclick={copyItemLink} aria-label="Copy share link">
 					<Icon icon="mdi:link-variant" class="h-4 w-4" />
@@ -80,6 +80,7 @@
 		formAction="?/update"
 		item={data.item}
 		categories={data.categories}
+		fulfillmentModel={data.fulfillmentModel}
 		hasSubscriptionsAddon={data.hasSubscriptionsAddon}
 	/>
 

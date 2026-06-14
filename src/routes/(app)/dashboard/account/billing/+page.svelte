@@ -765,7 +765,7 @@
 	<!-- Plans -->
 	<div class="mb-8">
 		<h2 class="mb-4 text-lg font-semibold text-foreground">Plans</h2>
-		<div class="grid gap-4 sm:grid-cols-1 lg:grid-cols-3">
+		<div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
 			{#each TIERS as tier (tier.key)}
 				{@const isCurrent = tier.key === currentTierKey}
 				{@const tierIndex = TIERS.findIndex((t) => t.key === tier.key)}

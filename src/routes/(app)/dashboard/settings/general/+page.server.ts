@@ -93,7 +93,6 @@ export const actions: Actions = {
 			const formData = await request.formData();
 
 			const enableTips = formData.get('enableTips') === 'on';
-			const asapPickupEnabled = formData.get('asapPickupEnabled') === 'on';
 
 			const record = await db.query.vendor.findFirst({
 				where: eq(vendor.id, vendorId),
@@ -102,7 +101,7 @@ export const actions: Actions = {
 			const current = (record?.settings ?? {}) as Record<string, unknown>;
 			await db
 				.update(vendor)
-				.set({ settings: { ...current, enableTips, asapPickupEnabled }, updatedAt: new Date() })
+				.set({ settings: { ...current, enableTips }, updatedAt: new Date() })
 				.where(eq(vendor.id, vendorId));
 
 			return { checkoutSuccess: true };

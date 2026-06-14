@@ -8,7 +8,9 @@
 		price: number;
 		discountedPrice: number | null;
 		status: string;
-		availabilityMode: string | null;
+		allowStoreHours: boolean;
+		allowPickupEvents: boolean;
+		allowCustomDate: boolean;
 		images: unknown;
 		tags: string[] | null;
 		modifiers: unknown[];
@@ -32,31 +34,27 @@
 	const primaryImage = $derived(imgs?.find((i) => i.isPrimary)?.url ?? imgs?.[0]?.url ?? null);
 	const hasModifiers = $derived(item.modifiers.length > 0);
 
-	// Availability mode → card border color + top "tab". Standard items (no mode /
-	// 'both') get the plain gray border and no tab.
+	// Channels → card border color + top "tab". Items orderable multiple ways (or by
+	// custom date) get the plain gray border and no tab. Unlisted items are filtered
+	// out of the public catalog upstream, so there's no unlisted tab here.
 	const modeTreatment = $derived.by(() => {
-		switch (item.availabilityMode) {
-			case 'events_only':
-				return {
-					label: 'Pickup events',
-					border: 'border-1 border-sky-400',
-					tab: 'bg-sky-50 text-sky-700'
-				};
-			case 'storefront_only':
-				return {
-					label: 'In-store only',
-					border: 'border-1 border-amber-300',
-					tab: 'bg-amber-50 text-amber-700'
-				};
-			case 'unlisted':
-				return {
-					label: 'Unlisted',
-					border: 'border-1 border-slate-300',
-					tab: 'bg-slate-100 text-slate-700'
-				};
-			default:
-				return null;
+		const storeOnly = item.allowStoreHours && !item.allowPickupEvents && !item.allowCustomDate;
+		const eventsOnly = item.allowPickupEvents && !item.allowStoreHours && !item.allowCustomDate;
+		if (eventsOnly) {
+			return {
+				label: 'Pickup events',
+				border: 'border-1 border-sky-400',
+				tab: 'bg-sky-50 text-sky-700'
+			};
 		}
+		if (storeOnly) {
+			return {
+				label: 'In-store only',
+				border: 'border-1 border-amber-300',
+				tab: 'bg-amber-50 text-amber-700'
+			};
+		}
+		return null;
 	});
 	const borderClass = $derived(modeTreatment?.border ?? 'border border-neutral-200');
 </script>

@@ -97,13 +97,11 @@
 			taxRate?: number;
 			enableTips?: boolean;
 			defaultTipPercentages?: number[];
-			asapPickupEnabled?: boolean;
 		} | null
 	);
 	const TAX_RATE = $derived(settings?.taxRate ?? 0.0825);
 	const tipPercentages = $derived(settings?.defaultTipPercentages ?? [15, 18, 20]);
 	const tipsEnabled = $derived(settings?.enableTips === true);
-	const asapPickupEnabled = $derived(settings?.asapPickupEnabled === true);
 
 	// Live "is vendor open" — refreshes every 60s so ASAP hides after close
 	let now = $state(new Date());
@@ -122,15 +120,24 @@
 			? null
 			: isVendorOpen(data.hours, data.exceptions, vendorTimezone, now)
 	);
-	const asapAvailable = $derived(asapPickupEnabled && vendorOpenState?.isOpen === true);
+	const asapAvailable = $derived(vendorOpenState?.isOpen === true);
 
 	type PickerOption =
 		| { id: string; kind: 'asap'; label: string; sublabel: string }
 		| { id: string; kind: 'scheduled'; label: string; sublabel: string }
 		| { id: string; kind: 'event'; label: string; sublabel: string; windowId: number };
 
+	// Pickup section is driven by the cart's channel intersection: a mode is offered
+	// only when every item in the cart supports it.
+	const cartAllowsStoreHours = $derived(
+		cart.items.length > 0 && cart.items.every((i) => i.allowStoreHours)
+	);
+	const cartAllowsPickupEvents = $derived(
+		cart.items.length > 0 && cart.items.every((i) => i.allowPickupEvents)
+	);
+
 	const storefrontPickerOptions = $derived.by<PickerOption[]>(() => {
-		if (fulfillmentModel !== 'hybrid') return [];
+		if (fulfillmentModel !== 'hybrid' || !cartAllowsStoreHours) return [];
 		const out: PickerOption[] = [];
 		if (asapAvailable) {
 			out.push({
@@ -161,7 +168,11 @@
 	};
 
 	const pickupDates = $derived.by<PickupDate[]>(() => {
-		if (fulfillmentModel !== 'pickup_only' && fulfillmentModel !== 'hybrid') return [];
+		if (
+			(fulfillmentModel !== 'pickup_only' && fulfillmentModel !== 'hybrid') ||
+			!cartAllowsPickupEvents
+		)
+			return [];
 
 		const byDate = new SvelteMap<string, typeof data.availableWindows>();
 		for (const win of data.availableWindows) {
@@ -248,29 +259,6 @@
 	function selectWindow(windowId: number) {
 		pickupChoice = { kind: 'event', windowId };
 	}
-
-	const currentPickupMode = $derived<'pickup_event' | 'storefront_hours' | 'custom_date' | null>(
-		pickupChoice?.kind === 'event'
-			? 'pickup_event'
-			: pickupChoice?.kind === 'asap' || pickupChoice?.kind === 'scheduled'
-				? 'storefront_hours'
-				: null
-	);
-
-	const incompatibleItemIds = $derived.by<SvelteSet<number>>(() => {
-		const mode = currentPickupMode;
-		if (!mode) return new SvelteSet();
-		const out = new SvelteSet<number>();
-		for (const item of cart.items) {
-			const am = item.availabilityMode;
-			if (!am || am === 'always' || am === 'unlisted') continue;
-			if (am === 'storefront_only' && mode === 'pickup_event') out.add(item.itemId);
-			if (am === 'events_only' && mode === 'storefront_hours') out.add(item.itemId);
-		}
-		return out;
-	});
-
-	const hasIncompatibleItems = $derived(incompatibleItemIds.size > 0);
 
 	function isOptionSelected(option: PickerOption, choice: PickupChoice | null): boolean {
 		if (!choice) return false;
@@ -359,6 +347,28 @@
 
 	// Custom-date cart detection
 	const isCustomDateCart = $derived(cart.pickupType === 'custom_date');
+
+	// A windowed cart conflicts when it mixes store-hours-only and pickup-events-only
+	// items — no single pickup mode works for the whole cart. Custom-date carts are a
+	// separate type-locked path and never reach the storefront/event picker.
+	const conflictingItemIds = $derived.by<SvelteSet<number>>(() => {
+		if (isCustomDateCart) return new SvelteSet<number>();
+		const storeOnly: number[] = [];
+		const eventsOnly: number[] = [];
+		for (const item of cart.items) {
+			if (item.allowStoreHours && !item.allowPickupEvents && !item.allowCustomDate)
+				storeOnly.push(item.itemId);
+			else if (item.allowPickupEvents && !item.allowStoreHours && !item.allowCustomDate)
+				eventsOnly.push(item.itemId);
+		}
+		return storeOnly.length > 0 && eventsOnly.length > 0
+			? new SvelteSet<number>([...storeOnly, ...eventsOnly])
+			: new SvelteSet<number>();
+	});
+	const hasChannelConflict = $derived(conflictingItemIds.size > 0);
+	const conflictingItemNames = $derived(
+		cart.items.filter((i) => conflictingItemIds.has(i.itemId)).map((i) => i.name)
+	);
 
 	// Lead-days for custom-date min date (max across all items, default 14)
 	const maxLeadDays = $derived(computeMaxLeadDays(cart.items));
@@ -671,10 +681,10 @@
 		</div>
 	{/if}
 
-	{#if hasIncompatibleItems}
+	{#if hasChannelConflict}
 		<div class="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700">
-			Some items in your cart aren't available for the selected pickup method. Remove them or choose
-			a different pickup option to continue.
+			Your cart mixes items that can't share one pickup time: {conflictingItemNames.join(', ')}.
+			Some are storefront-only and others are pickup-event-only — remove one group to continue.
 		</div>
 	{/if}
 
@@ -753,11 +763,11 @@
 									? `/${item.billingInterval === 'yearly' ? 'yr' : 'mo'}`
 									: ' each'}
 							</p>
-							{#if incompatibleItemIds.has(item.itemId)}
+							{#if conflictingItemIds.has(item.itemId)}
 								<p class="mt-1 text-xs font-medium text-amber-600">
-									{item.availabilityMode === 'storefront_only'
-										? 'Storefront pickup only — not available at events'
-										: 'Event pickup only — not available for storefront orders'}
+									{item.allowStoreHours && !item.allowPickupEvents
+										? 'Storefront pickup only'
+										: 'Pickup events only'}
 								</p>
 							{/if}
 						</div>
@@ -1433,7 +1443,7 @@
 		<button
 			type="button"
 			onclick={checkout}
-			disabled={loading || cart.items.length === 0 || isPaused || hasIncompatibleItems}
+			disabled={loading || cart.items.length === 0 || isPaused || hasChannelConflict}
 			style="background-color: var(--accent-color); color: var(--accent-foreground);"
 			class="w-full rounded-xl px-6 py-4 text-base font-semibold shadow-sm transition-opacity hover:opacity-90 disabled:opacity-50"
 		>

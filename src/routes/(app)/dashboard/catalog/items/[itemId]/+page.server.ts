@@ -43,7 +43,7 @@ export const load: PageServerLoad = async ({ locals, params }) => {
 		}),
 		db.query.vendor.findFirst({
 			where: eq(vendor.id, vendorId),
-			columns: { addons: true, subscriptionTier: true, slug: true }
+			columns: { addons: true, subscriptionTier: true, slug: true, fulfillmentModel: true }
 		})
 	]);
 
@@ -53,6 +53,7 @@ export const load: PageServerLoad = async ({ locals, params }) => {
 	return {
 		item,
 		categories,
+		fulfillmentModel: (vendorRecord?.fulfillmentModel ?? 'pickup_only') as 'pickup_only' | 'hybrid',
 		hasSubscriptionsAddon: effectiveHasAddon(
 			vendorRecord?.subscriptionTier ?? 'starter',
 			addons,

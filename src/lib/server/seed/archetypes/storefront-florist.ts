@@ -110,7 +110,6 @@ export const storefrontFlorist: ArchetypeFixture = {
 		allowPickup: true,
 		minimumOrderAmount: 0,
 		estimatedPrepTimeMinutes: 30,
-		asapPickupEnabled: true,
 		loyalty: {
 			enabled: false,
 			type: 'stamps',

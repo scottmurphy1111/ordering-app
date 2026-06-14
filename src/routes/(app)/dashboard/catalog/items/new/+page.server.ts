@@ -17,12 +17,13 @@ export const load: PageServerLoad = async ({ locals }) => {
 		}),
 		db.query.vendor.findFirst({
 			where: eq(vendor.id, vendorId),
-			columns: { addons: true, subscriptionTier: true }
+			columns: { addons: true, subscriptionTier: true, fulfillmentModel: true }
 		})
 	]);
 	const addons = (vendorRecord?.addons ?? []) as AddonItem[];
 	return {
 		categories,
+		fulfillmentModel: (vendorRecord?.fulfillmentModel ?? 'pickup_only') as 'pickup_only' | 'hybrid',
 		hasSubscriptionsAddon: effectiveHasAddon(
 			vendorRecord?.subscriptionTier ?? 'starter',
 			addons,

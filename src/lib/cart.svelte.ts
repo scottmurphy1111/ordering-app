@@ -11,9 +11,6 @@ export type CartModifier = {
 
 export type PickupType = 'windowed' | 'custom_date';
 
-import type { AvailabilityMode as _AvailabilityMode } from '$lib/server/cart/compat';
-export type AvailabilityMode = _AvailabilityMode;
-
 export type CartItem = {
 	itemId: number;
 	name: string;
@@ -26,7 +23,9 @@ export type CartItem = {
 	fulfillmentNote?: string;
 	pickupType: PickupType;
 	customDateLeadDays?: number;
-	availabilityMode?: AvailabilityMode;
+	allowStoreHours?: boolean;
+	allowPickupEvents?: boolean;
+	allowCustomDate?: boolean;
 };
 
 export class CartTypeMismatchError extends Error {
@@ -58,8 +57,26 @@ function loadItems(slug: string): CartItem[] {
 		const raw = localStorage.getItem(storageKey(slug));
 		if (!raw) return [];
 		const parsed = JSON.parse(raw) as CartItem[];
-		// Backward compat: pre-Phase-3 items lack pickupType; default to 'windowed'.
-		return parsed.map((item) => ({ ...item, pickupType: item.pickupType ?? 'windowed' }));
+		// Backward compat: pre-3b carts lack pickupType and the channel booleans.
+		// Default pickupType to 'windowed' and derive channels from pickupType alone
+		// (legacy windowed items are treated as orderable both ways; the server
+		// re-validates on checkout regardless).
+		return parsed.map((item) => {
+			const pickupType = item.pickupType ?? 'windowed';
+			const hasChannels =
+				item.allowStoreHours !== undefined ||
+				item.allowPickupEvents !== undefined ||
+				item.allowCustomDate !== undefined;
+			if (hasChannels) return { ...item, pickupType };
+			const custom = pickupType === 'custom_date';
+			return {
+				...item,
+				pickupType,
+				allowStoreHours: !custom,
+				allowPickupEvents: !custom,
+				allowCustomDate: custom
+			};
+		});
 	} catch {
 		return [];
 	}

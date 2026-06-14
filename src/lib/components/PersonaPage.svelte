@@ -16,7 +16,7 @@
 	let { persona }: Props = $props();
 
 	const loginHref = resolve('/login');
-	const highlightTier = 'pro';
+	const highlightTier = 'growth';
 
 	let mobileMenuOpen = $state(false);
 
@@ -321,7 +321,7 @@
 			</p>
 		</div>
 
-		<div class="grid items-start gap-6 lg:grid-cols-3">
+		<div class="grid items-start gap-6 sm:grid-cols-2 lg:grid-cols-2">
 			{#each TIERS as tier (tier.key)}
 				{@const isHighlight = tier.key === highlightTier}
 				{@const tagline = persona.pricing.taglinesByTier?.[tier.key]}
@@ -388,7 +388,7 @@
 			Not sure? Start free on our <a
 				href={loginHref}
 				class="text-primary underline underline-offset-2 hover:text-primary/80">Starter plan</a
-			> — up to 10 items, no credit card required.
+			> — up to 5 items, no credit card required.
 		</p>
 	</div>
 </section>

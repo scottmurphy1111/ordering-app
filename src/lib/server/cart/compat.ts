@@ -1,19 +1,23 @@
-export type AvailabilityMode = 'always' | 'storefront_only' | 'events_only' | 'unlisted';
+export type ItemChannels = {
+	allowStoreHours: boolean;
+	allowPickupEvents: boolean;
+	allowCustomDate: boolean;
+};
 
 /**
- * Returns true when an item's availabilityMode is compatible with the chosen pickupMode.
- * 'always' is compatible with everything.
- * 'storefront_only' is incompatible with 'pickup_event'.
- * 'events_only' is incompatible with 'storefront_hours'.
- * 'unlisted' items are hidden from the public catalog but orderable by direct
- * link — no pickupMode gating applies.
+ * Returns true when an item's fulfillment channels permit the chosen pickupMode.
+ * pickup_event     → item must allow pickup events
+ * storefront_hours → item must allow store hours
+ * custom_date      → item must allow custom date
+ * Undefined pickupMode (mode not yet chosen at the cart) is always compatible.
  */
 export function isCompatible(
-	mode: AvailabilityMode,
+	channels: ItemChannels,
 	pickupMode: 'pickup_event' | 'storefront_hours' | 'custom_date' | undefined
 ): boolean {
-	if (!pickupMode || mode === 'always' || mode === 'unlisted') return true;
-	if (mode === 'storefront_only' && pickupMode === 'pickup_event') return false;
-	if (mode === 'events_only' && pickupMode === 'storefront_hours') return false;
+	if (!pickupMode) return true;
+	if (pickupMode === 'pickup_event') return channels.allowPickupEvents;
+	if (pickupMode === 'storefront_hours') return channels.allowStoreHours;
+	if (pickupMode === 'custom_date') return channels.allowCustomDate;
 	return true;
 }

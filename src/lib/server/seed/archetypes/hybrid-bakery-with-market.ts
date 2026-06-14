@@ -217,7 +217,6 @@ export const hybridBakeryWithMarket: ArchetypeFixture = {
 		allowPickup: true,
 		minimumOrderAmount: 0,
 		estimatedPrepTimeMinutes: 20,
-		asapPickupEnabled: true,
 		loyalty: {
 			enabled: true,
 			type: 'stamps',

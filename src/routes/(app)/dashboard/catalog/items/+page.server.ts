@@ -57,7 +57,7 @@ export const load: PageServerLoad = async (event) => {
 			isSubscription: true,
 			billingInterval: true,
 			pickupType: true,
-			availabilityMode: true
+			isUnlisted: true
 		},
 		with: { category: { columns: { id: true, name: true } } },
 		orderBy: [catalogItems.sortOrder, desc(catalogItems.createdAt)],
@@ -87,7 +87,7 @@ export const load: PageServerLoad = async (event) => {
 
 	const vendorRecord = await db.query.vendor.findFirst({
 		where: eq(vendor.id, vendorId),
-		columns: { subscriptionTier: true, addons: true, slug: true }
+		columns: { subscriptionTier: true, addons: true, slug: true, fulfillmentModel: true }
 	});
 	const storefrontOrigin = vendorRecord?.slug ? vendorOrigin(vendorRecord.slug) : null;
 	const canImportCsv =
@@ -119,7 +119,10 @@ export const load: PageServerLoad = async (event) => {
 					billingInterval: true,
 					pickupType: true,
 					customDateLeadDays: true,
-					availabilityMode: true
+					allowStoreHours: true,
+					allowPickupEvents: true,
+					allowCustomDate: true,
+					isUnlisted: true
 				},
 				with: {
 					category: { columns: { id: true, name: true } },
@@ -151,6 +154,7 @@ export const load: PageServerLoad = async (event) => {
 		selectedCategoryId: filterUncategorized ? 'uncategorized' : categoryId,
 		canImportCsv,
 		totalItemsUnfiltered,
+		fulfillmentModel: (vendorRecord?.fulfillmentModel ?? 'pickup_only') as 'pickup_only' | 'hybrid',
 		hasSubscriptionsAddon: effectiveHasAddon(
 			vendorRecord?.subscriptionTier ?? 'starter',
 			addons,

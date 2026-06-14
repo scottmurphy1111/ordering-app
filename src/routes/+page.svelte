@@ -19,10 +19,11 @@
 	// item limits) lives in $lib/billing as the canonical source.
 	const taglines: Record<TierKey, string> = {
 		starter: 'Try it out, take your first orders.',
+		growth: 'Room to grow as your orders pick up.',
 		market: 'For booth vendors, market sellers, and side-hustle makers.',
 		pro: 'The full toolkit for shops, bakeries, and growing businesses.'
 	};
-	const highlightTier: TierKey = 'pro';
+	const highlightTier: TierKey = 'growth';
 
 	const audiences = [
 		{
@@ -48,6 +49,29 @@
 		{ icon: 'mdi:room-service-outline', label: 'Caterers', path: undefined },
 		{ icon: 'mdi:star-outline', label: 'Specialty vendors', path: undefined },
 		{ icon: 'mdi:hanger', label: 'Boutique shops', path: undefined }
+	];
+
+	const whyOrderLocal = [
+		{
+			icon: 'mdi:check-decagram-outline',
+			title: 'Fewer mistakes',
+			desc: 'Every order comes in structured — item, options, pickup time. Nothing lost in a DM thread.'
+		},
+		{
+			icon: 'mdi:clipboard-check-outline',
+			title: 'Less chaos on market day',
+			desc: 'One list, totaled and sorted, on your phone — not a stack of paper order sheets.'
+		},
+		{
+			icon: 'mdi:timer-sand',
+			title: 'Sell items before market day',
+			desc: 'Set a cutoff and a cap, and customers reserve in advance instead of crowding the booth.'
+		},
+		{
+			icon: 'mdi:shimmer',
+			title: 'Look more professional',
+			desc: 'A branded page of your own — instead of "DM me to order" and a Google Form link.'
+		}
 	];
 
 	const storefrontFeatures = [
@@ -139,7 +163,7 @@
 		{
 			label: 'Cost to start',
 			them: 'A monthly fee from day one, whether you sell or not',
-			us: 'Free to start, up to 10 items'
+			us: 'Free to start, up to 5 items'
 		},
 		{
 			label: 'The real bill',
@@ -154,7 +178,7 @@
 		{
 			label: "Who it's for",
 			them: '"Merchants" managing "SKUs" and "fulfillment"',
-			us: 'Makers, bakers, and growers running a booth and a storefront'
+			us: 'Makers, bakers, and growers running their own businesses'
 		}
 	];
 
@@ -199,8 +223,8 @@
 			a: 'No. Customers order from any phone or laptop browser — just share your link or QR code.'
 		},
 		{
-			q: 'What happens when I hit 10 items on the Starter plan?',
-			a: 'Upgrade to Market ($49/mo) for 30 items or Pro ($99/mo) for unlimited. Your existing catalog and orders carry over.'
+			q: 'What happens when I hit 5 items on the Starter plan?',
+			a: 'Upgrade to Growth ($24/mo) for 20 items, Market ($49/mo) for 50, or Pro ($99/mo) for unlimited. Your existing catalog and orders carry over.'
 		},
 		{
 			q: 'Can I pause my subscription in the off-season?',
@@ -616,6 +640,37 @@
 	</div>
 </div>
 
+<!-- Why Order Local -->
+<section class="bg-background px-6 py-24">
+	<div class="mx-auto max-w-5xl">
+		<div class="mb-14 text-center">
+			<span
+				class="mb-3 inline-block rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold tracking-widest text-primary/90 uppercase"
+			>
+				Why Order Local
+			</span>
+			<h2 class="mt-3 text-3xl font-bold text-foreground sm:text-4xl">
+				Replace the order-day scramble.
+			</h2>
+			<p class="mx-auto mt-4 max-w-2xl text-lg leading-relaxed text-muted-foreground">
+				Right now your orders live in DMs, a spreadsheet, a paper sheet at the booth, and a Google
+				Form you keep re-sharing. Order Local puts all of it in one place.
+			</p>
+		</div>
+		<div class="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
+			{#each whyOrderLocal as item (item.title)}
+				<div class="flex flex-col items-center text-center">
+					<div class="mb-4 flex items-center justify-center">
+						<Icon icon={item.icon} class="h-10 w-10 text-primary/90" aria-hidden="true" />
+					</div>
+					<h3 class="font-semibold text-foreground">{item.title}</h3>
+					<p class="mt-2 text-sm leading-relaxed text-muted-foreground">{item.desc}</p>
+				</div>
+			{/each}
+		</div>
+	</div>
+</section>
+
 <!-- Storefront features -->
 <section id="features" class="scroll-mt-20 bg-background px-6 pb-24 md:py-24">
 	<div class="mx-auto max-w-6xl">
@@ -845,7 +900,7 @@
 
 <!-- Pricing -->
 <section id="pricing" class="scroll-mt-20 bg-background px-6 py-24">
-	<div class="mx-auto max-w-6xl">
+	<div class="mx-auto max-w-4xl">
 		<div class="mb-10 text-center">
 			<span
 				class="mb-3 inline-block rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold tracking-widest text-primary/90 uppercase"
@@ -895,8 +950,8 @@
 			</div>
 		</div>
 
-		<!-- 3-tier grid -->
-		<div class="mt-10 grid items-start gap-6 lg:grid-cols-3">
+		<!-- 4-tier grid -->
+		<div class="mt-10 grid items-start gap-6 sm:grid-cols-2">
 			{#each TIERS as tier (tier.key)}
 				{@const isHighlight = tier.key === highlightTier}
 				{@const hasAnnual = 'annualMonthly' in tier}

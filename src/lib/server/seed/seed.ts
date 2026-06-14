@@ -61,7 +61,14 @@ async function _seed(vendorId: number, fixture: ArchetypeFixture): Promise<void>
 				...(item.customDateLeadDays !== undefined
 					? { customDateLeadDays: item.customDateLeadDays }
 					: {}),
-				availabilityMode: item.availabilityMode ?? 'always'
+				allowCustomDate: item.pickupType === 'custom_date',
+				allowStoreHours:
+					item.pickupType !== 'custom_date' &&
+					(item.availabilityMode ?? 'always') !== 'events_only',
+				allowPickupEvents:
+					item.pickupType !== 'custom_date' &&
+					(item.availabilityMode ?? 'always') !== 'storefront_only',
+				isUnlisted: (item.availabilityMode ?? 'always') === 'unlisted'
 			}))
 		)
 		.returning({ id: catalogItems.id, name: catalogItems.name });

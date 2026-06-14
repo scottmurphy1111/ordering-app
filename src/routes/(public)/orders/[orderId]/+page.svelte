@@ -23,6 +23,12 @@
 	const isDone = $derived(isFulfilled || isCancelled);
 	const isPendingApproval = $derived(order.status === 'pending_approval');
 	const isPaymentFailed = $derived(order.status === 'payment_failed');
+	// Terminal states where nothing changes on its own, so polling can stop. Note:
+	// payment_failed is intentionally NOT settled — reconcilePaymentStatus re-checks
+	// Stripe on each poll and can recover it to paid.
+	const isSettled = $derived(
+		isDone || order.paymentStatus === 'refunded' || order.paymentStatus === 'void'
+	);
 
 	// Customer-friendly label overrides for the status stepper
 	const customerLabels = {
@@ -87,8 +93,15 @@
 
 	// ── Live polling ─────────────────────────────────────────────────────────
 	onMount(() => {
-		if (isDone || !isPaid) return;
+		// Poll while the order can still change on its own — payment confirming after
+		// checkout, the vendor approving a request, or the status advancing — and stop
+		// once it's settled so a finished order isn't polled indefinitely.
+		if (isSettled) return;
 		const interval = setInterval(() => {
+			if (isSettled) {
+				clearInterval(interval);
+				return;
+			}
 			invalidate('app:order-status');
 		}, 15_000);
 		return () => clearInterval(interval);

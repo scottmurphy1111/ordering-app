@@ -24,7 +24,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 			where: and(
 				eq(catalogItems.vendorId, vendorId),
 				inArray(catalogItems.status, ['available', 'sold_out']),
-				ne(catalogItems.availabilityMode, 'unlisted')
+				eq(catalogItems.isUnlisted, false)
 			),
 			orderBy: (i, { asc }) => [asc(i.sortOrder), asc(i.name)],
 			columns: {
@@ -42,7 +42,9 @@ export const load: PageServerLoad = async ({ locals }) => {
 				status: true,
 				pickupType: true,
 				customDateLeadDays: true,
-				availabilityMode: true
+				allowStoreHours: true,
+				allowPickupEvents: true,
+				allowCustomDate: true
 			},
 			with: {
 				modifiers: { columns: { modifierId: true } }

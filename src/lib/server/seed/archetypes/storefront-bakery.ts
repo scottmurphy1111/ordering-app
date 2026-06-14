@@ -122,7 +122,6 @@ export const storefrontBakery: ArchetypeFixture = {
 		allowPickup: true,
 		minimumOrderAmount: 0,
 		estimatedPrepTimeMinutes: 10,
-		asapPickupEnabled: true,
 		loyalty: {
 			enabled: false,
 			type: 'stamps',

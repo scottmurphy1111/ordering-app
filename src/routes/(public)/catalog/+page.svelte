@@ -5,8 +5,7 @@
 		cart,
 		CartTypeMismatchError,
 		type PickupType,
-		type CartModifier,
-		type AvailabilityMode
+		type CartModifier
 	} from '$lib/cart.svelte';
 	import { confirmDialog } from '$lib/confirm.svelte';
 	import { resolve } from '$app/paths';
@@ -91,7 +90,9 @@
 		fulfillmentNote?: string | null;
 		pickupType: PickupType;
 		customDateLeadDays?: number | null;
-		availabilityMode?: AvailabilityMode | null;
+		allowStoreHours?: boolean | null;
+		allowPickupEvents?: boolean | null;
+		allowCustomDate?: boolean | null;
 	}) {
 		const images = item.images as { url: string; isPrimary?: boolean }[] | null;
 		const imageUrl = images?.find((i) => i.isPrimary)?.url ?? images?.[0]?.url;
@@ -106,7 +107,9 @@
 			fulfillmentNote: item.fulfillmentNote ?? undefined,
 			pickupType: item.pickupType,
 			customDateLeadDays: item.customDateLeadDays ?? undefined,
-			availabilityMode: item.availabilityMode ?? undefined
+			allowStoreHours: item.allowStoreHours ?? undefined,
+			allowPickupEvents: item.allowPickupEvents ?? undefined,
+			allowCustomDate: item.allowCustomDate ?? undefined
 		};
 
 		try {

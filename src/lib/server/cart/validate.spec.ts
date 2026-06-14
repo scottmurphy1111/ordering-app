@@ -23,7 +23,9 @@ function row(over: Record<string, unknown> = {}) {
 		status: 'available',
 		pickupType: 'windowed',
 		customDateLeadDays: null,
-		availabilityMode: 'always',
+		allowStoreHours: true,
+		allowPickupEvents: true,
+		allowCustomDate: false,
 		...over
 	};
 }
@@ -39,39 +41,45 @@ function cartItem(over: Partial<CartItem> = {}): CartItem {
 	} as CartItem;
 }
 
-describe('isCompatible — availability mode vs pickup mode', () => {
-	it('always is compatible with pickup_event', () => {
-		expect(isCompatible('always', 'pickup_event')).toBe(true);
+describe('isCompatible — channels vs pickup mode', () => {
+	const STORE = { allowStoreHours: true, allowPickupEvents: false, allowCustomDate: false };
+	const EVENTS = { allowStoreHours: false, allowPickupEvents: true, allowCustomDate: false };
+	const BOTH = { allowStoreHours: true, allowPickupEvents: true, allowCustomDate: false };
+	const CUSTOM = { allowStoreHours: false, allowPickupEvents: false, allowCustomDate: true };
+
+	it('store+events is compatible with pickup_event', () => {
+		expect(isCompatible(BOTH, 'pickup_event')).toBe(true);
 	});
 
-	it('always is compatible with storefront_hours', () => {
-		expect(isCompatible('always', 'storefront_hours')).toBe(true);
+	it('store+events is compatible with storefront_hours', () => {
+		expect(isCompatible(BOTH, 'storefront_hours')).toBe(true);
 	});
 
-	it('storefront_only is incompatible with pickup_event', () => {
-		expect(isCompatible('storefront_only', 'pickup_event')).toBe(false);
+	it('store-hours-only is incompatible with pickup_event', () => {
+		expect(isCompatible(STORE, 'pickup_event')).toBe(false);
 	});
 
-	it('storefront_only is compatible with storefront_hours', () => {
-		expect(isCompatible('storefront_only', 'storefront_hours')).toBe(true);
+	it('store-hours-only is compatible with storefront_hours', () => {
+		expect(isCompatible(STORE, 'storefront_hours')).toBe(true);
 	});
 
-	it('events_only is incompatible with storefront_hours', () => {
-		expect(isCompatible('events_only', 'storefront_hours')).toBe(false);
+	it('events-only is incompatible with storefront_hours', () => {
+		expect(isCompatible(EVENTS, 'storefront_hours')).toBe(false);
 	});
 
-	it('events_only is compatible with pickup_event', () => {
-		expect(isCompatible('events_only', 'pickup_event')).toBe(true);
+	it('events-only is compatible with pickup_event', () => {
+		expect(isCompatible(EVENTS, 'pickup_event')).toBe(true);
 	});
 
-	it('unlisted is compatible with any mode (hidden from catalog, link-orderable)', () => {
-		expect(isCompatible('unlisted', 'pickup_event')).toBe(true);
-		expect(isCompatible('unlisted', 'storefront_hours')).toBe(true);
+	it('custom-date-only is compatible only with custom_date', () => {
+		expect(isCompatible(CUSTOM, 'custom_date')).toBe(true);
+		expect(isCompatible(CUSTOM, 'pickup_event')).toBe(false);
+		expect(isCompatible(CUSTOM, 'storefront_hours')).toBe(false);
 	});
 
-	it('any mode is compatible when pickupMode is undefined', () => {
-		expect(isCompatible('storefront_only', undefined)).toBe(true);
-		expect(isCompatible('events_only', undefined)).toBe(true);
+	it('any channels are compatible when pickupMode is undefined', () => {
+		expect(isCompatible(STORE, undefined)).toBe(true);
+		expect(isCompatible(EVENTS, undefined)).toBe(true);
 	});
 });
 

@@ -20,7 +20,9 @@ export function getPlanPriceId(
 		'pro:monthly': env.STRIPE_PRICE_PRO,
 		'pro:annual': env.STRIPE_PRICE_PRO_ANNUAL,
 		'market:monthly': env.STRIPE_PRICE_MARKET,
-		'market:annual': env.STRIPE_PRICE_MARKET_ANNUAL
+		'market:annual': env.STRIPE_PRICE_MARKET_ANNUAL,
+		'growth:monthly': env.STRIPE_PRICE_GROWTH,
+		'growth:annual': env.STRIPE_PRICE_GROWTH_ANNUAL
 	};
 	return map[`${planKey}:${interval}`];
 }
@@ -32,6 +34,8 @@ export function getPlanPriceId(
  * Used by webhook handlers to resolve tier from a subscription's plan item.
  */
 export function getTierKeyFromPriceId(priceId: string): string | null {
+	if (priceId === env.STRIPE_PRICE_GROWTH || priceId === env.STRIPE_PRICE_GROWTH_ANNUAL)
+		return 'growth';
 	if (priceId === env.STRIPE_PRICE_MARKET || priceId === env.STRIPE_PRICE_MARKET_ANNUAL)
 		return 'market';
 	if (priceId === env.STRIPE_PRICE_PRO || priceId === env.STRIPE_PRICE_PRO_ANNUAL) return 'pro';

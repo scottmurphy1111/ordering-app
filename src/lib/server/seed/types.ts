@@ -143,7 +143,6 @@ export interface SeedSettings {
 	allowPickup: boolean;
 	minimumOrderAmount: number;
 	estimatedPrepTimeMinutes: number;
-	asapPickupEnabled: boolean;
 	loyalty: LoyaltyConfig;
 }
 

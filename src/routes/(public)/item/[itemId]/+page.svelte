@@ -2,12 +2,7 @@
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import type { PageData } from './$types';
-	import {
-		cart,
-		CartTypeMismatchError,
-		type CartModifier,
-		type AvailabilityMode
-	} from '$lib/cart.svelte';
+	import { cart, CartTypeMismatchError, type CartModifier } from '$lib/cart.svelte';
 	import { confirmDialog } from '$lib/confirm.svelte';
 	import { resolve } from '$app/paths';
 	import Icon from '@iconify/svelte';
@@ -107,7 +102,9 @@
 			fulfillmentNote: data.item.fulfillmentNote ?? undefined,
 			pickupType: data.item.pickupType,
 			customDateLeadDays: data.item.customDateLeadDays ?? undefined,
-			availabilityMode: (data.item.availabilityMode as AvailabilityMode | null) ?? undefined
+			allowStoreHours: data.item.allowStoreHours ?? undefined,
+			allowPickupEvents: data.item.allowPickupEvents ?? undefined,
+			allowCustomDate: data.item.allowCustomDate ?? undefined
 		};
 
 		try {
@@ -181,11 +178,11 @@
 			{:else}
 				<p class="text-xl font-bold text-foreground">${(data.item.price / 100).toFixed(2)}</p>
 			{/if}
-			{#if data.item.availabilityMode === 'storefront_only'}
+			{#if data.item.allowStoreHours && !data.item.allowPickupEvents && !data.item.allowCustomDate}
 				<StatusBadge tone="bg-amber-50 text-amber-700" class="text-xs">In-store only</StatusBadge>
-			{:else if data.item.availabilityMode === 'events_only'}
+			{:else if data.item.allowPickupEvents && !data.item.allowStoreHours && !data.item.allowCustomDate}
 				<StatusBadge tone="bg-sky-50 text-sky-700" class="text-xs">Pickup events</StatusBadge>
-			{:else if data.item.availabilityMode === 'unlisted'}
+			{:else if data.item.isUnlisted}
 				<StatusBadge tone="bg-slate-100 text-slate-700" class="text-xs">Unlisted</StatusBadge>
 			{/if}
 		</div>

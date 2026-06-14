@@ -7,7 +7,7 @@ import {
 } from '$lib/server/db/catalog';
 import { and, eq, inArray } from 'drizzle-orm';
 import type { CartItem, PickupType } from '$lib/cart.svelte';
-import { isCompatible, type AvailabilityMode } from './compat';
+import { isCompatible } from './compat';
 
 export type UnavailableItem = {
 	itemId: number;
@@ -24,7 +24,6 @@ export type PriceChange = {
 export type AvailabilityMismatch = {
 	itemId: number;
 	name: string;
-	mode: AvailabilityMode;
 };
 
 export type CartValidationResult =
@@ -61,7 +60,9 @@ export async function validateCartItems(
 			status: catalogItems.status,
 			pickupType: catalogItems.pickupType,
 			customDateLeadDays: catalogItems.customDateLeadDays,
-			availabilityMode: catalogItems.availabilityMode
+			allowStoreHours: catalogItems.allowStoreHours,
+			allowPickupEvents: catalogItems.allowPickupEvents,
+			allowCustomDate: catalogItems.allowCustomDate
 		})
 		.from(catalogItems)
 		.where(and(inArray(catalogItems.id, itemIds), eq(catalogItems.vendorId, vendorId)));
@@ -139,11 +140,20 @@ export async function validateCartItems(
 			});
 			seenPriceChangeIds.add(item.itemId);
 		}
-		if (!isCompatible(row.availabilityMode, pickupMode) && !seenMismatchIds.has(item.itemId)) {
+		if (
+			!isCompatible(
+				{
+					allowStoreHours: row.allowStoreHours,
+					allowPickupEvents: row.allowPickupEvents,
+					allowCustomDate: row.allowCustomDate
+				},
+				pickupMode
+			) &&
+			!seenMismatchIds.has(item.itemId)
+		) {
 			availabilityMismatch.push({
 				itemId: item.itemId,
-				name: item.name,
-				mode: row.availabilityMode
+				name: item.name
 			});
 			seenMismatchIds.add(item.itemId);
 		}
@@ -175,7 +185,6 @@ export async function validateCartItems(
 			...item,
 			basePrice: effectivePrice,
 			customDateLeadDays: row.customDateLeadDays ?? undefined,
-			availabilityMode: row.availabilityMode,
 			selectedModifiers: rebuiltModifiers
 		});
 	}

@@ -100,8 +100,7 @@ export const vendor = pgTable(
 			defaultTipPercentages: [15, 18, 20],
 			allowPickup: true,
 			minimumOrderAmount: 0,
-			estimatedPrepTimeMinutes: 15,
-			asapPickupEnabled: false
+			estimatedPrepTimeMinutes: 15
 		}),
 
 		// Operational status
